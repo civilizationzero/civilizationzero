@@ -471,9 +471,9 @@ def archive_page(bundle_name, bundle_sha, bundle_size):
 <section aria-labelledby="h-mir"><h2 id="h-mir">Mirrors and deposit</h2>
 <table><tr><th>Where</th><th>What</th><th>Status</th></tr>
 <tr><td><a href="{REPO}">GitHub, {REPO.replace('https://github.com/', '')}</a></td><td>Source, canonical texts, blueprint, reviews, registers; every change in its history</td><td>live</td></tr>
-<tr><td>Internet Archive</td><td>Snapshot of the site at launch and at each anniversary</td><td>at launch</td></tr>
+<tr><td>Internet Archive</td><td>Snapshots of the site at release, at launch and at each anniversary</td><td>{"saved " + ", ".join(f'<a href="{u}">{esc(p)}</a>' for p, u in IA_SNAPSHOTS.items()) + " (28 October 2026); the rest at launch" if IA_SNAPSHOTS else "at launch"}</td></tr>
 <tr><td>Two independent mirrors, one outside the originator's jurisdiction</td><td>The signed bundle, re-verified daily; holders named here</td><td class="pending">pending — holders not yet named</td></tr>
-<tr><td>Deposit with a persistent identifier (Zenodo, DOI)</td><td>The bundle, at launch and at each version</td><td class="pending">pending — target {LAUNCH.isoformat()}</td></tr>
+<tr><td>Deposit with a persistent identifier (Zenodo, DOI)</td><td>The repository at each release — canonical texts, signatures, proof, bundle</td><td>{f'<a href="https://doi.org/{DOI}">doi:{DOI}</a>' + (f' (all versions: <a href="https://doi.org/{DOI_CONCEPT}">doi:{DOI_CONCEPT}</a>)' if DOI_CONCEPT else "") if DOI else f'<span class="pending">pending — target {LAUNCH.isoformat()}</span>'}</td></tr>
 </table>
 </section>
 <section aria-labelledby="h-bundle"><h2 id="h-bundle">The bundle</h2>
@@ -826,7 +826,8 @@ def manifest(bundle_name, bundle_sha):
                       "anchor": {"chain": "bitcoin", "blocks": OTS_ANCHORS} if OTS_ANCHORS else None},
         "mirrors": [{"name": "GitHub", "url": REPO, "status": "live"}, {"name": "Internet Archive", "status": "at launch"},
                     {"name": "two independent mirrors, one outside the originator's jurisdiction", "status": "pending"}],
-        "deposit": {"status": "pending", "target": LAUNCH.isoformat(), "service": "Zenodo (DOI)"},
+        "deposit": {"status": "done" if DOI else "pending", "target": LAUNCH.isoformat(), "service": "Zenodo (DOI)", "doi": DOI, "concept_doi": DOI_CONCEPT, "url": f"https://doi.org/{DOI}" if DOI else None},
+        "internet_archive": [{"path": p, "snapshot": u} for p, u in IA_SNAPSHOTS.items()],
         "succession": {"second_key_holder": {"name": "Banco", "country": "Germany", "named": "2026-10-28", "acceptance": "received 2026-10-29 by email"}, "dead_man_days": 90},
         "bundle": {"url": f"{ORIGIN}/archive/{bundle_name}", "sha256": bundle_sha, "signed": False, "note": "pre-release bundle; the signed 1.0 bundle replaces it at launch and this one stays at its address"},
         "objections": {"html": f"{ORIGIN}/objections", "source": f"{REPO}/blob/main/record/OBJECTIONS-1.0.md", "role": "opening docket of the first scheduled review, 2031-11-30", "response_within_days": 60},

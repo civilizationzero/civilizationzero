@@ -17,6 +17,9 @@ BLUEPRINT = "1.3.1"
 PROMPT_VERSION = "cz-machine-1.0"
 ROOM_OPEN = False                          # flipped to True on the day the room's rules (§7) are verified; the functions read it from api/discuss-templates.json
 ROOM_OPENED = None                         # the ISO date the room opened (set with ROOM_OPEN)
+DOI = None                                 # Zenodo DOI of the current release (concept DOI of the record); None until the first release is archived
+DOI_CONCEPT = None
+IA_SNAPSHOTS = {"/": "https://web.archive.org/web/20261028174615/https://civilizationzero.ai/"}   # Internet Archive snapshots, by path
 RATE_PER_10MIN = 5                         # the room's limits, disclosed on /machine and in the rules (the database config carries the live values)
 DAILY_INTAKE = 2000
 
