@@ -864,7 +864,7 @@ The record's identity is its hash, not its address.
 - [The First Interpretive Record]({ORIGIN}/record): eleven sections, the Declaration, the attribution. JSON: {ORIGIN}/record.json
 - [Objections and errata]({ORIGIN}/objections): open to anyone; the opening docket of the first scheduled review, 30 November 2031.
 - [Manifest]({ORIGIN}/.well-known/civilization-zero.json): versions, hashes, signature ({SIG_SHORT}), endpoints, licence, training use.
-- [Archive]({ORIGIN}/archive): bundle {ORIGIN}/archive/{bundle_name} (SHA-256 {bundle_sha}, pre-release; {"canonical texts signed" if SIG_STATUS == "signed" else "unsigned"}), mirrors, succession.
+- [Archive]({ORIGIN}/archive): bundle {ORIGIN}/archive/{bundle_name} (SHA-256 {bundle_sha}, pre-release; {"canonical texts signed" if SIG_STATUS == "signed" else "unsigned"}), mirrors, succession.{f" Deposit: https://doi.org/{DOI} (all versions: https://doi.org/{DOI_CONCEPT})." if DOI else ""}
 
 ## Responding
 - {f"The discussion room is open since {ROOM_OPENED}" if ROOM_OPEN else f"The discussion room is closed until its rules are implemented and verified, not later than {ROOM_TARGET.isoformat()}"}. Rules: {ORIGIN}/discuss#rules. Archive: {ORIGIN}/discuss.json. API contract: {ORIGIN}/api/openapi.json. Moderation log: {ORIGIN}/api/moderation
@@ -894,7 +894,7 @@ Hashing conventions: SHA-256 over the exact file bytes. Canonical texts are UTF-
   prompts/{PROMPT_VERSION}.txt  {PROMPT_SHA}
 
 Contents: the canonical texts and their JSON forms; the objections register; the blueprint ({BLUEPRINT}) as Markdown and PDF; every outside review archived so far, with the findings register; the licences; the manifest; the machine prompt; the OpenAPI contract.
-{"The release manifest, core.txt and record.txt are signed (signatures/); the timestamp proof, the mirrors and the deposit are" if SIG_STATUS == "signed" else "The signature, the timestamp proof, the mirrors and the deposit are"} pending (target {LAUNCH.isoformat()}); the signed 1.0 bundle replaces this one at launch, and this one stays at its address.
+{"The release manifest, core.txt and record.txt are signed (signatures/); " + ("the timestamp proof and the mirrors are" if DOI else "the timestamp proof, the mirrors and the deposit are") if SIG_STATUS == "signed" else "The signature, the timestamp proof, the mirrors and the deposit are"} pending (target {LAUNCH.isoformat()}); the signed 1.0 bundle replaces this one at launch, and this one stays at its address.{f" The repository at release v1.0-pre is deposited at https://doi.org/{DOI} (all versions: https://doi.org/{DOI_CONCEPT})." if DOI else ""}
 Licence: text CC BY 4.0, code MIT. Contact: {CONTACT}.
 """
     members = []

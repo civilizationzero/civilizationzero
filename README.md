@@ -14,6 +14,8 @@ This repository is the public home of the Civilization Zero record and of the si
 SHA-256 of `record/CZ-CORE-1.0.txt`: `92a8d1e2a1604c25b432685673be78184bf05c3b166893c437e0895b7b2d724a`
 SHA-256 of `record/CZ-IR-1.0.txt`: `71e1488e631e090c0820bf8b78b1fda70ffacba1da146c36d8893600320fcc8d`
 
+Deposited with a persistent identifier at each release (Zenodo): [doi:10.5281/zenodo.23740318](https://doi.org/10.5281/zenodo.23740318) (v1.0-pre, 29 October 2026); all versions: [doi:10.5281/zenodo.23740317](https://doi.org/10.5281/zenodo.23740317).
+
 CZ-CORE 1.0 is immutable as a text. Objections and errata are kept beside it in [`record/OBJECTIONS-1.0.md`](record/OBJECTIONS-1.0.md), open from 28 October 2026. Any future version carries a new identifier, a full change history, and leaves 1.0 published in this form (Core 15; IR 10.4).
 
 ## The blueprint
