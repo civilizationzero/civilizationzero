@@ -5,3 +5,4 @@ site/build/shots/
 site/build/payload.json
 site/build/site.*
 site/build/admin_token.txt
+design/*.png
