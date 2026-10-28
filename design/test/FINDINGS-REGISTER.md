@@ -266,6 +266,15 @@ its snapshot FAILs; a bad or impossible `in_bundle_through` FAILs. Two findings,
 | G-3, G-1 | "Carries every day of the discussion" counted file names, not discussion days: the genesis day re-labelled as a register day (`"records": []` for `"entries": []`, the same hashed bytes), or a real register day, saved under `archive/discussion/`, was checked as the register's chain and still counted, so the OK line was false (medium) | **verified** — a bundle's days are checked as the chain of the directory they are carried in (data of the other chain FAILs, as with `--site`), and only days whose data is the discussion's count as carried |
 | G-2 | A snapshot whose `log` was not an object stopped the run through the catch-all (exit 1, but no later checks) (low) | **verified** — every snapshot's form is checked first (an object; its log an object with strings and integers where they belong; its items lists); a malformed one FAILs and the run goes on |
 
+A ninth pass (UTC 21:41–21:43) on 1.10: G-1 to G-3 hold, no OK line is false, and every earlier case still FAILs; but crafted
+field types could still stop a run through its last-resort handler (exit 1, later checks skipped) — a line or entry whose id is
+a list or an object, a key or signature that is a number, a statement whose versions are a number, and, with `--site`, a
+served snapshot that is a list, `null`, not JSON, or has a list for its log (low). Fixed in 1.11: the form of every snapshot is
+checked before any other check reads it — the hashed lines and the items (integer ids; text where text belongs; versions a list
+of text) as well as the log — in `--days`, in a bundle and as served by a site, where a snapshot that is not JSON FAILs too; a
+statement's versions must be a list of text; a key or signature of the wrong type FAILs as not base64. A fuzz run of 6,000
+random type changes to real day snapshots (both chains) ended with no exception.
+
 The same version moves the time from which a day is due from 01:00 to 02:00 UTC: the site's hosting plan runs its daily job at
 some time in the first hour of the day (UTC), not at 00:20 as the pages had said; the pages, the contract's notes and the
 daily-archive job (now 01:20 and 07:20 UTC) say so.

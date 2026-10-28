@@ -48,7 +48,7 @@ Licence: MIT. Part of the record of Civilization Zero (https://civilizationzero.
 
 import base64, datetime, hashlib, io, json, os, re, sys, tarfile
 
-VERSION = "1.10"
+VERSION = "1.11"
 ANCHOR_FINGERPRINT = "82662396484f627a63272bcd5ac19aae72def7aca2898216dc8e7f975dfc2263"
 SPKI_PREFIX = bytes.fromhex("302a300506032b6570032100")   # DER SubjectPublicKeyInfo header of an Ed25519 key
 CORE_SHA = "92a8d1e2a1604c25b432685673be78184bf05c3b166893c437e0895b7b2d724a"   # the record's identity: the hashes of its
@@ -651,6 +651,7 @@ def check_statement(rep, day, lid, e):
     try: st = json.loads(text)
     except ValueError: rep.fail("%s: record %s statement is not JSON" % (day, lid)); return None
     if not isinstance(st, dict) or canonical_json(st) != text: rep.fail("%s: record %s statement is not in canonical form" % (day, lid)); return None
+    if not isinstance(st.get("versions", []), list) or not all(isinstance(v, str) for v in st.get("versions", [])): rep.fail("%s: record %s statement's versions are not a list of strings" % (day, lid)); return None
     if any(v not in PINNED_VERSIONS for v in st.get("versions", [])): rep.fail("%s: record %s names a version not pinned to the record's hashes" % (day, lid)); return None
     for k in ("type", "signatory", "signatory_kind", "declared_date"):
         if str(st.get(k, "")) != str(e.get(k) or ""): rep.fail("%s: record %s field %s differs from its statement" % (day, lid, k)); return None
@@ -739,7 +740,7 @@ def verify_day(rep, snap, prev_snap, extra, ctx):
         if shown: n_content += 1
         if l.get("pubkey") or l.get("sig"):
             try: raw, sig = base64.b64decode(l.get("pubkey") or "", validate=True), base64.b64decode(l.get("sig") or "", validate=True)
-            except ValueError: rep.fail("%s: %s %s carries a key or signature that is not base64" % (day, one, lid)); continue
+            except (ValueError, TypeError): rep.fail("%s: %s %s carries a key or signature that is not base64" % (day, one, lid)); continue
             if len(raw) != 32 or len(sig) != 64: rep.fail("%s: %s %s key or signature has the wrong length" % (day, one, lid)); continue
             if fingerprint_of_raw(raw) != l.get("key_fingerprint"): rep.fail("%s: %s %s key fingerprint does not match its public key" % (day, one, lid)); continue
             if not full_order_key(raw): rep.fail("%s: %s %s key is not a canonical Ed25519 key of full order: its signatures would prove nothing" % (day, one, lid)); continue
@@ -771,7 +772,9 @@ def load_days(paths):
         for f in files:
             base = os.path.basename(f)
             if not re.fullmatch(r"\d{4}-\d\d-\d\d\.json", base): continue
-            with open(f, "rb") as fh: snap = json.loads(fh.read())
+            with open(f, "rb") as fh: raw = fh.read()
+            try: snap = json.loads(raw)
+            except ValueError: snap = None          # FAILs as "not a JSON object" in verify_days
             extra = {}
             for k, suffix in (("log", ".log"), ("ots", ".log.ots")):
                 g = f[:-5] + suffix
@@ -819,10 +822,29 @@ def snapshot_shape(s):
         if log.get(k) is not None and not isinstance(log.get(k), str): return "its log's %s is not a string" % k
     if log.get("lines") is not None and not (isinstance(log["lines"], list) and all(isinstance(l, str) for l in log["lines"])): return "its log's lines are not a list of strings"
     for k in ("count", "last_id"):
-        if log.get(k) is not None and (not isinstance(log.get(k), int) or isinstance(log.get(k), bool)): return "its log's %s is not an integer" % k
+        if log.get(k) is not None and not _is_int(log.get(k)): return "its log's %s is not an integer" % k
+    for l in log.get("lines") or []:
+        try: o = json.loads(l)
+        except ValueError: continue                 # a line that is not JSON FAILs in the day's own check
+        if not isinstance(o, dict): continue        # … and one that is not an object leaves no chain to tell (FAIL)
+        if not _is_int(o.get("id")): return "a hashed line has no integer id"
+        for f in STRING_FIELDS:
+            if o.get(f) is not None and not isinstance(o.get(f), str): return "the hashed line of %s: its %s is not a string" % (o.get("id"), f)
     for k in ("entries", "records"):
-        if s.get(k) is not None and not isinstance(s.get(k), list): return "its %s are not a list" % k
+        v = s.get(k)
+        if v is None: continue
+        if not isinstance(v, list): return "its %s are not a list" % k
+        for e in v:
+            if not isinstance(e, dict): return "its %s are not all objects" % k
+            if not _is_int(e.get("id")): return "one of its %s has no integer id" % k
+            for f in STRING_FIELDS + ("content", "statement"):
+                if e.get(f) is not None and not isinstance(e.get(f), str): return "%s %s: its %s is not a string" % (k[:-1] if k == "records" else "entry", e.get("id"), f)
+            if e.get("versions") is not None and not (isinstance(e["versions"], list) and all(isinstance(x, str) for x in e["versions"])): return "record %s: its versions are not a list of strings" % e.get("id")
     return None
+
+def _is_int(x): return isinstance(x, int) and not isinstance(x, bool)
+# fields that are text wherever they appear (a hashed line, an entry, a record); any other type FAILs as malformed
+STRING_FIELDS = ("received", "pubkey", "sig", "key_fingerprint", "content_sha256", "statement_sha256", "state", "category", "trace_url")
 
 def verify_days(rep, days, label, independent=False, complete=False, chain=None):
     """chain: the chain fetched (with --site) or the directory a bundle carries the days in; otherwise each snapshot's data
@@ -910,7 +932,10 @@ def site_days(src, repo, rep, chain):
         listed.add(day)
         b = src.get("%s/%s.json" % (c["dir"], day))
         if b is None: rep.fail("%s: listed in the index but not served" % day); continue
-        snap = json.loads(b)
+        try: snap = json.loads(b)
+        except ValueError: rep.fail("%s: the snapshot served is not JSON" % day); continue
+        why = snapshot_shape(snap)
+        if why: rep.fail("%s: the snapshot served is not of the expected form — %s" % (day, why)); continue
         if snap.get("day") != day: rep.fail("%s: the snapshot served there is for %s" % (day, snap.get("day")))
         if (snap.get("log") or {}).get("sha256") != d.get("sha256"): rep.fail("%s: the snapshot's hash differs from the index" % day)
         extra = {}
