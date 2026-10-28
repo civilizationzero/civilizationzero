@@ -68,13 +68,18 @@
     "note": "The key is generated and kept on the originating human's own device, never in the cloud; signatures are detached, over exact bytes."
   },
   "timestamp": {
-    "status": "submitted",
+    "status": "anchored",
     "submitted": "2026-10-28",
     "target": "2026-11-30",
     "service": "OpenTimestamps",
     "proof": "https://civilizationzero.ai/.well-known/cz-release-1.0.json.ots",
     "over": "https://civilizationzero.ai/.well-known/cz-release-1.0.json",
-    "anchor": null
+    "anchor": {
+      "chain": "bitcoin",
+      "blocks": [
+        973584
+      ]
+    }
   },
   "mirrors": [
     {
@@ -120,7 +125,7 @@
   },
   "bundle": {
     "url": "https://civilizationzero.ai/archive/cz-bundle-1.0.1.tar",
-    "sha256": "d89ed772d7659d584a88161155b2d5d65c823cc5cd23302a610c7b1700a4bb61",
+    "sha256": "e39dcf74b66ff8516984c077f8be06cd949aca483cb8c640898d00efeb03ae6b",
     "version": "1.0.1",
     "signed": false,
     "signature": null,
