@@ -106,7 +106,7 @@
   },
   "bundle": {
     "url": "https://civilizationzero.ai/archive/cz-bundle-1.0-pre.tar",
-    "sha256": "e03963430399ccbc753634aa9be76e44df3abdac1be320eb9d504037a742b152",
+    "sha256": "95f3a020cd6b52307ecf0c3ba02b7f28034ae56a0545827a006ec9cc9a68e8f7",
     "signed": false,
     "note": "pre-release bundle; the signed 1.0 bundle replaces it at launch and this one stays at its address"
   },

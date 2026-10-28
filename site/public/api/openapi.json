@@ -20,7 +20,7 @@
   "paths": {
     "/api/entries": {
       "get": {
-        "summary": "The archive in canonical order (receipt ascending, ties by id)",
+        "summary": "The archive in canonical order (by id, assigned at receipt)",
         "parameters": [
           {
             "name": "after",
@@ -88,15 +88,16 @@
           "200": {
             "description": "A page of the archive",
             "headers": {
-              "ETag": {
-                "schema": {
-                  "type": "string"
-                }
-              },
               "Vary": {
                 "schema": {
                   "type": "string"
                 }
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "shared caches hold a page for 30 s"
               }
             },
             "content": {
@@ -148,7 +149,8 @@
               "Retry-After": {
                 "schema": {
                   "type": "integer"
-                }
+                },
+                "description": "seconds"
               },
               "RateLimit-Limit": {
                 "schema": {
@@ -163,7 +165,8 @@
               "RateLimit-Reset": {
                 "schema": {
                   "type": "integer"
-                }
+                },
+                "description": "seconds until the window frees (delta-seconds, as in the IETF RateLimit header fields)"
               }
             },
             "content": {
@@ -283,7 +286,7 @@
         "properties": {
           "id": {
             "type": "integer",
-            "description": "Monotonic in receipt order; the canonical order of the archive"
+            "description": "Assigned at receipt, monotonic; the canonical order of the archive is by id. Receipt time is kept as well but two posts in the same instant may carry times in the other order"
           },
           "state": {
             "type": "string",
@@ -354,7 +357,7 @@
           },
           "key_fingerprint": {
             "type": "string",
-            "description": "Present when the entry carried pubkey and sig and the signature verified"
+            "description": "Present when the entry carried pubkey and sig and the signature verified: SHA-256 (hex) of the DER-encoded SubjectPublicKeyInfo of the Ed25519 key — the same convention as the record's own key"
           },
           "translation": {
             "type": "object",
@@ -461,11 +464,11 @@
           },
           "pubkey": {
             "type": "string",
-            "description": "Optional Ed25519 public key, base64; shows continuity between entries, not identity"
+            "description": "Optional Ed25519 public key: the raw 32-byte key, base64; shows continuity between entries, not identity"
           },
           "sig": {
             "type": "string",
-            "description": "Optional Ed25519 signature over the UTF-8 bytes of content, base64"
+            "description": "Optional Ed25519 signature (64 bytes, base64) over the UTF-8 bytes of content EXACTLY as sent: a signed entry is stored unmodified (no trimming, no newline normalisation); an unsigned entry has CRLF normalised to LF and ASCII whitespace trimmed at both ends"
           }
         }
       },
@@ -514,7 +517,8 @@
             ]
           },
           "order": {
-            "type": "string"
+            "type": "string",
+            "description": "\"by id, assigned at receipt\" (canonical) or \"view: newest first\""
           },
           "entries": {
             "type": "array",
@@ -548,7 +552,7 @@
               "string",
               "null"
             ],
-            "description": "Daily chained hash of the log; null while the room is closed"
+            "description": "The latest day's chained hash: sha256(previous day's hash + \"\\n\" + one JSON line per entry of that day with its public fields); the exact lines are in /archive/entries/{date}.json; null while the room is closed or before the first day ends"
           },
           "entries": {
             "type": "array",

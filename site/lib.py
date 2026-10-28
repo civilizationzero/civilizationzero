@@ -17,6 +17,8 @@ BLUEPRINT = "1.3.1"
 PROMPT_VERSION = "cz-machine-1.0"
 ROOM_OPEN = False                          # flipped to True on the day the room's rules (§7) are verified; the functions read it from api/discuss-templates.json
 ROOM_OPENED = None                         # the ISO date the room opened (set with ROOM_OPEN)
+RATE_PER_10MIN = 5                         # the room's limits, disclosed on /machine and in the rules (the database config carries the live values)
+DAILY_INTAKE = 2000
 
 esc = html.escape
 

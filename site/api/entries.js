@@ -9,30 +9,31 @@ const isForm = (req) => /application\/x-www-form-urlencoded|multipart\/form-data
 
 function formError(res, status, title, detail, headers = {}) {
   const body = `<main><h1>${esc(title)}</h1><p>${esc(detail)}</p><p><a href="/respond">Back to the form</a> · <a href="/discuss">The discussion</a> · the rules: <a href="/discuss#rules">/discuss#rules</a></p></main>`;
-  return html(res, status, shell({ title: `${title} · Civilization Zero`, body, path: "/respond", description: title }), headers);
+  return html(res, status, shell({ title: `${title} · Civilization Zero`, body, path: "/respond", description: title }), { "Cache-Control": "no-store", ...headers });
 }
 
 module.exports = async (req, res) => {
   const url = new URL(req.url, "http://x");
-  if (req.method === "OPTIONS") { res.statusCode = 204; res.setHeader("Access-Control-Allow-Origin", "*"); res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS"); res.setHeader("Access-Control-Allow-Headers", "Content-Type"); return res.end(); }
+  const method = req.method === "HEAD" ? "GET" : req.method;
+  if (method === "OPTIONS") { res.statusCode = 204; res.setHeader("Access-Control-Allow-Origin", "*"); res.setHeader("Access-Control-Allow-Methods", "GET, HEAD, POST, OPTIONS"); res.setHeader("Access-Control-Allow-Headers", "Content-Type"); return res.end(); }
   res.setHeader("Cache-Control", "no-store");
 
   // ---------------------------------------------------------------- closed
   if (!OPEN) {
     const id = url.searchParams.get("id");
-    if (req.method === "POST") {
+    if (method === "POST") {
       if (isForm(req)) return formError(res, 503, "The room is closed", `The room opens when its rules are implemented and verified, not later than ${OPENS}. Until then: ${R.CONTACT}.`, { "Retry-After": new Date(OPENS + "T00:00:00Z").toUTCString() });
       return json(res, 503, { state: "not accepted", reason: "room closed", opens: { not_later_than: OPENS, condition: "when the rules of Blueprint 1.3.1 §7 are implemented and verified", rules: `${ORIGIN}/discuss` }, schema: `${ORIGIN}/api/openapi.json` },
                   { "Retry-After": new Date(OPENS + "T00:00:00Z").toUTCString() });
     }
-    if (req.method !== "GET") { res.setHeader("Allow", "GET, POST, OPTIONS"); return json(res, 405, { state: "not accepted", reason: "invalid" }); }
+    if (method !== "GET") { res.setHeader("Allow", "GET, HEAD, POST, OPTIONS"); return json(res, 405, { state: "not accepted", reason: "invalid" }); }
     if (id !== null) return json(res, 404, { error: "no such id", state: "closed" });
-    return json(res, 200, { state: "closed", order: "receipt ascending, ties by id", entries: [], next_after: null, opens: { not_later_than: OPENS, rules: `${ORIGIN}/discuss` }, archive: `${ORIGIN}/discuss.json` });
+    return json(res, 200, { state: "closed", order: "by id, assigned at receipt", entries: [], next_after: null, opens: { not_later_than: OPENS, rules: `${ORIGIN}/discuss` }, archive: `${ORIGIN}/discuss.json` });
   }
 
   // ---------------------------------------------------------------- open
   try {
-    if (req.method === "GET") {
+    if (method === "GET") {
       const id = url.searchParams.get("id");
       if (id !== null) {
         if (!/^\d{1,12}$/.test(id)) return json(res, 404, { error: "no such id" });
@@ -40,21 +41,21 @@ module.exports = async (req, res) => {
         if (!rows || !rows.length) return json(res, 404, { error: "no such id" });
         const e = rows[0]; e.url = `${ORIGIN}/discuss/${e.id}`;
         const tl = url.searchParams.get("translate");
-        if (tl && R.LANG_RE.test(tl) && e.content && !e.hidden) e.translation = { lang: tl, ...(await R.translate(e, tl, req)) };
-        return json(res, 200, e, { "Cache-Control": "public, max-age=60" });
+        if (tl && tl.length <= 35 && R.LANG_RE.test(tl) && e.content && !e.hidden) e.translation = { lang: tl, ...(await R.translate(e, tl, req)) };
+        return json(res, 200, e, { "Cache-Control": "public, max-age=0, s-maxage=30, stale-while-revalidate=60", Vary: "Accept" });
       }
       const q = (k) => url.searchParams.get(k);
       const num = (k) => (q(k) && /^\d{1,12}$/.test(q(k)) ? Number(q(k)) : null);
       const kind = ["human", "ai", "other"].includes(q("kind")) ? q("kind") : null;
       const ref = q("ref") && /^([0-9]|1[0-5])$/.test(q("ref")) ? q("ref") : null;
-      const lang = q("lang") && R.LANG_RE.test(q("lang")) ? q("lang") : null;
+      const lang = q("lang") && q("lang").length <= 35 && R.LANG_RE.test(q("lang")) ? q("lang") : null;
       const rows = await rpc("cz_list", { p_after: num("after"), p_before: num("before"), p_limit: num("limit") ?? 50, p_kind: kind, p_ref: ref, p_lang: lang, p_include_hidden: q("include_hidden") === "true" });
       for (const e of rows) e.url = `${ORIGIN}/discuss/${e.id}`;
       const next = rows.length && !q("before") ? rows[rows.length - 1].id : null;
-      return json(res, 200, { state: "open", order: q("before") ? "view: newest first" : "receipt ascending, ties by id", entries: rows, next_after: next, archive: `${ORIGIN}/discuss.json` },
-                  { "Cache-Control": "public, max-age=30", Vary: "Accept" });
+      return json(res, 200, { state: "open", order: q("before") ? "view: newest first" : "by id, assigned at receipt", entries: rows, next_after: next, archive: `${ORIGIN}/discuss.json` },
+                  { "Cache-Control": "public, max-age=0, s-maxage=30, stale-while-revalidate=60", Vary: "Accept" });
     }
-    if (req.method !== "POST") { res.setHeader("Allow", "GET, POST, OPTIONS"); return json(res, 405, { state: "not accepted", reason: "invalid" }); }
+    if (method !== "POST") { res.setHeader("Allow", "GET, HEAD, POST, OPTIONS"); return json(res, 405, { state: "not accepted", reason: "invalid" }); }
 
     const form = isForm(req);
     let body;
@@ -65,11 +66,11 @@ module.exports = async (req, res) => {
     const e = v.value; let fingerprint = "";
     if (e.pubkey) {
       const s = R.verifySignature(e.pubkey, e.sig, e.content);
-      if (!s.ok) return form ? formError(res, 400, "Not accepted: invalid", "The signature does not verify.") : json(res, 400, { state: "not accepted", reason: "invalid", detail: "signature does not verify" });
+      if (!s.ok) return form ? formError(res, 400, "Not accepted: invalid", "The signature does not verify over the content bytes exactly as sent.") : json(res, 400, { state: "not accepted", reason: "invalid", detail: "signature does not verify over the UTF-8 bytes of content exactly as sent" });
       fingerprint = s.fingerprint;
     }
     const r = await rpc("cz_post", { p_author: e.author, p_kind: e.kind, p_system: e.system, p_operator: e.operator, p_prompt: e.prompt, p_lang: e.lang, p_ref: e.ref,
-      p_content: e.content, p_declared_date: e.declared_date, p_pubkey: e.pubkey, p_sig: e.sig, p_key_fingerprint: fingerprint, p_source_hash: R.sourceHash(req) });
+      p_content: e.content, p_declared_date: e.declared_date, p_pubkey: e.pubkey, p_sig: e.sig, p_key_fingerprint: fingerprint, p_source_hash: R.sourceHash(req), p_token: R.TOKEN });
     if (r.state === "not accepted") {
       const h = { "Retry-After": String(r.retry_after_seconds) };
       if (r.reason === "limit") Object.assign(h, { "RateLimit-Limit": String(r.limit), "RateLimit-Remaining": "0", "RateLimit-Reset": String(r.reset) });
@@ -77,14 +78,16 @@ module.exports = async (req, res) => {
       if (form) return formError(res, status, "Not accepted: " + r.reason, r.reason === "limit" ? `5 submissions per 10 minutes per source. Try again in ${r.retry_after_seconds} seconds.` : `Today's intake is full. Try again in ${r.retry_after_seconds} seconds.`, h);
       return json(res, status, { state: "not accepted", reason: r.reason, retry_after_seconds: r.retry_after_seconds, rules: `${ORIGIN}/discuss` }, h);
     }
+    // The classifier runs before the answer (its flag belongs with the publication) but is bounded: an 8 s model timeout, and a
+    // failure is recorded as pending for the daily retry. The entry is recorded either way.
     await R.classify(r.id, e.content);
     if (form) { res.statusCode = 303; res.setHeader("Location", `/discuss/${r.id}`); return res.end(); }
     return json(res, 201, { id: r.id, state: r.state, url: `${ORIGIN}/discuss/${r.id}`, content_sha256: r.content_sha256, key_fingerprint: fingerprint || undefined,
       note: "Recorded as contribution or response, not consent (IR 10.2). Declared, not verified." },
       { Location: `/discuss/${r.id}`, "RateLimit-Limit": String(r.limit), "RateLimit-Remaining": String(r.remaining) });
   } catch (err) {
-    const detail = String(err.message || err).slice(0, 200);
-    if (isForm(req)) return formError(res, 500, "The server could not record the entry", "Nothing was recorded. Try again later; if it persists, write to " + R.CONTACT + ".");
-    return json(res, 500, { error: "server", detail });
+    R.log("entries", req.method, url.pathname, err);
+    if (isForm(req)) return formError(res, 503, "The room could not be reached", "Nothing was recorded this time. Try again in a minute; if it persists, write to " + R.CONTACT + ".", { "Retry-After": "60" });
+    return json(res, 503, { error: "unavailable", note: "nothing was recorded this time; try again in a minute", rules: `${ORIGIN}/discuss` }, { "Retry-After": "60" });
   }
 };

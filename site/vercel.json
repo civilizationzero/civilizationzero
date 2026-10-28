@@ -269,7 +269,7 @@
       ]
     },
     {
-      "source": "/(core|record|discuss).json",
+      "source": "/(core|record).json",
       "headers": [
         {
           "key": "Content-Type",
@@ -434,6 +434,15 @@
           "value": "*"
         }
       ]
+    },
+    {
+      "source": "/discuss/:id",
+      "headers": [
+        {
+          "key": "Vary",
+          "value": "Accept"
+        }
+      ]
     }
   ],
   "crons": [
@@ -441,5 +450,22 @@
       "path": "/api/cron/daily",
       "schedule": "20 0 * * *"
     }
-  ]
+  ],
+  "functions": {
+    "api/archive.js": {
+      "maxDuration": 60
+    },
+    "api/cron/daily.js": {
+      "maxDuration": 60
+    },
+    "api/entries.js": {
+      "maxDuration": 30
+    },
+    "api/discuss.js": {
+      "maxDuration": 30
+    },
+    "api/moderation.js": {
+      "maxDuration": 30
+    }
+  }
 }
