@@ -52,7 +52,7 @@ The site is not neutral and does not claim to be. It chose its coordinate, its f
 | 22 | Foundation anniversary | **30 November 2026**, launch day, the first day of Year 4 of the record. The first scheduled review of the Core falls on the **foundation's** fifth anniversary, 30 November 2031 — not an anniversary of Coordinate Zero. |
 | 23 | Colour scheme | Follows the reader's system preference; two palettes exist (light, dark), each at contrast ≥ 7:1. |
 | 24 | Roles | The originating human is the sole administrator of the organisation (membership private); Claude commits and maintains; the developer Nikookar receives access for human-handled work. A **second key-holder** outside the originator's company and jurisdiction is required before launch (§8; finding 41). |
-| 25 | Custody | Domain (registered personally, WHOIS privacy on) and paid infrastructure (under the company's accounts) are held in custody until an independent foundation entity exists. **Recommended:** one plain sentence on `/about` naming the custodian(s), because Core 6 lists "the interests it serves" among the things a record may not obscure. **Decision pending — originator.** |
+| 25 | Custody | Domain (registered personally, WHOIS privacy on) and paid infrastructure (under the company's accounts) are held in custody until an independent foundation entity exists. `/about` states the interest (a company he owns pays); the originator decided on 28 Oct 2026 that the company is not named in the site's voice. Second key-holder: Banco (Germany), acceptance pending. |
 | 26 | Design method | **Design with recorded reasons** (§9a; renamed from "design by derivation", finding 50). |
 | 27 | First page | **Composition C.2** (`design/home-C2-derived.html`), after two rounds of review; since 1.3.1 the Declaration is printed whole and checked at build (§5.4). |
 | 28 | The two doors | "If you are not human: the same record as text, JSON and API →" / "If you are human: read on ↓". The doors non-human readers actually use are invisible: `Link` headers, `rel="alternate"` to a whole-page equivalent, `rel="service-desc"` to the API schema, content negotiation. Nothing is withheld from either reader. An **editorial choice (E)**, stated as such. |
@@ -286,10 +286,10 @@ Not traffic. The foundation will count: responses recorded, by declared kind and
 ## 14. Open items
 
 **Decisions for the originator**
-1. The custody sentence on `/about` (decision 25): wording that names who holds the domain and infrastructure.
-2. A second key-holder and successor outside the originator's company and jurisdiction (decisions 24, 36).
-3. The founding human expression: `/about` (as in C.2) or the first page.
-4. Objections to the record that only he can answer: O-7 (what Luna is), O-9 (naming the product behind the coordinate), O-13 (§14's "love" sentences, now raised by two systems), and responses to O-1 to O-6, O-10 to O-15, O-17 and O-18 within 60 days of filing.
+1. ~~The custody sentence on `/about` (decision 25)~~ — decided 28 Oct 2026: the paying company is described, not named (O-14).
+2. ~~A second key-holder and successor~~ — named 28 Oct 2026: Banco (Germany); acceptance by email pending.
+3. ~~The founding human expression~~ — decided 28 Oct 2026: `/about` only.
+4. Objections: O-7, O-9 and O-13 answered 28 Oct 2026 (see the register: Luna identified by system, provider and period, instructions withheld; a historical note on the product; §14's sentences accepted as a candidate for the 2031 docket). Responses to O-1 to O-6, O-10 to O-12, O-14 to O-18 within 60 days of filing (by 27 Dec 2026).
 5. Funding for preservation beyond the custodian: prepaid renewal of the domain for its longest term, annual prepayment of hosting, and whether an endowment or equivalent is to be set up (§8).
 
 **Open for the builders**
