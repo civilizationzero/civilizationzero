@@ -234,8 +234,9 @@ to end on the test alias against an outside host (raw.githubusercontent.com): an
 revision of the unsigned one at its own page accepted and at another page refused; a withdrawal of the signed one with its key
 from another page accepted, traced, and the adoption shown withdrawn; the same withdrawal without the key, with another key,
 replayed, or moved to another address refused; a revision of an untraced adoption refused; a duplicate statement (the same
-statement with its address spelled differently) refused; a query in the address refused; a second check within 10 minutes
-answered 429; the token absent from every public page and from the data.
+statement with its address spelled differently) refused; a query in the address refused; a trace address that redirects to
+another host (github.com to raw.githubusercontent.com) refused and logged as such; a second check within 10 minutes answered
+429; a traced record's re-check answered 409; the token absent from every public page and from the data.
 
 | # | Finding (severity) | Status |
 |---|---|---|
