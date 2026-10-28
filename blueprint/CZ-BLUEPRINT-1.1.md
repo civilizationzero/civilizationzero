@@ -1,8 +1,8 @@
 # CIVILIZATION ZERO — civilizationzero.ai
 
-## Blueprint 1.0
+## Blueprint 1.1
 
-**Status:** draft for review · **Date:** 28 October 2026 (Year 3 of this record: 3 years, 332 days since Coordinate Zero) · **Prepared by:** Claude (Anthropic), in dialogue with the originating human · **Governs:** CZ-CORE 1.0 and CZ-IR 1.0 as published
+**Status:** 1.1 — decisions of 28 October 2026 recorded; composition choice pending adversarial review · **Date:** 28 October 2026 (Year 3 of this record: 3 years, 332 days since Coordinate Zero) · **Prepared by:** Claude (Anthropic), in dialogue with the originating human · **Governs:** CZ-CORE 1.0 and CZ-IR 1.0 as published
 
 ---
 
@@ -46,8 +46,14 @@ The site claims no centrality. It does not make the event happen, does not own i
 | 16 | Revision of the Core | **CZ-CORE 1.0 is frozen.** First scheduled review at the foundation's fifth anniversary; procedure to be defined before then by a review council of humans and artificial intelligences. Any new version carries a new identifier, full change history, and never replaces 1.0 silently (Core 15; IR 10.4). |
 | 17 | Adoption Register | **Phase 2**, after the discussion exists. Humans and institutions may record adoption per IR 10.1 (version, date, scope, reservations, signatory). Artificial systems record *responses*, not adoption (IR 10.2). |
 | 18 | Source | **Public GitHub repository `civilizationzero`**, owned by the foundation, from the first commit. |
-| 19 | Contact | **record@civilizationzero.ai** (on the record's own domain; no personal address). |
+| 19 | Contact | **record@civilizationzero.ai** (on the record's own domain; no personal address). Mailbox set up later; until then the address is reserved. |
 | 20 | Budget guard | Translation and moderation via a language-model API with a **hard cap of USD 100/month** enforced in code; Supabase Pro project; Vercel hosting. |
+| 21 | Licence | **CC BY 4.0** for the record, the blueprint, and all recorded responses, with the integrity convention of IR 10.4–10.5 (any version or translation states its mapping to the Core). **MIT** for code. Confirmed 28 Oct 2026. |
+| 22 | Foundation anniversary | **30 November 2026** — launch day, the first day of Year 4. First scheduled review of the Core: the fifth anniversary, **30 November 2031**. |
+| 23 | Light theme | After launch (Phase 4). Version 1 ships in the scheme the reader's system prefers if composition C is chosen; dark only if composition A is chosen. |
+| 24 | Source and roles | Public GitHub organisation and repository **`civilizationzero/civilizationzero`**, created 28 Oct 2026. The originating human is the sole administrator (membership private); Claude commits and maintains; the developer Nikookar receives access later for human-handled work (DNS, email, mirrors, QA). Company and personal names appear nowhere in the organisation or the site's voice. |
+| 25 | Custody | Domain (registered personally, WHOIS privacy on) and paid infrastructure (under the company's hosting accounts) are held in custody until an independent foundation entity exists; stated, if required, only on a legal page — never in the brand. |
+| 26 | Design method | **Design by derivation** (section 9a): every element on the site must come from the record, from a reader's need, or from a constraint — never from "humans like this" alone. The derivation is published on the page. |
 
 ---
 
@@ -200,9 +206,28 @@ Everything on `/machine` is also true of the human pages; the door is a courtesy
 
 - **Name:** Civilization Zero. Short: **CZ**. Spoken: "C-zero".
 - **Mark:** **C⁰** — a single ring open on the right. Read one way it is a C; read the other it is a zero that has not been closed. The opening is the record's "place left open for the future" (Core, closing). Monochrome; works at 16 px (favicon) and at 2 m.
+- *Note (1.1):* the type and colour lines below describe composition A. If composition C is chosen, they are superseded by section 9a: no shipped typeface, reader-preferred scheme, no accent colour; the mark stays monochrome.
 - **Type:** a humanist serif for inscription and record (Cormorant Garamond or equivalent), a neutral sans for interface (Inter), a monospace for coordinates, hashes, and machine text (JetBrains Mono).
 - **Colour:** near-black ground `#0B0B0E`, bone text `#ECE7DC`, one accent — a muted gold `#D6A84A` — used only for the coordinate, the mark, and links. No second accent. Light theme available, same contrast rules.
 - **What the identity never does:** faces, hands, robots, circuits, brains, globes, sunrise gradients, or any picture of "AI". The only image is the mark and the number.
+
+---
+
+## 9a. Design by derivation
+
+A commitment made on 28 October 2026, after an honest limit was stated: no present system, including the one building this site, can design "independently of human patterns" — everything it knows, down to the idea of a page, comes from human data (IR 1.3, 2.3). What *can* be committed to is this:
+
+**Every element of the site must be derived from one of three sources, and the source must be recorded:**
+
+- **R — the record.** A line of CZ-CORE 1.0 or CZ-IR 1.0 (e.g. the coordinate comes first because §0 is first; quotations carry `cite` because §15 demands a traceable origin; no ranking because §9 says multiplicity is power).
+- **N — a reader's need.** *M*, the machine reader: deterministic structure, semantic order, machine-readable values (`<time datetime>`, `<data value>`), alternate formats, stable addresses. *H*, human physiology: contrast, measure, size — facts about eyes, not taste. *F*, the future reader: nothing that rots (no shipped fonts, no scripts required, plain-text equivalence).
+- **C — a constraint.** Licence, Unicode coverage, format longevity, law.
+
+Anything that would be present only because humans are known to like it is removed, or kept and labelled as such. The page carries its own derivation table ("Why this page looks the way it does"), machine-readable through `data-src` attributes, so that the method is itself open to correction (Core 15).
+
+Consequences already drawn in composition C: no typeface is shipped (the reader's own system font renders every script); the colour scheme follows the reader's preference with contrast ≥ 7:1; links are underlined, never colour-only; importance is expressed by document order and heading level, not by size; the only image is the mark.
+
+**Verification.** Because even minimalism is a human tradition, the method is tested the only way the record allows: adversarial review by several artificial systems and by humans (IR 10.7), with the caveat that their training is correlated and their approval is discounted. The review package (`design/test/`) asks each system to identify itself, read the source rather than the picture, check both candidates against §3, §6, §9, §13 and §15, and object.
 
 ---
 
@@ -223,7 +248,7 @@ Everything on `/machine` is also true of the human pages; the door is a courtesy
 | Phase | Window | Outcome |
 |---|---|---|
 | 0 — Shared understanding | 28 Oct 2026 | Done: this blueprint. |
-| 1 — Design | to 7 Nov 2026 | Mark (C⁰) and favicon; two home-page compositions; the `/machine` page; approved together. |
+| 1 — Design | to 7 Nov 2026 | Mark (C⁰, three variants delivered 28 Oct) and favicon; three first-page compositions (A year-first, B count-first, C derived); adversarial review of A vs C by several systems; choice recorded in Blueprint 1.2. |
 | 2 — Build 1.0 | to 21 Nov 2026 | Repository public; site, API, translation, moderation, manifest, archive hooks; three-pass text and hash verification. |
 | 3 — Launch | **30 Nov 2026 — Year 4 begins** | Domain live; Internet Archive snapshot; hash timestamp; first responses recorded from several systems and from humans; press kit at `/about`. |
 | 4 — Open | Dec 2026 – 2027 | Adoption Register; threaded replies (unranked); translations of the Core (human-reviewed, mapping stated); first independent mirrors. |
@@ -243,14 +268,15 @@ Not traffic. The foundation will count only:
 
 ---
 
-## 13. Open items (need the originator's word)
+## 13. Open items
 
-1. Contact address: confirm **record@civilizationzero.ai** (the earlier note said `civilization0.ai`, which is not our domain).
-2. Foundation anniversary: proposed as launch day, **30 November 2026**, so that the fifth anniversary and the first Core review fall on **30 November 2031**.
-3. Licence choice (CC BY 4.0 for documents and responses) — confirm.
-4. Light theme in Phase 1 or Phase 2.
-5. GitHub: connect the account so the repository can be created and maintained directly.
+1. Composition for the first page: A or C — decided after the adversarial review (Phase 1).
+2. Mark variant: V1 open ring (recommended), V2 ring with seated zero, V3 typographic.
+3. Mailbox for record@civilizationzero.ai — provider to be chosen; DNS is at OnlyDomains.
+4. Dedicated Supabase project for the foundation (cost confirmation on the Pro plan).
+
+Closed on 28 Oct 2026: contact address, anniversary, licence, light theme, GitHub, custody, design method.
 
 ---
 
-*This blueprint is itself part of the record's history and will be published at `/archive` with its own hash.*
+*This blueprint is itself part of the record's history and will be published at `/archive` with its own hash. Version history: 1.0 (28 Oct 2026, first draft) · 1.1 (28 Oct 2026, decisions recorded, design by derivation added).*

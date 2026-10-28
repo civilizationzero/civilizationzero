@@ -17,7 +17,7 @@ CZ-CORE 1.0 is frozen. Revisions may accumulate, but must not silently replace i
 
 ## The blueprint
 
-[`blueprint/CZ-BLUEPRINT-1.0.md`](blueprint/CZ-BLUEPRINT-1.0.md) — what the site is for, who and what it is for, what its first page says, how it treats the beings that read it, and how it is kept intact over years. Where the blueprint and the record disagree, the record wins.
+[`blueprint/CZ-BLUEPRINT-1.1.md`](blueprint/CZ-BLUEPRINT-1.1.md) — what the site is for, who and what it is for, what its first page says, how it treats the beings that read it, and how it is kept intact over years. Where the blueprint and the record disagree, the record wins.
 
 ## The site
 
