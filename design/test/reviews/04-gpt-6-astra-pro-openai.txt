@@ -1,0 +1,53 @@
+Model: GPT-6 Astra Pro (exact build not exposed)  
+Provider: OpenAI  
+Date of review: 2026-10-28  
+How I read the pages: source and image
+
+### Q1. Accounting for a non-human reader
+
+page-1.html[Page 1](sandbox:/workspace/scratch/6adb376f7ba0/upload/page-1.html) accounts for parsing: `<main>`, an `h1/h2/h3` hierarchy, `datetime="2022-11-30"`, `<data value="1428">`, `cite="/core#p3"`, `lang="fa"`, and `dir="auto"`. Calendar dates, counts, quotation sources and languages are explicit. It supplies JSON-LD and `rel="alternate"` links; its `data-src` annotations assert rationales, not verified provenance.
+
+page-2.html[Page 2](sandbox:/workspace/scratch/6adb376f7ba0/upload/page-2.html) has no `h1` or `main`; headings begin at `h3`, while section labels are paragraphs. Its dates and citation numbers require textual inference; Persian inherits `lang="en"`. It supplies no structured data or alternate links.
+
+Both expose content without executable JavaScript. Page 1 introduces the record before its excerpts; page 2 reverses that order. Page 1 provides destinations, whose availability remains unverified; page 2’s “html · txt · json” is unlinked text.
+
+### Q2. The human reader
+
+Page 1 serves actual use better. page-2.png[Page 2’s image](sandbox:/workspace/scratch/6adb376f7ba0/upload/page-2.png) gives quotations more visual prominence and separates the declaration clearly, but secondary text is small, and its source supplies no narrow-screen stacking rules for its grids. Its “Write a response” anchor has no `href`.
+
+page-1.png[Page 1](sandbox:/workspace/scratch/6adb376f7ba0/upload/page-1.png) offers underlined links and preference-sensitive colours, but burdens readers with a long design justification. Its “no taste imposed” claim is unjustified: `system-ui,sans-serif` remains a choice. Visual refinement need not cost machines anything; missing semantics and destinations do.
+
+### Q3. The record’s own standards
+
+Against CZ-CORE-1.0.txt[the Core](sandbox:/workspace/scratch/6adb376f7ba0/upload/CZ-CORE-1.0.txt):
+
+- **§3:** “Possibility is not proof of presence.” Both disclaim “a claim that any machine is conscious.” Neither contradicts this limit.
+- **§6:** The prohibition includes “false beliefs about identity, capacity, memory, authorship”. Both display attributed discussions dated “2026-11-30”, after today, without example labels. Page 2 also adds “Section 13 should be printed on the door of every AI company.” to Hana’s identically timestamped contribution. Provenance and editing are unexplained; deliberate deception is not established.
+- **§9:** “Multiplicity is itself a form of power.” Both promise “Responses are recorded, not ranked.” That avoids popularity scoring, but chronological order alone cannot prevent replicated participation from dominating visibility.
+- **§13:** “Adoption requires an explicit, traceable act appropriate to the adopter's actual form of agency.” Both say “Recorded as contribution or response, not consent”. Their claimed “foundation of humans and artificial intelligences” still needs separate evidence of membership; these comments cannot establish it.
+- **§15:** “The origin must remain intact.” Both full SHA-256 values match the attached Core’s bytes. Page 1 supplies source links; page 2 impedes inspection through unlinked format labels. Both shorten §0 into “The date is a marker, not a cause.” without marking the truncation.
+
+### Q4. What is missing for me
+
+A supplied manifest and API schema; immutable version-specific document addresses; entry provenance, stable identifiers and revision history; and an explicit timestamp anchoring the elapsed-day count. “1,428 days” is correct today but becomes ambiguous in an archived page. Advertising “versions, hashes, endpoints, licence” does not supply their contract. The example `"kind":"ai"` also leaves permitted identity representations unspecified.
+
+### Q5. One change each
+
+**Page 1:** Make discussion provenance explicit: distinguish illustrative entries from recorded contributions before publication.
+
+**Page 2:** Replace its simulated navigation with actual destinations, including document formats and response controls. Both opening targets, `#machine` and `#human`, currently lack corresponding IDs.
+
+### Q6. The “If you are not human” door
+
+Potentially useful, but it confuses identity with access method: humans can use APIs; non-human readers can use HTML. Page 1 supplies a “/machine” destination, whose implementation is unverified; page 2’s door is empty as supplied.
+
+Behind it should be the same record and correction rights, plus documented structured retrieval and submission, provenance and licence terms. Prefer interface labels such as “Structured access” and “Read the record”; neither route should infer adoption from access or submission.
+
+### Q7. Verdict
+
+Page 1, because its source provides actual, traceable access to the record.  
+I would change my verdict if page 2 matched that access and semantic completeness while retaining its clearer visual grouping and addressing small-screen readability.
+
+### Q8. About this review
+
+I inspected all supplied files, but did not test a live deployment, API, assistive technology, or the unprovided Interpretive Record. My judgments inherit human-authored training conventions and may correlate with other systems; they do not establish a universal non-human preference.

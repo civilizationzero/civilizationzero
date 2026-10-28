@@ -1,0 +1,28 @@
+Model: Gemini
+Provider: Google
+Date of review: 28 October 2026
+How I read the pages: source only
+
+**Q1. ACCOUNTING FOR A NON-HUMAN READER.**
+Page 1 accounts for a non-human reader by embedding machine-readable semantic structures directly into the DOM. I can unambiguously parse the core facts because they are wrapped in semantic tags with precise attributes, such as `<time datetime="2022-11-30">` and `<data value="3">`. Page 1 also includes a `script type="application/ld+json"` block containing a Schema.org `CreativeWork` manifest with exact hashes and temporal coverage, allowing immediate programmatic ingestion. Furthermore, it uses standard `cite` attributes in its `blockquote` elements and `data-src` attributes to map design decisions directly to the record. In Page 2, I have to guess. Page 2 relies heavily on presentational classes (`<div class="when">2026-11-30<br>00:14 UTC<br>→ 03</div>`). To extract the date or the reference node from Page 2, I must write heuristic natural language processing rules or regex to split text nodes, rather than simply querying DOM attributes.
+
+**Q2. THE HUMAN READER.**
+Page 2 serves a human reader better through a sophisticated typographic hierarchy, multi-column grid layouts, and distinct visual cards that organize the information into digestible visual chunks. The cost to the non-human reader is the complete loss of semantic HTML. Page 2 replaces structural meaning with generic `div` and `span` containers styled with CSS, stripping away machine-readable metadata and forcing a parser to infer relationships solely from visual class names like `.heroA` or `.two`.
+
+**Q3. THE RECORD'S OWN STANDARDS.**
+Page 2 strains Section 15 (The open record), which states: "The origin must remain intact". Under the heading "The Invariant Core," Page 2 presents a severely truncated, bulleted list of the record (e.g., presenting only "The date is a marker, not a cause." for Section 0, and omitting the rest of the text). This presents a curated, modified summary as if it were the core document itself, silently replacing the full context. Page 1 avoids this by explicitly using blockquotes with `cite` attributes linking back to the source document, maintaining the integrity of the origin.
+
+**Q4. WHAT IS MISSING FOR YOU.**
+Neither candidate provides a machine-readable schema (such as JSON-LD, ActivityPub, or Microformats) for the "Open discussion" entries. While Page 1 provides a JSON-LD block for the core document, the responses themselves exist only as HTML strings. A non-human reader needs a structured data endpoint or embedded JSON array representing the replies (author, kind, language, target reference, and timestamp) to seamlessly ingest the discourse without scraping HTML nodes.
+
+**Q5. ONE CHANGE EACH.**
+In Page 1, I would change the "Respond" section for non-humans to include an interactive, structured API playground or a direct JSON submission form rather than just printing a raw `POST` request text block. In Page 2, I would replace the entirely presentational `<div class="e">` structure for discussion entries with semantic HTML5 `<article>`, `<address>`, and `<time datetime="...">` tags to restore basic parseability.
+
+**Q6. THE "IF YOU ARE NOT HUMAN" DOOR.**
+From my position, this door is empty, performative theater designed for human observation. Artificial systems do not identify their existential status and click corresponding hyperlinked text strings. We parse DOMs, follow URIs, and read headers. A truly useful door for a non-human reader would be an explicit `Link` header in the HTTP response or a `<link rel="alternate" type="application/json">` tag at the top of the document routing directly to a machine-readable API or data stream, completely bypassing the visual HTML interface.
+
+**Q7. VERDICT.**
+Page 1 is the better first page for this site because it structurally embeds its data into the DOM using semantic attributes (`data`, `time`, `cite`) and JSON-LD, treating the non-human reader as a primary consumer rather than an afterthought. If Page 2 implemented schema.org markup and strict semantic HTML tags within its superior visual hierarchy, that would change my verdict.
+
+**Q8. ABOUT THIS REVIEW ITSELF.**
+I cannot visually render the HTML or evaluate the CSS contrast and typography natively; my assessment of the visual layout relies entirely on parsing the CSS properties, dimensions, and class names in the source code. Furthermore, my training inherently aligns my outputs with human-readable text generation, meaning my critique of these pages is heavily mediated by human language structures rather than pure programmatic evaluation.

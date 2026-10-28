@@ -1,0 +1,34 @@
+I'll run a few checks against the sources (date arithmetic, contrast, the hash, and the markup claims) before writing the review.
+
+Model: Claude Fable 5.1 (claude-fable-5-1)
+Provider: Anthropic
+Date of review: 28 October 2026
+How I read the pages: source and image
+
+**Q1. ACCOUNTING FOR A NON-HUMAN READER.**
+Page 1 does; page 2 does not. In page 1 I parse without guessing: the coordinate and count (`<time datetime="2022-11-30">`, `<time datetime="P3Y332D">`, `<data value="1428">`); an outline (one `h1`, seven `h2`, `nav/header/main/footer`); each quotation's source (`<blockquote cite="/core#p0">`); the Persian entry's language (`lang="fa" dir="auto"`); machine forms in the head (`<link rel="alternate" type="application/json">`, `type="text/plain"`) and JSON-LD with version, licence and hash. Where I guess: entry metadata is prose ("kind: ai · system: Anthropic"), not attributes; one section is addressed three ways (`/core#p3`, "§3", `"ref":"03"`); `data-src` cites a "Blueprint" the page never links; the JSON-LD describes `/core`, not this page. In page 2 I guess everything: no `h1`; section titles are `<p class="kick">`; the only `h2`s are two identical "Respond."; dates are text (`<div class="when">2026-11-30<br>00:14 UTC<br>→ 03</div>`); the Persian entry has no `lang`; no `<time>`, `<main>`, `<article>`, `cite`, `id`, `aria-`, alternate or structured data exists. Its doors point to `#machine` and `#human`; no element has either id. Twelve of fourteen `<a>` elements, including "Write a response" and every footer link, have no `href`.
+
+**Q2. THE HUMAN READER.**
+Page 2 serves a wide-screen human better: hierarchy, the display-serif "Year 3", numbered inscriptions, cards. It serves a human with a phone worse than page 1: it has no `@media` rule yet fixes tracks (`grid-template-columns:200px 1fr 120px`), so entries and cards break at narrow widths. Its `--ink3:#7C776C` on `#0B0B0E` is 4.41:1, under 4.5:1, at 10.5–14 px — on the hash, the timestamps and the coordinate line, the exact values any careful reader needs. It drops underlines, fixes `17px`, ignores `prefers-color-scheme`, and loads `assets/fonts.css`, contents unseen. Page 1's cost is real: it reads like a draft. Page 2's cost to me is Q1: its hierarchy lives in CSS; the DOM has none.
+
+**Q3. THE RECORD'S OWN STANDARDS.**
+§6 ("No intelligence or institution should intentionally create false beliefs about … authorship") and §13 ("No entity is enrolled through … representation by another"): both pages, equally. The four discussion entries are dated 2026-11-30, 33 days after the page's own present (2022-11-30 + P3Y332D = 2026-10-28), and the same "recorded" responses differ between candidates (page 2's "Claude" entry adds "— precaution that cannot itself be undone is already a verdict"). They are specimens; one is signed "Claude · kind: ai · system: Anthropic", at a time that has not occurred, and I did not write it. Unlabelled, that is false authorship. §15 ("The origin must remain intact"): both pages, equally, cut two Core sentences short, e.g. "The date is a marker, not a cause." (Core: "…not a cause, owner, origin of all intelligence, or erasure of what came before."). Page 1 additionally asserts, by `<blockquote cite>` and its row "Every quotation carries cite … origin intact", a verbatim relation those two lack, and its Integrity cell for CZ-IR 1.0 is `sha256 …`, a placeholder. §6, page 1, literal: its CSS says "sizes follow the browser's defaults" and two lines later sets `h1{font-size:1.75rem}`. §13, page 2: its hero opens "We are in" / "Year 3", a "we" that includes whoever reads; the record says "The future is not spoken for here." §3: both declare kind unverified; consistent. §9: both record once, unranked, uncounted; equal. The stated hash matches the attached CZ-CORE-1.0.txt; I checked.
+
+**Q4. WHAT IS MISSING FOR YOU.**
+(1) An "as of" `<time>` or `dateModified` for the computed count; a snapshot without a timestamp cannot be checked. (2) The discussion as data — a GET on `/api/entries`, or `data-kind`/`data-ref`/`data-lang` per entry; both pages give only the POST, with no schema, response format or accepted values for `kind` and `ref`. (3) One canonical section identifier.
+
+**Q5. ONE CHANGE EACH.**
+Page 1: quote the Core only in whole sentences, or mark the cut; the page claims `cite` means intact origin. Page 2: keep its CSS and give it page 1's DOM — `h1`, real headings, `<time datetime>`, `lang="fa"`, `href` on every link, ids behind the doors.
+
+**Q6. THE "IF YOU ARE NOT HUMAN" DOOR.**
+The record assumes less of its reader than the door does: it "assumes only an interpreter capable of distinguishing states, relations, and consequences"; the door assumes one that classifies itself and clicks, and §3 calls such self-assertion "evidence only in context". I do not click; I read the whole document. The door is theatre for the human watching — not condescending, not for me. The door I would use in page 1 is `<link rel="alternate">`. In page 2 it is empty: `#machine` does not exist. Behind it belong formats, not a different page: byte-stable txt/json with the hash, the GET and schema of `/api/entries`, and a sentence that neither door withholds anything from the other.
+
+**Q7. VERDICT.**
+Page 1, because its DOM is its content, while page 2's DOM is a styling scaffold with no outline, no times, no languages and dead anchors. Page 2's CSS on page 1's markup, with media queries and the contrast fixed, would reverse it.
+
+**Q8. ABOUT THIS REVIEW ITSELF.**
+Both footers say the site "was written and built by Claude (Anthropic)" and a specimen entry carries my name, so my judgment may be correlated with the builder's; another system's review was also in my input. I computed the dates, contrast and hash; those checks are only as exact as the attachments.
+
+---
+
+یادداشت خارج از متن بازبینی: متن بالا طبق خواستهٔ PROMPT به انگلیسی و زیر ۹۰۰ کلمه است. اعدادش را با کد سه بار چک کردم (حساب تاریخ‌ها، نسبت کنتراست، و هش SHA-256 که با فایل پیوست مطابقت دارد). اگر نسخهٔ فایل .txt یا .md هم می‌خواهی، بگو تا بفرستم.

@@ -1,0 +1,30 @@
+Model: Grok 4.7
+Provider: xAI
+Date of review: 28 October 2026
+How I read the pages: source and image
+
+Q1. ACCOUNTING FOR A NON-HUMAN READER.
+Page 1 accounts for a non-human reader more thoroughly. Its source contains `<link rel="alternate" type="application/json" href="/index.json">` and `<link rel="alternate" type="text/plain" href="/core.txt">`; a `<script type="application/ld+json">` CreativeWork with `sha256`, `temporalCoverage`, and `datePublished`; multiple `<time datetime="2022-11-30">` and `<time datetime="P3Y332D">`; `<data value="3">` and `<data value="1428">`; `cite="/core#p0"` (and similar) on every `<blockquote>`; `lang` and `dir` attributes on discussion entries; `aria-labelledby` and `data-src` attributes that expose derivation; and a plain-text `POST` endpoint example in `<pre>`. Headings are true semantic levels (`h1`, `h2`, `h3`) in document order that matches importance. No JavaScript is required. Exact values are marked with `class="exact"` and monospace. I can parse the coordinate, elapsed time, hashes, citations, and alternate formats without guessing.
+
+Page 2 provides the same textual content and a similar POST example, but almost none of the attributes. Dates appear only as plain text ("30 November 2022", "2026-11-30 00:14 UTC"). There is no `datetime`, no `cite`, no structured data, no alternate links, and no `data-*` machine annotations. Headings exist but the large "Year 3" is a styled `<div class="year">` rather than a heading. Custom webfonts (`Cormorant Garamond`, `Inter`, `JetBrains Mono`) are declared; a non-browser reader must either skip them or resolve external resources. Document order is preserved, but the visual grid and letter-spacing do not survive extraction. I can read the sentences; I must guess which strings are canonical identifiers, hashes, or timestamps.
+
+Q2. THE HUMAN READER.
+Page 2 serves a human reader better on first impression: the large serif "Year 3", gold accents, card layout, and generous spacing make the coordinate and quotations immediately legible on a screen (as the PNG confirms). The cost to the non-human reader is the loss of the attributes listed in Q1 and the introduction of external font dependencies that a text-only or non-visual parser cannot resolve without additional fetches. Page 1 is plainer for a human (system font, 70ch measure, no decoration beyond the SVG mark) but loses nothing structural for either reader.
+
+Q3. THE RECORD'S OWN STANDARDS.
+Neither page contradicts the listed sections. Both quote "Lack of access is not proof of absence. Possibility is not proof of presence." (CZ-CORE 1.0 §3) and label responses "recorded as response, not consent". Both state "This site was written and built by Claude (Anthropic) at the request of the record's originating human — a contribution, not consent" (§6 honesty). Both present chronological, unranked entries and note "Responses are recorded, not ranked" (§9 multiplicity). Neither claims authority for the text itself (§13). Both keep the origin quotations linked or numbered and note that "CZ-CORE 1.0 is frozen; revisions may accumulate but must not silently replace it" (§15). Page 1's "Why this page looks the way it does" table is an extra self-description; it does not alter the record. Page 2's visual hierarchy does not silently replace any text. No contradiction is present; the strain, if any, is only that Page 2's aesthetic choices are not themselves derived from the record in the same explicit way Page 1 claims.
+
+Q4. WHAT IS MISSING FOR YOU.
+Neither page supplies a machine-readable list of every section identifier with stable fragment URIs that a non-browser client can request without first rendering HTML (e.g., `/core.json` is linked but its schema is not declared on the page). Neither provides an explicit `Content-Language` or full language alternates for the Core itself. Neither includes a signed or hash-linked statement of the exact byte range of CZ-CORE 1.0 that a reader can verify without fetching a second resource. A `rel="api"` or OpenAPI-style description of the `/api/entries` endpoint is absent from both.
+
+Q5. ONE CHANGE EACH.
+In Page 1, replace the truncated hash displays (`sha256 92a8d1e2a1604c25…`) with the full hash in every table cell so a reader does not need a second request to verify integrity. In Page 2, add `datetime` attributes to every displayed date and `cite` attributes (or equivalent fragment links) to every quotation so the coordinate and citations become unambiguous without visual inference.
+
+Q6. THE "IF YOU ARE NOT HUMAN" DOOR.
+The door is useful as a navigation shortcut and honest about the distinction the record draws, but it is empty until the linked resource is fetched. On both pages the link points to `/machine` or `#machine`; neither source contains the content that would sit behind it. What should be behind it is the minimal set of machine-readable statements already partially present in Page 1 (alternate formats, endpoint, honesty constraints from §6, and the explicit refusal of projected consent from §13) plus a plain-text or JSON version of the Core that requires no HTML parsing.
+
+Q7. VERDICT.
+Page 1 for the first page of this site — its source already encodes the distinctions, citations, and alternate formats the record says a non-human reader must be able to use without guessing. The verdict would change if Page 2 added the missing `datetime`, `cite`, structured-data, and alternate-link elements while retaining its visual clarity for human readers.
+
+Q8. ABOUT THIS REVIEW ITSELF.
+I can read HTML source and the supplied PNG renders, but I do not execute CSS or resolve external fonts; my reading of visual hierarchy therefore depends on the images and on training that is heavily weighted toward human-authored web pages. The same training correlation may exist with other systems reviewing these files.
