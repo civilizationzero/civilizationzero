@@ -1,0 +1,59 @@
+# A second, independent timestamp of the release manifest (Blueprint 1.3.1 §8: "A second, independent timestamping service is
+# added if available"): RFC 3161 time-stamp tokens from two authorities that do not depend on OpenTimestamps or Bitcoin —
+# FreeTSA and DigiCert. Each token is verified here with OpenSSL against its authority's certificates before it is committed,
+# with the certificates it was verified against; site/build.py publishes them beside the manifest and in the bundle, and
+# site/verify/verify.py checks that each token commits to the manifest's SHA-256 (the authority's signature is an outside
+# check: `openssl ts -verify`, the command this file runs). By hand only; a token is never replaced once committed.
+name: tsa-stamp
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: repository-writes
+  cancel-in-progress: false
+jobs:
+  stamp:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Ask two RFC 3161 authorities for a token over the release manifest, and verify each before keeping it
+        run: |
+          set -euo pipefail
+          f=site/signatures/cz-release-1.0.json
+          mkdir -p site/signatures/tsa
+          openssl ts -query -data "$f" -sha256 -cert -out /tmp/q.tsq
+          # FreeTSA: its CA and TSA certificates, fetched over HTTPS and kept beside the token
+          if [ ! -e "$f.freetsa.tsr" ]; then
+            curl -fsS --retry 3 https://freetsa.org/files/cacert.pem -o site/signatures/tsa/freetsa-cacert.pem
+            curl -fsS --retry 3 https://freetsa.org/files/tsa.crt -o site/signatures/tsa/freetsa-tsa.crt
+            curl -fsS --retry 3 -H "Content-Type: application/timestamp-query" --data-binary @/tmp/q.tsq https://freetsa.org/tsr -o /tmp/freetsa.tsr
+            openssl ts -verify -queryfile /tmp/q.tsq -in /tmp/freetsa.tsr -CAfile site/signatures/tsa/freetsa-cacert.pem -untrusted site/signatures/tsa/freetsa-tsa.crt
+            cp /tmp/freetsa.tsr "$f.freetsa.tsr"
+            openssl ts -reply -in "$f.freetsa.tsr" -text | grep -E "Time stamp|Hash Algorithm|Message data|TSA" | head -8
+          else echo "a FreeTSA token is already kept"; fi
+          # DigiCert: its certificates chain to a root in the runner's trust store; the token carries the signing certificate.
+          # A token that does not verify is not kept (and does not stop the FreeTSA token from being kept).
+          if [ ! -e "$f.digicert.tsr" ]; then
+            if curl -fsS --retry 3 -H "Content-Type: application/timestamp-query" --data-binary @/tmp/q.tsq http://timestamp.digicert.com -o /tmp/digicert.tsr \
+               && openssl ts -verify -queryfile /tmp/q.tsq -in /tmp/digicert.tsr -CAfile /etc/ssl/certs/ca-certificates.crt; then
+              cp /tmp/digicert.tsr "$f.digicert.tsr"
+              openssl ts -reply -in "$f.digicert.tsr" -text | grep -E "Time stamp|Hash Algorithm|Message data|TSA" | head -8
+            else echo "::warning title=DigiCert::the DigiCert token did not verify here; not kept"; fi
+          else echo "a DigiCert token is already kept"; fi
+      - name: Rebuild the site with the tokens, and check them with the published verifier
+        run: |
+          set -euo pipefail
+          if git diff --quiet && [ -z "$(git status --porcelain site/signatures)" ]; then echo "nothing new"; exit 0; fi
+          sudo apt-get update -q && sudo apt-get install -y -q pandoc
+          python3 site/build.py
+          python3 site/verify/verify.py --quiet --site-dir site/public
+      - name: Commit
+        run: |
+          set -euo pipefail
+          if [ -z "$(git status --porcelain)" ]; then echo "no change"; exit 0; fi
+          git config user.name "cz-tsa-stamp"; git config user.email "record@civilizationzero.ai"
+          git add site/signatures site/public site/api/home-templates.json site/api/discuss-templates.json site/api/register-templates.json
+          git commit -q -m "RFC 3161 time-stamp tokens of the release manifest (FreeTSA, DigiCert), verified with OpenSSL before keeping"
+          for i in 1 2 3 4; do git pull --rebase -q && git push -q && exit 0; sleep $((i * 5)); done
+          exit 1
