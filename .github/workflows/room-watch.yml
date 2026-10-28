@@ -1,0 +1,51 @@
+# Watches the open room (Blueprint 1.3.1 §7.5): every hour it reads the public moderation log and, when a classifier flag has
+# no human decision yet, opens (or updates) one issue titled "Moderation queue" so that a human sees it. It never hides anything.
+name: room-watch
+on:
+  schedule:
+    - cron: "15 * * * *"
+  workflow_dispatch:
+permissions:
+  issues: write
+  contents: read
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Read the public log and the stats
+        id: read
+        run: |
+          set -euo pipefail
+          curl -fsSL --retry 3 https://civilizationzero.ai/api/moderation -o mod.json
+          curl -fsSL --retry 3 "https://civilizationzero.ai/api/entries?before=9007199254740991&limit=5" -o latest.json
+          python3 - <<'EOF' >> "$GITHUB_OUTPUT"
+          import json
+          mod = json.load(open("mod.json")); latest = json.load(open("latest.json"))
+          decided = {l["entry_id"] for l in mod.get("log", []) if l["actor"] == "human"}
+          flags = [l for l in mod.get("log", []) if l["action"] == "flag" and l["entry_id"] not in decided]
+          lines = [f"- entry #{f['entry_id']} — {f['category']} (score {f['classifier_score']}) — https://civilizationzero.ai/discuss/{f['entry_id']}" for f in flags]
+          n = len(latest.get("entries", []))
+          newest = latest["entries"][0]["id"] if n else 0
+          print(f"pending={len(flags)}")
+          print(f"newest={newest}")
+          print("body<<END")
+          print(f"Classifier flags awaiting a human decision: **{len(flags)}** (newest entry id: {newest}; unclassified entries: {mod.get('classifier', {}).get('unclassified_entries', 0)}).")
+          print()
+          print("\n".join(lines) if lines else "None.")
+          print()
+          print("Decide with `POST /api/moderation` (hide / unhide / redact / unredact / correct_translation) — grounds and never-grounds are in the rules. This issue is updated hourly by the room-watch workflow; close it when the queue is empty.")
+          print("END")
+          EOF
+      - name: Open or update the queue issue
+        if: steps.read.outputs.pending != '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BODY: ${{ steps.read.outputs.body }}
+        run: |
+          set -euo pipefail
+          num=$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --search "Moderation queue in:title" --json number --jq '.[0].number // empty')
+          if [ -z "$num" ]; then
+            gh issue create --repo "$GITHUB_REPOSITORY" --title "Moderation queue" --body "$BODY"
+          else
+            gh issue comment "$num" --repo "$GITHUB_REPOSITORY" --body "$BODY"
+          fi
