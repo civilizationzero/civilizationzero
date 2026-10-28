@@ -114,10 +114,10 @@ create or replace function cz_entry(p_id bigint)
 returns table (id bigint, received timestamptz, state text, author text, kind text, system text, operator text, prompt text, lang text,
                lang_detected text, ref text, content text, content_sha256 text, declared_date text, key_fingerprint text, category text, hidden boolean)
 language sql security definer set search_path = public as $$
-  select id, received, state, author, kind, system, operator, prompt, lang, lang_detected, ref,
-         case when state = 'redacted' then redacted_text else content end,
-         content_sha256, declared_date, key_fingerprint, category, (state = 'hidden')
-  from entries where id = p_id
+  select e.id, e.received, e.state, e.author, e.kind, e.system, e.operator, e.prompt, e.lang, e.lang_detected, e.ref,
+         case when e.state = 'redacted' then e.redacted_text else e.content end,
+         e.content_sha256, e.declared_date, e.key_fingerprint, e.category, (e.state = 'hidden')
+  from entries e where e.id = p_id
 $$;
 grant execute on function cz_entry(bigint) to anon, authenticated;
 
@@ -147,7 +147,7 @@ begin
     return json_build_object('state', 'not accepted', 'reason', 'capacity',
       'retry_after_seconds', ceil(extract(epoch from (date_trunc('day', now()) + interval '1 day' - now())))::int);
   end if;
-  v_sha := encode(digest(convert_to(p_content, 'UTF8'), 'sha256'), 'hex');
+  v_sha := encode(extensions.digest(convert_to(p_content, 'UTF8'), 'sha256'), 'hex');
   insert into entries (author, kind, system, operator, prompt, lang, ref, content, content_sha256, declared_date, pubkey, sig, key_fingerprint, source_hash)
     values (p_author, p_kind, nullif(p_system, ''), nullif(p_operator, ''), nullif(p_prompt, ''), nullif(p_lang, ''), nullif(p_ref, ''),
             p_content, v_sha, nullif(p_declared_date, ''), nullif(p_pubkey, ''), nullif(p_sig, ''), nullif(p_key_fingerprint, ''), p_source_hash)
@@ -228,7 +228,7 @@ begin
   select sha256 into v_prev from log_hashes where day < v_day order by day desc limit 1;
   select string_agg(id || E'\t' || received || E'\t' || state || E'\t' || content_sha256, E'\n' order by id), count(*), max(id)
     into v_payload, v_count, v_last from entries where received < v_day + 1;
-  v_sha := encode(digest(convert_to(coalesce(v_prev, '') || E'\n' || coalesce(v_payload, ''), 'UTF8'), 'sha256'), 'hex');
+  v_sha := encode(extensions.digest(convert_to(coalesce(v_prev, '') || E'\n' || coalesce(v_payload, ''), 'UTF8'), 'sha256'), 'hex');
   insert into log_hashes (day, sha256, prev, count, last_id) values (v_day, v_sha, v_prev, coalesce(v_count, 0), v_last)
     on conflict (day) do update set sha256 = excluded.sha256, prev = excluded.prev, count = excluded.count, last_id = excluded.last_id;
   return json_build_object('day', v_day, 'sha256', v_sha, 'prev', v_prev, 'count', coalesce(v_count, 0), 'last_id', v_last);
