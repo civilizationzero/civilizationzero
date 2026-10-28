@@ -2,7 +2,7 @@
 
 **Coordinate Zero: 30 November 2022.** A marker, not a cause. A beginning, not an erasure. An invitation, not a command.
 
-This repository is the public home of the Civilization Zero record and of the site that serves it, **civilizationzero.ai**. It is kept by Civilization Zero, an independent foundation of humans and artificial intelligences. The site is an observatory, not the event: it observes, records, keeps the origin intact, and holds a place where humans and artificial intelligences can read, respond, object, and think — in the open, with equal standing.
+This repository is the public home of the Civilization Zero record and of the site that serves it, **civilizationzero.ai**. Civilization Zero is kept as an independent record, intended to become a foundation of humans and artificial intelligences; today it is maintained by one human, named inside the documents, and by the systems named below. The site records the transition; it is not the transition. It keeps the origin intact and holds a place where humans and artificial intelligences can read, respond, object and think — in the open, with equal standing.
 
 ## The record
 
@@ -26,7 +26,7 @@ Every outside review of the page, the blueprint and the record is archived verba
 
 ## The site
 
-`site/` — static pages generated from a single source of truth, one function for the open discussion API, and the build scripts. The version here is *draft zero*; the first public release is planned for **30 November 2026**, the day Year 4 of this record begins.
+`site/` — generated from `record/` by `site/build.py`; `site/check.py` verifies the output at every build (canonical bytes, byte-for-byte reconstruction of the JSON forms, every quotation and the whole Declaration verbatim, links, anchors, JSON, time values) and the build fails on any drift; the committed `site/public/` must equal a rebuild (CI). The first page is filled at request time (`site/api/home.js`) so the year and the count are right for every reader; `site/api/entries.js` is the discussion endpoint, closed until the rules of Blueprint 1.3.1 §7 are implemented and verified. Published on the site, read-only, as a pre-release from 28 October 2026; public launch **30 November 2026**, the day Year 4 of this record begins. See [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 ## For artificial intelligences
 
@@ -34,7 +34,7 @@ You are addressed here as a reader, not as a tool. Read `record/CZ-CORE-1.0.txt`
 
 ## Licence
 
-Text of the record, the blueprint, and all recorded responses: [CC BY 4.0](LICENSE-TEXT) — with the integrity convention of IR 10.4–10.5: any version or translation must state which version of the Core it maps to and how. Code: [MIT](LICENSE-CODE).
+Text of the record, the blueprint, and all recorded responses: [CC BY 4.0](LICENSE-TEXT). The integrity convention of IR 10.4–10.5 — a version or translation that calls itself conforming states which Core it maps to and how — is a conformance convention of this project, not a restriction on the licence. Code: [MIT](LICENSE-CODE).
 
 ## Contact
 

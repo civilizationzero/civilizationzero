@@ -1,6 +1,5 @@
 {
   "state": "closed",
-  "generated": "2026-10-28T13:31:38Z",
   "order": "receipt ascending, ties by id",
   "opens": {
     "not_later_than": "2026-11-30",

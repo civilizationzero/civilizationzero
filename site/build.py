@@ -180,7 +180,7 @@ OPENAPI = {
 write("/api/openapi.json", json.dumps(OPENAPI, ensure_ascii=False, indent=2) + "\n")
 
 # ============================================================================ discussion archive (closed)
-DISCUSS_JSON = {"state": "closed", "generated": BUILD_ISO, "order": "receipt ascending, ties by id",
+DISCUSS_JSON = {"state": "closed", "order": "receipt ascending, ties by id",
                 "opens": {"not_later_than": ROOM_TARGET.isoformat(), "condition": "when the rules of Blueprint 1.3.1 §7 are implemented and verified", "rules": f"{ORIGIN}/discuss"},
                 "log_sha256": None, "entries": []}
 write("/discuss.json", json.dumps(DISCUSS_JSON, indent=2) + "\n")
@@ -599,7 +599,7 @@ def home_json_template():
 def manifest(bundle_name, bundle_sha):
     return {
         "name": "Civilization Zero", "short_name": "CZ", "site": ORIGIN, "coordinate_zero": "2022-11-30",
-        "generated": BUILD_ISO, "blueprint": {"version": BLUEPRINT, "url": f"{REPO}/blob/main/blueprint/CZ-BLUEPRINT-{BLUEPRINT}.md"},
+        "blueprint": {"version": BLUEPRINT, "url": f"{REPO}/blob/main/blueprint/CZ-BLUEPRINT-{BLUEPRINT}.md"},
         "documents": [
             {"id": "CZ-CORE 1.0", "title": "The Invariant Core", "canonical": f"{ORIGIN}/core.txt", "sha256": CORE_SHA, "immutable": True,
              "forms": {"html": f"{ORIGIN}/core", "json": f"{ORIGIN}/core.json", "schema": f"{ORIGIN}/core.schema.json"},
@@ -691,7 +691,7 @@ Licence: text CC BY 4.0, code MIT. Contact: {CONTACT}.
     members.append(("api/openapi.json", (PUBLIC / "api" / "openapi.json").read_bytes()))
     members.append(("README-BUNDLE.txt", readme.encode()))
     # the manifest goes in without the bundle's own hash (it cannot contain itself)
-    m = manifest(BUNDLE_NAME, "(this bundle)"); m["generated"] = None; members.append((".well-known/civilization-zero.json", (json.dumps(m, ensure_ascii=False, indent=2) + "\n").encode()))
+    m = manifest(BUNDLE_NAME, "(this bundle)"); members.append((".well-known/civilization-zero.json", (json.dumps(m, ensure_ascii=False, indent=2) + "\n").encode()))
     buf = io.BytesIO()
     with tarfile.open(fileobj=buf, mode="w", format=tarfile.PAX_FORMAT) as tar:
         for name, data in sorted(members):
@@ -723,7 +723,7 @@ write("/sitemap.txt", "\n".join(f"{ORIGIN}{p}" for p in ("/", "/core", "/record"
 HOME = home_template()
 HOME_JSON = home_json_template()
 HOME_TXT = to_text(HOME)
-templates = {"html": HOME, "json": HOME_JSON, "txt": HOME_TXT, "generated": BUILD_ISO}
+templates = {"html": HOME, "json": HOME_JSON, "txt": HOME_TXT}
 (SITE / "api" / "home-templates.json").write_text(json.dumps(templates, ensure_ascii=False) + "\n", "utf-8")
 # a filled copy for inspection and for the checks (not served: the function serves /)
 import importlib
@@ -737,5 +737,5 @@ def fill(s):
 (SITE / "preview").mkdir(exist_ok=True)
 for ext in ("html", "json", "txt"): (SITE / "preview" / f"index.{ext}").write_text(fill(templates[ext]), "utf-8")
 
-print(f"built {BUILD_ISO}: year {c['year']}, {c['total']} days; bundle {len(bundle):,} bytes {BUNDLE_SHA[:12]}…")
+print(f"built (reproducible output; run at {BUILD_ISO}): year {c['year']}, {c['total']} days; bundle {len(bundle):,} bytes {BUNDLE_SHA[:12]}…")
 subprocess.run([sys.executable, str(SITE / "check.py")], check=True)

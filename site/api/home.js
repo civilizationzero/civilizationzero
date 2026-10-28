@@ -46,7 +46,6 @@ module.exports = (req, res) => {
   res.setHeader("Cache-Control", "public, max-age=0, s-maxage=300, stale-while-revalidate=60");
   res.setHeader("Vary", "Accept");
   res.setHeader("Link", '</index.json>; rel="alternate"; type="application/json", </index.txt>; rel="alternate"; type="text/plain", </api/openapi.json>; rel="service-desc"; type="application/vnd.oai.openapi+json"');
-  res.setHeader("Last-Modified", new Date(T.generated).toUTCString());
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.end(fill(T[f] || T.html, c));

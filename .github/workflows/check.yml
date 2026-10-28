@@ -1,0 +1,24 @@
+name: build-time verification
+on: [push, pull_request]
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update -q && sudo apt-get install -y -q pandoc
+      - name: Rebuild the site from the record and verify it
+        run: python3 site/build.py
+      - name: The committed output must equal the rebuilt output (reproducible build)
+        run: git diff --exit-code -- site/public site/api/home-templates.json
+      - name: The functions answer as the contract says
+        run: |
+          cd site && node -e '
+          const h=require("./api/home.js"), e=require("./api/entries.js");
+          const run=(fn,req)=>new Promise(r=>{const res={h:{},setHeader(k,v){this.h[k]=v},end(b){r({status:this.statusCode,h:this.h,body:b})}};fn(req,res)});
+          (async()=>{
+            let r=await run(h,{url:"/",headers:{accept:"application/json"}}); const o=JSON.parse(r.body); if(!(o.year>=3)) throw "home json";
+            r=await run(h,{url:"/",headers:{accept:"text/html"}}); if(!r.body.includes("<h1")||r.body.includes("__YEAR__")) throw "home html";
+            r=await run(e,{url:"/api/entries",method:"POST",headers:{}}); if(r.status!==503||!r.h["Retry-After"]) throw "entries POST";
+            r=await run(e,{url:"/api/entries",method:"GET",headers:{}}); if(JSON.parse(r.body).state!=="closed") throw "entries GET";
+            console.log("functions ok");
+          })().catch(x=>{console.error(x);process.exit(1)})'
