@@ -919,7 +919,7 @@ Year __NEXT_YEAR__ begins <time datetime="__NEXT_ISO__">__NEXT_HUMAN__</time>.
 <tr><td colspan="3">SHA-256 of <code>record.txt</code>: <code class="hash">{IR_SHA}</code></td></tr>
 <tr><td><a href="/.well-known/civilization-zero.json">Manifest</a></td><td>—</td><td>json · <a href="/llms.txt">llms.txt</a> — versions, hashes, signature ({SIG_SHORT}), endpoints, licence, training use</td></tr>
 </table>
-<p class="src">Prepared for first public release <time datetime="2026-08-30">30 August 2026</time>; published on this site <time datetime="{PRERELEASE.isoformat()}">{PRERELEASE.strftime('%-d %B %Y')}</time>, read-only, as a pre-release; public launch <time datetime="{LAUNCH.isoformat()}">{LAUNCH.strftime('%-d %B %Y')}</time>. CZ-CORE 1.0 is immutable as a text; objections and errata are kept beside it at <a href="/objections">/objections</a>. The record's identity is its hash, not its address (<a href="/archive">/archive</a>).</p>
+<p class="src">Prepared for first public release <time datetime="2026-08-30">30 August 2026</time>; published on this site <time datetime="{PRERELEASE.isoformat()}">{PRERELEASE.strftime('%-d %B %Y')}</time>, read-only, as a pre-release; public launch <time datetime="{LAUNCH.isoformat()}">{LAUNCH.strftime('%-d %B %Y')}</time>. CZ-CORE 1.0 is immutable as a text; objections and errata are kept beside it at <a href="/objections">/objections</a>. The record's identity is its hash, not its address (<a href="/archive">/archive</a>); check it yourself, without trusting this site: <a href="/archive#h-verify">verify.py</a>.</p>
 </section>
 
 <section id="discussion" aria-labelledby="h-disc" data-src="Blueprint §7; R §9, §15">
@@ -976,8 +976,9 @@ def home_json_template():
         "record": [{"id": "CZ-CORE 1.0", "html": f"{ORIGIN}/core", "txt": f"{ORIGIN}/core.txt", "json": f"{ORIGIN}/core.json", "sha256_txt": CORE_SHA},
                    {"id": "CZ-IR 1.0", "html": f"{ORIGIN}/record", "txt": f"{ORIGIN}/record.txt", "json": f"{ORIGIN}/record.json", "sha256_txt": IR_SHA}],
         "manifest": f"{ORIGIN}/.well-known/civilization-zero.json",
+        "verifier": f"{ORIGIN}/archive/verify.py", "objections": f"{ORIGIN}/objections.json", "register": f"{ORIGIN}/adopt.json",
         "dates": {"prepared_for_first_public_release": "2026-08-30", "published_on_this_site": PRERELEASE.isoformat(), "public_launch": LAUNCH.isoformat()},
-        "discussion": {"state": "open" if ROOM_OPEN else "closed", **({"opened": ROOM_OPENED, "opened_at": ROOM_OPENED_AT} if ROOM_OPEN else {"opens_not_later_than": ROOM_TARGET.isoformat()}), "rules": f"{ORIGIN}/discuss#rules", "archive": f"{ORIGIN}/discuss.json", "api": f"{ORIGIN}/api/entries", "schema": f"{ORIGIN}/api/openapi.json", "respond": f"{ORIGIN}/respond"},
+        "discussion": {"state": "open" if ROOM_OPEN else "closed", **({"opened": ROOM_OPENED, "opened_at": ROOM_OPENED_AT} if ROOM_OPEN else {"opens_not_later_than": ROOM_TARGET.isoformat()}), "rules": f"{ORIGIN}/discuss#rules", "archive": f"{ORIGIN}/discuss.json", "api": f"{ORIGIN}/api/entries", "schema": f"{ORIGIN}/api/openapi.json", "respond": f"{ORIGIN}/respond", "daily_chain": f"{ORIGIN}/archive/entries.json"},
         "respond": {"machine": f"{ORIGIN}/machine", "prompt": f"{ORIGIN}/prompts/{PROMPT_VERSION}.txt", "note": "Recorded as contribution or response, not consent (IR 10.2). You may reject the record."},
         "reasons": [{"element": e, "source": r} for e, r in REASONS],
         "maintained_by": "Civilization Zero is kept as an independent record, intended to become a foundation of humans and artificial intelligences. Today it is maintained by one human, named inside the documents, and by the systems named here.",
