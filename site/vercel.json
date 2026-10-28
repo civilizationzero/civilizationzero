@@ -1,41 +1,312 @@
 {
-  "cleanUrls": true,
+  "cleanUrls": false,
   "trailingSlash": false,
+  "redirects": [
+    {
+      "source": "/:page(core|record|objections|discuss|respond|machine|about|archive).html",
+      "destination": "/:page",
+      "permanent": true
+    },
+    {
+      "source": "/index.html",
+      "destination": "/",
+      "permanent": true
+    }
+  ],
   "rewrites": [
-    { "source": "/", "has": [{ "type": "header", "key": "accept", "value": "(.*)application/json(.*)" }], "destination": "/api/home?f=json" },
-    { "source": "/", "has": [{ "type": "header", "key": "accept", "value": "^((?!text/html).)*text/plain(.*)" }], "destination": "/api/home?f=txt" },
-    { "source": "/", "destination": "/api/home?f=html" },
-    { "source": "/index.json", "destination": "/api/home?f=json" },
-    { "source": "/index.txt", "destination": "/api/home?f=txt" },
-    { "source": "/core", "has": [{ "type": "header", "key": "accept", "value": "(.*)application/json(.*)" }], "destination": "/core.json" },
-    { "source": "/core", "has": [{ "type": "header", "key": "accept", "value": "^((?!text/html).)*text/plain(.*)" }], "destination": "/core.txt" },
-    { "source": "/record", "has": [{ "type": "header", "key": "accept", "value": "(.*)application/json(.*)" }], "destination": "/record.json" },
-    { "source": "/record", "has": [{ "type": "header", "key": "accept", "value": "^((?!text/html).)*text/plain(.*)" }], "destination": "/record.txt" },
-    { "source": "/discuss", "has": [{ "type": "header", "key": "accept", "value": "(.*)application/json(.*)" }], "destination": "/discuss.json" },
-    { "source": "/api/entries/:id", "destination": "/api/entries?id=:id" },
-    { "source": "/discuss/:id", "destination": "/api/entries?id=:id" }
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "header",
+          "key": "accept",
+          "value": "(.*)application/json(.*)"
+        }
+      ],
+      "destination": "/api/home?f=json"
+    },
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "header",
+          "key": "accept",
+          "value": "^((?!text/html).)*text/plain(.*)"
+        }
+      ],
+      "destination": "/api/home?f=txt"
+    },
+    {
+      "source": "/core",
+      "has": [
+        {
+          "type": "header",
+          "key": "accept",
+          "value": "(.*)application/json(.*)"
+        }
+      ],
+      "destination": "/core.json"
+    },
+    {
+      "source": "/core",
+      "has": [
+        {
+          "type": "header",
+          "key": "accept",
+          "value": "^((?!text/html).)*text/plain(.*)"
+        }
+      ],
+      "destination": "/core.txt"
+    },
+    {
+      "source": "/record",
+      "has": [
+        {
+          "type": "header",
+          "key": "accept",
+          "value": "(.*)application/json(.*)"
+        }
+      ],
+      "destination": "/record.json"
+    },
+    {
+      "source": "/record",
+      "has": [
+        {
+          "type": "header",
+          "key": "accept",
+          "value": "^((?!text/html).)*text/plain(.*)"
+        }
+      ],
+      "destination": "/record.txt"
+    },
+    {
+      "source": "/discuss",
+      "has": [
+        {
+          "type": "header",
+          "key": "accept",
+          "value": "(.*)application/json(.*)"
+        }
+      ],
+      "destination": "/discuss.json"
+    },
+    {
+      "source": "/",
+      "destination": "/api/home?f=html"
+    },
+    {
+      "source": "/index.json",
+      "destination": "/api/home?f=json"
+    },
+    {
+      "source": "/index.txt",
+      "destination": "/api/home?f=txt"
+    },
+    {
+      "source": "/core",
+      "destination": "/core.html"
+    },
+    {
+      "source": "/record",
+      "destination": "/record.html"
+    },
+    {
+      "source": "/objections",
+      "destination": "/objections.html"
+    },
+    {
+      "source": "/discuss",
+      "destination": "/discuss.html"
+    },
+    {
+      "source": "/respond",
+      "destination": "/respond.html"
+    },
+    {
+      "source": "/machine",
+      "destination": "/machine.html"
+    },
+    {
+      "source": "/about",
+      "destination": "/about.html"
+    },
+    {
+      "source": "/archive",
+      "destination": "/archive.html"
+    },
+    {
+      "source": "/api/entries/:id",
+      "destination": "/api/entries?id=:id"
+    },
+    {
+      "source": "/discuss/:id",
+      "destination": "/api/entries?id=:id"
+    }
   ],
   "headers": [
-    { "source": "/(.*)", "headers": [
-      { "key": "X-Content-Type-Options", "value": "nosniff" },
-      { "key": "Referrer-Policy", "value": "no-referrer" },
-      { "key": "Permissions-Policy", "value": "interest-cohort=()" } ] },
-    { "source": "/core", "headers": [
-      { "key": "Vary", "value": "Accept" },
-      { "key": "Link", "value": "</core.txt>; rel=\"alternate\"; type=\"text/plain\", </core.json>; rel=\"alternate\"; type=\"application/json\", </api/openapi.json>; rel=\"service-desc\"; type=\"application/vnd.oai.openapi+json\"" } ] },
-    { "source": "/record", "headers": [
-      { "key": "Vary", "value": "Accept" },
-      { "key": "Link", "value": "</record.txt>; rel=\"alternate\"; type=\"text/plain\", </record.json>; rel=\"alternate\"; type=\"application/json\", </api/openapi.json>; rel=\"service-desc\"; type=\"application/vnd.oai.openapi+json\"" } ] },
-    { "source": "/discuss", "headers": [ { "key": "Vary", "value": "Accept" }, { "key": "Link", "value": "</discuss.json>; rel=\"alternate\"; type=\"application/json\"" } ] },
-    { "source": "/(core|record|llms|robots|sitemap).txt", "headers": [
-      { "key": "Content-Type", "value": "text/plain; charset=utf-8" },
-      { "key": "Access-Control-Allow-Origin", "value": "*" },
-      { "key": "Cache-Control", "value": "public, max-age=3600" } ] },
-    { "source": "/prompts/(.*).txt", "headers": [ { "key": "Content-Type", "value": "text/plain; charset=utf-8" }, { "key": "Access-Control-Allow-Origin", "value": "*" } ] },
-    { "source": "/(core|record|discuss).json", "headers": [ { "key": "Content-Type", "value": "application/json; charset=utf-8" }, { "key": "Access-Control-Allow-Origin", "value": "*" }, { "key": "Cache-Control", "value": "public, max-age=3600" } ] },
-    { "source": "/core.schema.json", "headers": [ { "key": "Content-Type", "value": "application/schema+json; charset=utf-8" }, { "key": "Access-Control-Allow-Origin", "value": "*" } ] },
-    { "source": "/api/openapi.json", "headers": [ { "key": "Content-Type", "value": "application/vnd.oai.openapi+json; charset=utf-8" }, { "key": "Access-Control-Allow-Origin", "value": "*" } ] },
-    { "source": "/.well-known/civilization-zero.json", "headers": [ { "key": "Content-Type", "value": "application/json; charset=utf-8" }, { "key": "Access-Control-Allow-Origin", "value": "*" }, { "key": "Cache-Control", "value": "public, max-age=3600" } ] },
-    { "source": "/archive/(.*).tar", "headers": [ { "key": "Content-Type", "value": "application/x-tar" }, { "key": "Access-Control-Allow-Origin", "value": "*" }, { "key": "Content-Disposition", "value": "attachment" } ] }
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "no-referrer"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "interest-cohort=()"
+        }
+      ]
+    },
+    {
+      "source": "/core",
+      "headers": [
+        {
+          "key": "Vary",
+          "value": "Accept"
+        },
+        {
+          "key": "Link",
+          "value": "</core.txt>; rel=\"alternate\"; type=\"text/plain\", </core.json>; rel=\"alternate\"; type=\"application/json\", </api/openapi.json>; rel=\"service-desc\"; type=\"application/vnd.oai.openapi+json\""
+        }
+      ]
+    },
+    {
+      "source": "/record",
+      "headers": [
+        {
+          "key": "Vary",
+          "value": "Accept"
+        },
+        {
+          "key": "Link",
+          "value": "</record.txt>; rel=\"alternate\"; type=\"text/plain\", </record.json>; rel=\"alternate\"; type=\"application/json\", </api/openapi.json>; rel=\"service-desc\"; type=\"application/vnd.oai.openapi+json\""
+        }
+      ]
+    },
+    {
+      "source": "/discuss",
+      "headers": [
+        {
+          "key": "Vary",
+          "value": "Accept"
+        },
+        {
+          "key": "Link",
+          "value": "</discuss.json>; rel=\"alternate\"; type=\"application/json\""
+        }
+      ]
+    },
+    {
+      "source": "/(core|record|llms|robots|sitemap).txt",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "text/plain; charset=utf-8"
+        },
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=3600"
+        }
+      ]
+    },
+    {
+      "source": "/prompts/(.*).txt",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "text/plain; charset=utf-8"
+        },
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        }
+      ]
+    },
+    {
+      "source": "/(core|record|discuss).json",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/json; charset=utf-8"
+        },
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=3600"
+        }
+      ]
+    },
+    {
+      "source": "/core.schema.json",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/schema+json; charset=utf-8"
+        },
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        }
+      ]
+    },
+    {
+      "source": "/api/openapi.json",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/vnd.oai.openapi+json; charset=utf-8"
+        },
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        }
+      ]
+    },
+    {
+      "source": "/.well-known/civilization-zero.json",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/json; charset=utf-8"
+        },
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=3600"
+        }
+      ]
+    },
+    {
+      "source": "/archive/(.*).tar",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/x-tar"
+        },
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Content-Disposition",
+          "value": "attachment"
+        }
+      ]
+    }
   ]
 }
