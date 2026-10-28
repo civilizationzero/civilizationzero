@@ -291,6 +291,15 @@ bundle" passed (medium; present since the pinned list was added) — the pinned 
 says; and 1.12's new filter on the manifest's translation tags dropped a malformed entry silently where 1.11 had failed it
 (low) — such an entry FAILs.
 
+A twelfth pass (UTC 21:56–21:58), over the whole file, before 1.13 was to be frozen in bundle 1.0.1 — two false passes, fixed
+in 1.14 with two hardenings:
+
+| # | Finding (severity) | Status |
+|---|---|---|
+| N-1 | An unhashed day carried in a bundle counted as carried, and its entries were never checked: a bundle whose only day had no hash and one fabricated "published" entry passed with "carries every day … as its manifest says"; the PENDING it printed ("not hashed yet") was untrue for a day long finished; `--days` did the same for the last day supplied (high) | **verified** — a bundle carries finished, hashed days only: an unhashed day in one FAILs and is not counted; with `--days` or `--site`, an unhashed day that is due (from 02:00 UTC the next day) FAILs |
+| N-2 | `--strict` did not count CHECK: a made-up Bitcoin branch added to a day's proof removed the PENDING of its pending calendars and turned a strict failure into a strict pass; such a proof also counted as covered (medium) | **verified** — `--strict` counts what needs an outside check as well as what is pending; an OpenTimestamps proof is no longer counted as covered (its attestation is the outside check) |
+| N-3 | A signed release manifest that omitted a canonical text passed its pin unchecked; one without a machine prompt stopped the run (low; needs the record's key) | **verified** — every pinned canonical text must be listed; a missing machine prompt is noted |
+
 The same version moves the time from which a day is due from 01:00 to 02:00 UTC: the site's hosting plan runs its daily job at
 some time in the first hour of the day (UTC), not at 00:20 as the pages had said; the pages, the contract's notes and the
 daily-archive job (now 01:20 and 07:20 UTC) say so.

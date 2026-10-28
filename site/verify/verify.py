@@ -15,10 +15,12 @@ Python 3.8 or later, standard library only. Nothing is fetched unless you pass -
   python3 verify.py --self-test                        the Ed25519 test vectors of RFC 8032
 
 Options: --fingerprint HEX (another trust anchor); --repo-raw URL|none (where --site looks for the repository's copies of
-each day; default the public repository); --strict (anything that could not be verified counts as a failure); --json (the
+each day; default the public repository); --strict (anything not verified here — PENDING, and CHECK, which needs an outside
+fact — counts as a failure); --json (the
 report as data); --quiet (only what failed, what could not be verified and what needs an outside check, then the summary).
 Put bundles and --site options before --days; every path after --days must hold daily snapshots.
-Exit status: 0 when nothing failed (with --strict: and nothing was left unverified), 1 otherwise, 2 on a usage error.
+Exit status: 0 when nothing failed (with --strict: and nothing was left unverified, and nothing needs an outside check),
+1 otherwise, 2 on a usage error.
 
 Levels: OK (checked here), FAIL (wrong), PENDING (could not be verified here: a missing signature, proof or copy),
 CHECK (needs one outside fact this file cannot hold: a Bitcoin block, an authority's signature), NOTE (context).
@@ -48,7 +50,7 @@ Licence: MIT. Part of the record of Civilization Zero (https://civilizationzero.
 
 import base64, datetime, hashlib, io, json, os, re, sys, tarfile
 
-VERSION = "1.13"
+VERSION = "1.14"
 ANCHOR_FINGERPRINT = "82662396484f627a63272bcd5ac19aae72def7aca2898216dc8e7f975dfc2263"
 SPKI_PREFIX = bytes.fromhex("302a300506032b6570032100")   # DER SubjectPublicKeyInfo header of an Ed25519 key
 CORE_SHA = "92a8d1e2a1604c25b432685673be78184bf05c3b166893c437e0895b7b2d724a"   # the record's identity: the hashes of its
@@ -396,11 +398,19 @@ def verify_record(src, rep, anchor, label):
         rel = jload(rbytes)
         key = rel.get("key", {})
         rep.check(key.get("fingerprint") == anchor, "release manifest names the same key", "release manifest names another key: %s" % key.get("fingerprint"))
-        for d in rel.get("documents", []):
+        docs = [d for d in rel.get("documents", []) if isinstance(d, dict) and isinstance(d.get("file"), str) and isinstance(d.get("sha256"), str)]
+        if len(docs) != len(rel.get("documents", [])): rep.fail("the release manifest lists a document without a file name and a hash")
+        for f in PINNED_TEXTS:
+            if not any(d.get("file") == f for d in docs): rep.fail("the release manifest does not list %s, one of the record's canonical texts" % f)
+        for d in docs:
             pinned = PINNED_TEXTS.get(d.get("file"))
             if pinned and d.get("sha256") != pinned: rep.fail("%s: the release manifest states sha256 %s, but the record's identity is %s" % (d.get("id"), d.get("sha256"), pinned))
             if d.get("file") == "core.txt": result["core_sha"] = d["sha256"]
-        for d in rel.get("documents", []) + [dict(rel.get("machine_prompt", {}), id="machine prompt " + rel.get("machine_prompt", {}).get("version", ""))]:
+        mp = rel.get("machine_prompt")
+        if isinstance(mp, dict) and isinstance(mp.get("file"), str) and isinstance(mp.get("sha256"), str): docs = docs + [dict(mp, id="machine prompt " + str(mp.get("version", "")))]
+        else: rep.note("the release manifest names no machine prompt")
+        for d in docs:
+            d.setdefault("id", d["file"])
             p = site_path(src, d["file"]); b = src.get(p)
             if b is None: rep.fail("%s: %s is missing" % (d["id"], p)); continue
             if rep.check(sha256(b) == d["sha256"], "%s: %s sha256 %s as the release manifest states" % (d["id"], p, d["sha256"]), "%s: %s sha256 %s, the release manifest states %s" % (d["id"], p, sha256(b), d["sha256"])):
@@ -410,7 +420,7 @@ def verify_record(src, rep, anchor, label):
         ots_name = "signatures/" + base + ".ots" if src.kind == "bundle" else rname + ".ots"
         ots = src.get(ots_name)
         if ots:
-            if verify_ots(rep, ots, rbytes, base): covered.add(ots_name)
+            verify_ots(rep, ots, rbytes, base)   # not counted as covered: its Bitcoin attestation is the CHECK it prints
         else: rep.pending(base + ": no timestamp proof present")
         # the second, independent timestamp: RFC 3161 tokens from authorities that are not OpenTimestamps (not counted as
         # covered: the time a token states holds only once its authority's signature verifies, the CHECK it prints)
@@ -609,12 +619,12 @@ def check_bundle_days(src, rep, name):
         days.setdefault(m.group(1), []).append((snap, extra, m.group(2) + ".json"))
     try: through = (jload(src.get(".well-known/civilization-zero.json") or b"{}").get("discussion") or {}).get("in_bundle_through")
     except (ValueError, AttributeError): through = None
-    for d in sorted(days): verify_days(rep, days[d], "carried by " + name, chain=d)   # the directory decides; data of the other chain FAILs
+    for d in sorted(days): verify_days(rep, days[d], "carried by " + name, chain=d, carried=True)   # the directory decides; data of the other chain FAILs
     if through is None: return
     first = FIRST_DAY["discussion"]
     if not isinstance(through, str) or not re.fullmatch(r"\d{4}-\d\d-\d\d", through) or through < first:
         rep.fail("%s: its manifest says it carries the discussion's days through %r, which is not a day of the chain" % (name, through)); return
-    have = {f[:10] for s, _, f in days.get("discussion", []) if snapshot_shape(s) is None and chain_of_data(s) == {"discussion"}}   # only days whose data is the discussion's
+    have = {f[:10] for s, _, f in days.get("discussion", []) if snapshot_shape(s) is None and chain_of_data(s) == {"discussion"} and (s.get("log") or {}).get("sha256")}   # only hashed days whose data is the discussion's
     missing, d = [], first
     while d <= through and len(missing) < 1000:
         if d not in have: missing.append(d)
@@ -690,7 +700,9 @@ def verify_day(rep, snap, prev_snap, extra, ctx):
     """One day. ctx: chain, first (the pinned first day or None), first_supplied, has_successor, after_gap, independent."""
     day = snap.get("day"); log = snap.get("log") or {}; chain = CHAINS[ctx["chain"]]
     if not log.get("sha256"):
-        if ctx["has_successor"]: rep.fail("%s: not hashed, but a later day is — every finished day is hashed in order" % day)
+        if ctx.get("carried"): rep.fail("%s: carried in a bundle without its hash — a bundle carries finished, hashed days only" % day)
+        elif ctx["has_successor"]: rep.fail("%s: not hashed, but a later day is — every finished day is hashed in order" % day)
+        elif isinstance(day, str) and day <= due_day(): rep.fail("%s: not hashed, though every finished day is hashed in the first hour of the next day (UTC) and this one is due (this computer's clock)" % day)
         else: rep.pending("%s: not hashed yet (a day is hashed after it ends, UTC)" % day)
         return
     data = day_bytes(log)
@@ -873,7 +885,7 @@ def _is_int(x): return isinstance(x, int) and not isinstance(x, bool)
 # fields that are text wherever they appear (a hashed line, an entry, a record); any other type FAILs as malformed
 STRING_FIELDS = ("received", "pubkey", "sig", "key_fingerprint", "content_sha256", "statement_sha256", "state", "category", "trace_url")
 
-def verify_days(rep, days, label, independent=False, complete=False, chain=None):
+def verify_days(rep, days, label, independent=False, complete=False, chain=None, carried=False):
     """chain: the chain fetched (with --site) or the directory a bundle carries the days in; otherwise each snapshot's data
     decides. complete: the days are a site's whole chain as its index lists it, so every day from the first day (pinned, else
     the first served) to the day due must be there."""
@@ -935,7 +947,7 @@ def verify_days(rep, days, label, independent=False, complete=False, chain=None)
                 gap_from = (datetime.date.fromisoformat(order[i - 1]) + datetime.timedelta(days=1)).isoformat()
                 rep.fail("%s: %s missing — every day is hashed, so a gap is a removal" % (d, ("the day " + gap_from + " is") if gap_from == expected else ("the days " + gap_from + " to " + expected + " are")))
                 after_gap = True
-        verify_day(rep, s, prev_snap, x, {"chain": chain, "first": first, "first_supplied": i == 0, "has_successor": i < len(order) - 1, "after_gap": after_gap and prev_snap is None, "independent": independent})
+        verify_day(rep, s, prev_snap, x, {"chain": chain, "first": first, "first_supplied": i == 0, "has_successor": i < len(order) - 1, "after_gap": after_gap and prev_snap is None, "independent": independent, "carried": carried})
 
 def site_days(src, repo, rep, chain):
     """The days the site serves for one chain, each with the repository's copy of its bytes and proof (when repo is given),
@@ -1059,13 +1071,13 @@ def main(argv):
     except Exception as e:   # a malformed input is a failure of the input, reported as such
         rep.section("error"); rep.fail("%s: %s" % (type(e).__name__, e))
     c = rep.counts()
-    failed = c["FAIL"] > 0 or (opts.get("strict") and c["PENDING"] > 0)
+    failed = c["FAIL"] > 0 or (opts.get("strict") and (c["PENDING"] > 0 or c["CHECK"] > 0))
     if opts.get("json"):
         print(json.dumps({"verifier": "cz-verify " + VERSION, "trust_anchor": anchor, "summary": c, "strict": bool(opts.get("strict")),
                           "result": "fail" if failed else ("pass, with items not verified here" if c["PENDING"] or c["CHECK"] else "pass"), "items": rep.items}, ensure_ascii=True, indent=1))
     else:
         tail = " — FAILED" if c["FAIL"] else (" — nothing failed" + ("; %d item(s) could not be verified here (PENDING)" % c["PENDING"] if c["PENDING"] else "") + ("; %d need an outside check — a Bitcoin block, an authority's signature (CHECK)" % c["CHECK"] if c["CHECK"] else ""))
-        if opts.get("strict") and c["PENDING"] and not c["FAIL"]: tail += " — counted as a failure (--strict)"
+        if opts.get("strict") and (c["PENDING"] or c["CHECK"]) and not c["FAIL"]: tail += " — counted as a failure (--strict)"
         print("\nsummary: " + ", ".join("%d %s" % (c[k], k) for k in LEVELS) + tail)
     return 1 if failed else 0
 
