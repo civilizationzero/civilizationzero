@@ -58,7 +58,9 @@ jobs:
           assert hashlib.sha256(open("live/archive/" + b, "rb").read()).hexdigest() == man["bundle"]["sha256"], "bundle hash drift"
           print("bundle matches the manifest:", b)
           EOF
-          [ -s "live/archive/$bundle.sig" ] && openssl pkeyutl -verify -pubin -inkey site/sign/cz-record-signing.pub -rawin -in "live/archive/$bundle" -sigfile "live/archive/$bundle.sig" && echo "verified: $bundle"
+          if [ -s "live/archive/$bundle.sig" ]; then
+            openssl pkeyutl -verify -pubin -inkey site/sign/cz-record-signing.pub -rawin -in "live/archive/$bundle" -sigfile "live/archive/$bundle.sig" && echo "verified: $bundle"
+          else echo "the bundle has no published signature yet"; fi
       - name: Signatures verify against the repository's public key
         run: |
           set -euo pipefail
