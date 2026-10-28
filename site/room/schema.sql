@@ -550,3 +550,6 @@ alter function cz_day(date) set timezone = 'UTC';
 alter function cz_unclassified(int) set timezone = 'UTC';
 alter function cz_budget_status() set timezone = 'UTC';
 -- superseded and disabled (they raise 'superseded'): cz_post(13 args), cz_translation_put, cz_source_chars(text,int), cz_daily(text), cz_daily(text,date)
+
+-- v5e (2026-10-29), applied as migration cz_room_schema_v5e_unhide_category: an unhide that returns an entry to 'redacted'
+-- restores the redaction's own category (from the latest 'redact' row of the log) instead of keeping the hide's category.
