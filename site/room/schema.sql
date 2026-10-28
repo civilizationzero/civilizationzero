@@ -876,7 +876,7 @@ end $$;
 grant execute on function cz_register_daily(text, date, boolean) to anon, authenticated;
 notify pgrst, 'reload schema';
 
--- ================================================================ v6c (2026-10-28 20:12 UTC), applied as migration cz_views_security_invoker_v6c
+-- ================================================================ v6c (2026-10-28 20:13 UTC), applied as migration cz_views_security_invoker_v6c
 -- The register's security review (finding G-4): a view owned by postgres ran with its owner's rights and was automatically
 -- updatable, and Supabase's default privileges grant anon every privilege on new relations, so the publishable key could have
 -- written through entries_public and register_public. The views now check privileges and row-level security as the caller:
