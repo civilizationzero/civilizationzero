@@ -14,9 +14,9 @@ concurrency:
   cancel-in-progress: false
 jobs:
   stamp:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Ask two RFC 3161 authorities for a token over the release manifest, and verify each before keeping it
         run: |
           set -euo pipefail
