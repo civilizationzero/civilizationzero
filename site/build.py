@@ -884,7 +884,8 @@ The record's identity is its hash, not its address.
 
 # ============================================================================ bundle
 BUNDLE_NAME = f"cz-bundle-{BUNDLE_VERSION}.tar"
-ARCHIVED = sorted((SITE / "archived-bundles").glob("cz-bundle-*.tar")) if (SITE / "archived-bundles").exists() else []   # earlier bundles, kept at their addresses
+FROZEN = SITE / "archived-bundles" / BUNDLE_NAME          # once a bundle is signed, its bytes are frozen here and the build publishes them unchanged
+ARCHIVED = sorted(b for b in (SITE / "archived-bundles").glob("cz-bundle-*.tar") if b.name != BUNDLE_NAME) if (SITE / "archived-bundles").exists() else []   # earlier bundles, kept at their addresses
 for _b in ARCHIVED: write(f"/archive/{_b.name}", _b.read_bytes())
 
 def build_bundle():
@@ -942,7 +943,8 @@ write("/about.html", about_page())
 write("/machine.html", machine_page())
 write("/ask.html", ask_page())
 (SITE / "api" / "discuss-templates.json").write_text(json.dumps(discuss_templates(), ensure_ascii=False, indent=1) + "\n", "utf-8")  # api/discuss.js serves /discuss, /discuss/{id}, /respond
-bundle = build_bundle()
+bundle = FROZEN.read_bytes() if FROZEN.exists() else build_bundle()   # a signed bundle is never regenerated; the next version gets a new name
+if FROZEN.exists(): write(f"/archive/{BUNDLE_NAME}", bundle)
 BUNDLE_SHA = sha256(bundle)
 BUNDLE_SIGNED = (SIGS / (BUNDLE_NAME + ".sig")).exists()
 if BUNDLE_SIGNED: publish_sig(BUNDLE_NAME + ".sig", f"/archive/{BUNDLE_NAME}")
