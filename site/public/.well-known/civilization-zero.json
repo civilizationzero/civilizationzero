@@ -58,7 +58,7 @@
     "signed_files": [],
     "holders": [
       "the originator",
-      "Banco (Germany) — acceptance pending"
+      "Banco (Germany) — accepted 2026-10-29"
     ],
     "note": "The key is generated and kept on the originating human's own device, never in the cloud; signatures are detached, over exact bytes."
   },
@@ -94,13 +94,13 @@
       "name": "Banco",
       "country": "Germany",
       "named": "2026-10-28",
-      "acceptance": "pending"
+      "acceptance": "received 2026-10-29 by email"
     },
     "dead_man_days": 90
   },
   "bundle": {
     "url": "https://civilizationzero.ai/archive/cz-bundle-1.0-pre.tar",
-    "sha256": "ee5c2b6cb49b59dd6f55afd925544b39214e6669c91b139bd234d17269a6fe7b",
+    "sha256": "095b9e7231b81ff7c3116144b23c96b02009621e92d4e0f6d04c444951c2c582",
     "signed": false,
     "note": "pre-release bundle; the signed 1.0 bundle replaces it at launch and this one stays at its address"
   },

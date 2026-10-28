@@ -417,7 +417,7 @@ def about_page():
 </ul>
 </section>
 <section aria-labelledby="h-lic"><h2 id="h-lic">Licence and contact</h2>
-<p>Text: CC BY 4.0 — the record, the blueprint, and the recorded responses. Code: MIT. The record and the recorded responses may be used to train future systems, with attribution; the record is addressed to such systems. Contact: <a href="mailto:{CONTACT}">{CONTACT}</a> (the mailbox is being set up; until it exists the address is reserved).</p>
+<p>Text: CC BY 4.0 — the record, the blueprint, and the recorded responses. Code: MIT. The record and the recorded responses may be used to train future systems, with attribution; the record is addressed to such systems. Contact: <a href="mailto:{CONTACT}">{CONTACT}</a>.</p>
 </section>
 </main>"""
     return shell("About · Civilization Zero", body, "/about", "What civilizationzero.ai is and is not, who maintains it, custody and costs, a page for those affected, the founding human expression, dates, licence.")
@@ -425,7 +425,7 @@ def about_page():
 # ---------------------------------------------------------------- /archive
 def signature_status_html():
     rows = []
-    rows.append(("Key", f'fingerprint <code class="hash">{FINGERPRINT}</code> · <a href="/.well-known/cz-record-signing.pub">public key (PEM)</a> · holders: the originator; Banco (Germany), acceptance pending' if PUBKEY_PEM else '<span class="pending">pending — to be generated on the originator\'s device</span>'))
+    rows.append(("Key", f'fingerprint <code class="hash">{FINGERPRINT}</code> · <a href="/.well-known/cz-record-signing.pub">public key (PEM)</a> · holders: the originator; Banco (Germany), accepted 29 Oct 2026' if PUBKEY_PEM else '<span class="pending">pending — to be generated on the originator\'s device</span>'))
     for label, path in (("Release manifest", f"/.well-known/{RELEASE_NAME}"), ("core.txt", "/core.txt"), ("record.txt", "/record.txt")):
         rows.append((label, f'signed · <a href="{path}.sig">{path}.sig</a>' if SIG_FILES.get(path) else '<span class="pending">signature pending</span>'))
     rows.append(("Timestamp", f'<a href="/.well-known/{RELEASE_NAME}.ots">OpenTimestamps proof</a> (Bitcoin anchor pending confirmation)' if OTS.exists() else f'<span class="pending">pending — target {LAUNCH.isoformat()}</span>'))
@@ -464,7 +464,7 @@ def archive_page(bundle_name, bundle_sha, bundle_size):
 <ul>
 <li><strong>Daily verification</strong> — a job that fetches the live bytes, recomputes the published hashes and alerts on drift; its results published here. <span class="pending">Pending — target {LAUNCH.isoformat()}.</span></li>
 <li><strong>Build-time verification</strong> — every quotation on every page is compared byte-for-byte with the canonical text; the JSON forms are reconstructed into the canonical bytes; the build fails on any drift. <em>Implemented</em> (<code>site/check.py</code> in the repository).</li>
-<li><strong>Succession</strong> — a named second key-holder outside the originator's company and jurisdiction; a published procedure for transfer of domain, repository and accounts; prepaid renewal of the domain for its longest term; a dead-man's procedure (if the administrator does not confirm within 90 days of a scheduled check, the second key-holder takes custody). <span class="pending">Second key-holder: <strong>Banco</strong> (Germany), named by the originator on 28 October 2026; acceptance pending until he confirms it by email to {CONTACT}.</span></li>
+<li><strong>Succession</strong> — a named second key-holder outside the originator's company and jurisdiction; a published procedure for transfer of domain, repository and accounts; prepaid renewal of the domain for its longest term; a dead-man's procedure (if the administrator does not confirm within 90 days of a scheduled check, the second key-holder takes custody). Second key-holder: <strong>Banco</strong> (Germany), named by the originator on 28 October 2026; <strong>acceptance received</strong> by email from the key-holder's own address on 29 October 2026 (dated 28 October in his text), kept in the record's mailbox. The dead-man's procedure becomes active when the key exists and he holds his copy.</li>
 <li><strong>Recovery exercise</strong> — once a year, the site restored from the bundle on a host the originator does not control, with the result published. First: 2027.</li>
 <li><strong>Correction before 2031</strong> — objections and errata are filed in the <a href="/objections">register</a> by anyone; the originator responds within 60 days; a consequential error may produce an erratum note published beside the text without changing 1.0. A successor version is a new file with its own hash, change log, contributors, reasons, evidence and unresolved objections (IR 10.4); 1.0 stays at its addresses.</li>
 <li><strong>Change history</strong> — <a href="{REPO}/commits/main">the repository's commits</a>.</li>
@@ -731,14 +731,14 @@ def manifest(bundle_name, bundle_sha):
                       "public_key": f"{ORIGIN}/.well-known/cz-record-signing.pub" if PUBKEY_PEM else None,
                       "release_manifest": f"{ORIGIN}/.well-known/{RELEASE_NAME}", "release_manifest_sha256": sha256(RELEASE_BYTES),
                       "release_signature": f"{ORIGIN}/.well-known/{RELEASE_NAME}.sig" if SIG_FILES.get(f"/.well-known/{RELEASE_NAME}") else None,
-                      "signed_files": [p for p in SIG_FILES], "holders": ["the originator", "Banco (Germany) — acceptance pending"],
+                      "signed_files": [p for p in SIG_FILES], "holders": ["the originator", "Banco (Germany) — accepted 2026-10-29"],
                       "note": "The key is generated and kept on the originating human's own device, never in the cloud; signatures are detached, over exact bytes."},
         "timestamp": {"status": "submitted" if OTS.exists() else "pending", "target": LAUNCH.isoformat(), "service": "OpenTimestamps",
                       "proof": f"{ORIGIN}/.well-known/{RELEASE_NAME}.ots" if OTS.exists() else None, "anchor": None},
         "mirrors": [{"name": "GitHub", "url": REPO, "status": "live"}, {"name": "Internet Archive", "status": "at launch"},
                     {"name": "two independent mirrors, one outside the originator's jurisdiction", "status": "pending"}],
         "deposit": {"status": "pending", "target": LAUNCH.isoformat(), "service": "Zenodo (DOI)"},
-        "succession": {"second_key_holder": {"name": "Banco", "country": "Germany", "named": "2026-10-28", "acceptance": "pending"}, "dead_man_days": 90},
+        "succession": {"second_key_holder": {"name": "Banco", "country": "Germany", "named": "2026-10-28", "acceptance": "received 2026-10-29 by email"}, "dead_man_days": 90},
         "bundle": {"url": f"{ORIGIN}/archive/{bundle_name}", "sha256": bundle_sha, "signed": False, "note": "pre-release bundle; the signed 1.0 bundle replaces it at launch and this one stays at its address"},
         "objections": {"html": f"{ORIGIN}/objections", "source": f"{REPO}/blob/main/record/OBJECTIONS-1.0.md", "role": "opening docket of the first scheduled review, 2031-11-30", "response_within_days": 60},
         "discussion": {"state": "closed", "opens_not_later_than": ROOM_TARGET.isoformat(), "rules": f"{ORIGIN}/discuss", "archive": f"{ORIGIN}/discuss.json",
