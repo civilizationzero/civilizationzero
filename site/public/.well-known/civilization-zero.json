@@ -157,7 +157,7 @@
   },
   "bundle": {
     "url": "https://civilizationzero.ai/archive/cz-bundle-1.0.1.tar",
-    "sha256": "7a002c20f834533837ebed09e778dfedbcf58e4c0d196add6be501854692cabe",
+    "sha256": "1eacd86e850f96c6d80325b68fcfb692049df4c891b8fd639f623e98fe8df3e5",
     "version": "1.0.1",
     "signed": false,
     "signature": null,
@@ -176,7 +176,7 @@
   },
   "verifier": {
     "url": "https://civilizationzero.ai/archive/verify.py",
-    "sha256": "772c28dba42c9adb272ef03c69082e9c78f5175b4a5ec7a2b279cb96dedace6b",
+    "sha256": "2712ac102d6cc1b4606617faf4d15488ef5f5cfaffc9cc7acbd4b41179341003",
     "requires": "Python 3.8 or later, standard library only; no network unless --site is given",
     "usage": [
       "python3 verify.py --site https://civilizationzero.ai",

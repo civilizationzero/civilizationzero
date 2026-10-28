@@ -254,6 +254,22 @@ the bytes at that path, which is what is checked; the sixth pass's cases hold. T
 | X-9 | Unicode case folding: `casefold()` leaves the dotless ı unchanged, so a member `sıgnatures/tsa/freetsa-cacert.pem` (which a file system comparing names by their upper case, as NTFS does, would put in `signatures/tsa/`) escaped the lower-case rule; only an unsigned copy could carry it (low) | **verified** — a bundle's member names must be ASCII (all 64 of 1.0 and all 69 of 1.0.1 are), which removes every case-folding and normalisation alias at once |
 | X-8 | A link was reported up to three times (by the walk, as missing, and again when read) (low, wording) | **verified** — a path under a link the walk found is not reported again when read |
 
+1.9 added one check before bundle 1.0.1 was frozen with the room's first day inside it: a bundle's own daily snapshots
+(`archive/discussion/`) are checked as a chain — in the tar, unpacked, and from inside an unpacked bundle with no argument, as
+the bundle's README already said — and every day from the chain's first day through the bundle's stated `in_bundle_through`
+must be carried. An eighth pass (UTC 21:36–21:38) on it: no regression on bundles 1.0 and 1.0.1; days under another path,
+case or a non-ASCII name are not collected (a claimed day carried only that way FAILs as missing); a `.log` that differs from
+its snapshot FAILs; a bad or impossible `in_bundle_through` FAILs. Two findings, fixed in 1.10:
+
+| # | Finding (severity) | Status |
+|---|---|---|
+| G-3, G-1 | "Carries every day of the discussion" counted file names, not discussion days: the genesis day re-labelled as a register day (`"records": []` for `"entries": []`, the same hashed bytes), or a real register day, saved under `archive/discussion/`, was checked as the register's chain and still counted, so the OK line was false (medium) | **verified** — a bundle's days are checked as the chain of the directory they are carried in (data of the other chain FAILs, as with `--site`), and only days whose data is the discussion's count as carried |
+| G-2 | A snapshot whose `log` was not an object stopped the run through the catch-all (exit 1, but no later checks) (low) | **verified** — every snapshot's form is checked first (an object; its log an object with strings and integers where they belong; its items lists); a malformed one FAILs and the run goes on |
+
+The same version moves the time from which a day is due from 01:00 to 02:00 UTC: the site's hosting plan runs its daily job at
+some time in the first hour of the day (UTC), not at 00:20 as the pages had said; the pages, the contract's notes and the
+daily-archive job (now 01:20 and 07:20 UTC) say so.
+
 
 ### Security review of the Adoption Register (28 Oct 2026, UTC 19:49–20:10) — before it opens
 

@@ -81,7 +81,7 @@ module.exports = async (req, res) => {
             how: DAY_HASH,
             copies: { snapshot: `${REPO}/blob/main/archive/discussion/${date}.json`, hashed_bytes: `${REPO}/blob/main/archive/discussion/${date}.log`,
                       timestamp_proof: `${REPO}/blob/main/archive/discussion/${date}.log.ots`,
-                      note: "committed to the public repository by the daily-archive job about half an hour after the day is hashed, once verify.py has checked the whole chain; absent until then" },
+                      note: "committed to the public repository by the daily-archive job (01:20 and 07:20 UTC), once verify.py has checked the whole chain; absent until then" },
             verifier: `${ORIGIN}/archive/verify.py` }
         : { sha256: null, note: "the day's hash is computed after the day ends (UTC)" };
       startJson(res);

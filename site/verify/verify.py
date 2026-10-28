@@ -33,7 +33,7 @@ SHA-256 that freetsa.org publishes; anything else there FAILs); for each daily c
 SHA-256(previous day's hash + "\\n" + the day's lines), that the days run without gap from the chain's first day (pinned
 below), that every entry's content and every record's statement match their hashes and that nothing the site always shows
 is withheld and nothing it never shows is added, that every signature verifies, and — with --site — that the site serves
-every day from the first to the last one due (a day is hashed by 00:20 UTC the next day) and that each day equals the
+every day from the first to the last one due (a day is hashed in the first hour of the next day, UTC) and that each day equals the
 copy and timestamp proof kept in the public repository, which the site does not control.
 
 What it cannot check: whether a declared name is true; whether a Bitcoin block exists, or whether an RFC 3161 token's
@@ -48,7 +48,7 @@ Licence: MIT. Part of the record of Civilization Zero (https://civilizationzero.
 
 import base64, datetime, hashlib, io, json, os, re, sys, tarfile
 
-VERSION = "1.9"
+VERSION = "1.10"
 ANCHOR_FINGERPRINT = "82662396484f627a63272bcd5ac19aae72def7aca2898216dc8e7f975dfc2263"
 SPKI_PREFIX = bytes.fromhex("302a300506032b6570032100")   # DER SubjectPublicKeyInfo header of an Ed25519 key
 CORE_SHA = "92a8d1e2a1604c25b432685673be78184bf05c3b166893c437e0895b7b2d724a"   # the record's identity: the hashes of its
@@ -587,12 +587,12 @@ def check_bundle_days(src, rep, name):
         days.setdefault(m.group(1), []).append((snap, extra, m.group(2) + ".json"))
     try: through = (json.loads(src.get(".well-known/civilization-zero.json") or b"{}").get("discussion") or {}).get("in_bundle_through")
     except (ValueError, AttributeError): through = None
-    for d in sorted(days): verify_days(rep, days[d], "carried by " + name)
+    for d in sorted(days): verify_days(rep, days[d], "carried by " + name, chain=d)   # the directory decides; data of the other chain FAILs
     if through is None: return
     first = FIRST_DAY["discussion"]
     if not isinstance(through, str) or not re.fullmatch(r"\d{4}-\d\d-\d\d", through) or through < first:
         rep.fail("%s: its manifest says it carries the discussion's days through %r, which is not a day of the chain" % (name, through)); return
-    have = {f[:10] for _, _, f in days.get("discussion", [])}
+    have = {f[:10] for s, _, f in days.get("discussion", []) if snapshot_shape(s) is None and chain_of_data(s) == {"discussion"}}   # only days whose data is the discussion's
     missing, d = [], first
     while d <= through and len(missing) < 1000:
         if d not in have: missing.append(d)
@@ -787,9 +787,10 @@ def _span(a, b, one, many):
     return ("The day %s %s" % (a, one)) if a == b else ("The days %s to %s %s" % (a, b, many))
 
 def due_day(now=None):
-    """The last day every copy should have hashed by now: yesterday (UTC) from 01:00 UTC on (the site hashes at 00:20 UTC), else the day before."""
+    """The last day every copy should have hashed by now: yesterday (UTC) from 02:00 UTC on, else the day before. The site's
+    daily job runs in the first hour of the day (UTC; its host promises no more precise a time); an hour's margin follows."""
     now = now or datetime.datetime.now(datetime.timezone.utc)
-    return (now - datetime.timedelta(days=1 if now.hour >= 1 else 2)).date().isoformat()
+    return (now - datetime.timedelta(days=1 if now.hour >= 2 else 2)).date().isoformat()
 
 def chain_of_data(snap):
     """The chains a snapshot's data belongs to — by its hashed lines (content_sha256: discussion; statement_sha256: register)
@@ -807,19 +808,44 @@ def chain_of_data(snap):
         kinds.add("discussion" if keys == {"entries"} else "register" if keys == {"records"} else "?")
     return kinds
 
+def snapshot_shape(s):
+    """None when a snapshot has the form the checks read (an object; its log an object with strings and integers where they
+    belong; its items lists), else what is wrong — so that a malformed snapshot FAILs instead of stopping the run."""
+    if not isinstance(s, dict): return "not a JSON object"
+    log = s.get("log")
+    if log is None: return None
+    if not isinstance(log, dict): return "its log is not an object"
+    for k in ("sha256", "prev"):
+        if log.get(k) is not None and not isinstance(log.get(k), str): return "its log's %s is not a string" % k
+    if log.get("lines") is not None and not (isinstance(log["lines"], list) and all(isinstance(l, str) for l in log["lines"])): return "its log's lines are not a list of strings"
+    for k in ("count", "last_id"):
+        if log.get(k) is not None and (not isinstance(log.get(k), int) or isinstance(log.get(k), bool)): return "its log's %s is not an integer" % k
+    for k in ("entries", "records"):
+        if s.get(k) is not None and not isinstance(s.get(k), list): return "its %s are not a list" % k
+    return None
+
 def verify_days(rep, days, label, independent=False, complete=False, chain=None):
-    """chain: the chain fetched (with --site); otherwise each snapshot's data decides.
-    complete: the days are a site's whole chain as its index lists it, so every day from the first day (pinned, else the first
-    served) to the day due must be there."""
-    wrong, eff = [], []
+    """chain: the chain fetched (with --site) or the directory a bundle carries the days in; otherwise each snapshot's data
+    decides. complete: the days are a site's whole chain as its index lists it, so every day from the first day (pinned, else
+    the first served) to the day due must be there."""
+    wrong, eff, malformed, shaped = [], [], [], []
+    for s, x, f in days:
+        why = snapshot_shape(s)
+        if why: malformed.append("%s: not a daily snapshot of the expected form — %s" % (f or (str(s.get("day")) if isinstance(s, dict) else "?"), why))
+        else: shaped.append((s, x, f))
+    if malformed:
+        rep.section(((chain or "chain") + " — " + label))
+        for m in malformed: rep.fail(m)
+        if not shaped: return
+    days = shaped
     for s, x, f in days:
         kinds = chain_of_data(s); declared = s.get("chain"); name = f or str(s.get("day"))
         data = next(iter(kinds)) if len(kinds) == 1 and "?" not in kinds else None
         if "?" in kinds or len(kinds) > 1:
             wrong.append(("%s: its lines are not all lines of one chain" if (s.get("log") or {}).get("lines") else "%s: a day without lines that carries neither or both of \"entries\" and \"records\" — no chain can be told from it") % name)
         c = chain or data or "discussion"   # never the label: it is not hashed
-        if declared is not None and declared != c and (chain or data): wrong.append("%s: labelled %r, but %s" % (name, declared, ("it was fetched as the " + c + " chain") if chain else ("its data is the " + c + " chain's")))
-        if data is not None and data != c: wrong.append("%s: fetched as the %s chain, but its data is the %s chain's" % (name, c, data))
+        if declared is not None and declared != c and (chain or data): wrong.append("%s: labelled %r, but %s" % (name, declared, ("it was taken as the " + c + " chain (where it was found)") if chain else ("its data is the " + c + " chain's")))
+        if data is not None and data != c: wrong.append("%s: taken as the %s chain (where it was found), but its data is the %s chain's" % (name, c, data))
         eff.append(c)
     chains = set(eff) or ({chain} if chain else set())
     if days: rep.section(("/".join(sorted(map(str, chains)))) + " — " + label)
@@ -847,7 +873,7 @@ def verify_days(rep, days, label, independent=False, complete=False, chain=None)
         now = datetime.datetime.now(datetime.timezone.utc); due = due_day(now); last = order[-1] if order else None
         if due >= start and (last is None or last < due):
             frm = start if last is None else _next(last)
-            rep.fail("%s: every finished day is hashed by 00:20 UTC the next day, and %s (this computer's clock: %s UTC)" % (_span(frm, due, "is not served", "are not served"), ("the last day served is " + last) if last else "no day is served", now.strftime("%Y-%m-%d %H:%M")))
+            rep.fail("%s: every finished day is hashed in the first hour of the next day (UTC), and %s (this computer's clock: %s UTC)" % (_span(frm, due, "is not served", "are not served"), ("the last day served is " + last) if last else "no day is served", now.strftime("%Y-%m-%d %H:%M")))
     if not order: return
     prev = None; after_gap = False
     for i, d in enumerate(order):

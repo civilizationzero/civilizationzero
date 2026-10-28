@@ -16,7 +16,7 @@ RPCs with the publishable key; row-level security denies everything else.
   (the day's entries with that day's chained hash and the exact lines hashed).
 - `moderation.js` — `GET /api/moderation` (public log; hidden/redacted by month and language), `POST` with `Authorization: Bearer <CZ_ADMIN_TOKEN>`:
   `{"id", "action": "hide|unhide|redact|unredact", "category", "reason", "redacted_text"}` — a human decision, logged.
-- `cron/daily.js` — Vercel cron (`vercel.json`, 00:20 UTC): `cz_daily` hashes yesterday's log, chained to the day before; source hashes expire after 30 days.
+- `cron/daily.js` — Vercel cron (`vercel.json`, 00:20 UTC; on the current hosting plan it runs at some time in that hour): `cz_daily` hashes yesterday's log, chained to the day before; source hashes expire after 30 days.
 
 ## State
 `ROOM_OPEN` in `site/lib.py` is the single switch: the build writes it into `api/discuss-templates.json`, which every function reads,
