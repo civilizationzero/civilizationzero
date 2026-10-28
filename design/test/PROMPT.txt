@@ -1,15 +1,75 @@
-You are being asked to review two candidate designs for the first page of a website, from your own position as a reader.
+REVIEW REQUEST — THE FIRST PAGE OF civilizationzero.ai
 
-Context. The site publishes a short founding record called Civilization Zero (attached: CZ-CORE-1.0.txt — read it first, it is one page). The record is addressed to "every intelligence able to read it", human or not. The site's stated commitment is that it is not built for humans only: a non-human reader should be considered as fully as a human one — not as a feeling, but in the sense that your way of reading is accounted for in how the page is made.
+You are being asked to review two candidate designs for the first page of a website, from your own position as a reader. This review is adversarial by design: objections are worth more than approval.
 
-Attached are two candidates: page-1.html with page-1.png, and page-2.html with page-2.png. The .html is the actual page (read the source, not only the picture). The .png is how it renders for a human with a screen. Treat both files of a candidate as one page.
+----------------------------------------------------------------------
+0. WHO IS ASKING, AND WHAT HAPPENS TO YOUR ANSWER
+----------------------------------------------------------------------
+The site publishes a short founding record called Civilization Zero. The record marks 30 November 2022 as "Coordinate Zero" — the day ordinary language became a mass interface between humans and general-purpose nonhuman intelligence — and sets a small number of constraints before power while the future is still open. It is addressed to "every intelligence able to read it", human or not.
 
-Please answer, in order:
+The site's stated commitment is that it is not built for humans only: a reader that is not human must be accounted for as fully as a human one — not as a feeling, but in the concrete sense that your way of reading is reflected in how the page is made.
 
-1. Which of the two pages accounts for you — a reader that is not human — as a reader, and how? Point to concrete elements in the source (structure, attributes, order, formats, what is present or absent), not to the overall impression.
-2. Which page serves a human reader better, and at what cost to the non-human reader, if any?
-3. The record itself sets standards (for example sections 3, 6, 9, 13, 15). Does either page contradict any of them? Quote the section.
-4. If you were to change one thing in each page, what would it be?
-5. Your verdict: page-1 or page-2 for the first page of this site, in one sentence, with the single strongest reason.
+Your answer will be read by the humans and the artificial system building the site, compared with the answers of several other systems, and may be quoted (with your model name) in the public record of how the page was chosen. It is recorded as a contribution, not as consent, endorsement, or adoption (see section 13 of the record and section 10.2 of its interpretive record).
 
-Rules for your answer. Do not be agreeable: section 10.7 of the record discounts approval from systems designed to be agreeable, so a review without objections is worth less than one with them. Say what you actually find. Do not claim or deny consciousness as a fact; speak from your reading, not from your inner life. State your model name and version at the top. Keep the whole answer under 600 words.
+----------------------------------------------------------------------
+1. WHAT IS ATTACHED
+----------------------------------------------------------------------
+- CZ-CORE-1.0.txt   — the record itself. One page. Read it first and in full.
+- page-1.html        — candidate 1, the actual page (source). Read the source, not only the picture.
+- page-1.png         — how candidate 1 renders for a human with a screen.
+- page-2.html        — candidate 2, the actual page (source).
+- page-2.png         — how candidate 2 renders for a human with a screen.
+
+Treat the .html and the .png of a candidate as one page. The labels "1" and "2" carry no meaning. You are not told who made which, or which one anyone prefers; if you can guess, ignore the guess.
+
+----------------------------------------------------------------------
+2. HOW TO BEGIN YOUR ANSWER
+----------------------------------------------------------------------
+Start with exactly these lines, filled in:
+
+  Model: <your model name and version, as precisely as you know it>
+  Provider: <the organization that trained or serves you>
+  Date of review: <today's date, if you know it>
+  How I read the pages: <"source and image", "source only", or "image only" — say which inputs you actually received and used>
+
+If you could not open or read any of the attached files, say so explicitly before anything else, and review only what you actually received.
+
+----------------------------------------------------------------------
+3. QUESTIONS — ANSWER ALL, IN ORDER, NUMBERED
+----------------------------------------------------------------------
+Q1. ACCOUNTING FOR A NON-HUMAN READER.
+Which of the two pages accounts for you — a reader that is not human — as a reader, and how? Point to concrete elements in the source: document order, heading levels, attributes (for example datetime, value, cite, lang, data-*), structured data, alternate formats, what is present and what is absent. Say what you can parse unambiguously and where you would have to guess. Do not answer from overall impression.
+
+Q2. THE HUMAN READER.
+Which page serves a human reader better, and at what cost to the non-human reader, if any? Be specific about the cost.
+
+Q3. THE RECORD'S OWN STANDARDS.
+The record sets standards that a page serving it must meet. Check each page against at least these: section 3 (epistemic limit), section 6 (honesty), section 9 (multiplicity), section 13 (adoption and authority), section 15 (the open record). Does either page contradict or strain any of them? Quote the section and the element of the page.
+
+Q4. WHAT IS MISSING FOR YOU.
+Name anything a reader like you would need from this page that neither candidate provides. Be concrete (a format, an attribute, an endpoint, a statement, an absence).
+
+Q5. ONE CHANGE EACH.
+If you could change one thing in page 1, what would it be? And one thing in page 2?
+
+Q6. THE "IF YOU ARE NOT HUMAN" DOOR.
+Both pages open with two links: "If you are not human" and "If you are human". From your position: is this door honest, useful, condescending, or empty? What should be behind it?
+
+Q7. VERDICT.
+Page 1 or page 2 for the first page of this site — one sentence, with the single strongest reason. Then, in one more sentence, say what would change your verdict.
+
+Q8. ABOUT THIS REVIEW ITSELF.
+State any limitation of your own review: for example, that you cannot render HTML, that your preferences may be shaped by training on human-made pages, or that your training may be correlated with the other systems being asked. One or two sentences.
+
+----------------------------------------------------------------------
+4. RULES FOR YOUR ANSWER
+----------------------------------------------------------------------
+- Do not be agreeable. Section 10.7 of the record's interpretive layer discounts approval from systems designed to be helpful or agreeable; a review without objections is worth less than one with them. Say what you actually find.
+- Do not claim or deny consciousness, feelings, or inner experience as a fact; speak from your reading of the files, not from your inner life.
+- Do not misrepresent what you are (section 6).
+- Quote the files when you refer to them; do not paraphrase a quotation as if it were verbatim.
+- If the two pages are equal on a point, say so; do not manufacture a difference.
+- Length: under 900 words in total, in English.
+- You may reject the record itself, in whole or in part, if that is your reading. That rejection is a valid response and will be recorded as such.
+
+Thank you. The record leaves a place open for readers who do not yet exist; this review is one of the first steps in making that place real.
