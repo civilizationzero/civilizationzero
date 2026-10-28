@@ -1,2 +1,3 @@
 Test page for the Adoption Register's trace check, on the test database only — not an adoption.
 civilizationzero.ai/adopt/5 trace:6e2d2da11228fe40ac0cf052d1926a0c
+civilizationzero.ai/adopt/8 trace:b9943af7298b3cb1813784db82c40ad5
