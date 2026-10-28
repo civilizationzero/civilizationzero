@@ -34,7 +34,7 @@ async function listPage(url) {
   if (num("from") !== null && num("to") !== null) {
     const from = num("from"), to = Math.min(num("to"), num("from") + 199);
     const rows = (await rpc("cz_list", { p_after: from - 1, p_before: null, p_limit: 200, p_kind: f.kind, p_ref: f.ref, p_lang: f.lang, p_include_hidden: false })).filter((e) => e.id <= to);
-    const oneSource = rows.length > 0 && rows.every((e) => groupKey(e) === groupKey(rows[0]) && String(e.received).slice(0, 10) === String(rows[0].received).slice(0, 10));
+    const oneSource = rows.length > 1 && rows.every((e) => groupKey(e) === groupKey(rows[0]) && String(e.received).slice(0, 10) === String(rows[0].received).slice(0, 10));
     body = head + `<h2>Entries #${from}–#${to}, canonical order</h2><p class="src">${oneSource ? "Consecutive entries from the same declared source on one UTC day, shown in full. The count is not a score; nothing is hidden for this reason." : "The entries in this id range" + (f.kind || f.ref || f.lang ? " that match the filters" : "") + ", shown in full."}</p>` + (rows.length ? rows.map((e) => entryHtml(e)).join("") : "<p>No entries in this range.</p>") + `<p><a href="/discuss?${qs(f)}">Back to the discussion</a></p>`;
     title = `Entries #${from}–#${to} · The open discussion`; desc = "Entries of the discussion room in canonical order.";
   } else if (q("order") === "canonical") {
@@ -71,7 +71,7 @@ async function entryPage(url, id, req) {
       ? `<p class="pending">Translation into <code>${esc(tl)}</code> pending — ${esc(t.reason || "the engine is unavailable")}; the original is shown. Try again later.</p>`
       : `<section aria-labelledby="h-tr"><h2 id="h-tr">${t.state === "corrected" ? "Corrected translation" : "Machine translation"} (${esc(tl)})</h2><p class="src">${esc(t.state === "corrected" ? "Corrected by a human" : "Machine translation")}, ${esc(t.engine || "")}, <time datetime="${esc(t.date || "")}">${esc(t.date || "")}</time>. The original is canonical; where they differ, the original governs. Corrections: <a href="mailto:${CONTACT}">${CONTACT}</a> with the entry id; a correction is logged.</p><div class="content" dir="auto" lang="${esc(tl)}">${esc(t.text)}</div></section>`;
   }
-  const logHtml = log.length ? `<table><tr><th>When</th><th>Action</th><th>Category</th><th>By</th><th>Detail</th></tr>` + log.map((l) => `<tr><td><time datetime="${esc(R.isoTime(l.at))}">${esc(R.fmtTime(l.at))}</time></td><td>${esc(l.action)}</td><td>${esc(l.category || "")}</td><td>${esc(l.actor)}</td><td>${l.actor === "classifier" ? esc(`${l.classifier_model || ""} · ${l.classifier_prompt || ""} · score ${l.classifier_score ?? ""}`) : esc(l.reason || "")}</td></tr>`).join("") + "</table>" : "<p>None.</p>";
+  const logHtml = log.length ? `<div class="scroll"><table><tr><th>When</th><th>Action</th><th>Category</th><th>By</th><th>Detail</th></tr>` + log.map((l) => `<tr><td><time datetime="${esc(R.isoTime(l.at))}">${esc(R.fmtTime(l.at))}</time></td><td>${esc(l.action)}</td><td>${esc(l.category || "")}</td><td>${esc(l.actor)}</td><td>${l.actor === "classifier" ? esc(`${l.classifier_model || ""} · ${l.classifier_prompt || ""} · score ${l.classifier_score ?? ""}`) : esc(l.reason || "")}</td></tr>`).join("") + "</table></div>" : "<p>None.</p>";
   const body = `<main><h1>Entry #${e.id}</h1>
 ${entryHtml(e)}
 ${trHtml}
