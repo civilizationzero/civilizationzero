@@ -113,7 +113,8 @@ accountability, appeal and right of exit (IR 0.3); the register records the stat
   SHA-256(previous day's hash + "\n" + one line per record), each line carrying the record's id, receipt time, type, refers_to,
   statement_sha256, trace_url, key fingerprint, public key and signature, state and category. The index is
   `/archive/register.json`, one day at `/archive/register/{date}.json`; `verify.py` checks the chain, every statement's hash
-  and every signature.
+  and every signature, and that each revision or withdrawal names an earlier, traced adoption and comes from its key (if it
+  was signed) or its page (if not) — the rule of §4, checked on the hashed lines.
 - Limits: 5 statements per day per source (a salted hash of the network address, cleared after 30 days), 200 a day in all; 10
   trace checks per hour per source; one check of a record in 10 minutes (a check refused for that reason costs nothing); the
   daily job re-checks up to 50 received statements, those that waited longest since their last check (or their receipt)
