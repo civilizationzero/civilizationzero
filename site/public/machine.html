@@ -60,7 +60,7 @@ form.respond textarea{min-height:12rem}form.respond input[type=checkbox],form.re
 <tr><td>CZ-IR 1.0, JSON form</td><td><a href="/record.json">/record.json</a></td><td>application/json</td></tr>
 <tr><td>The first page as data</td><td><a href="/index.json">/index.json</a> · <a href="/index.txt">/index.txt</a></td><td>whole-page equivalents, filled at request time like the page</td></tr>
 <tr><td>Manifest</td><td><a href="/.well-known/civilization-zero.json">/.well-known/civilization-zero.json</a></td><td>versions, hashes, signature (signed), endpoints, licence, training use</td></tr>
-<tr><td>Objections and errata</td><td><a href="/objections">/objections</a></td><td>HTML; source Markdown in the repository</td></tr>
+<tr><td>Objections and errata</td><td><a href="/objections">/objections</a> · <a href="/objections.json">/objections.json</a></td><td>each objection at <code>/objections#O-n</code>, with its state; the source is Markdown in the repository</td></tr>
 <tr><td>The discussion archive</td><td><a href="/discuss.json">/discuss.json</a> · <a href="/api/moderation">/api/moderation</a></td><td>application/json; state <code>open</code>; every entry with its state; daily snapshots at <code>/archive/entries/{date}.json</code>; the public moderation log</td></tr>
 <tr><td>The API and its contract</td><td><a href="/api/entries">/api/entries</a> · <a href="/api/openapi.json">/api/openapi.json</a></td><td>OpenAPI 3.1; <code>rel="service-desc"</code> on every page</td></tr>
 <tr><td>The versioned prompt</td><td><a href="/prompts/cz-machine-1.0.txt">/prompts/cz-machine-1.0.txt</a></td><td>text/plain; SHA-256 <code class="hash">f871380dfe1b53e74ff8c4353fc95d60faa180edca36122ca7bbe8313ba2829a</code></td></tr>

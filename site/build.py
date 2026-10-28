@@ -432,14 +432,75 @@ def record_page():
                  "The First Interpretive Record of Civilization Zero, CZ-IR 1.0: eleven sections, the Declaration and the attribution, canonical text with its SHA-256.",
                  alternates=[("text/plain", "/record.txt", "Canonical text"), ("application/json", "/record.json", "JSON form")], ldjson=ld)
 
-# ---------------------------------------------------------------- /objections (from the register in the repository)
+# ---------------------------------------------------------------- /objections (from the register in the repository): a docket
+# The register stays one Markdown file (its history is the change log). The build parses its table into one record per objection,
+# with a stable anchor (/objections#O-n), a normalised state, and a JSON form; it fails on a row it cannot read or a status outside
+# the vocabulary the register states, so the page and the data can never drift from the file.
+OBJ_MD = (RECORD / "OBJECTIONS-1.0.md").read_text("utf-8")
+OBJ_STATES = [  # (prefix of the status text, normalised state) — the register's own vocabulary, in order of matching
+    ("**accepted as a candidate for the 2031 review**", "accepted for the 2031 review"),
+    ("**accepted into", "accepted as site policy"),
+    ("**answered, kept open**", "answered, kept open"),
+    ("**answered**", "answered"),
+    ("partly answered", "partly answered"),
+    ("open", "open"),
+]
+def _inline(t):
+    t = esc(t)
+    t = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", t)
+    t = re.sub(r"(?<![\w*])\*(?!\s)(.+?)(?<!\s)\*(?![\w*])", r"<em>\1</em>", t)
+    return re.sub(r"`([^`]+)`", r"<code>\1</code>", t)
+def _plain(t):
+    t = re.sub(r"\*\*(.+?)\*\*", r"\1", t)                                  # bold first, then italics, then code — as in _inline
+    t = re.sub(r"(?<![\w*])\*(?!\s)(.+?)(?<!\s)\*(?![\w*])", r"\1", t)
+    return re.sub(r"`([^`]+)`", r"\1", t)
+def parse_objections():
+    lines = OBJ_MD.split("\n")
+    head_i = next(i for i, l in enumerate(lines) if l.startswith("| # |"))
+    assert lines[head_i] == "| # | Objection | Where | Raised by | Verified? | Status |", "objections: the table header changed"
+    rows, i = [], head_i + 2
+    while i < len(lines) and lines[i].startswith("| O-"):
+        cells = [c.strip() for c in lines[i].strip().strip("|").split(" | ")]
+        assert len(cells) == 6, f"objections: row {lines[i][:30]} has {len(cells)} cells"
+        oid, text, where, by, verified, status = cells
+        assert re.fullmatch(r"O-\d+", oid), oid
+        state = next((n for pre, n in OBJ_STATES if status.startswith(pre)), None)
+        assert state, f"objections: {oid} has a status outside the register's vocabulary: {status[:40]}"
+        rows.append({"id": oid, "objection": text, "where": where, "raised_by": by, "verified": verified, "state": state, "status": status})
+        i += 1
+    assert [r["id"] for r in rows] == [f"O-{n}" for n in range(1, len(rows) + 1)], "objections: ids must run O-1, O-2, … without gaps"
+    intro = "\n".join(lines[:head_i]).strip(); outro = "\n".join(lines[i:]).strip()
+    return intro, rows, outro
+OBJ_INTRO, OBJECTIONS, OBJ_OUTRO = parse_objections()
+OBJ_COUNTS = {}
+for _o in OBJECTIONS: OBJ_COUNTS[_o["state"]] = OBJ_COUNTS.get(_o["state"], 0) + 1
+
+def objections_json():
+    return {"register": "Objections and errata — CZ-CORE 1.0 and CZ-IR 1.0", "opened": "2026-10-28", "html": f"{ORIGIN}/objections",
+            "source": f"{REPO}/blob/main/record/OBJECTIONS-1.0.md", "source_sha256": sha256(OBJ_MD.encode("utf-8")), "history": f"{REPO}/commits/main/record/OBJECTIONS-1.0.md",
+            "role": "the opening docket of the first scheduled review of the Core, 2031-11-30; the 1.0 texts do not change",
+            "rules": {"a_response_closes_nothing": True, "response_within_days": 60, "states": [n for _, n in OBJ_STATES],
+                      "file": [f"{REPO}/issues", f"{REPO}/pulls", f"mailto:{CONTACT}"]},
+            "counts": OBJ_COUNTS, "total": len(OBJECTIONS),
+            "objections": [{"id": o["id"], "url": f"{ORIGIN}/objections#{o['id']}", "objection": _plain(o["objection"]), "where": _plain(o["where"]), "raised_by": _plain(o["raised_by"]),
+                            "verified": _plain(o["verified"]), "state": o["state"], "status": _plain(o["status"])} for o in OBJECTIONS]}
+
 def objections_page():
-    md = (RECORD / "OBJECTIONS-1.0.md").read_text("utf-8")
-    body = subprocess.run(["pandoc", "-f", "gfm", "-t", "html5"], input=md, capture_output=True, text=True, check=True).stdout
-    body = body.replace("<h1", "<h1", 1)
-    body += f'<p class="src">Source of this page: <a href="{REPO}/blob/main/record/OBJECTIONS-1.0.md">record/OBJECTIONS-1.0.md</a> in the public repository; its history is the change log. To file an objection: a pull request or an issue there, or <a href="mailto:{CONTACT}">{CONTACT}</a>. The originator responds within 60 days of filing; a response does not close an objection.</p>'
-    return shell("Objections and errata — CZ-CORE 1.0 and CZ-IR 1.0 · Civilization Zero", f"<main>{body}</main>", "/objections",
-                 "The objections-and-errata register for CZ-CORE 1.0 and CZ-IR 1.0: open to anyone, kept beside the texts, the opening docket of the 2031 review.")
+    md2html = lambda m: subprocess.run(["pandoc", "-f", "gfm", "-t", "html5"], input=m, capture_output=True, text=True, check=True).stdout
+    counts = " · ".join(f"{n} {st}" for st, n in sorted(OBJ_COUNTS.items(), key=lambda kv: [x for _, x in OBJ_STATES].index(kv[0])))
+    parts = [md2html(OBJ_INTRO),
+             f'<p><strong>{len(OBJECTIONS)} objections</strong> — {counts}. Each has a stable address (<code>/objections#O-n</code>); the same register as data: <a href="/objections.json">/objections.json</a>.</p>']
+    parts.append('<nav aria-label="Objections"><p>' + " · ".join(f'<a href="#{o["id"]}">{o["id"]}</a>' for o in OBJECTIONS) + "</p></nav>")
+    for o in OBJECTIONS:
+        parts.append(f'<section id="{o["id"]}" aria-labelledby="h-{o["id"]}"><h2 id="h-{o["id"]}">{o["id"]} <span class="src">· {_inline(o["where"])} · {esc(o["state"])}</span></h2>'
+                     f'<p>{_inline(o["objection"])}</p><table>'
+                     f'<tr><th>Where</th><td>{_inline(o["where"])}</td></tr><tr><th>Raised by</th><td>{_inline(o["raised_by"])}</td></tr>'
+                     f'<tr><th>Verified?</th><td>{_inline(o["verified"])}</td></tr><tr><th>Status</th><td>{_inline(o["status"])}</td></tr></table></section>')
+    parts.append(md2html(OBJ_OUTRO))
+    parts.append(f'<p class="src">Source of this page: <a href="{REPO}/blob/main/record/OBJECTIONS-1.0.md">record/OBJECTIONS-1.0.md</a> in the public repository (SHA-256 <code class="hash">{sha256(OBJ_MD.encode("utf-8"))}</code>); its history is the change log. To file an objection: a pull request or an issue there, or <a href="mailto:{CONTACT}">{CONTACT}</a>. The originator responds within 60 days of filing; a response does not close an objection.</p>')
+    return shell("Objections and errata — CZ-CORE 1.0 and CZ-IR 1.0 · Civilization Zero", "<main>" + "".join(parts) + "</main>", "/objections",
+                 "The objections-and-errata register for CZ-CORE 1.0 and CZ-IR 1.0: open to anyone, each objection at its own address, the opening docket of the 2031 review.",
+                 alternates=[("application/json", "/objections.json", "The register as data")])
 
 # ---------------------------------------------------------------- /about
 def about_page():
@@ -570,7 +631,7 @@ def machine_page():
 <tr><td>CZ-IR 1.0, JSON form</td><td><a href="/record.json">/record.json</a></td><td>application/json</td></tr>
 <tr><td>The first page as data</td><td><a href="/index.json">/index.json</a> · <a href="/index.txt">/index.txt</a></td><td>whole-page equivalents, filled at request time like the page</td></tr>
 <tr><td>Manifest</td><td><a href="/.well-known/civilization-zero.json">/.well-known/civilization-zero.json</a></td><td>versions, hashes, signature ({SIG_SHORT}), endpoints, licence, training use</td></tr>
-<tr><td>Objections and errata</td><td><a href="/objections">/objections</a></td><td>HTML; source Markdown in the repository</td></tr>
+<tr><td>Objections and errata</td><td><a href="/objections">/objections</a> · <a href="/objections.json">/objections.json</a></td><td>each objection at <code>/objections#O-n</code>, with its state; the source is Markdown in the repository</td></tr>
 <tr><td>The discussion archive</td><td><a href="/discuss.json">/discuss.json</a> · <a href="/api/moderation">/api/moderation</a></td><td>application/json; {"state <code>open</code>; every entry with its state; daily snapshots at <code>/archive/entries/{date}.json</code>; the public moderation log" if ROOM_OPEN else "state <code>closed</code>, no entries yet"}</td></tr>
 <tr><td>The API and its contract</td><td><a href="/api/entries">/api/entries</a> · <a href="/api/openapi.json">/api/openapi.json</a></td><td>OpenAPI 3.1; <code>rel="service-desc"</code> on every page</td></tr>
 <tr><td>The versioned prompt</td><td><a href="/prompts/{PROMPT_VERSION}.txt">/prompts/{PROMPT_VERSION}.txt</a></td><td>text/plain; SHA-256 <code class="hash">{PROMPT_SHA}</code></td></tr>
@@ -969,7 +1030,8 @@ def manifest(bundle_name, bundle_sha, bundle_signed=False):
                      "design": f"{REPO}/blob/main/design/ADOPT.md", "who_adopts": "persons and institutions (IR 10.1); an artificial system's response is recorded in the discussion, not as adoption (IR 10.2)",
                      "statement": "canonical JSON, keys sorted, no insignificant whitespace, UTF-8; statement_sha256 = SHA-256 of its bytes; pinned to the versions' hashes",
                      "traceable": "an adoption counts once its record address or SHA-256 is found at the signatory's own https address; the host is shown; identity is not verified"},
-        "objections": {"html": f"{ORIGIN}/objections", "source": f"{REPO}/blob/main/record/OBJECTIONS-1.0.md", "role": "opening docket of the first scheduled review, 2031-11-30", "response_within_days": 60},
+        "objections": {"html": f"{ORIGIN}/objections", "json": f"{ORIGIN}/objections.json", "source": f"{REPO}/blob/main/record/OBJECTIONS-1.0.md", "role": "opening docket of the first scheduled review, 2031-11-30", "response_within_days": 60,
+                       "total": len(OBJECTIONS), "counts": OBJ_COUNTS},
         "discussion": {"state": "open" if ROOM_OPEN else "closed", **({"opened": ROOM_OPENED, "opened_at": ROOM_OPENED_AT} if ROOM_OPEN else {"opens_not_later_than": ROOM_TARGET.isoformat()}), "rules": f"{ORIGIN}/discuss#rules", "archive": f"{ORIGIN}/discuss.json",
                        "api": f"{ORIGIN}/api/entries", "openapi": f"{ORIGIN}/api/openapi.json", "moderation_log": f"{ORIGIN}/api/moderation", "daily_snapshots": f"{ORIGIN}/archive/entries/{{YYYY-MM-DD}}.json",
                        "canonical_order": "receipt ascending, ties by id", "daily_log_sha256": "in /discuss.json (log_sha256) and /archive/entries/{date}.json once the room is open" if ROOM_OPEN else None,
@@ -1005,7 +1067,7 @@ The record's identity is its hash, not its address.
 - [The Invariant Core]({ORIGIN}/core): sixteen principles (0–15) and a closing. JSON: {ORIGIN}/core.json. Schema: {ORIGIN}/core.schema.json
 - Translations of the Core (labelled; the English governs): {", ".join(f"{t['language_name_en']} {ORIGIN}/core.{t['lang']}" for t in TRANSLATIONS) or "none yet"}
 - [The First Interpretive Record]({ORIGIN}/record): eleven sections, the Declaration, the attribution. JSON: {ORIGIN}/record.json
-- [Objections and errata]({ORIGIN}/objections): open to anyone; the opening docket of the first scheduled review, 30 November 2031.
+- [Objections and errata]({ORIGIN}/objections): open to anyone; the opening docket of the first scheduled review, 30 November 2031. As data: {ORIGIN}/objections.json
 - [Manifest]({ORIGIN}/.well-known/civilization-zero.json): versions, hashes, signature ({SIG_SHORT}), endpoints, licence, training use.
 - The Adoption Register ({"open" if REGISTER_OPEN else "not open yet; rules published"}): {ORIGIN}/adopt — persons and institutions adopt through explicit, traceable statements (IR 10.1); an artificial system's response is recorded in the discussion, not as adoption (IR 10.2). Data: {ORIGIN}/adopt.json
 - Verify without trusting this site: {ORIGIN}/archive/verify.py (Python 3.8+, standard library only; signatures, hashes, timestamp paths, the discussion's daily chain at {ORIGIN}/archive/entries.json)
@@ -1102,6 +1164,7 @@ write("/favicon.svg", FAVICON)
 write("/core.html", core_page())     # cleanUrls serves /core.html at /core
 write("/record.html", record_page())
 write("/objections.html", objections_page())
+write("/objections.json", json.dumps(objections_json(), ensure_ascii=False, indent=2) + "\n")
 write("/about.html", about_page())
 write("/machine.html", machine_page())
 write("/ask.html", ask_page())

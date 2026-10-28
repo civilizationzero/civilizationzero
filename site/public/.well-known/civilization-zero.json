@@ -116,7 +116,7 @@
   },
   "bundle": {
     "url": "https://civilizationzero.ai/archive/cz-bundle-1.0.1.tar",
-    "sha256": "a314deef10296109b0dd36abe7f3f27bd76d5cfe9e0d580bbf0ec42f8cc78871",
+    "sha256": "4c7a925a983ff6c80346428a5ac9b03a5013f7b70d02c92892546562c1276d6c",
     "version": "1.0.1",
     "signed": false,
     "signature": null,
@@ -161,9 +161,19 @@
   },
   "objections": {
     "html": "https://civilizationzero.ai/objections",
+    "json": "https://civilizationzero.ai/objections.json",
     "source": "https://github.com/civilizationzero/civilizationzero/blob/main/record/OBJECTIONS-1.0.md",
     "role": "opening docket of the first scheduled review, 2031-11-30",
-    "response_within_days": 60
+    "response_within_days": 60,
+    "total": 18,
+    "counts": {
+      "open": 13,
+      "answered, kept open": 1,
+      "partly answered": 1,
+      "answered": 1,
+      "accepted for the 2031 review": 1,
+      "accepted as site policy": 1
+    }
   },
   "discussion": {
     "state": "open",

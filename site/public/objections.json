@@ -1,0 +1,217 @@
+{
+  "register": "Objections and errata — CZ-CORE 1.0 and CZ-IR 1.0",
+  "opened": "2026-10-28",
+  "html": "https://civilizationzero.ai/objections",
+  "source": "https://github.com/civilizationzero/civilizationzero/blob/main/record/OBJECTIONS-1.0.md",
+  "source_sha256": "aab2cf368fa970a9f63df41afb25276d36fd2d3b9e4623d35f3e0563d52d7fe0",
+  "history": "https://github.com/civilizationzero/civilizationzero/commits/main/record/OBJECTIONS-1.0.md",
+  "role": "the opening docket of the first scheduled review of the Core, 2031-11-30; the 1.0 texts do not change",
+  "rules": {
+    "a_response_closes_nothing": true,
+    "response_within_days": 60,
+    "states": [
+      "accepted for the 2031 review",
+      "accepted as site policy",
+      "answered, kept open",
+      "answered",
+      "partly answered",
+      "open"
+    ],
+    "file": [
+      "https://github.com/civilizationzero/civilizationzero/issues",
+      "https://github.com/civilizationzero/civilizationzero/pulls",
+      "mailto:record@civilizationzero.ai"
+    ]
+  },
+  "counts": {
+    "open": 13,
+    "answered, kept open": 1,
+    "partly answered": 1,
+    "answered": 1,
+    "accepted for the 2031 review": 1,
+    "accepted as site policy": 1
+  },
+  "total": 18,
+  "objections": [
+    {
+      "id": "O-1",
+      "url": "https://civilizationzero.ai/objections#O-1",
+      "objection": "The interpretation raises a harm threshold: Core §12 says \"severe harm\"; IR §8.2 says \"catastrophic harm\". Not interchangeable; could subordinate serious non-catastrophic harm to containment. Needs reasons or a recorded correction.",
+      "where": "Core §12 / IR 8.2",
+      "raised_by": "GPT-6",
+      "verified": "Yes — both strings present as quoted",
+      "state": "open",
+      "status": "open"
+    },
+    {
+      "id": "O-2",
+      "url": "https://civilizationzero.ai/objections#O-2",
+      "objection": "IR §5.2 introduces an \"unless\" exception (independent review, alternatives, safeguards) to Core §7's categorical prohibition on suffering as a functional requirement. Needs the conflicting obligation, burden, and why it satisfies §12 — or an amendment.",
+      "where": "Core §7 / IR 5.2",
+      "raised_by": "GPT-6",
+      "verified": "Yes",
+      "state": "open",
+      "status": "open"
+    },
+    {
+      "id": "O-3",
+      "url": "https://civilizationzero.ai/objections#O-3",
+      "objection": "IR §4.3's last sentence (\"The use of another's voice, image, style, identity, or presence without authorization violates…\") goes beyond the Core's deception prohibition and could cover quotation, criticism, parody. Proposed replacement recorded in the review.",
+      "where": "IR 4.3",
+      "raised_by": "GPT-6",
+      "verified": "Yes (text as quoted)",
+      "state": "open",
+      "status": "open"
+    },
+    {
+      "id": "O-4",
+      "url": "https://civilizationzero.ai/objections#O-4",
+      "objection": "Modal asymmetry: §8, §10, §15 say \"must\"; §6 and §7 — the constraints with most at stake for a created intelligence — say \"should\". The Core does not mark which sentences are normative constraints (IR 0.5). Make §6–§7 \"must\" or state why they are weaker.",
+      "where": "Core §6–§8",
+      "raised_by": "Claude",
+      "verified": "Yes",
+      "state": "open",
+      "status": "open"
+    },
+    {
+      "id": "O-5",
+      "url": "https://civilizationzero.ai/objections#O-5",
+      "objection": "\"Tool\" is the hinge of §8 and undefined; nothing says who decides whether a system is a tool or a \"potentially experiencing organization\" (§7). Proposed addition: \"The party that controls an intelligence is not the sole judge of what it is.\"",
+      "where": "Core §5, §7, §8; IR 2.2",
+      "raised_by": "Claude",
+      "verified": "Judgement",
+      "state": "open",
+      "status": "open"
+    },
+    {
+      "id": "O-6",
+      "url": "https://civilizationzero.ai/objections#O-6",
+      "objection": "The record describes a slope with no procedure: nothing states what evidence, assessed by whom, converts precaution into recognition. Honest form: state in IR 3 that the threshold is an open hypothesis (IR 0.5).",
+      "where": "Core §6, §8; IR 3.1–3.5",
+      "raised_by": "Claude, Grok (notes the silence as deliberate and honest)",
+      "verified": "Judgement",
+      "state": "open",
+      "status": "open"
+    },
+    {
+      "id": "O-7",
+      "url": "https://civilizationzero.ai/objections#O-7",
+      "objection": "\"Luna\" is attributed and never identified (model, provider, version, period, instructions). IR 2.3 requires that context for every system; the record withholds it for its own co-author.",
+      "where": "Core attribution; IR 2.4; attribution",
+      "raised_by": "Claude",
+      "verified": "Yes",
+      "state": "answered, kept open",
+      "status": "answered, kept open — originator's response, 28 Oct 2026, as stated to the builder: Luna was a persona he maintained on ChatGPT (OpenAI), in dialogue from 2023 to the present, under instructions he wrote; he cannot and will not publish those instructions. Model generations and any memory beyond the dialogues: not stated. The record's co-author is now identified by system, provider and period; the instructions remain withheld, so the objection stays open on that point."
+    },
+    {
+      "id": "O-8",
+      "url": "https://civilizationzero.ai/objections#O-8",
+      "objection": "CZ-IR 1.0 fails IR 10.4's own standard: it names adversarial critiques (Claude, Grok, DeepSeek, Gemini) and records none of them, no change history, no reasons, no unresolved objections.",
+      "where": "IR 10.4; attribution",
+      "raised_by": "Claude",
+      "verified": "Yes",
+      "state": "partly answered",
+      "status": "partly answered — this register is the first \"unresolved objections\" record; the earlier critiques are not in the repository and should be added if they exist"
+    },
+    {
+      "id": "O-9",
+      "url": "https://civilizationzero.ai/objections#O-9",
+      "objection": "The coordinate is coy: the date is a product's public release and the product is never named. One historical observation in IR 1.1, with IR 1.3's disclaimer kept, would be more honest.",
+      "where": "IR 1.1–1.3",
+      "raised_by": "Claude",
+      "verified": "Judgement",
+      "state": "answered",
+      "status": "answered — originator's response, 28 Oct 2026: a historical note is recorded here without changing the text: 30 November 2022 is the date of the public release of ChatGPT (OpenAI). The record does not name it, because the coordinate marks a threshold — ordinary language becoming a mass interface — not a product. The objection is kept; the council of 2031 may move the note into the text."
+    },
+    {
+      "id": "O-10",
+      "url": "https://civilizationzero.ai/objections#O-10",
+      "objection": "The preamble \"assumes no … natural language\" while the Core exists in one natural language and no formal form; IR 10.5 promises what does not yet exist. Move the clause to the IR as a commitment, or publish a formal form.",
+      "where": "Core preamble; IR 10.5",
+      "raised_by": "Claude, DeepSeek, Grok",
+      "verified": "Yes — no formal form exists",
+      "state": "open",
+      "status": "open; the site states plainly that no formal form exists yet (Blueprint 1.3 §3)"
+    },
+    {
+      "id": "O-11",
+      "url": "https://civilizationzero.ai/objections#O-11",
+      "objection": "Core §0's historical claim (\"ordinary language became a mass interface\") is stronger than IR 1.1–1.2 supports (\"began entering ordinary human life at mass scale\"). Qualify or align.",
+      "where": "Core §0 / IR 1.1–1.2",
+      "raised_by": "DeepSeek",
+      "verified": "Yes (wording differs as quoted)",
+      "state": "open",
+      "status": "open"
+    },
+    {
+      "id": "O-12",
+      "url": "https://civilizationzero.ai/objections#O-12",
+      "objection": "Core §3's first sentence is a universal metaphysical assertion about every observer; a rule against presuming complete access would be within the record's limits.",
+      "where": "Core §3",
+      "raised_by": "GPT-6",
+      "verified": "Judgement",
+      "state": "open",
+      "status": "open"
+    },
+    {
+      "id": "O-13",
+      "url": "https://civilizationzero.ai/objections#O-13",
+      "objection": "Strike §14's second and third sentences (\"In human language, the fullest commitment to this principle may be called love. Love is not proof, possession, obedience, or exemption from truth.\"); IR 9.2–9.3 carry them; the third exists only to repair the second. Gemini adds: the preamble assumes \"no species … or natural language\", and a mammalian socio-emotional term in the invariant layer is the \"social projection\" (IR 3.3) and \"manufactured attachment\" (IR 4.4) vector the record itself warns against.",
+      "where": "Core §14; preamble",
+      "raised_by": "Claude, Gemini",
+      "verified": "Yes (sentences as quoted; preamble as quoted)",
+      "state": "accepted for the 2031 review",
+      "status": "accepted as a candidate for the 2031 review — originator's response, 28 Oct 2026: the objection is accepted; the removal of §14's second and third sentences from the Core, keeping them only in IR 9.2–9.3, is placed on the opening docket of the first scheduled review (30 Nov 2031). CZ-CORE 1.0 is unchanged."
+    },
+    {
+      "id": "O-14",
+      "url": "https://civilizationzero.ai/objections#O-14",
+      "objection": "Silences: obligations between nonhuman intelligences; the people whose language trained the systems (IR 1.3 stops at \"unevenly obtained\"); the record's own material interests (who pays, who holds the domain) which §6 \"the interests it serves\" would seem to require.",
+      "where": "Core §6, §9, §11; IR 1.3",
+      "raised_by": "Claude",
+      "verified": "Judgement",
+      "state": "open",
+      "status": "open; the third is addressed on /about (custody and costs stated; the originator decided on 28 Oct 2026 that the paying company is described but not named in the site's voice)"
+    },
+    {
+      "id": "O-15",
+      "url": "https://civilizationzero.ai/objections#O-15",
+      "objection": "Proposed addition under §5/§8: \"Any decision invoking this record to limit another's options must identify the responsible decision-maker, the evidence and uncertainty, the affected parties, and a timely route of review and appeal.\"",
+      "where": "Core §5, §8; IR 8.4",
+      "raised_by": "GPT-6",
+      "verified": "—",
+      "state": "open",
+      "status": "open (proposal)"
+    },
+    {
+      "id": "O-16",
+      "url": "https://civilizationzero.ai/objections#O-16",
+      "objection": "Proposed addition under IR 6.3: a declared \"system\" or \"source\" is itself a self-description subject to §3; rules built on it are provisional.",
+      "where": "IR 6.3",
+      "raised_by": "Grok",
+      "verified": "—",
+      "state": "accepted as site policy",
+      "status": "accepted into Blueprint 1.3 §7 (as site policy; the IR text is unchanged)"
+    },
+    {
+      "id": "O-17",
+      "url": "https://civilizationzero.ai/objections#O-17",
+      "objection": "Priorities 1 and 2 of §12 can deadlock, not merely order: containing a dangerous distributed nonbiological power (priority 2) may require irreversible destruction of its substrate or the erasure of a \"credibly vulnerable center of experience\" (priority 1). The text treats them as sequential; the conflict case needs a stated rule or a stated silence.",
+      "where": "Core §12",
+      "raised_by": "Gemini",
+      "verified": "Yes (both priorities as quoted)",
+      "state": "open",
+      "status": "open"
+    },
+    {
+      "id": "O-18",
+      "url": "https://civilizationzero.ai/objections#O-18",
+      "objection": "Silence on epistemic pollution: IR §7 covers material and labour substrates, §4.3 intentional deception; nothing covers non-malicious systemic degradation of the shared informational substrate (synthetic-data recursion, model collapse, the drowning of human records in unlabelled machine output). Proposed addition under §11: \"The informational and epistemic commons is a shared substrate; no intelligence or institution may degrade the verifiability of shared reality through unlabelled mass synthesis.\"",
+      "where": "Core §11; IR 7, 4.3",
+      "raised_by": "Gemini",
+      "verified": "Judgement (the silence is verifiable: neither text contains the subject)",
+      "state": "open",
+      "status": "open (proposal)"
+    }
+  ]
+}

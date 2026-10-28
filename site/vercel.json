@@ -315,7 +315,7 @@
       ]
     },
     {
-      "source": "/(core|record).json",
+      "source": "/(core|record|objections).json",
       "headers": [
         {
           "key": "Content-Type",

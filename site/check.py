@@ -87,11 +87,13 @@ for f, p in parsed.items():
             if target in ids_by_page: check(frag in ids_by_page[target], f"{f.name}: missing anchor {href}")
 
 # 3. data files
-for name in ("core.json", "record.json", "core.schema.json", "api/openapi.json", ".well-known/civilization-zero.json"):
+for name in ("core.json", "record.json", "core.schema.json", "api/openapi.json", ".well-known/civilization-zero.json", "objections.json"):
     try: json.loads((PUBLIC / name).read_text("utf-8"))
     except Exception as e: fails.append(f"{name}: {e}")
 man = json.loads((PUBLIC / ".well-known/civilization-zero.json").read_text("utf-8"))
 check({d["sha256"] for d in man["documents"]} == {CORE_SHA, IR_SHA}, "manifest hashes")
+oj = json.loads((PUBLIC / "objections.json").read_text("utf-8"))
+check(oj["total"] == len(oj["objections"]) == sum(oj["counts"].values()) and all(f'id="{o["id"]}"' in (PUBLIC / "objections.html").read_text("utf-8") for o in oj["objections"]), "objections: data and anchors")
 check(man["signature"]["status"] in ("pending", "key published; signatures pending", "signed") and man["discussion"]["state"] == ("open" if ROOM_OPEN else "closed"), "manifest states")
 oa = json.loads((PUBLIC / "api/openapi.json").read_text("utf-8"))
 check("/api/entries" in oa["paths"] and "429" in oa["paths"]["/api/entries"]["post"]["responses"], "openapi contract")
