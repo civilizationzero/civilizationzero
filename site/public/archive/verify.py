@@ -50,7 +50,7 @@ Licence: MIT. Part of the record of Civilization Zero (https://civilizationzero.
 
 import base64, datetime, hashlib, io, json, os, re, sys, tarfile
 
-VERSION = "1.14"
+VERSION = "1.15"
 ANCHOR_FINGERPRINT = "82662396484f627a63272bcd5ac19aae72def7aca2898216dc8e7f975dfc2263"
 SPKI_PREFIX = bytes.fromhex("302a300506032b6570032100")   # DER SubjectPublicKeyInfo header of an Ed25519 key
 CORE_SHA = "92a8d1e2a1604c25b432685673be78184bf05c3b166893c437e0895b7b2d724a"   # the record's identity: the hashes of its
@@ -717,6 +717,7 @@ def verify_day(rep, snap, prev_snap, extra, ctx):
             rep.check(day == ctx["first"], "%s: the first day of the chain (no previous hash)" % day, "%s: no previous hash, but the chain began on %s" % (day, ctx["first"]))
         elif ctx["first_supplied"] and not ctx["after_gap"]: rep.note("%s: no previous hash: taken as the first day of this chain, which this verifier does not pin" % day)
         else: rep.fail("%s: no previous hash in the middle of the chain" % day)
+    elif ctx["first"] is not None and day == ctx["first"]: rep.fail("%s: the first day of the chain declares a previous day's hash (%s…) — the chain has no day before it" % (day, log["prev"][:16]))
     elif ctx["first_supplied"]: rep.note("%s: chained to %s… (the day before was not supplied)" % (day, log["prev"][:16]))
     lines = []
     for i, l in enumerate(log.get("lines") or []):
@@ -948,6 +949,44 @@ def verify_days(rep, days, label, independent=False, complete=False, chain=None,
                 rep.fail("%s: %s missing — every day is hashed, so a gap is a removal" % (d, ("the day " + gap_from + " is") if gap_from == expected else ("the days " + gap_from + " to " + expected + " are")))
                 after_gap = True
         verify_day(rep, s, prev_snap, x, {"chain": chain, "first": first, "first_supplied": i == 0, "has_successor": i < len(order) - 1, "after_gap": after_gap and prev_snap is None, "independent": independent, "carried": carried})
+    if chain == "register": check_register_links(rep, by_day, order, complete or (first is not None and order[0] == first))
+
+def check_register_links(rep, by_day, order, front_complete):
+    """The register's rule for a revision or a withdrawal (design/ADOPT.md §4; the site refuses any other): it names an
+    earlier adoption that was traced, and comes from the same adopter — signed with the adoption's key if the adoption was
+    signed, else traced at the adoption's own address. Checked across every day supplied, on the hashed lines."""
+    lines, recs = {}, {}
+    for d in order:
+        s, _ = by_day[d]
+        for l in (s.get("log") or {}).get("lines") or []:
+            try: o = jload(l)
+            except ValueError: continue
+            if isinstance(o, dict) and _is_int(o.get("id")): lines[o["id"]] = (d, o)
+        for r in s.get("records") or []:
+            if isinstance(r, dict) and _is_int(r.get("id")): recs[r["id"]] = r
+    linked = 0
+    for rid in sorted(lines):
+        d, l = lines[rid]; kind = l.get("type")
+        if kind not in ("revision", "withdrawal"): continue
+        t = l.get("refers_to")
+        if isinstance(t, str) and t.isdigit(): t = int(t)
+        if not _is_int(t) or t >= rid: rep.fail("%s: record %s (%s) names %r, which is not an earlier record" % (d, rid, kind, l.get("refers_to"))); continue
+        if t not in lines:
+            if front_complete: rep.fail("%s: record %s (%s) names #%s, which is not a record of this chain" % (d, rid, kind, t))
+            else: rep.pending("%s: record %s (%s) names #%s, which is not in the days supplied — its link to that adoption is not checked" % (d, rid, kind, t))
+            continue
+        td, tl = lines[t]
+        if tl.get("type") != "adoption": rep.fail("%s: record %s (%s) names #%s, which is a %s, not an adoption" % (d, rid, kind, t, tl.get("type"))); continue
+        now = (recs.get(t) or {}).get("state")
+        if now == "received": rep.fail("%s: record %s (%s) names #%s, an adoption never traced — only a traced adoption can be revised or withdrawn" % (d, rid, kind, t)); continue
+        if now == "hidden": rep.note("%s: record %s (%s) names #%s, which is hidden now; whether it was traced when this record was received is in its log" % (d, rid, kind, t))
+        if tl.get("key_fingerprint"):
+            if l.get("key_fingerprint") != tl.get("key_fingerprint"):
+                rep.fail("%s: record %s (%s) of #%s is not signed with the adoption's key (%s) — a signed adoption is revised or withdrawn only with its own key" % (d, rid, kind, t, tl.get("key_fingerprint"))); continue
+        elif l.get("trace_url") != tl.get("trace_url"):
+            rep.fail("%s: record %s (%s) of #%s is not traced at the adoption's address (%s) — an unsigned adoption is revised or withdrawn only at its own page" % (d, rid, kind, t, tl.get("trace_url"))); continue
+        linked += 1
+    if linked: rep.ok("%d revision(s) or withdrawal(s) linked to their adoptions as the register's rules require (the same key, or the same page for an unsigned adoption)" % linked)
 
 def site_days(src, repo, rep, chain):
     """The days the site serves for one chain, each with the repository's copy of its bytes and proof (when repo is given),

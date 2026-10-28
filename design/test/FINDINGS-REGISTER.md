@@ -300,6 +300,14 @@ in 1.14 with two hardenings:
 | N-2 | `--strict` did not count CHECK: a made-up Bitcoin branch added to a day's proof removed the PENDING of its pending calendars and turned a strict failure into a strict pass; such a proof also counted as covered (medium) | **verified** — `--strict` counts what needs an outside check as well as what is pending; an OpenTimestamps proof is no longer counted as covered (its attestation is the outside check) |
 | N-3 | A signed release manifest that omitted a canonical text passed its pin unchecked; one without a machine prompt stopped the run (low; needs the record's key) | **verified** — every pinned canonical text must be listed; a missing machine prompt is noted |
 
+A thirteenth pass (UTC 22:00–22:03) on 1.14: N-1 to N-3 hold; the Ed25519 edge cases (s ≥ L, a non-canonical R, small-order
+and non-canonical keys) and the RFC 3161 parser are sound. Two findings, fixed in 1.15:
+
+| # | Finding (severity) | Status |
+|---|---|---|
+| P-1 | Revisions and withdrawals were not tied to the adoption they change: a site breaking its own rule could record a withdrawal of someone's signed adoption, signed by an unrelated key from another host, and verify.py passed it ("1 signed record: its signature verifies") (high) | **verified** — across every day supplied, a revision or withdrawal must name an earlier adoption that is not untraced, and come from the same adopter: signed with the adoption's key if it was signed, else traced at the adoption's own address (the rule the site enforces, design/ADOPT.md §4); a named record missing from a chain served whole FAILs, from days supplied by hand is PENDING |
+| P-2 | The chain's pinned first day could declare a previous day's hash and got a NOTE (low) | **verified** — FAIL: the first day has no day before it |
+
 The same version moves the time from which a day is due from 01:00 to 02:00 UTC: the site's hosting plan runs its daily job at
 some time in the first hour of the day (UTC), not at 00:20 as the pages had said; the pages, the contract's notes and the
 daily-archive job (now 01:20 and 07:20 UTC) say so.
