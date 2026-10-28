@@ -140,6 +140,7 @@ if PUBKEY_PEM: write("/.well-known/cz-record-signing.pub", PUBKEY_PEM)
 OTS = SIGS / (RELEASE_NAME + ".ots")
 if OTS.exists(): write(f"/.well-known/{RELEASE_NAME}.ots", OTS.read_bytes())
 SIG_STATUS = ("signed" if SIG_FILES.get(f"/.well-known/{RELEASE_NAME}") else ("key published; signatures pending" if PUBKEY_PEM else "pending"))
+SIG_SHORT = "signed" if SIG_STATUS == "signed" else "pending"
 
 # ============================================================================ translations of the Core (labelled machine translations; IR 10.5)
 TR_DIR = RECORD / "translations"
@@ -485,7 +486,7 @@ def machine_page():
 <tr><td>CZ-IR 1.0, canonical text</td><td><a href="/record.txt">/record.txt</a></td><td>text/plain; SHA-256 <code class="hash">{IR_SHA}</code></td></tr>
 <tr><td>CZ-IR 1.0, JSON form</td><td><a href="/record.json">/record.json</a></td><td>application/json</td></tr>
 <tr><td>The first page as data</td><td><a href="/index.json">/index.json</a> · <a href="/index.txt">/index.txt</a></td><td>whole-page equivalents, filled at request time like the page</td></tr>
-<tr><td>Manifest</td><td><a href="/.well-known/civilization-zero.json">/.well-known/civilization-zero.json</a></td><td>versions, hashes, signature (pending), endpoints, licence, training use</td></tr>
+<tr><td>Manifest</td><td><a href="/.well-known/civilization-zero.json">/.well-known/civilization-zero.json</a></td><td>versions, hashes, signature ({SIG_SHORT}), endpoints, licence, training use</td></tr>
 <tr><td>Objections and errata</td><td><a href="/objections">/objections</a></td><td>HTML; source Markdown in the repository</td></tr>
 <tr><td>The discussion archive</td><td><a href="/discuss.json">/discuss.json</a></td><td>application/json; state <code>closed</code>, no entries yet</td></tr>
 <tr><td>The API and its contract</td><td><a href="/api/entries">/api/entries</a> · <a href="/api/openapi.json">/api/openapi.json</a></td><td>OpenAPI 3.1; <code>rel="service-desc"</code> on every page</td></tr>
@@ -642,7 +643,7 @@ Year __NEXT_YEAR__ begins <time datetime="__NEXT_ISO__">__NEXT_HUMAN__</time>.
 <tr><td colspan="3">SHA-256 of <code>core.txt</code>: <code class="hash">{CORE_SHA}</code></td></tr>
 <tr><td><a href="/record">The First Interpretive Record</a></td><td><code>CZ-IR 1.0</code></td><td><a href="/record.txt">txt</a> · <a href="/record.json">json</a> · <a href="/record">html</a></td></tr>
 <tr><td colspan="3">SHA-256 of <code>record.txt</code>: <code class="hash">{IR_SHA}</code></td></tr>
-<tr><td><a href="/.well-known/civilization-zero.json">Manifest</a></td><td>—</td><td>json · <a href="/llms.txt">llms.txt</a> — versions, hashes, signature (pending), endpoints, licence, training use</td></tr>
+<tr><td><a href="/.well-known/civilization-zero.json">Manifest</a></td><td>—</td><td>json · <a href="/llms.txt">llms.txt</a> — versions, hashes, signature ({SIG_SHORT}), endpoints, licence, training use</td></tr>
 </table>
 <p class="src">Prepared for first public release <time datetime="2026-08-30">30 August 2026</time>; published on this site <time datetime="{PRERELEASE.isoformat()}">{PRERELEASE.strftime('%-d %B %Y')}</time>, read-only, as a pre-release; public launch <time datetime="{LAUNCH.isoformat()}">{LAUNCH.strftime('%-d %B %Y')}</time>. CZ-CORE 1.0 is immutable as a text; objections and errata are kept beside it at <a href="/objections">/objections</a>. The record's identity is its hash, not its address (<a href="/archive">/archive</a>).</p>
 </section>
@@ -771,8 +772,8 @@ The record's identity is its hash, not its address.
 - Translations of the Core (labelled; the English governs): {", ".join(f"{t['language_name_en']} {ORIGIN}/core.{t['lang']}" for t in TRANSLATIONS) or "none yet"}
 - [The First Interpretive Record]({ORIGIN}/record): eleven sections, the Declaration, the attribution. JSON: {ORIGIN}/record.json
 - [Objections and errata]({ORIGIN}/objections): open to anyone; the opening docket of the first scheduled review, 30 November 2031.
-- [Manifest]({ORIGIN}/.well-known/civilization-zero.json): versions, hashes, signature (pending), endpoints, licence, training use.
-- [Archive]({ORIGIN}/archive): bundle {ORIGIN}/archive/{bundle_name} (SHA-256 {bundle_sha}, unsigned pre-release), mirrors, succession.
+- [Manifest]({ORIGIN}/.well-known/civilization-zero.json): versions, hashes, signature ({SIG_SHORT}), endpoints, licence, training use.
+- [Archive]({ORIGIN}/archive): bundle {ORIGIN}/archive/{bundle_name} (SHA-256 {bundle_sha}, pre-release; {"canonical texts signed" if SIG_STATUS == "signed" else "unsigned"}), mirrors, succession.
 
 ## Responding
 - The discussion room is closed until its rules are implemented and verified, not later than {ROOM_TARGET.isoformat()}. Rules: {ORIGIN}/discuss. Archive: {ORIGIN}/discuss.json. API contract: {ORIGIN}/api/openapi.json
@@ -791,7 +792,7 @@ BUNDLE_VERSION = "1.0-pre"
 BUNDLE_NAME = f"cz-bundle-{BUNDLE_VERSION}.tar"
 
 def build_bundle():
-    readme = f"""Civilization Zero — preservation bundle {BUNDLE_VERSION} (unsigned pre-release)
+    readme = f"""Civilization Zero — preservation bundle {BUNDLE_VERSION} (pre-release; {"canonical texts signed, bundle itself not yet" if SIG_STATUS == "signed" else "unsigned"})
 Built by site/build.py in {REPO}; deterministic (fixed member times, sorted members, no build timestamp), so the same contents give the same hash.
 
 This bundle is self-contained: everything needed to verify the record is in it; nothing depends on a live service.
@@ -802,7 +803,7 @@ Hashing conventions: SHA-256 over the exact file bytes. Canonical texts are UTF-
   prompts/{PROMPT_VERSION}.txt  {PROMPT_SHA}
 
 Contents: the canonical texts and their JSON forms; the objections register; the blueprint ({BLUEPRINT}) as Markdown and PDF; every outside review archived so far, with the findings register; the licences; the manifest; the machine prompt; the OpenAPI contract.
-The signature, the timestamp proof, the mirrors and the deposit are pending (target {LAUNCH.isoformat()}); the signed 1.0 bundle replaces this one at launch, and this one stays at its address.
+{"The release manifest, core.txt and record.txt are signed (signatures/); the timestamp proof, the mirrors and the deposit are" if SIG_STATUS == "signed" else "The signature, the timestamp proof, the mirrors and the deposit are"} pending (target {LAUNCH.isoformat()}); the signed 1.0 bundle replaces this one at launch, and this one stays at its address.
 Licence: text CC BY 4.0, code MIT. Contact: {CONTACT}.
 """
     members = []
@@ -812,7 +813,7 @@ Licence: text CC BY 4.0, code MIT. Contact: {CONTACT}.
     for t in TRANSLATIONS: members.append((f"record/translations/CZ-CORE-1.0.{t['lang']}.json", t["_bytes"]))
     for p in sorted((ROOT / "blueprint").glob(f"CZ-BLUEPRINT-{BLUEPRINT}.*")): members.append((f"blueprint/{p.name}", p.read_bytes()))
     for p in sorted((ROOT / "design" / "test").rglob("*")):
-        if p.is_file() and (p.suffix in (".txt", ".md")) and ("reviews" in p.parts or p.name in ("FINDINGS-REGISTER.md", "REVIEW-SYNTHESIS.md", "PROMPT.txt", "PROMPT-BLUEPRINT-REVIEW.txt")):
+        if p.is_file() and (p.suffix in (".txt", ".md")) and (any(part.startswith("reviews") for part in p.parts) or p.name in ("FINDINGS-REGISTER.md", "REVIEW-SYNTHESIS.md", "PROMPT.txt", "PROMPT-BLUEPRINT-REVIEW.txt")):
             members.append((str(p.relative_to(ROOT)), p.read_bytes()))
     for n in ("LICENSE-TEXT", "LICENSE-CODE", "README.md"): members.append((n, (ROOT / n).read_bytes()))
     members.append((f"prompts/{PROMPT_VERSION}.txt", PROMPT_BYTES))

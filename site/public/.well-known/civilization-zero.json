@@ -47,15 +47,19 @@
     "normalisation": "none"
   },
   "signature": {
-    "status": "pending",
+    "status": "signed",
     "target": "2026-11-30",
     "algorithm": "Ed25519",
-    "key_fingerprint": null,
-    "public_key": null,
+    "key_fingerprint": "82662396484f627a63272bcd5ac19aae72def7aca2898216dc8e7f975dfc2263",
+    "public_key": "https://civilizationzero.ai/.well-known/cz-record-signing.pub",
     "release_manifest": "https://civilizationzero.ai/.well-known/cz-release-1.0.json",
-    "release_manifest_sha256": "34b0fdf4348a1cbc9cda4150279033f891e2e39537c91f336e3169471a5d6fd9",
-    "release_signature": null,
-    "signed_files": [],
+    "release_manifest_sha256": "0c0646498e25415e0da954774319cd6d0f174a7e98a9c0159090eda96d848bfc",
+    "release_signature": "https://civilizationzero.ai/.well-known/cz-release-1.0.json.sig",
+    "signed_files": [
+      "/.well-known/cz-release-1.0.json",
+      "/core.txt",
+      "/record.txt"
+    ],
     "holders": [
       "the originator",
       "Banco (Germany) — accepted 2026-10-29"
@@ -100,7 +104,7 @@
   },
   "bundle": {
     "url": "https://civilizationzero.ai/archive/cz-bundle-1.0-pre.tar",
-    "sha256": "095b9e7231b81ff7c3116144b23c96b02009621e92d4e0f6d04c444951c2c582",
+    "sha256": "432c87d1226534fe0fc5a8f0585f0fcc0716ed85617ee325e6a91decd68c995f",
     "signed": false,
     "note": "pre-release bundle; the signed 1.0 bundle replaces it at launch and this one stays at its address"
   },

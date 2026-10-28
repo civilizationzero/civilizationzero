@@ -30,8 +30,8 @@
   },
   "key": {
     "algorithm": "Ed25519",
-    "fingerprint": null,
-    "public_key_pem": null
+    "fingerprint": "82662396484f627a63272bcd5ac19aae72def7aca2898216dc8e7f975dfc2263",
+    "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAVqHz3eOozUKRu2WeEitbLd+uTc6qTsIEj4eTn25XsBI=\n-----END PUBLIC KEY-----\n"
   },
   "licence": {
     "text": "CC-BY-4.0",
