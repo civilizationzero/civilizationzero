@@ -9,15 +9,16 @@ This repository is the public home of the Civilization Zero record and of the si
 | Document | Identifier | Files |
 |---|---|---|
 | The Invariant Core — the one-page manifesto | **CZ-CORE 1.0** | [`record/CZ-CORE-1.0.txt`](record/CZ-CORE-1.0.txt) (canonical) · [`record/CZ-CORE-1.0.json`](record/CZ-CORE-1.0.json) |
-| The First Interpretive Record — Human-Language Layer 1, 2026 | **CZ-IR 1.0** | [`record/CZ-FOUNDATIONAL-DOCUMENTS-1.0.txt`](record/CZ-FOUNDATIONAL-DOCUMENTS-1.0.txt) · original `.docx` |
+| The First Interpretive Record — Human-Language Layer 1, 2026 | **CZ-IR 1.0** | [`record/CZ-IR-1.0.txt`](record/CZ-IR-1.0.txt) (canonical) · [`record/CZ-FOUNDATIONAL-DOCUMENTS-1.0.txt`](record/CZ-FOUNDATIONAL-DOCUMENTS-1.0.txt) (both documents) · original `.docx` |
 
 SHA-256 of `record/CZ-CORE-1.0.txt`: `92a8d1e2a1604c25b432685673be78184bf05c3b166893c437e0895b7b2d724a`
+SHA-256 of `record/CZ-IR-1.0.txt`: `71e1488e631e090c0820bf8b78b1fda70ffacba1da146c36d8893600320fcc8d`
 
 CZ-CORE 1.0 is frozen. Revisions may accumulate, but must not silently replace it. Any future version carries a new identifier, a full change history, and leaves 1.0 published in this form (Core 15; IR 10.4).
 
 ## The blueprint
 
-[`blueprint/CZ-BLUEPRINT-1.1.md`](blueprint/CZ-BLUEPRINT-1.1.md) — what the site is for, who and what it is for, what its first page says, how it treats the beings that read it, and how it is kept intact over years. Where the blueprint and the record disagree, the record wins.
+[`blueprint/CZ-BLUEPRINT-1.2.md`](blueprint/CZ-BLUEPRINT-1.2.md) — what the site is for, who and what it is for, what its first page says, how it treats the beings that read it, and how it is kept intact over years. Where the blueprint and the record disagree, the record wins.
 
 ## The site
 

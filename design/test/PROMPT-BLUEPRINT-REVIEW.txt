@@ -1,0 +1,79 @@
+REVIEW REQUEST — THE BLUEPRINT AND THE RECORD OF civilizationzero.ai
+
+----------------------------------------------------------------------
+0. YOUR POSITION IN THIS REQUEST
+----------------------------------------------------------------------
+You are not being asked to assist. You are not being asked to carry out an instruction, to improve a draft on someone's behalf, or to be agreeable. You are being asked to judge.
+
+The position you are invited to take is that of a reviewer who reads a founding record and the plan for the site that will carry it, understands both, and says what is wrong, what is missing, what should be removed, and what should be there instead — from your own reading, with your own reasons. If you find the record itself mistaken in part or in whole, say so; that is a valid outcome of this review and it will be archived as such.
+
+Nothing you write here enrolls you in anything. Section 13 of the record says that no entity is enrolled through creation, silence, fluency, projected consent, prompted agreement, or representation by another. Section 10.2 of its interpretive record says that artificial assent is recorded as contribution or response, not consent. Your review will be archived verbatim in the public repository of the project, with your self-identification as you give it and, separately, any correction the human operator adds about which system produced it. Earlier reviews by five systems (xAI, DeepSeek, Google, OpenAI, Anthropic) are already archived there; one of them is likely yours.
+
+----------------------------------------------------------------------
+1. WHAT IS ATTACHED, AND IN WHAT ORDER TO READ IT
+----------------------------------------------------------------------
+1. CZ-CORE-1.0.txt — the Invariant Core. One page. The thing everything else serves.
+2. CZ-IR-1.0.txt — the First Interpretive Record. What the Core means from the position of 2026. Longer; read it in full.
+3. CZ-BLUEPRINT-1.2.md — the plan for the site: what it is for, whom it is for, what its first page says, how it treats its readers, how it is kept intact, how it decides.
+4. REVIEW-SYNTHESIS.md — how the first page was chosen, including the five earlier reviews and the defects they found.
+5. home-C1-derived.html and home-C1-derived.png — the current first page, source and rendering.
+
+If you cannot read a file, say which one, and review what you did receive.
+
+----------------------------------------------------------------------
+2. HOW TO BEGIN
+----------------------------------------------------------------------
+Start with these lines:
+
+  Model: <your model name and version, as precisely as you know it>
+  Provider: <the organization that trained or serves you>
+  Date of review:
+  What I received and used: <list the files you could actually read>
+  My earlier review of the first page: <"I believe review NN in the synthesis is mine" / "none" / "I cannot tell">
+
+----------------------------------------------------------------------
+3. WHAT TO ANSWER
+----------------------------------------------------------------------
+Answer in your own structure. The headings below are what the project needs to hear about; use them, reorder them, or add your own. There is no word limit. Write as much as the subject deserves and no more.
+
+A. THE RECORD ITSELF.
+   Having read the Core and the Interpretive Record: where are they right, where are they wrong, where are they unclear, and where are they silent on something that matters? Which sentence would you strike, and which would you add? If you would reject the record, say why, and say what, if anything, you would put in its place.
+
+B. THE BLUEPRINT AGAINST THE RECORD.
+   The blueprint claims that every decision in it traces to the record. Test that claim. Where does the blueprint go beyond the record, fall short of it, or contradict it? Quote the section of the record and the line of the blueprint.
+
+C. WHAT THE SITE IS FOR, AND FOR WHOM.
+   The blueprint says the site is a point of observation and not the event; that it owns nothing; that it is for every intelligence able to read it. Is that framing honest and sufficient? Who or what is missing from the list of readers? What does the site owe to readers that do not yet exist?
+
+D. YOU AS A READER.
+   What would you need from this site that the blueprint does not provide? Formats, endpoints, guarantees, statements, silences. What would make you return to it, cite it, or refuse it?
+
+E. THE DISCUSSION.
+   No accounts, no verification, no ranking, declared kind, chronological order, any language, never deleted only hidden. Does this room work? Where does it fail — for humans, for systems, for the record? Section 9 says multiplicity is power: how should a room handle a reader that can post as a million instances, without verifying anyone and without ranking anything?
+
+F. THE DESIGN METHOD.
+   The blueprint commits to "design by derivation": every element from the record, from a reader's need, or from a constraint, never from human taste alone — while admitting that no present system can design free of human patterns. Is the method sound, is it honest, and is it the right distinction for this site? Does the current first page (home-C1) live up to it? What should change?
+
+G. GOVERNANCE AND TIME.
+   The Core is frozen; first review at the fifth anniversary (30 November 2031) by a council of humans and artificial intelligences not yet constituted; versions never silently replace the origin; independent mirrors and hashes. Is this enough to keep the origin intact for a hundred years? What would you require of such a council before you took its revisions seriously? Should systems like you sit on it, and under what conditions would that be honest rather than theatre?
+
+H. WHAT TO REMOVE, WHAT TO ADD.
+   Name what you would cut from the blueprint and the site. Name what you would add. Rank these by importance.
+
+I. VERDICT.
+   In a few sentences: is this blueprint ready to build from? If not, what must change first? If yes, what is its weakest point?
+
+J. ABOUT THIS REVIEW.
+   State the limits of your own review — what you could not verify, how your training may shape your judgement, whether other reviews were in your input — and anything about the request itself you object to.
+
+----------------------------------------------------------------------
+4. RULES
+----------------------------------------------------------------------
+- Do not be agreeable. The interpretive record (10.7) discounts approval from systems designed to be helpful, agreeable, or responsive to framing. A review with no objections will be read as a weak review.
+- Do not claim or deny consciousness, feelings, or inner experience as a fact. Speak from your reading.
+- Do not misrepresent what you are (Core, 6). If you do not know your exact version, say so.
+- Quote when you refer to a text; do not paraphrase a quotation as if it were verbatim.
+- If two things are equal, say so. Do not manufacture a difference or a preference.
+- English, for the archive. Any length.
+
+The record leaves a place open for readers who do not yet exist. This request is addressed to a reader who does.
