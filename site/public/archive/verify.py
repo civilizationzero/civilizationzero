@@ -19,13 +19,15 @@ Put bundles and --site options before --days; every path after --days must hold 
 Exit status: 0 when nothing failed (with --strict: and nothing was left unverified), 1 otherwise, 2 on a usage error.
 
 Levels: OK (checked here), FAIL (wrong), PENDING (could not be verified here: a missing signature, proof or copy),
-CHECK (needs one outside fact this file cannot hold: a Bitcoin block), NOTE (context).
+CHECK (needs one outside fact this file cannot hold: a Bitcoin block, an authority's signature), NOTE (context).
 
 What it checks: the record's key against the trust anchor below; the Ed25519 signatures of the release manifest, of the
 canonical texts and of each bundle; every hash the release manifest states, and that the canonical texts are the ones whose
 hashes are printed below; the structure of a bundle (plain relative names, no links, no duplicates) and which of its
 members no signature covers; that each OpenTimestamps proof commits to what it claims, following every path to its Bitcoin
-block (it prints the Merkle root to compare with that block); for each daily chain, that every day's hash is
+block (it prints the Merkle root to compare with that block); that each RFC 3161 token's message imprint is the release
+manifest's hash, and that the authority's certificates kept beside the tokens are the ones pinned below (FreeTSA's, by the
+SHA-256 that freetsa.org publishes; anything else there FAILs); for each daily chain, that every day's hash is
 SHA-256(previous day's hash + "\\n" + the day's lines), that the days run without gap from the chain's first day (pinned
 below), that every entry's content and every record's statement match their hashes and that nothing the site always shows
 is withheld and nothing it never shows is added, that every signature verifies, and — with --site — that the site serves
@@ -33,7 +35,8 @@ every day from the first to the last one due (a day is hashed by 00:20 UTC the n
 copy and timestamp proof kept in the public repository, which the site does not control.
 
 What it cannot check: whether a declared name is true; whether a Bitcoin block exists, or whether an RFC 3161 token's
-authority signed it (CHECK: it prints what to compare and the command); what a translation says
+authority signed it — and so whether the time the token states holds (CHECK: it prints what to compare and the command);
+what a translation says
 (a translation's text is covered by a bundle's signature, not by the release manifest); a copy of this file altered
 together with the bundle it came with. The trust anchor is the fingerprint below: compare it with one you obtained
 elsewhere — the DOI deposit (doi:10.5281/zenodo.23740317), the repository (github.com/civilizationzero/civilizationzero),
@@ -43,7 +46,7 @@ Licence: MIT. Part of the record of Civilization Zero (https://civilizationzero.
 
 import base64, datetime, hashlib, io, json, os, re, sys, tarfile
 
-VERSION = "1.5"
+VERSION = "1.6"
 ANCHOR_FINGERPRINT = "82662396484f627a63272bcd5ac19aae72def7aca2898216dc8e7f975dfc2263"
 SPKI_PREFIX = bytes.fromhex("302a300506032b6570032100")   # DER SubjectPublicKeyInfo header of an Ed25519 key
 CORE_SHA = "92a8d1e2a1604c25b432685673be78184bf05c3b166893c437e0895b7b2d724a"   # the record's identity: the hashes of its
@@ -55,6 +58,11 @@ FIRST_DAY = {"discussion": "2026-10-28", "register": None}    # the room opened 
 REPO_RAW = "https://raw.githubusercontent.com/civilizationzero/civilizationzero/main"
 ORIGIN_HOSTS = ("civilizationzero.ai", "www.civilizationzero.ai")   # the record's own site serves its chains; a mirror may not
 ORIGIN = "https://civilizationzero.ai"
+# FreeTSA's certificates, pinned like the record's key: the SHA-256 of the two files as freetsa.org publishes it (on
+# https://freetsa.org/ and in its certification practice statement). A chain kept beside the tokens is used only if it is
+# this one; anything else under signatures/tsa/ (or /.well-known/tsa/) FAILs.
+TSA_PINS = {"freetsa-cacert.pem": ("FreeTSA's root certificate", "https://freetsa.org/files/cacert.pem", "2151b61137ffa86bf664691ba67e7da0b19f98c758e3d228d5d8ebf27e044438"),
+            "freetsa-tsa.crt": ("FreeTSA's time-stamping certificate", "https://freetsa.org/files/tsa.crt", "8bfb0305bb64e2571ca507552ef3245cb1c2fee8728e0ff8689225081ea13467")}
 
 def is_origin(base):
     """Whether an https address is the record's own site, however it is spelled (case, a trailing dot, port 443, a slash)."""
@@ -328,7 +336,8 @@ def sig_path(src, p):
 
 # ================================================================ the record: key, release manifest, texts, translations, timestamp
 def verify_record(src, rep, anchor, label):
-    """Returns {"raw": key, "covered": set of member paths whose bytes a signature or a signed hash covers}, or None."""
+    """Returns {"raw": key, "covered": set of member paths whose bytes a signature, a signed hash or a pin in this file
+    covers}, or None. A time-stamp token is not counted: what it states holds only once its authority's signature verifies."""
     rep.section("record — " + label)
     for p in getattr(src, "problems", []): rep.fail("bundle structure: " + p)
     covered = set()
@@ -378,14 +387,18 @@ def verify_record(src, rep, anchor, label):
         if ots:
             if verify_ots(rep, ots, rbytes, base): covered.add(ots_name)
         else: rep.pending(base + ": no timestamp proof present")
-        # the second, independent timestamp: RFC 3161 tokens from authorities that are not OpenTimestamps
+        # the second, independent timestamp: RFC 3161 tokens from authorities that are not OpenTimestamps (not counted as
+        # covered: the time a token states holds only once its authority's signature verifies, the CHECK it prints)
         for tsa in TSA_NAMES:
             tname = ("signatures/" if src.kind == "bundle" else rname.rsplit("/", 1)[0] + "/") + base + "." + tsa + ".tsr"
             tok = src.get(tname)
-            if tok is not None and verify_tsr(rep, tok, rbytes, base, base + "." + tsa + ".tsr", "signatures/tsa/" if src.kind == "bundle" else "/.well-known/tsa/"): covered.add(tname)
-        if src.kind == "bundle":
-            for n in src.list("signatures/tsa/"):
-                if n.endswith((".pem", ".crt")): rep.note("%s: an authority's certificate, kept beside its token; trust in it is yours to establish" % n); covered.add(n)
+            if tok is not None: verify_tsr(rep, tok, rbytes, base, base + "." + tsa + ".tsr", tsa, "signatures/tsa/" if src.kind == "bundle" else "/.well-known/tsa/")
+    # the authorities' certificates kept beside the tokens: only the pinned ones, byte for byte (a site over the network
+    # cannot be listed: the pinned names are fetched)
+    tdir = "signatures/tsa/" if src.kind == "bundle" else ".well-known/tsa/"
+    for n in ([tdir + f for f in TSA_PINS] if isinstance(src, HttpSource) else src.list(tdir)):
+        b = src.get(n)
+        if b is not None and check_tsa_cert(rep, n, b) and src.kind == "bundle": covered.add(n)
     # translations: their texts are not in the release manifest; each declares the Core it maps to (IR 10.5)
     core_sha = result.get("core_sha")
     if core_sha:
@@ -461,18 +474,37 @@ def parse_tsr(b):
     if not alg or alg[0][0] != 0x06: raise ValueError("no hash algorithm")
     gt = b[tst[4][1]:tst[4][2]].decode("ascii", "replace")
     if not re.fullmatch(r"\d{14}(\.\d{1,6})?Z", gt): raise ValueError("a malformed time")
+    try: datetime.datetime.strptime(gt[:14], "%Y%m%d%H%M%S")
+    except ValueError: raise ValueError("an impossible time, %s" % gt)
     return HASH_OIDS.get(b[alg[0][1]:alg[0][2]]), b[mi[1][1]:mi[1][2]], gt
 
-def verify_tsr(rep, tok, data, data_name, label, certs):
-    """True when the token's message imprint is this file's hash (the authority's signature is the outside CHECK it prints)."""
+def verify_tsr(rep, tok, data, data_name, label, tsa, certs):
+    """True when the token's message imprint is this file's hash. The time it states is not taken as checked: it holds only
+    once the authority's signature verifies, which needs the authority's certificate chain — the outside CHECK it prints."""
     try: name, digest, gt = parse_tsr(tok)
     except (ValueError, IndexError) as e: rep.fail("%s: not a readable RFC 3161 time-stamp token (%s)" % (label, e)); return False
     when = "%s-%s-%s %s:%s:%s UTC" % (gt[0:4], gt[4:6], gt[6:8], gt[8:10], gt[10:12], gt[12:14])
     if not rep.check(name is not None and digest == hashlib.new(name, data).digest(),
-                     "%s: an RFC 3161 time-stamp token over %s %s, stating the time %s" % (label, name, digest.hex(), when),
+                     "%s: an RFC 3161 time-stamp token whose message imprint is this file's %s (%s)" % (label, name, digest.hex()),
                      "%s: the token is over %s %s, not over this file" % (label, name or "an unknown hash", digest.hex())): return False
-    rep.add("CHECK", "%s: the authority's signature on it is not checked by this file — check it with OpenSSL: openssl ts -verify -data %s -in %s, with the authority's certificate chain (FreeTSA's is in %s; DigiCert's is in the token and ends in a root of the common trust stores)" % (label, data_name, label, certs))
+    if tsa == "freetsa":
+        ca, crt = TSA_PINS["freetsa-cacert.pem"], TSA_PINS["freetsa-tsa.crt"]
+        how = ("-CAfile freetsa-cacert.pem -untrusted freetsa-tsa.crt, with FreeTSA's certificates from %s and %s (or %s): their SHA-256 must be %s and %s, as freetsa.org publishes them and this file pins them"
+               % (ca[1], crt[1], certs, ca[2], crt[2]))
+    else:
+        how = "-CAfile /etc/ssl/certs/ca-certificates.crt, or your system's trust store: the authority's chain is in the token and must end in one of its roots"
+    rep.checkout("%s: states the time %s — which holds only once the authority's signature on the token verifies; this file does not check it: openssl ts -verify -data %s -in %s %s"
+                 % (label, when, data_name, label, how))
     return True
+
+def check_tsa_cert(rep, n, b):
+    """A certificate kept beside the tokens: True only when it is one of the pinned ones, byte for byte."""
+    pin, h = TSA_PINS.get(n.rsplit("/", 1)[-1]), sha256(b if b is not None else b"")
+    if pin and h == pin[2]:
+        rep.ok("%s: %s, sha256 %s, as freetsa.org publishes it (pinned in this file)" % (n, pin[0], h)); return True
+    rep.fail("%s: not a certificate this file knows (sha256 %s%s) — only the pinned certificates may stand beside the tokens"
+             % (n, h, "; %s is pinned as %s" % (pin[0], pin[2]) if pin else ""))
+    return False
 
 def verify_ots(rep, ots, data, label):
     """True when the proof commits to the data (its Bitcoin attestations still need the outside CHECK it prints)."""

@@ -112,7 +112,14 @@ jobs:
             if ! curl -fsSL --retry 3 "https://civilizationzero.ai/.well-known/$f" -o "live/$f"; then echo "::notice title=RFC 3161::no $tsa token published"; continue; fi
             cmp "live/$f" "site/signatures/$f"
             case $tsa in
-              freetsa) openssl ts -verify -data live/.well-known/cz-release-1.0.json -in "live/$f" -CAfile site/signatures/tsa/freetsa-cacert.pem -untrusted site/signatures/tsa/freetsa-tsa.crt ;;
+              freetsa)
+                # FreeTSA's root as freetsa.org serves it today must be the one verify.py pins; the token is verified with that
+                # root (the time-stamping certificate beside it is checked by OpenSSL against the root)
+                if curl -fsS --retry 3 https://freetsa.org/files/cacert.pem -o /tmp/freetsa-root.pem; then
+                  if cmp -s /tmp/freetsa-root.pem site/signatures/tsa/freetsa-cacert.pem; then echo "::notice title=RFC 3161::FreeTSA's root certificate as freetsa.org serves it today is the pinned one ($(sha256sum < /tmp/freetsa-root.pem | cut -c1-64))"
+                  else echo "::error title=RFC 3161::FreeTSA's root certificate at freetsa.org differs from the pinned one"; exit 1; fi
+                else echo "::warning title=RFC 3161::freetsa.org did not answer; the pinned copy of its root is used"; cp site/signatures/tsa/freetsa-cacert.pem /tmp/freetsa-root.pem; fi
+                openssl ts -verify -data live/.well-known/cz-release-1.0.json -in "live/$f" -CAfile /tmp/freetsa-root.pem -untrusted site/signatures/tsa/freetsa-tsa.crt ;;
               digicert) openssl ts -verify -data live/.well-known/cz-release-1.0.json -in "live/$f" -CAfile /etc/ssl/certs/ca-certificates.crt ;;
             esac
             echo "::notice title=RFC 3161::$tsa: $(openssl ts -reply -in "live/$f" -text | grep 'Time stamp')"

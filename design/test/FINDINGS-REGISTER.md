@@ -222,6 +222,17 @@ A fourth pass (UTC 20:07–20:10) on those fixes:
 | E-1 | A day with no lines and neither list still let the unhashed label choose its chain (low) | **verified** — such a day FAILs; the label never chooses |
 | W-1 | The third pass's fixes were published under the same number, 1.2 | **verified** — 1.3; every change to the file now changes its number |
 
+A fifth pass (UTC 21:04–21:07) on the paths 1.5 added for the second timestamp (RFC 3161 tokens), with a certificate authority
+and a time-stamping authority of the reviewer's own, made with OpenSSL: two findings, both fixed in 1.6 and re-run against the
+reviewer's reproductions (`X1_site`, `X2_bundle.tar`) and every earlier case; the token parser was fuzzed again (30,000
+mutations, no unexpected exception). Nothing else was found: no crash or hang on crafted DER, a token over another file or
+with an unknown hash FAILs, SHA-384 and SHA-512 imprints are compared correctly.
+
+| # | Finding (severity) | Status |
+|---|---|---|
+| X-2 | The authority's certificates came from the source being checked: a bundle could carry the reviewer's own "Free TSA Root CA" and time-stamping certificate with a token they issued over the release manifest — verify.py printed OK and a CHECK pointing to that chain, with which OpenSSL then printed "Verification: OK" — and any file under `signatures/tsa/`, even a plain-text "addendum to the Core", was noted as a certificate and counted as covered (high) | **verified** — FreeTSA's two certificates are pinned in verify.py by the SHA-256 that freetsa.org publishes (`2151b611…4438`, `8bfb0305…3467`, read on freetsa.org and in its certification practice statement); any other file under `signatures/tsa/` (or `/.well-known/tsa/` of a site copy) FAILs, and only a pinned file counts as covered; the CHECK tells the reader to get the certificates from freetsa.org and compare; the build refuses to publish a file the verifier would refuse; verify-live compares FreeTSA's root as freetsa.org serves it each day with the pinned one and verifies the token with it |
+| X-1 | The OK line stated a time no authority had signed: in a site copy whose token had only its time edited (to 2020-01-01), verify.py printed "OK … stating the time 2020-01-01 00:00:00 UTC" and counted the token as covered, while OpenSSL said "Verification: FAILED"; impossible times (month 13, day 99) were read as times (medium) | **verified** — the OK line says only what is checked: the token's message imprint is the release manifest's hash; the time is in the CHECK, as what the token states, which holds only once the authority's signature verifies; a token is never counted as covered; an impossible time FAILs |
+
 
 ### Security review of the Adoption Register (28 Oct 2026, UTC 19:49–20:10) — before it opens
 

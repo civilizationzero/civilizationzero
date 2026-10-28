@@ -87,7 +87,20 @@
         "sha256": "7be6a804b76f1d616261e00838f3f08efcf405fdbe8b88ca4978a29eb0e3dfe6",
         "time": "2026-10-28T20:58:12Z",
         "over": "https://civilizationzero.ai/.well-known/cz-release-1.0.json",
-        "verify": "openssl ts -verify -data cz-release-1.0.json -in cz-release-1.0.json.freetsa.tsr -CAfile tsa/freetsa-cacert.pem -untrusted tsa/freetsa-tsa.crt"
+        "verify": "openssl ts -verify -data cz-release-1.0.json -in cz-release-1.0.json.freetsa.tsr -CAfile tsa/freetsa-cacert.pem -untrusted tsa/freetsa-tsa.crt",
+        "certificates": [
+          {
+            "url": "https://civilizationzero.ai/.well-known/tsa/freetsa-cacert.pem",
+            "source": "https://freetsa.org/files/cacert.pem",
+            "sha256": "2151b61137ffa86bf664691ba67e7da0b19f98c758e3d228d5d8ebf27e044438"
+          },
+          {
+            "url": "https://civilizationzero.ai/.well-known/tsa/freetsa-tsa.crt",
+            "source": "https://freetsa.org/files/tsa.crt",
+            "sha256": "8bfb0305bb64e2571ca507552ef3245cb1c2fee8728e0ff8689225081ea13467"
+          }
+        ],
+        "certificates_published_by": "https://freetsa.org/ (the SHA-256 of both files; verify.py pins them)"
       },
       {
         "authority": "DigiCert (timestamp.digicert.com)",
@@ -95,7 +108,8 @@
         "sha256": "01c99cf732ced65e469dad8565878c9dc144a227bf4b076800cf4fbf13458d13",
         "time": "2026-10-28T20:58:12Z",
         "over": "https://civilizationzero.ai/.well-known/cz-release-1.0.json",
-        "verify": "openssl ts -verify -data cz-release-1.0.json -in cz-release-1.0.json.digicert.tsr -CAfile <your system's trust store, e.g. /etc/ssl/certs/ca-certificates.crt>"
+        "verify": "openssl ts -verify -data cz-release-1.0.json -in cz-release-1.0.json.digicert.tsr -CAfile <your system's trust store, e.g. /etc/ssl/certs/ca-certificates.crt>",
+        "certificates": "in the token; the chain ends in a root of the common trust stores"
       }
     ]
   },
@@ -143,7 +157,7 @@
   },
   "bundle": {
     "url": "https://civilizationzero.ai/archive/cz-bundle-1.0.1.tar",
-    "sha256": "a284e6f07a12b4ff99a554c272438846da9b140f8772395bb07b754fa5ee4751",
+    "sha256": "7f967433aed47c23306fca2ae11b4fa1440641b145b3947a777b2346bd403503",
     "version": "1.0.1",
     "signed": false,
     "signature": null,
@@ -162,7 +176,7 @@
   },
   "verifier": {
     "url": "https://civilizationzero.ai/archive/verify.py",
-    "sha256": "73c8fa9f9cb99a529d483e8d573f52a46afe85231808261a7aa050e77093b5a4",
+    "sha256": "5f4f1b51fbb07c1f99d0070a0d6557b03c37a2fbdeb9c2b66a2c3bd5aab23603",
     "requires": "Python 3.8 or later, standard library only; no network unless --site is given",
     "usage": [
       "python3 verify.py --site https://civilizationzero.ai",
