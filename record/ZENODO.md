@@ -1,4 +1,6 @@
-# Zenodo deposit — metadata for the 1.0 record (Blueprint 1.3.1 §8; day 3 of the sprint)
+# Zenodo deposit — metadata for the 1.0 record (Blueprint 1.3.1 §8)
+
+**Primary path (29 Oct 2026):** the Zenodo–GitHub integration archives every GitHub release of this repository with the metadata in `.zenodo.json`; releases: `v1.0-pre` (29 Oct), `v1.0` (opening day). The manual form below is the fallback.
 
 What is deposited: the signed preservation bundle `cz-bundle-1.0.tar` (the canonical texts and their JSON forms, the
 objections register, the blueprint, every outside review and the findings register, the licences, the manifest, the
