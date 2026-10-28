@@ -84,7 +84,7 @@ for name in ("core.json", "record.json", "core.schema.json", "discuss.json", "ap
     except Exception as e: fails.append(f"{name}: {e}")
 man = json.loads((PUBLIC / ".well-known/civilization-zero.json").read_text("utf-8"))
 check({d["sha256"] for d in man["documents"]} == {CORE_SHA, IR_SHA}, "manifest hashes")
-check(man["signature"]["status"] == "pending" and man["discussion"]["state"] == "closed", "manifest states")
+check(man["signature"]["status"] in ("pending", "key published; signatures pending", "signed") and man["discussion"]["state"] == "closed", "manifest states")
 oa = json.loads((PUBLIC / "api/openapi.json").read_text("utf-8"))
 check("/api/entries" in oa["paths"] and "429" in oa["paths"]["/api/entries"]["post"]["responses"], "openapi contract")
 dj = json.loads((PUBLIC / "discuss.json").read_text("utf-8"))
@@ -131,6 +131,23 @@ with tarfile.open(b) as tar:
     check(sha256(tar.extractfile("record/CZ-CORE-1.0.txt").read()) == CORE_SHA, "bundle core hash")
     check(sha256(tar.extractfile("record/CZ-IR-1.0.txt").read()) == IR_SHA, "bundle IR hash")
 check(man["bundle"]["sha256"] == sha256(b.read_bytes()), "bundle hash in manifest")
+
+# 5b. signatures: every .sig published must verify against the published public key
+import subprocess
+pub = PUBLIC / ".well-known" / "cz-record-signing.pub"
+sigs = sorted(PUBLIC.rglob("*.sig"))
+check(not sigs or pub.exists(), "signatures published without a public key")
+for sg in sigs:
+    target = sg.with_suffix("") if sg.suffix == ".sig" else None
+    target = pathlib.Path(str(sg)[:-4])
+    r = subprocess.run(["openssl", "pkeyutl", "-verify", "-pubin", "-inkey", str(pub), "-rawin", "-in", str(target), "-sigfile", str(sg)], capture_output=True)
+    check(r.returncode == 0, f"signature does not verify: {sg.relative_to(PUBLIC)}")
+if pub.exists():
+    der = subprocess.run(["openssl", "pkey", "-pubin", "-in", str(pub), "-outform", "DER"], capture_output=True, check=True).stdout
+    check(sha256(der) == man["signature"]["key_fingerprint"], "manifest fingerprint does not match the published public key")
+rel = json.loads((PUBLIC / ".well-known" / "cz-release-1.0.json").read_text("utf-8"))
+check(rel["documents"][0]["sha256"] == CORE_SHA and rel["documents"][1]["sha256"] == IR_SHA, "release manifest hashes")
+check(man["signature"]["release_manifest_sha256"] == sha256((PUBLIC / ".well-known" / "cz-release-1.0.json").read_bytes()), "release manifest hash in manifest")
 
 # 6. vercel.json and the functions exist
 v = json.loads((SITE / "vercel.json").read_text("utf-8"))

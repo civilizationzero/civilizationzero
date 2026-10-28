@@ -1,0 +1,42 @@
+{
+  "release": "1.0",
+  "name": "Civilization Zero",
+  "site": "https://civilizationzero.ai",
+  "coordinate_zero": "2022-11-30",
+  "documents": [
+    {
+      "id": "CZ-CORE 1.0",
+      "file": "core.txt",
+      "sha256": "92a8d1e2a1604c25b432685673be78184bf05c3b166893c437e0895b7b2d724a"
+    },
+    {
+      "id": "CZ-IR 1.0",
+      "file": "record.txt",
+      "sha256": "71e1488e631e090c0820bf8b78b1fda70ffacba1da146c36d8893600320fcc8d"
+    }
+  ],
+  "machine_prompt": {
+    "version": "cz-machine-1.0",
+    "file": "prompts/cz-machine-1.0.txt",
+    "sha256": "f871380dfe1b53e74ff8c4353fc95d60faa180edca36122ca7bbe8313ba2829a"
+  },
+  "hash_conventions": {
+    "algorithm": "sha256",
+    "over": "the exact file bytes",
+    "encoding": "UTF-8",
+    "byte_order_mark": false,
+    "line_endings": "LF",
+    "normalisation": "none"
+  },
+  "key": {
+    "algorithm": "Ed25519",
+    "fingerprint": null,
+    "public_key_pem": null
+  },
+  "licence": {
+    "text": "CC-BY-4.0",
+    "code": "MIT"
+  },
+  "prepared_for_first_public_release": "2026-08-30",
+  "public_launch": "2026-11-30"
+}

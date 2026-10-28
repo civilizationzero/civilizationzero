@@ -52,8 +52,15 @@
     "algorithm": "Ed25519",
     "key_fingerprint": null,
     "public_key": null,
-    "detached_signature": null,
-    "note": "The key is to be generated on the originating human's device and held by two people; until then this manifest is unsigned."
+    "release_manifest": "https://civilizationzero.ai/.well-known/cz-release-1.0.json",
+    "release_manifest_sha256": "34b0fdf4348a1cbc9cda4150279033f891e2e39537c91f336e3169471a5d6fd9",
+    "release_signature": null,
+    "signed_files": [],
+    "holders": [
+      "the originator",
+      "Banco (Germany) — acceptance pending"
+    ],
+    "note": "The key is generated and kept on the originating human's own device, never in the cloud; signatures are detached, over exact bytes."
   },
   "timestamp": {
     "status": "pending",
@@ -93,7 +100,7 @@
   },
   "bundle": {
     "url": "https://civilizationzero.ai/archive/cz-bundle-1.0-pre.tar",
-    "sha256": "7186a4be507bef2e39ba10525b01ade4fa68009097ed43577fa126fd16d53124",
+    "sha256": "c725af57ba89d449e446552a87aeb11c02e7b3174d1d076f7f1b22e1adaca950",
     "signed": false,
     "note": "pre-release bundle; the signed 1.0 bundle replaces it at launch and this one stays at its address"
   },

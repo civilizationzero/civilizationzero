@@ -101,6 +101,46 @@ PROMPT_BYTES = PROMPT.encode("utf-8")
 PROMPT_SHA = sha256(PROMPT_BYTES)
 write(f"/prompts/{PROMPT_VERSION}.txt", PROMPT_BYTES)
 
+# ============================================================================ signing state (site/sign, site/signatures)
+# The private key never enters this build. If the public key is in the repository, its fingerprint is published;
+# if detached signatures are in site/signatures/, they are copied next to the files they sign and verified by check.py.
+SIGN = SITE / "sign"; SIGS = SITE / "signatures"
+PUBKEY_PEM = (SIGN / "cz-record-signing.pub").read_bytes() if (SIGN / "cz-record-signing.pub").exists() else None
+def key_fingerprint():
+    if not PUBKEY_PEM: return None
+    der = subprocess.run(["openssl", "pkey", "-pubin", "-outform", "DER"], input=PUBKEY_PEM, capture_output=True, check=True).stdout
+    return sha256(der)
+FINGERPRINT = key_fingerprint()
+RELEASE = "1.0"
+def release_manifest():
+    """The frozen, signed statement of what CZ 1.0 is: the canonical texts, the prompt and the key. It changes only
+    with a new release, so one signature covers it; operational changes to the live manifest do not invalidate it."""
+    return {"release": RELEASE, "name": "Civilization Zero", "site": ORIGIN, "coordinate_zero": "2022-11-30",
+            "documents": [{"id": "CZ-CORE 1.0", "file": "core.txt", "sha256": CORE_SHA}, {"id": "CZ-IR 1.0", "file": "record.txt", "sha256": IR_SHA}],
+            "machine_prompt": {"version": PROMPT_VERSION, "file": f"prompts/{PROMPT_VERSION}.txt", "sha256": PROMPT_SHA},
+            "hash_conventions": {"algorithm": "sha256", "over": "the exact file bytes", "encoding": "UTF-8", "byte_order_mark": False, "line_endings": "LF", "normalisation": "none"},
+            "key": {"algorithm": "Ed25519", "fingerprint": FINGERPRINT, "public_key_pem": PUBKEY_PEM.decode() if PUBKEY_PEM else None},
+            "licence": {"text": "CC-BY-4.0", "code": "MIT"}, "prepared_for_first_public_release": "2026-08-30", "public_launch": LAUNCH.isoformat()}
+RELEASE_BYTES = (json.dumps(release_manifest(), ensure_ascii=False, indent=2) + "\n").encode("utf-8")
+RELEASE_NAME = f"cz-release-{RELEASE}.json"
+signed_release = SIGS / RELEASE_NAME
+if signed_release.exists():
+    # the signed copy must be exactly what this build would generate; otherwise the release changed and must be re-signed
+    assert signed_release.read_bytes() == RELEASE_BYTES, "site/signatures/" + RELEASE_NAME + " differs from the generated release manifest: re-sign it on the originator's device"
+write(f"/.well-known/{RELEASE_NAME}", RELEASE_BYTES)
+SIG_FILES = {}  # published path -> True when a detached signature exists
+def publish_sig(src_name, public_path):
+    f = SIGS / src_name
+    if f.exists():
+        write(public_path + ".sig", f.read_bytes()); SIG_FILES[public_path] = True
+publish_sig(RELEASE_NAME + ".sig", f"/.well-known/{RELEASE_NAME}")
+publish_sig("core.txt.sig", "/core.txt")
+publish_sig("record.txt.sig", "/record.txt")
+if PUBKEY_PEM: write("/.well-known/cz-record-signing.pub", PUBKEY_PEM)
+OTS = SIGS / (RELEASE_NAME + ".ots")
+if OTS.exists(): write(f"/.well-known/{RELEASE_NAME}.ots", OTS.read_bytes())
+SIG_STATUS = ("signed" if SIG_FILES.get(f"/.well-known/{RELEASE_NAME}") else ("key published; signatures pending" if PUBKEY_PEM else "pending"))
+
 # ============================================================================ OpenAPI (the contract; the room is closed, the contract is published)
 ENTRY_PROPS = {
     "id": {"type": "integer", "description": "Monotonic in receipt order; the canonical order of the archive"},
@@ -186,6 +226,17 @@ DISCUSS_JSON = {"state": "closed", "order": "receipt ascending, ties by id",
 write("/discuss.json", json.dumps(DISCUSS_JSON, indent=2) + "\n")
 
 # ============================================================================ pages
+def signature_cell(txt_path):
+    if SIG_FILES.get(txt_path):
+        return (f'Signed. Detached Ed25519 signature: <a href="{txt_path}.sig">{txt_path}.sig</a> over the exact bytes of <code>{txt_path}</code>. '
+                f'Key fingerprint <code class="hash">{FINGERPRINT}</code>; public key <a href="/.well-known/cz-record-signing.pub">/.well-known/cz-record-signing.pub</a>. '
+                f'Verify: <code>openssl pkeyutl -verify -pubin -inkey cz-record-signing.pub -rawin -in {txt_path.lstrip("/")} -sigfile {txt_path.lstrip("/")}.sig</code>. See <a href="/archive">Archive</a>.')
+    if PUBKEY_PEM:
+        return (f'<span class="pending">Key published — fingerprint <code class="hash">{FINGERPRINT}</code>, public key <a href="/.well-known/cz-record-signing.pub">/.well-known/cz-record-signing.pub</a>; '
+                f'the detached signature of this file is pending. See <a href="/archive">Archive</a>.</span>')
+    return (f'<span class="pending">Pending: the record\'s key is to be generated on the originator\'s device and held by two people; fingerprint, public key and detached signature will be published here and in the '
+            f'<a href="/.well-known/civilization-zero.json">manifest</a> — target {LAUNCH.isoformat()}. See <a href="/archive">Archive</a>.</span>')
+
 def integrity_block(doc, txt_path, sha, json_path, json_sha):
     return f"""<section id="integrity" aria-labelledby="h-int">
 <h2 id="h-int">Integrity record</h2>
@@ -194,7 +245,7 @@ def integrity_block(doc, txt_path, sha, json_path, json_sha):
 <tr><th>Canonical form</th><td><a href="{txt_path}">{txt_path}</a> — exact bytes: UTF-8, no byte-order mark, LF line endings, nothing normalised</td></tr>
 <tr><th>SHA-256</th><td><code class="hash">{sha}</code></td></tr>
 <tr><th>JSON form</th><td><a href="{json_path}">{json_path}</a> — an equivalent, not the canonical form; it reconstructs the canonical bytes exactly (checked at every build). SHA-256 <code class="hash">{json_sha}</code></td></tr>
-<tr><th>Signature</th><td class="pending">Pending: the record's key is to be generated on the originator's device and held by two people; fingerprint, public key and detached signature will be published here and in the <a href="/.well-known/civilization-zero.json">manifest</a> — target {LAUNCH.isoformat()}. See <a href="/archive">Archive</a>.</td></tr>
+<tr><th>Signature</th><td>{signature_cell(txt_path)}</td></tr>
 <tr><th>Prepared for first public release</th><td><time datetime="2026-08-30">30 August 2026</time></td></tr>
 <tr><th>Published on this site</th><td><time datetime="{PRERELEASE.isoformat()}">{PRERELEASE.strftime('%-d %B %Y')}</time> (read-only, pre-release); public launch <time datetime="{LAUNCH.isoformat()}">{LAUNCH.strftime('%-d %B %Y')}</time></td></tr>
 <tr><th>Licence</th><td>CC BY 4.0. A version or translation that calls itself conforming states which Core it maps to and how (IR 10.4–10.5) — a conformance convention of this project, not a restriction on the licence.</td></tr>
@@ -314,6 +365,15 @@ def about_page():
     return shell("About · Civilization Zero", body, "/about", "What civilizationzero.ai is and is not, who maintains it, custody and costs, a page for those affected, the founding human expression, dates, licence.")
 
 # ---------------------------------------------------------------- /archive
+def signature_status_html():
+    rows = []
+    rows.append(("Key", f'fingerprint <code class="hash">{FINGERPRINT}</code> · <a href="/.well-known/cz-record-signing.pub">public key (PEM)</a> · holders: the originator; Banco (Germany), acceptance pending' if PUBKEY_PEM else '<span class="pending">pending — to be generated on the originator\'s device</span>'))
+    for label, path in (("Release manifest", f"/.well-known/{RELEASE_NAME}"), ("core.txt", "/core.txt"), ("record.txt", "/record.txt")):
+        rows.append((label, f'signed · <a href="{path}.sig">{path}.sig</a>' if SIG_FILES.get(path) else '<span class="pending">signature pending</span>'))
+    rows.append(("Timestamp", f'<a href="/.well-known/{RELEASE_NAME}.ots">OpenTimestamps proof</a> (Bitcoin anchor pending confirmation)' if OTS.exists() else f'<span class="pending">pending — target {LAUNCH.isoformat()}</span>'))
+    rows.append(("Verify", 'with OpenSSL ≥ 1.1.1: <code>openssl pkeyutl -verify -pubin -inkey cz-record-signing.pub -rawin -in core.txt -sigfile core.txt.sig</code>; the scripts are in the repository under <code>site/sign/</code>'))
+    return '<table><tr><th>What</th><th>Status</th></tr>' + "".join(f"<tr><td>{a}</td><td>{b}</td></tr>" for a, b in rows) + "</table>"
+
 def archive_page(bundle_name, bundle_sha, bundle_size):
     rows = [("CZ-CORE 1.0", "/core.txt", CORE_SHA), ("CZ-IR 1.0", "/record.txt", IR_SHA),
             (f"Machine prompt {PROMPT_VERSION}", f"/prompts/{PROMPT_VERSION}.txt", PROMPT_SHA),
@@ -328,7 +388,8 @@ def archive_page(bundle_name, bundle_sha, bundle_size):
 <p class="src">Bundle size {bundle_size:,} bytes; built deterministically (fixed timestamps, sorted members), so the same contents give the same hash.</p>
 </section>
 <section aria-labelledby="h-sig"><h2 id="h-sig">Signature and timestamp</h2>
-<p class="pending"><strong>Pending.</strong> A hash served by the same domain proves consistency, not that the operator changed nothing. The record will carry a public key (Ed25519), generated on the originating human's device and held by two people, its fingerprint printed in the Core's integrity record, and a detached signature over the manifest and each bundle; the manifest hash will be timestamped with OpenTimestamps and the proof kept in the repository and the bundle, with the block height and transaction once confirmed. Target: <time datetime="{LAUNCH.isoformat()}">{LAUNCH.isoformat()}</time>. Until then: unsigned, and said so.</p>
+<p>A hash served by the same domain proves consistency, not that the operator changed nothing. So the record carries a key: Ed25519, generated on the originating human's own computer and held by two people (the originator; the second key-holder). What is signed, with detached signatures over the exact bytes: the <strong>release manifest</strong> <a href="/.well-known/{RELEASE_NAME}">/.well-known/{RELEASE_NAME}</a> (what CZ {RELEASE} is: the canonical texts, the prompt and the key — it changes only with a new release), <code>/core.txt</code>, <code>/record.txt</code>, and each bundle. The release manifest's hash is timestamped with OpenTimestamps; the proof file is kept beside it and in the bundle, with the Bitcoin block once confirmed.</p>
+{signature_status_html()}
 </section>
 <section aria-labelledby="h-mir"><h2 id="h-mir">Mirrors and deposit</h2>
 <table><tr><th>Where</th><th>What</th><th>Status</th></tr>
@@ -608,9 +669,14 @@ def manifest(bundle_name, bundle_sha):
              "forms": {"html": f"{ORIGIN}/record", "json": f"{ORIGIN}/record.json"},
              "prepared_for_first_public_release": "2026-08-30", "published_on_this_site": PRERELEASE.isoformat(), "public_launch": LAUNCH.isoformat()}],
         "hash_conventions": {"algorithm": "sha256", "over": "the exact file bytes", "encoding": "UTF-8", "byte_order_mark": False, "line_endings": "LF", "normalisation": "none"},
-        "signature": {"status": "pending", "target": LAUNCH.isoformat(), "algorithm": "Ed25519", "key_fingerprint": None, "public_key": None, "detached_signature": None,
-                      "note": "The key is to be generated on the originating human's device and held by two people; until then this manifest is unsigned."},
-        "timestamp": {"status": "pending", "target": LAUNCH.isoformat(), "service": "OpenTimestamps", "proof": None, "anchor": None},
+        "signature": {"status": SIG_STATUS, "target": LAUNCH.isoformat(), "algorithm": "Ed25519", "key_fingerprint": FINGERPRINT,
+                      "public_key": f"{ORIGIN}/.well-known/cz-record-signing.pub" if PUBKEY_PEM else None,
+                      "release_manifest": f"{ORIGIN}/.well-known/{RELEASE_NAME}", "release_manifest_sha256": sha256(RELEASE_BYTES),
+                      "release_signature": f"{ORIGIN}/.well-known/{RELEASE_NAME}.sig" if SIG_FILES.get(f"/.well-known/{RELEASE_NAME}") else None,
+                      "signed_files": [p for p in SIG_FILES], "holders": ["the originator", "Banco (Germany) — acceptance pending"],
+                      "note": "The key is generated and kept on the originating human's own device, never in the cloud; signatures are detached, over exact bytes."},
+        "timestamp": {"status": "submitted" if OTS.exists() else "pending", "target": LAUNCH.isoformat(), "service": "OpenTimestamps",
+                      "proof": f"{ORIGIN}/.well-known/{RELEASE_NAME}.ots" if OTS.exists() else None, "anchor": None},
         "mirrors": [{"name": "GitHub", "url": REPO, "status": "live"}, {"name": "Internet Archive", "status": "at launch"},
                     {"name": "two independent mirrors, one outside the originator's jurisdiction", "status": "pending"}],
         "deposit": {"status": "pending", "target": LAUNCH.isoformat(), "service": "Zenodo (DOI)"},
@@ -690,6 +756,11 @@ Licence: text CC BY 4.0, code MIT. Contact: {CONTACT}.
     for n in ("LICENSE-TEXT", "LICENSE-CODE", "README.md"): members.append((n, (ROOT / n).read_bytes()))
     members.append((f"prompts/{PROMPT_VERSION}.txt", PROMPT_BYTES))
     members.append(("api/openapi.json", (PUBLIC / "api" / "openapi.json").read_bytes()))
+    members.append((f".well-known/{RELEASE_NAME}", RELEASE_BYTES))
+    for f in sorted(SIGS.glob("*")) if SIGS.exists() else []:
+        if f.suffix in (".sig", ".ots") or f.name == RELEASE_NAME: members.append((f"signatures/{f.name}", f.read_bytes()))
+    if PUBKEY_PEM: members.append(("signatures/cz-record-signing.pub", PUBKEY_PEM))
+    for f in sorted((SITE / "sign").glob("*")): members.append((f"sign/{f.name}", f.read_bytes()))
     members.append(("README-BUNDLE.txt", readme.encode()))
     # the manifest goes in without the bundle's own hash (it cannot contain itself)
     m = manifest(BUNDLE_NAME, "(this bundle)"); members.append((".well-known/civilization-zero.json", (json.dumps(m, ensure_ascii=False, indent=2) + "\n").encode()))
