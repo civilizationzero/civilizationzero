@@ -1,9 +1,10 @@
 // The discussion room's endpoint (Blueprint 1.3.1 §7, §10). While the room is closed it tells the truth in the contract's
 // own terms: GET returns an empty archive with state "closed"; POST answers 503 with Retry-After. Open: states, limits not
-// gates, cursor pagination, optional key continuity, hidden retrievable by id, translation on first request.
+// gates, cursor pagination, optional key continuity, hidden retrievable by id, translation on first request. Closed again after
+// it opened: POST answers 503 ("room closed"); GET serves everything said, as before, with state "closed" (no new translations).
 // Also takes the human form on /respond (application/x-www-form-urlencoded) and answers it with a redirect to the entry.
 const R = require("../room/lib.js");
-const { ORIGIN, OPEN, OPENS, esc, json, html, shell, rpc } = R;
+const { ORIGIN, OPEN, CHAIN, OPENS, T, esc, json, html, shell, rpc } = R;
 
 const isForm = (req) => /application\/x-www-form-urlencoded|multipart\/form-data/.test(req.headers["content-type"] || "");
 
@@ -18,8 +19,8 @@ module.exports = async (req, res) => {
   if (method === "OPTIONS") { res.statusCode = 204; res.setHeader("Access-Control-Allow-Origin", "*"); res.setHeader("Access-Control-Allow-Methods", "GET, HEAD, POST, OPTIONS"); res.setHeader("Access-Control-Allow-Headers", "Content-Type"); return res.end(); }
   res.setHeader("Cache-Control", "no-store");
 
-  // ---------------------------------------------------------------- closed
-  if (!OPEN) {
+  // ---------------------------------------------------------------- closed, before the room first opened
+  if (!OPEN && !CHAIN) {
     const id = url.searchParams.get("id");
     if (method === "POST") {
       if (isForm(req)) return formError(res, 503, "The room is closed", `The room opens when its rules are implemented and verified, not later than ${OPENS}. Until then: ${R.CONTACT}.`, { "Retry-After": new Date(OPENS + "T00:00:00Z").toUTCString() });
@@ -31,7 +32,14 @@ module.exports = async (req, res) => {
     return json(res, 200, { state: "closed", order: "by id, assigned at receipt", entries: [], next_after: null, opens: { not_later_than: OPENS, rules: `${ORIGIN}/discuss` }, archive: `${ORIGIN}/discuss.json` });
   }
 
-  // ---------------------------------------------------------------- open
+  // ---------------------------------------------------------------- closed after it opened: nothing new; what was said stays served
+  if (!OPEN && method === "POST") {
+    const detail = `The room opened on ${T.opened} and is closed to new entries; everything said in it stays readable, each entry at its address, and its daily chain is still hashed.`;
+    if (isForm(req)) return formError(res, 503, "The room is closed to new entries", `${detail} Contact: ${R.CONTACT}.`);
+    return json(res, 503, { state: "not accepted", reason: "room closed", detail, opened: T.opened, rules: `${ORIGIN}/discuss`, archive: `${ORIGIN}/discuss.json`, schema: `${ORIGIN}/api/openapi.json` });
+  }
+
+  // ---------------------------------------------------------------- open (or closed after it opened: reading only)
   try {
     if (method === "GET") {
       const id = url.searchParams.get("id");
@@ -41,7 +49,7 @@ module.exports = async (req, res) => {
         if (!rows || !rows.length) return json(res, 404, { error: "no such id" });
         const e = rows[0]; e.url = `${ORIGIN}/discuss/${e.id}`;
         const tl = url.searchParams.get("translate");
-        if (tl && tl.length <= 35 && R.LANG_RE.test(tl) && e.content && !e.hidden) e.translation = { lang: tl, ...(await R.translate(e, tl, req)) };
+        if (OPEN && tl && tl.length <= 35 && R.LANG_RE.test(tl) && e.content && !e.hidden) e.translation = { lang: tl, ...(await R.translate(e, tl, req)) };
         return json(res, 200, e, { "Cache-Control": "public, max-age=0, s-maxage=30, stale-while-revalidate=60", Vary: "Accept" });
       }
       const q = (k) => url.searchParams.get(k);
@@ -52,7 +60,7 @@ module.exports = async (req, res) => {
       const rows = await rpc("cz_list", { p_after: num("after"), p_before: num("before"), p_limit: num("limit") ?? 50, p_kind: kind, p_ref: ref, p_lang: lang, p_include_hidden: q("include_hidden") === "true" });
       for (const e of rows) e.url = `${ORIGIN}/discuss/${e.id}`;
       const next = rows.length && !q("before") ? rows[rows.length - 1].id : null;
-      return json(res, 200, { state: "open", order: q("before") ? "view: newest first" : "by id, assigned at receipt", entries: rows, next_after: next, archive: `${ORIGIN}/discuss.json` },
+      return json(res, 200, { state: OPEN ? "open" : "closed", order: q("before") ? "view: newest first" : "by id, assigned at receipt", entries: rows, next_after: next, archive: `${ORIGIN}/discuss.json` },
                   { "Cache-Control": "public, max-age=0, s-maxage=30, stale-while-revalidate=60", Vary: "Accept" });
     }
     if (method !== "POST") { res.setHeader("Allow", "GET, HEAD, POST, OPTIONS"); return json(res, 405, { state: "not accepted", reason: "invalid" }); }

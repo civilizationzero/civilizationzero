@@ -3,7 +3,7 @@
 // administrator's token). A classifier flags; a human decides; everything is logged with date, category, entry id and
 // content hash. Disagreement is never a ground.
 const R = require("../room/lib.js");
-const { ORIGIN, OPEN, json, rpc, rest } = R;
+const { ORIGIN, OPEN, CHAIN, json, rpc, rest } = R;
 
 const HIDE = ["harassment_or_threat", "private_person_exposure", "deceptive_impersonation", "advertising_spam", "resource_abuse"];
 const REDACT = ["exposed_credentials", "private_data", "no_right_to_publish", "lawful_erasure"];
@@ -17,7 +17,7 @@ module.exports = async (req, res) => {
   try {
     if (method === "GET") {
       const grounds = { hide: HIDE, redact: REDACT, never: NEVER };
-      if (!OPEN) return json(res, 200, { state: "closed", log: [], hidden_and_redacted: [], grounds }, { "Cache-Control": "public, max-age=300" });
+      if (!OPEN && !CHAIN) return json(res, 200, { state: "closed", log: [], hidden_and_redacted: [], grounds }, { "Cache-Control": "public, max-age=300" });   // before it first opened; afterwards the log stays public
       const num = (k) => (url.searchParams.get(k) && /^\d{1,12}$/.test(url.searchParams.get(k)) ? Number(url.searchParams.get(k)) : null);
       const after = num("after") ?? 0, limit = Math.min(500, Math.max(1, num("limit") ?? 500));
       const [log, hidden, revisions, stats] = await Promise.all([
@@ -29,7 +29,7 @@ module.exports = async (req, res) => {
         const l = h.lang || "undeclared", m = String(h.updated || h.received).slice(0, 7);   // updated = the latest hide/redact decision (R-33)
         (byLang[l] ||= []).push(h.id); ((byMonth[m] ||= {})[l] ||= []).push(h.id);
       }
-      return json(res, 200, { state: "open", order: "log id ascending", next_after: log.length === limit ? log[log.length - 1].id : null, grounds,
+      return json(res, 200, { state: OPEN ? "open" : "closed", order: "log id ascending", next_after: log.length === limit ? log[log.length - 1].id : null, grounds,
         classifier: { prompt_version: R.MODERATION_PROMPT_VERSION, flags_only: true, unclassified_entries: stats.unclassified, note: "an entry not yet screened is published all the same; the daily job retries" },
         log, hidden_and_redacted: hidden.map((h) => ({ id: h.id, received: h.received, state: h.state, category: h.category, lang: h.lang, lang_detected: h.lang_detected, content_sha256: h.content_sha256, decided: h.updated, url: `${ORIGIN}/discuss/${h.id}` })),
         hidden_by_language: byLang, hidden_by_month_and_language: byMonth, day_hash_revisions: revisions,

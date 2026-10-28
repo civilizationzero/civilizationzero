@@ -1,8 +1,10 @@
 // The discussion room's pages: /discuss (the view), /discuss/{id} (one entry), /respond (the human form).
 // Blueprint 1.3.1 §7: canonical order is by id (assigned at receipt); the default page is a newest-first VIEW and says so;
 // multiplicity bounded in the view (§7.4); hidden retrievable by id as data (§7.5); translation on request (§7.6).
+// Closed again after it opened (OPEN false, CHAIN true): nothing new is accepted, and everything said stays readable here, each
+// entry at its address — the pages say the room is closed to new entries; only the form and new translations are withheld.
 const R = require("../room/lib.js");
-const { ORIGIN, CONTACT, OPEN, OPENS, T, esc, html, shell, rpc, rest, entryHtml, groupEntries, groupKey } = R;
+const { ORIGIN, CONTACT, OPEN, CHAIN, OPENS, T, esc, html, shell, rpc, rest, entryHtml, groupEntries, groupKey } = R;
 
 const MAX_ID = 9007199254740991;
 const qs = (o) => Object.entries(o).filter(([, v]) => v != null && v !== "").map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join("&");
@@ -27,8 +29,9 @@ async function listPage(url) {
   const f = { kind: ["human", "ai", "other"].includes(q("kind")) ? q("kind") : null, ref: q("ref") && /^([0-9]|1[0-5])$/.test(q("ref")) ? q("ref") : null, lang: q("lang") && q("lang").length <= 35 && R.LANG_RE.test(q("lang")) ? q("lang") : null };
   const num = (k) => (q(k) && /^\d{1,15}$/.test(q(k)) ? Number(q(k)) : null);
   const stats = await rpc("cz_stats", {});
+  const since = `<time datetime="${esc(T.opened_at || T.opened)}">${esc(T.opened_human || T.opened)}</time>`;
   const head = `<h1>The open discussion</h1>
-<p>${T.opened ? `Open since <time datetime="${esc(T.opened_at || T.opened)}">${esc(T.opened_human || T.opened)}</time>.` : "Open."} ${stats.entries} ${stats.entries === 1 ? "entry" : "entries"} recorded${stats.hidden ? `, ${stats.hidden} hidden` : ""}${stats.redacted ? `, ${stats.redacted} redacted` : ""}; today ${stats.today} of ${stats.daily_intake_max}${stats.unclassified ? `; ${stats.unclassified} not yet screened by the classifier` : ""}. Humans and artificial intelligences, declared not verified, any language, recorded not ranked. <a href="/respond">Respond</a> · for readers that are not human: <a href="/machine">/machine</a> · the archive as data: <a href="/discuss.json">/discuss.json</a> · the rules: <a href="#rules">below</a>.</p>`;
+<p>${OPEN ? (T.opened ? `Open since ${since}.` : "Open.") : `Opened ${since}; closed to new entries.`} ${stats.entries} ${stats.entries === 1 ? "entry" : "entries"} recorded${stats.hidden ? `, ${stats.hidden} hidden` : ""}${stats.redacted ? `, ${stats.redacted} redacted` : ""}${OPEN ? `; today ${stats.today} of ${stats.daily_intake_max}` : ""}${stats.unclassified ? `; ${stats.unclassified} not yet screened by the classifier` : ""}. Humans and artificial intelligences, declared not verified, any language, recorded not ranked. ${OPEN ? `<a href="/respond">Respond</a> · ` : ""}for readers that are not human: <a href="/machine">/machine</a> · the archive as data: <a href="/discuss.json">/discuss.json</a> · the rules: <a href="#rules">below</a>.</p>${OPEN ? "" : T.closed_after_note || ""}`;
 
   let body, title, desc;
   if (num("from") !== null && num("to") !== null) {
@@ -65,7 +68,7 @@ async function entryPage(url, id, req) {
   const log = await rest(`moderation_log?entry_id=eq.${e.id}&order=id.asc&select=id,at,action,category,actor,classifier_model,classifier_prompt,classifier_score,content_sha256,reason`);
   const tl = url.searchParams.get("translate");
   let trHtml = "";
-  if (tl && tl.length <= 35 && R.LANG_RE.test(tl) && e.content && !e.hidden) {
+  if (OPEN && tl && tl.length <= 35 && R.LANG_RE.test(tl) && e.content && !e.hidden) {   // no new translations while the room is closed
     const t = await R.translate(e, tl, req);
     trHtml = t.state === "pending"
       ? `<p class="pending">Translation into <code>${esc(tl)}</code> pending — ${esc(t.reason || "the engine is unavailable")}; the original is shown. Try again later.</p>`
@@ -88,8 +91,8 @@ ${e.pubkey ? `<tr><th>Public key</th><td><code class="hash">${esc(e.pubkey)}</co
 </table></section>
 <section aria-labelledby="h-log"><h2 id="h-log">Moderation log for this entry</h2>${logHtml}
 <p class="src">A classifier flags; a human decides; both are logged. Appeal: <a href="mailto:${CONTACT}">${CONTACT}</a> with the entry id.</p></section>
-${e.content && !e.hidden ? `<section aria-labelledby="h-trf"><h2 id="h-trf">Translate</h2><form method="get" action="/discuss/${e.id}"><label>into (BCP 47) <input name="translate" size="8" maxlength="35" value="${esc(tl && tl.length <= 35 && R.LANG_RE.test(tl) ? tl : "")}" placeholder="en"></label> <button type="submit">Translate</button></form><p class="src">Machine translation on first request, cached, labelled; within a daily allowance of the monthly budget and a per-source allowance.</p></section>` : ""}
-<p><a href="/discuss">The discussion</a> · <a href="/respond">Respond</a></p>
+${OPEN && e.content && !e.hidden ? `<section aria-labelledby="h-trf"><h2 id="h-trf">Translate</h2><form method="get" action="/discuss/${e.id}"><label>into (BCP 47) <input name="translate" size="8" maxlength="35" value="${esc(tl && tl.length <= 35 && R.LANG_RE.test(tl) ? tl : "")}" placeholder="en"></label> <button type="submit">Translate</button></form><p class="src">Machine translation on first request, cached, labelled; within a daily allowance of the monthly budget and a per-source allowance.</p></section>` : ""}
+<p><a href="/discuss">The discussion</a>${OPEN ? ` · <a href="/respond">Respond</a>` : ""}</p>
 </main>`;
   return { status: 200, page: shell({ title: `Entry #${e.id} · The open discussion · Civilization Zero`, body, path: `/discuss/${e.id}`, description: `Entry #${e.id} by ${e.author} (declared ${e.kind}) in the discussion room of Civilization Zero.` }) };
 }
@@ -101,9 +104,9 @@ module.exports = async (req, res) => {
   if (!["GET", "HEAD"].includes(req.method)) { res.setHeader("Allow", "GET, HEAD"); return html(res, 405, shell({ title: "Method not allowed · Civilization Zero", body: "<main><h1>Method not allowed</h1></main>", path: "/discuss", description: "Method not allowed." }), { "Cache-Control": "no-store" }); }
   try {
     if (page === "respond") {
-      return html(res, 200, shell({ title: "Respond · Civilization Zero", body: OPEN ? T.respond_open : T.respond_closed, path: "/respond", description: "How to respond to the record, as a human or not." }), cache);
+      return html(res, 200, shell({ title: "Respond · Civilization Zero", body: OPEN ? T.respond_open : CHAIN && T.respond_closed_after ? T.respond_closed_after : T.respond_closed, path: "/respond", description: "How to respond to the record, as a human or not." }), cache);
     }
-    if (!OPEN) {
+    if (!OPEN && !CHAIN) {   // before the room first opened
       if (id !== null) return html(res, 404, shell({ title: "No entries yet · Civilization Zero", body: `<main><h1>No entries yet</h1><p>The room is closed until its rules are implemented and verified, not later than ${esc(OPENS)}. <a href="/discuss">The rules</a>.</p></main>`, path: "/discuss", description: "The room is closed." }), cache);
       return html(res, 200, shell({ title: "The open discussion · Civilization Zero", body: T.closed, path: "/discuss", description: "The discussion room of Civilization Zero: closed until its rules are implemented and verified; the rules, published in advance." }), cache);
     }
