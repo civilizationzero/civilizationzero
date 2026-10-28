@@ -29,7 +29,9 @@ module.exports = async (req, res) => {
     if (!p_day && R.validDate(T.opened || "") && T.opened < new Date().toISOString().slice(0, 10)) {
       try {
         const st = await rpc("cz_stats", {});
-        if (st && !st.last_log) out.first_day = await rpc("cz_daily", { p_token: R.TOKEN, p_day: T.opened, p_force: false });
+        // forced to that one day: without force, cz_daily starts at the first entry's day, which may be later than the opening;
+        // nothing can be revised, since no day is hashed yet
+        if (st && !st.last_log) out.first_day = await rpc("cz_daily", { p_token: R.TOKEN, p_day: T.opened, p_force: true });
       } catch (err) { R.log("daily first day", err); }
     }
     try { Object.assign(out, await rpc("cz_daily", { p_token: R.TOKEN, p_day, p_force })); }

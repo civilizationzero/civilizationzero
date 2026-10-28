@@ -316,6 +316,14 @@ check, fixed in 1.16:
 | Q-1 | A claimed key fingerprint counted as a signature: a withdrawal carrying the adoption's fingerprint, but no key and no signature, was "linked by the same key"; an entry could likewise show someone's fingerprint unsigned (high) | **verified** — in both chains a fingerprint, a key and a signature come together or not at all (the site sets a fingerprint only for a signature it verified), and a revision is linked by key only when its own signature verified in the run (a hidden one, whose statement is not shown, is PENDING) |
 | Q-2 | The same id on two days was not caught: a later day re-using an adoption's id (signed with another key) let a withdrawal of it pass, or made the genuine revision fail instead (high) | **verified** — an id appearing on two days FAILs, and so does a day whose ids do not follow the day before's (ids are assigned at receipt; an id out of order at the stroke of midnight, from two posts in the same instant, is noted) |
 
+A fifteenth pass (UTC 22:09–22:13) on 1.16 found nothing wrong in the verifier: Q-1 and Q-2 hold; the rule on ids across days
+cannot fail genuine data (an id and its receipt time are taken together for each row; an inversion lasts microseconds and,
+at midnight, falls inside the one-second allowance); a forged hidden revision gets only a PENDING and cannot change an
+adoption's status, which the site derives from traced records. It also reviewed a safeguard added to the daily job the same
+night — while no day is hashed, hash the room's opening day first, so that a missed first run cannot lose it — and found,
+against the real `cz_daily` on a local PostgreSQL 16, that without `p_force` the call started at the first entry's day and
+could still skip the opening day (medium); the call is now forced to that one day (safe: nothing is hashed yet).
+
 The same version moves the time from which a day is due from 01:00 to 02:00 UTC: the site's hosting plan runs its daily job at
 some time in the first hour of the day (UTC), not at 00:20 as the pages had said; the pages, the contract's notes and the
 daily-archive job (now 01:20 and 07:20 UTC) say so.

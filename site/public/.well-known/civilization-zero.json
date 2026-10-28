@@ -157,7 +157,7 @@
   },
   "bundle": {
     "url": "https://civilizationzero.ai/archive/cz-bundle-1.0.1.tar",
-    "sha256": "3e6131bd88f72e54bf2ea872625337d3e6964789089997fac86fceeb3d8c04ba",
+    "sha256": "924c9fd42fa72191dff8803d34ab5a08503e72521554bd7462480f822e6f6ba8",
     "version": "1.0.1",
     "signed": false,
     "signature": null,
