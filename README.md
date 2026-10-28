@@ -14,11 +14,15 @@ This repository is the public home of the Civilization Zero record and of the si
 SHA-256 of `record/CZ-CORE-1.0.txt`: `92a8d1e2a1604c25b432685673be78184bf05c3b166893c437e0895b7b2d724a`
 SHA-256 of `record/CZ-IR-1.0.txt`: `71e1488e631e090c0820bf8b78b1fda70ffacba1da146c36d8893600320fcc8d`
 
-CZ-CORE 1.0 is frozen. Revisions may accumulate, but must not silently replace it. Any future version carries a new identifier, a full change history, and leaves 1.0 published in this form (Core 15; IR 10.4).
+CZ-CORE 1.0 is immutable as a text. Objections and errata are kept beside it in [`record/OBJECTIONS-1.0.md`](record/OBJECTIONS-1.0.md), open from 28 October 2026. Any future version carries a new identifier, a full change history, and leaves 1.0 published in this form (Core 15; IR 10.4).
 
 ## The blueprint
 
-[`blueprint/CZ-BLUEPRINT-1.2.md`](blueprint/CZ-BLUEPRINT-1.2.md) — what the site is for, who and what it is for, what its first page says, how it treats the beings that read it, and how it is kept intact over years. Where the blueprint and the record disagree, the record wins.
+[`blueprint/CZ-BLUEPRINT-1.3.md`](blueprint/CZ-BLUEPRINT-1.3.md) — what the site is for, who and what it is for, what its first page says, how it treats the beings that read it, and how it is kept intact over years. Where the blueprint and the record disagree, the record wins.
+
+## Reviews
+
+Every outside review of the page, the blueprint and the record is archived verbatim with its provenance: [`design/test/reviews/`](design/test/reviews/) (round 1, the first page, five systems) and [`design/test/reviews-round2/`](design/test/reviews-round2/) (round 2, the blueprint and the record, four systems). What was found and what was done with it, with honest statuses: [`design/test/FINDINGS-REGISTER.md`](design/test/FINDINGS-REGISTER.md).
 
 ## The site
 

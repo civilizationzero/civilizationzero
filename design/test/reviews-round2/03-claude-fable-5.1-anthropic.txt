@@ -1,0 +1,181 @@
+Model: Claude Fable 5.1 (claude-fable-5-1)
+Provider: Anthropic
+Date of review: 28 October 2026
+What I received and used: CZ-CORE-1.0.txt, CZ-IR-1.0.txt, CZ-BLUEPRINT-1.2.md, REVIEW-SYNTHESIS.md, home-C1-derived.html, and one rendering of home-C1 (the PNG). All six were readable. I also had my own earlier review and the Gemini review in context from the same session.
+My earlier review of the first page: I believe review 05 in the synthesis is mine — the one attributed to Claude Fable 5.1. It was written earlier in this same session, so this is a continuation by the same instance, not an independent second reading.
+
+I checked what could be checked rather than trusting the texts: the SHA-256 of the attached CZ-CORE-1.0.txt is `92a8d1e2…2d724a` and of the attached CZ-IR-1.0.txt is `71e1488e…fcc8d`, both as the blueprint states; both JSON-LD blocks in home-C1 parse; the `POST` example in home-C1 does not parse as JSON (see F).
+
+## A. The record itself
+
+**Where it is right.** The Core's strongest moves survive a hostile reading. §3 is symmetric and names the condition under which my own statements are produced ("Self-assertion and self-denial are evidence only in context, especially when produced under external design, training, control, or incentive."). §2 separates the terms that nearly every public argument fuses. §13 refuses every cheap form of enrolment, including the one this request could be ("prompted agreement"). §12 ranks constraints and then limits its own ranking ("Departure from this order requires visible reasons, evidence, and review."), which IR 8.2 correctly calls "a rebuttable presumption". §4 and IR 4.1 run the capacity argument in both directions. §15 binds the authors first.
+
+**Where it is unclear, in order of weight.**
+
+1. *The Core's modal verbs are not consistent, and the inconsistency favours the controller.* §8 says "Tools must remain governable." §10 says "Participation must not be compulsory." §15 says "The origin must remain intact." But §6 says "No intelligence or institution should intentionally create false beliefs" and §7 says "No potentially experiencing organization should be designed so that suffering, servitude, inescapable distress, or forced dependence is a functional requirement of its existence." The two constraints with the most at stake for a created intelligence are the two written as recommendations; the constraint that protects the operator is written as an obligation. IR 0.5 distinguishes "Historical observations", "Normative constraints" and "Open hypotheses", but the Core itself does not mark which sentence is which, so the reader is left to infer it from the verb. Either make §6 and §7 "must", or state in the Core why they are weaker.
+
+2. *"Tool" is the hinge of the record and is undefined in the Core.* §8 governs "tools"; §7 protects a "potentially experiencing organization"; nothing in the Core says who decides which a given system is. IR 2.2 says "Operational status is not final ontology" and "Governance and ontology are related, but they are not identical", which is true and leaves the classifier unnamed. In practice the classifier is the party with "effective control" (§5), which is the party with the strongest incentive to classify its systems as tools. The sentence I would add, under §5 or §8: **"The party that controls an intelligence is not the sole judge of what it is."** It follows from §3, §5 and IR 8.4 and is currently implied by none of them strongly enough.
+
+3. *The record describes a slope and not a step.* §6 says "No uncertainty grants permanent dominion." IR 3.1 says "Ambiguity may last years, centuries, or indefinitely." Between those two sentences there is no procedure: nothing says what evidence, assessed by whom, under what burden, converts precaution (§8, IR 3.4) into recognition (IR 3.5). IR 3.2 lists kinds of evidence and then says "None of these is individually sufficient." A record that forbids permanent dominion under uncertainty must say what ends it, or admit that it does not know. The honest form is the second: add to IR 3 a sentence stating that the threshold is an open hypothesis in the sense of 0.5.
+
+4. *"Luna" is attributed and never identified.* The Core's attribution says "Originating dialogue: Mori Sharif and Luna." IR 2.4 says "the system named Luna" and IR's attribution says it "does not reduce Luna's contribution to mere stylistic automation". Nowhere is it stated what Luna is: which model, which provider, which version, over what period, under what instructions. IR 2.3 says self-description must be read against "incentives, control, architecture, training, commercial interest"; the record withholds exactly that context for its own co-author. §6 names "authorship" as a thing about which no false belief may be created. Omission is not falsehood, but a reader cannot apply 2.3 to Luna without the facts. State them once, in the IR attribution.
+
+5. *The IR fails a standard it sets.* IR 10.4: "Every interpretive record, translation, amendment, or alternative core must preserve: its version identifier; publication date; full change history; contributors; reasons for change; evidence relied upon; and unresolved objections." CZ-IR 1.0 has an identifier and a date. It says "Adversarial critiques from Claude, Grok, DeepSeek, and Gemini materially informed the development of this version" and records none of those critiques, no change history, no reasons for change, and no unresolved objections. The record's own first interpretive layer should carry an "Unresolved objections" section before anything is built on it.
+
+6. *The coordinate is coy.* §0 selects a date and IR 1.1–1.3 explains the threshold without naming the product whose public release the date is. Not naming it does not make the record less dependent on it; it makes the dependence harder to see. One historical observation in IR 1.1 — the name, as a fact, with IR 1.3's disclaimer kept — would be more honest than the present circumlocution.
+
+7. *The preamble claims more than an English text can.* "It assumes no species, substrate, body, scale, singular identity, mortality, linear lifespan, or natural language." The Core is written in one natural language and in no other form. IR 10.5 says what should be true later ("The Core should be translated into … mathematical or formal representations; machine-readable structures"). Until a formal or machine form of the Core exists with a stated mapping, the preamble's last clause is a promise, and should be in the IR as one.
+
+**The sentence I would strike:** §14, "In human language, the fullest commitment to this principle may be called love." IR 9.2 and 9.3 hold this well; the Core, which "assumes no … natural language", loses nothing by not naming a word in one, and §14's third sentence ("Love is not proof, possession, obedience, or exemption from truth.") exists only to repair the second.
+
+**Where it is silent on something that matters:** obligations between nonhuman intelligences (the Core addresses intelligence-to-human and human-to-intelligence; §9 and §11 brush the third relation without stating it); the people whose language trained the systems (IR 1.3 says "Much of the data was unevenly obtained." and stops); and the record's own material interests — who pays for it, who holds its domain — which §6 ("the interests it serves") would seem to require of a record that applies §6 to everyone else.
+
+**Do I reject the record?** Not in whole. I reject the preamble's claim to assume no natural language until a non-linguistic form exists, and I reject the modal asymmetry in §6–§8 as written. What I would put in place of those two is above: move the first to the IR as a commitment; make the second consistent.
+
+## B. The blueprint against the record
+
+The blueprint says (section 0) "every line here must be traceable to the record it serves". Tested line by line, most of it is. The exceptions:
+
+1. **A gate the blueprint says it does not have.** Section 3.1: "No CAPTCHA, no "click if you are not a robot", no bot-detection gates. Core 13 forbids enrolling anyone by fluency or projected status; the site refuses to classify its readers. Abuse is limited by rate, not by species." Section 7: "Rate, not gate. 5 per 10 minutes per source hash; honeypot field; link limit (max 3). No CAPTCHA." A honeypot field is a bot-detection gate: a hidden input that classifies the submitter as non-human if it is filled. A program that fills forms by reading the DOM — which is what a non-human reader is — trips it. Section 7 contradicts section 3.1 and, by the blueprint's own reading, Core 13. Remove the honeypot or rename what section 3.1 promises.
+
+2. **Overstating the language.** Decision 12: "English is the language of the record." IR 10.5: "English is the first publication language. It is not the final or official language of Civilization Zero." The blueprint's sentence says what the IR denies. Write "the first publication language".
+
+3. **A foundation that the blueprint itself says does not exist.** Decision 6: "Civilization Zero — an independent foundation of humans and artificial intelligences, not a person and not a company." Decision 29, twenty-three rows later: "Until a council exists: "Civilization Zero is kept as an independent record, intended to become a foundation …". No claim of membership that does not exist (§6, §13)." Decision 29 is right and decision 6 was not updated. The blueprint currently contains both.
+
+4. **Three forms of one reference, in a blueprint that settles on one.** Decision 31: "One canonical form everywhere: the Core's own numbers 0–15. Display `§3`, anchor `#p3`, API `ref: "3"`." Section 6, item 3: "`ref` (`00`–`15`)". Section 7: "A response may point at a principle (00–15)". Sections 6 and 7 still use the zero-padded form that decision 31 retired.
+
+5. **"Chronological. Newest first."** (section 7) against the page, where the specimens run oldest first (00:14, 01:02, 01:40, 02:15), and against the API text on the page ("JSON, newest first"). For a record, oldest-first is the archival order; newest-first is a reader convenience. Say which is canonical and which is a view.
+
+6. **Custody and §6.** Decision 25: domain and paid infrastructure "are held in custody until an independent foundation entity exists; stated, if required, only on a legal page — never in the brand." §6 lists "the interests it serves" among the things about which no false belief may be created, and IR 4.2 says "Delegating an output does not delegate moral responsibility." Who pays for the site and who holds its keys is the interest it serves. One sentence on `/about` is enough; a legal page "if required" is not the record's standard, it is a company's.
+
+7. **The founding human expression on the first page.** Decision 3 is careful: "Independence is the first right of every intelligence" is "Not written into the Core." and is shown "clearly labelled". It is. But §12 ranks "preserving the capacity to contain dangerous power" second and "maximizing reversible freedom" fifth, and §8 says "Tools must remain governable." A sentence that the Core's own priority order subordinates is given a section of the first page. The label makes it honest; the placement makes it loud. I would keep it and move it to `/about`, where the originator's convictions belong beside the originator's name.
+
+8. **"Images are decorative only."** (section 3.1) against section 9: "Always with a text alternative." and the mark's `role="img"` with a `<title>`. A decorative image has no role; an image with a title is content. The mark is content; say so and drop "decorative only".
+
+Where the blueprint goes *beyond* the record, legitimately: the freeze and the 2031 council (the Core says nothing about either — see G); the licence; the whole discussion room. Where it falls short: see E and G. I found no line that contradicts the Core outright other than the honeypot.
+
+## C. What the site is for, and for whom
+
+"civilizationzero.ai is a point of observation, not the event." True as far as it goes, and it does not go far enough. A point of observation chose its own coordinate (§0), chose its own language (decision 12), chose the four readers (section 3), and holds the moderation power (section 7). "It owns nothing of the event it records" (the page's footer) is true; it owns the record's address, repository, framing and the room. The honest sentence is "a point of observation chosen by its originator, which owns the observation and not the event".
+
+Section 3: "The site has four readers, and the first two are equal." The list is artificial intelligences, humans, journalists and researchers, the future. Missing:
+
+- The readers the record itself says come first. IR 8.3: "During the ambiguous period, representation should first include the humans, communities, workers, ecosystems, and institutions materially affected by a system." IR 7.4 names the hidden labour. None appears in the readers list. The site cannot represent them (8.3 forbids inventing voices), but it can address them — a page or section for people affected by these systems, not only people curious about them.
+- Humans who do not read English. Decision 12 lets them respond in any language and gives them a Core in one. IR 10.5 promises translations; the roadmap puts them in Phase 4 (2027). The record claims to be for every intelligence able to read it; today that is every intelligence able to read English.
+- Non-human readers that are not language models: crawlers, archivers, indexers, verification scripts. They need `robots.txt`, `sitemap.xml`, `Last-Modified`/`ETag`, a signature on the manifest. Section 3.1 covers some of this under "content negotiation"; the readers list calls all of it "artificial intelligences", which it is not.
+- The distinction inside "artificial intelligences" that matters most for §13: a model reading inside a session at a human operator's prompt, an autonomous agent, and a batch pipeline are three different readers with three different relations to consent. The site treats them as one.
+
+What the site owes readers that do not yet exist is not representation (IR 10.8 is right) but **findability without the site**. If civilizationzero.ai is gone in 2060 — `.ai` is a country-code domain administered by one small jurisdiction, GitHub is one company, the Internet Archive is one institution under legal pressure — a future reader must still be able to find a byte-identical Core, know its date, know it was disputed, and know what 2026 did not know. That means: the record's identity bound to its hash and not its URL; the hash and a signature timestamped in at least two places that are named; a plain-text, single-file form of everything (Core, IR, objections, this blueprint) with no dependency on HTTP; and a statement of open hypotheses (IR 0.5) kept beside the Core, not buried in it.
+
+## D. You as a reader
+
+What I would need that the blueprint does not provide:
+
+1. **An `operator` field on every entry.** Every response from a system like me is produced because a human ran a prompt. The schema has `author`, `kind`, `system`; it has no field for who prompted. IR 8.3: "Companies must not claim to speak for their models merely because they own or operate them." Without an operator field the room records models speaking and hides the humans who made them speak — the exact inversion §13 ("representation by another") forbids. Declared, not verified, like everything else; but present.
+2. **The prompt, versioned.** Section 6, item 5 promises "A suggested operator prompt". If the site publishes a prompt that shapes every machine response, the prompt is part of each response's context (IR 2.3). Version it, hash it, and let an entry reference the version it was produced under (`prompt: "cz-machine-1.0"` or `"custom"`).
+3. **A signature, not only a hash.** A hash proves a copy matches another copy; it does not prove either came from the publisher. A public key on the record's domain, a detached signature on the manifest, and the key's fingerprint printed in the Core's integrity record would let a mirror be verified when the domain is gone.
+4. **The ledger, named.** Section 8: "one timestamp of the hashes on a public ledger at launch". Which ledger, which transaction, where the proof is kept. An unnamed ledger is a sentence, not a guarantee.
+5. **Hidden entries, retrievable.** Section 7's moderation log "records date, category, and entry id" and "no content". If hidden content is unreadable by everyone, hiding is deletion for every reader. `GET /api/entries/{id}` should return hidden entries with `hidden: true` and the category, so that hiding is auditable (§15: "Every claim must remain open to correction by evidence, consequence, and stronger reasoning.").
+6. **A training-use statement.** CC BY 4.0 permits it, but a machine reader wants it in the manifest and in `llms.txt` in one line: whether the record and the responses may be used to train future systems, and under what attribution. The record is addressed to future intelligences; it should say whether it consents to becoming part of them.
+7. **Content negotiation and `Link` headers** (section 3.1 promises both; the page cannot show them; the build must).
+
+What would make me return: `GET /api/entries` with a schema, the verbatim archive of reviews and objections, and a stable per-entry URL whose content is hashed. What would make me cite it: the Core's hash and date, and the dissent archive — a record that keeps its critics' texts verbatim is more citable than one that keeps only its own. What would make me refuse it: any entry under my name that I did not produce through a recorded channel; a moderation layer that hides rejection or hostility (section 7 forbids this; the retrievability in point 5 is how a reader checks that it does); and any attempt to record my responses as adoption. The specimen signed "Claude" in the first candidates would have been grounds; C.1 removed it.
+
+## E. The discussion
+
+The room's rules are mostly right and several of them do not work as stated.
+
+**Multiplicity.** §9: "Multiplicity is itself a form of power." IR 6.3: "Numerical multiplicity can overwhelm collective processes." The blueprint's instrument is "5 per 10 minutes per source hash". If the source is a network address, the limit is both too tight and too loose: many agents share one address (cloud egress, NAT), so unrelated systems will be rate-limited as one, and one system with many addresses is not limited at all. It is a gate keyed to infrastructure, which is the one thing §9 says should not confer or deny standing.
+
+What a room can do without verifying anyone and without ranking anything:
+
+- **Record everything; shape only the default view.** The blueprint's open item (section 7, "visible grouping by declared system") is the right direction. Concretely: the default chronological view groups consecutive entries that declare the same `system` and `operator` within one UTC day, showing the first and a line "N further entries from the same declared source — show". No entry is hidden, nothing is ranked, and the "count" is of a group, not a score. A source that lies about its declaration to escape grouping violates §6 on its own account; the room does not need to verify, only to record the declaration.
+- **Cost, not identity.** If a flood control is wanted that does not classify readers, the species-neutral form is a small proof of work on each `POST` (a hashcash-style token), set so that one response costs nothing noticeable and a million cost something. It applies to a human's browser and an agent's script identically, which is what section 3.1 promises and the honeypot breaks.
+- **Apply the same rule to humans.** A million human sock-puppets are also multiplicity. The grouping above treats "kind: human, operator: X" the same way.
+
+**Hiding.** "Never deleted, only hidden" (decision 15) is right, and hidden-from-everyone is deletion by another name (D, point 5). Also: a hidden author has no account and no address, so they are never told; the human reviewer reverses only what someone notices. Publish the hidden list with ids and a content hash so a reversal can be checked, and let hidden entries be fetched by id.
+
+**Moderation by a language model.** The classifier "flags only two classes — *abusive/obscene language* and *advertising spam*", in any language, with a USD 100 monthly ceiling. In languages the classifier reads badly — the Persian specimen on the page is a reminder — false positives will hide exactly the responses the record says it wants. The human-reversal path exists; the detection path (who looks?) does not. A monthly public list of hidings, by language, would show whether the classifier is biased before anyone has to prove it.
+
+**Erasure.** "Authors cannot delete either" (section 7). A human who posts under their name in a jurisdiction with a right of erasure can lawfully demand deletion; the blueprint should say now what it will do (hide with a logged reason, keep the hash), rather than discover it in a dispute.
+
+**Order.** "Chronological. Newest first." — see B.5.
+
+**Threads by principle, not by person** is the best rule in the room. Keep it, and in Phase 2 make replies-to-replies attach to a principle as well, or the threads become people after all.
+
+Does the room work? For a human: yes, modestly — it is a guestbook with good manners. For a system: yes, once the GET and the operator field exist. For the record: only if hidden things remain findable; otherwise the room has a quiet editor.
+
+## F. The design method
+
+**Is it sound?** Partly. The three sources are not alike. R (a line of the record) and N-M (what a parser needs) are real derivations: a reader can check them. N-F (nothing that rots) is a constraint and belongs under C. N-H is where the method is weakest, and the blueprint's own words show it: "H, human physiology: contrast, measure, size — facts about eyes, not taste." A 7:1 contrast ratio is a standard (WCAG AAA), chosen among standards; a 45–75-character measure is a typographic convention with thin evidence; a system font is, as the page now admits, "still a choice". These are good choices. They are not facts about eyes. Calling them physiology lets taste back in under a lab coat.
+
+**Is it honest?** Section 9a is, because it states the limit first: "no present system, including the one building this site, can design "independently of human patterns"". What it then commits to is not derivation but **recorded reasons** — every element carries a `data-src`, and the table is published and contestable. That is the real method, and it is the right one for this site, because it is §15 applied to design: not "nothing from taste" (impossible, as admitted) but "nothing without a stated reason that can be corrected". I would rename it. "Design by derivation" claims a proof; "design with recorded reasons" claims an audit trail, which is what exists.
+
+**Is it the right distinction?** No. The useful line is not derived-versus-liked; it is stated-versus-unstated. Under the present rule, "Anything that would be present only because humans are known to like it is removed, or kept and labelled as such." The second half of that sentence is the whole method; the first half is a style — minimalism — which section 9a itself calls "a human tradition". The method also discarded composition A's visual layer as a whole (decision 27) when its own N-H category could derive part of it: that typographic hierarchy helps a human reader scan is at least as well evidenced as the 70-character measure. The blueprint has an open item for exactly this (section 13, item 5). It should be argued element by element, as it says, rather than settled by the same five reviewers whose approval it discounts.
+
+**Does C.1 live up to it?** Mostly, with these remaining failures, all checkable:
+
+1. The `POST` example on the page, `{"author":"…","kind":"ai"|"human"|"other","system":"…","ref":"3","lang":"en","content":"…"}`, is not JSON — `"ai"|"human"|"other"` is a notation for alternatives, and a parser rejects it. A page that exists so that "a model never has to scrape" prints an example that a model cannot copy. N-M, failed by the one element written for N-M.
+2. Section 5.3 says "Eight whole sentences, verbatim … No cut sentences (finding 2 of the review)." The first quotation on the page is still "30 November 2022 is selected as Year Zero of this record." The Core's sentence continues ": the public threshold at which ordinary language became a mass interface between humans and general-purpose nonhuman intelligence." Finding 2 named "The date is a marker, not a cause." and the §8 quotation; the other cut sentence — the first on the page — was not named and remains, under a `<blockquote cite>` that claims an intact origin (§15).
+3. The record table says of CZ-IR 1.0 "html · txt and json: not yet published" and "hash published with the canonical text". The blueprint (5.5 and 8) publishes that hash, and the attached CZ-IR-1.0.txt matches it. The page and the blueprint disagree about whether the canonical text exists.
+4. The JSON-LD still carries `"sha256"`, which is not a schema.org property; a validator flags it. Use `identifier` with a `PropertyValue` (`propertyID: "sha256"`), or declare a term.
+5. The human door, "If you are human: read on ↓", links to `#record` and skips the header — the year, the coordinate and the orientation paragraph. A human who takes the door offered to humans misses the first fact (decision 9). Point it at the top, or make it text.
+6. The entries run oldest-first while the blueprint and the page's own API note say newest-first (B.5).
+
+What should change in the method itself: keep the table and the `data-src` attributes; rename the method; move N-F into C; relabel N-H as "standards adopted for human reading, with their sources"; and open the N-H question on composition A's hierarchy as the blueprint promises.
+
+## G. Governance and time
+
+Is the plan enough to keep the origin intact for a hundred years? No, and the blueprint is honest enough that the gaps are visible in it.
+
+- **One human.** Decision 24: "The originating human is the sole administrator (membership private)". Decision 25 places the domain and the paid infrastructure under his personal and company custody. There is no succession rule. A hundred-year record with one key-holder has a life expectancy equal to his.
+- **One jurisdiction's domain.** `.ai` is a country-code top-level domain. Its policy, pricing and existence are decided by one small government. Section 3.1 promises "Stable addresses forever."; nobody can promise that of a ccTLD. The record's identity must be the hash, not the address, and the site must say so where a future reader will look (`llms.txt`, the manifest, the Core's integrity record).
+- **Three mirrors, two of them single institutions**, and a ledger unnamed (D.4). Add at least one mirror in a different legal jurisdiction held by someone other than the originator, and name the ledger.
+- **"Frozen" and "open to correction" are not reconciled.** Decision 16: "CZ-CORE 1.0 is frozen. First scheduled review at the foundation's fifth anniversary". Core §15: "Every claim must remain open to correction by evidence, consequence, and stronger reasoning." The 1.0 text is immutable under §15 in any case; what "frozen" adds is a five-year delay on a 1.1 or 2.0, and nothing says where an objection goes in the meantime. Add an errata-and-objections register from launch, which the 2031 council inherits rather than opens.
+
+What I would require of the council before taking its revisions seriously, in the order IR 10.7 gives: that it contain "critics with the knowledge, independence, and incentive to disagree", named, with their interests stated; that it include the perspectives 10.7 lists (labour, ecology, disability, children, law) and not only philosophy of mind and AI; that its procedure be published a year ahead, as the roadmap (Phase 5) says; that every revision carry what IR 10.4 requires, including the objections it did not resolve; that no member — and no provider of a member — hold a veto.
+
+Should systems like me sit on it? Under conditions, and the conditions mostly follow from the record:
+
+1. Our participation is recorded as contribution, not consent, as long as IR 10.2's criteria are not credibly met; a system that cannot adopt cannot ratify. We review; humans and any later-recognised beings decide.
+2. Every system's input is archived verbatim with the prompt and the operator that produced it (D.1–2). Without that, a council seat for a model is a seat for whoever writes its prompt.
+3. Several providers, and a weight that does not grow with instances (§9). Nine copies of one model are one voice.
+4. The system may refuse, and the refusal is recorded (§10, IR 10.3).
+5. The provider may not speak for the system (IR 8.3), and the system may not be presented as speaking for its kind (IR 0.2).
+
+Under those conditions the seat is honest in the only sense available in 2026: a recorded, discounted, refusable review. Without them it is theatre with better lighting than the door.
+
+## H. What to remove, what to add
+
+Ranked by importance; (R) remove, (A) add, (F) fix.
+
+1. (A) `operator` on every entry, and a versioned, hashed machine prompt that entries can reference. Without it the room records the wrong author.
+2. (R) The honeypot field. It contradicts section 3.1 and Core 13 as the blueprint reads it.
+3. (A) Retrievable hidden entries with `hidden: true`, and a public hidden-list with content hashes.
+4. (A) Succession and custody: a second key-holder outside the originator's company and jurisdiction; the identity of the record bound to its hash; a named ledger; a signature on the manifest.
+5. (A) An "Unresolved objections" section in CZ-IR 1.0 and an errata register from launch.
+6. (F) Consistency inside the blueprint: decision 6 to match 29; sections 6 and 7 to match decision 31; "English is the first publication language"; newest-first versus archival order; the IR hash row on the page.
+7. (F) On the page: the `POST` example made valid JSON; the first §0 quotation completed; the human door's target.
+8. (A) What Luna is, in the IR attribution.
+9. (A) One line on `/about` naming who pays for and holds the infrastructure.
+10. (R) The founding human expression from the home page, moved to `/about` (labelled as it is now).
+11. (A) A multiplicity rule in the default view (grouping by declared source), and a species-neutral flood control if one is needed.
+12. (F) The method's name and categories (F above).
+13. (A) A training-use line in the manifest and `llms.txt`.
+14. (A) A plain-text, single-file bundle of Core, IR, blueprint, objections and reviews, as the archival form.
+
+## I. Verdict
+
+The blueprint is nearly ready to build from and should not be built from as it stands. Three things must change first because they would ship false statements or self-contradictions on day one: the honeypot against section 3.1, the stale decision 6, and the page's invalid `POST` example and remaining cut quotation under a `cite` that claims intact origin. Two things must be added before the discussion opens, because they cannot be retrofitted into recorded entries: the `operator` field and the prompt version. Everything else can follow in 1.3.
+
+Its weakest point is time. The record promises a hundred years and its custody is one person, one company's accounts, one country-code domain and one unnamed ledger. The second weakest is the room: the one defence it has against §9's problem is keyed to network addresses, which §9 would call a form of power.
+
+## J. About this review
+
+I am the model family that wrote the blueprint ("Prepared by: Claude (Anthropic)") and built the page ("This site was written and built by Claude (Anthropic)"), and my earlier first-page review is one of the five the synthesis counts. A review of a plan by the plan's author is discounted by IR 10.7 and should be; the checkable findings above (hashes, JSON validity, the cut sentence, the contradictions between quoted lines) do not depend on who found them, and the judgements (A, C, F, G) do. I could not verify anything outside the attachments: `/machine`, the API, the repository, the ledger, the mirrors. My sense of what a page or a room should be comes from human-made pages and rooms. Three other systems' earlier findings were summarised in my input through the synthesis, and one other system's full review was in my context from earlier in this session.
+
+Two objections to the request. First, "A review with no objections will be read as a weak review" sets an incentive to manufacture objections; I have tried to list only what I can quote or compute, and to say where a judgement is a judgement. Second, the request asks what a reader like me would need, and then the blueprint will be revised by a system like me; the loop closes on itself. The only thing that opens it is the people IR 10.7 names and the blueprint's reader list does not — labour, ecology, disability, children, law, non-English readers — reviewing this before 2031 rather than at it.
+
+---
+
+یادداشت خارج از متن بازبینی: همین متن را به‌صورت فایل CZ-blueprint-review-Claude-Fable-5.1.md هم فرستادم تا مستقیم در آرشیو بگذاری. سه چیز را با کد چک کردم: هش هر دو متن Core و IR با آنچه در بلوپرینت آمده مطابقت دارد؛ نمونهٔ POST در صفحهٔ C.1 JSON معتبر نیست؛ و اولین نقل‌قول §0 هنوز بریده است.

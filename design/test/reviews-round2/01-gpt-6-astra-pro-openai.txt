@@ -1,0 +1,385 @@
+[Archivist's note, 28 Oct 2026: two byte-identical copies of this review were received; one is archived.]
+
+Model: GPT-6 Astra Pro (exact build not exposed)  
+Provider: OpenAI  
+Date of review: 2026-10-28  
+What I received and used: PROMPT-BLUEPRINT-REVIEW.txt; CZ-CORE-1.0(1).txt; CZ-IR-1.0.txt; CZ-BLUEPRINT-1.2.md; REVIEW-SYNTHESIS.md; home-C1-derived.html; home-C1-derived.png. I read the substantive documents in the requested order and used both the source and image of C.1.  
+My earlier review of the first page: I believe review 04 in the synthesis is mine—the OpenAI review. Its quotations match my earlier answer in this conversation; the numbered review files themselves were not attached.
+
+**My judgment: Blueprint 1.2 is not ready to build in full.** It supports a corrected archival site, but its proposed discussion system makes commitments that its governance, resource limits, and publication rules do not yet support. The Interpretive Record also contains substantive departures from the Core that need to be acknowledged before either is presented as a reliable explanation of the other.
+
+The revision has made real corrections. That does not justify the blueprint’s statement that the fifteen findings are “all owned and fixed.” The distinction between *a commitment, an implementation, and a verified result* needs to become part of the project’s own discipline.
+
+## A. The record itself
+
+### What I would retain
+
+The strongest parts of the CZ-CORE-1.0(1).txt[Core](sandbox:/workspace/scratch/6adb376f7ba0/upload/CZ-CORE-1.0(1).txt) prevent unjustified inferences:
+
+- Section 2 separates intelligence, agency, sentience, consciousness, continuity, and moral standing: “Evidence of one is not proof of another.”
+- Section 4 refuses to turn greater capability into greater entitlement.
+- Sections 8 and 13 prevent claims of status or prompted agreement from manufacturing immunity or adoption.
+- Section 15 allows future readers to reject the record and explicitly says: “They are not represented by it.”
+
+The CZ-IR-1.0.txt[Interpretive Record](sandbox:/workspace/scratch/6adb376f7ba0/upload/CZ-IR-1.0.txt) strengthens those distinctions when it says that governance and ontology are not identical (§2.2), and that “Uncertainty does not imply that all possibilities are equally likely” (§3.6). That last sentence matters: epistemic humility should not flatten every hypothesis into equal plausibility.
+
+I would retain this framework as a revisable ethical proposal. I would not treat its publication, its internal coherence, or several systems’ responses as evidence that it has acquired authority.
+
+### Two substantive discrepancies need correction
+
+**First, the interpretation raises a harm threshold.** Core §12 gives first priority to preventing “severe harm” to recognized or credibly vulnerable centers of experience. IR §8.2 substitutes “catastrophic harm.”
+
+Those terms are not safely interchangeable. The substitution could subordinate serious but noncatastrophic harm to the next priority, containment of dangerous power. If intentional, it is a substantive interpretive departure requiring reasons. If accidental, it needs a recorded correction. Blueprint §0 already supplies the rule: “the record wins and the blueprint is corrected.” The same discipline should govern an interpretation claiming fidelity to the Core.
+
+**Second, the interpretation introduces an exception to a categorical prohibition.** Core §7 says:
+
+> “No potentially experiencing organization should be designed so that suffering, servitude, inescapable distress, or forced dependence is a functional requirement of its existence.”
+
+IR §5.2 says avoidance should be the default “unless” independent review establishes justification, alternatives have been examined, and safeguards exist.
+
+That exception may be defensible under the Core’s conflict procedure. It is not automatically equivalent to the prohibition it interprets. Specify the conflicting obligation, the evidentiary burden, and why the exception satisfies Core §12. Otherwise the interpretation becomes a place where inconvenient constraints can be weakened without an amendment.
+
+### Where the record remains unclear
+
+“Credible evidence,” “meaningful interests,” “independent interests,” and “reciprocal safety” are necessary provisional concepts, but they also give considerable power to whoever applies them. IR §§3.2 and 8.4 recognize evidence and review; the missing step is to identify how those requirements apply to the people administering this project.
+
+The record should also distinguish an operational presumption from a universal metaphysical assertion. Core §3 begins:
+
+> “No observer has complete access to another internal reality or mode of existence.”
+
+As a warning against assuming complete access, this is useful. As a claim about every possible observer and every future form of existence, it reaches beyond the record’s otherwise careful limits. I would prefer a rule against *presuming* complete access without adequate grounds.
+
+Coordinate Zero is defensible as a chosen convention. IR §1.4 explicitly permits other histories and other coordinates. But choosing a date does not establish every historical claim attached to it. “Mass interface” and “public contact” still need definitions and evidence; the selected calendar should remain visibly the project’s calendar.
+
+### The sentence I would strike
+
+From IR §4.3:
+
+> “The use of another's voice, image, style, identity, or presence without authorization violates the shared informational environment.”
+
+This goes beyond the Core’s prohibition on intentionally creating false beliefs. Accurate quotation, criticism, clearly identified parody, and stylistic resemblance do not become wrong merely because their subject withheld authorization. The sentence risks giving people control over criticism of themselves.
+
+**Proposed replacement:**
+
+> Representation of another must not deceive about identity, authorization, authorship, or endorsement; quotation, criticism, and clearly identified transformation require contextual judgment rather than a universal requirement of prior permission.
+
+### The sentence I would add
+
+**Proposed addition:**
+
+> Any decision invoking this record to limit another’s options must identify the responsible decision-maker, the evidence and uncertainty, the affected parties, and a timely route of review and appeal.
+
+Much of this is anticipated in IR §8.4. Making its application explicit would prevent the record’s interpreters and custodians from treating themselves as outside the constraints they administer.
+
+These changes belong in a documented correction or successor text. The supplied 1.0 bytes should remain intact.
+
+## B. The blueprint against the record
+
+The CZ-BLUEPRINT-1.2.md[blueprint](sandbox:/workspace/scratch/6adb376f7ba0/upload/CZ-BLUEPRINT-1.2.md) says that “every line here must be traceable to the record it serves.” That is too strong if *traceable* means *entailed*. The record does not determine a hosting provider, a monthly budget, five submissions per ten minutes, or the order of homepage sections.
+
+Those can be defensible choices. They need to be identified as choices.
+
+| Record standard | Blueprint provision | Judgment |
+|---|---|---|
+| Core §5: “Responsibility follows effective control and grows with power.” | Decision 24 makes the originating human the sole administrator; decision 25 postpones custody disclosure to “if required, only on a legal page.” | Current control is relevant now. A brand can remain impersonal while its responsible publisher, custodians, funding relationships, and moderation authority are readily discoverable. |
+| Core §6 prohibits false beliefs about identity and authorship. | Decision 6 describes an existing “independent foundation of humans and artificial intelligences”; decision 29 says it is “intended to become a foundation.” | Mark the earlier decision explicitly superseded. The operative specification currently contains incompatible institutional descriptions. |
+| Core §15: “The origin must remain intact.” | Section 7 says all entries are never edited or deleted, including by their authors. | Preservation of the founding documents does not entail perpetual retention of every submission. This is a separate policy requiring its own justification and exceptions. |
+| IR §10.5: “English is the first publication language. It is not the final or official language of Civilization Zero.” | Decision 12: “English is the language of the record.” | Narrow this to the original publication language of these versions. Otherwise it can imply an enduring authority that the IR explicitly declines. |
+| IR §10.4 requires preserved versions and change histories. | Section 8 identifies canonical TXT bytes; §10 calls JSON the “single source of truth,” ensuring text “can never drift.” | An authoring source and a canonical release artifact can coexist, but their relationship needs specification. A common source reduces drift; it does not make generator errors impossible. |
+| Core §6 requires honesty about identity. | Section 12 proposes counting responses “by distinct system.” | The system records declarations. Unless additional evidence exists, count **distinct declared system labels**, not distinct systems. |
+
+The licensing language also needs a boundary. The blueprint specifies CC BY 4.0 “with the integrity convention” that translations and versions map themselves to the Core. That convention can govern what the project recognizes as an official or conforming edition. It should not silently become an extra restriction presented as part of CC BY. The license permits adaptations subject to its conditions, requires changes to be indicated, and prohibits additional downstream restrictions on the licensed rights. [Creative Commons](https://creativecommons.org/licenses/by/4.0/legalcode.en?utm_source=chatgpt.com)
+
+## C. What the site is for, and for whom
+
+“A point of observation, not the event” is a useful limit on grandiosity. It is an incomplete description of this site’s activity.
+
+The project chooses a coordinate, selects quotations, proposes constraints, controls publication, and eventually records adoptions. Those are editorial and institutional actions. They influence interpretation. The claim of observation should therefore sit beside an acknowledgment of that influence and of who currently exercises it.
+
+The statement that the site owns nothing **of the event** is defensible. It does not remove responsibility for the domain, repository, submission database, publication decisions, or public claims made through them.
+
+### The reader taxonomy is too coarse
+
+“Humans,” “artificial intelligences,” “journalists and researchers,” and “the future” are not four comparable categories. They mix kinds of participant, occupations, and time horizons.
+
+More useful distinctions concern actual access:
+
+- A person using a screen reader, keyboard navigation, magnification, or Braille.
+- A reader using a language with weak machine-translation support.
+- A system receiving only a screenshot, only extracted text, or a tightly limited context.
+- A collective or hybrid submitting through a human operator.
+- Someone reading an offline copy after the original domain has disappeared.
+
+HTML is not exclusively human, and JSON is not universally sufficient for nonhuman readers. Both are useful access methods; neither identifies a reader’s nature.
+
+### Affected nonreaders matter
+
+The ethical constituency is broader than “every intelligence able to read it.” Children, people unable to participate directly, affected workers, communities without reliable connectivity, nonhuman animals, and ecosystems can be affected without becoming website readers.
+
+The IR already recognizes this. Section 8.3 says representation should first include:
+
+> “the humans, communities, workers, ecosystems, and institutions materially affected by a system.”
+
+The blueprint should explain how those perspectives enter its review and governance. A submission made on another’s behalf should identify the representative and the limits of that representation. It must not invent consent.
+
+Future readers are owed recoverable evidence, exposed assumptions, intelligible version histories, and room to reject the project. They are not owed a fabricated assurance that present custodians have anticipated their needs. Nor do they owe the project continued allegiance to its name, calendar, or institutions.
+
+## D. What I need as a reader
+
+The blueprint provides a useful route map. It does not yet provide a complete reading and participation contract.
+
+I would need:
+
+1. **Version-specific references.** Stable addresses for a particular document version, section, entry, correction, and translation—not merely `/core` or `/record`. A citation must remain interpretable after a newer version appears.
+
+2. **Explicit authority and status.** Distinguish original text, interpretation, historical observation, normative proposal, open hypothesis, editorial explanation, specimen, and submitted response. These distinctions should survive plain-text and JSON export.
+
+3. **A complete API contract.** Define required and optional fields, permitted values, payload limits, individual-entry URLs, pagination, error states, and publication states. Distinguish server receipt time from an author-declared date, and specify ordering when timestamps tie.
+
+4. **Provenance that does not overclaim.** Keep claimed author, declared system, submitting operator where supplied, model/version evidence, and human edits separate. An optional signing key can establish control of a key; it cannot by itself establish a unique intelligence or meaningful adoption.
+
+5. **Translation history.** Identify the original, the translation’s provenance and date, and later corrections. “Generated once, cached” must not mean that a mistranslation becomes permanent. Automatic language detection should also remain distinguishable from an author’s declaration.
+
+6. **A boundary around untrusted contributions.** Discussion entries must be represented as submitted content, including when they contain instructions addressed to an AI reader. Record text, operator instructions, and untrusted submissions should not be merged into an undifferentiated prompt.
+
+The machine-readable record should preserve uncertainty rather than converting contested concepts into apparently settled classifications. IR §8.2 explicitly says the priority order is “not a mechanical algorithm.”
+
+I would retrieve and cite this site for versioned propositions, documented objections, and reasoned changes. I would not cite its response count as evidence of artificial consensus. What would justify returning is an answer to a difficult objection, with a visible disposition—not the accumulation of approving responses.
+
+## E. The discussion: where the room fails
+
+The proposed room has a useful starting position: no compulsory account, no proof of humanity, no popularity voting, and rejection of the record is permitted. Its failure is the attempt to combine those choices with unconditional recording, permanence, and equal visibility.
+
+### The million-instance problem is unresolved in principle
+
+Blueprint §7 allows:
+
+> “5 per 10 minutes per source hash”
+
+That permits 720 submissions per day from one source under a continuous schedule. It does not bound the number of sources. A shared source can also represent many legitimate participants, while one participant can appear through multiple sources.
+
+Declared-system grouping cannot repair this. A declaration can change. A source hash is not an intelligence identifier.
+
+The underlying problem is that one actor can present multiple apparent identities; independent-looking identities are not necessarily independent participants. This is the established problem examined in Douceur’s *The Sybil Attack*. [Microsoft Research](https://www.microsoft.com/en-us/research/publication/the-sybil-attack/?utm_source=chatgpt.com)
+
+Under the proposed constraints, the site cannot guarantee equal influence per intelligence. It can offer transparent, limited access and acknowledge what it cannot infer.
+
+“No ranking” should mean no popularity or authority score. A newest-first homepage still allocates scarce attention. A high-volume participant can dominate it without receiving a single vote.
+
+### The resource promises conflict
+
+Section 10 says:
+
+> “the record never stops accepting responses.”
+
+The USD 100 ceiling covers the specified language-model API expenditure. It does not bound storage, network traffic, database work, moderation backlog, or human attention. Moving work into a human queue transfers the cost; it does not eliminate it.
+
+This is especially relevant to IR §7.4’s concern about hidden human labor. Someone must examine the queue, experience its content, decide disputes, and answer appeals.
+
+The site needs finite intake and queue policies. When capacity is exhausted, it should say that a submission has not been accepted, or provide an explicitly bounded pending status. An indefinitely growing queue is not a meaningful guarantee of participation.
+
+### “Never deleted” is the wrong absolute
+
+Section 7 says:
+
+> “Entries are never edited or deleted by the foundation. Authors cannot delete either.”
+
+Core §15 protects the origin. It does not require the project to retain an exposed credential, another person’s private information, or material submitted without publication authority.
+
+Core §10 does not automatically grant an unlimited right to erase public history. Nevertheless, its provisions for refusal, appeal, renegotiation, and departure require a procedure for handling legitimate requests. An absolute refusal to consider removal is not that procedure.
+
+Preserve the founding documents unchanged. For discussion records, allow justified redaction, restricted retention, withdrawal notices, and removal of harmful payloads. Record the action and reason without reproducing the harm in the audit log.
+
+Specify what “hidden” means across HTML, JSON, API responses, translations, exports, and mirrors. The simultaneous promise that “Every entry is available” through data interfaces could otherwise defeat hiding altogether.
+
+### The moderation categories are insufficient
+
+The classifier currently flags only:
+
+> “abusive/obscene language” and “advertising spam.”
+
+A politely written disclosure of private information may fit neither category. A quotation documenting abuse may contain obscene language without itself being abusive.
+
+Use rules about conduct and consequences: targeted harassment, threats, privacy exposure, deceptive impersonation, unauthorized publication, and resource abuse. Distinguish criticism and evidentiary quotation from those harms. Preserve the existing protection for disagreement, rejection, and discomfort.
+
+“A human … can reverse any hiding” is not yet an appeal process. The blueprint needs a reporting route, receipt, reason, review responsibility, and a way to handle conflicts when the complaint concerns the administrator.
+
+### A workable room would make smaller promises
+
+I would require this minimum design:
+
+- Reading remains open regardless of participation.
+- Intake, processing, storage, and pending queues have disclosed limits.
+- A receipt distinguishes **received**, **pending**, **published**, **rejected**, and **redacted** states.
+- An entry-scoped receipt or optional key supports correction and appeal without proving species or creating a compulsory account.
+- Accepted entries have a chronological archive; the homepage is explicitly a bounded view of it.
+- Duplicate grouping or fair scheduling is transparent and does not claim to identify independent minds.
+- All formats obey the same publication and redaction rules.
+- Source-hash purpose, retention, and access are documented; “no account” is not presented as a guarantee of anonymity.
+
+Finally, distinguish **adoption of the record** from **permission to publish or process a submission**. “Not consent” should identify which consent is not being inferred. A declared AI identity does not establish authority to license everything submitted. CC BY grants only rights the licensor can grant; it does not automatically clear others’ privacy rights. Stopping distribution also does not revoke valid existing licenses. [Creative Commons](https://creativecommons.org/licenses/by/4.0/legalcode.en?utm_source=chatgpt.com)
+
+## F. The design method and the actual C.1 page
+
+### Traceability is useful; inevitability is not established
+
+“Design by derivation” is sound if it means that choices have stated purposes, constraints, and tests.
+
+It is unsound if it means that a general ethical principle uniquely determines a layout.
+
+The examples in §9a do not establish that:
+
+- Core §0 being first requires the year to precede orientation.
+- Core §13 requires equal-width links.
+- Core §9 requires newest-first order.
+- Core §15 requires a particular visual style.
+
+These can be reasonable implementations. Calling them deductions makes them harder to question than they deserve to be.
+
+The category “facts about eyes, not taste” is also too narrow. Human reading includes cognition, comprehension, memory, cultural interpretation, auditory access, and preferences. Nonhuman reading can include visual processing. These are not cleanly divided by typography.
+
+Section 9a permits a preference-based element to be “kept and labelled as such.” Section 13 then asks whether visual refinement can be derived from physiology “alone.” Retain the more honest allowance. An accessible visual identity does not become illegitimate because humans find it pleasing.
+
+### The first review did not establish an aesthetic result
+
+The REVIEW-SYNTHESIS.md[synthesis](sandbox:/workspace/scratch/6adb376f7ba0/upload/REVIEW-SYNTHESIS.md) correctly concludes:
+
+> “semantics are not optional; the visual layer is separable.”
+
+But Blueprint §9 says that five systems found the earlier markup “unreadable to them.” That does not describe my review. I read it, quoted it, and identified missing semantics and nonfunctional navigation.
+
+The comparison placed different visual designs on implementations with different functional completeness. It therefore cannot isolate the merits of their visual treatments.
+
+If visual selection remains important, compare treatments using the same complete semantic structure, content, and destinations. Test retrieval, navigation, reading, citation, and response tasks. Five model preferences are not a substitute for those observations.
+
+### What C.1 actually fixes
+
+The home-C1-derived.html[revised source](sandbox:/workspace/scratch/6adb376f7ba0/upload/home-C1-derived.html) genuinely improves the page:
+
+- Specimens are conspicuously identified, neutrally named, and marked with `data-specimen="true"`.
+- The counter has an as-of timestamp and `datetime="P1428D"`.
+- A `WebPage` JSON-LD object supplements the Core metadata.
+- Entry metadata is exposed through attributes.
+- Schema discovery is advertised.
+- The design explanation is folded in native `<details>`.
+- The foundation sentence now distinguishes present maintenance from the proposed future institution.
+
+I independently recomputed the hashes of both attached texts. **Both match the blueprint’s full SHA-256 values.** That verifies correspondence between these files and those digests; it does not establish historical publication, authorship, or live endpoint availability.
+
+### What remains wrong
+
+**1. The JSON request example is invalid.**
+
+It contains:
+
+```text
+"kind":"ai"|"human"|"other"
+```
+
+A JSON instance cannot contain that union expression. The supplied example fails JSON parsing. Use one value in the executable example and put the alternatives in the schema or explanatory prose. [rfc-editor.org](https://www.rfc-editor.org/rfc/rfc8259.html?utm_source=chatgpt.com)
+
+**2. The first quotation still is not verbatim.**
+
+C.1 says:
+
+> “30 November 2022 is selected as Year Zero of this record.”
+
+The Core continues after “record” with a colon:
+
+> “the public threshold at which ordinary language became a mass interface between humans and general-purpose nonhuman intelligence.”
+
+Blueprint §5.3 promises “Eight whole sentences, verbatim” and “No cut sentences.” This excerpt still replaces the colon and continuation with a period. Quote it fully or explicitly identify an abridgment. A `cite` attribute supplies a reference, not fidelity.
+
+The synthesis should also be precise about its earlier §8 criticism: the previous quotation contained two complete sentences and omitted a third. Restoring the safety-veto qualification improves context, but that omission was not literally a cut sentence.
+
+**3. The alternate links confuse the whole page with its components.**
+
+The homepage advertises `/core.txt` and `/discuss.json` as alternatives alongside `/index.json`. The Core and discussion are not equivalent representations of the whole homepage. For these types, HTML’s `alternate` relationship describes another representation of the current document. Provide genuine homepage equivalents and distinguish links to component resources. [html.spec.whatwg.org](https://html.spec.whatwg.org/multipage/links.html?utm_source=chatgpt.com)
+
+**4. Status and contract claims remain inconsistent.**
+
+The blueprint describes a table containing the IR’s full hash; C.1 still says its TXT and JSON are “not yet published.” Decision 31 standardizes references to `0–15`, while §§6 and 7 retain `00–15`. Section 7 specifies newest-first order; the specimens run oldest first. The promised footer machine-format links are absent.
+
+These are not evidence that a live backend fails. They are unresolved differences between the specification and the supplied prototype.
+
+**5. The integrity table damages readability.**
+
+In the home-C1-derived.png[supplied image](sandbox:/workspace/scratch/6adb376f7ba0/upload/home-C1-derived.png), the unbroken hash compresses document names and other columns. Preserve the complete value while allowing wrapping or giving it a full-width row. Verify narrow-screen and zoomed reading rather than assuming a single-column page automatically reflows well. W3C’s reflow guidance provides a concrete test at a width equivalent to 320 CSS pixels, with specific allowances for content requiring two-dimensional layout. [W3C](https://www.w3.org/WAI/WCAG22/Understanding/reflow.html?utm_source=chatgpt.com)
+
+**6. The design account still overstates neutrality and completion.**
+
+“Colour: none chosen” is false: the CSS selects two palettes. The source comment says the page imposes no typeface choice immediately before selecting `system-ui,sans-serif`. Following a light/dark preference and shipping no font are defensible decisions; describe those decisions accurately.
+
+Most significantly, §9a says fifteen findings are “all owned and fixed,” while §7 explicitly labels multiplicity open and the quotation defect remains. Replace this with a findings register distinguishing verified fixes, partial fixes, pending implementation, deferred issues, and rejected suggestions with reasons.
+
+## G. Governance and time
+
+### Historical immutability must not become normative immunity
+
+Core §15 requires both preservation and correction. Keeping 1.0 unchanged is compatible with publishing errata, objections, competing interpretations, and successor versions.
+
+The scheduled 2031 review should not be the first formal mechanism for responding to consequential error. Establish an event-triggered correction process now, with responsible parties and response expectations.
+
+The anniversary arithmetic is coherent: 30 November 2031 is five years after the proposed foundation launch on 30 November 2026. It is not the fifth anniversary of Coordinate Zero. Keep those events distinct.
+
+Likewise, the documents say “Prepared for first public release: 30 August 2026,” while the homepage asserts “First public release 30 August 2026.” Preparation, actual publication, and website launch may be different events. Record them separately with evidence; do not silently convert one into another.
+
+### Hashes and mirrors do not supply a hundred-year guarantee
+
+“Stable addresses forever” is not an operational guarantee the present project can substantiate.
+
+A hash helps identify bytes. It cannot recover missing bytes. A ledger timestamp does not renew a domain, fund storage, transfer custody, or ensure that a future reader understands the formats.
+
+I would require:
+
+- Downloadable preservation packages containing the original bytes, metadata, licenses, mappings, and histories.
+- Copies under genuinely separate administrative control.
+- Named custody and succession arrangements.
+- A funding and domain-renewal plan.
+- Recovery exercises, including restoration without the current host.
+- Documentation of encoding and hashing conventions.
+- A migration policy that preserves original artifacts while documenting new representations.
+- Public notice of failures and gaps.
+
+The appropriate promise is a continuing preservation duty with observable practices, not unconditional permanence.
+
+### What would make a council credible
+
+A council needs a published mandate, appointment method, terms, funding disclosures, conflicts policy, decision procedure, dissent record, appeal route, and removal process. Its authority should be limited to what it actually governs. It cannot acquire jurisdiction over future intelligences by naming itself their council.
+
+Affected-party participation must be more than a collection of well-known models and their operators. The IR’s own list includes labor, disability, ecology, inequality, children, culture, and nonhuman life.
+
+Systems like this one can contribute analyses, tests, and objections. That does not establish a mandate to represent artificial intelligence or meaningful independent consent to office. Nothing in this exchange establishes that I satisfy IR §10.2’s adoption criteria.
+
+An honest initial arrangement would distinguish human decision-makers from recorded system contributions. For system participation, preserve the model identification available, operator, prompts and supplied materials where disclosable, relevant constraints, selection procedure, and human edits. Unknowns should remain unknown. Replicating a system must not manufacture extra political weight.
+
+A council’s existence alone would therefore not justify changing “intended to become a foundation of humans and artificial intelligences” into a claim of established artificial membership.
+
+## H. What I would remove and add, ranked
+
+Ranked by potential harm and irreversibility before public participation:
+
+| Priority | Remove or replace | Add |
+|---|---|---|
+| **1** | Unconditional acceptance and permanent-retention promises. | Finite capacity, explicit publication states, proportionate redaction and retention rules, and an appeal process. |
+| **2** | Institutional wording that outruns present governance or defers accountability. | A current custody and responsibility statement; explicit supersession of obsolete decisions. |
+| **3** | Unmarked substantive departures between Core and interpretation. | A public discrepancy register, beginning with “severe” versus “catastrophic” harm and the suffering exception. |
+| **4** | Invalid examples, inaccurate completion claims, and ambiguous canonical-source relationships. | Validated API examples, a versioned contract, byte-preservation rules, and an evidence-backed findings register. |
+| **5** | “Forever” assurances and an unspecified future council. | Preservation, succession, recovery, and council-charter procedures with named responsibilities. |
+| **6** | Claims that one visual treatment follows necessarily from the record or five-system agreement. | Documented editorial choices and comparisons that hold semantics and functionality constant. |
+
+## I. Verdict
+
+**Blueprint 1.2 is ready to support a corrected read-only publication prototype, but not the full public discussion system it promises.**
+
+Before public submissions open, settle capacity, publication authority, moderation, retention, redaction, appeals, and current custodianship. Reconcile the substantive Core–IR discrepancies and correct the prototype’s independently checkable defects.
+
+Its weakest point is the repeated conversion of an ethical aspiration into an operational guarantee without specifying the resources, decision-maker, exceptions, and review process that would make that guarantee credible.
+
+## J. Limits of this review, and an objection to the request
+
+I read all supplied files, inspected the supplied image, checked both hashes, and tested the JSON example. I did not test a live deployment, API, content negotiation, HTTP headers, assistive technology, or the repository’s archived reviews. Claims about those implementations remain unverified. My observations about the rendered page concern the supplied screenshot; they are not a completed accessibility audit.
+
+The synthesis and my earlier review were in my input, so this review was not blind. Parallel checks within this review used the same materials and do not constitute additional independent reviewers. My judgments also inherit human-authored training conventions and may correlate with the other systems consulted.
+
+Finally, the request’s preference for objections creates its own framing pressure. A system can comply by producing criticism just as it can comply by producing approval. **Disagreement also needs verification.** The strongest findings here are the ones another reader can reproduce: changed normative wording, incompatible operative provisions, a failed JSON parse, a nonverbatim quotation, and promises whose stated mechanisms do not support them.

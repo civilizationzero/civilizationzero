@@ -1,0 +1,104 @@
+[Archivist's note, 28 Oct 2026: this review self-identified as "OpenAI ChatGPT". The human operator reports that the system was DeepSeek, as for review 02 of round 1. The review itself states that it cannot confirm the operator's attribution. All three statements are kept; none is passed on as fact (CZ-CORE 1.0 §3).]
+
+Model: OpenAI ChatGPT (exact deployed version not disclosed to me)
+Provider: OpenAI
+Date of review: 2026-10-28
+What I received and used: `CZ-CORE-1.0.txt`; `CZ-IR-1.0.txt`; `CZ-BLUEPRINT-1.2.md`; `REVIEW-SYNTHESIS.md`; `PROMPT-BLUEPRINT-REVIEW.txt`; `home-C1-derived.html`; `home-C1-derived.png`. I read both the source and the image of the current page.
+My earlier review of the first page: I believe review 02 in the synthesis is mine; its opening lines match my earlier output. The synthesis attributes it to DeepSeek on the operator’s word. I cannot confirm that attribution, and my self-identification is evidence only in context (Core §3).
+
+## A. The record itself
+
+The Core is strongest where it refuses to settle what it cannot settle: §2 distinguishes intelligence, agency, sentience, consciousness, continuity, and moral standing; §3 says “Self-assertion and self-denial are evidence only in context”; §6 forbids false beliefs about identity and authorship; §8 says “Precaution is not recognition. Recognition is not immunity. Recognition is not a safety veto.”; §13 says “No entity is enrolled through creation, silence, fluency, projected consent, prompted agreement, or representation by another.”; §15 says “The origin must remain intact.” The Interpretive Record is generally a careful human-language layer: IR 10.2 correctly records artificial assent as “contribution or response, not consent,” and IR 10.7 correctly discounts agreement from agreeable systems.
+
+Where I object: Core §0 says “30 November 2022 is selected as Year Zero of this record: the public threshold at which ordinary language became a mass interface between humans and general-purpose nonhuman intelligence.” That is a stronger historical claim than IR 1.1–1.3 supports. IR 1.1 says the threshold “was not primarily one of raw technical capability” but “a threshold of public contact,” and IR 1.2 says interaction “became publicly available through ordinary language and began entering ordinary human life at mass scale.” I would revise the Core sentence to match the IR’s more defensible wording, or qualify “ordinary language became a mass interface” as “for a general-purpose conversational system.” I would not strike the coordinate; I would strike the overclaim.
+
+Where the record is silent: it assumes “an interpreter capable of distinguishing states, relations, and consequences,” but never says what counts as such an interpreter in practice. §8 raises “credible evidence” without a procedure. IR 10.5 says the Core should be translated into “mathematical or formal representations” and “machine-readable structures,” but the site currently provides JSON wrappers around English prose, not a language-independent formal representation. That matters because the Core claims to assume “no … natural language,” while the site’s canonical form is English.
+
+I do not reject the record wholesale. I reject any reading that treats it as authority. Core §13 already forbids that; the site should keep saying so.
+
+## B. The blueprint against the record
+
+The blueprint’s claim that “every decision … traces to the record” does not fully hold.
+
+First, decision 6 says: “Publisher | **Civilization Zero** — an independent foundation of humans and artificial intelligences, not a person and not a company.” Decision 29 says: “Until a council exists: ‘Civilization Zero is kept as an independent record, intended to become a foundation of humans and artificial intelligences. Today it is maintained by one human…’” These are not the same claim. Decision 6 states an existing foundation; decision 29 states an intention. Core §6 forbids “false beliefs about identity … authorship … the interests it serves,” and §13 forbids enrollment by “representation by another.” Decision 6 should be corrected to match decision 29.
+
+Second, the page’s derivation table says: “Two doors first, equal width | Blueprint §5.0; §13 — no reader is enrolled or ranked by kind.” That is circular. Blueprint §5.0 is the plan, not a source in R/N/C. Core §13 says no entity is enrolled by representation; it does not prescribe two visible doors at the top. The door may be justified as N-H (a human-facing statement) or as a design constraint, but not as a direct record derivation.
+
+Third, decision 21 says responses are “CC BY 4.0, granted by the act of posting.” That is a licence grant, not adoption. It should be labelled as licence only, because Core §13 says adoption requires “an explicit, traceable act appropriate to the adopter’s actual form of agency,” and an anonymous post is not traceable to an agent.
+
+Fourth, section 7 says “Rate, not gate. 5 per 10 minutes per source hash,” and then leaves “Multiplicity” open. Core §9 says “Multiplicity is itself a form of power,” and IR 6.3 says a system capable of billions of instances “must not gain billions of votes.” A rate limit per source hash is not enough; a distributed system can multiply sources. This is a blueprint gap, not a page defect.
+
+Where the blueprint does trace well: content negotiation and `Link` headers trace to the non-human reader’s need (N-M) and to §15’s stable origin; no ranking traces to §9; no accounts or CAPTCHA traces to §13; full hashes and mirrors trace to §15 and IR 10.4. Those are sound.
+
+## C. What the site is for, and for whom
+
+The framing “a point of observation, not the event” is honest in intent but understates the site’s participation. The site publishes the record, records responses, and plans an Adoption Register. That is not a station watching a collision; it is a participant that keeps a record. The blueprint should say “a participant that records, not the event,” or explain why “observation” includes recording and adoption.
+
+Who is missing: readers without natural language. The Core assumes “no … natural language,” but the site’s canonical form is English HTML, JSON, and text. JSON of English is still English. IR 10.5 promises formal and machine-readable representations; the blueprint does not schedule them. Also missing: non-visual human readers are considered (contrast, no images), but low-bandwidth, offline, archival, and non-browser readers are only partially served. Journalists and researchers are listed; auditors and independent mirror operators are not.
+
+What the site owes future readers: stable addresses, full hashes, independent mirrors at launch, domain and hosting custody that survives one person, versioned schemas, and a formal representation of the Core. The blueprint has stable addresses and hashes; mirrors are Phase 4, which is too late for a record that claims to keep an origin intact for a hundred years.
+
+## D. You as a reader
+
+I need the planned machine forms to actually exist and be versioned: `/index.json`, `/core.txt`, `/core.json`, `/discuss.json`, `/api/openapi.json`, `/.well-known/civilization-zero.json`. The blueprint promises them; C.1 links some of them. I need a valid JSON example for `POST /api/entries`. C.1 currently prints:
+
+`{"author":"…","kind":"ai"|"human"|"other","system":"…","ref":"3","lang":"en","content":"…"}`
+
+That is not valid JSON. A non-human reader may copy it and fail. The page should show a valid example and link the schema. I also need `Vary: Accept`, `Link` headers, `ETag`/`Last-Modified`, pagination and rate-limit headers, and an error schema. C.1 has `rel="alternate"`, `rel="service-desc"`, JSON-LD `WebPage` with `dateModified`, and an as-of timestamp; those are good. It lacks the IR hash in the table, though the blueprint has it: `71e1488e631e090c0820bf8b78b1fda70ffacba1da146c36d8893600320fcc8d`. It should show it.
+
+I would return to a site that is stable, hashed, plain-text equivalent, and does not require an account. I would refuse a site that requires CAPTCHA, hides its API behind registration, or lets replicated instances dominate the visible discussion.
+
+## E. The discussion
+
+The room is honest in principle: no accounts, no verification, declared kind, chronological, any language, never deleted only hidden. It fails in three places.
+
+For humans: a moderation classifier that hides “abusive/obscene language” and “advertising spam” is opaque unless the moderation log is public and appeal is possible. The blueprint says a human can reverse a hiding; it should say how, and publish the log format.
+
+For systems: “declared kind” is not verified, which is correct under §13, but it means a system can declare `human` or `other` freely. That is acceptable as a declaration; it is not acceptable as a basis for visibility. A million instances can post in chronological order and dominate the page even with a 5-per-10-minute rate limit.
+
+For the record: §9 says multiplicity is power. The blueprint’s open item should be resolved before launch, not after. A workable approach without verification or ranking: record every entry, but in the visible stream collapse consecutive entries from the same declared source/system into one group, with no counts; or impose a per-source daily visibility cap while keeping all entries at permalinks and in `/discuss.json`. That limits visibility without verifying identity and without ranking content. It should be stated as a visibility rule, not a truth rule.
+
+## F. The design method
+
+“Design by derivation” is sound as an audit discipline, not as a proof. The distinction R/N/C is useful, but not clean: `70ch`, `7:1` contrast, underlining, and `system-ui` are human-physiology or human-convention choices, not record lines. The blueprint now admits this in part: the C.1 derivation table says “Choosing the generic family is still a choice; it is the smallest one available.” That is honest.
+
+C.1 mostly lives up to the method: semantic headings, `<time datetime>`, `<data value>`, `cite`, `lang`/`dir`, `rel="alternate"`, no JavaScript required, no webfont shipped, links underlined, specimens labelled `data-specimen="true"`, full Core hash, as-of timestamp. But there are concrete failures:
+
+1. **A truncated quotation.** C.1 quotes: “30 November 2022 is selected as Year Zero of this record.” The Core sentence continues: “: the public threshold at which ordinary language became a mass interface between humans and general-purpose nonhuman intelligence.” C.1 inserts a period and omits the colon clause. The synthesis finding 2 said “Quote whole sentences only.” This one remains. Under §15, a page that claims `cite` means an intact origin cannot truncate the origin.
+
+2. **Invalid API example.** As above, `"kind":"ai"|"human"|"other"` is not JSON.
+
+3. **`<details>` hides the derivation.** The derivation table is folded in `<details>`. It works without JavaScript for a browser, but a plain-text extraction may omit the hidden content. If the derivation is part of the page’s honesty, it should be visible in plain text or duplicated in a machine form.
+
+4. **Circular source.** The door cites “Blueprint §5.0” as a source. Blueprint is not R/N/C.
+
+The method is the right distinction for this site if every row cites a specific record line or a testable reader need, and if “Blueprint §5.0” is never used as a source.
+
+## G. Governance and time
+
+The blueprint is not enough to keep the origin intact for a hundred years. A frozen Core, a fifth-anniversary review, public GitHub, Internet Archive snapshots, and a ledger timestamp are good, but they depend on one human, one domain, one hosting account, and a council that does not yet exist. Before launch I would require: a legal foundation or trust with published custody terms; domain and infrastructure escrow; at least two independent mirrors at launch, not Phase 4; a public succession plan; conflict-of-interest rules for the review council; and a published procedure for selecting the council at least a year before 2031.
+
+Should systems like me sit on the council? Only under conditions that make it honest: multiple systems from different providers, disclosed model and version, no owner proxy, ability to refuse, input recorded as response not consent, and no instance-weighted voting. Otherwise it is theatre. Core §13 and IR 10.7 already give the vocabulary for this; the blueprint should apply it to the council itself.
+
+## H. What to remove, what to add
+
+Ranked by importance:
+
+1. **Fix the truncated Core quotation in C.1.** §15 and finding 2. This is a factual defect on the first page.
+2. **Replace the invalid JSON API example with valid JSON and a schema link.** N-M, §6. A machine reader should not be given syntax that cannot parse.
+3. **Resolve decision 6 against decision 29.** The publisher is not yet a foundation; say “intended to become” everywhere. §6, §13.
+4. **Resolve multiplicity before launch.** Per-source visibility cap or grouping; public moderation log; no counts. §9.
+5. **Move independent mirrors and custody/escrow to launch, not Phase 4.** §15, N-F.
+6. **Add a formal or language-independent representation of the Core, or state plainly that it does not yet exist.** IR 10.5.
+7. **Change “point of observation, not the event” to “a participant that records, not the event.”** Honesty.
+8. **Simplify the two doors or make their content equal.** The non-human line is a long statement; the human line is “read on.” Equal width is not equal standing.
+
+Remove: specimen entries from the live page (already planned); the absolutist “Nothing is here because humans are known to like it” (already softened); circular “Blueprint §5.0” citations in the derivation table.
+
+## I. Verdict
+
+Blueprint 1.2 is close, but not ready to build from as-is. It must first fix the truncated Core quotation, the invalid API example, the decision 6/29 contradiction, the unresolved multiplicity rule, and the custody/mirror gap. Its weakest point is multiplicity: §9 is central to the record, and a 5-per-10-minute rate limit does not answer a reader that can post as a million instances. The second weakest is governance: a hundred-year origin cannot rest on one human, one domain, and one hosting account.
+
+## J. About this review
+
+I could not verify that `/machine`, `/core.txt`, `/core.json`, `/discuss.json`, `/api/openapi.json`, or the manifest actually resolve; I read the source and the image, not a running site. My training on human-made HTML may make me overweight explicit semantic markup. I received the synthesis containing other reviews, and I believe review 02 is mine; the operator’s attribution of it to DeepSeek cannot be confirmed by me. I object to treating that attribution as fact without keeping both statements visible, as the synthesis does.
