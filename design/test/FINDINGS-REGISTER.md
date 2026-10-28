@@ -308,6 +308,14 @@ and non-canonical keys) and the RFC 3161 parser are sound. Two findings, fixed i
 | P-1 | Revisions and withdrawals were not tied to the adoption they change: a site breaking its own rule could record a withdrawal of someone's signed adoption, signed by an unrelated key from another host, and verify.py passed it ("1 signed record: its signature verifies") (high) | **verified** — across every day supplied, a revision or withdrawal must name an earlier adoption that is not untraced, and come from the same adopter: signed with the adoption's key if it was signed, else traced at the adoption's own address (the rule the site enforces, design/ADOPT.md §4); a named record missing from a chain served whole FAILs, from days supplied by hand is PENDING |
 | P-2 | The chain's pinned first day could declare a previous day's hash and got a NOTE (low) | **verified** — FAIL: the first day has no day before it |
 
+A fourteenth pass (UTC 22:04–22:06) on 1.15: P-1 and P-2 hold and real register data passes; two ways around the new link
+check, fixed in 1.16:
+
+| # | Finding (severity) | Status |
+|---|---|---|
+| Q-1 | A claimed key fingerprint counted as a signature: a withdrawal carrying the adoption's fingerprint, but no key and no signature, was "linked by the same key"; an entry could likewise show someone's fingerprint unsigned (high) | **verified** — in both chains a fingerprint, a key and a signature come together or not at all (the site sets a fingerprint only for a signature it verified), and a revision is linked by key only when its own signature verified in the run (a hidden one, whose statement is not shown, is PENDING) |
+| Q-2 | The same id on two days was not caught: a later day re-using an adoption's id (signed with another key) let a withdrawal of it pass, or made the genuine revision fail instead (high) | **verified** — an id appearing on two days FAILs, and so does a day whose ids do not follow the day before's (ids are assigned at receipt; an id out of order at the stroke of midnight, from two posts in the same instant, is noted) |
+
 The same version moves the time from which a day is due from 01:00 to 02:00 UTC: the site's hosting plan runs its daily job at
 some time in the first hour of the day (UTC), not at 00:20 as the pages had said; the pages, the contract's notes and the
 daily-archive job (now 01:20 and 07:20 UTC) say so.

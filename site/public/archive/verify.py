@@ -50,7 +50,7 @@ Licence: MIT. Part of the record of Civilization Zero (https://civilizationzero.
 
 import base64, datetime, hashlib, io, json, os, re, sys, tarfile
 
-VERSION = "1.15"
+VERSION = "1.16"
 ANCHOR_FINGERPRINT = "82662396484f627a63272bcd5ac19aae72def7aca2898216dc8e7f975dfc2263"
 SPKI_PREFIX = bytes.fromhex("302a300506032b6570032100")   # DER SubjectPublicKeyInfo header of an Ed25519 key
 CORE_SHA = "92a8d1e2a1604c25b432685673be78184bf05c3b166893c437e0895b7b2d724a"   # the record's identity: the hashes of its
@@ -743,6 +743,9 @@ def verify_day(rep, snap, prev_snap, extra, ctx):
         lid = l.get("id"); e = entries.get(lid)
         if e is None:
             rep.fail("%s: %s %s is in the hashed lines but not in the snapshot" % (day, one, lid)); continue
+        fp, pk, sg = l.get("key_fingerprint"), l.get("pubkey"), l.get("sig")
+        if any(v not in (None, "") for v in (fp, pk, sg)) and not all(v not in (None, "") for v in (fp, pk, sg)):
+            rep.fail("%s: %s %s carries a key fingerprint, a key or a signature without the other two — the site sets a fingerprint only for a signature it verified" % (day, one, lid)); continue
         if "hidden" in e and e.get("hidden") is not (e.get("state") == "hidden"):
             rep.fail("%s: %s %s is marked hidden %s while its state is %s — the site derives the one from the other" % (day, one, lid, json.dumps(e.get("hidden")), e.get("state"))); continue
         diff = [k for k in chain["fields"] if (_iso(e.get(k)) if k == "received" else e.get(k)) != (_iso(l.get(k)) if k == "received" else l.get(k))]
@@ -783,7 +786,7 @@ def verify_day(rep, snap, prev_snap, extra, ctx):
             if fingerprint_of_raw(raw) != l.get("key_fingerprint"): rep.fail("%s: %s %s key fingerprint does not match its public key" % (day, one, lid)); continue
             if not full_order_key(raw): rep.fail("%s: %s %s key is not a canonical Ed25519 key of full order: its signatures would prove nothing" % (day, one, lid)); continue
             if signed_bytes is not None:
-                if ed25519_verify(raw, signed_bytes, sig): n_sig += 1
+                if ed25519_verify(raw, signed_bytes, sig): n_sig += 1; ctx.setdefault("verified", set()).add(lid)
                 else: rep.fail("%s: %s %s signature does NOT verify over its %s" % (day, one, lid, "content" if many == "entries" else "statement"))
             else: rep.note("%s: %s %s is %s; its signature covers text that is not shown — the key fingerprint was checked" % (day, one, lid, e.get("state")))
     extra_ids = sorted(set(entries) - set(ids), key=lambda x: (x is None, str(x)))
@@ -937,7 +940,7 @@ def verify_days(rep, days, label, independent=False, complete=False, chain=None,
             frm = start if last is None else _next(last)
             rep.fail("%s: every finished day is hashed in the first hour of the next day (UTC), and %s (this computer's clock: %s UTC)" % (_span(frm, due, "is not served", "are not served"), ("the last day served is " + last) if last else "no day is served", now.strftime("%Y-%m-%d %H:%M")))
     if not order: return
-    prev = None; after_gap = False
+    prev = None; after_gap = False; verified = set()
     for i, d in enumerate(order):
         s, x = by_day[d]
         expected = (datetime.date.fromisoformat(d) - datetime.timedelta(days=1)).isoformat()
@@ -948,10 +951,35 @@ def verify_days(rep, days, label, independent=False, complete=False, chain=None,
                 gap_from = (datetime.date.fromisoformat(order[i - 1]) + datetime.timedelta(days=1)).isoformat()
                 rep.fail("%s: %s missing — every day is hashed, so a gap is a removal" % (d, ("the day " + gap_from + " is") if gap_from == expected else ("the days " + gap_from + " to " + expected + " are")))
                 after_gap = True
-        verify_day(rep, s, prev_snap, x, {"chain": chain, "first": first, "first_supplied": i == 0, "has_successor": i < len(order) - 1, "after_gap": after_gap and prev_snap is None, "independent": independent, "carried": carried})
-    if chain == "register": check_register_links(rep, by_day, order, complete or (first is not None and order[0] == first))
+        verify_day(rep, s, prev_snap, x, {"chain": chain, "first": first, "first_supplied": i == 0, "has_successor": i < len(order) - 1, "after_gap": after_gap and prev_snap is None, "independent": independent, "carried": carried, "verified": verified})
+    check_ids_across_days(rep, by_day, order)
+    if chain == "register": check_register_links(rep, by_day, order, complete or (first is not None and order[0] == first), verified)
 
-def check_register_links(rep, by_day, order, front_complete):
+def _line_ids(snap):
+    out = []
+    for l in (snap.get("log") or {}).get("lines") or []:
+        try: o = jload(l)
+        except ValueError: continue
+        if isinstance(o, dict) and _is_int(o.get("id")): out.append((o["id"], _iso(o.get("received"))))
+    return out
+
+def check_ids_across_days(rep, by_day, order):
+    """Ids are assigned once, at receipt: an id never appears on two days, and each day's ids follow the day before's — save
+    for posts in the same instant at the stroke of midnight, whose receipt times may fall in the other order (noted)."""
+    first_seen, prev_max, prev_day = {}, None, None
+    for d in order:
+        ids = _line_ids(by_day[d][0])
+        for i, rec in ids:
+            if i in first_seen and first_seen[i] != d: rep.fail("%s: id %s is also on %s — an id is assigned once" % (d, i, first_seen[i]))
+            first_seen.setdefault(i, d)
+        if prev_max is not None:
+            for i, rec in ids:
+                if i <= prev_max:
+                    if isinstance(rec, str) and rec.startswith(d + "T00:00:00"): rep.note("%s: id %s, received at the stroke of midnight, is not after the last id of %s (%s) — two posts in the same instant" % (d, i, prev_day, prev_max))
+                    else: rep.fail("%s: id %s is not after the last id of %s (%s) — ids are assigned at receipt" % (d, i, prev_day, prev_max))
+        if ids: prev_max, prev_day = max([prev_max or 0] + [i for i, _ in ids]), d
+
+def check_register_links(rep, by_day, order, front_complete, verified=frozenset()):
     """The register's rule for a revision or a withdrawal (design/ADOPT.md §4; the site refuses any other): it names an
     earlier adoption that was traced, and comes from the same adopter — signed with the adoption's key if the adoption was
     signed, else traced at the adoption's own address. Checked across every day supplied, on the hashed lines."""
@@ -983,6 +1011,10 @@ def check_register_links(rep, by_day, order, front_complete):
         if tl.get("key_fingerprint"):
             if l.get("key_fingerprint") != tl.get("key_fingerprint"):
                 rep.fail("%s: record %s (%s) of #%s is not signed with the adoption's key (%s) — a signed adoption is revised or withdrawn only with its own key" % (d, rid, kind, t, tl.get("key_fingerprint"))); continue
+            if rid not in verified:   # the same fingerprint counts only with a signature verified here
+                if (recs.get(rid) or {}).get("state") == "hidden": rep.pending("%s: record %s (%s) of #%s is hidden: its signature, over a statement not shown, cannot be checked here — nor its link by key" % (d, rid, kind, t))
+                else: rep.fail("%s: record %s (%s) of #%s carries the adoption's key fingerprint, but no signature of it verified here" % (d, rid, kind, t))
+                continue
         elif l.get("trace_url") != tl.get("trace_url"):
             rep.fail("%s: record %s (%s) of #%s is not traced at the adoption's address (%s) — an unsigned adoption is revised or withdrawn only at its own page" % (d, rid, kind, t, tl.get("trace_url"))); continue
         linked += 1

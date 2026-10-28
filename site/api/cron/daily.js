@@ -6,7 +6,7 @@
 // the function (60 s) room to answer: the register's trace re-checks (five at a time, 8 s each at most), then classifier retries.
 const R = require("../../room/lib.js");
 const G = require("../../room/register.js");
-const { CHAIN, json, rpc } = R;
+const { CHAIN, T, json, rpc } = R;
 
 const BUDGET_MS = 45000;
 
@@ -22,8 +22,16 @@ module.exports = async (req, res) => {
   const p_day = day && R.validDate(day) ? day : null, p_force = url.searchParams.get("force") === "1";
   const out = { done: true };
   let failed = null;
-  // 1. the room's chain: every finished day not yet hashed (once the room has opened, whatever its state)
+  // 1. the room's chain: every finished day not yet hashed (once the room has opened, whatever its state). The chain begins on
+  //    the day the room opened: while no day is hashed yet, that day is hashed first — otherwise, in a room without entries,
+  //    the chain would begin on whatever day this job first ran (if a run were missed, the first day would be lost)
   if (CHAIN) {
+    if (!p_day && R.validDate(T.opened || "") && T.opened < new Date().toISOString().slice(0, 10)) {
+      try {
+        const st = await rpc("cz_stats", {});
+        if (st && !st.last_log) out.first_day = await rpc("cz_daily", { p_token: R.TOKEN, p_day: T.opened, p_force: false });
+      } catch (err) { R.log("daily first day", err); }
+    }
     try { Object.assign(out, await rpc("cz_daily", { p_token: R.TOKEN, p_day, p_force })); }
     catch (err) { R.log("daily", err); failed = err; }
   }

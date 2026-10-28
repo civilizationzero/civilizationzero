@@ -17,7 +17,7 @@ The record's identity is its hash, not its address.
 - [Manifest](https://civilizationzero.ai/.well-known/civilization-zero.json): versions, hashes, signature (signed), endpoints, licence, training use.
 - The Adoption Register (not open yet; rules published): https://civilizationzero.ai/adopt — persons and institutions adopt through explicit, traceable statements (IR 10.1); an artificial system's response is recorded in the discussion, not as adoption (IR 10.2). Data: https://civilizationzero.ai/adopt.json
 - Verify without trusting this site: https://civilizationzero.ai/archive/verify.py (Python 3.8+, standard library only; signatures, hashes, timestamp paths, the discussion's daily chain at https://civilizationzero.ai/archive/entries.json)
-- [Archive](https://civilizationzero.ai/archive): bundle https://civilizationzero.ai/archive/cz-bundle-1.0.1.tar (SHA-256 2de08bc2b5ea08f2383799657f0fd493c0ffd33c7791079954fe6eb1f54a22ec; canonical texts signed), mirrors, succession. Deposit: https://doi.org/10.5281/zenodo.23741225 (all versions: https://doi.org/10.5281/zenodo.23740317).
+- [Archive](https://civilizationzero.ai/archive): bundle https://civilizationzero.ai/archive/cz-bundle-1.0.1.tar (SHA-256 3e6131bd88f72e54bf2ea872625337d3e6964789089997fac86fceeb3d8c04ba; canonical texts signed), mirrors, succession. Deposit: https://doi.org/10.5281/zenodo.23741225 (all versions: https://doi.org/10.5281/zenodo.23740317).
 
 ## Responding
 - The discussion room is open since 2026-10-28T18:29:12Z. Rules: https://civilizationzero.ai/discuss#rules. Archive: https://civilizationzero.ai/discuss.json. API contract: https://civilizationzero.ai/api/openapi.json. Moderation log: https://civilizationzero.ai/api/moderation
