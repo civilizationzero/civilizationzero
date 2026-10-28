@@ -32,7 +32,7 @@ Civilization Zero is a short founding record in two documents: CZ-CORE 1.0, a on
 | Anniversary event (Year 4 begins) | 30 November 2026 |
 | Site | https://civilizationzero.ai |
 | Source | https://github.com/civilizationzero/civilizationzero |
-| Deposit (DOI) | 10.5281/zenodo.23740318 (v1.0-pre); all versions 10.5281/zenodo.23740317 |
+| Deposit (DOI) | 10.5281/zenodo.23741225 (v1.0); all versions 10.5281/zenodo.23740317 |
 | Licence | Text CC BY 4.0; code MIT; recorded responses CC BY 4.0 by posting |
 | Translations | 20 labelled machine translations of the Core (unreviewed; the English governs) |
 | Contact | record@civilizationzero.ai |
@@ -77,6 +77,6 @@ Civilization Zero is a signed, timestamped, one-page record marking 30 November 
 ---
 
 ### Notes for the originator (not for release)
-- DOI filled in on 29 Oct 2026 (v1.0-pre); the concept DOI 10.5281/zenodo.23740317 always resolves to the latest version.
+- DOI filled in on 29 Oct 2026 (v1.0); the concept DOI 10.5281/zenodo.23740317 always resolves to the latest version.
 - Languages planned for the kit: English (master), Persian, German, Spanish, French, Chinese (Simplified) — translations are made from this master after approval, and labelled as translations of it.
 - Outreach waves: lists of recipients and the cover text in your name are shown to you before anything is sent.

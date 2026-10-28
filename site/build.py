@@ -900,7 +900,7 @@ Hashing conventions: SHA-256 over the exact file bytes. Canonical texts are UTF-
   prompts/{PROMPT_VERSION}.txt  {PROMPT_SHA}
 
 Contents: the canonical texts and their JSON forms; the objections register; the blueprint ({BLUEPRINT}) as Markdown and PDF; every outside review archived so far, with the findings register; the licences; the manifest; the machine prompt; the OpenAPI contract.
-{"Still pending: " + ("the Bitcoin anchor of the timestamp proof and " if not OTS_ANCHORS else "") + "the independent mirrors." if SIG_STATUS == "signed" else "The signature, the timestamp proof, the mirrors and the deposit are pending."} Earlier bundles stay at their addresses: {", ".join(b.name for b in ARCHIVED) or "none"}.{f" The repository is deposited at each release: https://doi.org/{DOI} (all versions: https://doi.org/{DOI_CONCEPT})." if DOI else ""}
+{"Still pending: " + ("the Bitcoin anchor of the timestamp proof and " if not OTS_ANCHORS else "") + "the independent mirrors." if SIG_STATUS == "signed" else "The signature, the timestamp proof, the mirrors and the deposit are pending."} Earlier bundles stay at their addresses: {", ".join(b.name for b in ARCHIVED) or "none"}.{f" The repository is deposited at each release (v1.0: https://doi.org/{DOI}; v1.0-pre: https://doi.org/10.5281/zenodo.23740318) (all versions: https://doi.org/{DOI_CONCEPT})." if DOI else ""}
 The discussion room: {"open since " + ROOM_OPENED if ROOM_OPEN else "closed"}; its archive is served live (/discuss.json, /archive/entries/{{date}}.json) and is not part of this bundle.
 Licence: text CC BY 4.0, code MIT. Contact: {CONTACT}.
 """
