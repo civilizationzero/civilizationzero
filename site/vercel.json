@@ -3,6 +3,11 @@
   "trailingSlash": false,
   "redirects": [
     {
+      "source": "/core.:lang([a-z]{2,3}|[a-z]{2,3}-[A-Za-z0-9]+).html",
+      "destination": "/core.:lang",
+      "permanent": true
+    },
+    {
       "source": "/:page(core|record|objections|discuss|respond|machine|about|archive).html",
       "destination": "/:page",
       "permanent": true
@@ -106,6 +111,10 @@
     {
       "source": "/core",
       "destination": "/core.html"
+    },
+    {
+      "source": "/core.:lang([a-z]{2,3}|[a-z]{2,3}-[A-Za-z0-9]+)",
+      "destination": "/core.:lang.html"
     },
     {
       "source": "/record",

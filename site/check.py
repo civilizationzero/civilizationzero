@@ -55,7 +55,8 @@ for f in pages:
     ids_by_page[name] = p.ids
     check(not p.err and not p.stack, f"{f.name}: HTML nesting {p.err} unclosed {p.stack}")
     check(p.h1 == 1, f"{f.name}: {p.h1} h1 elements")
-    check(p.lang == "en", f"{f.name}: lang")
+    expected_lang = f.stem.split(".")[1] if f.stem.startswith("core.") and f.stem.count(".") == 1 else "en"
+    check(p.lang == expected_lang, f"{f.name}: lang {p.lang!r}, expected {expected_lang!r}")
     check({"utf-8", "viewport", "description", "canonical", "icon", "service-desc"} <= p.attrs_seen, f"{f.name}: head metadata {p.attrs_seen}")
     for t in p.times:
         check(re.fullmatch(r"\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}(:\d{2})?Z)?|P\d+D", t), f"{f.name}: invalid datetime {t!r}")

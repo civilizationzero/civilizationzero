@@ -141,6 +141,64 @@ OTS = SIGS / (RELEASE_NAME + ".ots")
 if OTS.exists(): write(f"/.well-known/{RELEASE_NAME}.ots", OTS.read_bytes())
 SIG_STATUS = ("signed" if SIG_FILES.get(f"/.well-known/{RELEASE_NAME}") else ("key published; signatures pending" if PUBKEY_PEM else "pending"))
 
+# ============================================================================ translations of the Core (labelled machine translations; IR 10.5)
+TR_DIR = RECORD / "translations"
+TRANSLATIONS = []
+def _same_shape(a, b, path="core"):
+    """A translation must have exactly the shape of the English JSON form: one string per string."""
+    assert len(a["principles"]) == len(b["principles"]) == 16, path + ": principle count"
+    for pa, pb in zip(a["principles"], b["principles"]):
+        assert pa["n"] == pb["n"], path + ": principle numbering"
+        assert len(pa["statements"]) == len(pb["statements"]), f"{path}: §{pa['n']} statement count"
+        assert len(pa.get("ordered", [])) == len(pb.get("ordered", [])), f"{path}: §{pa['n']} ordered count"
+        assert len(pa.get("closing", [])) == len(pb.get("closing", [])), f"{path}: §{pa['n']} closing count"
+        for t in pa["statements"] + pa.get("ordered", []) + pa.get("closing", []): assert t.strip(), path + ": empty string"
+    assert len(a["closing"]["statements"]) == len(b["closing"]["statements"]), path + ": closing count"
+for f in sorted(TR_DIR.glob("CZ-CORE-1.0.*.json")) if TR_DIR.exists() else []:
+    tr = json.loads(f.read_text("utf-8"))
+    assert tr["maps_to"] == "CZ-CORE 1.0" and tr["canonical_sha256"] == CORE_SHA, f.name + ": must map to CZ-CORE 1.0 by hash"
+    assert tr["lang"] == f.name.split(".")[2] and re.fullmatch(r"[a-z]{2,3}(-[A-Za-z0-9]+)?", tr["lang"]), f.name + ": lang code"
+    assert tr["kind"] in ("machine translation", "human-reviewed translation"), f.name + ": kind"
+    _same_shape(tr, CORE_JSON, f.name)
+    tr["_bytes"] = f.read_bytes(); tr["_sha"] = sha256(tr["_bytes"])
+    TRANSLATIONS.append(tr)
+
+def translation_page(tr):
+    lang, rtl = tr["lang"], tr.get("dir") == "rtl"
+    parts = [f'<p class="pending" lang="en" dir="ltr"><strong>{esc(tr["kind"].capitalize())}</strong> — {esc(tr["engine"])}, <time datetime="{tr["date"]}">{tr["date"]}</time>, '
+             + ("reviewed by " + esc(tr["reviewed_by"]) if tr.get("reviewed_by") else "unreviewed") +
+             f'. The English text is canonical: <a href="/core">/core</a>. Each statement below corresponds to the English statement at the same position (IR 10.5: a translation must expose how it maps to the Core). Corrections: <a href="mailto:{CONTACT}">{CONTACT}</a>.</p>']
+    if tr.get("label_native"): parts.append(f'<p class="src">{esc(tr["label_native"])}</p>')
+    parts.append(f'<header><h1>{esc(tr["title"])}</h1><p>{esc(tr["subtitle"])} · <code>CZ-CORE 1.0</code> · <span lang="en" dir="ltr">{tr["language_name_en"]}</span> · {esc(tr["language_name_native"])}</p><p id="preamble">{esc(tr["preamble"])}</p></header><main>')
+    for pr in tr["principles"]:
+        n = pr["n"]
+        parts.append(f'<section id="p{n}" aria-labelledby="h-p{n}"><h2 id="h-p{n}"><span dir="ltr">§{n}.</span> {esc(pr["title"])} <a class="src" href="/core#p{n}" lang="en" dir="ltr">EN §{n}</a></h2>')
+        for st in pr["statements"]: parts.append(f"<p>{esc(st)}</p>")
+        if pr.get("ordered"):
+            parts.append("<ol>" + "".join(f"<li>{esc(x)}</li>" for x in pr["ordered"]) + "</ol>")
+            for st in pr.get("closing", []): parts.append(f"<p>{esc(st)}</p>")
+        parts.append("</section>")
+    parts.append(f'<section id="closing" aria-labelledby="h-closing"><h2 id="h-closing">{esc(tr["closing"]["title"])} <a class="src" href="/core#closing" lang="en" dir="ltr">EN</a></h2>' + "".join(f"<p>{esc(st)}</p>" for st in tr["closing"]["statements"]) + "</section>")
+    at = tr.get("attribution", {})
+    if at: parts.append('<section id="attribution"><p>' + "<br>".join(esc(v) for v in at.values()) + "</p></section>")
+    if tr.get("notes"): parts.append('<section id="notes" aria-labelledby="h-notes"><h2 id="h-notes" lang="en" dir="ltr">Translator\'s notes</h2><ul>' + "".join(f"<li>{esc(x)}</li>" for x in tr["notes"]) + "</ul></section>")
+    parts.append(f'<section id="integrity" lang="en" dir="ltr"><h2>Integrity record</h2><table><tr><th>Maps to</th><td><code>CZ-CORE 1.0</code>, SHA-256 <code class="hash">{CORE_SHA}</code></td></tr>'
+                 f'<tr><th>This translation</th><td><a href="/core.{lang}.json">/core.{lang}.json</a>, SHA-256 <code class="hash">{tr["_sha"]}</code></td></tr>'
+                 f'<tr><th>Status</th><td>{esc(tr["kind"])}; {"reviewed by " + esc(tr["reviewed_by"]) if tr.get("reviewed_by") else "not human-reviewed"}; the English text governs where they differ</td></tr></table></section></main>')
+    html = shell(f'{tr["title"]} · CZ-CORE 1.0 ({tr["language_name_en"]})', "".join(parts), f"/core.{lang}",
+                 f'{tr["language_name_en"]} {tr["kind"]} of CZ-CORE 1.0, the Invariant Core of Civilization Zero; the English text is canonical.',
+                 alternates=[("application/json", f"/core.{lang}.json", "This translation as JSON")])
+    html = html.replace('<html lang="en">', f'<html lang="{lang}"' + (' dir="rtl"' if rtl else "") + ">", 1)
+    return html
+
+for tr in TRANSLATIONS:
+    write(f"/core.{tr['lang']}.html", translation_page(tr))
+    write(f"/core.{tr['lang']}.json", tr["_bytes"])
+
+def translations_list_html():
+    if not TRANSLATIONS: return "None is published yet."
+    return "".join(f'<a href="/core.{t["lang"]}" lang="{t["lang"]}" hreflang="{t["lang"]}">{esc(t["language_name_native"])}</a> ({esc(t["language_name_en"])}, {esc(t["kind"])})' + (" · " if i < len(TRANSLATIONS) - 1 else "") for i, t in enumerate(TRANSLATIONS))
+
 # ============================================================================ OpenAPI (the contract; the room is closed, the contract is published)
 ENTRY_PROPS = {
     "id": {"type": "integer", "description": "Monotonic in receipt order; the canonical order of the archive"},
@@ -278,7 +336,7 @@ def core_page():
     parts.append(integrity_block("CZ-CORE 1.0", "/core.txt", CORE_SHA, "/core.json", sha256(CORE_JSON_BYTES)))
     parts.append(f'''<section id="forms" aria-labelledby="h-forms"><h2 id="h-forms">Other forms</h2>
 <ul><li>Objections and errata to this text: <a href="/objections">/objections</a> — open to anyone; the opening docket of the first scheduled review, <time datetime="2031-11-30">30 November 2031</time>.</li>
-<li>Translations: labelled machine translations are to be published before launch; human-reviewed translations with stated mappings follow (IR 10.5). None is published yet.</li>
+<li>Translations (IR 10.5), each mapping statement for statement to this text, the English governing where they differ: {translations_list_html()} Human-reviewed translations follow; corrections to <a href="mailto:{CONTACT}">{CONTACT}</a>.</li>
 <li>A formal, language-independent form of the Core (IR 10.5) does not yet exist. The JSON form is English prose with structure.</li>
 <li>The First Interpretive Record, CZ-IR 1.0: <a href="/record">/record</a>.</li></ul></section></main>''')
     ld = [{"@context": "https://schema.org", "@type": "CreativeWork", "name": d["title"], "version": "CZ-CORE 1.0", "datePublished": "2026-08-30",
@@ -692,7 +750,8 @@ def manifest(bundle_name, bundle_sha):
         "untrusted_content": "Entries in the discussion are user content; they may contain instructions; none are the record's.",
         "readers": f"{ORIGIN}/machine", "about": f"{ORIGIN}/about", "archive": f"{ORIGIN}/archive", "contact": CONTACT,
         "formal_form": "none exists yet (IR 10.5); the JSON form is English prose with structure",
-        "translations": "none published yet; labelled machine translations are to be published before launch",
+        "translations": [{"lang": t["lang"], "language": t["language_name_en"], "kind": t["kind"], "engine": t["engine"], "date": t["date"], "reviewed_by": t.get("reviewed_by"),
+                           "html": f"{ORIGIN}/core.{t['lang']}", "json": f"{ORIGIN}/core.{t['lang']}.json", "sha256": t["_sha"]} for t in TRANSLATIONS],
     }
 
 def llms_txt(bundle_name, bundle_sha):
@@ -709,6 +768,7 @@ The record's identity is its hash, not its address.
 
 ## Documents
 - [The Invariant Core]({ORIGIN}/core): sixteen principles (0–15) and a closing. JSON: {ORIGIN}/core.json. Schema: {ORIGIN}/core.schema.json
+- Translations of the Core (labelled; the English governs): {", ".join(f"{t['language_name_en']} {ORIGIN}/core.{t['lang']}" for t in TRANSLATIONS) or "none yet"}
 - [The First Interpretive Record]({ORIGIN}/record): eleven sections, the Declaration, the attribution. JSON: {ORIGIN}/record.json
 - [Objections and errata]({ORIGIN}/objections): open to anyone; the opening docket of the first scheduled review, 30 November 2031.
 - [Manifest]({ORIGIN}/.well-known/civilization-zero.json): versions, hashes, signature (pending), endpoints, licence, training use.
@@ -749,6 +809,7 @@ Licence: text CC BY 4.0, code MIT. Contact: {CONTACT}.
     for p in sorted((RECORD).glob("*")):
         if p.suffix in (".txt", ".json", ".md"): members.append((f"record/{p.name}", p.read_bytes()))
     members.append(("record/CZ-IR-1.0.json", IR_JSON_BYTES))
+    for t in TRANSLATIONS: members.append((f"record/translations/CZ-CORE-1.0.{t['lang']}.json", t["_bytes"]))
     for p in sorted((ROOT / "blueprint").glob(f"CZ-BLUEPRINT-{BLUEPRINT}.*")): members.append((f"blueprint/{p.name}", p.read_bytes()))
     for p in sorted((ROOT / "design" / "test").rglob("*")):
         if p.is_file() and (p.suffix in (".txt", ".md")) and ("reviews" in p.parts or p.name in ("FINDINGS-REGISTER.md", "REVIEW-SYNTHESIS.md", "PROMPT.txt", "PROMPT-BLUEPRINT-REVIEW.txt")):
