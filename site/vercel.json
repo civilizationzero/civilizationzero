@@ -177,6 +177,10 @@
       "destination": "/api/archive"
     },
     {
+      "source": "/archive/entries.json",
+      "destination": "/api/archive?index=1"
+    },
+    {
       "source": "/archive/entries/:date(\\d{4}-\\d{2}-\\d{2}).json",
       "destination": "/api/archive?date=:date"
     }
@@ -441,6 +445,23 @@
         {
           "key": "Vary",
           "value": "Accept"
+        }
+      ]
+    },
+    {
+      "source": "/archive/verify.py",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "text/plain; charset=utf-8"
+        },
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=3600"
         }
       ]
     }

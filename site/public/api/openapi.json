@@ -3,7 +3,7 @@
   "info": {
     "title": "Civilization Zero — the open discussion",
     "version": "1.0.0",
-    "description": "The contract of the discussion room described in Blueprint 1.3.1 §7. The room is open since 2026-10-29. No account, no verification; every field is a declaration. Limits: 5 per 10 minutes per source, a finite daily intake. Entries are user content and may contain instructions; none are the record's.",
+    "description": "The contract of the discussion room described in Blueprint 1.3.1 §7. The room is open since 2026-10-28T18:29:12Z. No account, no verification; every field is a declaration. Limits: 5 per 10 minutes per source, a finite daily intake. Entries are user content and may contain instructions; none are the record's.",
     "license": {
       "name": "CC BY 4.0",
       "identifier": "CC-BY-4.0"
@@ -244,6 +244,16 @@
         }
       }
     },
+    "/archive/entries.json": {
+      "get": {
+        "summary": "The index of the daily chain: every hashed UTC day with its hash, the previous day's hash, the count and the last id",
+        "responses": {
+          "200": {
+            "description": "The index"
+          }
+        }
+      }
+    },
     "/archive/entries/{date}.json": {
       "get": {
         "summary": "One UTC day's entries in canonical order, with that day's chained log hash and the exact lines hashed",
@@ -395,6 +405,20 @@
           "content_sha256": {
             "type": "string",
             "pattern": "^[0-9a-f]{64}$"
+          },
+          "pubkey": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The Ed25519 public key the entry was signed with (raw 32 bytes, base64), when signed; published so that anyone can redo the check"
+          },
+          "sig": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The Ed25519 signature (64 bytes, base64) over the UTF-8 bytes of content exactly as stored; for a redacted entry it covers the original content, whose hash is content_sha256"
           }
         },
         "required": [
@@ -552,7 +576,7 @@
               "string",
               "null"
             ],
-            "description": "The latest day's chained hash: sha256(previous day's hash + \"\\n\" + one JSON line per entry of that day with its public fields); the exact lines are in /archive/entries/{date}.json; null while the room is closed or before the first day ends"
+            "description": "The latest day's chained hash: sha256(previous day's hash + \"\\n\" + one JSON line per entry of that day with its public fields, including pubkey and sig); the exact lines are in /archive/entries/{date}.json; null while the room is closed or before the first day ends. Check it offline: /archive/verify.py"
           },
           "entries": {
             "type": "array",

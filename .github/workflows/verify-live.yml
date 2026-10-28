@@ -68,3 +68,12 @@ jobs:
             openssl pkeyutl -verify -pubin -inkey site/sign/cz-record-signing.pub -rawin -in "live/$f" -sigfile "live/$f.sig" && echo "verified: $f"
           done
           openssl pkey -pubin -in site/sign/cz-record-signing.pub -outform DER | sha256sum | grep -q 82662396484f627a63272bcd5ac19aae72def7aca2898216dc8e7f975dfc2263
+      - name: The published verifier, run against the live site (record, bundles, timestamp, the discussion's daily chain)
+        run: |
+          set -euo pipefail
+          curl -fsSL --retry 3 https://civilizationzero.ai/archive/verify.py -o live/verify.py
+          cmp live/verify.py site/verify/verify.py && echo "the live verifier is the repository's"
+          python3 site/verify/verify.py --site https://civilizationzero.ai
+      - name: The repository's copy of the daily chain
+        run: |
+          if [ -d archive/discussion ]; then python3 site/verify/verify.py --days archive/discussion; else echo "no day committed yet"; fi

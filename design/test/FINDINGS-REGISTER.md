@@ -159,7 +159,14 @@ Before the public round 3, the implementation of the room (`site/api/*`, `site/r
 
 Deferred to 1.4 (stated, not hidden): proof-of-work on POST (§7.3), an allow-list of translation languages, hashing of translations and moderation decisions into the daily line.
 
-### The room opened — 29 October 2026, 02:30 SGT (28 Oct 18:30 UTC)
+### The room opened — 28 October 2026, 18:29:12 UTC (29 October, 02:29 in Kuala Lumpur)
 
 After the fixes above, the re-tests on the isolated test database, the wipe of the test entries (by the originator, in the database console) and the production deployment at commit `cbf6330`, the room is open at https://civilizationzero.ai/discuss. Release `v1.0` (tag at `9d7b157`+) is deposited as doi:10.5281/zenodo.23741225; the signed bundle 1.0 is `cz-bundle-1.0.tar` (SHA-256 `fcd3957cbea9c5b21da662e7ea97b4bf3d3b1da1e2eb55ec7bf9d71e2af5cb36`). Round 3 (five outside systems, `PROMPT-ROUND3.txt`) runs against the test alias on 30 October; its findings are recorded below when they arrive.
 
+
+### After the opening — 29 October 2026 (UTC 28 Oct 18:50 onward)
+
+- **C-12 (self-found)** — the site stated the opening date in local time (2026-10-29) although it keeps time in UTC; in UTC the room opened 2026-10-28T18:29:12Z. **Verified** — corrected in the build from bundle 1.0.1; bundle 1.0 keeps its signed statement; recorded in `blueprint/CHANGES-FOR-1.4.md`.
+- **C-v6a (self-found)** — entry signatures were checkable only by the server (only the fingerprint was public). **Verified** — `pubkey` and `sig` are public fields and part of the day line, applied before the first day was hashed.
+- **Build-time contract test** — `check.yml` still expected a closed room after the opening and failed on every push. **Verified** — the test follows the room's state (`fe59891`).
+- **The verifier** (`/archive/verify.py`, `verify/verify.py` in bundles from 1.0.1) and the daily copies of the chain (`daily-archive`) — **implemented**; tested as described in the change list.

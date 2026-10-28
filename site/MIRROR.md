@@ -4,14 +4,14 @@ A mirror holds the signed bytes where civilizationzero.ai cannot reach, under so
 functions (the first page's clock, the discussion room): the record is the static files.
 
 ## What to mirror
-Everything under `site/public/` at a tagged release (`v1.0-pre`, then `v1.0`): the canonical texts (`core.txt`, `record.txt`),
+Everything under `site/public/` at a tagged release (`v1.0`, and each later one): the canonical texts (`core.txt`, `record.txt`),
 their JSON forms, the translations, `/.well-known/` (manifest, release manifest, public key, signatures, OpenTimestamps proof),
 `/archive/cz-bundle-*.tar`, the pages. The discussion archive (`/discuss.json`, `/archive/entries/{date}.json`) is dynamic;
 a mirror may keep dated copies of it.
 
 ## How (any static host; no build step)
 ```sh
-git clone --branch v1.0-pre --depth 1 https://github.com/civilizationzero/civilizationzero.git
+git clone --branch v1.0 --depth 1 https://github.com/civilizationzero/civilizationzero.git
 # serve civilizationzero/site/public as a static site, e.g.:
 #   nginx:   root /path/to/civilizationzero/site/public;  (serve .html for extension-less paths: try_files $uri $uri.html =404;)
 #   python:  cd civilizationzero/site/public && python3 -m http.server 8080
@@ -20,6 +20,13 @@ Content types that matter: `core.txt`, `record.txt`, `*.pub` as `text/plain; cha
 `*.sig`, `*.ots` as `application/octet-stream`; `*.tar` as `application/x-tar`.
 
 ## Verify the mirror (same checks as the daily job)
+One command, from a clone of the repository (or with `verify.py` from any bundle from 1.0.1), no installs:
+```sh
+python3 site/verify/verify.py --site-dir /path/to/your/copy/of/site/public     # the files, before you serve them
+python3 site/verify/verify.py --site https://mirror.example                      # the mirror as it is served
+```
+It checks the key against its trust anchor, every signature, every hash in the release manifest, the translations, the
+timestamp proof and the bundles (and, with `--site`, the discussion's daily chain). The same steps with OpenSSL alone:
 ```sh
 M=https://mirror.example   # the mirror's base URL
 for f in core.txt record.txt .well-known/cz-release-1.0.json; do

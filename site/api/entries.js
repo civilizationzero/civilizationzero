@@ -37,7 +37,7 @@ module.exports = async (req, res) => {
       const id = url.searchParams.get("id");
       if (id !== null) {
         if (!/^\d{1,12}$/.test(id)) return json(res, 404, { error: "no such id" });
-        const rows = await rpc("cz_entry", { p_id: Number(id) });
+        const rows = await rpc("cz_entry2", { p_id: Number(id) });
         if (!rows || !rows.length) return json(res, 404, { error: "no such id" });
         const e = rows[0]; e.url = `${ORIGIN}/discuss/${e.id}`;
         const tl = url.searchParams.get("translate");

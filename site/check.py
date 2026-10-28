@@ -40,7 +40,7 @@ class P(HTMLParser):
         if self.stack and self.stack[-1] == t: self.stack.pop()
         else: self.err.append((t, self.stack[-3:]))
 
-FUNCTION_ROUTES = {"/", "/index.json", "/index.txt", "/api/entries", "/discuss", "/discuss.json", "/respond", "/api/moderation", "/api/cron/daily"}
+FUNCTION_ROUTES = {"/", "/index.json", "/index.txt", "/api/entries", "/discuss", "/discuss.json", "/respond", "/api/moderation", "/api/cron/daily", "/archive/entries.json"}
 def resolves(path):
     if path in FUNCTION_ROUTES or re.match(r"^/(api/entries|discuss)/\d+$", path) or re.match(r"^/archive/entries/\d{4}-\d{2}-\d{2}\.json$", path): return True
     p = path.lstrip("/")
@@ -170,6 +170,19 @@ for fn in ("api/entries.js", "api/discuss.js", "api/archive.js", "api/moderation
     r = subprocess.run(["node", "--check", str(SITE / fn)], capture_output=True)
     check(r.returncode == 0, f"{fn}: syntax {r.stderr.decode()[:200]}")
 check(not (PUBLIC / "index.html").exists(), "public/index.html must not exist (the function serves /)")
+check(any(r.get("source") == "/archive/entries.json" and r.get("destination") == "/api/archive?index=1" for r in v.get("rewrites", [])), "vercel.json: /archive/entries.json → the chain index")
+
+# 7. the verifier: the published copy is the repository's, it passes its own self-test, and it verifies this build as a mirror would
+VERIFY = SITE / "verify" / "verify.py"
+check((PUBLIC / "archive" / "verify.py").read_bytes() == VERIFY.read_bytes(), "archive/verify.py is not site/verify/verify.py")
+check(man.get("verifier", {}).get("sha256") == sha256(VERIFY.read_bytes()), "manifest: verifier hash")
+for args in (["--self-test"], ["--site-dir", str(PUBLIC)]):
+    r = subprocess.run([sys.executable, str(VERIFY), "--quiet", *args], capture_output=True, text=True)
+    check(r.returncode == 0, f"verify.py {' '.join(args)}: {r.stdout[-600:]}")
+if BUNDLE_VERSION not in ("1.0-pre", "1.0"):
+    with tarfile.open(b) as tar: check("verify/verify.py" in tar.getnames() and tar.extractfile("verify/verify.py").read() == VERIFY.read_bytes(), "bundle: verify/verify.py missing or different")
+    r = subprocess.run([sys.executable, str(VERIFY), "--quiet", str(b)], capture_output=True, text=True)
+    check(r.returncode == 0, f"verify.py on the bundle: {r.stdout[-600:]}")
 
 if fails:
     print("CHECK FAILED"); [print(" -", f) for f in fails]; sys.exit(1)

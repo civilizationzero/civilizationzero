@@ -1,31 +1,50 @@
-# Upgrades the OpenTimestamps proof of the release manifest once the calendars have anchored it in Bitcoin
-# (Blueprint 1.3.1 §8). Run by hand (workflow_dispatch). If the proof changes, the upgraded .ots is committed; the site is
-# rebuilt and deployed separately. The proof's own verification (`ots verify`) needs a Bitcoin node and is left to readers.
+# Upgrades the OpenTimestamps proofs once the calendars have anchored them in Bitcoin (Blueprint 1.3.1 §8): the proof of the
+# release manifest (site/signatures/) and the proof of each day of the discussion (archive/discussion/). Every six hours, and by
+# hand. When a proof changes it is committed; when the release proof changed, the site is rebuilt in the same commit (the
+# manifest then reads "anchored"); deploying it is a separate step. Checking a Bitcoin attestation needs the block header:
+# site/verify/verify.py prints the Merkle root to compare, and `ots verify` checks it against a Bitcoin node.
 name: ots-upgrade
 on:
+  schedule:
+    - cron: "10 */6 * * *"
   workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: repository-writes
+  cancel-in-progress: false
 jobs:
   upgrade:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
       - uses: actions/checkout@v4
       - run: pip install --quiet opentimestamps-client
-      - name: Upgrade the proof
+      - name: Upgrade every proof
+        run: |
+          set -uo pipefail
+          for f in site/signatures/*.ots archive/discussion/*.ots; do
+            [ -e "$f" ] || continue
+            before=$(sha256sum "$f" | cut -c1-64)
+            ots upgrade "$f" >/dev/null 2>&1 || true      # exits non-zero while an attestation is still pending
+            rm -f "$f.bak"
+            after=$(sha256sum "$f" | cut -c1-64)
+            if [ "$before" != "$after" ]; then echo "upgraded: $f"; ots info "$f" | grep -E "BitcoinBlockHeaderAttestation|Bitcoin block" | head -3 || true; else echo "unchanged: $f"; fi
+          done
+      - name: Rebuild the site when the release proof changed
         run: |
           set -euo pipefail
-          f=site/signatures/cz-release-1.0.json.ots
-          sha256sum "$f"
-          ots info "$f" | head -5
-          ots upgrade "$f" || true          # exits non-zero while any attestation is still pending
-          rm -f "$f.bak"
-          ots info "$f" | grep -E "verify|Bitcoin" || true
-          sha256sum "$f"
+          if git diff --quiet -- site/signatures; then echo "release proof unchanged"; exit 0; fi
+          sudo apt-get update -q && sudo apt-get install -y -q pandoc
+          python3 site/build.py
+      - name: The proofs still commit to what they claim
+        run: python3 site/verify/verify.py --quiet --site-dir site/public $( [ -d archive/discussion ] && echo --days archive/discussion )
       - name: Commit if changed
         run: |
+          set -euo pipefail
           if git diff --quiet; then echo "no change yet"; exit 0; fi
           git config user.name "cz-ots-upgrade"; git config user.email "record@civilizationzero.ai"
-          git add site/signatures/cz-release-1.0.json.ots
-          git commit -m "OpenTimestamps proof upgraded (Bitcoin attestation)"
-          git push
+          git add site/signatures site/public site/api/home-templates.json site/api/discuss-templates.json
+          [ -d archive/discussion ] && git add archive/discussion
+          git commit -q -m "OpenTimestamps proofs upgraded (Bitcoin attestation)"
+          for i in 1 2 3 4; do git pull --rebase -q && git push -q && exit 0; sleep $((i * 5)); done
+          exit 1

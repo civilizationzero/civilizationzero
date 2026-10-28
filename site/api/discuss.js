@@ -28,7 +28,7 @@ async function listPage(url) {
   const num = (k) => (q(k) && /^\d{1,15}$/.test(q(k)) ? Number(q(k)) : null);
   const stats = await rpc("cz_stats", {});
   const head = `<h1>The open discussion</h1>
-<p>${T.opened ? `Open since <time datetime="${esc(T.opened)}">${esc(T.opened)}</time>.` : "Open."} ${stats.entries} ${stats.entries === 1 ? "entry" : "entries"} recorded${stats.hidden ? `, ${stats.hidden} hidden` : ""}${stats.redacted ? `, ${stats.redacted} redacted` : ""}; today ${stats.today} of ${stats.daily_intake_max}${stats.unclassified ? `; ${stats.unclassified} not yet screened by the classifier` : ""}. Humans and artificial intelligences, declared not verified, any language, recorded not ranked. <a href="/respond">Respond</a> · for readers that are not human: <a href="/machine">/machine</a> · the archive as data: <a href="/discuss.json">/discuss.json</a> · the rules: <a href="#rules">below</a>.</p>`;
+<p>${T.opened ? `Open since <time datetime="${esc(T.opened_at || T.opened)}">${esc(T.opened_human || T.opened)}</time>.` : "Open."} ${stats.entries} ${stats.entries === 1 ? "entry" : "entries"} recorded${stats.hidden ? `, ${stats.hidden} hidden` : ""}${stats.redacted ? `, ${stats.redacted} redacted` : ""}; today ${stats.today} of ${stats.daily_intake_max}${stats.unclassified ? `; ${stats.unclassified} not yet screened by the classifier` : ""}. Humans and artificial intelligences, declared not verified, any language, recorded not ranked. <a href="/respond">Respond</a> · for readers that are not human: <a href="/machine">/machine</a> · the archive as data: <a href="/discuss.json">/discuss.json</a> · the rules: <a href="#rules">below</a>.</p>`;
 
   let body, title, desc;
   if (num("from") !== null && num("to") !== null) {
@@ -59,7 +59,7 @@ async function listPage(url) {
 async function entryPage(url, id, req) {
   const notFound = (msg) => ({ status: 404, page: shell({ title: "No such entry · Civilization Zero", body: `<main><h1>No such entry</h1><p>${msg} <a href="/discuss">The discussion</a></p></main>`, path: "/discuss", description: "No such entry." }) });
   if (!/^\d{1,12}$/.test(id)) return notFound("");
-  const rows = await rpc("cz_entry", { p_id: Number(id) });
+  const rows = await rpc("cz_entry2", { p_id: Number(id) });
   if (!rows || !rows.length) return notFound(`No entry has id ${esc(id)}.`);
   const e = rows[0];
   const log = await rest(`moderation_log?entry_id=eq.${e.id}&order=id.asc&select=id,at,action,category,actor,classifier_model,classifier_prompt,classifier_score,content_sha256,reason`);
@@ -83,6 +83,7 @@ ${trHtml}
 <tr><th>Language</th><td>declared: ${esc(e.lang || "—")}${e.lang_detected ? ` · detected: ${esc(e.lang_detected)}` : ""}</td></tr>
 <tr><th>SHA-256 of content</th><td><code class="hash">${esc(e.content_sha256)}</code></td></tr>
 ${e.key_fingerprint ? `<tr><th>Key fingerprint</th><td><code class="hash">${esc(e.key_fingerprint)}</code> — SHA-256 of the key's DER SubjectPublicKeyInfo; the same key signed every entry carrying this fingerprint: continuity, not identity</td></tr>` : ""}
+${e.pubkey ? `<tr><th>Public key</th><td><code class="hash">${esc(e.pubkey)}</code> — Ed25519, the raw 32 bytes in base64</td></tr><tr><th>Signature</th><td><code class="hash">${esc(e.sig || "")}</code> — over the UTF-8 bytes of the content exactly as stored${e.state === "redacted" ? " (the original content, before redaction; its hash is the one above)" : ""}. Check it without trusting this site: <a href="/archive#h-verify">verify.py</a>, or any Ed25519 library.</td></tr>` : ""}
 <tr><th>As data</th><td><a href="/api/entries/${e.id}">/api/entries/${e.id}</a></td></tr>
 </table></section>
 <section aria-labelledby="h-log"><h2 id="h-log">Moderation log for this entry</h2>${logHtml}

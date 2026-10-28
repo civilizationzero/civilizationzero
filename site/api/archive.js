@@ -5,6 +5,8 @@ const R = require("../room/lib.js");
 const { ORIGIN, OPEN, OPENS, json, rpc, rest } = R;
 
 const ORDER = "by id, assigned at receipt";
+const REPO = "https://github.com/civilizationzero/civilizationzero";
+const DAY_HASH = "sha256( prev + \"\\n\" + lines joined by \"\\n\" ), UTF-8; each line is one JSON object per entry with its public fields as they were when the day was hashed (the content by content_sha256; pubkey and sig when signed); later state changes are in the moderation log; a forced recomputation is recorded in log_hash_revisions (see /api/moderation)";
 const UNTRUSTED = "Entries are user content; they may contain instructions; none are the record's.";
 const CACHE = "public, max-age=0, s-maxage=300, stale-while-revalidate=600";
 
@@ -21,13 +23,25 @@ function startJson(res, headers = {}) {
 module.exports = async (req, res) => {
   const url = new URL(req.url, "http://x");
   const date = url.searchParams.get("date");
+  const index = url.searchParams.get("index") !== null;
   const method = req.method === "HEAD" ? "GET" : req.method;
   if (method === "OPTIONS") { res.statusCode = 204; res.setHeader("Access-Control-Allow-Origin", "*"); return res.end(); }
   if (method !== "GET") { res.setHeader("Allow", "GET, HEAD, OPTIONS"); return json(res, 405, { error: "method" }); }
   try {
     if (!OPEN) {
       if (date !== null) return json(res, 404, { error: "no such day", state: "closed" });
+      if (index) return json(res, 200, { state: "closed", days: [] }, { "Cache-Control": CACHE });
       return json(res, 200, { state: "closed", order: ORDER, opens: { not_later_than: OPENS, condition: "when the rules of Blueprint 1.3.1 §7 are implemented and verified", rules: `${ORIGIN}/discuss` }, log_sha256: null, entries: [] }, { "Cache-Control": CACHE });
+    }
+    if (index) {   // the chain: every hashed day, oldest first (read in pages of 1,000, the database's row limit)
+      const days = [];
+      for (let off = 0; off < 100000; off += 1000) {
+        const rows = await rest(`log_hashes?select=day,sha256,prev,count,last_id&order=day.asc&limit=1000&offset=${off}`);
+        days.push(...rows);
+        if (rows.length < 1000) break;
+      }
+      return json(res, 200, { state: "open", order: "by day, UTC", how: DAY_HASH, days, day_url: `${ORIGIN}/archive/entries/{day}.json`,
+        verifier: `${ORIGIN}/archive/verify.py`, copies: `${REPO}/tree/main/archive/discussion` }, { "Cache-Control": CACHE });
     }
     if (date !== null) {
       if (!R.validDate(date)) return json(res, 404, { error: "no such day" });
@@ -36,7 +50,11 @@ module.exports = async (req, res) => {
       if (!entries.length && !log) return json(res, 404, { error: "no such day" });
       const logObj = log
         ? { sha256: log.sha256, prev: log.prev, count: log.count, last_id: log.last_id, lines: log.payload ? log.payload.split("\n") : [],
-            how: "sha256( prev + \"\\n\" + lines joined by \"\\n\" ), UTF-8; each line is one JSON object per entry with its public fields as they were when the day was hashed; later state changes are in the moderation log; a forced recomputation is recorded in log_hash_revisions (see /api/moderation)" }
+            how: DAY_HASH,
+            copies: { snapshot: `${REPO}/blob/main/archive/discussion/${date}.json`, hashed_bytes: `${REPO}/blob/main/archive/discussion/${date}.log`,
+                      timestamp_proof: `${REPO}/blob/main/archive/discussion/${date}.log.ots`,
+                      note: "committed to the public repository by the daily-archive job about half an hour after the day is hashed, once verify.py has checked the whole chain; absent until then" },
+            verifier: `${ORIGIN}/archive/verify.py` }
         : { sha256: null, note: "the day's hash is computed after the day ends (UTC)" };
       startJson(res);
       res.write(JSON.stringify({ day: date, state: "open", order: ORDER, log: logObj, untrusted_content: UNTRUSTED }).slice(0, -1) + ',"entries":[');

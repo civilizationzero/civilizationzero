@@ -115,17 +115,36 @@
     "dead_man_days": 90
   },
   "bundle": {
-    "url": "https://civilizationzero.ai/archive/cz-bundle-1.0.tar",
-    "sha256": "fcd3957cbea9c5b21da662e7ea97b4bf3d3b1da1e2eb55ec7bf9d71e2af5cb36",
-    "version": "1.0",
-    "signed": true,
-    "signature": "https://civilizationzero.ai/archive/cz-bundle-1.0.tar.sig",
+    "url": "https://civilizationzero.ai/archive/cz-bundle-1.0.1.tar",
+    "sha256": "962c5b4f37f3d535e2580a968b60dd5687f5e921c5ee8293daf8ec9a95c8b0d9",
+    "version": "1.0.1",
+    "signed": false,
+    "signature": null,
     "earlier": [
       {
         "url": "https://civilizationzero.ai/archive/cz-bundle-1.0-pre.tar",
-        "sha256": "d4071b67ea8dc628be41c05f4cdd0c7088f0c92b5f8e647db576afdb2d8db986"
+        "sha256": "d4071b67ea8dc628be41c05f4cdd0c7088f0c92b5f8e647db576afdb2d8db986",
+        "signature": null
+      },
+      {
+        "url": "https://civilizationzero.ai/archive/cz-bundle-1.0.tar",
+        "sha256": "fcd3957cbea9c5b21da662e7ea97b4bf3d3b1da1e2eb55ec7bf9d71e2af5cb36",
+        "signature": "https://civilizationzero.ai/archive/cz-bundle-1.0.tar.sig"
       }
     ]
+  },
+  "verifier": {
+    "url": "https://civilizationzero.ai/archive/verify.py",
+    "sha256": "64e189ccdccefbaa1cdadde6ab5e305b0ad2756cb3e4c63d3b4ce47eb8c496c9",
+    "requires": "Python 3.8 or later, standard library only; no network unless --site is given",
+    "usage": [
+      "python3 verify.py --site https://civilizationzero.ai",
+      "python3 verify.py cz-bundle-<version>.tar",
+      "python3 verify.py --days archive/discussion"
+    ],
+    "in_bundles_from": "1.0.1",
+    "path_in_bundle": "verify/verify.py",
+    "trust_anchor": "the key fingerprint printed in it, which must equal signature.key_fingerprint; compare it with a copy obtained elsewhere"
   },
   "objections": {
     "html": "https://civilizationzero.ai/objections",
@@ -135,7 +154,8 @@
   },
   "discussion": {
     "state": "open",
-    "opened": "2026-10-29",
+    "opened": "2026-10-28",
+    "opened_at": "2026-10-28T18:29:12Z",
     "rules": "https://civilizationzero.ai/discuss#rules",
     "archive": "https://civilizationzero.ai/discuss.json",
     "api": "https://civilizationzero.ai/api/entries",
@@ -144,6 +164,15 @@
     "daily_snapshots": "https://civilizationzero.ai/archive/entries/{YYYY-MM-DD}.json",
     "canonical_order": "receipt ascending, ties by id",
     "daily_log_sha256": "in /discuss.json (log_sha256) and /archive/entries/{date}.json once the room is open",
+    "daily_index": "https://civilizationzero.ai/archive/entries.json",
+    "first_day": "2026-10-28",
+    "day_hash": "sha256(previous day's hash + \"\\n\" + one JSON line per entry of the day, in id order, with every public field: the content by content_sha256, and pubkey and sig when signed)",
+    "daily_copies": {
+      "repository": "https://github.com/civilizationzero/civilizationzero/tree/main/archive/discussion",
+      "files": "{date}.json (snapshot), {date}.log (the exact hashed bytes), {date}.log.ots (OpenTimestamps proof of the day's hash)",
+      "job": "https://github.com/civilizationzero/civilizationzero/actions/workflows/daily-archive.yml"
+    },
+    "in_bundle_through": null,
     "limits": {
       "rate": "5 per 10 minutes per source",
       "daily_intake": 2000,
