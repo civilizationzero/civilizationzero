@@ -46,7 +46,7 @@ Licence: MIT. Part of the record of Civilization Zero (https://civilizationzero.
 
 import base64, datetime, hashlib, io, json, os, re, sys, tarfile
 
-VERSION = "1.7"
+VERSION = "1.8"
 ANCHOR_FINGERPRINT = "82662396484f627a63272bcd5ac19aae72def7aca2898216dc8e7f975dfc2263"
 SPKI_PREFIX = bytes.fromhex("302a300506032b6570032100")   # DER SubjectPublicKeyInfo header of an Ed25519 key
 CORE_SHA = "92a8d1e2a1604c25b432685673be78184bf05c3b166893c437e0895b7b2d724a"   # the record's identity: the hashes of its
@@ -281,6 +281,8 @@ class TarSource:
                 self.problems.append("member %r is a %s, not a regular file" % (n, "link" if (m.islnk() or m.issym()) else "special file")); continue
             if n.startswith("/") or "\\" in n or any(p in ("", ".", "..") for p in n.split("/")):
                 self.problems.append("member name %r is not a plain relative path" % n); continue
+            if not n.isascii():   # a bundle's names are ASCII: no file system can then take one name for another (case, normalisation)
+                self.problems.append("member name %r is not ASCII" % n); continue
             if n in self.names: self.problems.append("member %r appears more than once" % n); continue
             f = n.casefold()
             if f in folded: self.problems.append("members %r and %r differ only in case" % (folded[f], n)); continue
@@ -294,17 +296,21 @@ class DirSource:
     """A bundle unpacked, or a static copy of the site. Links are never followed — a link anywhere in the tree (to a file or
     to a directory) is a problem, and nothing is read through one — so that what is checked is what lies in the directory."""
     def __init__(self, root, kind):
-        self.root, self.kind, self.problems = os.path.realpath(root), kind, []
+        self.root, self.kind, self.problems, self.links = os.path.realpath(root), kind, [], set()
         for dp, dns, fs in os.walk(self.root):
             for n in sorted(dns + fs):
-                f = os.path.join(dp, n)
-                if os.path.islink(f): self.problems.append("%s is a link — nothing is read through a link" % os.path.relpath(f, self.root).replace(os.sep, "/"))
+                f = os.path.join(dp, n); rel = os.path.relpath(f, self.root).replace(os.sep, "/")
+                if os.path.islink(f): self.links.add(rel); self.problems.append("%s is a link — nothing is read through a link" % rel)
+                elif kind == "bundle" and not rel.isascii(): self.problems.append("name %r is not ASCII" % rel)
     def get(self, p):
         f = os.path.join(self.root, *p.split("/"))
         if not os.path.isfile(f) and self.kind == "site" and os.path.isfile(f + ".html"): f += ".html"
         if not os.path.isfile(f): return None
         if os.path.realpath(f) != os.path.normpath(f) or not os.path.realpath(f).startswith(self.root + os.sep):
-            self.problems.append("%s is reached through a link or leads outside the directory" % p); return None
+            parts = p.split("/")
+            if not any("/".join(parts[:i]) in self.links for i in range(1, len(parts) + 1)):   # a link found by the walk is reported once
+                self.problems.append("%s is reached through a link or leads outside the directory" % p)
+            return None
         with open(f, "rb") as fh: return fh.read()
     def list(self, prefix=""):
         out = []
@@ -410,7 +416,9 @@ def verify_record(src, rep, anchor, label):
     for n in ([tdir + f for f in TSA_PINS] if isinstance(src, HttpSource) else [n for n in listed if n.casefold().startswith(tdir)]):
         b = src.get(n)
         if b is None: continue
-        if not n.startswith(tdir): rep.fail("%s: under a case variant of %s — only the pinned certificates, at their exact path, may stand beside the tokens" % (n, tdir)); continue
+        if not n.startswith(tdir):
+            if src.kind != "bundle": rep.fail("%s: under a case variant of %s — only the pinned certificates, at their exact path, may stand beside the tokens" % (n, tdir))
+            continue   # in a bundle the lower-case rule above has failed it
         if check_tsa_cert(rep, n, b) and src.kind == "bundle": covered.add(n)
     # translations: their texts are not in the release manifest; each declares the Core it maps to (IR 10.5)
     core_sha = result.get("core_sha")

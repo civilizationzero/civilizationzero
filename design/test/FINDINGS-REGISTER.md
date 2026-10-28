@@ -245,6 +245,15 @@ swapped FAIL; no OK line prints a time; neither a token nor an unpinned file is 
 | X-7 | verify-live did not notice tokens removed from the site: a 404 gave a notice and the step passed (medium) | **verified** — a token kept in the repository but not served is an error |
 | X-5, X-3 | Directories differing only in case were not checked: a bundle member `signatures/TSA/freetsa-cacert.pem` (which a case-insensitive file system extracts into `signatures/tsa/`) and a site copy's `.well-known/TSA/` raised no failure (low) | **verified** — a bundle's names under `signatures/` must be in lower case; certificates are found by the case-folded path and must sit at the exact one |
 
+A seventh pass (UTC 21:20–21:23) on 1.7: no false failure on bundles 1.0 and 1.0.1 or on a copy of the site; every link in an
+unpacked bundle (a file in `record/`, a directory at `verify/`) FAILs and nothing is read through one; a hard link is read as
+the bytes at that path, which is what is checked; the sixth pass's cases hold. Two low findings, fixed in 1.8:
+
+| # | Finding (severity) | Status |
+|---|---|---|
+| X-9 | Unicode case folding: `casefold()` leaves the dotless ı unchanged, so a member `sıgnatures/tsa/freetsa-cacert.pem` (which a file system comparing names by their upper case, as NTFS does, would put in `signatures/tsa/`) escaped the lower-case rule; only an unsigned copy could carry it (low) | **verified** — a bundle's member names must be ASCII (all 64 of 1.0 and all 69 of 1.0.1 are), which removes every case-folding and normalisation alias at once |
+| X-8 | A link was reported up to three times (by the walk, as missing, and again when read) (low, wording) | **verified** — a path under a link the walk found is not reported again when read |
+
 
 ### Security review of the Adoption Register (28 Oct 2026, UTC 19:49–20:10) — before it opens
 
