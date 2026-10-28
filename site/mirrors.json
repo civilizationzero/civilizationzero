@@ -1,0 +1,4 @@
+{
+  "note": "Independent mirrors of the record (Blueprint 1.3.1 §8; site/MIRROR.md). An entry is added only when its holder has set it up and asked for it; verify-live then runs verify.py --site against it every day. Holders are named as they ask to be named.",
+  "mirrors": []
+}

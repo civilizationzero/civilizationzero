@@ -598,7 +598,7 @@ python3 verify.py --self-test                         # its Ed25519, against RFC
 <table><tr><th>Where</th><th>What</th><th>Status</th></tr>
 <tr><td><a href="{REPO}">GitHub, {REPO.replace('https://github.com/', '')}</a></td><td>Source, canonical texts, blueprint, reviews, registers; every change in its history</td><td>live</td></tr>
 <tr><td>Internet Archive</td><td>Snapshots of the site at release, at launch and at each anniversary</td><td>{"saved " + ", ".join(f'<a href="{u}">{esc(p)}</a>' for p, u in IA_SNAPSHOTS.items()) + " (28 October 2026); the rest at launch" if IA_SNAPSHOTS else "at launch"}</td></tr>
-<tr><td>Two independent mirrors, one outside the originator's jurisdiction</td><td>The signed bundle, re-verified daily; holders named here</td><td class="pending">pending — holders not yet named</td></tr>
+<tr><td>Two independent mirrors, one outside the originator's jurisdiction</td><td>The signed record and bundles, re-verified daily by <a href="{REPO}/actions/workflows/verify-live.yml">verify-live</a> with verify.py; holders named as they ask</td><td>{"; ".join(f'<a href="{esc(m["url"])}">{esc(m["name"])}</a> — {esc(m["holder"])} ({esc(m["country"])}), since <time datetime="{esc(m["since"])}">{esc(m["since"])}</time>' for m in MIRRORS) if MIRRORS else '<span class="pending">pending — none set up yet; how to host one: <a href="' + REPO + '/blob/main/site/MIRROR.md">site/MIRROR.md</a></span>'}</td></tr>
 <tr><td>Deposit with a persistent identifier (Zenodo, DOI)</td><td>The repository at each release — canonical texts, signatures, proof, bundle</td><td>{f'<a href="https://doi.org/{DOI}">doi:{DOI}</a>' + (f' (all versions: <a href="https://doi.org/{DOI_CONCEPT}">doi:{DOI_CONCEPT}</a>)' if DOI_CONCEPT else "") if DOI else f'<span class="pending">pending — target {LAUNCH.isoformat()}</span>'}</td></tr>
 </table>
 </section>
@@ -1011,8 +1011,9 @@ def manifest(bundle_name, bundle_sha, bundle_signed=False):
         "timestamp": {"status": OTS_STATUS, "submitted": "2026-10-28" if OTS.exists() else None, "target": LAUNCH.isoformat(), "service": "OpenTimestamps",
                       "proof": f"{ORIGIN}/.well-known/{RELEASE_NAME}.ots" if OTS.exists() else None, "over": f"{ORIGIN}/.well-known/{RELEASE_NAME}" if OTS.exists() else None,
                       "anchor": {"chain": "bitcoin", "blocks": OTS_ANCHORS} if OTS_ANCHORS else None},
-        "mirrors": [{"name": "GitHub", "url": REPO, "status": "live"}, {"name": "Internet Archive", "status": "at launch"},
-                    {"name": "two independent mirrors, one outside the originator's jurisdiction", "status": "pending"}],
+        "mirrors": [{"name": "GitHub", "url": REPO, "status": "live"}, {"name": "Internet Archive", "status": "snapshots", "snapshots": [u for u in IA_SNAPSHOTS.values()]}]
+                   + [dict(m, status="verified daily by verify-live") for m in MIRRORS]
+                   + ([] if len(MIRRORS) >= 2 else [{"name": "independent mirrors, one outside the originator's jurisdiction", "status": "pending", "how": f"{REPO}/blob/main/site/MIRROR.md"}]),
         "deposit": {"status": "done" if DOI else "pending", "target": LAUNCH.isoformat(), "service": "Zenodo (DOI)", "doi": DOI, "concept_doi": DOI_CONCEPT, "url": f"https://doi.org/{DOI}" if DOI else None},
         "internet_archive": [{"path": p, "snapshot": u} for p, u in IA_SNAPSHOTS.items()],
         "succession": {"second_key_holder": {"name": "Banco", "country": "Germany", "named": "2026-10-28", "acceptance": "received 2026-10-29 by email"}, "dead_man_days": 90},
@@ -1084,6 +1085,10 @@ The record's identity is its hash, not its address.
 - Section references use the Core's own numbers 0–15: display §3, anchor /core#p3, API ref "3".
 - Contact: {CONTACT}. Source: {REPO}
 """
+
+# ============================================================================ mirrors (site/mirrors.json: added when a holder has set one up)
+MIRRORS = json.loads((SITE / "mirrors.json").read_text("utf-8"))["mirrors"]
+for _m in MIRRORS: assert set(_m) >= {"name", "url", "holder", "country", "since"} and _m["url"].startswith("https://"), "mirrors.json: name, url (https), holder, country, since"
 
 # ============================================================================ the verifier and the discussion's daily copies
 VERIFY_BYTES = (SITE / "verify" / "verify.py").read_bytes()

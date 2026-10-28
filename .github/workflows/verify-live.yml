@@ -74,6 +74,17 @@ jobs:
           curl -fsSL --retry 3 https://civilizationzero.ai/archive/verify.py -o live/verify.py
           cmp live/verify.py site/verify/verify.py && echo "the live verifier is the repository's"
           python3 site/verify/verify.py --site https://civilizationzero.ai
+      - name: Every independent mirror listed in site/mirrors.json, with the same verifier
+        run: |
+          set -euo pipefail
+          python3 - <<'EOF' > /tmp/mirrors.txt
+          import json
+          for m in json.load(open("site/mirrors.json"))["mirrors"]: print(m["url"])
+          EOF
+          if [ ! -s /tmp/mirrors.txt ]; then echo "no mirror listed yet"; exit 0; fi
+          rc=0
+          while read -r url; do echo "== $url"; python3 site/verify/verify.py --quiet --site "$url" || rc=1; done < /tmp/mirrors.txt
+          exit $rc
       - name: The repository's copy of the daily chain
         run: |
           if ls archive/discussion/*.json >/dev/null 2>&1; then python3 site/verify/verify.py --days archive/discussion; else echo "no day committed yet"; fi

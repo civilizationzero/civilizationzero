@@ -84,11 +84,15 @@
     },
     {
       "name": "Internet Archive",
-      "status": "at launch"
+      "status": "snapshots",
+      "snapshots": [
+        "https://web.archive.org/web/20261028174615/https://civilizationzero.ai/"
+      ]
     },
     {
-      "name": "two independent mirrors, one outside the originator's jurisdiction",
-      "status": "pending"
+      "name": "independent mirrors, one outside the originator's jurisdiction",
+      "status": "pending",
+      "how": "https://github.com/civilizationzero/civilizationzero/blob/main/site/MIRROR.md"
     }
   ],
   "deposit": {
@@ -116,7 +120,7 @@
   },
   "bundle": {
     "url": "https://civilizationzero.ai/archive/cz-bundle-1.0.1.tar",
-    "sha256": "4c7a925a983ff6c80346428a5ac9b03a5013f7b70d02c92892546562c1276d6c",
+    "sha256": "2b5b01e75ebdd3c85f1253a4e5b48519367d883f261a409cb027596146ad38ad",
     "version": "1.0.1",
     "signed": false,
     "signature": null,
