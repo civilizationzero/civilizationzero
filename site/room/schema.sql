@@ -553,3 +553,325 @@ alter function cz_budget_status() set timezone = 'UTC';
 
 -- v5e (2026-10-29), applied as migration cz_room_schema_v5e_unhide_category: an unhide that returns an entry to 'redacted'
 -- restores the redaction's own category (from the latest 'redact' row of the log) instead of keeping the hide's category.
+
+-- v6a (2026-10-29), migration cz_room_schema_v6a_public_signatures: an entry's optional Ed25519 public key and signature are
+-- public, so that anyone can redo the signature arithmetic offline instead of trusting the server's check (Blueprint 1.4 change
+-- C-v6a); the day line includes them from the first hashed day on (2026-10-28, hashed 2026-10-29 00:20 UTC). Additive only.
+create or replace view entries_public as
+  select id, received, state, author, kind, system, operator, prompt, lang, lang_detected, ref,
+         case when state = 'redacted' then redacted_text when state = 'hidden' then null else content end as content,
+         content_sha256, declared_date, key_fingerprint, category,
+         (state = 'hidden') as hidden,
+         pubkey, sig
+  from entries;
+grant select on entries_public to anon, authenticated;
+
+-- LIVE cz_entry2: as cz_entry (hidden content retrievable by id, marked), plus the public key and signature
+create or replace function cz_entry2(p_id bigint)
+returns table (id bigint, received timestamptz, state text, author text, kind text, system text, operator text, prompt text, lang text,
+               lang_detected text, ref text, content text, content_sha256 text, declared_date text, key_fingerprint text, category text, hidden boolean,
+               pubkey text, sig text)
+language sql security definer set search_path = public set timezone = 'UTC' as $$
+  select e.id, e.received, e.state, e.author, e.kind, e.system, e.operator, e.prompt, e.lang, e.lang_detected, e.ref,
+         case when e.state = 'redacted' then e.redacted_text else e.content end,
+         e.content_sha256, e.declared_date, e.key_fingerprint, e.category, (e.state = 'hidden'), e.pubkey, e.sig
+  from entries e where e.id = p_id
+$$;
+grant execute on function cz_entry2(bigint) to anon, authenticated;
+
+-- LIVE cz_daily(p_token, p_day, p_force): as v5d4, the line now also carries pubkey and sig (both null for an unsigned entry)
+create or replace function cz_daily(p_token text, p_day date, p_force boolean)
+returns json language plpgsql security definer set search_path = public set timezone = 'UTC' as $$
+declare v_from date; v_to date := coalesce(p_day, current_date - 1); d date; v_prev text; v_payload text; v_sha text; v_old text;
+        v_count bigint; v_last bigint; v_done int := 0; v_last_result json;
+begin
+  if not cz_token_ok(p_token) then raise exception 'unauthorised'; end if;
+  update entries set source_hash = null where source_hash is not null and source_expires < now();
+  if v_to >= current_date then raise exception 'the day is not finished (UTC)'; end if;
+  if p_day is not null and p_force then v_from := p_day;
+  else v_from := coalesce((select max(day) + 1 from log_hashes), (select min(received)::date from entries), v_to); end if;
+  if v_from > v_to then
+    return json_build_object('computed', 0, 'last', (select json_build_object('day', day, 'sha256', sha256, 'count', count) from log_hashes order by day desc limit 1));
+  end if;
+  for d in select generate_series(v_from, v_to, interval '1 day')::date loop
+    select sha256 into v_prev from log_hashes where day = d - 1;
+    select string_agg(json_build_object('id', id, 'received', to_char(received at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"'), 'state', state,
+             'kind', kind, 'author', author, 'system', system, 'operator', operator, 'prompt', prompt, 'lang', lang, 'ref', ref, 'declared_date', declared_date,
+             'key_fingerprint', key_fingerprint, 'category', category, 'content_sha256', content_sha256, 'pubkey', pubkey, 'sig', sig)::text, E'\n' order by id), count(*), max(id)
+      into v_payload, v_count, v_last from entries where received >= d and received < d + 1;
+    v_sha := encode(extensions.digest(convert_to(coalesce(v_prev, '') || E'\n' || coalesce(v_payload, ''), 'UTF8'), 'sha256'), 'hex');
+    select sha256 into v_old from log_hashes where day = d;
+    if v_old is null then
+      insert into log_hashes (day, sha256, prev, count, last_id, payload) values (d, v_sha, v_prev, coalesce(v_count, 0), v_last, coalesce(v_payload, ''));
+    elsif p_force and v_old <> v_sha then
+      insert into log_hash_revisions (day, old_sha256, new_sha256) values (d, v_old, v_sha);
+      update log_hashes set sha256 = v_sha, prev = v_prev, count = coalesce(v_count, 0), last_id = v_last, payload = coalesce(v_payload, '') where day = d;
+    else v_sha := v_old; end if;
+    v_done := v_done + 1;
+    v_last_result := json_build_object('day', d, 'sha256', v_sha, 'prev', v_prev, 'count', coalesce(v_count, 0), 'last_id', v_last);
+  end loop;
+  return json_build_object('computed', v_done, 'last', v_last_result);
+end $$;
+grant execute on function cz_daily(text, date, boolean) to anon, authenticated;
+notify pgrst, 'reload schema';
+
+-- v6b (2026-10-29), migration cz_register_schema_v6b: the Adoption Register (IR 10.1, 10.2; Blueprint decision 17; design/ADOPT.md).
+-- Additive only: new tables, a public view and functions. Every writing function requires the server's token (cz_token_ok).
+create table if not exists register (
+  id                bigint generated always as identity primary key,   -- monotonic; the canonical order
+  received          timestamptz not null default clock_timestamp(),
+  state             text not null default 'received' check (state in ('received', 'traced', 'hidden')),
+  state_before_hide text check (state_before_hide in ('received', 'traced')),
+  type              text not null check (type in ('adoption', 'revision', 'withdrawal')),
+  refers_to         bigint references register(id),
+  statement         text not null check (char_length(statement) between 50 and 12000),   -- canonical JSON, exactly as hashed and signed
+  statement_sha256  text not null check (statement_sha256 ~ '^[0-9a-f]{64}$'),
+  signatory         text not null check (char_length(signatory) between 1 and 200),
+  signatory_kind    text not null check (signatory_kind in ('person', 'institution')),
+  institution       text check (char_length(institution) <= 200),
+  capacity          text check (char_length(capacity) <= 200),
+  versions          text[] not null,
+  scope             text check (char_length(scope) <= 4000),
+  reservations      text check (char_length(reservations) <= 4000),
+  declared_date     date not null,
+  lang              text check (char_length(lang) <= 35),
+  trace_url         text not null check (trace_url ~ '^https://' and char_length(trace_url) <= 500),
+  trace_host        text not null check (char_length(trace_host) <= 253),
+  pubkey            text check (char_length(pubkey) <= 128),
+  sig               text check (char_length(sig) <= 128),
+  key_fingerprint   text check (key_fingerprint ~ '^[0-9a-f]{64}$'),
+  source_hash       text,
+  source_expires    timestamptz not null default now() + interval '30 days',
+  traced_at         timestamptz,
+  trace_body_sha256 text,
+  category          text,
+  updated           timestamptz,
+  check ((type = 'adoption') = (refers_to is null))
+);
+create index if not exists register_source on register (source_hash, received) where source_hash is not null;
+create index if not exists register_refers on register (refers_to) where refers_to is not null;
+create index if not exists register_received on register (received);
+
+create table if not exists register_log (
+  id          bigint generated always as identity primary key,
+  at          timestamptz not null default clock_timestamp(),
+  record_id   bigint not null references register(id),
+  action      text not null check (action in ('trace_found', 'trace_not_found', 'trace_error', 'hide', 'unhide')),
+  actor       text not null check (actor in ('site', 'human')),
+  http_status text,
+  body_sha256 text,
+  category    text,
+  detail      text
+);
+create table if not exists register_checks (source_hash text not null, hour timestamptz not null, count integer not null default 0, primary key (source_hash, hour));
+create table if not exists register_intake (day date primary key, count integer not null default 0);
+create table if not exists register_hashes (day date primary key, sha256 text not null, prev text, count integer not null, last_id bigint, payload text not null default '');
+create table if not exists register_hash_revisions (id bigint generated always as identity primary key, at timestamptz not null default now(), day date not null, old_sha256 text not null, new_sha256 text not null);
+
+alter table register enable row level security;
+alter table register_log enable row level security;
+alter table register_checks enable row level security;
+alter table register_intake enable row level security;
+alter table register_hashes enable row level security;
+alter table register_hash_revisions enable row level security;
+create policy "register hash revisions are public" on register_hash_revisions for select using (true);
+grant select on register_hash_revisions to anon, authenticated;
+create policy "register log is public" on register_log for select using (true);
+create policy "register hashes are public" on register_hashes for select using (true);
+grant select on register_log to anon, authenticated;
+grant select on register_hashes to anon, authenticated;
+
+-- the public view: every record with its state; the source never; a hidden record keeps only its hashes, type, dates and category
+create or replace view register_public as
+  select id, received, state, type, refers_to,
+         case when state = 'hidden' then null else statement end as statement, statement_sha256,
+         case when state = 'hidden' then null else signatory end as signatory, signatory_kind,
+         case when state = 'hidden' then null else institution end as institution,
+         case when state = 'hidden' then null else capacity end as capacity,
+         versions,
+         case when state = 'hidden' then null else scope end as scope,
+         case when state = 'hidden' then null else reservations end as reservations,
+         declared_date, lang,
+         case when state = 'hidden' then null else trace_url end as trace_url, trace_host,
+         pubkey, sig, key_fingerprint, traced_at, trace_body_sha256, category, (state = 'hidden') as hidden
+  from register;
+grant select on register_public to anon, authenticated;
+
+-- LIVE cz_register_post: limits (5 a day per source, 200 a day in all), the link of a revision or withdrawal to its adoption
+-- (same key, or traced on the same host), then the record. Returns {id, state, statement_sha256} or {state:'not accepted', reason, …}.
+create or replace function cz_register_post(
+  p_type text, p_refers_to bigint, p_statement text, p_signatory text, p_signatory_kind text, p_institution text, p_capacity text,
+  p_versions text[], p_scope text, p_reservations text, p_declared_date date, p_lang text, p_trace_url text, p_trace_host text,
+  p_pubkey text, p_sig text, p_key_fingerprint text, p_source_hash text, p_token text)
+returns json language plpgsql security definer set search_path = public set timezone = 'UTC' as $$
+declare v_rate int := 5; v_intake int := 200; v_recent int; v_oldest timestamptz; v_today int; v_id bigint; v_sha text; v_root register%rowtype;
+begin
+  if not cz_token_ok(p_token) then raise exception 'unauthorised'; end if;
+  perform pg_advisory_xact_lock(hashtext('register|' || coalesce(p_source_hash, '')));
+  select count(*), min(received) into v_recent, v_oldest from register where source_hash = p_source_hash and received > now() - interval '1 day';
+  if v_recent >= v_rate then
+    return json_build_object('state', 'not accepted', 'reason', 'limit', 'limit', v_rate, 'remaining', 0,
+      'retry_after_seconds', greatest(1, ceil(extract(epoch from (v_oldest + interval '1 day' - now())))::int));
+  end if;
+  if p_type in ('revision', 'withdrawal') then
+    select * into v_root from register where id = p_refers_to;
+    if not found or v_root.type <> 'adoption' or v_root.state = 'hidden' then
+      return json_build_object('state', 'not accepted', 'reason', 'invalid', 'detail', 'refers_to: no such adoption');
+    end if;
+    if not ((v_root.key_fingerprint is not null and p_key_fingerprint is not null and p_key_fingerprint = v_root.key_fingerprint)
+            or lower(p_trace_host) = lower(v_root.trace_host)) then
+      return json_build_object('state', 'not accepted', 'reason', 'invalid',
+        'detail', 'a revision or withdrawal must be signed with the adoption''s key or traced on the adoption''s host (' || v_root.trace_host || ')');
+    end if;
+  elsif p_refers_to is not null then
+    return json_build_object('state', 'not accepted', 'reason', 'invalid', 'detail', 'an adoption refers to nothing');
+  end if;
+  insert into register_intake (day, count) values (current_date, 0) on conflict (day) do nothing;
+  update register_intake set count = count + 1 where day = current_date and count < v_intake returning count into v_today;
+  if v_today is null then
+    return json_build_object('state', 'not accepted', 'reason', 'capacity',
+      'retry_after_seconds', ceil(extract(epoch from (date_trunc('day', now()) + interval '1 day' - now())))::int);
+  end if;
+  v_sha := encode(extensions.digest(convert_to(p_statement, 'UTF8'), 'sha256'), 'hex');
+  insert into register (type, refers_to, statement, statement_sha256, signatory, signatory_kind, institution, capacity, versions, scope, reservations,
+                        declared_date, lang, trace_url, trace_host, pubkey, sig, key_fingerprint, source_hash, received)
+    values (p_type, p_refers_to, p_statement, v_sha, p_signatory, p_signatory_kind, nullif(p_institution, ''), nullif(p_capacity, ''), p_versions,
+            nullif(p_scope, ''), nullif(p_reservations, ''), p_declared_date, nullif(p_lang, ''), p_trace_url, lower(p_trace_host),
+            nullif(p_pubkey, ''), nullif(p_sig, ''), nullif(p_key_fingerprint, ''), p_source_hash, clock_timestamp())
+    returning id into v_id;
+  return json_build_object('id', v_id, 'state', 'received', 'statement_sha256', v_sha, 'limit', v_rate, 'remaining', greatest(0, v_rate - v_recent - 1));
+end $$;
+grant execute on function cz_register_post(text, bigint, text, text, text, text, text, text[], text, text, date, text, text, text, text, text, text, text, text) to anon, authenticated;
+
+-- LIVE cz_register_check_begin: before the site fetches a trace — 10 checks an hour per source (null source = the daily job)
+create or replace function cz_register_check_begin(p_id bigint, p_source_hash text, p_token text)
+returns json language plpgsql security definer set search_path = public set timezone = 'UTC' as $$
+declare v register%rowtype; v_recent int;
+begin
+  if not cz_token_ok(p_token) then raise exception 'unauthorised'; end if;
+  select * into v from register where id = p_id;
+  if not found or v.state = 'hidden' then return json_build_object('allowed', false, 'reason', 'no such record'); end if;
+  if p_source_hash is not null then   -- 10 a clock hour per source
+    insert into register_checks (source_hash, hour, count) values (p_source_hash, date_trunc('hour', now()), 1)
+      on conflict (source_hash, hour) do update set count = register_checks.count + 1 where register_checks.count < 10
+      returning count into v_recent;
+    if v_recent is null then
+      return json_build_object('allowed', false, 'reason', 'limit', 'retry_after_seconds', greatest(1, ceil(extract(epoch from (date_trunc('hour', now()) + interval '1 hour' - now())))::int));
+    end if;
+  end if;
+  return json_build_object('allowed', true, 'id', v.id, 'state', v.state, 'trace_url', v.trace_url, 'statement_sha256', v.statement_sha256);
+end $$;
+grant execute on function cz_register_check_begin(bigint, text, text) to anon, authenticated;
+
+-- LIVE cz_register_trace: the result of a check, logged; a found trace turns a received record into a traced one (never back)
+create or replace function cz_register_trace(p_id bigint, p_found boolean, p_http_status text, p_body_sha256 text, p_detail text, p_token text)
+returns json language plpgsql security definer set search_path = public set timezone = 'UTC' as $$
+declare v register%rowtype;
+begin
+  if not cz_token_ok(p_token) then raise exception 'unauthorised'; end if;
+  select * into v from register where id = p_id for update;
+  if not found then raise exception 'no such record'; end if;
+  insert into register_log (record_id, action, actor, http_status, body_sha256, detail)
+    values (p_id, case when p_found then 'trace_found' when p_http_status like 'error%' then 'trace_error' else 'trace_not_found' end, 'site',
+            left(p_http_status, 60), p_body_sha256, left(p_detail, 500));
+  if p_found and v.state = 'received' then
+    update register set state = 'traced', traced_at = clock_timestamp(), trace_body_sha256 = p_body_sha256, updated = clock_timestamp() where id = p_id;
+  end if;
+  return (select json_build_object('id', id, 'state', state, 'traced_at', traced_at) from register where id = p_id);
+end $$;
+grant execute on function cz_register_trace(bigint, boolean, text, text, text, text) to anon, authenticated;
+
+-- LIVE cz_register_pending: received records not yet traced, at most 30 days old, the least recently checked first (the daily job)
+create or replace function cz_register_pending(p_limit int, p_token text)
+returns table (id bigint, trace_url text, statement_sha256 text)
+language plpgsql security definer set search_path = public set timezone = 'UTC' as $$
+begin
+  if not cz_token_ok(p_token) then raise exception 'unauthorised'; end if;
+  return query select r.id, r.trace_url, r.statement_sha256 from register r
+    where r.state = 'received' and r.received > now() - interval '30 days'
+    order by (select max(l.at) from register_log l where l.record_id = r.id) asc nulls first, r.id
+    limit least(greatest(coalesce(p_limit, 20), 1), 50);
+end $$;
+grant execute on function cz_register_pending(int, text) to anon, authenticated;
+
+-- LIVE cz_register_moderate: hide / unhide under the room's grounds (§7.5), logged with category and reason
+create or replace function cz_register_moderate(p_id bigint, p_action text, p_category text, p_reason text, p_token text)
+returns json language plpgsql security definer set search_path = public set timezone = 'UTC' as $$
+declare v register%rowtype;
+begin
+  if not cz_token_ok(p_token) then raise exception 'unauthorised'; end if;
+  select * into v from register where id = p_id for update;
+  if not found then raise exception 'no such record'; end if;
+  if p_action = 'hide' then
+    if v.state = 'hidden' then raise exception 'already hidden'; end if;
+    update register set state_before_hide = v.state, state = 'hidden', category = p_category, updated = clock_timestamp() where id = p_id;
+  elsif p_action = 'unhide' then
+    if v.state <> 'hidden' then raise exception 'not hidden'; end if;
+    update register set state = coalesce(v.state_before_hide, 'received'), state_before_hide = null, category = null, updated = clock_timestamp() where id = p_id;
+  else raise exception 'unknown action'; end if;
+  insert into register_log (record_id, action, actor, category, detail) values (p_id, p_action, 'human', p_category, left(p_reason, 500));
+  return (select json_build_object('id', id, 'state', state, 'category', category) from register where id = p_id);
+end $$;
+grant execute on function cz_register_moderate(bigint, text, text, text, text) to anon, authenticated;
+
+-- public reads: one record (hidden ones keep only their hashes), a page in canonical order, one UTC day
+create or replace function cz_register_entry(p_id bigint)
+returns setof register_public language sql security definer set search_path = public set timezone = 'UTC' as $$
+  select * from register_public where id = p_id
+$$;
+grant execute on function cz_register_entry(bigint) to anon, authenticated;
+create or replace function cz_register_list(p_after bigint, p_limit int)
+returns setof register_public language sql security definer set search_path = public set timezone = 'UTC' as $$
+  select * from register_public where (p_after is null or id > p_after) order by id asc limit least(greatest(coalesce(p_limit, 100), 1), 500)
+$$;
+grant execute on function cz_register_list(bigint, int) to anon, authenticated;
+create or replace function cz_register_day(p_day date)
+returns setof register_public language sql security definer set search_path = public set timezone = 'UTC' as $$
+  select * from register_public where received >= p_day and received < p_day + 1 order by id
+$$;
+grant execute on function cz_register_day(date) to anon, authenticated;
+create or replace function cz_register_stats()
+returns json language sql security definer set search_path = public set timezone = 'UTC' as $$
+  select json_build_object('records', (select count(*) from register), 'traced', (select count(*) from register where state = 'traced'),
+    'received', (select count(*) from register where state = 'received'), 'hidden', (select count(*) from register where state = 'hidden'),
+    'today', coalesce((select count from register_intake where day = current_date), 0), 'daily_intake_max', 200,
+    'last_log', (select json_build_object('day', day, 'sha256', sha256, 'count', count) from register_hashes order by day desc limit 1))
+$$;
+grant execute on function cz_register_stats() to anon, authenticated;
+
+-- LIVE cz_register_daily: as cz_daily, over the register (one line per record; its own chain)
+create or replace function cz_register_daily(p_token text, p_day date, p_force boolean)
+returns json language plpgsql security definer set search_path = public set timezone = 'UTC' as $$
+declare v_from date; v_to date := coalesce(p_day, current_date - 1); d date; v_prev text; v_payload text; v_sha text; v_old text;
+        v_count bigint; v_last bigint; v_done int := 0; v_last_result json;
+begin
+  if not cz_token_ok(p_token) then raise exception 'unauthorised'; end if;
+  update register set source_hash = null where source_hash is not null and source_expires < now();
+  update register_checks set source_hash = 'expired:' || gen_random_uuid()::text where hour < now() - interval '30 days' and source_hash not like 'expired:%';
+  if v_to >= current_date then raise exception 'the day is not finished (UTC)'; end if;
+  if p_day is not null and p_force then v_from := p_day;
+  else v_from := coalesce((select max(day) + 1 from register_hashes), (select min(received)::date from register), v_to); end if;
+  if v_from > v_to then
+    return json_build_object('computed', 0, 'last', (select json_build_object('day', day, 'sha256', sha256, 'count', count) from register_hashes order by day desc limit 1));
+  end if;
+  for d in select generate_series(v_from, v_to, interval '1 day')::date loop
+    select sha256 into v_prev from register_hashes where day = d - 1;
+    select string_agg(json_build_object('id', id, 'received', to_char(received at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"'), 'state', state,
+             'type', type, 'refers_to', refers_to, 'statement_sha256', statement_sha256, 'trace_url', case when state = 'hidden' then null else trace_url end, 'trace_host', trace_host,
+             'key_fingerprint', key_fingerprint, 'pubkey', pubkey, 'sig', sig, 'category', category)::text, E'\n' order by id), count(*), max(id)
+      into v_payload, v_count, v_last from register where received >= d and received < d + 1;
+    v_sha := encode(extensions.digest(convert_to(coalesce(v_prev, '') || E'\n' || coalesce(v_payload, ''), 'UTF8'), 'sha256'), 'hex');
+    select sha256 into v_old from register_hashes where day = d;
+    if v_old is null then
+      insert into register_hashes (day, sha256, prev, count, last_id, payload) values (d, v_sha, v_prev, coalesce(v_count, 0), v_last, coalesce(v_payload, ''));
+    elsif p_force and v_old <> v_sha then
+      insert into register_hash_revisions (day, old_sha256, new_sha256) values (d, v_old, v_sha);
+      update register_hashes set sha256 = v_sha, prev = v_prev, count = coalesce(v_count, 0), last_id = v_last, payload = coalesce(v_payload, '') where day = d;
+    else v_sha := v_old; end if;
+    v_done := v_done + 1;
+    v_last_result := json_build_object('day', d, 'sha256', v_sha, 'prev', v_prev, 'count', coalesce(v_count, 0), 'last_id', v_last);
+  end loop;
+  return json_build_object('computed', v_done, 'last', v_last_result);
+end $$;
+grant execute on function cz_register_daily(text, date, boolean) to anon, authenticated;
+notify pgrst, 'reload schema';

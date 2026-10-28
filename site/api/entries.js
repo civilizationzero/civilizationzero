@@ -66,7 +66,10 @@ module.exports = async (req, res) => {
     const e = v.value; let fingerprint = "";
     if (e.pubkey) {
       const s = R.verifySignature(e.pubkey, e.sig, e.content);
-      if (!s.ok) return form ? formError(res, 400, "Not accepted: invalid", "The signature does not verify over the content bytes exactly as sent.") : json(res, 400, { state: "not accepted", reason: "invalid", detail: "signature does not verify over the UTF-8 bytes of content exactly as sent" });
+      if (!s.ok) {
+        const detail = s.reason === "key" ? "pubkey: not a canonical Ed25519 key of full order — a small-order or malformed key proves no continuity" : "signature does not verify over the UTF-8 bytes of content exactly as sent";
+        return form ? formError(res, 400, "Not accepted: invalid", detail) : json(res, 400, { state: "not accepted", reason: "invalid", detail });
+      }
       fingerprint = s.fingerprint;
     }
     const r = await rpc("cz_post", { p_author: e.author, p_kind: e.kind, p_system: e.system, p_operator: e.operator, p_prompt: e.prompt, p_lang: e.lang, p_ref: e.ref,

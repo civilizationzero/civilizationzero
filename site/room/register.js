@@ -93,7 +93,7 @@ function validateStatement(b) {
     if (!b.pubkey || !b.sig) return { error: "pubkey and sig go together" };
     if (String(b.pubkey).length > 128 || String(b.sig).length > 128) return { error: "pubkey, sig: too long" };
     const s = R.verifySignature(String(b.pubkey), String(b.sig), statement);
-    if (!s.ok) return { error: "sig: does not verify over the UTF-8 bytes of the canonical statement: " + statement };
+    if (!s.ok) return { error: s.reason === "key" ? "pubkey: not a canonical Ed25519 key of full order — a small-order or malformed key proves no continuity" : "sig: does not verify over the UTF-8 bytes of the canonical statement: " + statement };
     fingerprint = s.fingerprint;
   }
   return { value: { ...stmt, statement, statement_sha256: sha256(statement), trace_url: out.trace_url, trace_host: host,
