@@ -20,13 +20,17 @@ Content types that matter: `core.txt`, `record.txt`, `*.pub` as `text/plain; cha
 `*.sig`, `*.ots` as `application/octet-stream`; `*.tar` as `application/x-tar`.
 
 ## Verify the mirror (same checks as the daily job)
-One command, from a clone of the repository (or with `verify.py` from any bundle from 1.0.1), no installs:
+One command, no installs (Python 3.8 or later). `verify.py` is in the repository (`site/verify/verify.py` on `main`), in
+every bundle from 1.0.1 (`verify/verify.py`) and at https://civilizationzero.ai/archive/verify.py — take it from one of
+these and compare its SHA-256 with another:
 ```sh
-python3 site/verify/verify.py --site-dir /path/to/your/copy/of/site/public     # the files, before you serve them
-python3 site/verify/verify.py --site https://mirror.example                      # the mirror as it is served
+python3 verify.py --site-dir /path/to/your/copy/of/site/public     # the files, before you serve them
+python3 verify.py --site https://mirror.example                     # the mirror as it is served
 ```
 It checks the key against its trust anchor, every signature, every hash in the release manifest, the translations, the
-timestamp proof and the bundles (and, with `--site`, the discussion's daily chain). The same steps with OpenSSL alone:
+timestamp proof and the bundles. A static mirror holds the record, not the daily chains of the discussion and the register
+(they are served by civilizationzero.ai and copied to this repository's `archive/`): for a mirror the verifier reports them
+as PENDING, not as a failure. The same steps with OpenSSL alone:
 ```sh
 M=https://mirror.example   # the mirror's base URL
 for f in core.txt record.txt .well-known/cz-release-1.0.json; do
@@ -36,8 +40,9 @@ done
 sha256sum /tmp/core.txt   # 92a8d1e2a1604c25b432685673be78184bf05c3b166893c437e0895b7b2d724a
 sha256sum /tmp/record.txt # 71e1488e631e090c0820bf8b78b1fda70ffacba1da146c36d8893600320fcc8d
 ```
-Once a mirror's URL is known it is added to `.github/workflows/verify-live.yml` (the same steps run against it daily) and
-named on `/archive` and in the manifest with the date it was last verified.
+Once a mirror's holder has set it up and asked for it, its URL is added to `site/mirrors.json`: the `verify-live` workflow
+then runs verify.py against it every day (the run history is public), and `/archive` and the manifest name it, with its
+holder as they ask to be named.
 
 ## Who
 At least two, one outside the originator's jurisdiction. The second key-holder (Banco, Germany) is the first candidate; any
