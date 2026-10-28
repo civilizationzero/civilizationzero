@@ -48,7 +48,7 @@ Licence: MIT. Part of the record of Civilization Zero (https://civilizationzero.
 
 import base64, datetime, hashlib, io, json, os, re, sys, tarfile
 
-VERSION = "1.11"
+VERSION = "1.12"
 ANCHOR_FINGERPRINT = "82662396484f627a63272bcd5ac19aae72def7aca2898216dc8e7f975dfc2263"
 SPKI_PREFIX = bytes.fromhex("302a300506032b6570032100")   # DER SubjectPublicKeyInfo header of an Ed25519 key
 CORE_SHA = "92a8d1e2a1604c25b432685673be78184bf05c3b166893c437e0895b7b2d724a"   # the record's identity: the hashes of its
@@ -65,6 +65,11 @@ ORIGIN = "https://civilizationzero.ai"
 # this one; anything else under signatures/tsa/ (or /.well-known/tsa/) FAILs.
 TSA_PINS = {"freetsa-cacert.pem": ("FreeTSA's root certificate", "https://freetsa.org/files/cacert.pem", "2151b61137ffa86bf664691ba67e7da0b19f98c758e3d228d5d8ebf27e044438"),
             "freetsa-tsa.crt": ("FreeTSA's time-stamping certificate", "https://freetsa.org/files/tsa.crt", "8bfb0305bb64e2571ca507552ef3245cb1c2fee8728e0ff8689225081ea13467")}
+
+def jload(b):
+    """json.loads for input from a copy: too deep a nesting is malformed input (ValueError), never a crash."""
+    try: return json.loads(b)
+    except RecursionError: raise ValueError("nested too deeply")
 
 def is_origin(base):
     """Whether an https address is the record's own site, however it is spelled (case, a trailing dot, port 443, a slash)."""
@@ -291,7 +296,10 @@ class TarSource:
             folded[f] = n; self.names[n] = m
     def get(self, p):
         m = self.names.get(p)
-        return self.t.extractfile(m).read() if m else None
+        if not m: return None
+        try: return self.t.extractfile(m).read()
+        except (tarfile.TarError, EOFError, OSError) as e:
+            self.problems.append("member %r cannot be read (%s)" % (p, e)); return None
     def list(self, prefix=""): return sorted(n for n in self.names if n.startswith(prefix))
 
 class DirSource:
@@ -336,7 +344,9 @@ class HttpSource:
             with urllib.request.urlopen(req, timeout=60) as resp: return resp.read(64 * 1024 * 1024)
         except urllib.error.HTTPError as e:
             if e.code == 404: return None
-            raise
+            self.problems.append("%s answered HTTP %d" % (p, e.code)); return None
+        except Exception as e:   # a network failure (URLError, a reset, an incomplete read, a timeout) for this one path
+            self.problems.append("%s could not be fetched (%s)" % (p, type(e).__name__)); return None
     def list(self, prefix=""): return []
 
 def site_path(src, p):
@@ -367,8 +377,9 @@ def verify_record(src, rep, anchor, label):
         names = [n for n in src.list(".well-known/") if re.fullmatch(r"\.well-known/cz-release-[0-9][0-9A-Za-z.\-]*\.json", n)]
     else:
         man = src.get(".well-known/civilization-zero.json")
-        url = json.loads(man)["signature"]["release_manifest"] if man else None
-        names = [".well-known/" + url.rsplit("/", 1)[-1]] if url else []
+        try: url = jload(man)["signature"]["release_manifest"] if man else None
+        except (ValueError, KeyError, TypeError): url = None; rep.fail("the manifest (.well-known/civilization-zero.json) is not readable, or names no release manifest")
+        names = [".well-known/" + url.rsplit("/", 1)[-1]] if isinstance(url, str) and url else []
     if not names: rep.fail("no release manifest found"); return None
     result = {"raw": raw, "covered": covered}
     for rname in names:
@@ -382,7 +393,7 @@ def verify_record(src, rep, anchor, label):
         copy = src.get("signatures/" + base) if src.kind == "bundle" else None
         if copy is not None:
             if rep.check(copy == rbytes, "signatures/%s is the same signed file" % base, "signatures/%s differs from the signed %s" % (base, rname)): covered.add("signatures/" + base)
-        rel = json.loads(rbytes)
+        rel = jload(rbytes)
         key = rel.get("key", {})
         rep.check(key.get("fingerprint") == anchor, "release manifest names the same key", "release manifest names another key: %s" % key.get("fingerprint"))
         for d in rel.get("documents", []):
@@ -428,12 +439,16 @@ def verify_record(src, rep, anchor, label):
         if src.kind == "bundle":
             trs = [(n, src.get(n), None) for n in src.list("record/translations/") if n.endswith(".json")]
         else:
-            man = json.loads(src.get(".well-known/civilization-zero.json") or b"{}")
-            trs = [("core.%s.json" % t["lang"], src.get("core.%s.json" % t["lang"]), t.get("sha256")) for t in man.get("translations", [])]
+            try:
+                man = jload(src.get(".well-known/civilization-zero.json") or b"{}")
+                trs = [("core.%s.json" % t["lang"], src.get("core.%s.json" % t["lang"]), t.get("sha256")) for t in man.get("translations", []) if re.fullmatch(r"[A-Za-z0-9-]{1,35}", str(t["lang"]))]
+            except (ValueError, KeyError, TypeError, AttributeError): trs = []; rep.fail("the manifest's list of translations is not readable")
         bad = 0
         for name, b, stated in trs:
             if b is None: rep.fail(name + ": missing"); bad += 1; continue
-            t = json.loads(b)
+            try: t = jload(b)
+            except ValueError: t = None
+            if not isinstance(t, dict): rep.fail(name + ": not a JSON object"); bad += 1; continue
             if t.get("maps_to") != "CZ-CORE 1.0" or t.get("canonical_sha256") != core_sha: rep.fail(name + ": does not declare that it maps to CZ-CORE 1.0 by its hash"); bad += 1
             if stated and stated != sha256(b): rep.fail("%s: sha256 %s, the manifest states %s" % (name, sha256(b), stated)); bad += 1
         if trs and not bad:
@@ -553,7 +568,10 @@ def verify_ots(rep, ots, data, label):
 
 def check_bundle(rep, name, data, sig, anchor):
     """A whole bundle: its own signature, then its structure and contents; lists the members no signature covers."""
-    src = TarSource(data)
+    try: src = TarSource(data)
+    except (tarfile.TarError, EOFError, OSError) as e:
+        rep.section("record — " + name); rep.fail("%s: not a readable tar archive (%s)" % (name, e)); return None
+    n0 = len(src.problems)
     pub = src.get("signatures/cz-record-signing.pub")
     raw = raw_from_spki(pem_to_der(pub)) if pub else None
     sig_ok = None
@@ -566,6 +584,7 @@ def check_bundle(rep, name, data, sig, anchor):
         rest = [n for n in src.list() if n not in res["covered"]]
         if rest: rep.pending("%s: %d member(s) covered by no signature here: %s%s" % (name, len(rest), ", ".join(rest[:6]), ", …" if len(rest) > 6 else ""))
     if res: check_bundle_days(src, rep, name)
+    for p in src.problems[n0:]: rep.fail("%s: %s" % (name, p))
     return res
 
 def check_bundle_days(src, rep, name):
@@ -577,7 +596,7 @@ def check_bundle_days(src, rep, name):
     for n in src.list("archive/"):
         m = re.fullmatch(r"archive/(discussion|register)/(\d{4}-\d\d-\d\d)\.json", n)
         if not m: continue
-        try: snap = json.loads(src.get(n) or b"")
+        try: snap = jload(src.get(n) or b"")
         except ValueError: snap = None
         if not isinstance(snap, dict): rep.fail("%s: %s is not a readable daily snapshot" % (name, n)); continue
         extra = {}
@@ -585,7 +604,7 @@ def check_bundle_days(src, rep, name):
             v = src.get(n[:-5] + suffix)
             if v is not None: extra[k] = v
         days.setdefault(m.group(1), []).append((snap, extra, m.group(2) + ".json"))
-    try: through = (json.loads(src.get(".well-known/civilization-zero.json") or b"{}").get("discussion") or {}).get("in_bundle_through")
+    try: through = (jload(src.get(".well-known/civilization-zero.json") or b"{}").get("discussion") or {}).get("in_bundle_through")
     except (ValueError, AttributeError): through = None
     for d in sorted(days): verify_days(rep, days[d], "carried by " + name, chain=d)   # the directory decides; data of the other chain FAILs
     if through is None: return
@@ -601,11 +620,14 @@ def check_bundle_days(src, rep, name):
     else: rep.ok("%s carries every day of the discussion from %s through %s, as its manifest says" % (name, first, through))
 
 def verify_site_bundles(src, rep, anchor):
-    man = json.loads(src.get(".well-known/civilization-zero.json") or b"{}")
-    b = man.get("bundle")
-    if not b: rep.note("the manifest names no bundle"); return
-    entries = [b] + list(b.get("earlier", []))
-    seen = {e["url"].rsplit("/", 1)[-1] for e in entries}
+    try:
+        man = jload(src.get(".well-known/civilization-zero.json") or b"{}")
+        b = man.get("bundle")
+        if not b: rep.note("the manifest names no bundle"); return
+        entries = [b] + list(b.get("earlier", []))
+        seen = {e["url"].rsplit("/", 1)[-1] for e in entries}
+    except (ValueError, KeyError, TypeError, AttributeError):
+        rep.fail("the manifest's list of bundles is not readable"); entries, seen, b = [], set(), None
     for name, h in KNOWN_SIGNED_BUNDLES.items():
         if name not in seen: entries.append({"url": "/archive/" + name, "sha256": h, "signature": name + ".sig", "_pinned_only": True})
     for entry in entries:
@@ -648,7 +670,7 @@ def check_statement(rep, day, lid, e):
     """A register record's statement: canonical form, pinned versions, and the record's fields as stated in it.
     Returns the statement's bytes for the signature check, or None after a failure."""
     text = e.get("statement")
-    try: st = json.loads(text)
+    try: st = jload(text)
     except ValueError: rep.fail("%s: record %s statement is not JSON" % (day, lid)); return None
     if not isinstance(st, dict) or canonical_json(st) != text: rep.fail("%s: record %s statement is not in canonical form" % (day, lid)); return None
     if not isinstance(st.get("versions", []), list) or not all(isinstance(v, str) for v in st.get("versions", [])): rep.fail("%s: record %s statement's versions are not a list of strings" % (day, lid)); return None
@@ -683,7 +705,7 @@ def verify_day(rep, snap, prev_snap, extra, ctx):
     elif ctx["first_supplied"]: rep.note("%s: chained to %s… (the day before was not supplied)" % (day, log["prev"][:16]))
     lines = []
     for i, l in enumerate(log.get("lines") or []):
-        try: lines.append(json.loads(l))
+        try: lines.append(jload(l))
         except ValueError: rep.fail("%s: line %d is not JSON" % (day, i + 1)); return
     ids = [l.get("id") for l in lines]
     rep.check(all(isinstance(x, int) for x in ids) and ids == sorted(ids) and len(set(ids)) == len(ids), "%s: %d line%s in canonical order" % (day, len(ids), "" if len(ids) == 1 else "s"), "%s: lines are not in canonical order" % day)
@@ -772,8 +794,10 @@ def load_days(paths):
         for f in files:
             base = os.path.basename(f)
             if not re.fullmatch(r"\d{4}-\d\d-\d\d\.json", base): continue
-            with open(f, "rb") as fh: raw = fh.read()
-            try: snap = json.loads(raw)
+            try:
+                with open(f, "rb") as fh: raw = fh.read()
+            except OSError as e: raise UsageError("--days: cannot read %s (%s)" % (f, e.strerror or type(e).__name__))
+            try: snap = jload(raw)
             except ValueError: snap = None          # FAILs as "not a JSON object" in verify_days
             extra = {}
             for k, suffix in (("log", ".log"), ("ots", ".log.ots")):
@@ -800,7 +824,7 @@ def chain_of_data(snap):
     or, for a day without lines, by its items (entries or records). The "chain" field is not hashed, so it decides nothing."""
     kinds = set()
     for l in (snap.get("log") or {}).get("lines") or []:
-        try: o = json.loads(l)
+        try: o = jload(l)
         except (ValueError, TypeError): kinds.add("?"); continue
         if not isinstance(o, dict): kinds.add("?")
         elif "content_sha256" in o and "statement_sha256" not in o: kinds.add("discussion")
@@ -824,7 +848,7 @@ def snapshot_shape(s):
     for k in ("count", "last_id"):
         if log.get(k) is not None and not _is_int(log.get(k)): return "its log's %s is not an integer" % k
     for l in log.get("lines") or []:
-        try: o = json.loads(l)
+        try: o = jload(l)
         except ValueError: continue                 # a line that is not JSON FAILs in the day's own check
         if not isinstance(o, dict): continue        # … and one that is not an object leaves no chain to tell (FAIL)
         if not _is_int(o.get("id")): return "a hashed line has no integer id"
@@ -915,7 +939,7 @@ def site_days(src, repo, rep, chain):
     and whether it serves an index of the chain at all (then the index is a claim to the whole chain)."""
     c = CHAINS[chain]
     raw = src.get(c["dir"] + ".json")
-    try: idx = json.loads(raw) if raw is not None else None
+    try: idx = jload(raw) if raw is not None else None
     except ValueError: idx = None
     if not isinstance(idx, dict) or not isinstance(idx.get("days", []), list):
         what = "no index of this chain" if raw is None else "no readable index of this chain (not the expected JSON)"
@@ -932,7 +956,7 @@ def site_days(src, repo, rep, chain):
         listed.add(day)
         b = src.get("%s/%s.json" % (c["dir"], day))
         if b is None: rep.fail("%s: listed in the index but not served" % day); continue
-        try: snap = json.loads(b)
+        try: snap = jload(b)
         except ValueError: rep.fail("%s: the snapshot served is not JSON" % day); continue
         why = snapshot_shape(snap)
         if why: rep.fail("%s: the snapshot served is not of the expected form — %s" % (day, why)); continue
@@ -940,8 +964,9 @@ def site_days(src, repo, rep, chain):
         if (snap.get("log") or {}).get("sha256") != d.get("sha256"): rep.fail("%s: the snapshot's hash differs from the index" % day)
         extra = {}
         if repo is not None:
-            try: extra = {"log": repo.get("%s/%s.log" % (c["repo"], day)), "ots": repo.get("%s/%s.log.ots" % (c["repo"], day))}
-            except Exception as e: rep.note("%s: the repository's copy could not be fetched (%s)" % (day, type(e).__name__)); extra = {"log": None, "ots": None}
+            n = len(repo.problems)
+            extra = {"log": repo.get("%s/%s.log" % (c["repo"], day)), "ots": repo.get("%s/%s.log.ots" % (c["repo"], day))}
+            if len(repo.problems) > n: rep.note("%s: the repository's copy could not be fetched (%s)" % (day, "; ".join(repo.problems[n:]))); extra = {"log": None, "ots": None}
         out.append((snap, extra, None))
     return out, True
 
@@ -1024,6 +1049,9 @@ def main(argv):
                 rep.section(chain + " — " + opts["site"])
                 got, served = site_days(src, repo, rep, chain)
                 verify_days(rep, got, opts["site"] + " (as served now)" + ("" if repo else "; repository copies not consulted"), independent=repo is not None, complete=served, chain=chain)
+            if src.problems:
+                rep.section("fetching — " + opts["site"])
+                for p in src.problems: rep.fail(p)
         if days: verify_days(rep, days, ", ".join(opts["days"]))
     except Exception as e:   # a malformed input is a failure of the input, reported as such
         rep.section("error"); rep.fail("%s: %s" % (type(e).__name__, e))

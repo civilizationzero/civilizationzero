@@ -275,6 +275,15 @@ of text) as well as the log — in `--days`, in a bundle and as served by a site
 statement's versions must be a list of text; a key or signature of the wrong type FAILs as not base64. A fuzz run of 6,000
 random type changes to real day snapshots (both chains) ended with no exception.
 
+A tenth pass (UTC 21:46–21:48) on 1.11 found no false FAIL on the site's real formats (the production-generated days of both
+chains: signed, hidden and redacted entries; a traced signed adoption; a hidden record with its fields nulled; a revision with an
+integer `refers_to`), and the last ways to stop a run instead of failing it: JSON nested a hundred thousand deep (a snapshot file
+given to `--days`, which escaped every handler, so `--json` printed nothing; a hashed line; a day in a bundle; a served
+snapshot), a truncated tar, and an HTTP error other than 404 or a network failure with `--site` (low). Fixed in 1.12: one
+parser for every input from a copy, for which too deep a nesting is malformed input; a bundle that is not a readable tar, or a
+member that cannot be read, FAILs; the site's unsigned manifest is read defensively; with `--site`, any answer but 200 or 404
+and any network failure FAILs for that path and the run goes on; a `--days` file that cannot be read is a usage error.
+
 The same version moves the time from which a day is due from 01:00 to 02:00 UTC: the site's hosting plan runs its daily job at
 some time in the first hour of the day (UTC), not at 00:20 as the pages had said; the pages, the contract's notes and the
 daily-archive job (now 01:20 and 07:20 UTC) say so.
