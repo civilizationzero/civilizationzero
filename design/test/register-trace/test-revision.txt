@@ -1,0 +1,3 @@
+Test fixture for the Adoption Register (test database only; not an adoption, revision or withdrawal of anything).
+
+sha256:18bce4b16a22d66d40de4cc7d5b4d071dc36aa35513cb14c6596078ff74ddf26
