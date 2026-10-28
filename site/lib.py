@@ -19,6 +19,7 @@ ROOM_OPEN = True                           # flipped on the day the room's rules
 ROOM_OPENED = "2026-10-28"                 # the UTC date the room opened (set with ROOM_OPEN). Bundle 1.0 says 2026-10-29: the local date in
 ROOM_OPENED_AT = "2026-10-28T18:29:12Z"    # Kuala Lumpur (UTC+8); the site keeps time in UTC, corrected from bundle 1.0.1 (CHANGES-FOR-1.4, C-12)
 REGISTER_OPEN = False                      # the Adoption Register (design/ADOPT.md): opens by the originator's decision after review
+REGISTER_OPENED = None                     # the UTC date it first opened (set with REGISTER_OPEN; then kept): from then on its records and chain stay served
 BUNDLE_VERSION = "1.0.1"                   # the current preservation bundle; earlier bundles stay at their addresses (site/archived-bundles/)
 BUNDLE_DAYS_THROUGH = None                 # the last UTC day of the discussion archive (archive/discussion/) the current bundle carries; None = none yet
 DOI = "10.5281/zenodo.23741225"            # Zenodo DOI of the current release (v1.0, released 2026-10-28 18:36 UTC); the concept DOI resolves to the latest version

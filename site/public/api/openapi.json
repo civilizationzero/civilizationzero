@@ -340,7 +340,7 @@
         },
         "responses": {
           "201": {
-            "description": "Received — not an adoption until traced; the answer carries the canonical statement, its SHA-256 and the line to publish"
+            "description": "Received — not an adoption until traced; the answer carries the canonical statement, its SHA-256 and, once, the line to publish (trace.line) with its secret token (trace.token), which no public page shows"
           },
           "200": {
             "description": "The result of a trace check"
@@ -348,8 +348,14 @@
           "400": {
             "description": "Not accepted: invalid (an artificial signatory is answered here, with the address of the room)"
           },
+          "409": {
+            "description": "Not checked: the record is already traced"
+          },
+          "410": {
+            "description": "Not checked: received more than 30 days ago and never traced"
+          },
           "429": {
-            "description": "Limited: 5 statements a day, 10 trace checks an hour, per source",
+            "description": "Limited: 5 statements a day and 10 trace checks an hour per source; one check of a record in 10 minutes",
             "headers": {
               "Retry-After": {
                 "schema": {
@@ -696,7 +702,7 @@
           "declared_date",
           "trace_url"
         ],
-        "description": "The fields of a statement. The site builds the canonical statement from them: JSON with keys sorted, no insignificant whitespace, UTF-8, strings only, with the keys capacity, declared_date, institution, lang, refers_to, reservations, scope, signatory, signatory_kind, type, versions (absent text fields as \"\"). An unsigned statement is normalised (CRLF to LF, ASCII whitespace trimmed); a signed one must already be.",
+        "description": "The fields of a statement. The site builds the canonical statement from them: JSON with keys sorted, no insignificant whitespace, UTF-8, strings only, with the keys capacity, declared_date, institution, lang, refers_to, reservations, scope, signatory, signatory_kind, trace_url, type, versions (absent text fields as \"\"). An unsigned statement is normalised (CRLF to LF, ASCII whitespace trimmed; trace_url to its WHATWG-normalised form); a signed one must already be. A statement is recorded once.",
         "properties": {
           "type": {
             "type": "string",
@@ -709,7 +715,7 @@
           },
           "refers_to": {
             "type": "string",
-            "description": "For a revision or a withdrawal: the id of the adoption it changes (as a string)"
+            "description": "For a revision or a withdrawal: the id of the traced adoption it changes (as a string); it must be signed with the adoption's key if the adoption was signed, else name the adoption's trace_url"
           },
           "signatory": {
             "type": "string",
@@ -764,7 +770,8 @@
           "trace_url": {
             "type": "string",
             "format": "uri",
-            "description": "An https address of the signatory's where the record's address or the statement's SHA-256 is published"
+            "maxLength": 500,
+            "description": "The https page of the signatory's (no query, no fragment, port 443, a host name) where the line given in the answer will be published; part of the statement. A revision or withdrawal of an unsigned adoption must name the adoption's own trace_url"
           },
           "statement": {
             "type": "string",

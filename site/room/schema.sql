@@ -893,3 +893,126 @@ language sql stable security definer set search_path = public as $$
   select * from register_public where id = p_root or refers_to = p_root order by id limit 1000
 $$;
 grant execute on function cz_register_linked(bigint) to anon, authenticated;
+
+-- ================================================================ v6d (2026-10-28), migration cz_register_v6d_review
+-- The Adoption Register after its security review (design/ADOPT.md §3–4; design/test/FINDINGS-REGISTER.md G-1 … G-12).
+-- Additive: two columns, a unique index, functions replaced in place, one new function (the old one answers "superseded").
+-- G-1: a secret trace token per record, given only to the submitter, is what the trace must find (the record's address and the
+--      statement's SHA-256 are public and could be echoed or copied by pages the signatory does not control).
+-- G-3: a statement is recorded once (its SHA-256 is unique); a revision or withdrawal links only to a traced adoption — signed
+--      with the adoption's key when the adoption was signed, else traced at the adoption's exact address.
+-- G-7: one check of a record every 10 minutes at most (by anyone, the daily job included); checks only within 30 days of receipt.
+alter table register add column if not exists trace_token text check (trace_token ~ '^[0-9a-f]{32}$');
+alter table register add column if not exists last_check_at timestamptz;
+create unique index if not exists register_statement_unique on register (statement_sha256);
+
+create or replace function cz_register_post(
+  p_type text, p_refers_to bigint, p_statement text, p_signatory text, p_signatory_kind text, p_institution text, p_capacity text,
+  p_versions text[], p_scope text, p_reservations text, p_declared_date date, p_lang text, p_trace_url text, p_trace_host text,
+  p_pubkey text, p_sig text, p_key_fingerprint text, p_source_hash text, p_token text)
+returns json language plpgsql security definer set search_path = public set timezone = 'UTC' as $$
+declare v_rate int := 5; v_intake int := 200; v_recent int; v_oldest timestamptz; v_today int; v_id bigint; v_sha text; v_root register%rowtype;
+        v_dup bigint; v_token text; v_fp text := nullif(p_key_fingerprint, '');
+begin
+  if not cz_token_ok(p_token) then raise exception 'unauthorised'; end if;
+  perform pg_advisory_xact_lock(hashtext('register|' || coalesce(p_source_hash, '')));
+  select count(*), min(received) into v_recent, v_oldest from register where source_hash = p_source_hash and received > now() - interval '1 day';
+  if v_recent >= v_rate then
+    return json_build_object('state', 'not accepted', 'reason', 'limit', 'limit', v_rate, 'remaining', 0,
+      'retry_after_seconds', greatest(1, ceil(extract(epoch from (v_oldest + interval '1 day' - now())))::int));
+  end if;
+  v_sha := encode(extensions.digest(convert_to(p_statement, 'UTF8'), 'sha256'), 'hex');
+  select id into v_dup from register where statement_sha256 = v_sha;
+  if v_dup is not null then
+    return json_build_object('state', 'not accepted', 'reason', 'invalid', 'detail',
+      'this exact statement is already record #' || v_dup || ': a statement is recorded once (a new one differs at least in its date, its text or its trace address)');
+  end if;
+  if p_type in ('revision', 'withdrawal') then
+    select * into v_root from register where id = p_refers_to;
+    if not found or v_root.type <> 'adoption' or v_root.state = 'hidden' then
+      return json_build_object('state', 'not accepted', 'reason', 'invalid', 'detail', 'refers_to: no such adoption');
+    end if;
+    if v_root.state <> 'traced' then
+      return json_build_object('state', 'not accepted', 'reason', 'invalid', 'detail',
+        'refers_to: adoption #' || v_root.id || ' is not traced; only a traced adoption can be revised or withdrawn (an untraced statement is not an adoption)');
+    end if;
+    if v_root.key_fingerprint is not null then
+      if v_fp is distinct from v_root.key_fingerprint then
+        return json_build_object('state', 'not accepted', 'reason', 'invalid', 'detail',
+          'adoption #' || v_root.id || ' was signed: a revision or withdrawal of it must be signed with the same key (fingerprint ' || v_root.key_fingerprint || ')');
+      end if;
+    elsif p_trace_url is distinct from v_root.trace_url then
+      return json_build_object('state', 'not accepted', 'reason', 'invalid', 'detail',
+        'adoption #' || v_root.id || ' was not signed: a revision or withdrawal of it must be traced at the same address, ' || v_root.trace_url);
+    end if;
+  elsif p_refers_to is not null then
+    return json_build_object('state', 'not accepted', 'reason', 'invalid', 'detail', 'an adoption refers to nothing');
+  end if;
+  insert into register_intake (day, count) values (current_date, 0) on conflict (day) do nothing;
+  update register_intake set count = count + 1 where day = current_date and count < v_intake returning count into v_today;
+  if v_today is null then
+    return json_build_object('state', 'not accepted', 'reason', 'capacity',
+      'retry_after_seconds', ceil(extract(epoch from (date_trunc('day', now()) + interval '1 day' - now())))::int);
+  end if;
+  v_token := encode(extensions.gen_random_bytes(16), 'hex');
+  insert into register (type, refers_to, statement, statement_sha256, signatory, signatory_kind, institution, capacity, versions, scope, reservations,
+                        declared_date, lang, trace_url, trace_host, pubkey, sig, key_fingerprint, source_hash, received, trace_token)
+    values (p_type, p_refers_to, p_statement, v_sha, p_signatory, p_signatory_kind, nullif(p_institution, ''), nullif(p_capacity, ''), p_versions,
+            nullif(p_scope, ''), nullif(p_reservations, ''), p_declared_date, nullif(p_lang, ''), p_trace_url, lower(p_trace_host),
+            nullif(p_pubkey, ''), nullif(p_sig, ''), v_fp, p_source_hash, clock_timestamp(), v_token)
+    returning id into v_id;
+  return json_build_object('id', v_id, 'state', 'received', 'statement_sha256', v_sha, 'trace_token', v_token, 'limit', v_rate, 'remaining', greatest(0, v_rate - v_recent - 1));
+end $$;
+
+create or replace function cz_register_check_begin(p_id bigint, p_source_hash text, p_token text)
+returns json language plpgsql security definer set search_path = public set timezone = 'UTC' as $$
+declare v register%rowtype; v_recent int; v_claimed bigint;
+begin
+  if not cz_token_ok(p_token) then raise exception 'unauthorised'; end if;
+  select * into v from register where id = p_id;
+  if not found or v.state = 'hidden' then return json_build_object('allowed', false, 'reason', 'no such record'); end if;
+  if v.state = 'traced' then return json_build_object('allowed', false, 'reason', 'already traced', 'traced_at', v.traced_at); end if;
+  if v.received < now() - interval '30 days' then return json_build_object('allowed', false, 'reason', 'expired'); end if;
+  if v.trace_token is null then return json_build_object('allowed', false, 'reason', 'no trace token (a record from before 28 Oct 2026, 21:00 UTC)'); end if;
+  if p_source_hash is not null then   -- 10 a clock hour per source
+    insert into register_checks (source_hash, hour, count) values (p_source_hash, date_trunc('hour', now()), 1)
+      on conflict (source_hash, hour) do update set count = register_checks.count + 1 where register_checks.count < 10
+      returning count into v_recent;
+    if v_recent is null then
+      return json_build_object('allowed', false, 'reason', 'limit', 'retry_after_seconds', greatest(1, ceil(extract(epoch from (date_trunc('hour', now()) + interval '1 hour' - now())))::int));
+    end if;
+  end if;
+  update register set last_check_at = clock_timestamp() where id = p_id and (last_check_at is null or last_check_at < now() - interval '10 minutes') returning id into v_claimed;
+  if v_claimed is null then
+    return json_build_object('allowed', false, 'reason', 'too soon',
+      'retry_after_seconds', greatest(1, ceil(extract(epoch from (v.last_check_at + interval '10 minutes' - now())))::int));
+  end if;
+  return json_build_object('allowed', true, 'id', v.id, 'state', v.state, 'trace_url', v.trace_url, 'trace_token', v.trace_token);
+end $$;
+
+-- the daily job's list: received records with a token, at most 30 days old, not checked in the last 10 minutes, the least
+-- recently checked first; claimed (last_check_at) as they are listed
+create or replace function cz_register_pending2(p_limit int, p_token text)
+returns table (id bigint, trace_url text, trace_token text)
+language plpgsql security definer set search_path = public set timezone = 'UTC' as $$
+declare v_ids bigint[];
+begin
+  if not cz_token_ok(p_token) then raise exception 'unauthorised'; end if;
+  select array_agg(s.id) into v_ids from (
+    select r.id from register r
+    where r.state = 'received' and r.received > now() - interval '30 days' and r.trace_token is not null
+      and (r.last_check_at is null or r.last_check_at < now() - interval '10 minutes')
+    order by r.last_check_at asc nulls first, r.id
+    limit least(greatest(coalesce(p_limit, 50), 1), 100)) s;
+  if v_ids is null then return; end if;
+  update register set last_check_at = clock_timestamp() where register.id = any(v_ids);
+  return query select r.id, r.trace_url, r.trace_token from register r where r.id = any(v_ids) order by r.id;
+end $$;
+grant execute on function cz_register_pending2(int, text) to anon, authenticated;
+
+create or replace function cz_register_pending(p_limit int, p_token text)
+returns table (id bigint, trace_url text, statement_sha256 text)
+language plpgsql security definer set search_path = public as $$
+begin raise exception 'superseded: cz_register_pending2'; end $$;
+
+notify pgrst, 'reload schema';

@@ -42,7 +42,7 @@ Licence: MIT. Part of the record of Civilization Zero (https://civilizationzero.
 
 import base64, datetime, hashlib, io, json, os, re, sys, tarfile
 
-VERSION = "1.3"
+VERSION = "1.4"
 ANCHOR_FINGERPRINT = "82662396484f627a63272bcd5ac19aae72def7aca2898216dc8e7f975dfc2263"
 SPKI_PREFIX = bytes.fromhex("302a300506032b6570032100")   # DER SubjectPublicKeyInfo header of an Ed25519 key
 CORE_SHA = "92a8d1e2a1604c25b432685673be78184bf05c3b166893c437e0895b7b2d724a"   # the record's identity: the hashes of its
@@ -488,7 +488,7 @@ def check_statement(rep, day, lid, e):
     if any(v not in PINNED_VERSIONS for v in st.get("versions", [])): rep.fail("%s: record %s names a version not pinned to the record's hashes" % (day, lid)); return None
     for k in ("type", "signatory", "signatory_kind", "declared_date"):
         if str(st.get(k, "")) != str(e.get(k) or ""): rep.fail("%s: record %s field %s differs from its statement" % (day, lid, k)); return None
-    for k in ("institution", "capacity", "scope", "reservations", "lang"):
+    for k in ("institution", "capacity", "scope", "reservations", "lang", "trace_url"):   # the trace address is part of the statement (register v6d)
         if (st.get(k) or "") != (e.get(k) or ""): rep.fail("%s: record %s field %s differs from its statement" % (day, lid, k)); return None
     if list(st.get("versions") or []) != list(e.get("versions") or []) or str(st.get("refers_to") or "") != str(e.get("refers_to") or ""):
         rep.fail("%s: record %s versions or refers_to differ from its statement" % (day, lid)); return None

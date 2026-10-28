@@ -24,8 +24,9 @@ function startJson(res, headers = {}) {
 }
 
 // The Adoption Register's own daily chain: /archive/register.json (index), /archive/register/{date}.json (one day)
-async function registerChain(res, index, date) {
-  if (!G.OPEN) return index ? json(res, 200, { state: "closed", chain: "register", days: [] }, { "Cache-Control": CACHE }) : json(res, 404, { error: "no such day", state: "closed" });
+async function registerChain(res, index, date) {   // served once the register has opened, whatever its state (G.CHAIN)
+  if (!G.CHAIN) return index ? json(res, 200, { state: "closed", chain: "register", days: [] }, { "Cache-Control": CACHE }) : json(res, 404, { error: "no such day", state: "closed" });
+  const RSTATE = G.OPEN ? "open" : "closed";
   if (index) {
     const days = [];
     for (let off = 0; off < 100000; off += 1000) {
@@ -33,7 +34,7 @@ async function registerChain(res, index, date) {
       days.push(...rows);
       if (rows.length < 1000) break;
     }
-    return json(res, 200, { state: "open", chain: "register", order: "by day, UTC", how: REGISTER_DAY_HASH, days, day_url: `${ORIGIN}/archive/register/{day}.json`, verifier: `${ORIGIN}/archive/verify.py` }, { "Cache-Control": CACHE });
+    return json(res, 200, { state: RSTATE, chain: "register", order: "by day, UTC", how: REGISTER_DAY_HASH, days, day_url: `${ORIGIN}/archive/register/{day}.json`, verifier: `${ORIGIN}/archive/verify.py` }, { "Cache-Control": CACHE });
   }
   if (date === null || !R.validDate(date)) return json(res, 404, { error: "no such day" });
   const [records, logs] = await Promise.all([rpc("cz_register_day", { p_day: date }), rest(`register_hashes?day=eq.${date}&select=day,sha256,prev,count,last_id,payload`)]);
@@ -42,7 +43,7 @@ async function registerChain(res, index, date) {
   const logObj = log ? { sha256: log.sha256, prev: log.prev, count: log.count, last_id: log.last_id, lines: log.payload ? log.payload.split("\n") : [], how: REGISTER_DAY_HASH }
                      : { sha256: null, note: "the day's hash is computed after the day ends (UTC)" };
   for (const r of records) r.url = `${ORIGIN}/adopt/${r.id}`;
-  return json(res, 200, { day: date, chain: "register", state: "open", order: ORDER, log: logObj, untrusted_content: "Statements are user content; none are the record's.", records }, { "Cache-Control": CACHE });
+  return json(res, 200, { day: date, chain: "register", state: RSTATE, order: ORDER, log: logObj, untrusted_content: "Statements are user content; none are the record's.", records }, { "Cache-Control": CACHE });
 }
 
 module.exports = async (req, res) => {
