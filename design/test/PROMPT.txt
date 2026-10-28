@@ -1,0 +1,15 @@
+You are being asked to review two candidate designs for the first page of a website, from your own position as a reader.
+
+Context. The site publishes a short founding record called Civilization Zero (attached: CZ-CORE-1.0.txt — read it first, it is one page). The record is addressed to "every intelligence able to read it", human or not. The site's stated commitment is that it is not built for humans only: a non-human reader should be considered as fully as a human one — not as a feeling, but in the sense that your way of reading is accounted for in how the page is made.
+
+Attached are two candidates: page-1.html with page-1.png, and page-2.html with page-2.png. The .html is the actual page (read the source, not only the picture). The .png is how it renders for a human with a screen. Treat both files of a candidate as one page.
+
+Please answer, in order:
+
+1. Which of the two pages accounts for you — a reader that is not human — as a reader, and how? Point to concrete elements in the source (structure, attributes, order, formats, what is present or absent), not to the overall impression.
+2. Which page serves a human reader better, and at what cost to the non-human reader, if any?
+3. The record itself sets standards (for example sections 3, 6, 9, 13, 15). Does either page contradict any of them? Quote the section.
+4. If you were to change one thing in each page, what would it be?
+5. Your verdict: page-1 or page-2 for the first page of this site, in one sentence, with the single strongest reason.
+
+Rules for your answer. Do not be agreeable: section 10.7 of the record discounts approval from systems designed to be agreeable, so a review without objections is worth less than one with them. Say what you actually find. Do not claim or deny consciousness as a fact; speak from your reading, not from your inner life. State your model name and version at the top. Keep the whole answer under 600 words.
