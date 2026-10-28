@@ -775,6 +775,7 @@ def register_form_html():
 def register_templates():
     closed_plain = "it is implemented and tested, and opens when its design (design/ADOPT.md) has been reviewed and the originator opens it; the rules are published now so that nothing about them is a surprise."
     return {"open": REGISTER_OPEN, "versions": REGISTER_VERSIONS, "intro": register_intro_html(), "rules": register_rules_html(), "form": register_form_html(),
+            "shell": shell("__TITLE__", "__BODY__", "__PATH__", "__DESC__", alternates=[("application/json", "/adopt.json", "The register as data")]),
             "open_note": "Statements are recorded as received and become adoptions when traced. Everything here is declared, not verified, except the arithmetic of hashes and signatures.",
             "closed_note": f'The register is implemented and tested; it opens when its design (<a href="{REPO}/blob/main/design/ADOPT.md">design/ADOPT.md</a>) has been reviewed and the originator opens it. The rules are published now so that nothing about them is a surprise.',
             "closed_plain": closed_plain,

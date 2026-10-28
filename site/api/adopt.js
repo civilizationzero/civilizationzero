@@ -9,7 +9,12 @@ const { RT } = G;
 
 const CACHE = { "Cache-Control": "public, max-age=0, s-maxage=30, stale-while-revalidate=60", Vary: "Accept" };
 const isForm = (req) => /application\/x-www-form-urlencoded|multipart\/form-data/.test(req.headers["content-type"] || "");
-const page = (title, body, path, description) => R.shell({ title: `${title} · Civilization Zero`, body: `<main>${body}</main>`, path, description });
+// the register's own shell: same stylesheet, nav and footer as every page, with /adopt.json as its alternate (an equivalent of the page)
+const put = (t, mark, value) => t.replace(mark, () => value);
+const page = (title, body, path, description, alt) => {
+  const shellFor = alt ? RT.shell.replace('href="/adopt.json" title="The register as data"', () => `href="${esc(alt)}" title="This record as data"`) : RT.shell;
+  return put(put(put(put(shellFor, "__TITLE__", esc(`${title} · Civilization Zero`)), "__DESC__", esc(description)), "__PATH__", esc(path)), "__BODY__", `<main>${body}</main>`);
+};
 const stateLine = () => (G.OPEN ? `<p><strong>Open.</strong> ${RT.open_note}</p>` : `<p class="pending"><strong>Not open yet.</strong> ${RT.closed_note}</p>`);
 
 function formError(res, status, title, detail, headers = {}) {
@@ -118,7 +123,7 @@ ${next}${stmt}${linked}
 <section aria-labelledby="h-log"><h2 id="h-log">Log of this record</h2>${logHtml}<p class="src">Every trace check and every decision is logged. A check that no longer finds a trace is logged; it is not a withdrawal.</p></section>
 <p>${RT.not_line}</p>
 <p><a href="/adopt">The register</a> · <a href="/adopt#rules">The rules</a></p>`;
-  return { status: 200, page: page(`Record #${r.id} · The Adoption Register`, body, `/adopt/${r.id}`, `Record #${r.id} in the Adoption Register of Civilization Zero.`) };
+  return { status: 200, page: page(`Record #${r.id} · The Adoption Register`, body, `/adopt/${r.id}`, `Record #${r.id} in the Adoption Register of Civilization Zero.`, `/api/adopt?id=${r.id}`) };
 }
 
 // ---------------------------------------------------------------- posting

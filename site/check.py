@@ -179,6 +179,7 @@ check(RG["open"] == REGISTER_OPEN and RG["versions"] == [f"CZ-CORE 1.0 sha256:{C
 for name in ("intro", "rules", "form"):
     pr = P(); pr.feed(RG[name]); check(not pr.err and not pr.stack, f"register {name}: HTML nesting {pr.err} {pr.stack}")
 check('id="rules"' in RG["rules"] and 'id="form"' in RG["form"] and 'action="/api/adopt"' in RG["form"], "register templates: anchors and form action")
+check('href="/adopt.json"' in RG["shell"] and "/discuss.json" not in RG["shell"].split("</head>")[0], "register shell: its alternate is /adopt.json")
 
 # 7. the verifier: the published copy is the repository's, it passes its own self-test, and it verifies this build as a mirror would
 VERIFY = SITE / "verify" / "verify.py"
