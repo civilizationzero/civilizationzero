@@ -170,3 +170,21 @@ After the fixes above, the re-tests on the isolated test database, the wipe of t
 - **C-v6a (self-found)** — entry signatures were checkable only by the server (only the fingerprint was public). **Verified** — `pubkey` and `sig` are public fields and part of the day line, applied before the first day was hashed.
 - **Build-time contract test** — `check.yml` still expected a closed room after the opening and failed on every push. **Verified** — the test follows the room's state (`fe59891`).
 - **The verifier** (`/archive/verify.py`, `verify/verify.py` in bundles from 1.0.1) and the daily copies of the chain (`daily-archive`) — **implemented**; tested as described in the change list.
+
+### Independent review of the verifier (29 Oct 2026, UTC 19:10–19:35) — before verify.py 1.1
+
+An agent that had not written the code reviewed `site/verify/verify.py` 1.0 adversarially, with reproductions (cases kept in the
+session's scratch space; summarised here). Every finding was fixed in 1.1 and re-run against the same cases.
+
+| # | Finding (severity) | Status |
+|---|---|---|
+| V-1 | A tar member aliased by `record/./…` or a hard link, after the genuine member, passed as the canonical text (high) | **verified** — members must be regular files with plain relative names, none twice, none differing only in case; anything else FAILs; the members no signature covers are listed as PENDING |
+| V-2 | Translations reported "OK" against nothing signed (high) | **verified** — reported as a NOTE: a translation declares its mapping; its text is covered by a bundle's signature, not by the release manifest |
+| V-3 | A site copy could replace a signed bundle and drop its signature (high) | **verified** — bundle 1.0 is pinned by hash as signed; a named signature that is not served FAILs; every bundle is opened and checked |
+| V-4 | Duplicate entry ids collapsed; a "hidden" entry's content went unchecked (high) | **verified** — duplicates FAIL; any content present is checked against its hash; redacted text is noted as covered by no hash |
+| V-5 | The chain had no enforced anchor: unhashed days, null `prev`, gaps and forks passed; `--site` fetched no proofs (high) | **verified** — the discussion's first day is pinned (2026-10-28); gaps, forks, an unhashed day with a successor and a null `prev` after the first day FAIL; a day with no proof is PENDING (`--strict` counts it); `--site` compares every day with the repository's copy and timestamp proof |
+| V-6 | OpenSSL (the site) accepts non-canonical and small-order keys the verifier refuses: one entry could stall the daily copy (medium) | **verified** — the site refuses them at submission (`fullOrderKey`, tested against the verifier on 33 keys incl. all eight small-order points); the verifier FAILs them |
+| V-7 | No size limits in the proof parser: a 115-byte proof reached 464 MB (medium) | **verified** — the client's limits (4,096-byte results, 64 KB proofs) and end-of-proof check; the case now stops at 18 MB |
+| V-8 | A fabricated Bitcoin attestation printed "OK" and cleared PENDING (medium) | **verified** — a separate level, CHECK, shown under `--quiet` and in the summary; a path must end in 32 bytes |
+| V-9 | Control characters from input could erase a FAIL on a terminal (medium) | **verified** — C0/C1 controls and bidirectional overrides are escaped in all output; JSON output is ASCII |
+| V-10 | `--days` swallowed later arguments; empty or mistyped paths passed (medium) | **verified** — every path after `--days` must yield a snapshot, else a usage error (exit 2); `--site http://` is a usage error |

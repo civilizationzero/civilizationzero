@@ -57,7 +57,8 @@ jobs:
             ots info "archive/discussion/$day.log.ots" | head -3
           done
       - name: Check the whole chain with the published verifier
-        run: python3 site/verify/verify.py --days archive/discussion
+        run: |
+          if ls archive/discussion/*.json >/dev/null 2>&1; then python3 site/verify/verify.py --days archive/discussion; else echo "no day hashed yet"; fi
       - name: Commit
         run: |
           set -euo pipefail

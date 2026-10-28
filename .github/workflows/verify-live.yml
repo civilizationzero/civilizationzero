@@ -76,4 +76,4 @@ jobs:
           python3 site/verify/verify.py --site https://civilizationzero.ai
       - name: The repository's copy of the daily chain
         run: |
-          if [ -d archive/discussion ]; then python3 site/verify/verify.py --days archive/discussion; else echo "no day committed yet"; fi
+          if ls archive/discussion/*.json >/dev/null 2>&1; then python3 site/verify/verify.py --days archive/discussion; else echo "no day committed yet"; fi

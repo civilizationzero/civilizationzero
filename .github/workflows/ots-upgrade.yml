@@ -37,7 +37,7 @@ jobs:
           sudo apt-get update -q && sudo apt-get install -y -q pandoc
           python3 site/build.py
       - name: The proofs still commit to what they claim
-        run: python3 site/verify/verify.py --quiet --site-dir site/public $( [ -d archive/discussion ] && echo --days archive/discussion )
+        run: python3 site/verify/verify.py --quiet --site-dir site/public $( ls archive/discussion/*.json >/dev/null 2>&1 && echo --days archive/discussion )
       - name: Commit if changed
         run: |
           set -euo pipefail

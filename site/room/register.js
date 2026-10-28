@@ -166,10 +166,12 @@ async function traceCheck(traceUrl, id, statementSha) {
 function statusOf(root, all) {
   const chain = [root, ...all.filter((r) => String(r.refers_to) === String(root.id))].sort((a, b) => a.id - b.id);
   const traced = chain.filter((r) => r.state === "traced");
-  if (!traced.length) return { status: "received, not traced", effective: null, chain };
+  if (!traced.length) return { status: "received, not traced", effective: null, commitment: null, chain };
   const last = traced[traced.length - 1];
-  if (last.type === "withdrawal") return { status: "withdrawn", effective: last, chain };
-  return { status: last.type === "revision" ? "in force, as revised" : "in force", effective: last, chain };
+  const commitments = traced.filter((r) => r.type !== "withdrawal");
+  const commitment = commitments.length ? commitments[commitments.length - 1] : null;   // the last statement of what was committed
+  if (last.type === "withdrawal") return { status: "withdrawn", effective: last, commitment, chain };
+  return { status: last.type === "revision" ? "in force, as revised" : "in force", effective: last, commitment, chain };
 }
 
 module.exports = { OPEN, RT, VERSIONS, canonical, sha256, validateStatement, traceCheck, blockedAddress, statusOf };

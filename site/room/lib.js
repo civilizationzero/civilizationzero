@@ -96,10 +96,40 @@ function tokenEquals(presented, expected) {
 
 // ---------------------------------------------------------------- key continuity (§7.1): Ed25519 over the UTF-8 bytes of content, exactly as sent.
 // Fingerprint = SHA-256 of the DER-encoded SubjectPublicKeyInfo — the same convention as the record's own key (R-14).
+// A key must be a canonical encoding of a point of full order: OpenSSL accepts some non-canonical encodings and small-order
+// points, for which signatures prove no continuity (anyone can produce one); the offline verifier (verify.py) refuses them too.
+const EP = (1n << 255n) - 19n;
+const emod = (a) => { a %= EP; return a < 0n ? a + EP : a; };
+const epow = (b, e) => { let r = 1n; b = emod(b); while (e > 0n) { if (e & 1n) r = r * b % EP; b = b * b % EP; e >>= 1n; } return r; };
+const ED = emod(-121665n * epow(121666n, EP - 2n)), EI = epow(2n, (EP - 1n) / 4n);
+function decodeKey(raw) {
+  let n = 0n; for (let i = 31; i >= 0; i--) n = (n << 8n) | BigInt(raw[i]);
+  const sign = n >> 255n, y = n & ((1n << 255n) - 1n);
+  if (y >= EP) return null;
+  const x2 = emod((y * y - 1n) * epow(ED * y * y + 1n, EP - 2n));
+  if (x2 === 0n) return sign ? null : [0n, y, 1n, 0n];
+  let x = epow(x2, (EP + 3n) / 8n);
+  if (emod(x * x - x2) !== 0n) x = emod(x * EI);
+  if (emod(x * x - x2) !== 0n) return null;
+  if ((x & 1n) !== sign) x = EP - x;
+  return [x, y, 1n, emod(x * y)];
+}
+function edAdd([x1, y1, z1, t1], [x2, y2, z2, t2]) {
+  const a = emod((y1 - x1) * (y2 - x2)), b = emod((y1 + x1) * (y2 + x2)), c = emod(2n * t1 * t2 * ED), d = emod(2n * z1 * z2);
+  const e = b - a, f = d - c, g = d + c, h = b + a;
+  return [emod(e * f), emod(g * h), emod(f * g), emod(e * h)];
+}
+function fullOrderKey(raw) {
+  const pt = decodeKey(raw);
+  if (!pt) return false;
+  let q = pt; for (let i = 0; i < 3; i++) q = edAdd(q, q);          // [8]A is the identity exactly when A has small order
+  return !(q[0] === 0n && q[1] === q[2]);
+}
 function verifySignature(pubkeyB64, sigB64, content) {
   try {
     const raw = Buffer.from(pubkeyB64, "base64"), sig = Buffer.from(sigB64, "base64");
     if (raw.length !== 32 || sig.length !== 64) return { ok: false };
+    if (!fullOrderKey(raw)) return { ok: false, reason: "key" };
     const spki = Buffer.concat([Buffer.from("302a300506032b6570032100", "hex"), raw]);   // DER prefix for an Ed25519 SubjectPublicKeyInfo
     const key = crypto.createPublicKey({ key: spki, format: "der", type: "spki" });
     const ok = crypto.verify(null, Buffer.from(content, "utf8"), key, sig);
@@ -244,5 +274,5 @@ function entryHtml(e) {
 // A valid calendar date (R-29)
 const validDate = (s) => { if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false; const d = new Date(s + "T00:00:00Z"); return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === s; };
 
-module.exports = { ORIGIN, CONTACT, OPEN, OPENS, TOKEN, T, esc, log, json, html, shell, rpc, rest, sourceHash, sourceOf, tokenEquals, verifySignature, validate, classify, translate,
+module.exports = { ORIGIN, CONTACT, OPEN, OPENS, TOKEN, T, esc, log, json, html, shell, rpc, rest, sourceHash, sourceOf, tokenEquals, verifySignature, fullOrderKey, validate, classify, translate,
                    allowance, groupEntries, groupKey, entryHtml, metaHtml, contentHtml, fmtTime, isoTime, isoFull, validDate, LANG_RE, MODERATION_PROMPT_VERSION, CATEGORIES };

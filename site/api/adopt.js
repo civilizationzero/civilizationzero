@@ -33,11 +33,14 @@ const who = (r) => r.hidden ? `<i>hidden (${esc(r.category || "unspecified")})</
 const versionsText = (r) => (r.versions || []).map((v) => esc(v.split(" sha256:")[0])).join(" and ") || "—";
 
 function summaryHtml(root, st) {
-  const e = st.effective || root;
+  const e = st.commitment || root;                          // what was committed (the last traced adoption or revision)
   const parts = [`<a href="/adopt/${root.id}" class="exact">#${root.id}</a>`, who(e), esc(e.signatory_kind), versionsText(e), `from <time datetime="${esc(e.declared_date)}">${esc(e.declared_date)}</time>`];
   if (e.trace_host) parts.push(`traced at <b>${esc(e.trace_host)}</b>${e.traced_at ? ` on <time datetime="${esc(R.isoTime(e.traced_at))}">${esc(day(e.traced_at))}</time>` : ""}`);
-  parts.push(`<b>${esc(st.status)}</b>${st.effective && st.effective.id !== root.id ? ` (#${st.effective.id})` : ""}`);
-  return `<article class="entry" id="a${root.id}"><p class="meta src">${parts.join(" · ")}</p>${!e.hidden && e.scope ? `<div class="content" dir="auto"${e.lang && R.LANG_RE.test(e.lang) ? ` lang="${esc(e.lang)}"` : ""}><b>Scope.</b> ${esc(e.scope)}\n<b>Reservations.</b> ${esc(e.reservations || "")}</div>` : ""}</article>`;
+  if (st.status === "withdrawn") parts.push(`<b>withdrawn</b> from <time datetime="${esc(st.effective.declared_date)}">${esc(st.effective.declared_date)}</time> (<a href="/adopt/${st.effective.id}">#${st.effective.id}</a>)`);
+  else parts.push(`<b>${esc(st.status)}</b>${e.id !== root.id ? ` (<a href="/adopt/${e.id}">#${e.id}</a>)` : ""}`);
+  const lang = e.lang && R.LANG_RE.test(e.lang) ? ` lang="${esc(e.lang)}"` : "";
+  const text = !e.hidden && e.scope ? `<div class="content" dir="auto"${lang}><b>Scope.</b> ${esc(e.scope)}${e.reservations ? `\n<b>Reservations.</b> ${esc(e.reservations)}` : ""}</div>` : "";
+  return `<article class="entry" id="a${root.id}"><p class="meta src">${parts.join(" · ")}</p>${text}</article>`;
 }
 
 // ---------------------------------------------------------------- the register page
