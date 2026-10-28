@@ -233,6 +233,18 @@ with an unknown hash FAILs, SHA-384 and SHA-512 imprints are compared correctly.
 | X-2 | The authority's certificates came from the source being checked: a bundle could carry the reviewer's own "Free TSA Root CA" and time-stamping certificate with a token they issued over the release manifest — verify.py printed OK and a CHECK pointing to that chain, with which OpenSSL then printed "Verification: OK" — and any file under `signatures/tsa/`, even a plain-text "addendum to the Core", was noted as a certificate and counted as covered (high) | **verified** — FreeTSA's two certificates are pinned in verify.py by the SHA-256 that freetsa.org publishes (`2151b611…4438`, `8bfb0305…3467`, read on freetsa.org and in its certification practice statement); any other file under `signatures/tsa/` (or `/.well-known/tsa/` of a site copy) FAILs, and only a pinned file counts as covered; the CHECK tells the reader to get the certificates from freetsa.org and compare; the build refuses to publish a file the verifier would refuse; verify-live compares FreeTSA's root as freetsa.org serves it each day with the pinned one and verifies the token with it |
 | X-1 | The OK line stated a time no authority had signed: in a site copy whose token had only its time edited (to 2020-01-01), verify.py printed "OK … stating the time 2020-01-01 00:00:00 UTC" and counted the token as covered, while OpenSSL said "Verification: FAILED"; impossible times (month 13, day 99) were read as times (medium) | **verified** — the OK line says only what is checked: the token's message imprint is the release manifest's hash; the time is in the CHECK, as what the token states, which holds only once the authority's signature verifies; a token is never counted as covered; an impossible time FAILs |
 
+A sixth pass (UTC 21:14–21:17) on 1.6 found four ways around those fixes, all fixed in 1.7 and re-run against the reviewer's
+reproductions (`X3_sitedir`, `X4_dir_symlink`, `X5_TSA_case.tar`, `X6_build`, `X7_live`) and every earlier case. Checked and
+sound: X-1 and X-2 hold; an extra file beside the tokens, a file link, a pinned file under another name or two pinned files
+swapped FAIL; no OK line prints a time; neither a token nor an unpinned file is ever counted as covered.
+
+| # | Finding (severity) | Status |
+|---|---|---|
+| X-4 | An unpacked bundle could bypass the pins with a directory link: `signatures/tsa` → `../certs` holding the forged chain was never listed (the walk does not follow links) and passed the link check (it looked only at the last name); the CHECK's command then verified the forged token (medium) | **verified** — a link anywhere in an unpacked bundle or a site copy, to a file or a directory, FAILs, and nothing is read through one |
+| X-6 | The build read the pins as text: a comment in verify.py in the same form, carrying another hash, would have been taken as the pin, so the build could publish a certificate the verifier inside the bundle refuses (medium) | **verified** — the build loads verify.py and uses its `TSA_PINS` |
+| X-7 | verify-live did not notice tokens removed from the site: a 404 gave a notice and the step passed (medium) | **verified** — a token kept in the repository but not served is an error |
+| X-5, X-3 | Directories differing only in case were not checked: a bundle member `signatures/TSA/freetsa-cacert.pem` (which a case-insensitive file system extracts into `signatures/tsa/`) and a site copy's `.well-known/TSA/` raised no failure (low) | **verified** — a bundle's names under `signatures/` must be in lower case; certificates are found by the case-folded path and must sit at the exact one |
+
 
 ### Security review of the Adoption Register (28 Oct 2026, UTC 19:49–20:10) — before it opens
 

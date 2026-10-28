@@ -109,7 +109,11 @@ jobs:
           set -euo pipefail
           for tsa in freetsa digicert; do
             f=cz-release-1.0.json.$tsa.tsr
-            if ! curl -fsSL --retry 3 "https://civilizationzero.ai/.well-known/$f" -o "live/$f"; then echo "::notice title=RFC 3161::no $tsa token published"; continue; fi
+            if ! curl -fsSL --retry 3 "https://civilizationzero.ai/.well-known/$f" -o "live/$f"; then
+              # a token kept in the repository must be served: its absence from the site is a removal
+              if [ -e "site/signatures/$f" ]; then echo "::error title=RFC 3161::the $tsa token kept in the repository is not served at /.well-known/$f"; exit 1; fi
+              echo "::notice title=RFC 3161::no $tsa token published"; continue
+            fi
             cmp "live/$f" "site/signatures/$f"
             case $tsa in
               freetsa)

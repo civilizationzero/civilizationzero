@@ -156,7 +156,10 @@ def tsa_time(b):
     t = m.group(1).decode(); return f"{t[0:4]}-{t[4:6]}-{t[6:8]}T{t[8:10]}:{t[10:12]}:{t[12:14]}Z"
 # FreeTSA's certificates are pinned in verify.py by the SHA-256 that freetsa.org publishes; the build refuses to publish any
 # other file beside the tokens (verify.py would FAIL it)
-TSA_PINS = {m[0]: (m[1], m[2]) for m in re.findall(r'"(freetsa-[a-z.\-]+)": \("[^"]+", "(https://[^"]+)", "([0-9a-f]{64})"\)', (SITE / "verify" / "verify.py").read_text(encoding="utf-8"))}
+import importlib.util
+_spec = importlib.util.spec_from_file_location("cz_verify_pins", SITE / "verify" / "verify.py")   # the pins verify.py itself uses,
+_verify = importlib.util.module_from_spec(_spec); _spec.loader.exec_module(_verify)                # not text that looks like them
+TSA_PINS = {n: (v[1], v[2]) for n, v in _verify.TSA_PINS.items()}
 assert set(TSA_PINS) == {"freetsa-cacert.pem", "freetsa-tsa.crt"}, TSA_PINS
 for _f in sorted((SIGS / "tsa").glob("*")) if (SIGS / "tsa").exists() else []:
     if _f.name not in TSA_PINS or sha256(_f.read_bytes()) != TSA_PINS[_f.name][1]:

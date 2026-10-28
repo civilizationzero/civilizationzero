@@ -46,7 +46,7 @@ Licence: MIT. Part of the record of Civilization Zero (https://civilizationzero.
 
 import base64, datetime, hashlib, io, json, os, re, sys, tarfile
 
-VERSION = "1.6"
+VERSION = "1.7"
 ANCHOR_FINGERPRINT = "82662396484f627a63272bcd5ac19aae72def7aca2898216dc8e7f975dfc2263"
 SPKI_PREFIX = bytes.fromhex("302a300506032b6570032100")   # DER SubjectPublicKeyInfo header of an Ed25519 key
 CORE_SHA = "92a8d1e2a1604c25b432685673be78184bf05c3b166893c437e0895b7b2d724a"   # the record's identity: the hashes of its
@@ -291,14 +291,20 @@ class TarSource:
     def list(self, prefix=""): return sorted(n for n in self.names if n.startswith(prefix))
 
 class DirSource:
+    """A bundle unpacked, or a static copy of the site. Links are never followed — a link anywhere in the tree (to a file or
+    to a directory) is a problem, and nothing is read through one — so that what is checked is what lies in the directory."""
     def __init__(self, root, kind):
         self.root, self.kind, self.problems = os.path.realpath(root), kind, []
+        for dp, dns, fs in os.walk(self.root):
+            for n in sorted(dns + fs):
+                f = os.path.join(dp, n)
+                if os.path.islink(f): self.problems.append("%s is a link — nothing is read through a link" % os.path.relpath(f, self.root).replace(os.sep, "/"))
     def get(self, p):
         f = os.path.join(self.root, *p.split("/"))
         if not os.path.isfile(f) and self.kind == "site" and os.path.isfile(f + ".html"): f += ".html"
         if not os.path.isfile(f): return None
-        if os.path.islink(f) or not os.path.realpath(f).startswith(self.root + os.sep):
-            self.problems.append("%s is a link or leads outside the directory" % p); return None
+        if os.path.realpath(f) != os.path.normpath(f) or not os.path.realpath(f).startswith(self.root + os.sep):
+            self.problems.append("%s is reached through a link or leads outside the directory" % p); return None
         with open(f, "rb") as fh: return fh.read()
     def list(self, prefix=""):
         out = []
@@ -339,7 +345,7 @@ def verify_record(src, rep, anchor, label):
     """Returns {"raw": key, "covered": set of member paths whose bytes a signature, a signed hash or a pin in this file
     covers}, or None. A time-stamp token is not counted: what it states holds only once its authority's signature verifies."""
     rep.section("record — " + label)
-    for p in getattr(src, "problems", []): rep.fail("bundle structure: " + p)
+    for p in list(getattr(src, "problems", [])): rep.fail(("bundle structure: " if src.kind == "bundle" else "structure: ") + p)
     covered = set()
     pub_path = "signatures/cz-record-signing.pub" if src.kind == "bundle" else ".well-known/cz-record-signing.pub"
     pub_pem = src.get(pub_path)
@@ -393,12 +399,19 @@ def verify_record(src, rep, anchor, label):
             tname = ("signatures/" if src.kind == "bundle" else rname.rsplit("/", 1)[0] + "/") + base + "." + tsa + ".tsr"
             tok = src.get(tname)
             if tok is not None: verify_tsr(rep, tok, rbytes, base, base + "." + tsa + ".tsr", tsa, "signatures/tsa/" if src.kind == "bundle" else "/.well-known/tsa/")
-    # the authorities' certificates kept beside the tokens: only the pinned ones, byte for byte (a site over the network
-    # cannot be listed: the pinned names are fetched)
+    # the authorities' certificates kept beside the tokens: only the pinned ones, byte for byte, at their exact path (a site
+    # over the network cannot be listed: the pinned names are fetched). A bundle's names under signatures/ are in lower case:
+    # on a case-insensitive file system a name differing only in case would take the place of the one checked here.
     tdir = "signatures/tsa/" if src.kind == "bundle" else ".well-known/tsa/"
-    for n in ([tdir + f for f in TSA_PINS] if isinstance(src, HttpSource) else src.list(tdir)):
+    listed = [] if isinstance(src, HttpSource) else src.list()
+    if src.kind == "bundle":
+        for n in listed:
+            if n.casefold().startswith("signatures/") and n != n.lower(): rep.fail("%s: a name under signatures/ that is not in lower case — on a case-insensitive file system it would take the place of another" % n)
+    for n in ([tdir + f for f in TSA_PINS] if isinstance(src, HttpSource) else [n for n in listed if n.casefold().startswith(tdir)]):
         b = src.get(n)
-        if b is not None and check_tsa_cert(rep, n, b) and src.kind == "bundle": covered.add(n)
+        if b is None: continue
+        if not n.startswith(tdir): rep.fail("%s: under a case variant of %s — only the pinned certificates, at their exact path, may stand beside the tokens" % (n, tdir)); continue
+        if check_tsa_cert(rep, n, b) and src.kind == "bundle": covered.add(n)
     # translations: their texts are not in the release manifest; each declares the Core it maps to (IR 10.5)
     core_sha = result.get("core_sha")
     if core_sha:
@@ -891,9 +904,9 @@ def main(argv):
         if opts.get("self_test"): self_test(rep)
         for a in opts["bundles"]:
             if os.path.isdir(a):
-                src = DirSource(a, "bundle")
+                src = DirSource(a, "bundle"); n0 = len(src.problems)      # verify_record reports these first
                 res = verify_record(src, rep, anchor, "bundle directory " + a)
-                for p in src.problems: rep.fail(p)
+                for p in src.problems[n0:]: rep.fail(p)
                 rep.pending("an unpacked bundle: its own signature cannot be checked here — check the .tar and its .sig before unpacking")
             else:
                 with open(a, "rb") as fh: data = fh.read()
@@ -902,10 +915,10 @@ def main(argv):
                     with open(a + ".sig", "rb") as fh: sig = fh.read()
                 check_bundle(rep, os.path.basename(a), data, sig, anchor)
         if opts.get("site_dir"):
-            src = DirSource(opts["site_dir"], "site")
+            src = DirSource(opts["site_dir"], "site"); n0 = len(src.problems)
             res = verify_record(src, rep, anchor, "site copy " + opts["site_dir"])
             if res: verify_site_bundles(src, rep, anchor)
-            for p in src.problems: rep.fail(p)
+            for p in src.problems[n0:]: rep.fail(p)
             rep.note("a static copy holds no daily snapshots; check the chains with --site, or --days on the repository's archive/discussion and archive/register")
         if opts.get("site"):
             src = HttpSource(opts["site"])
