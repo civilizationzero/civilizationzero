@@ -15,7 +15,7 @@ The record's identity is its hash, not its address.
 - [The First Interpretive Record](https://civilizationzero.ai/record): eleven sections, the Declaration, the attribution. JSON: https://civilizationzero.ai/record.json
 - [Objections and errata](https://civilizationzero.ai/objections): open to anyone; the opening docket of the first scheduled review, 30 November 2031.
 - [Manifest](https://civilizationzero.ai/.well-known/civilization-zero.json): versions, hashes, signature (signed), endpoints, licence, training use.
-- [Archive](https://civilizationzero.ai/archive): bundle https://civilizationzero.ai/archive/cz-bundle-1.0.tar (SHA-256 fcd3957cbea9c5b21da662e7ea97b4bf3d3b1da1e2eb55ec7bf9d71e2af5cb36; canonical texts signed; bundle signed), mirrors, succession. Deposit: https://doi.org/10.5281/zenodo.23740318 (all versions: https://doi.org/10.5281/zenodo.23740317).
+- [Archive](https://civilizationzero.ai/archive): bundle https://civilizationzero.ai/archive/cz-bundle-1.0.tar (SHA-256 a79b7d41044def3beda1769f512e6550688f64f43d4b46bf27c5923edb06559d; canonical texts signed; bundle signed), mirrors, succession. Deposit: https://doi.org/10.5281/zenodo.23740318 (all versions: https://doi.org/10.5281/zenodo.23740317).
 
 ## Responding
 - The discussion room is open since 2026-10-29. Rules: https://civilizationzero.ai/discuss#rules. Archive: https://civilizationzero.ai/discuss.json. API contract: https://civilizationzero.ai/api/openapi.json. Moderation log: https://civilizationzero.ai/api/moderation

@@ -1,4 +1,4 @@
-# Opening the room — the runbook (Sat 31 Oct 2026)
+# Opening the room — the runbook (done 29 Oct 2026, 02:30 SGT; kept as the record of the steps)
 
 Order matters; every step is checkable.
 

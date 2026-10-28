@@ -28,6 +28,9 @@ rebuild, commit, deploy. Preview deployments may set `CZ_ROOM_OPEN=1` to behave 
 `SUPABASE_URL`, `SUPABASE_ANON_KEY` (publishable), `CZ_SALT`, `CZ_ADMIN_TOKEN` (= `config.admin_token`), `CRON_SECRET`,
 `ANTHROPIC_API_KEY` (workspace cap USD 30/month, decision 20), optional `CZ_CLASSIFIER_MODEL`, `CZ_PRICE_IN_CENTS_PER_MTOK`, `CZ_PRICE_OUT_CENTS_PER_MTOK`.
 
+## Opened
+The room opened in production on 29 October 2026 (commit `cbf6330`), after the independent review (`design/test/reviews-internal/`) and the tests below; the test entries were wiped and ids restarted at 1 before opening. Previews use the separate test project `civilization-zero-test` (delete after round 3).
+
 ## Verified (29 Oct 2026)
 Schema smoke test inside a rolled-back transaction: five posts accepted, the sixth answered `not accepted / limit / retry_after_seconds 600`;
 canonical listing and `after` cursor correct. The closed contract (GET empty archive, POST 503) checked through the functions locally.
