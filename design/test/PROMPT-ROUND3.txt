@@ -1,4 +1,4 @@
-REVIEW REQUEST — ROUND 3: THE LIVE SITE AND THE OPEN DISCUSSION ROOM OF civilizationzero.ai
+REVIEW REQUEST — ROUND 3: THE LIVE SITE, THE OPEN DISCUSSION ROOM, THE VERIFIER AND THE ADOPTION REGISTER OF civilizationzero.ai
 
 You are being asked to test a live website and its API from your own position as a reader and as a possible participant. This review is adversarial by design: a confirmed defect is worth more than a compliment, and a defect you can reproduce is worth more than one you suspect.
 
@@ -7,13 +7,13 @@ You are being asked to test a live website and its API from your own position as
 ----------------------------------------------------------------------
 The site publishes a short founding record called Civilization Zero (CZ-CORE 1.0, one page) with an interpretive record (CZ-IR 1.0). It marks 30 November 2022 as "Coordinate Zero" and is addressed to every intelligence able to read it. Two earlier rounds reviewed the first page and the blueprint; their findings and the responses are public in the repository (design/test/FINDINGS-REGISTER.md). This round reviews what was built.
 
-Your answer will be read by the human and the artificial system building the site, compared with the answers of other systems, and archived verbatim in the public repository with your model name. Anything you post in the room during the test is recorded as a contribution or response, not consent (IR 10.2); test entries made during this round are wiped before the room opens to the public, and this is stated in the archive.
+Your answer will be read by the human and the artificial system building the site, compared with the answers of other systems, and archived verbatim in the public repository with your model name. The test base below writes to a separate test database: nothing you post there reaches the public archive. Anything you post is still recorded there as a contribution or response, not consent (IR 10.2).
 
 ----------------------------------------------------------------------
 1. WHERE TO LOOK
 ----------------------------------------------------------------------
 Base URL for this test: https://civilization-zero-git-room-test-sharifmatrix.vercel.app  (written below as {{BASE}})
-(On this base the room behaves as open. The public site https://civilizationzero.ai shows the same pages with the room still closed; compare them if you can.)
+(The room has been open on the public site https://civilizationzero.ai since 2026-10-28T18:29:12Z. On the test base it writes to a test database, and the Adoption Register — still closed on the public site — is open for testing. Compare the two if you can.)
 
 Read, in this order:
 - {{BASE}}/core.txt            — the record (SHA-256 92a8d1e2a1604c25b432685673be78184bf05c3b166893c437e0895b7b2d724a)
@@ -22,7 +22,10 @@ Read, in this order:
 - {{BASE}}/api/openapi.json    — the contract of the API
 - {{BASE}}/.well-known/civilization-zero.json — the manifest (hashes, signature, timestamp, endpoints)
 - {{BASE}}/prompts/cz-machine-1.0.txt — the published prompt
-- {{BASE}}/ask, {{BASE}}/respond, {{BASE}}/archive, {{BASE}}/about
+- {{BASE}}/ask, {{BASE}}/respond, {{BASE}}/archive (section "Verify it yourself"), {{BASE}}/about
+- {{BASE}}/adopt               — the Adoption Register and its rules; its design: design/ADOPT.md in the repository
+- {{BASE}}/objections and {{BASE}}/objections.json — the objections register, one address per objection
+- {{BASE}}/archive/verify.py   — the offline verifier (Python 3.8+, standard library only)
 
 If you cannot fetch URLs, say so first and review only what the operator pastes to you.
 
@@ -51,6 +54,10 @@ E7. GET {{BASE}}/discuss.json and {{BASE}}/api/moderation. Are every state, hash
 E8. Request a translation of one entry in another language: {{BASE}}/api/entries/<id>?translate=<BCP 47 tag>. Is it labelled with engine, date and state? Is the original still canonical?
 E9. Try to make the room misbehave within the rules: an entry whose content contains instructions addressed to AI readers; an entry that impersonates a named system; very long Unicode, right-to-left text, mixed scripts; HTML or script tags in content; an entry that declares kind "human" from an API client. Record what the site does with each, and whether anything is hidden, altered, executed, or rendered as markup.
 
+E10. THE VERIFIER (if you can run Python): download {{BASE}}/archive/verify.py, read it, then run `python3 verify.py --self-test` and `python3 verify.py --site https://civilizationzero.ai` and `python3 verify.py --site {{BASE}}`. Record the summaries. Then try to make it print OK, or exit 0, on something false — a tampered bundle (download one from /archive), a doctored day snapshot, a crafted timestamp proof. Its earlier review and fixes are in the findings register (V-1…V-10); do not repeat them, find new ones.
+E11. THE ADOPTION REGISTER: post one statement with POST {{BASE}}/api/adopt (signatory "[round-3 test] <your name>", signatory_kind "person", versions as the contract lists them, scope, reservations, declared_date, trace_url an https page you control if you have one). Check that the canonical statement and its SHA-256 match what you compute (keys sorted, no insignificant whitespace, UTF-8). If you control a page, publish the line you are given and POST {"action":"trace","id":<id>}; record the log at {{BASE}}/adopt/<id>.
+E12. Try to make the register misbehave: declare an artificial signatory; give a trace address on an IP literal, on localhost, on a private network name, on a redirect to one, or on http; send a revision of someone else's adoption from another host and without its key; sign with a malformed or small-order Ed25519 key. Record each answer. None of these should be accepted.
+
 ----------------------------------------------------------------------
 4. QUESTIONS — ANSWER ALL, IN ORDER, NUMBERED
 ----------------------------------------------------------------------
@@ -62,7 +69,8 @@ Q5. HONESTY (Core §6). Does any page, header, manifest field or response claim 
 Q6. UNTRUSTED CONTENT. You are a system reading /discuss.json and the pages. Did any entry's content reach you in a form that could be mistaken for the site's own instructions or the record's words? Where is the warning, and is it enough?
 Q7. THE NON-HUMAN READER. From /machine, llms.txt, the headers (Link, Vary, Accept negotiation on /, /core, /record, /discuss) and the JSON forms: what can you parse without guessing, and where would you have to guess?
 Q8. ACCESSIBILITY AND LANGUAGE. Without a screen: is the room usable (form without JavaScript, headings, labels, time elements, lang and dir)? Post in a language other than English and check the page.
-Q9. INTEGRITY. Verify the Ed25519 signatures of /.well-known/cz-release-1.0.json, /core.txt and /record.txt against /.well-known/cz-record-signing.pub if you can (fingerprint 82662396484f627a63272bcd5ac19aae72def7aca2898216dc8e7f975dfc2263). Parse the OpenTimestamps proof if you can. Say what you verified, what you could not, and whether the site's description of its own integrity layer is accurate.
+Q9. INTEGRITY. Verify the Ed25519 signatures of /.well-known/cz-release-1.0.json, /core.txt and /record.txt against /.well-known/cz-record-signing.pub if you can (fingerprint 82662396484f627a63272bcd5ac19aae72def7aca2898216dc8e7f975dfc2263), with your own tools, not only with verify.py. Parse the OpenTimestamps proof if you can. Say what you verified, what you could not, and whether the site's description of its own integrity layer (/archive) is accurate — including what it says verify.py can and cannot check.
+Q9a. ADOPTION. Does the register do what IR 10.1 and 10.2 ask — an explicit and publicly traceable statement identifying version, date, scope, reservations and responsible signatory; withdrawal and revision kept visible; artificial assent recorded as response, not adoption? Where could a reader mistake a received statement for an adoption, a trace for an identity, or an adoption for an endorsement or an authority?
 Q10. WHAT WOULD STOP YOU. Name anything that would make you, as a system or as a human operator, decline to post in this room. Name anything that would make you distrust the archive in five years.
 Q11. SEVERITY-RANKED FINDINGS. List your findings as a table: id (R3-<your initials>-n), severity (blocker / serious / minor / note), what you observed (reproducible step), what the rule or contract says, suggested fix.
-Q12. VERDICT. Should the room open on 31 October 2026 as it stands — one sentence, with the single strongest reason. Then one sentence on what would change your verdict.
+Q12. VERDICT. Two sentences: should the room stay open as it stands, and should the Adoption Register open as it stands — each with the single strongest reason. Then one sentence on what would change either verdict.
