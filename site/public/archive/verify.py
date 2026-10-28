@@ -52,6 +52,7 @@ PINNED_VERSIONS = {"CZ-CORE 1.0 sha256:" + CORE_SHA, "CZ-IR 1.0 sha256:" + IR_SH
 KNOWN_SIGNED_BUNDLES = {"cz-bundle-1.0.tar": "fcd3957cbea9c5b21da662e7ea97b4bf3d3b1da1e2eb55ec7bf9d71e2af5cb36"}   # signed: must stay so
 FIRST_DAY = {"discussion": "2026-10-28", "register": None}    # the room opened 2026-10-28T18:29:12Z; the register's first day is not fixed yet
 REPO_RAW = "https://raw.githubusercontent.com/civilizationzero/civilizationzero/main"
+ORIGINS = ("https://civilizationzero.ai", "https://www.civilizationzero.ai")   # the record's own site serves its chains; a mirror may not
 
 # ================================================================ Ed25519 verification (RFC 8032, section 5.1)
 # Cofactorless, compared as encodings, as OpenSSL does. A public key must be a canonical encoding (y < p; x = 0 only with the
@@ -515,19 +516,24 @@ def verify_day(rep, snap, prev_snap, extra, ctx):
     if lines and log.get("last_id") is not None: rep.check(log["last_id"] == ids[-1], "%s: last id %s as stated" % (day, ids[-1]), "%s: last id %s, the snapshot states %s" % (day, ids[-1], log["last_id"]))
     one, many = chain["one"], chain["many"]
     items = snap.get(chain["items"]) or []
+    if not isinstance(items, list) or not all(isinstance(e, dict) for e in items): rep.fail("%s: the snapshot's %s are not a list of objects" % (day, many)); items = []
     entries = {}
     for e in items:
         if e.get("id") in entries: rep.fail("%s: %s %s appears more than once in the snapshot" % (day, one, e.get("id")))
         entries[e.get("id")] = e
-    if not entries and lines: rep.note("%s: the snapshot carries no %s; only the chain was checked" % (day, many))
+    if lines and not entries:
+        rep.fail("%s: the snapshot carries none of the %d %s its lines hash — the site serves every %s of a day" % (day, len(lines), many if len(lines) > 1 else one, one))
+        lines_to_check = []
+    else: lines_to_check = lines
     n_content = n_sig = 0
-    for l in lines:
+    for l in lines_to_check:
         lid = l.get("id"); e = entries.get(lid)
         if e is None:
-            if entries: rep.fail("%s: %s %s is in the hashed lines but not in the snapshot" % (day, one, lid))
-            continue
+            rep.fail("%s: %s %s is in the hashed lines but not in the snapshot" % (day, one, lid)); continue
+        if "hidden" in e and e.get("hidden") is not (e.get("state") == "hidden"):
+            rep.fail("%s: %s %s is marked hidden %s while its state is %s — the site derives the one from the other" % (day, one, lid, json.dumps(e.get("hidden")), e.get("state"))); continue
         diff = [k for k in chain["fields"] if (_iso(e.get(k)) if k == "received" else e.get(k)) != (_iso(l.get(k)) if k == "received" else l.get(k))]
-        if many == "records" and l.get("state") != "hidden" and not e.get("hidden") and e.get("trace_url") != l.get("trace_url"): diff.append("trace_url")
+        if many == "records" and l.get("state") != "hidden" and e.get("state") != "hidden" and e.get("trace_url") != l.get("trace_url"): diff.append("trace_url")
         if diff: rep.fail("%s: %s %s differs from its hashed line in %s" % (day, one, lid, ", ".join(diff)))
         if e.get("state") != l.get("state") or e.get("category") != l.get("category"):
             rep.note("%s: %s %s was %s when hashed, is %s%s now — later events are in %s" % (day, one, lid, l.get("state"), e.get("state"), (" (" + str(e["category"]) + ")") if e.get("category") else "", chain["later"]))
@@ -535,17 +541,17 @@ def verify_day(rep, snap, prev_snap, extra, ctx):
             content = e.get("content"); signed_bytes = None
             shown = content is not None and e.get("state") != "redacted"
             if content is not None and e.get("state") == "redacted": rep.note("%s: entry %s is redacted: the text shown is covered by no hash (the hash is the original's)" % (day, lid))
-            if content is None and e.get("state") == "published" and not e.get("hidden"):
+            if content is None and e.get("state") == "published":
                 rep.fail("%s: entry %s is published, yet the snapshot carries no content for it — the site serves every published entry's text" % (day, lid)); continue
             if shown:
-                if sha256(content.encode("utf-8")) != l.get("content_sha256"): rep.fail("%s: entry %s content does not match its hash" % (day, lid)); continue
-                if e.get("state") == "hidden" or e.get("hidden"): rep.note("%s: entry %s is hidden, yet its content is in this snapshot (it matches its hash)" % (day, lid))
+                if not isinstance(content, str) or sha256(content.encode("utf-8")) != l.get("content_sha256"): rep.fail("%s: entry %s content does not match its hash" % (day, lid)); continue
+                if e.get("state") == "hidden": rep.note("%s: entry %s is hidden, yet its content is in this snapshot (it matches its hash)" % (day, lid))
                 signed_bytes = content.encode("utf-8")
         else:
             text = e.get("statement"); signed_bytes = None
             shown = text is not None
             if not shown:
-                if e.get("state") != "hidden" and not e.get("hidden"):
+                if e.get("state") != "hidden":
                     rep.fail("%s: record %s is not hidden, yet the snapshot carries no statement for it — the site serves every statement that is not hidden" % (day, lid)); continue
                 leaked = [k for k in HIDDEN_NULLED if e.get(k) not in (None, "")]
                 if leaked:
@@ -553,7 +559,7 @@ def verify_day(rep, snap, prev_snap, extra, ctx):
                 kept = [k for k in HIDDEN_KEPT if e.get(k) not in (None, "", [])]
                 if kept: rep.note("%s: record %s is hidden: its %s %s shown, but no hash covers %s while its statement is not shown" % (day, lid, ", ".join(kept), "is" if len(kept) == 1 else "are", "it" if len(kept) == 1 else "them"))
             if shown:
-                if sha256(text.encode("utf-8")) != l.get("statement_sha256"): rep.fail("%s: record %s statement does not match its hash" % (day, lid)); continue
+                if not isinstance(text, str) or sha256(text.encode("utf-8")) != l.get("statement_sha256"): rep.fail("%s: record %s statement does not match its hash" % (day, lid)); continue
                 signed_bytes = check_statement(rep, day, lid, e)
                 if signed_bytes is None: continue
         if shown: n_content += 1
@@ -611,12 +617,42 @@ def due_day(now=None):
     now = now or datetime.datetime.now(datetime.timezone.utc)
     return (now - datetime.timedelta(days=1 if now.hour >= 1 else 2)).date().isoformat()
 
+def chain_of_data(snap):
+    """The chains a snapshot's data belongs to — by its hashed lines (content_sha256: discussion; statement_sha256: register)
+    or, for a day without lines, by its items (entries or records). The "chain" field is not hashed, so it decides nothing."""
+    kinds = set()
+    for l in (snap.get("log") or {}).get("lines") or []:
+        try: o = json.loads(l)
+        except (ValueError, TypeError): kinds.add("?"); continue
+        if not isinstance(o, dict): kinds.add("?")
+        elif "content_sha256" in o and "statement_sha256" not in o: kinds.add("discussion")
+        elif "statement_sha256" in o and "content_sha256" not in o: kinds.add("register")
+        else: kinds.add("?")
+    if not kinds:
+        keys = {k for k in ("entries", "records") if k in snap}
+        if keys == {"entries"}: kinds.add("discussion")
+        elif keys == {"records"}: kinds.add("register")
+    return kinds
+
 def verify_days(rep, days, label, independent=False, complete=False, chain=None):
-    """complete: the days are a site's whole chain as its index lists it, so every day from the pinned first day to the day due must be there."""
-    chains = {(s.get("chain") or "discussion") for s, _, _ in days} or ({chain} if chain else set())
+    """chain: the chain fetched (with --site); otherwise each snapshot's data decides.
+    complete: the days are a site's whole chain as its index lists it, so every day from the first day (pinned, else the first
+    served) to the day due must be there."""
+    wrong, eff = [], []
+    for s, x, f in days:
+        kinds = chain_of_data(s); declared = s.get("chain"); name = f or str(s.get("day"))
+        data = next(iter(kinds)) if len(kinds) == 1 and "?" not in kinds else None
+        if "?" in kinds or len(kinds) > 1: wrong.append("%s: its lines are not all lines of one chain" % name)
+        c = chain or data or declared or "discussion"
+        if declared is not None and declared != c: wrong.append("%s: labelled %r, but %s" % (name, declared, ("it was fetched as the " + c + " chain") if chain else ("its data is the " + c + " chain's")))
+        if data is not None and data != c: wrong.append("%s: fetched as the %s chain, but its data is the %s chain's" % (name, c, data))
+        eff.append(c)
+    chains = set(eff) or ({chain} if chain else set())
     if days: rep.section(("/".join(sorted(map(str, chains)))) + " — " + label)
+    for w in wrong: rep.fail(w)
     if len(chains) != 1 or not chains <= set(CHAINS): rep.fail("the snapshots supplied belong to %s; check one chain at a time" % ", ".join(sorted(map(str, chains)))); return
     chain = chains.pop(); first = FIRST_DAY.get(chain)
+    if wrong: return
     by_day = {}
     for s, x, f in days:
         d = s.get("day")
@@ -632,10 +668,11 @@ def verify_days(rep, days, label, independent=False, complete=False, chain=None)
     if first and order and order[0] > first:
         if complete: rep.fail("%s: the chain began on %s and every day is hashed, so a missing day is a removal" % (_span(first, _next(order[0], -1), "is missing", "are missing"), first))
         else: rep.pending("%s: this chain is checked from %s only — supply every day from %s to check it from its first day" % (_span(first, _next(order[0], -1), "was not supplied", "were not supplied"), order[0], first))
-    if complete and first:
+    start = first or (order[0] if order else None)   # a chain whose first day is not pinned yet: from its first day served
+    if complete and start:
         now = datetime.datetime.now(datetime.timezone.utc); due = due_day(now); last = order[-1] if order else None
-        if due >= first and (last is None or last < due):
-            frm = first if last is None else _next(last)
+        if due >= start and (last is None or last < due):
+            frm = start if last is None else _next(last)
             rep.fail("%s: every finished day is hashed by 00:20 UTC the next day, and %s (this computer's clock: %s UTC)" % (_span(frm, due, "is not served", "are not served"), ("the last day served is " + last) if last else "no day is served", now.strftime("%Y-%m-%d %H:%M")))
     if not order: return
     prev = None; after_gap = False
@@ -652,28 +689,36 @@ def verify_days(rep, days, label, independent=False, complete=False, chain=None)
         verify_day(rep, s, prev_snap, x, {"chain": chain, "first": first, "first_supplied": i == 0, "has_successor": i < len(order) - 1, "after_gap": after_gap and prev_snap is None, "independent": independent})
 
 def site_days(src, repo, rep, chain):
-    """The days the site serves for one chain, each with the repository's copy of its bytes and proof (when repo is given)."""
+    """The days the site serves for one chain, each with the repository's copy of its bytes and proof (when repo is given),
+    and whether it serves an index of the chain at all (then the index is a claim to the whole chain)."""
     c = CHAINS[chain]
-    idx = src.get(c["dir"] + ".json")
-    if idx is None: rep.note("no index at /%s.json" % c["dir"]); return []
-    idx = json.loads(idx)
-    if idx.get("state") == "closed" and not idx.get("days"): rep.note("the %s is not open and serves no days" % ("room" if chain == "discussion" else "register")); return []
-    out = []
+    raw = src.get(c["dir"] + ".json")
+    try: idx = json.loads(raw) if raw is not None else None
+    except ValueError: idx = None
+    if not isinstance(idx, dict) or not isinstance(idx.get("days", []), list):
+        what = "no index of this chain" if raw is None else "no readable index of this chain (not the expected JSON)"
+        if FIRST_DAY.get(chain) and src.base in ORIGINS: rep.fail("the record's own site serves %s at /%s.json — the chain exists since %s" % (what, c["dir"], FIRST_DAY[chain]))
+        elif FIRST_DAY.get(chain): rep.pending("this copy serves %s at /%s.json: a static mirror holds the record, not the chain — check the chain with --site %s or with --days on the repository's %s" % (what, c["dir"], ORIGINS[0], c["repo"]))
+        else: rep.note("this copy serves %s at /%s.json" % (what, c["dir"]))
+        return [], False
+    if idx.get("state") == "closed" and not idx.get("days"): rep.note("the %s is not open and serves no days" % ("room" if chain == "discussion" else "register")); return [], True
+    out, listed = [], set()
     for d in idx.get("days", []):
-        day = d.get("day", "")
-        if not re.fullmatch(r"\d{4}-\d\d-\d\d", str(day)): rep.fail("the index lists an invalid day %r" % day); continue
+        day = d.get("day", "") if isinstance(d, dict) else ""
+        if not re.fullmatch(r"\d{4}-\d\d-\d\d", str(day)): rep.fail("the index lists an invalid day %r" % (day or d,)); continue
+        if day in listed: rep.fail("%s: listed twice in the index" % day); continue
+        listed.add(day)
         b = src.get("%s/%s.json" % (c["dir"], day))
         if b is None: rep.fail("%s: listed in the index but not served" % day); continue
         snap = json.loads(b)
         if snap.get("day") != day: rep.fail("%s: the snapshot served there is for %s" % (day, snap.get("day")))
         if (snap.get("log") or {}).get("sha256") != d.get("sha256"): rep.fail("%s: the snapshot's hash differs from the index" % day)
-        snap.setdefault("chain", chain)
         extra = {}
         if repo is not None:
             try: extra = {"log": repo.get("%s/%s.log" % (c["repo"], day)), "ots": repo.get("%s/%s.log.ots" % (c["repo"], day))}
             except Exception as e: rep.note("%s: the repository's copy could not be fetched (%s)" % (day, type(e).__name__)); extra = {"log": None, "ots": None}
         out.append((snap, extra, None))
-    return out
+    return out, True
 
 # ================================================================ main
 class UsageError(Exception): pass
@@ -751,8 +796,8 @@ def main(argv):
             repo = None if opts["repo_raw"] == "none" else HttpSource(opts["repo_raw"])
             for chain in ("discussion", "register"):
                 rep.section(chain + " — " + opts["site"])
-                got = site_days(src, repo, rep, chain)
-                verify_days(rep, got, opts["site"] + " (as served now)" + ("" if repo else "; repository copies not consulted"), independent=repo is not None, complete=True, chain=chain)
+                got, served = site_days(src, repo, rep, chain)
+                verify_days(rep, got, opts["site"] + " (as served now)" + ("" if repo else "; repository copies not consulted"), independent=repo is not None, complete=served, chain=chain)
         if days: verify_days(rep, days, ", ".join(opts["days"]))
     except Exception as e:   # a malformed input is a failure of the input, reported as such
         rep.section("error"); rep.fail("%s: %s" % (type(e).__name__, e))

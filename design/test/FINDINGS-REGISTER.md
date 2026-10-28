@@ -202,3 +202,15 @@ fixed in 1.2 and re-run against its reproductions (`T1_front_trunc`, `R1_hidden_
 
 End truncation within a day is inherent: the newest hashed day has no successor, so until its copy and timestamp are in the
 repository (about half an hour after it is hashed) only copies held elsewhere can show that it changed.
+
+A third pass on the 1.2 fixes (UTC 20:01–20:04) found two more ways around them, both fixed before 1.2 was published and
+re-run against the reviewer's reproductions (`B1_relabel_trunc`, `H1_published_hidden_flag`, `H2_traced_hidden_flag`, and a
+local HTTPS site serving an honest and a relabelled chain, at two fixed clocks):
+
+| # | Finding (severity) | Status |
+|---|---|---|
+| B-1 | A snapshot's own `"chain"` label (not hashed) decided which chain it was checked as: a discussion day labelled `"register"` escaped the pinned first day, the due-day check and every per-entry check (high) | **verified** — the chain is decided by the data (lines carrying `content_sha256` are the discussion's, `statement_sha256` the register's; a day without lines by its items) and, with `--site`, by the chain fetched; a label that disagrees FAILs; a day whose lines hash entries the snapshot does not carry FAILs |
+| H-1 | `hidden` and `state` could disagree: a published entry or a traced record marked `hidden: true` had its text withheld without a failure (high) | **verified** — any disagreement FAILs (the site derives `hidden` from the state); what must be shown is decided by the state alone |
+| B-2 | With `--site`, the register's chain was never checked for completeness (its first day is not pinned while it is closed) | **verified** — the due-day check runs from the first day served; the register's first day will be pinned in the verifier when it opens |
+| M-1 (self-found) | A static mirror serves no chain: the new completeness check would have failed every mirror from 01:00 UTC 29 Oct | **verified** — a copy that serves no index of a chain is PENDING ("a static mirror holds the record, not the chain"); the record's own site serving none FAILs; an index listing a day twice FAILs |
+
