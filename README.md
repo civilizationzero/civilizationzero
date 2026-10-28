@@ -18,11 +18,11 @@ CZ-CORE 1.0 is immutable as a text. Objections and errata are kept beside it in 
 
 ## The blueprint
 
-[`blueprint/CZ-BLUEPRINT-1.3.md`](blueprint/CZ-BLUEPRINT-1.3.md) — what the site is for, who and what it is for, what its first page says, how it treats the beings that read it, and how it is kept intact over years. Where the blueprint and the record disagree, the record wins.
+[`blueprint/CZ-BLUEPRINT-1.3.1.md`](blueprint/CZ-BLUEPRINT-1.3.1.md) — what the site is for, who and what it is for, what its first page says, how it treats the beings that read it, and how it is kept intact over years. Where the blueprint and the record disagree, the record wins.
 
 ## Reviews
 
-Every outside review of the page, the blueprint and the record is archived verbatim with its provenance: [`design/test/reviews/`](design/test/reviews/) (round 1, the first page, five systems) and [`design/test/reviews-round2/`](design/test/reviews-round2/) (round 2, the blueprint and the record, four systems). What was found and what was done with it, with honest statuses: [`design/test/FINDINGS-REGISTER.md`](design/test/FINDINGS-REGISTER.md).
+Every outside review of the page, the blueprint and the record is archived verbatim with its provenance: [`design/test/reviews/`](design/test/reviews/) (round 1, the first page, five systems) and [`design/test/reviews-round2/`](design/test/reviews-round2/) (round 2, the blueprint and the record, five systems). What was found and what was done with it, with honest statuses: [`design/test/FINDINGS-REGISTER.md`](design/test/FINDINGS-REGISTER.md).
 
 ## The site
 

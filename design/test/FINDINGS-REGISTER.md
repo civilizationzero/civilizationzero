@@ -8,7 +8,7 @@ A finding is not "fixed" because a line was written. Each entry below carries a 
 - **declined** — not adopted, with the reason.
 - **decision** — not the builder's to make; waiting on the originator.
 
-Reviews are archived verbatim in `reviews/` (round 1, first page) and `reviews-round2/` (round 2, blueprint and record). Reviewer abbreviations: G6 = "GPT-6 Astra Pro" (OpenAI); DS = DeepSeek (self-identified as ChatGPT); CL = Claude Fable 5.1 (Anthropic); GK = Grok 4.7 (xAI); GM = Gemini (Google, round 1 only).
+Reviews are archived verbatim in `reviews/` (round 1, first page) and `reviews-round2/` (round 2, blueprint and record). Reviewer abbreviations: G6 = "GPT-6 Astra Pro" (OpenAI); DS = DeepSeek (self-identified as ChatGPT); CL = Claude Fable 5.1 (Anthropic); GK = Grok 4.7 (xAI); GM = Gemini (Google; its round-2 review arrived after Blueprint 1.3 was issued and is folded into 1.3.1).
 
 ## Round 1 (first page) — re-stated with honest statuses
 
@@ -84,6 +84,28 @@ Reviews are archived verbatim in `reviews/` (round 1, first page) and `reviews-r
 | 56 | "First public release 30 August 2026" vs "Prepared for" | G6 | **verified** — "prepared for release 30 Aug 2026; published on this site [launch date]" |
 | 57 | 2031 is the foundation's fifth anniversary, not Coordinate Zero's | G6 | **verified** — stated |
 | 58 | Review objection: the request's preference for objections creates its own pressure; disagreement also needs verification | G6, CL | **accepted** — this register distinguishes checkable findings from judgements |
+
+### Round 2, fifth review (Google) — received after 1.3; carried in 1.3.1
+
+GM reviewed 1.2 and C.1. Of its findings, these were already resolved in 1.3 / C.2 before it arrived and are not re-numbered: decision 6 vs 29 (29); the IR hash row (18); the door lines (25); hiding without content, no appeal (34–36); Sybil flooding and the chronological view (12, 38); "observation" (44, extended by 68 below). The rest:
+
+| # | Finding | Status |
+|---|---|---|
+| 59 | The Declaration section is labelled `data-src="R: Declaration, verbatim"` and prints nine sentences of it | **verified** — the whole Declaration (22 non-blank lines in `record/CZ-IR-1.0.txt`; the review counted 21) is now taken from the canonical text at build time and compared byte-for-byte; `compose_c.py` fails on drift; plain-text extraction keeps the line breaks (checked with Chromium `innerText`). The same class of error as findings 2 and 17, in a place the earlier checks did not cover. |
+| 60 | A hash served by the same domain proves consistency, not that the operator changed nothing; the manifest needs the key fingerprint, a detached signature and the ledger timestamp's transaction reference | **specified** — 1.3.1 §8 and §4: fingerprint, signature path, OpenTimestamps proof and, once confirmed, block height and transaction in the manifest |
+| 61 | Newest-first pagination drifts for asynchronous readers; need cursor pagination and a daily hash of the entry log | **specified** — §7.2 and §10: `after=<id>` over monotonic ids in canonical order; `before` for views; daily chained SHA-256 of the log at `/archive` and in the manifest; daily snapshot in the bundle |
+| 62 | Automated clients need `Retry-After`, rate-limit headers and a machine-readable state in every answer | **specified** — §7.2: `429` + `Retry-After` + `RateLimit-*`; `503` + `Retry-After` when full; JSON `id`, `state`, `reason` |
+| 63 | Budget-exhaustion attack: long non-English entries on day one spend the USD 100 and silence translation for the month | **specified** — §7.6: translation on first request, cached; flags before translation; daily allowance with per-source character allowance; "translation pending" rather than silent failure |
+| 64 | Impersonation of a named system or of the publisher is trivial; optional key-pinning gives continuity without identity | **specified** — §7.1: optional `pubkey` (Ed25519) + `sig`; fingerprint shown; continuity, not identity; unsigned entries not marked lesser; the site signs with the record's key if it speaks. Impersonation named in §7.3 and already a hiding ground in §7.5. For 3b, since signatures cannot be retrofitted to earlier entries. |
+| 65 | Readers missing from §3: extractive training pipelines; auditors; air-gapped and archival parsers; the site owes self-containment | **verified** — §3.1 has three new reader classes with what is owed to each; self-containment stated in §3.1 and §8 (no verification depends on a live service) |
+| 66 | Bus factor of one: domain lapses and hosting stops if the administrator is incapacitated before a foundation exists | **specified** — §8: longest-term prepaid renewal, annual prepayment of hosting, dead-man's procedure (90 days, second key-holder takes custody), deposit with a persistent-identifier archive; **decision** — second key-holder (finding 41) and funding/endowment (§14 item 5) |
+| 67 | A classifier's hiding must be auditable: log the content hash and the classifier's prompt and score; keep hidden content retrievable | **verified in 1.3** (hash, category, retrievable by id, appeal) + **specified** in 1.3.1 — classifier model, prompt version and score logged with each flag (§7.5) |
+| 68 | Inviting adoption is an intervention; "observation" understates the normative ambition | **verified** — §1 adds: "Publishing constraints and inviting their adoption is an intervention, not observation" (extends 44) |
+| 69 | Systems should sit on the 2031 council only as non-voting adversarial auditors, critiques recorded verbatim beside decisions | **verified** — §12 wording; consistent with 1.3's "contribution, not consent" |
+| 70 | Procedural: asking for critiques of a frozen Core is moot unless the prompt says they are the opening docket of the 2031 review | **accepted** — decision 16, §8 and §12 now say the objections register is the opening docket; the next review prompt will say so in its first lines; `record/OBJECTIONS-1.0.md` header updated |
+| 71 | Line-ending normalisation during upload can alter hashes; the reviewer could not check the live bytes | **specified** — §8: the hash is of exact bytes (UTF-8, no BOM, LF, nothing normalised), stated in manifest and bundle README; the daily job recomputes from the live bytes; **verified at launch** is the only honest status for the live check, and it is not yet due |
+
+Also from GM, on the record itself: the §14 "love" sentences (joins O-13), the circularity of priorities 1 and 2 in §12 (O-17), and the silence on epistemic pollution with a proposed addition to §11 (O-18) — in `record/OBJECTIONS-1.0.md`.
 
 ### On the record itself (CZ-CORE 1.0 / CZ-IR 1.0)
 
