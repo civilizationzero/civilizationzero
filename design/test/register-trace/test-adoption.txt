@@ -1,0 +1,4 @@
+Test fixture for the Adoption Register (design/ADOPT.md), used only against the test database through the test alias.
+It is not an adoption of anything. The register's trace check looks for this statement's SHA-256 on this page:
+
+sha256:9f52799cff9de3e3f369957d2197f7ad2df0dba4ba2b52b6381dab7246214976
