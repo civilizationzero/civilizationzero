@@ -158,3 +158,8 @@ Before the public round 3, the implementation of the room (`site/api/*`, `site/r
 | R-39 | HEAD → 405 | **verified** — HEAD handled on every endpoint |
 
 Deferred to 1.4 (stated, not hidden): proof-of-work on POST (§7.3), an allow-list of translation languages, hashing of translations and moderation decisions into the daily line.
+
+### The room opened — 29 October 2026, 02:30 SGT (28 Oct 18:30 UTC)
+
+After the fixes above, the re-tests on the isolated test database, the wipe of the test entries (by the originator, in the database console) and the production deployment at commit `cbf6330`, the room is open at https://civilizationzero.ai/discuss. Release `v1.0` (tag at `9d7b157`+) is deposited as doi:10.5281/zenodo.23741225; the signed bundle 1.0 is `cz-bundle-1.0.tar` (SHA-256 `fcd3957cbea9c5b21da662e7ea97b4bf3d3b1da1e2eb55ec7bf9d71e2af5cb36`). Round 3 (five outside systems, `PROMPT-ROUND3.txt`) runs against the test alias on 30 October; its findings are recorded below when they arrive.
+
