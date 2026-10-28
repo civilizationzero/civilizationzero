@@ -362,6 +362,30 @@ def _iso(t):
     return m.group(1) + "." + frac + "Z"
 
 LINE_FIELDS = ("received", "kind", "author", "system", "operator", "prompt", "lang", "ref", "declared_date", "key_fingerprint", "content_sha256", "pubkey", "sig")
+REGISTER_FIELDS = ("received", "type", "refers_to", "statement_sha256", "trace_host", "key_fingerprint", "pubkey", "sig")
+PINNED = {"CZ-CORE 1.0 sha256:92a8d1e2a1604c25b432685673be78184bf05c3b166893c437e0895b7b2d724a", "CZ-IR 1.0 sha256:71e1488e631e090c0820bf8b78b1fda70ffacba1da146c36d8893600320fcc8d"}
+CHAINS = {"discussion": {"items": "entries", "one": "entry", "many": "entries", "fields": LINE_FIELDS, "later": "the moderation log"},
+          "register": {"items": "records", "one": "record", "many": "records", "fields": REGISTER_FIELDS, "later": "each record's log"}}
+
+def canonical_json(obj):
+    return json.dumps(obj, ensure_ascii=False, separators=(",", ":"), sort_keys=True)
+
+def check_statement(rep, day, lid, e):
+    """A register record's statement: its hash, its canonical form, the pinned versions, and the record's fields as stated in it.
+    Returns the statement's bytes when they can be used for the signature check, or None after a failure."""
+    text = e.get("statement")
+    b = text.encode("utf-8")
+    try: st = json.loads(text)
+    except ValueError: rep.fail("%s: record %s statement is not JSON" % (day, lid)); return None
+    if not isinstance(st, dict) or canonical_json(st) != text: rep.fail("%s: record %s statement is not in canonical form" % (day, lid)); return None
+    if any(v not in PINNED for v in st.get("versions", [])): rep.fail("%s: record %s names a version not pinned to the record's hashes" % (day, lid)); return None
+    for k in ("type", "signatory", "signatory_kind", "declared_date"):
+        if str(st.get(k, "")) != str(e.get(k) or ""): rep.fail("%s: record %s field %s differs from its statement" % (day, lid, k)); return None
+    for k in ("institution", "capacity", "scope", "reservations", "lang"):
+        if (st.get(k) or "") != (e.get(k) or ""): rep.fail("%s: record %s field %s differs from its statement" % (day, lid, k)); return None
+    if list(st.get("versions") or []) != list(e.get("versions") or []) or str(st.get("refers_to") or "") != str(e.get("refers_to") or ""):
+        rep.fail("%s: record %s versions or refers_to differ from its statement" % (day, lid)); return None
+    return b
 
 def day_bytes(log):
     return ((log.get("prev") or "") + "\n" + "\n".join(log.get("lines") or [])).encode("utf-8")
@@ -383,40 +407,54 @@ def verify_day(rep, snap, prev_snap, extra):
         try: lines.append(json.loads(l))
         except ValueError: rep.fail("%s: line %d is not JSON" % (day, i + 1)); return
     ids = [l.get("id") for l in lines]
-    rep.check(ids == sorted(ids) and len(set(ids)) == len(ids), "%s: %d entr%s in canonical order" % (day, len(ids), "y" if len(ids) == 1 else "ies"), "%s: lines are not in canonical order" % day)
+    rep.check(ids == sorted(ids) and len(set(ids)) == len(ids), "%s: %d line%s in canonical order" % (day, len(ids), "" if len(ids) == 1 else "s"), "%s: lines are not in canonical order" % day)
     if log.get("count") is not None: rep.check(log["count"] == len(lines), "%s: count %d as stated" % (day, len(lines)), "%s: %d lines, the snapshot states count %s" % (day, len(lines), log["count"]))
     if lines and log.get("last_id") is not None: rep.check(log["last_id"] == ids[-1], "%s: last id %s as stated" % (day, ids[-1]), "%s: last id %s, the snapshot states %s" % (day, ids[-1], log["last_id"]))
-    entries = {e.get("id"): e for e in snap.get("entries") or []}
-    if not entries and lines: rep.note("%s: the snapshot carries no entries; only the chain was checked" % day)
+    chain = CHAINS.get(snap.get("chain") or "discussion")
+    if chain is None: rep.fail("%s: unknown chain %r" % (day, snap.get("chain"))); return
+    one, many = chain["one"], chain["many"]
+    entries = {e.get("id"): e for e in snap.get(chain["items"]) or []}
+    if not entries and lines: rep.note("%s: the snapshot carries no %s; only the chain was checked" % (day, many))
     n_content = n_sig = 0
     for l in lines:
         lid = l.get("id"); e = entries.get(lid)
         if e is None:
-            if entries: rep.fail("%s: entry %s is in the hashed lines but not in the snapshot" % (day, lid))
+            if entries: rep.fail("%s: %s %s is in the hashed lines but not in the snapshot" % (day, one, lid))
             continue
-        diff = [k for k in LINE_FIELDS if (_iso(e.get(k)) if k == "received" else e.get(k)) != (_iso(l.get(k)) if k == "received" else l.get(k))]
-        if diff: rep.fail("%s: entry %s differs from its hashed line in %s" % (day, lid, ", ".join(diff)))
+        diff = [k for k in chain["fields"] if (_iso(e.get(k)) if k == "received" else e.get(k)) != (_iso(l.get(k)) if k == "received" else l.get(k))]
+        if many == "records" and l.get("state") != "hidden" and not e.get("hidden") and e.get("trace_url") != l.get("trace_url"): diff.append("trace_url")
+        if diff: rep.fail("%s: %s %s differs from its hashed line in %s" % (day, one, lid, ", ".join(diff)))
         if e.get("state") != l.get("state") or e.get("category") != l.get("category"):
-            rep.note("%s: entry %s was %s when hashed, is %s%s now — later decisions are in the moderation log" % (day, lid, l.get("state"), e.get("state"), (" (" + e["category"] + ")") if e.get("category") else ""))
-        content = e.get("content")
-        shown = e.get("state") == "published" and content is not None
-        if shown:
-            if sha256(content.encode("utf-8")) != l.get("content_sha256"):
+            rep.note("%s: %s %s was %s when hashed, is %s%s now — later events are in %s" % (day, one, lid, l.get("state"), e.get("state"), (" (" + e["category"] + ")") if e.get("category") else "", chain["later"]))
+        if many == "entries":
+            content = e.get("content")
+            shown = e.get("state") == "published" and content is not None
+            signed_bytes = content.encode("utf-8") if shown else None
+            if shown and sha256(signed_bytes) != l.get("content_sha256"):
                 rep.fail("%s: entry %s content does not match its hash" % (day, lid)); continue
-            n_content += 1
+        else:
+            shown = e.get("statement") is not None and not e.get("hidden")
+            signed_bytes = None
+            if shown:
+                if sha256(e["statement"].encode("utf-8")) != l.get("statement_sha256"):
+                    rep.fail("%s: record %s statement does not match its hash" % (day, lid)); continue
+                signed_bytes = check_statement(rep, day, lid, e)
+                if signed_bytes is None: continue
+        if shown: n_content += 1
         if l.get("pubkey") or l.get("sig"):
             try: raw, sig = base64.b64decode(l.get("pubkey") or "", validate=True), base64.b64decode(l.get("sig") or "", validate=True)
-            except ValueError: rep.fail("%s: entry %s carries a key or signature that is not base64" % (day, lid)); continue
-            if len(raw) != 32 or len(sig) != 64: rep.fail("%s: entry %s key or signature has the wrong length" % (day, lid)); continue
-            if fingerprint_of_raw(raw) != l.get("key_fingerprint"): rep.fail("%s: entry %s key fingerprint does not match its public key" % (day, lid)); continue
+            except ValueError: rep.fail("%s: %s %s carries a key or signature that is not base64" % (day, one, lid)); continue
+            if len(raw) != 32 or len(sig) != 64: rep.fail("%s: %s %s key or signature has the wrong length" % (day, one, lid)); continue
+            if fingerprint_of_raw(raw) != l.get("key_fingerprint"): rep.fail("%s: %s %s key fingerprint does not match its public key" % (day, one, lid)); continue
             if shown:
-                if ed25519_verify(raw, content.encode("utf-8"), sig): n_sig += 1
-                else: rep.fail("%s: entry %s signature does NOT verify over its content" % (day, lid))
-            else: rep.note("%s: entry %s is %s; its signature covers the original content, which is not shown — the key fingerprint was checked" % (day, lid, e.get("state")))
+                if ed25519_verify(raw, signed_bytes, sig): n_sig += 1
+                else: rep.fail("%s: %s %s signature does NOT verify over its %s" % (day, one, lid, "content" if many == "entries" else "statement"))
+            else: rep.note("%s: %s %s is %s; its signature covers text that is not shown — the key fingerprint was checked" % (day, one, lid, e.get("state")))
     extra_ids = sorted(set(entries) - set(ids), key=lambda x: (x is None, x))
-    if extra_ids: rep.fail("%s: entr%s %s in the snapshot but not in the hashed lines" % (day, "y" if len(extra_ids) == 1 else "ies", ", ".join(str(x) for x in extra_ids)))
-    if n_content: rep.ok("%s: %s" % (day, "1 published entry matches its content hash" if n_content == 1 else "%d published entries match their content hashes" % n_content))
-    if n_sig: rep.ok("%s: %s" % (day, "1 signed entry: its Ed25519 signature verifies over its content, with the fingerprint published" if n_sig == 1 else "%d signed entries: each Ed25519 signature verifies over its content, with the fingerprint published" % n_sig))
+    if extra_ids: rep.fail("%s: %s %s in the snapshot but not in the hashed lines" % (day, one if len(extra_ids) == 1 else many, ", ".join(str(x) for x in extra_ids)))
+    what = "content" if many == "entries" else "statement"
+    if n_content: rep.ok("%s: %s" % (day, ("1 %s matches its %s hash" % ("published entry" if many == "entries" else "record's statement", what)) if n_content == 1 else "%d %s match their %s hashes" % (n_content, "published entries" if many == "entries" else "records' statements", what)))
+    if n_sig: rep.ok("%s: %s" % (day, ("1 signed %s: its Ed25519 signature verifies over its %s, with the fingerprint published" % (one, what)) if n_sig == 1 else "%d signed %s: each Ed25519 signature verifies over its %s, with the fingerprint published" % (n_sig, many, what)))
     if extra.get("ots") is not None: verify_ots(rep, extra["ots"], data, day + ".log")
 
 def load_days(paths):
@@ -436,7 +474,7 @@ def load_days(paths):
     return sorted(found, key=lambda x: x[0].get("day") or "")
 
 def verify_days(rep, days, label):
-    rep.section("discussion — " + label)
+    rep.section(((days[0][0].get("chain") or "discussion") if days else "days") + " — " + label)
     if not days: rep.note("no daily snapshots supplied"); return
     prev = None
     for snap, extra in days:
@@ -446,12 +484,15 @@ def verify_days(rep, days, label):
         verify_day(rep, snap, expected_prev[0] if expected_prev else None, extra)
         prev = (snap, extra)
 
-def site_days(src, rep):
-    idx = src.get("archive/entries.json")
-    if idx is None: rep.note("no index of daily snapshots at /archive/entries.json"); return []
+def site_days(src, rep, chain="discussion"):
+    base = "archive/entries" if chain == "discussion" else "archive/register"
+    idx = src.get(base + ".json")
+    if idx is None: rep.note("no index of daily snapshots at /%s.json" % base); return []
+    idx = json.loads(idx)
+    if idx.get("state") == "closed": rep.note("the %s is not open; no days yet" % ("room" if chain == "discussion" else "register")); return []
     out = []
-    for d in json.loads(idx).get("days", []):
-        b = src.get("archive/entries/%s.json" % d["day"])
+    for d in idx.get("days", []):
+        b = src.get("%s/%s.json" % (base, d["day"]))
         if b is None: rep.fail("%s: listed in the index but not served" % d["day"]); continue
         snap = json.loads(b)
         if (snap.get("log") or {}).get("sha256") != d.get("sha256"): rep.fail("%s: the snapshot's hash differs from the index" % d["day"])
@@ -503,9 +544,10 @@ def main(argv):
                 res = verify_record(src, rep, anchor, ("site copy " if key == "site_dir" else "") + opts[key])
                 if res: verify_site_bundles(src, rep, res["raw"])
                 if key == "site":
-                    rep.section("discussion — " + opts[key])
-                    days = site_days(src, rep)
-                    if days: verify_days(rep, days, opts[key] + " (as served now)")
+                    for chain in ("discussion", "register"):
+                        rep.section(chain + " — " + opts[key])
+                        days = site_days(src, rep, chain)
+                        if days: verify_days(rep, days, opts[key] + " (as served now)")
         if opts["days"]: verify_days(rep, load_days(opts["days"]), ", ".join(opts["days"]))
     except Exception as e:   # a malformed input is a failure of the input, reported as such
         rep.section("error"); rep.fail("%s: %s" % (type(e).__name__, e))

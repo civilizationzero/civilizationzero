@@ -45,6 +45,14 @@ module.exports = async (req, res) => {
     const id = Number(b.id), action = String(b.action || ""), category = b.category == null ? "" : String(b.category), reason = String(b.reason || "").slice(0, 2000);
     if (!Number.isInteger(id) || id < 1) return json(res, 400, { error: "id" });
     if (!reason) return json(res, 400, { error: "reason: a written reason is required" });
+    if (b.target === "register") {   // the Adoption Register: hide / unhide under the room's grounds (design/ADOPT.md §6)
+      if (!["hide", "unhide"].includes(action)) return json(res, 400, { error: "action (register): hide | unhide" });
+      if (action === "hide" && !HIDE.includes(category)) return json(res, 400, { error: "category (hide): " + HIDE.join(" | ") });
+      let r;
+      try { r = await rpc("cz_register_moderate", { p_id: id, p_action: action, p_category: action === "hide" ? category : null, p_reason: reason, p_token: R.TOKEN }); }
+      catch (e) { if (/no such record/.test(e.message)) return json(res, 404, { error: "no such record" }); if (/already hidden|not hidden/.test(e.message)) return json(res, 409, { error: e.message.match(/already hidden|not hidden/)[0] }); throw e; }
+      return json(res, 200, { id, target: "register", action, state: r.state, url: `${ORIGIN}/adopt/${id}`, logged: true });
+    }
     if (action === "correct_translation") {
       const lang = String(b.lang || ""), text = typeof b.text === "string" ? b.text : "";
       if (!R.LANG_RE.test(lang) || lang.length > 35) return json(res, 400, { error: "lang: BCP 47 tag" });

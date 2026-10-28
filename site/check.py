@@ -40,9 +40,10 @@ class P(HTMLParser):
         if self.stack and self.stack[-1] == t: self.stack.pop()
         else: self.err.append((t, self.stack[-3:]))
 
-FUNCTION_ROUTES = {"/", "/index.json", "/index.txt", "/api/entries", "/discuss", "/discuss.json", "/respond", "/api/moderation", "/api/cron/daily", "/archive/entries.json"}
+FUNCTION_ROUTES = {"/", "/index.json", "/index.txt", "/api/entries", "/discuss", "/discuss.json", "/respond", "/api/moderation", "/api/cron/daily", "/archive/entries.json",
+                   "/adopt", "/adopt.json", "/api/adopt", "/archive/register.json"}
 def resolves(path):
-    if path in FUNCTION_ROUTES or re.match(r"^/(api/entries|discuss)/\d+$", path) or re.match(r"^/archive/entries/\d{4}-\d{2}-\d{2}\.json$", path): return True
+    if path in FUNCTION_ROUTES or re.match(r"^/(api/entries|discuss|adopt)/\d+$", path) or re.match(r"^/archive/(entries|register)/\d{4}-\d{2}-\d{2}\.json$", path): return True
     p = path.lstrip("/")
     return (PUBLIC / p).exists() or (PUBLIC / (p + ".html")).exists()
 
@@ -162,15 +163,22 @@ check(man["signature"]["release_manifest_sha256"] == sha256((PUBLIC / ".well-kno
 # 6. vercel.json and the functions exist
 v = json.loads((SITE / "vercel.json").read_text("utf-8"))
 check(any(r.get("source") == "/" and "has" in r for r in v.get("rewrites", [])), "vercel.json: content negotiation for /")
-for fn in ("api/home.js", "api/entries.js", "api/discuss.js", "api/archive.js", "api/moderation.js", "api/cron/daily.js", "room/lib.js"):
+for fn in ("api/home.js", "api/entries.js", "api/discuss.js", "api/archive.js", "api/moderation.js", "api/cron/daily.js", "api/adopt.js", "room/lib.js", "room/register.js"):
     check((SITE / fn).exists(), f"function missing: {fn}")
 check(any(c.get("path") == "/api/cron/daily" for c in v.get("crons", [])), "vercel.json: daily cron")
 check(any(r.get("source") == "/discuss.json" and r.get("destination") == "/api/archive" for r in v.get("rewrites", [])), "vercel.json: /discuss.json → function")
-for fn in ("api/entries.js", "api/discuss.js", "api/archive.js", "api/moderation.js", "api/cron/daily.js", "room/lib.js"):
+for fn in ("api/entries.js", "api/discuss.js", "api/archive.js", "api/moderation.js", "api/cron/daily.js", "api/adopt.js", "room/lib.js", "room/register.js"):
     r = subprocess.run(["node", "--check", str(SITE / fn)], capture_output=True)
     check(r.returncode == 0, f"{fn}: syntax {r.stderr.decode()[:200]}")
 check(not (PUBLIC / "index.html").exists(), "public/index.html must not exist (the function serves /)")
 check(any(r.get("source") == "/archive/entries.json" and r.get("destination") == "/api/archive?index=1" for r in v.get("rewrites", [])), "vercel.json: /archive/entries.json → the chain index")
+for src in ("/adopt", "/adopt.json", "/archive/register.json"):
+    check(any(r.get("source") == src and "has" not in r for r in v.get("rewrites", [])), f"vercel.json: {src} → the register")
+RG = json.loads((SITE / "api" / "register-templates.json").read_text("utf-8"))
+check(RG["open"] == REGISTER_OPEN and RG["versions"] == [f"CZ-CORE 1.0 sha256:{CORE_SHA}", f"CZ-IR 1.0 sha256:{IR_SHA}"], "register templates: state and pinned versions")
+for name in ("intro", "rules", "form"):
+    pr = P(); pr.feed(RG[name]); check(not pr.err and not pr.stack, f"register {name}: HTML nesting {pr.err} {pr.stack}")
+check('id="rules"' in RG["rules"] and 'id="form"' in RG["form"] and 'action="/api/adopt"' in RG["form"], "register templates: anchors and form action")
 
 # 7. the verifier: the published copy is the repository's, it passes its own self-test, and it verifies this build as a mirror would
 VERIFY = SITE / "verify" / "verify.py"

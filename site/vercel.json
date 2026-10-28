@@ -102,6 +102,28 @@
       "destination": "/api/archive"
     },
     {
+      "source": "/adopt",
+      "has": [
+        {
+          "type": "header",
+          "key": "accept",
+          "value": "(.*)application/json(.*)"
+        }
+      ],
+      "destination": "/api/adopt?page=json"
+    },
+    {
+      "source": "/adopt/:id(\\d{1,12})",
+      "has": [
+        {
+          "type": "header",
+          "key": "accept",
+          "value": "(.*)application/json(.*)"
+        }
+      ],
+      "destination": "/api/adopt?id=:id"
+    },
+    {
       "source": "/",
       "destination": "/api/home?f=html"
     },
@@ -154,6 +176,18 @@
       "destination": "/archive.html"
     },
     {
+      "source": "/adopt",
+      "destination": "/api/adopt?page=list"
+    },
+    {
+      "source": "/adopt.json",
+      "destination": "/api/adopt?page=json"
+    },
+    {
+      "source": "/adopt/:id(\\d{1,12})",
+      "destination": "/api/adopt?page=record&id=:id"
+    },
+    {
       "source": "/api/entries/:id",
       "destination": "/api/entries?id=:id"
     },
@@ -179,6 +213,14 @@
     {
       "source": "/archive/entries.json",
       "destination": "/api/archive?index=1"
+    },
+    {
+      "source": "/archive/register.json",
+      "destination": "/api/archive?index=1&chain=register"
+    },
+    {
+      "source": "/archive/register/:date(\\d{4}-\\d{2}-\\d{2}).json",
+      "destination": "/api/archive?date=:date&chain=register"
     },
     {
       "source": "/archive/entries/:date(\\d{4}-\\d{2}-\\d{2}).json",
@@ -464,6 +506,19 @@
           "value": "public, max-age=3600"
         }
       ]
+    },
+    {
+      "source": "/adopt",
+      "headers": [
+        {
+          "key": "Vary",
+          "value": "Accept"
+        },
+        {
+          "key": "Link",
+          "value": "</adopt.json>; rel=\"alternate\"; type=\"application/json\""
+        }
+      ]
     }
   ],
   "crons": [
@@ -486,6 +541,9 @@
       "maxDuration": 30
     },
     "api/moderation.js": {
+      "maxDuration": 30
+    },
+    "api/adopt.js": {
       "maxDuration": 30
     }
   }

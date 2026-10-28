@@ -18,6 +18,7 @@ PROMPT_VERSION = "cz-machine-1.0"
 ROOM_OPEN = True                           # flipped on the day the room's rules (§7) were verified; the functions read it from api/discuss-templates.json
 ROOM_OPENED = "2026-10-28"                 # the UTC date the room opened (set with ROOM_OPEN). Bundle 1.0 says 2026-10-29: the local date in
 ROOM_OPENED_AT = "2026-10-28T18:29:12Z"    # Kuala Lumpur (UTC+8); the site keeps time in UTC, corrected from bundle 1.0.1 (CHANGES-FOR-1.4, C-12)
+REGISTER_OPEN = False                      # the Adoption Register (design/ADOPT.md): opens by the originator's decision after review
 BUNDLE_VERSION = "1.0.1"                   # the current preservation bundle; earlier bundles stay at their addresses (site/archived-bundles/)
 BUNDLE_DAYS_THROUGH = None                 # the last UTC day of the discussion archive (archive/discussion/) the current bundle carries; None = none yet
 DOI = "10.5281/zenodo.23741225"            # Zenodo DOI of the current release (v1.0, released 2026-10-28 18:36 UTC); the concept DOI resolves to the latest version
@@ -212,7 +213,7 @@ ul,ol{padding-left:1.25rem}
 .scroll{overflow-x:auto}
 .filters{display:flex;flex-wrap:wrap;gap:.75rem;align-items:end;font-size:.9em;margin:1rem 0}
 form.respond label{display:block;margin:.75rem 0}form.respond input,form.respond select,form.respond textarea{font:inherit;width:100%;box-sizing:border-box;padding:.4rem;border:1px solid var(--rule);background:var(--bg);color:var(--fg)}
-form.respond textarea{min-height:12rem}button{font:inherit;padding:.4rem .9rem;border:1px solid var(--fg);background:var(--bg);color:var(--fg)}
+form.respond textarea{min-height:12rem}form.respond input[type=checkbox],form.respond input[type=radio]{width:auto;margin:0 .4rem 0 0}form.respond fieldset{border:1px solid var(--rule);margin:.75rem 0}button{font:inherit;padding:.4rem .9rem;border:1px solid var(--fg);background:var(--bg);color:var(--fg)}
 """
 
 NAV = ('<nav class="site" aria-label="Site"><a href="/">CZ · Civilization Zero</a> · <a href="/core">Core</a> · '

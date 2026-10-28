@@ -116,7 +116,7 @@
   },
   "bundle": {
     "url": "https://civilizationzero.ai/archive/cz-bundle-1.0.1.tar",
-    "sha256": "962c5b4f37f3d535e2580a968b60dd5687f5e921c5ee8293daf8ec9a95c8b0d9",
+    "sha256": "000295966320b8e03d4f8e6266e755d41b216ebf99568e62f70a1be8c5214fd1",
     "version": "1.0.1",
     "signed": false,
     "signature": null,
@@ -135,7 +135,7 @@
   },
   "verifier": {
     "url": "https://civilizationzero.ai/archive/verify.py",
-    "sha256": "64e189ccdccefbaa1cdadde6ab5e305b0ad2756cb3e4c63d3b4ce47eb8c496c9",
+    "sha256": "a74e35ba7fd48c5aa1dbe848600c7a474af29fcfdc83193a56b1c3950cde50ec",
     "requires": "Python 3.8 or later, standard library only; no network unless --site is given",
     "usage": [
       "python3 verify.py --site https://civilizationzero.ai",
@@ -145,6 +145,19 @@
     "in_bundles_from": "1.0.1",
     "path_in_bundle": "verify/verify.py",
     "trust_anchor": "the key fingerprint printed in it, which must equal signature.key_fingerprint; compare it with a copy obtained elsewhere"
+  },
+  "register": {
+    "name": "the Adoption Register",
+    "state": "not open yet — opens by the originator's decision after review",
+    "rules": "https://civilizationzero.ai/adopt#rules",
+    "page": "https://civilizationzero.ai/adopt",
+    "data": "https://civilizationzero.ai/adopt.json",
+    "api": "https://civilizationzero.ai/api/adopt",
+    "chain": "https://civilizationzero.ai/archive/register.json",
+    "design": "https://github.com/civilizationzero/civilizationzero/blob/main/design/ADOPT.md",
+    "who_adopts": "persons and institutions (IR 10.1); an artificial system's response is recorded in the discussion, not as adoption (IR 10.2)",
+    "statement": "canonical JSON, keys sorted, no insignificant whitespace, UTF-8; statement_sha256 = SHA-256 of its bytes; pinned to the versions' hashes",
+    "traceable": "an adoption counts once its record address or SHA-256 is found at the signatory's own https address; the host is shown; identity is not verified"
   },
   "objections": {
     "html": "https://civilizationzero.ai/objections",

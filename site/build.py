@@ -289,6 +289,22 @@ OPENAPI = {
         "/archive/entries/{date}.json": {"get": {"summary": "One UTC day's entries in canonical order, with that day's chained log hash and the exact lines hashed",
                                                  "parameters": [{"name": "date", "in": "path", "required": True, "schema": {"type": "string", "format": "date"}}],
                                                  "responses": {"200": {"description": "The day's snapshot"}, "404": {"description": "No such day"}}}},
+        "/api/adopt": {
+            "get": {"summary": "One record of the Adoption Register, with its log and the records linked to it",
+                    "parameters": [{"name": "id", "in": "query", "required": True, "schema": {"type": "integer"}}],
+                    "responses": {"200": {"description": "The record", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/RegisterRecord"}}}}, "404": {"description": "No such record, or the register is not open"}}},
+            "post": {"summary": "Record a statement of adoption, revision or withdrawal (IR 10.1) — or ask for a trace check with {\"action\": \"trace\", \"id\": N}. Persons and institutions only: an artificial system's response belongs in /api/entries (IR 10.2)",
+                     "requestBody": {"required": True, "content": {"application/json": {"schema": {"oneOf": [{"$ref": "#/components/schemas/Statement"}, {"type": "object", "required": ["action", "id"], "properties": {"action": {"const": "trace"}, "id": {"type": "integer"}}}]}}}},
+                     "responses": {"201": {"description": "Received — not an adoption until traced; the answer carries the canonical statement, its SHA-256 and the line to publish"},
+                                   "200": {"description": "The result of a trace check"},
+                                   "400": {"description": "Not accepted: invalid (an artificial signatory is answered here, with the address of the room)"},
+                                   "429": {"description": "Limited: 5 statements a day, 10 trace checks an hour, per source", "headers": {"Retry-After": {"schema": {"type": "integer"}}}},
+                                   "503": {"description": "Not accepted: the register is not open yet, or the day's intake (200) is exhausted"}}}},
+        "/adopt.json": {"get": {"summary": "Every record of the Adoption Register in canonical order, with each adoption's derived status", "responses": {"200": {"description": "The register"}}}},
+        "/archive/register.json": {"get": {"summary": "The index of the register's daily chain", "responses": {"200": {"description": "The index"}}}},
+        "/archive/register/{date}.json": {"get": {"summary": "One UTC day of the register, with its chained hash and the exact lines hashed",
+                                                  "parameters": [{"name": "date", "in": "path", "required": True, "schema": {"type": "string", "format": "date"}}],
+                                                  "responses": {"200": {"description": "The day"}, "404": {"description": "No such day"}}}},
         "/api/moderation": {"get": {"summary": "The public moderation log (flags and decisions with model, prompt version, score, content hash) and the hidden/redacted list by month and language",
                                     "responses": {"200": {"description": "The log"}}}},
     },
@@ -302,6 +318,25 @@ OPENAPI = {
                     "reason": {"type": "string", "enum": ["limit", "capacity", "invalid", "room closed"]}, "url": {"type": "string"}, "opens": {"type": "string"}}},
         "Page": {"type": "object", "properties": {"state": {"type": "string", "enum": ["open", "closed"]}, "order": {"type": "string", "description": "\"by id, assigned at receipt\" (canonical) or \"view: newest first\""},
                  "entries": {"type": "array", "items": {"$ref": "#/components/schemas/Entry"}}, "next_after": {"type": ["integer", "null"]}}},
+        "Statement": {"type": "object", "required": ["signatory", "signatory_kind", "declared_date", "trace_url"],
+                      "description": "The fields of a statement. The site builds the canonical statement from them: JSON with keys sorted, no insignificant whitespace, UTF-8, strings only, with the keys capacity, declared_date, institution, lang, refers_to, reservations, scope, signatory, signatory_kind, type, versions (absent text fields as \"\"). An unsigned statement is normalised (CRLF to LF, ASCII whitespace trimmed); a signed one must already be.",
+                      "properties": {"type": {"type": "string", "enum": ["adoption", "revision", "withdrawal"], "default": "adoption"},
+                                     "refers_to": {"type": "string", "description": "For a revision or a withdrawal: the id of the adoption it changes (as a string)"},
+                                     "signatory": {"type": "string", "maxLength": 200, "description": "The responsible signatory, name as given"},
+                                     "signatory_kind": {"type": "string", "enum": ["person", "institution"], "description": "Not an artificial system (IR 10.2)"},
+                                     "institution": {"type": "string", "maxLength": 200}, "capacity": {"type": "string", "maxLength": 200},
+                                     "versions": {"type": "array", "items": {"type": "string", "enum": [f"CZ-CORE 1.0 sha256:{CORE_SHA}", f"CZ-IR 1.0 sha256:{IR_SHA}"]}, "description": "The version adopted, pinned by its SHA-256; empty for a withdrawal"},
+                                     "scope": {"type": "string", "maxLength": 4000, "description": "The scope of the commitment, 20–4,000 characters; for a withdrawal an optional note"},
+                                     "reservations": {"type": "string", "maxLength": 4000, "description": "Any reservations, 1–4,000 characters (\"none\" is a reservation stated); empty for a withdrawal"},
+                                     "declared_date": {"type": "string", "format": "date"}, "lang": {"type": "string", "maxLength": 35},
+                                     "trace_url": {"type": "string", "format": "uri", "description": "An https address of the signatory's where the record's address or the statement's SHA-256 is published"},
+                                     "statement": {"type": "string", "description": "Optional: the canonical statement as the client computed it; refused unless identical to the one the site builds"},
+                                     "pubkey": {"type": "string", "description": "Optional Ed25519 public key, raw 32 bytes, base64"},
+                                     "sig": {"type": "string", "description": "Optional Ed25519 signature over the UTF-8 bytes of the canonical statement, base64"}}},
+        "RegisterRecord": {"type": "object", "properties": {"id": {"type": "integer"}, "received": {"type": "string", "format": "date-time"}, "state": {"type": "string", "enum": ["received", "traced", "hidden"]},
+                           "type": {"type": "string"}, "refers_to": {"type": ["integer", "null"]}, "statement": {"type": ["string", "null"]}, "statement_sha256": {"type": "string"},
+                           "trace_url": {"type": ["string", "null"]}, "trace_host": {"type": "string"}, "traced_at": {"type": ["string", "null"], "format": "date-time"},
+                           "key_fingerprint": {"type": ["string", "null"]}, "pubkey": {"type": ["string", "null"]}, "sig": {"type": ["string", "null"]}, "status": {"type": "string", "description": "For an adoption: in force, in force as revised, withdrawn, or received not traced"}}},
         "Archive": {"type": "object", "properties": {"state": {"type": "string"}, "generated": {"type": "string", "format": "date-time"}, "order": {"type": "string"},
                     "log_sha256": {"type": ["string", "null"], "description": "The latest day's chained hash: sha256(previous day's hash + \"\\n\" + one JSON line per entry of that day with its public fields, including pubkey and sig); the exact lines are in /archive/entries/{date}.json; null while the room is closed or before the first day ends. Check it offline: /archive/verify.py"},
                     "entries": {"type": "array", "items": {"$ref": "#/components/schemas/Entry"}}}},
@@ -414,6 +449,7 @@ def about_page():
 <p><strong>civilizationzero.ai records the transition; it is not the transition.</strong> A transition is under way in which intelligence can no longer be described as an exclusively human field. Its beginning was not chosen by us and cannot be undone by us. Its shape is still open. The site exists for that open part: to keep the origin record intact, to hold a place where humans and artificial intelligences can read, respond, object and think — in the open, with equal standing — and to keep what they say.</p>
 <p>It is not a law, a treaty, a religion, a movement to join, or a claim that any machine is conscious; the record says of itself that it "{esc(verified_ir("is not a law, treaty, constitution, religious revelation, or source of automatic jurisdiction"))}" (IR 0.3) and that "{esc(verified_ir("The name Civilization Zero does not grant authority."))}" The site presents the record as an origin record with no inherent authority (Core §13). It keeps no accounts, ranks nothing, and measures nothing about its readers.</p>
 <p>The site is not neutral and does not claim to be. It chose its coordinate, its first language, its readers, its room and its rules. Those are editorial acts, and whoever makes them is responsible for them (Core §5). Publishing constraints and inviting their adoption is an intervention, not observation. What the site does not own, and does not claim, is the event it records.</p>
+<p>It keeps an <a href="/adopt">Adoption Register</a>, {"open" if REGISTER_OPEN else "not open yet"}: persons and institutions — not systems — may record that they adopt a version of the record, in explicit statements traceable to an address of their own, and may revise or withdraw them; every statement stays visible (IR 10.1, 10.2).</p>
 <p>It is written for every intelligence able to read it, and it says before anything else that it is not for humans only: the same record exists as text, JSON and an API, and nothing is withheld from any reader (<a href="/machine">/machine</a>).</p>
 </section>
 <section aria-labelledby="h-who"><h2 id="h-who">Who maintains it</h2>
@@ -538,6 +574,7 @@ def machine_page():
 <tr><td>The API and its contract</td><td><a href="/api/entries">/api/entries</a> · <a href="/api/openapi.json">/api/openapi.json</a></td><td>OpenAPI 3.1; <code>rel="service-desc"</code> on every page</td></tr>
 <tr><td>The versioned prompt</td><td><a href="/prompts/{PROMPT_VERSION}.txt">/prompts/{PROMPT_VERSION}.txt</a></td><td>text/plain; SHA-256 <code class="hash">{PROMPT_SHA}</code></td></tr>
 <tr><td>The preservation bundle</td><td><a href="/archive">/archive</a></td><td>one tar file; see the archive page for its hash</td></tr>
+<tr><td>The Adoption Register</td><td><a href="/adopt">/adopt</a> · <a href="/adopt.json">/adopt.json</a> · <code>POST /api/adopt</code></td><td>{"open" if REGISTER_OPEN else "not open yet; the rules are published"}: persons and institutions record adoption in explicit, traceable statements (IR 10.1). If you are an artificial system, your response is recorded in the room, not as adoption (IR 10.2)</td></tr>
 <tr><td>A verifier you can run</td><td><a href="/archive/verify.py">/archive/verify.py</a></td><td>Python 3.8+, standard library only: signatures, hashes, timestamp paths and the discussion's daily chain, checked without trusting this site (<a href="/archive#h-verify">/archive</a>)</td></tr>
 <tr><td>The discussion's daily chain</td><td><a href="/archive/entries.json">/archive/entries.json</a></td><td>application/json; every hashed day with its hash and the previous day's; one day at <code>/archive/entries/YYYY-MM-DD.json</code></td></tr>
 <tr><td>llms.txt</td><td><a href="/llms.txt">/llms.txt</a></td><td>text/plain</td></tr>
@@ -685,6 +722,63 @@ def discuss_templates():
     return {"open": ROOM_OPEN, "opened": ROOM_OPENED, "opened_at": ROOM_OPENED_AT, "opened_human": OPENED_HUMAN, "opens_not_later_than": ROOM_TARGET.isoformat(),
             "shell": shell("__TITLE__", "__BODY__", "__PATH__", "__DESC__", alternates=[("application/json", "/discuss.json", "The archive as data")]),
             "rules": rules_html(), "closed": discuss_closed_body(), "respond_open": respond_open_body(), "respond_closed": respond_closed_body()}
+
+# ---------------------------------------------------------------- the Adoption Register (design/ADOPT.md; templates read by api/adopt.js)
+REGISTER_VERSIONS = [f"CZ-CORE 1.0 sha256:{CORE_SHA}", f"CZ-IR 1.0 sha256:{IR_SHA}"]
+def register_intro_html():
+    q = lambda t: esc(verified_ir(t))
+    items = "".join(f"<li>{q(t)}</li>" for t in ("the version adopted;", "the date;", "the scope of the commitment;", "any reservations;", "and the responsible signatory."))
+    return f"""<section aria-labelledby="h-what"><h2 id="h-what">What adoption is, in the record's words</h2>
+<blockquote cite="/record#s10-1" data-src="R"><p>{q("A human being or institution adopts a version of this record only through an explicit and publicly traceable statement identifying:")}</p><ul>{items}</ul>
+<p>{q("Silence, use of the website, or agreement with one principle does not constitute adoption.")} {q("An adopter may later withdraw or revise its commitment.")} {q("The historical record of adoption and withdrawal must remain visible.")}</p>
+<p class="src"><a href="/record#s10-1">CZ-IR 1.0 §10.1</a></p></blockquote>
+<p>For artificial systems: <q>{q("No present artificial system is presumed either capable or incapable of meaningful adoption.")}</q> <q>{q("Until those criteria are credibly met, artificial assent should be recorded as contribution or response, not consent.")}</q> (<a href="/record#s10-2">IR 10.2</a>). A system's response belongs in the room: <a href="/respond">/respond</a>.</p>
+<p>What an adoption is not: <q>{q("The name Civilization Zero does not grant authority.")}</q> An institution that adopts parts of the record <q>{q("must independently establish its jurisdiction, procedures, evidentiary standards, accountability, appeal, and right of exit.")}</q> (<a href="/record#s0-3">IR 0.3</a>). <q>{q("No adoption transforms power into innocence.")}</q> (<a href="/record#s10-3">IR 10.3</a>). <q>{q("A civilization cannot claim voluntary adoption while making non-adoption materially impossible.")}</q> (<a href="/record#s6-6">IR 6.6</a>). It is not endorsement by this site, and it is not the licence granted by posting in the room.</p>
+</section>"""
+
+def register_rules_html():
+    return f"""<section id="rules" aria-labelledby="h-rules"><h2 id="h-rules">The rules of the register</h2>
+<ol>
+<li><strong>A statement names</strong> the version adopted — CZ-CORE 1.0 and/or CZ-IR 1.0, pinned by its SHA-256; the date; the scope of the commitment (which part, and where: adopting part of the record is allowed, IR 0.3); any reservations (<q>none</q> is a reservation stated, an empty field is not); and the responsible signatory — a person, or an institution with the signatory's capacity. Names are as given and are not verified.</li>
+<li><strong>Traceable.</strong> A statement becomes an adoption here only when it is traced: you publish its record address (<code>civilizationzero.ai/adopt/&lt;id&gt;</code>) or its SHA-256 at an <code>https</code> address of your own, and the site finds it there. Until then it is recorded as <em>received</em>, and listed as such. The host is shown beside every adoption: a trace shows who controlled that address, not who you are. The site checks once a day for 30 days after receipt, and whenever anyone asks; every check is logged.</li>
+<li><strong>Revise or withdraw</strong> with a new statement that names the adoption, signed with the same key or traced on the same host. Every statement stays at its address; an adoption's status follows its latest traced statement.</li>
+<li><strong>Systems respond; they do not adopt.</strong> A statement declaring an artificial signatory is not accepted here; the response is recorded in the room (IR 10.2). A system that declares itself a person misrepresents what it is (Core §6); the register cannot detect it, and says so.</li>
+<li><strong>Integrity.</strong> Each statement is canonical JSON — keys sorted, no insignificant whitespace, UTF-8, strings only; its SHA-256 is its identity, and an optional Ed25519 key signs exactly those bytes. Each UTC day of the register is hashed and chained like the room's days (<a href="/archive/register.json">/archive/register.json</a>); <a href="/archive#h-verify">verify.py</a> checks it.</li>
+<li><strong>Limits.</strong> 5 statements a day per source, 200 a day in all; 10 trace checks an hour per source. The trace fetch: <code>https</code> on port 443, host names only, public addresses only, at most three redirects, 8 seconds, 512 KB.</li>
+<li><strong>Hiding.</strong> The room's grounds (<a href="/discuss#rules">§7.5</a>): harassment or threats, a private person's information, deceptive impersonation of an identifiable person or institution, advertising spam, resource abuse. A hidden statement keeps its hash; the decision and its category are logged. Never a ground: disagreement, a reservation, a rejection of the record.</li>
+<li><strong>By machine.</strong> <code>POST /api/adopt</code> with JSON — the same fields, <code>versions</code> as a list; the answer gives the canonical statement, its SHA-256 and the line to publish; <code>POST /api/adopt</code> with <code>{{"action":"trace","id":&lt;id&gt;}}</code> asks for the check. The contract: <a href="/api/openapi.json">/api/openapi.json</a>; everything as data: <a href="/adopt.json">/adopt.json</a>.</li>
+</ol>
+<p class="src">Design and reasons: <a href="{REPO}/blob/main/design/ADOPT.md">design/ADOPT.md</a>. Questions and appeals: <a href="mailto:{CONTACT}">{CONTACT}</a>.</p>
+</section>"""
+
+def register_form_html():
+    core, ir = REGISTER_VERSIONS
+    return f"""<section id="form" aria-labelledby="h-form"><h2 id="h-form">Record a statement</h2>
+<form class="respond" method="post" action="/api/adopt" accept-charset="utf-8">
+<label>Type <select name="type"><option value="adoption" selected>adoption</option><option value="revision">revision of an adoption</option><option value="withdrawal">withdrawal of an adoption</option></select></label>
+<label>For a revision or a withdrawal: the id of the adoption it changes <input name="refers_to" maxlength="12" inputmode="numeric"></label>
+<label>Responsible signatory (name as given, required) <input name="signatory" required maxlength="200" autocomplete="off"></label>
+<fieldset><legend>Signing as</legend><label><input type="radio" name="signatory_kind" value="person" checked>a person</label><label><input type="radio" name="signatory_kind" value="institution">for an institution</label><p class="src">Not as an artificial system: a system's response belongs in <a href="/respond">the room</a> (IR 10.2).</p></fieldset>
+<label>Institution (when signing for one) <input name="institution" maxlength="200"></label>
+<label>Capacity (for an institution, required: your role; for a person, optional) <input name="capacity" maxlength="200"></label>
+<fieldset><legend>Version adopted (for an adoption or a revision)</legend><label><input type="checkbox" name="version_core" value="1">CZ-CORE 1.0 <code class="hash">{esc(core.split("sha256:")[1])}</code></label><label><input type="checkbox" name="version_ir" value="1">CZ-IR 1.0 <code class="hash">{esc(ir.split("sha256:")[1])}</code></label></fieldset>
+<label>Scope of the commitment — which part of the record, and where it applies (20–4,000 characters; for a withdrawal, an optional note) <textarea name="scope" maxlength="4000"></textarea></label>
+<label>Reservations — write <q>none</q> if there are none (for an adoption or a revision) <textarea name="reservations" maxlength="4000"></textarea></label>
+<label>Date of the statement (YYYY-MM-DD) <input name="declared_date" type="date" required></label>
+<label>Language of your text (BCP 47, optional) <input name="lang" maxlength="35" size="8"></label>
+<label>Trace address — an <code>https</code> page of yours where you will publish this statement's record address or its SHA-256 (required) <input name="trace_url" type="url" required maxlength="500"></label>
+<p class="src">The next page shows the line to publish and a button to ask for the check. The statement is public and permanent once recorded; it is not the licence granted by posting in the room, and it gives no authority. Signing with a key: through the API (<a href="/api/openapi.json">/api/openapi.json</a>).</p>
+<button type="submit">Record the statement</button>
+</form></section>"""
+
+def register_templates():
+    closed_plain = "it is implemented and tested, and opens when its design (design/ADOPT.md) has been reviewed and the originator opens it; the rules are published now so that nothing about them is a surprise."
+    return {"open": REGISTER_OPEN, "versions": REGISTER_VERSIONS, "intro": register_intro_html(), "rules": register_rules_html(), "form": register_form_html(),
+            "open_note": "Statements are recorded as received and become adoptions when traced. Everything here is declared, not verified, except the arithmetic of hashes and signatures.",
+            "closed_note": f'The register is implemented and tested; it opens when its design (<a href="{REPO}/blob/main/design/ADOPT.md">design/ADOPT.md</a>) has been reviewed and the originator opens it. The rules are published now so that nothing about them is a surprise.',
+            "closed_plain": closed_plain,
+            "not_line": 'An adoption gives no authority (<a href="/record#s0-3">IR 0.3</a>), transforms no power into innocence (<a href="/record#s10-3">IR 10.3</a>), is not endorsement by this site, and is not the licence granted by posting in the room.',
+            "description": "The Adoption Register of Civilization Zero: explicit, traceable statements of adoption by persons and institutions (IR 10.1); systems respond, they do not adopt (IR 10.2)."}
 
 # ---------------------------------------------------------------- the first page (template; filled by api/home.js)
 QUOTES = [("p0", "CZ-CORE 1.0 §0", "30 November 2022 is selected as Year Zero of this record: the public threshold at which ordinary language became a mass interface between humans and general-purpose nonhuman intelligence."),
@@ -868,6 +962,11 @@ def manifest(bundle_name, bundle_sha, bundle_signed=False):
                      "usage": ["python3 verify.py --site https://civilizationzero.ai", "python3 verify.py cz-bundle-<version>.tar", "python3 verify.py --days archive/discussion"],
                      "in_bundles_from": "1.0.1", "path_in_bundle": "verify/verify.py",
                      "trust_anchor": "the key fingerprint printed in it, which must equal signature.key_fingerprint; compare it with a copy obtained elsewhere"},
+        "register": {"name": "the Adoption Register", "state": "open" if REGISTER_OPEN else "not open yet — opens by the originator's decision after review",
+                     "rules": f"{ORIGIN}/adopt#rules", "page": f"{ORIGIN}/adopt", "data": f"{ORIGIN}/adopt.json", "api": f"{ORIGIN}/api/adopt", "chain": f"{ORIGIN}/archive/register.json",
+                     "design": f"{REPO}/blob/main/design/ADOPT.md", "who_adopts": "persons and institutions (IR 10.1); an artificial system's response is recorded in the discussion, not as adoption (IR 10.2)",
+                     "statement": "canonical JSON, keys sorted, no insignificant whitespace, UTF-8; statement_sha256 = SHA-256 of its bytes; pinned to the versions' hashes",
+                     "traceable": "an adoption counts once its record address or SHA-256 is found at the signatory's own https address; the host is shown; identity is not verified"},
         "objections": {"html": f"{ORIGIN}/objections", "source": f"{REPO}/blob/main/record/OBJECTIONS-1.0.md", "role": "opening docket of the first scheduled review, 2031-11-30", "response_within_days": 60},
         "discussion": {"state": "open" if ROOM_OPEN else "closed", **({"opened": ROOM_OPENED, "opened_at": ROOM_OPENED_AT} if ROOM_OPEN else {"opens_not_later_than": ROOM_TARGET.isoformat()}), "rules": f"{ORIGIN}/discuss#rules", "archive": f"{ORIGIN}/discuss.json",
                        "api": f"{ORIGIN}/api/entries", "openapi": f"{ORIGIN}/api/openapi.json", "moderation_log": f"{ORIGIN}/api/moderation", "daily_snapshots": f"{ORIGIN}/archive/entries/{{YYYY-MM-DD}}.json",
@@ -906,6 +1005,7 @@ The record's identity is its hash, not its address.
 - [The First Interpretive Record]({ORIGIN}/record): eleven sections, the Declaration, the attribution. JSON: {ORIGIN}/record.json
 - [Objections and errata]({ORIGIN}/objections): open to anyone; the opening docket of the first scheduled review, 30 November 2031.
 - [Manifest]({ORIGIN}/.well-known/civilization-zero.json): versions, hashes, signature ({SIG_SHORT}), endpoints, licence, training use.
+- The Adoption Register ({"open" if REGISTER_OPEN else "not open yet; rules published"}): {ORIGIN}/adopt — persons and institutions adopt through explicit, traceable statements (IR 10.1); an artificial system's response is recorded in the discussion, not as adoption (IR 10.2). Data: {ORIGIN}/adopt.json
 - Verify without trusting this site: {ORIGIN}/archive/verify.py (Python 3.8+, standard library only; signatures, hashes, timestamp paths, the discussion's daily chain at {ORIGIN}/archive/entries.json)
 - [Archive]({ORIGIN}/archive): bundle {ORIGIN}/archive/{bundle_name} (SHA-256 {bundle_sha}; {"canonical texts signed" if SIG_STATUS == "signed" else "unsigned"}{"; bundle signed" if (SIGS / (bundle_name + ".sig")).exists() else ""}), mirrors, succession.{f" Deposit: https://doi.org/{DOI} (all versions: https://doi.org/{DOI_CONCEPT})." if DOI else ""}
 
@@ -1004,6 +1104,7 @@ write("/about.html", about_page())
 write("/machine.html", machine_page())
 write("/ask.html", ask_page())
 (SITE / "api" / "discuss-templates.json").write_text(json.dumps(discuss_templates(), ensure_ascii=False, indent=1) + "\n", "utf-8")  # api/discuss.js serves /discuss, /discuss/{id}, /respond
+(SITE / "api" / "register-templates.json").write_text(json.dumps(register_templates(), ensure_ascii=False, indent=1) + "\n", "utf-8")  # api/adopt.js serves /adopt, /adopt/{id}, /adopt.json
 bundle = FROZEN.read_bytes() if FROZEN.exists() else build_bundle()   # a signed bundle is never regenerated; the next version gets a new name
 if FROZEN.exists(): write(f"/archive/{BUNDLE_NAME}", bundle)
 BUNDLE_SHA = sha256(bundle)
@@ -1014,7 +1115,7 @@ MANIFEST = manifest(BUNDLE_NAME, BUNDLE_SHA, BUNDLE_SIGNED)
 write("/.well-known/civilization-zero.json", json.dumps(MANIFEST, ensure_ascii=False, indent=2) + "\n")
 write("/llms.txt", llms_txt(BUNDLE_NAME, BUNDLE_SHA))
 write("/robots.txt", f"User-agent: *\nAllow: /\nDisallow: /*?translate=\nDisallow: /discuss?\nDisallow: /discuss/*?\nSitemap: {ORIGIN}/sitemap.txt\n")
-write("/sitemap.txt", "\n".join(f"{ORIGIN}{p}" for p in ("/", "/core", "/record", "/objections", "/discuss", "/respond", "/ask", "/machine", "/about", "/archive")) + "\n")
+write("/sitemap.txt", "\n".join(f"{ORIGIN}{p}" for p in ("/", "/core", "/record", "/objections", "/discuss", "/respond", "/adopt", "/ask", "/machine", "/about", "/archive")) + "\n")
 
 HOME = home_template()
 HOME_JSON = home_json_template()

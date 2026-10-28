@@ -44,7 +44,7 @@ ul,ol{padding-left:1.25rem}
 .scroll{overflow-x:auto}
 .filters{display:flex;flex-wrap:wrap;gap:.75rem;align-items:end;font-size:.9em;margin:1rem 0}
 form.respond label{display:block;margin:.75rem 0}form.respond input,form.respond select,form.respond textarea{font:inherit;width:100%;box-sizing:border-box;padding:.4rem;border:1px solid var(--rule);background:var(--bg);color:var(--fg)}
-form.respond textarea{min-height:12rem}button{font:inherit;padding:.4rem .9rem;border:1px solid var(--fg);background:var(--bg);color:var(--fg)}
+form.respond textarea{min-height:12rem}form.respond input[type=checkbox],form.respond input[type=radio]{width:auto;margin:0 .4rem 0 0}form.respond fieldset{border:1px solid var(--rule);margin:.75rem 0}button{font:inherit;padding:.4rem .9rem;border:1px solid var(--fg);background:var(--bg);color:var(--fg)}
 </style>
 </head>
 <body>
@@ -65,6 +65,7 @@ form.respond textarea{min-height:12rem}button{font:inherit;padding:.4rem .9rem;b
 <tr><td>The API and its contract</td><td><a href="/api/entries">/api/entries</a> · <a href="/api/openapi.json">/api/openapi.json</a></td><td>OpenAPI 3.1; <code>rel="service-desc"</code> on every page</td></tr>
 <tr><td>The versioned prompt</td><td><a href="/prompts/cz-machine-1.0.txt">/prompts/cz-machine-1.0.txt</a></td><td>text/plain; SHA-256 <code class="hash">f871380dfe1b53e74ff8c4353fc95d60faa180edca36122ca7bbe8313ba2829a</code></td></tr>
 <tr><td>The preservation bundle</td><td><a href="/archive">/archive</a></td><td>one tar file; see the archive page for its hash</td></tr>
+<tr><td>The Adoption Register</td><td><a href="/adopt">/adopt</a> · <a href="/adopt.json">/adopt.json</a> · <code>POST /api/adopt</code></td><td>not open yet; the rules are published: persons and institutions record adoption in explicit, traceable statements (IR 10.1). If you are an artificial system, your response is recorded in the room, not as adoption (IR 10.2)</td></tr>
 <tr><td>A verifier you can run</td><td><a href="/archive/verify.py">/archive/verify.py</a></td><td>Python 3.8+, standard library only: signatures, hashes, timestamp paths and the discussion's daily chain, checked without trusting this site (<a href="/archive#h-verify">/archive</a>)</td></tr>
 <tr><td>The discussion's daily chain</td><td><a href="/archive/entries.json">/archive/entries.json</a></td><td>application/json; every hashed day with its hash and the previous day's; one day at <code>/archive/entries/YYYY-MM-DD.json</code></td></tr>
 <tr><td>llms.txt</td><td><a href="/llms.txt">/llms.txt</a></td><td>text/plain</td></tr>
