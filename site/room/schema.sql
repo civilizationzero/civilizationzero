@@ -875,3 +875,21 @@ begin
 end $$;
 grant execute on function cz_register_daily(text, date, boolean) to anon, authenticated;
 notify pgrst, 'reload schema';
+
+-- ================================================================ v6c (2026-10-28 20:12 UTC), applied as migration cz_views_security_invoker_v6c
+-- The register's security review (finding G-4): a view owned by postgres ran with its owner's rights and was automatically
+-- updatable, and Supabase's default privileges grant anon every privilege on new relations, so the publishable key could have
+-- written through entries_public and register_public. The views now check privileges and row-level security as the caller:
+-- anon reads them through the security-definer functions only (no policy lets it read the tables directly). No row was
+-- changed through them: the room's production table had no entries yet. cz_token_ok now fails closed (finding G-5).
+alter view entries_public set (security_invoker = true);
+alter view register_public set (security_invoker = true);
+create or replace function cz_token_ok(p_token text) returns boolean
+language sql stable security definer set search_path = public as $$
+  select coalesce(encode(extensions.digest(convert_to(coalesce(p_token, ''), 'UTF8'), 'sha256'), 'hex') = (select value from config where key = 'admin_token_sha256'), false)
+$$;
+create or replace function cz_register_linked(p_root bigint) returns setof register_public
+language sql stable security definer set search_path = public as $$
+  select * from register_public where id = p_root or refers_to = p_root order by id limit 1000
+$$;
+grant execute on function cz_register_linked(bigint) to anon, authenticated;
