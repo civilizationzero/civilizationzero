@@ -12,7 +12,7 @@ Your answer will be read by the human and the artificial system building the sit
 ----------------------------------------------------------------------
 1. WHERE TO LOOK
 ----------------------------------------------------------------------
-Base URL for this test: {{BASE}}
+Base URL for this test: https://civilization-zero-git-room-test-sharifmatrix.vercel.app  (written below as {{BASE}})
 (On this base the room behaves as open. The public site https://civilizationzero.ai shows the same pages with the room still closed; compare them if you can.)
 
 Read, in this order:
