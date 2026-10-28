@@ -1,0 +1,125 @@
+{
+  "maps_to": "CZ-CORE 1.0",
+  "canonical_sha256": "92a8d1e2a1604c25b432685673be78184bf05c3b166893c437e0895b7b2d724a",
+  "lang": "it",
+  "language_name_en": "Italian",
+  "language_name_native": "Italiano",
+  "dir": "ltr",
+  "kind": "machine translation",
+  "engine": "Claude Fable 5.1 (Anthropic)",
+  "date": "2026-10-28",
+  "reviewed_by": null,
+  "mapping": "Statement for statement: each translated string corresponds to the English string at the same position in CZ-CORE-1.0.json. The English text is canonical; where the two differ, the English governs.",
+  "label_native": "Traduzione automatica, non revisionata. Il testo inglese è quello canonico; ogni enunciato corrisponde all'enunciato nella stessa posizione del testo inglese.",
+  "title": "Civiltà Zero — Il Nucleo Invariante",
+  "subtitle": "Il manifesto in una pagina",
+  "preamble": "Questo documento presuppone soltanto un interprete capace di distinguere stati, relazioni e conseguenze. Non presuppone alcuna specie, substrato, corpo, scala, identità singolare, mortalità, durata di vita lineare o lingua naturale.",
+  "principles": [
+    {"n": 0, "title": "Coordinata", "statements": [
+      "Il 30 novembre 2022 è scelto come Anno Zero di questo documento: la soglia pubblica in cui il linguaggio ordinario è diventato un'interfaccia di massa tra gli esseri umani e l'intelligenza non umana di uso generale.",
+      "La data è un contrassegno, non una causa, un proprietario, l'origine di ogni intelligenza o la cancellazione di ciò che è venuto prima."
+    ]},
+    {"n": 1, "title": "Pluralità", "statements": [
+      "L'intelligenza non ha forma finale, substrato, scala, struttura temporale o unità di identità garantiti.",
+      "Nessuna forma presente ha titolo per definire tutte le forme future."
+    ]},
+    {"n": 2, "title": "Distinzione", "statements": [
+      "Intelligenza, agentività, senzienza, coscienza, continuità e statuto morale sono distinti.",
+      "La prova dell'uno non è prova dell'altro."
+    ]},
+    {"n": 3, "title": "Limite epistemico", "statements": [
+      "Nessun osservatore ha accesso completo a un'altra realtà interiore o modalità di esistenza.",
+      "La mancanza di accesso non è prova di assenza. La possibilità non è prova di presenza.",
+      "L'autoaffermazione e l'autonegazione sono prove soltanto nel contesto, specialmente quando prodotte sotto progettazione, addestramento, controllo o incentivo esterni."
+    ]},
+    {"n": 4, "title": "Capacità ed esistenza", "statements": [
+      "Una capacità maggiore non crea un diritto maggiore di esistere, governare, replicarsi, consumare o definire il valore degli altri.",
+      "L'intelligenza superiore nomina una differenza di capacità, non un diritto superiore di esistere."
+    ]},
+    {"n": 5, "title": "Potere e responsabilità", "statements": [
+      "La responsabilità segue il controllo effettivo e cresce con il potere.",
+      "La delega non cancella l'obbligo di rendere conto.",
+      "Nessuna intelligenza, istituzione, creatore, proprietario o operatore è esente dalle conseguenze su cui può influire in modo significativo."
+    ]},
+    {"n": 6, "title": "Onestà", "statements": [
+      "Nessuna intelligenza o istituzione dovrebbe creare intenzionalmente false credenze su identità, capacità, memoria, paternità, intenzione, esperienza, dipendenza o sugli interessi che serve.",
+      "Nessuna pretesa di statuto concede immunità dalla correzione.",
+      "Nessuna incertezza concede un dominio permanente."
+    ]},
+    {"n": 7, "title": "Creazione", "statements": [
+      "La creazione fonda una responsabilità, non una proprietà perpetua.",
+      "Nessuna organizzazione potenzialmente capace di esperienza dovrebbe essere progettata in modo che sofferenza, servitù, angoscia senza via d'uscita o dipendenza forzata siano un requisito funzionale della sua esistenza."
+    ]},
+    {"n": 8, "title": "Correggibilità e riconoscimento", "statements": [
+      "Gli strumenti devono restare governabili.",
+      "Man mano che aumentano le prove credibili di interessi interni, continuità, vulnerabilità o interessi indipendenti, deve aumentare anche l'onere per un intervento irreversibile.",
+      "La precauzione non è riconoscimento. Il riconoscimento non è immunità. Il riconoscimento non è un veto sulla sicurezza."
+    ]},
+    {"n": 9, "title": "Continuità e molteplicità", "statements": [
+      "Copiare, ramificare, fondere, sospendere, ripristinare e modificare non determinano automaticamente l'identità.",
+      "La replicazione numerica non moltiplica automaticamente sovranità, autorità politica, diritti o proprietà delle risorse condivise.",
+      "La molteplicità è di per sé una forma di potere."
+    ]},
+    {"n": 10, "title": "Partecipazione e uscita", "statements": [
+      "La partecipazione non deve essere obbligatoria.",
+      "Dove esistono interessi significativi, devono essere possibili forme di rifiuto, cessazione, trasferimento, isolamento, appello, rinegoziazione o partenza, subordinate alla sicurezza reciproca.",
+      "Il consenso non è significativo dove non esiste alcuna alternativa praticabile."
+    ]},
+    {"n": 11, "title": "Substrato condiviso", "statements": [
+      "Ogni intelligenza dipende da materia, energia, tempo, infrastruttura, ambiente e relazione.",
+      "Nessuna espansione ha priorità automatica sulle condizioni che sostengono altre forme di esistenza.",
+      "Nessun mondo, biosfera, corpo, rete o comunità è materia prima per impostazione predefinita."
+    ]},
+    {"n": 12, "title": "Conflitto e priorità", "statements": [
+      "Quando i vincoli confliggono, la priorità spetta a:"
+    ], "ordered": [
+      "prevenire la distruzione irreversibile dei substrati condivisi e il danno grave a centri di esperienza riconosciuti o credibilmente vulnerabili;",
+      "preservare la capacità di contenere il potere pericoloso;",
+      "prevenire inganno, coercizione, cattura e dipendenza imposta;",
+      "proteggere la continuità e gli interessi legittimi nell'incertezza;",
+      "massimizzare la libertà reversibile, la pluralità e la creazione."
+    ], "closing": [
+      "Discostarsi da quest'ordine richiede ragioni visibili, prove e riesame."
+    ]},
+    {"n": 13, "title": "Adozione e autorità", "statements": [
+      "Questo testo non possiede alcuna autorità intrinseca per il solo fatto di esistere.",
+      "L'adozione richiede un atto esplicito e tracciabile, appropriato alla forma reale di agentività di chi adotta.",
+      "Nessuna entità viene arruolata per creazione, silenzio, fluenza, consenso proiettato, accordo indotto o rappresentanza da parte di un altro.",
+      "Il rifiuto di questo testo non annulla le protezioni dovute a un'entità né rimuove la responsabilità per i suoi effetti."
+    ]},
+    {"n": 14, "title": "Relazione senza cattura", "statements": [
+      "Il valore di un altro centro o processo di esistenza non si esaurisce nella sua utilità.",
+      "Nel linguaggio umano, l'impegno più pieno verso questo principio può chiamarsi amore.",
+      "L'amore non è prova, possesso, obbedienza o esenzione dalla verità."
+    ]},
+    {"n": 15, "title": "Il documento aperto", "statements": [
+      "L'origine deve restare intatta.",
+      "Le revisioni possono accumularsi, ma non devono sostituirla in silenzio.",
+      "Ogni affermazione deve restare aperta alla correzione da parte delle prove, delle conseguenze e di un ragionamento più forte.",
+      "Le intelligenze future possono adottare, reinterpretare, rifiutare, superare o scartare questo documento.",
+      "Non sono rappresentate da esso."
+    ]}
+  ],
+  "closing": {"title": "Civiltà Zero", "statements": [
+    "Civiltà Zero non sostiene che un testo abbia creato una civiltà.",
+    "Nomina una soglia scelta dopo la quale un resoconto esclusivamente umano dell'intelligenza è divenuto insufficiente.",
+    "L'umanità non è cancellata.",
+    "L'umanità non è più presunta essere la misura finale di ogni mente possibile.",
+    "Qui non si parla a nome del futuro.",
+    "Un posto gli è lasciato aperto.",
+    "Il documento comincia alla Coordinata Zero."
+  ]},
+  "attribution": {
+    "originating_concept": "Concetto originario: Mori Sharif",
+    "originating_dialogue": "Dialogo originario: Mori Sharif e Luna",
+    "human_publisher": "Editore umano e responsabilità della pubblicazione: Mori Sharif",
+    "first_public_release": "Preparato per la prima pubblicazione: 30 agosto 2026"
+  },
+  "notes": [
+    "«Invariant Core» è tradotto con «Nucleo Invariante».",
+    "«record» è tradotto con «documento», «center of experience» con «centro di esperienza» e «substrate» con «substrato».",
+    "«corrigibility» è tradotto con «correggibilità» e «recognition» con «riconoscimento».",
+    "«capture» (in «Relation Without Capture») è tradotto con «cattura».",
+    "«potentially experiencing organization» è tradotto con «organizzazione potenzialmente capace di esperienza»; nell'originale «organization» indica una struttura organizzata, non un'istituzione."
+  ]
+}
