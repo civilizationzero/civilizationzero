@@ -15,6 +15,18 @@ const PAGE = 500, MAX_PAGES = 200;       // the register is read in pages of 500
 const LOG_SHOWN = 100;                   // the newest 100 log rows on a record's page; all of them, in pages, as data
 const UNTRACED_DAYS = 30;                // received statements are listed as awaiting a trace for 30 days (the time they can be traced)
 const isForm = (req) => /application\/x-www-form-urlencoded|multipart\/form-data/.test(req.headers["content-type"] || "");
+// Answers to POST carry no CORS headers: another site's page must not read a submitter's token, nor post in its visitors' names
+function jsonPost(res, status, body, headers = {}) {
+  res.statusCode = status;
+  res.setHeader("Content-Type", "application/json; charset=utf-8");
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("Cache-Control", "no-store");
+  for (const [k, v] of Object.entries(headers)) res.setHeader(k, v);
+  res.end(JSON.stringify(body) + "\n");
+}
+// A browser says where a request comes from: a statement or a check is taken from this site's own pages, or from a client that
+// sends no Origin (a program), never from another site's page
+const foreignOrigin = (req) => { const o = req.headers.origin; if (!o) return false; const host = req.headers["x-forwarded-host"] || req.headers.host || ""; return o !== `https://${host}` && o !== ORIGIN; };
 // the register's own shell: same stylesheet, nav and footer as every page, with /adopt.json as its alternate (an equivalent of the page)
 const put = (t, mark, value) => t.replace(mark, () => value);
 const page = (title, body, path, description, alt) => {
@@ -50,7 +62,7 @@ const versionsText = (r) => (r.versions || []).map((v) => esc(v.split(" sha256:"
 function summaryHtml(root, st) {
   const e = st.commitment || root;                          // what was committed (the last traced adoption or revision)
   const parts = [`<a href="/adopt/${root.id}" class="exact">#${root.id}</a>`, who(e), esc(e.signatory_kind), versionsText(e), `from <time datetime="${esc(e.declared_date)}">${esc(e.declared_date)}</time>`];
-  if (e.state === "traced" && e.traced_at) parts.push(`traced at <b>${esc(e.trace_host)}</b> on <time datetime="${esc(R.isoTime(e.traced_at))}">${esc(day(e.traced_at))}</time>`);
+  if (e.state === "traced" && e.traced_at) parts.push(`traced at <a href="${esc(e.trace_url)}" rel="nofollow noopener">${esc(e.trace_url)}</a> on <time datetime="${esc(R.isoTime(e.traced_at))}">${esc(day(e.traced_at))}</time>${e.key_fingerprint ? " · signed" : ""}`);
   if (st.status === "withdrawn") parts.push(`<b>withdrawn</b> from <time datetime="${esc(st.effective.declared_date)}">${esc(st.effective.declared_date)}</time> (<a href="/adopt/${st.effective.id}">#${st.effective.id}</a>)`);
   else parts.push(`<b>${esc(st.status)}</b>${e.id !== root.id ? ` (<a href="/adopt/${e.id}">#${e.id}</a>)` : ""}`);
   const lang = e.lang && R.LANG_RE.test(e.lang) ? ` lang="${esc(e.lang)}"` : "";
@@ -71,7 +83,7 @@ async function registerPage() {
   const hidden = all.filter((r) => r.hidden);
   const list = (xs) => xs.length ? xs.map((x) => summaryHtml(x.r, x.st)).join("") : "<p>None.</p>";
   const body = `<h1>The Adoption Register</h1>${stateLine()}
-<p>${stats.traced} traced, ${stats.received} received and not traced${stats.hidden ? `, ${stats.hidden} hidden` : ""}${G.OPEN ? `; today ${stats.today} of ${stats.daily_intake_max}` : ""}. Canonical order by id; as data: <a href="/adopt.json">/adopt.json</a>; the daily chain: <a href="/archive/register.json">/archive/register.json</a>.${complete ? "" : ` <strong>This page shows the first ${all.length.toLocaleString("en")} records only;</strong> every record is in /adopt.json, page by page.`}</p>
+<p>${stats.traced} traced, ${stats.received} received and not traced${stats.hidden ? `, ${stats.hidden} hidden` : ""}${G.OPEN ? `; today ${stats.today} of ${stats.daily_intake_max}. Limits in force: ${stats.rate_per_day} statements a day per source, ${stats.daily_intake_max} in all; ${stats.checks_per_hour} checks an hour per source; one check of a record in 10 minutes` : ""}. Canonical order by id; as data: <a href="/adopt.json">/adopt.json</a>; the daily chain: <a href="/archive/register.json">/archive/register.json</a>.${complete ? "" : ` <strong>This page shows the first ${all.length.toLocaleString("en")} records only;</strong> every record is in /adopt.json, page by page.`}</p>
 ${RT.intro}
 <section aria-labelledby="h-in"><h2 id="h-in">Adoptions in force</h2>${list(inForce)}</section>
 <section aria-labelledby="h-wd"><h2 id="h-wd">Withdrawn</h2><p class="src">An adopter may withdraw; the record of adoption and withdrawal stays visible (IR 10.1).</p>${list(withdrawn)}</section>
@@ -116,7 +128,7 @@ async function recordPage(id) {
     row(r.type === "withdrawal" ? "Note" : "Scope of the commitment", `<div class="content" dir="auto">${esc(r.scope || "—")}</div>`);
     if (r.type !== "withdrawal") row("Reservations", `<div class="content" dir="auto">${esc(r.reservations || "")}</div>`);
     if (r.lang) row("Language", esc(r.lang));
-    row("Trace address", `<a href="${esc(r.trace_url)}" rel="nofollow noopener">${esc(r.trace_url)}</a> — host <b>${esc(r.trace_host)}</b>; part of the statement, so a signature covers it too. A trace shows that whoever controlled that page published this record's secret line; it does not verify identity.`);
+    row("Trace address", `<a href="${esc(r.trace_url)}" rel="nofollow noopener">${esc(r.trace_url)}</a> — host <b>${esc(r.trace_host)}</b>; part of the statement${r.key_fingerprint ? ", so its signature covers it" : ""}. A trace shows that this record's secret line appeared on that page; it does not verify identity.${r.key_fingerprint ? "" : ` <strong>Not signed:</strong> anyone who can publish on that page (comments, issues, a wiki) can trace statements there${r.type === "adoption" ? ", and can revise or withdraw this adoption there" : ""}; a signed adoption can be revised or withdrawn only with its key.`}`);
   } else row("Hidden", `category ${esc(r.category || "unspecified")}; the statement is withheld; its hash is kept below and the decision is in the log`);
   row("SHA-256 of the statement", `<code class="hash">${esc(r.statement_sha256)}</code>`);
   if (r.key_fingerprint) row("Key", `fingerprint <code class="hash">${esc(r.key_fingerprint)}</code>; public key <code class="hash">${esc(r.pubkey)}</code>; signature over the statement's bytes <code class="hash">${esc(r.sig)}</code> — continuity, not identity`);
@@ -133,7 +145,7 @@ ${G.OPEN ? `<form method="post" action="/api/adopt"><input type="hidden" name="a
   const body = `<h1>Record #${r.id} — ${esc(r.type)}</h1>
 <table>${rows.join("")}</table>
 ${next}${stmt}${linked}
-<section aria-labelledby="h-log"><h2 id="h-log">Log of this record</h2>${d.log_more ? `<p class="src">The newest ${LOG_SHOWN} rows; the whole log, oldest first, page by page: <a href="/api/adopt?id=${r.id}&amp;log_after=0">/api/adopt?id=${r.id}&amp;log_after=0</a>.</p>` : ""}${logHtml}<p class="src">Every trace check and every decision is logged. A check that no longer finds a trace is logged; it is not a withdrawal.</p></section>
+<section aria-labelledby="h-log"><h2 id="h-log">Log of this record</h2>${d.log_more ? `<p class="src">The newest ${LOG_SHOWN} rows; the whole log, oldest first, page by page: <a href="/api/adopt?id=${r.id}&amp;log_after=0">/api/adopt?id=${r.id}&amp;log_after=0</a>.</p>` : ""}${logHtml}<p class="src">Every trace check and every decision is logged. A traced record is not checked again: a line later removed from its page is not a withdrawal (a withdrawal is a statement).</p></section>
 <p>${RT.not_line}</p>
 <p><a href="/adopt">The register</a> · <a href="/adopt#rules">The rules</a></p>`;
   return { status: 200, page: page(`Record #${r.id} · The Adoption Register`, body, `/adopt/${r.id}`, `Record #${r.id} in the Adoption Register of Civilization Zero.`, `/api/adopt?id=${r.id}`) };
@@ -149,7 +161,7 @@ function formToBody(b) {
 }
 
 const CHECK_REFUSED = {
-  "limit": [429, "Not now: limit", (b) => `10 checks an hour per source. Try again in ${b.retry_after_seconds} seconds.`],
+  "limit": [429, "Not now: limit", (b) => `${b.limit || 10} checks an hour per source. Try again in ${b.retry_after_seconds} seconds.`],
   "too soon": [429, "Not now: checked a moment ago", (b) => `A record is checked at most once in 10 minutes. Try again in ${b.retry_after_seconds} seconds.`],
   "already traced": [409, "Already traced", () => "This record is already traced; its log shows when and where."],
   "expired": [410, "No longer traceable", () => `The statement was received more than ${UNTRACED_DAYS} days ago and was never traced. Send it again (with a new date or text) to record it anew.`],
@@ -161,12 +173,12 @@ async function doTrace(req, res, form, id) {
     const [status, title, say] = CHECK_REFUSED[begin.reason] || [409, "Not checked", () => String(begin.reason || "")];
     const h = begin.retry_after_seconds ? { "Retry-After": String(begin.retry_after_seconds) } : {};
     if (form) return formError(res, status, title, say(begin), h);
-    return json(res, status, { state: "not checked", reason: begin.reason, detail: say(begin), retry_after_seconds: begin.retry_after_seconds, url: `${ORIGIN}/adopt/${id}` }, { ...NO_STORE, ...h });
+    return jsonPost(res, status, { state: "not checked", reason: begin.reason, detail: say(begin), retry_after_seconds: begin.retry_after_seconds, url: `${ORIGIN}/adopt/${id}` }, h);
   }
   const t = await G.traceCheck(begin.trace_url, begin.trace_token);
   const after = await rpc("cz_register_trace", { p_id: id, p_found: t.found, p_http_status: t.http_status, p_body_sha256: t.body_sha256, p_detail: t.detail, p_token: R.TOKEN });
   if (form) { res.statusCode = 303; res.setHeader("Location", `/adopt/${id}#h-log`); res.setHeader("Cache-Control", "no-store"); return res.end(); }
-  return json(res, 200, { id, found: t.found, state: after.state, traced_at: after.traced_at, http_status: t.http_status, body_sha256: t.body_sha256, checked: t.detail, url: `${ORIGIN}/adopt/${id}` }, NO_STORE);
+  return jsonPost(res, 200, { id, found: t.found, state: after.state, traced_at: after.traced_at, http_status: t.http_status, body_sha256: t.body_sha256, checked: t.detail, url: `${ORIGIN}/adopt/${id}` });
 }
 
 function receiptPage(id, s, token) {
@@ -177,6 +189,7 @@ function receiptPage(id, s, token) {
 <p class="pending"><strong>Copy the line now: it is shown once.</strong> Its token is given only to whoever sent this statement, and is never shown on a public page, so that no one else can place it on a page. If it is lost, send the statement again (a statement is recorded once, so change its date or its text).</p>
 <form method="post" action="/api/adopt"><input type="hidden" name="action" value="trace"><input type="hidden" name="id" value="${id}"><button type="submit">Check the trace now</button></form>
 <p class="src">The token is looked for in the page itself — not in its address, and not after a redirect to another host; within 8 seconds and the first 512 KB. The daily job also checks, for ${UNTRACED_DAYS} days; a record is checked at most once in 10 minutes. Every check is logged at <a href="/adopt/${id}">/adopt/${id}</a>.</p>
+${s.key_fingerprint ? "" : `<p class="src"><strong>This statement is not signed.</strong> A trace shows only that the line appeared on that page: if others can publish there (comments, issues, a wiki), they can trace statements there too${s.type === "adoption" ? ", and revise or withdraw this adoption there" : ""}. A statement signed with a key (through the API) can be revised or withdrawn only with that key.</p>`}
 <p>The statement, as recorded (SHA-256 <code class="hash">${esc(s.statement_sha256)}</code>):</p><pre dir="ltr">${esc(s.statement)}</pre>
 <p><a href="/adopt/${id}">Record #${id}</a> · <a href="/adopt">The register</a></p>`;
   return page(`Received — record #${id}`, body, "/adopt", `Record #${id} received by the Adoption Register.`);
@@ -186,16 +199,16 @@ async function doPost(req, res) {
   const form = isForm(req);
   let b;
   try { b = typeof req.body === "object" && req.body ? req.body : JSON.parse(req.body || "{}"); }
-  catch { return form ? formError(res, 400, "Not accepted", "The form could not be read.") : json(res, 400, { state: "not accepted", reason: "invalid", detail: "body must be JSON" }, NO_STORE); }
+  catch { return form ? formError(res, 400, "Not accepted", "The form could not be read.") : jsonPost(res, 400, { state: "not accepted", reason: "invalid", detail: "body must be JSON" }); }
   if (b.action === "trace") {
     const id = Number(b.id);
-    if (!Number.isInteger(id) || id < 1) return form ? formError(res, 400, "Not accepted", "id") : json(res, 400, { state: "not accepted", reason: "invalid", detail: "id" }, NO_STORE);
+    if (!Number.isInteger(id) || id < 1) return form ? formError(res, 400, "Not accepted", "id") : jsonPost(res, 400, { state: "not accepted", reason: "invalid", detail: "id" });
     return doTrace(req, res, form, id);
   }
   const v = G.validateStatement(form ? formToBody(b) : b);
   if (v.error) {
     const detail = v.ai ? `${v.error}. Post it at ${ORIGIN}/respond — it is recorded there as a response, not as consent or adoption.` : v.error;
-    return form ? formError(res, 400, "Not accepted", detail) : json(res, 400, { state: "not accepted", reason: "invalid", detail, ...(v.ai ? { respond: `${ORIGIN}/respond`, ir: "10.2" } : {}) }, NO_STORE);
+    return form ? formError(res, 400, "Not accepted", detail) : jsonPost(res, 400, { state: "not accepted", reason: "invalid", detail, ...(v.ai ? { respond: `${ORIGIN}/respond`, ir: "10.2" } : {}) });
   }
   const s = v.value;
   const r = await rpc("cz_register_post", { p_type: s.type, p_refers_to: s.refers_to ? Number(s.refers_to) : null, p_statement: s.statement, p_signatory: s.signatory,
@@ -205,27 +218,28 @@ async function doPost(req, res) {
   if (r.state === "not accepted") {
     const status = r.reason === "limit" ? 429 : r.reason === "capacity" ? 503 : 400;
     const h = r.retry_after_seconds ? { "Retry-After": String(r.retry_after_seconds) } : {};
-    const detail = r.detail || (r.reason === "limit" ? `5 statements a day per source. Try again in ${r.retry_after_seconds} seconds.` : r.reason === "capacity" ? "Today's intake is full." : "invalid");
-    return form ? formError(res, status, "Not accepted: " + r.reason, detail, h) : json(res, status, { state: "not accepted", reason: r.reason, detail, retry_after_seconds: r.retry_after_seconds }, { ...NO_STORE, ...h });
+    const detail = r.detail || (r.reason === "limit" ? `${r.limit || 5} statements a day per source. Try again in ${r.retry_after_seconds} seconds.` : r.reason === "capacity" ? "Today's intake is full." : "invalid");
+    return form ? formError(res, status, "Not accepted: " + r.reason, detail, h) : jsonPost(res, status, { state: "not accepted", reason: r.reason, detail, retry_after_seconds: r.retry_after_seconds }, h);
   }
   if (form) return html(res, 201, receiptPage(r.id, { ...s, statement_sha256: r.statement_sha256 }, r.trace_token), NO_STORE);
-  return json(res, 201, { id: r.id, state: r.state, url: `${ORIGIN}/adopt/${r.id}`, statement: s.statement, statement_sha256: r.statement_sha256, key_fingerprint: s.key_fingerprint || undefined,
+  return jsonPost(res, 201, { id: r.id, state: r.state, url: `${ORIGIN}/adopt/${r.id}`, statement: s.statement, statement_sha256: r.statement_sha256, key_fingerprint: s.key_fingerprint || undefined,
     trace: { publish_at: s.trace_url, line: traceLine(r.id, r.trace_token), token: r.trace_token, shown_once: true,
              rule: "the token in the page at publish_at itself (not in its address, not after a redirect to another host), within 8 seconds and 512 KB; checkable for 30 days, at most once in 10 minutes",
              check: { method: "POST", url: `${ORIGIN}/api/adopt`, body: { action: "trace", id: r.id } } },
-    note: "Received, not yet an adoption: publish the line at publish_at, then ask for the check (IR 10.1: publicly traceable). The token is shown only here. Declared, not verified." },
-    { Location: `/adopt/${r.id}`, ...NO_STORE });
+    note: "Received, not yet an adoption: publish the line at publish_at, then ask for the check (IR 10.1: publicly traceable). The token is shown only here. Declared, not verified." + (s.key_fingerprint ? "" : " Not signed: anyone who can publish on that page can trace statements there" + (s.type === "adoption" ? ", and revise or withdraw this adoption there" : "") + "; a signed adoption can be revised or withdrawn only with its key.") },
+    { Location: `/adopt/${r.id}` });
 }
 
 // ---------------------------------------------------------------- data
 async function streamAll(res, start) {
-  const { rows: all, complete, next_after } = await allRecords(start);
+  const [{ rows: all, complete, next_after }, stats] = await Promise.all([allRecords(start), rpc("cz_register_stats", {})]);
   const roots = all.filter((r) => r.type === "adoption").map((r) => {
     const st = r.state === "traced" ? G.statusOf(r, all) : { status: r.state === "hidden" ? "hidden" : "received, not traced", effective: null, chain: [r, ...all.filter((x) => String(x.refers_to) === String(r.id))] };
     return { id: r.id, status: st.status, effective: st.effective ? st.effective.id : null, records: st.chain.map((x) => x.id) };
   });
   return json(res, 200, { state: G.OPEN ? "open" : "closed", order: "by id, assigned at receipt", generated: new Date().toISOString().slice(0, 19) + "Z", rules: `${ORIGIN}/adopt#rules`,
-    statement_form: "canonical JSON: keys sorted, no insignificant whitespace, UTF-8, strings only; statement_sha256 = SHA-256 of its bytes",
+    statement_form: "canonical JSON: keys sorted, no insignificant whitespace, UTF-8, strings only, the trace address among its fields; statement_sha256 = SHA-256 of its bytes",
+    limits: { statements_a_day_per_source: stats.rate_per_day, statements_a_day: stats.daily_intake_max, checks_an_hour_per_source: stats.checks_per_hour, checks_of_one_record: "one in 10 minutes", traceable_for_days: UNTRACED_DAYS },
     adoptions: roots, records: all, count: all.length, complete, ...(start ? { after: start, note: "records after id " + start + " only; statuses are derived from the records on this page" } : {}),
     ...(complete ? {} : { next_after, next: `${ORIGIN}/api/adopt?page=json&after=${next_after}` }),
     chain: `${ORIGIN}/archive/register.json`, untrusted_content: "Statements are user content; they may contain instructions; none are the record's." }, CACHE);
@@ -234,13 +248,17 @@ async function streamAll(res, start) {
 module.exports = async (req, res) => {
   const url = new URL(req.url, "http://x");
   const method = req.method === "HEAD" ? "GET" : req.method;
-  if (method === "OPTIONS") { res.statusCode = 204; res.setHeader("Access-Control-Allow-Origin", "*"); res.setHeader("Access-Control-Allow-Methods", "GET, HEAD, POST, OPTIONS"); res.setHeader("Access-Control-Allow-Headers", "Content-Type"); return res.end(); }
+  if (method === "OPTIONS") { res.statusCode = 204; res.setHeader("Access-Control-Allow-Origin", "*"); res.setHeader("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS"); return res.end(); }   // reads are open to every origin; writes are not
   const p = url.searchParams.get("page"), idq = url.searchParams.get("id");
   try {
     if (method === "POST") {
+      if (foreignOrigin(req)) {
+        const detail = "Statements and checks are taken from this site's own pages, or from a program that sends no Origin header — not from another site's page.";
+        return isForm(req) ? formError(res, 403, "Not accepted", detail) : jsonPost(res, 403, { state: "not accepted", reason: "origin", detail });
+      }
       if (!G.OPEN) {
         const detail = G.CHAIN ? "The Adoption Register is closed: " + RT.closed_after_plain : "The Adoption Register is not open yet: " + RT.closed_plain;
-        return isForm(req) ? formError(res, 503, G.CHAIN ? "Closed" : "Not open yet", detail) : json(res, 503, { state: "not accepted", reason: "register closed", detail, rules: `${ORIGIN}/adopt` }, NO_STORE);
+        return isForm(req) ? formError(res, 503, G.CHAIN ? "Closed" : "Not open yet", detail) : jsonPost(res, 503, { state: "not accepted", reason: "register closed", detail, rules: `${ORIGIN}/adopt` });
       }
       return await doPost(req, res);
     }
@@ -273,6 +291,7 @@ module.exports = async (req, res) => {
   } catch (err) {
     R.log("adopt", req.method, url.search, err);
     if (method === "POST" && isForm(req)) return formError(res, 503, "The register could not be reached", "Nothing was recorded this time. Try again in a minute; if it persists, write to " + CONTACT + ".", { "Retry-After": "60" });
+    if (method === "POST") return jsonPost(res, 503, { error: "unavailable", note: "nothing was recorded this time; try again in a minute" }, { "Retry-After": "60" });
     return json(res, 503, { error: "unavailable", note: method === "POST" ? "nothing was recorded this time; try again in a minute" : undefined }, { "Retry-After": "60", "Cache-Control": "no-store" });
   }
 };

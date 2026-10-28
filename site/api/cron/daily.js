@@ -33,7 +33,7 @@ module.exports = async (req, res) => {
     catch (e) { R.log("register daily", e); out.register = { error: String(e.message).slice(0, 200) }; }
   }
   // 3. while the register is open: re-check the traces of received statements (at most 30 days old, the least recently checked
-  //    first, each record at most once in 10 minutes), five at a time, within the budget
+  //    first, each record at most once in 10 minutes), five at a time, within the budget; a record is claimed when it is checked
   if (G.OPEN) {
     let checked = 0, found = 0;
     try {
@@ -41,7 +41,9 @@ module.exports = async (req, res) => {
       const worker = async () => {
         while (queue.length && left() > 9000) {
           const p = queue.shift();
-          const t = await G.traceCheck(p.trace_url, p.trace_token);
+          const begin = await rpc("cz_register_check_begin", { p_id: p.id, p_source_hash: null, p_token: R.TOKEN });
+          if (!begin.allowed) continue;   // checked by someone a moment ago, or traced meanwhile
+          const t = await G.traceCheck(begin.trace_url, begin.trace_token);
           await rpc("cz_register_trace", { p_id: p.id, p_found: t.found, p_http_status: t.http_status, p_body_sha256: t.body_sha256, p_detail: t.detail, p_token: R.TOKEN });
           checked++; if (t.found) found++;
         }

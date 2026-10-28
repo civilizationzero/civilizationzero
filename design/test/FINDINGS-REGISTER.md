@@ -254,3 +254,15 @@ another host (github.com to raw.githubusercontent.com) refused and logged as suc
 | G-12 | Display: "traced at" printed for an adoption never traced; an adoption both "in force" and "received, not traced" (low) | **verified** — only a traced adoption can be revised or withdrawn, and only a traced statement shows where it was traced |
 
 The verifier (1.4) checks the statement's trace address against the record's.
+
+The same agent checked the fixes (UTC 20:41–20:48) against its harness: every one held; six things remained, fixed in schema
+v6e (applied to both databases) and the code that follows `120db99`:
+
+| # | Finding (severity) | Status |
+|---|---|---|
+| G2-1 | Pages that carry other people's content (comments, issues, a wiki): anyone who can post on an unsigned adoption's page can trace a revision or withdrawal there, or a statement in an institution's name on any of its open pages (medium) | **verified** — inherent to tracing by page; stated where it matters: the form, the rules, the answer to a submission, and every unsigned record ("anyone who can publish on that page…"), with the advice to choose a page only the signatory can edit or to sign; the register shows the page's full address beside each adoption, not only its host |
+| G2-2 | A sentence had become false: "a later check that no longer finds it is logged" — traced records are not checked again (low) | **verified** — the pages and the design now say that a traced record is not checked again and that a line later removed is not a withdrawal |
+| G2-3 | Hard-coded numbers where the limits come from config (low) | **verified** — refusals carry the numbers in force; `/adopt` and `/adopt.json` show them |
+| G2-4 | A check refused as "too soon" still counted against the caller's hourly quota (low) | **verified** — the 10-minute rule is checked first and costs nothing; the quota is counted before the record is claimed, so a source over its quota cannot claim (and block) a record |
+| G2-5 | The token was readable cross-origin (`Access-Control-Allow-Origin: *` on the answer to POST): another site could post statements from its visitors' browsers and read their tokens (low) | **verified** — answers to POST carry no CORS headers, the preflight no longer allows POST, and a POST whose `Origin` is another site is refused (403) |
+| G2-6 | The daily job could be starved: its list took never-checked records first and claimed all fifty at once (low) | **verified** — the list claims nothing and is ordered by the time since each record's last check (or its receipt); each record is claimed when it is actually checked |

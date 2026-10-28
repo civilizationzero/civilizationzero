@@ -76,9 +76,11 @@ percent-decoded); redirects are followed only on the same origin, so the host sh
   receipt — at most once in 10 minutes for a record (G-7); after 30 days an untraced statement can no longer be traced and stays
   at its address as received. Each check is logged publicly: time, result, HTTP status, the address fetched, and the SHA-256 of
   the bytes fetched.
-- A trace shows that whoever controlled that address published the record. It does not verify identity; the register shows the
-  **host** beside every adoption so a reader can judge whether it is the institution's own (E: continuity, not identity, as in
-  the room). A later check that no longer finds it is logged, not treated as a withdrawal.
+- A trace shows that the line appeared on that page. It does not verify identity; the register shows the **page's full
+  address** beside every adoption so a reader can judge whose page it is (E: continuity, not identity, as in the room). If
+  others can publish on that page — comments, issues, a wiki — they can trace statements there too, and revise or withdraw an
+  unsigned adoption there (second review, G2-1): the form, the rules, the answer and every unsigned record say so, and point to
+  signing. A traced record is not checked again; a line later removed is not a withdrawal (a withdrawal is a statement).
 - The fetch is guarded (C): `https` on port 443 only, a host name (no IP literal), every resolved address public — the
   special-purpose ranges of the IANA registries refused exactly, and every IPv6 range that embeds or translates an IPv4 address
   refused whole (G-10) — checked in the resolver itself so the connection cannot be redirected after the check; an agent of its
@@ -113,9 +115,14 @@ accountability, appeal and right of exit (IR 0.3); the register records the stat
   `/archive/register.json`, one day at `/archive/register/{date}.json`; `verify.py` checks the chain, every statement's hash
   and every signature.
 - Limits: 5 statements per day per source (a salted hash of the network address, cleared after 30 days), 200 a day in all; 10
-  trace checks per hour per source; one check of a record in 10 minutes; the daily job re-checks up to 50 received statements,
-  the least recently checked first, five at a time, after the day's hashes are computed (the hashes come first). Disclosed
-  (C). The numbers are in the database's config, as the room's are.
+  trace checks per hour per source; one check of a record in 10 minutes (a check refused for that reason costs nothing); the
+  daily job re-checks up to 50 received statements, those that waited longest since their last check (or their receipt)
+  first, each claimed as it is checked, five at a time, after the day's hashes are computed (the hashes come first).
+  Disclosed (C). The numbers are in the database's config, as the room's are, and the numbers in force are shown on `/adopt`
+  and in `/adopt.json`.
+- Writes come from this site's pages or from programs: a `POST` whose `Origin` is another site is refused, and its answers carry
+  no CORS headers, so another site's page cannot read a submitter's token or post in its visitors' names (G2-5). Reads stay
+  open to every origin.
 - Paging: `/adopt.json` reads the whole register in pages and says `complete` (and where to continue when it is not); a record's
   page shows the newest 100 log rows and links to the whole log, page by page (G-7).
 - Moderation: the room's grounds for hiding (§7.5) apply — harassment or threats, a private person's information, deceptive

@@ -1031,3 +1031,62 @@ language plpgsql security definer set search_path = public as $$
 begin raise exception 'superseded: cz_register_pending2'; end $$;
 
 notify pgrst, 'reload schema';
+-- ================================================================ v6e (2026-10-28), migration cz_register_v6e_review2
+-- The register's second review pass: a check refused as "too soon" no longer costs the caller's hourly quota, and a source over
+-- its quota cannot claim (and so block) a record; the daily job's list no longer claims what it lists — each record is claimed
+-- when it is checked — and is ordered by when a record last had attention (its last check, else its receipt), so a day of new
+-- statements cannot starve older ones; the numbers in force are returned with every refusal and by cz_register_stats.
+create or replace function cz_register_check_begin(p_id bigint, p_source_hash text, p_token text)
+returns json language plpgsql security definer set search_path = public set timezone = 'UTC' as $$
+declare v register%rowtype; v_recent int; v_claimed bigint;
+        v_per_hour int := coalesce((select value::int from config where key = 'register_checks_per_hour'), 10);
+begin
+  if not cz_token_ok(p_token) then raise exception 'unauthorised'; end if;
+  select * into v from register where id = p_id;
+  if not found or v.state = 'hidden' then return json_build_object('allowed', false, 'reason', 'no such record'); end if;
+  if v.state = 'traced' then return json_build_object('allowed', false, 'reason', 'already traced', 'traced_at', v.traced_at); end if;
+  if v.received < now() - interval '30 days' then return json_build_object('allowed', false, 'reason', 'expired'); end if;
+  if v.trace_token is null then return json_build_object('allowed', false, 'reason', 'no trace token (a record from before 28 Oct 2026, 21:00 UTC)'); end if;
+  if v.last_check_at is not null and v.last_check_at > now() - interval '10 minutes' then   -- refused before anything is counted
+    return json_build_object('allowed', false, 'reason', 'too soon',
+      'retry_after_seconds', greatest(1, ceil(extract(epoch from (v.last_check_at + interval '10 minutes' - now())))::int));
+  end if;
+  if p_source_hash is not null then   -- checks per clock hour per source (10 unless configured), counted before the record is claimed
+    insert into register_checks (source_hash, hour, count) values (p_source_hash, date_trunc('hour', now()), 1)
+      on conflict (source_hash, hour) do update set count = register_checks.count + 1 where register_checks.count < v_per_hour
+      returning count into v_recent;
+    if v_recent is null then
+      return json_build_object('allowed', false, 'reason', 'limit', 'limit', v_per_hour,
+        'retry_after_seconds', greatest(1, ceil(extract(epoch from (date_trunc('hour', now()) + interval '1 hour' - now())))::int));
+    end if;
+  end if;
+  update register set last_check_at = clock_timestamp() where id = p_id and (last_check_at is null or last_check_at < now() - interval '10 minutes') returning id into v_claimed;
+  if v_claimed is null then   -- another check claimed it a moment ago
+    return json_build_object('allowed', false, 'reason', 'too soon', 'retry_after_seconds', 600);
+  end if;
+  return json_build_object('allowed', true, 'id', v.id, 'state', v.state, 'trace_url', v.trace_url, 'trace_token', v.trace_token);
+end $$;
+
+create or replace function cz_register_pending2(p_limit int, p_token text)
+returns table (id bigint, trace_url text, trace_token text)
+language plpgsql security definer set search_path = public set timezone = 'UTC' as $$
+begin
+  if not cz_token_ok(p_token) then raise exception 'unauthorised'; end if;
+  return query select r.id, r.trace_url, r.trace_token from register r
+    where r.state = 'received' and r.received > now() - interval '30 days' and r.trace_token is not null
+      and (r.last_check_at is null or r.last_check_at < now() - interval '10 minutes')
+    order by coalesce(r.last_check_at, r.received) asc, r.id
+    limit least(greatest(coalesce(p_limit, 50), 1), 100);
+end $$;
+
+create or replace function cz_register_stats()
+returns json language sql security definer set search_path = public set timezone = 'UTC' as $$
+  select json_build_object('records', (select count(*) from register), 'traced', (select count(*) from register where state = 'traced'),
+    'received', (select count(*) from register where state = 'received'), 'hidden', (select count(*) from register where state = 'hidden'),
+    'today', coalesce((select count from register_intake where day = current_date), 0),
+    'daily_intake_max', coalesce((select value::int from config where key = 'register_daily_intake'), 200),
+    'rate_per_day', coalesce((select value::int from config where key = 'register_rate_per_day'), 5),
+    'checks_per_hour', coalesce((select value::int from config where key = 'register_checks_per_hour'), 10),
+    'last_log', (select json_build_object('day', day, 'sha256', sha256, 'count', count) from register_hashes order by day desc limit 1))
+$$;
+notify pgrst, 'reload schema';
