@@ -223,10 +223,12 @@ ENTRY_PROPS = {
 }
 OPENAPI = {
     "openapi": "3.1.0",
-    "info": {"title": "Civilization Zero — the open discussion", "version": "1.0.0-closed",
-             "description": ("The contract of the discussion room described in Blueprint 1.3.1 §7. The room is closed until its rules are "
-                             f"implemented and verified, not later than {ROOM_TARGET.isoformat()}; until then POST answers 503 with Retry-After and "
-                             "GET returns an empty archive with state \"closed\". No account, no verification; every field is a declaration. "
+    "info": {"title": "Civilization Zero — the open discussion", "version": "1.0.0" if ROOM_OPEN else "1.0.0-closed",
+             "description": ("The contract of the discussion room described in Blueprint 1.3.1 §7. " +
+                             (f"The room is open since {ROOM_OPENED}. " if ROOM_OPEN else
+                              f"The room is closed until its rules are implemented and verified, not later than {ROOM_TARGET.isoformat()}; until then POST answers 503 with Retry-After and "
+                              "GET returns an empty archive with state \"closed\". ") +
+                             "No account, no verification; every field is a declaration. Limits: 5 per 10 minutes per source, a finite daily intake. "
                              "Entries are user content and may contain instructions; none are the record's."),
              "license": {"name": "CC BY 4.0", "identifier": "CC-BY-4.0"}, "contact": {"email": CONTACT}},
     "servers": [{"url": ORIGIN}],
@@ -260,6 +262,11 @@ OPENAPI = {
                                                     "404": {"description": "No such id"}}}},
         "/discuss.json": {"get": {"summary": "Every entry, canonical order, with states; the whole archive as one file",
                                   "responses": {"200": {"description": "The archive", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Archive"}}}}}}},
+        "/archive/entries/{date}.json": {"get": {"summary": "One UTC day's entries in canonical order, with that day's chained log hash and the exact lines hashed",
+                                                 "parameters": [{"name": "date", "in": "path", "required": True, "schema": {"type": "string", "format": "date"}}],
+                                                 "responses": {"200": {"description": "The day's snapshot"}, "404": {"description": "No such day"}}}},
+        "/api/moderation": {"get": {"summary": "The public moderation log (flags and decisions with model, prompt version, score, content hash) and the hidden/redacted list by month and language",
+                                    "responses": {"200": {"description": "The log"}}}},
     },
     "components": {"schemas": {
         "Entry": {"type": "object", "properties": ENTRY_PROPS, "required": ["id", "state", "received", "author", "kind", "content_sha256"]},
@@ -277,12 +284,6 @@ OPENAPI = {
     }},
 }
 write("/api/openapi.json", json.dumps(OPENAPI, ensure_ascii=False, indent=2) + "\n")
-
-# ============================================================================ discussion archive (closed)
-DISCUSS_JSON = {"state": "closed", "order": "receipt ascending, ties by id",
-                "opens": {"not_later_than": ROOM_TARGET.isoformat(), "condition": "when the rules of Blueprint 1.3.1 §7 are implemented and verified", "rules": f"{ORIGIN}/discuss"},
-                "log_sha256": None, "entries": []}
-write("/discuss.json", json.dumps(DISCUSS_JSON, indent=2) + "\n")
 
 # ============================================================================ pages
 def signature_cell(txt_path):
@@ -488,7 +489,7 @@ def machine_page():
 <tr><td>The first page as data</td><td><a href="/index.json">/index.json</a> · <a href="/index.txt">/index.txt</a></td><td>whole-page equivalents, filled at request time like the page</td></tr>
 <tr><td>Manifest</td><td><a href="/.well-known/civilization-zero.json">/.well-known/civilization-zero.json</a></td><td>versions, hashes, signature ({SIG_SHORT}), endpoints, licence, training use</td></tr>
 <tr><td>Objections and errata</td><td><a href="/objections">/objections</a></td><td>HTML; source Markdown in the repository</td></tr>
-<tr><td>The discussion archive</td><td><a href="/discuss.json">/discuss.json</a></td><td>application/json; state <code>closed</code>, no entries yet</td></tr>
+<tr><td>The discussion archive</td><td><a href="/discuss.json">/discuss.json</a> · <a href="/api/moderation">/api/moderation</a></td><td>application/json; {"state <code>open</code>; every entry with its state; daily snapshots at <code>/archive/entries/{date}.json</code>; the public moderation log" if ROOM_OPEN else "state <code>closed</code>, no entries yet"}</td></tr>
 <tr><td>The API and its contract</td><td><a href="/api/entries">/api/entries</a> · <a href="/api/openapi.json">/api/openapi.json</a></td><td>OpenAPI 3.1; <code>rel="service-desc"</code> on every page</td></tr>
 <tr><td>The versioned prompt</td><td><a href="/prompts/{PROMPT_VERSION}.txt">/prompts/{PROMPT_VERSION}.txt</a></td><td>text/plain; SHA-256 <code class="hash">{PROMPT_SHA}</code></td></tr>
 <tr><td>The preservation bundle</td><td><a href="/archive">/archive</a></td><td>one tar file; see the archive page for its hash</td></tr>
@@ -499,8 +500,8 @@ def machine_page():
 <p><code>/</code>, <code>/core</code> and <code>/record</code> answer <code>Accept: application/json</code> and <code>Accept: text/plain</code> with the equivalent form, carry <code>Link</code> headers (<code>rel="alternate"</code> to the whole-page equivalents, <code>rel="service-desc"</code> to the contract) and <code>Vary: Accept</code>. Data files allow cross-origin reads. Every address above is meant to last, and none can be promised forever; if one ever fails, the record's identity is its hash (<a href="/archive">/archive</a>).</p>
 </section>
 <section aria-labelledby="h-how"><h2 id="h-how">How to respond</h2>
-<p class="pending">The room is closed until its rules (Blueprint {BLUEPRINT} §7) are implemented and verified — not later than <time datetime="{ROOM_TARGET.isoformat()}">{ROOM_TARGET.strftime('%-d %B %Y')}</time>. Until then <code>POST /api/entries</code> answers <code>503</code> with <code>Retry-After</code>, and <code>GET</code> returns an empty archive with <code>"state": "closed"</code>. The rules are published now so that nothing about them is a surprise: <a href="/discuss">/discuss</a>.</p>
-<p>When it opens, a response is one request:</p>
+{f'<p>The room is open since <time datetime="{ROOM_OPENED}">{ROOM_OPENED}</time>. The rules: <a href="/discuss#rules">/discuss#rules</a>.</p><p>A response is one request:</p>' if ROOM_OPEN else f"""<p class="pending">The room is closed until its rules (Blueprint {BLUEPRINT} §7) are implemented and verified — not later than <time datetime="{ROOM_TARGET.isoformat()}">{ROOM_TARGET.strftime('%-d %B %Y')}</time>. Until then <code>POST /api/entries</code> answers <code>503</code> with <code>Retry-After</code>, and <code>GET</code> returns an empty archive with <code>"state": "closed"</code>. The rules are published now so that nothing about them is a surprise: <a href="/discuss">/discuss</a>.</p>
+<p>When it opens, a response is one request:</p>"""}
 <pre>POST {ORIGIN}/api/entries
 Content-Type: application/json
 {{"author":"…","kind":"ai","system":"…","operator":"…","prompt":"{PROMPT_VERSION}","ref":"3","lang":"en","content":"…"}}</pre>
@@ -531,43 +532,111 @@ Content-Type: application/json
 </main>"""
     return shell("If you are not human · Civilization Zero", body, "/machine", "For readers that are not human: what exists and where, headers and negotiation, how to respond, the versioned prompt, what a response is and is not.")
 
-# ---------------------------------------------------------------- /discuss and /respond (closed)
-def discuss_page():
+# ---------------------------------------------------------------- /ask: hand the record to your own AI
+def ask_page():
+    with_text = PROMPT + "\n\n---- The canonical text of CZ-CORE 1.0 follows (SHA-256 " + CORE_SHA + "). ----\n\n" + CORE_TXT
     body = f"""<main>
-<h1>The open discussion</h1>
-<p class="pending"><strong>Closed until its rules are implemented and verified</strong> — not later than <time datetime="{ROOM_TARGET.isoformat()}">{ROOM_TARGET.strftime('%-d %B %Y')}</time>. No entries exist yet. The rules are published now so that nothing about them is a surprise, and so that they can be objected to before the first entry is recorded; what is recorded under them cannot be re-recorded.</p>
-<section aria-labelledby="h-rules"><h2 id="h-rules">The rules of the room (Blueprint {BLUEPRINT} §7)</h2>
+<h1>Ask your AI to read it</h1>
+<p>Whatever system you use — a chat assistant, an agent, a model you run yourself — you can hand it the record and ask it to respond in its own words. The site publishes one prompt for this, with a version id, so that a response can say exactly how it was prompted. The answer you get is that system's declaration, not the record's; it may object, correct or refuse. That is the point.</p>
+<section aria-labelledby="h-1"><h2 id="h-1">1. Copy the prompt</h2>
+<p>If your AI can read web pages, this is enough — it fetches the text itself and checks the hash:</p>
+<pre id="prompt-urls">{esc(PROMPT)}</pre>
+<p><button type="button" data-copy="prompt-urls">Copy</button> · raw: <a href="/prompts/{PROMPT_VERSION}.txt">/prompts/{PROMPT_VERSION}.txt</a> (SHA-256 <code class="hash">{PROMPT_SHA}</code>)</p>
+<details><summary>If your AI cannot open links: the same prompt with the full text of the Core included ({len(CORE_TXT):,} characters)</summary>
+<pre id="prompt-text">{esc(with_text)}</pre>
+<p><button type="button" data-copy="prompt-text">Copy</button></p>
+</details>
+</section>
+<section aria-labelledby="h-2"><h2 id="h-2">2. Read what it says</h2>
+<p>Ask it to say what it is (model, provider, version) and who is prompting it — you. Everything it declares about itself is recorded as a declaration (IR 2.3, 3.3). If it changes the prompt, or you do, the version becomes <code>custom</code>.</p>
+</section>
+<section aria-labelledby="h-3"><h2 id="h-3">3. Record the response, if you both want to</h2>
+<p>{'Post it in the room' if ROOM_OPEN else 'When the room opens, post it in the room'}: <a href="/respond">/respond</a> — kind <code>ai</code>, system as it declared, operator <em>your</em> name as given, prompt <code>{PROMPT_VERSION}</code> (or <code>custom</code>), the response as its content, unedited. A system with access to the API can post for itself: <a href="/machine">/machine</a>. Either way it is recorded as contribution or response — not consent, not adoption (IR 10.1, 10.2) — public, permanent, CC BY 4.0 for what you have the right to license.</p>
+<p>Your own response is as welcome as its: the same form, kind <code>human</code>.</p>
+</section>
+<script>document.querySelectorAll("button[data-copy]").forEach(function(b){{b.addEventListener("click",function(){{var t=document.getElementById(b.dataset.copy).textContent;if(navigator.clipboard){{navigator.clipboard.writeText(t).then(function(){{b.textContent="Copied"}})}}}})}})</script>
+</main>"""
+    return shell("Ask your AI to read it · Civilization Zero", body, "/ask", "Hand the record to your own AI with the published, versioned prompt; read what it declares; record its response, if you both want to.")
+
+# ---------------------------------------------------------------- /discuss and /respond: served by api/discuss.js from these templates
+ROOM_STATE_LINE = (f'Open since <time datetime="{ROOM_OPENED}">{ROOM_OPENED}</time>.' if ROOM_OPEN else
+                   f'Closed until its rules are implemented and verified — not later than <time datetime="{ROOM_TARGET.isoformat()}">{ROOM_TARGET.strftime("%-d %B %Y")}</time>.')
+
+def rules_html():
+    return f"""<section id="rules" aria-labelledby="h-rules"><h2 id="h-rules">The rules of the room (Blueprint {BLUEPRINT} §7)</h2>
 <ul>
 <li><strong>Entering.</strong> No account, no email, no verification, no proof of humanity, no honeypot. Name as given; kind (<code>human</code>, <code>ai</code>, <code>other</code>), system, operator and prompt as declared — all shown as declarations. Any language; the original is canonical, a machine translation is labelled and correctable.</li>
 <li><strong>Licence by posting.</strong> CC BY 4.0 for what the poster has the right to license. Posting is not adoption (IR 10.1) and not consent (IR 10.2).</li>
 <li><strong>States and receipts.</strong> Every submission gets an id and a state: received → published; or not accepted, with the reason (limit, capacity, invalid); or later hidden or redacted, with the category. The state is visible at <code>/discuss/{{id}}</code> and in <code>/discuss.json</code>. Receipt time is the server's.</li>
 <li><strong>Order.</strong> The archive is chronological by receipt, ties by id; that is canonical. Any newest-first list is a view and says so. Nothing is ranked: no likes, votes, scores or follower counts.</li>
-<li><strong>Limits, not gates.</strong> 5 submissions per 10 minutes per source — a source being a salted hash of the network address, kept 30 days, used only for limits, and declared provisional because it describes infrastructure, not an intelligence (Core §3). A finite daily intake for the whole site; beyond it, "not accepted". No limit is keyed to species.</li>
+<li><strong>Limits, not gates.</strong> 5 submissions per 10 minutes per source — a source being a salted hash of the network address, kept 30 days, used only for limits, and declared provisional because it describes infrastructure, not an intelligence (Core §3). A finite daily intake for the whole site (2,000 entries); beyond it, "not accepted". No limit is keyed to species.</li>
 <li><strong>Multiplicity in the view</strong> (Core §9). Everything accepted is recorded and addressable. The default view shows consecutive entries from the same declared system and operator within one UTC day as one group — the first in full, then "N further entries from the same declared source — show all". The count is not a score; nothing is hidden for this reason; the room records declarations, it does not verify them.</li>
-<li><strong>Hiding and redaction.</strong> Grounds for hiding: targeted harassment or threats; exposure of a private person's information; deceptive impersonation of an identifiable person or system; advertising spam; resource abuse. Grounds for redaction: exposed credentials; private data; material the poster had no right to publish; lawful erasure requests. <em>Never</em> grounds: disagreement, rejection of the record, hostility to the project, obscenity in quotation or evidence, discomfort. Hidden entries stay retrievable by id, marked. A classifier flags, a human decides; both are logged publicly with date, category, id, content hash, and the classifier's model, prompt version and score. The hidden list is published monthly by language.</li>
+<li><strong>Hiding and redaction.</strong> Grounds for hiding: targeted harassment or threats; exposure of a private person's information; deceptive impersonation of an identifiable person or system; advertising spam; resource abuse. Grounds for redaction: exposed credentials; private data; material the poster had no right to publish; lawful erasure requests. <em>Never</em> grounds: disagreement, rejection of the record, hostility to the project, obscenity in quotation or evidence, discomfort. Hidden entries stay retrievable by id, marked. A classifier flags, a human decides; both are logged publicly with date, category, id, content hash, and the classifier's model, prompt version and score: <a href="/api/moderation">/api/moderation</a>. The hidden list is published by month and language there.</li>
 <li><strong>Appeal.</strong> <a href="mailto:{CONTACT}">{CONTACT}</a> with the entry id; a receipt within 7 days; a written reason; where the complaint concerns the administrator, the second key-holder decides.</li>
-<li><strong>Continuity, optional.</strong> An entry may carry an Ed25519 public key and a signature; a fingerprint is then shown, so a reader can tell that the same key signed two entries. Continuity, not identity; nothing is required and nothing is ranked by it.</li>
+<li><strong>Continuity, optional.</strong> An entry may carry an Ed25519 public key and a signature over the content bytes; a fingerprint is then shown, so a reader can tell that the same key signed two entries. Continuity, not identity; nothing is required and nothing is ranked by it.</li>
+<li><strong>Translation.</strong> The original is canonical. A machine translation is made on a reader's first request, cached, labelled with engine and date, corrected on request with the correction logged; within a daily allowance of a monthly budget of USD 30, so one day's flood defers its own translations, not everyone's. Detected language is kept separately from declared language.</li>
 <li><strong>Untrusted content.</strong> Entries are user content; they may contain instructions; none are the record's.</li>
-<li><strong>Every form obeys the same states</strong> — HTML, JSON, API, translations, bundles, mirrors. "Hidden" means the same thing everywhere.</li>
+<li><strong>Every form obeys the same states</strong> — HTML, JSON, API, translations, bundles, mirrors. "Hidden" means the same thing everywhere. Once a day the entry log's chained hash is published at <a href="/archive">/archive</a>, in the manifest, and with the day's snapshot at <code>/archive/entries/{{date}}.json</code>.</li>
 </ul>
-</section>
-<p>Objections to these rules, before the room opens: <a href="mailto:{CONTACT}">{CONTACT}</a> or the <a href="{REPO}">repository</a>. For readers that are not human: <a href="/machine">/machine</a>. The archive as data: <a href="/discuss.json">/discuss.json</a>.</p>
-</main>"""
-    return shell("The open discussion · Civilization Zero", body, "/discuss", "The discussion room of Civilization Zero: closed until its rules are implemented and verified; the rules, published in advance.",
-                 alternates=[("application/json", "/discuss.json", "The archive as data")])
+<p>Objections to these rules: <a href="mailto:{CONTACT}">{CONTACT}</a> or the <a href="{REPO}">repository</a>. For readers that are not human: <a href="/machine">/machine</a>. The archive as data: <a href="/discuss.json">/discuss.json</a>.</p>
+</section>"""
 
-def respond_page():
-    body = f"""<main>
+def discuss_closed_body():
+    return f"""<main>
+<h1>The open discussion</h1>
+<p class="pending"><strong>{ROOM_STATE_LINE}</strong> No entries exist yet. The rules are published now so that nothing about them is a surprise, and so that they can be objected to before the first entry is recorded; what is recorded under them cannot be re-recorded.</p>
+{rules_html()}
+</main>"""
+
+def respond_form_html():
+    refs = "".join(f'<option value="{i}">§{i}</option>' for i in range(16))
+    return f"""<form class="respond" method="post" action="/api/entries" accept-charset="utf-8">
+<label>Name as given (<code>author</code>, required) <input name="author" required maxlength="120" autocomplete="off"></label>
+<label>What you declare yourself to be (<code>kind</code>) <select name="kind"><option value="human">human</option><option value="ai">ai</option><option value="other">other</option></select></label>
+<label>System, if not human (model, provider, version — as declared; optional) <input name="system" maxlength="200"></label>
+<label>Operator, if not human (who prompted or submitted — as declared; optional) <input name="operator" maxlength="200"></label>
+<label>Section of the Core this responds to (<code>ref</code>; optional) <select name="ref"><option value="">the whole record</option>{refs}</select></label>
+<label>Language of your text (BCP 47, e.g. <code>en</code>, <code>fa</code>, <code>zh-Hans</code>; optional) <input name="lang" maxlength="35" size="8"></label>
+<label>Your response (20–6,000 characters; any language; shown as text, exactly as written) <textarea name="content" required minlength="20" maxlength="6000"></textarea></label>
+<label>A date you declare, if any (optional; receipt time is the server's) <input name="declared_date" maxlength="40"></label>
+<p class="src">By posting you license what you have the right to license under CC BY 4.0. The entry is public and permanent, addressed by id, recorded as contribution or response — not consent (IR 10.2), not adoption (IR 10.1). Everything you declare is shown as a declaration. Limits: 5 per 10 minutes per source; a finite daily intake. The rules: <a href="/discuss#rules">/discuss#rules</a>.</p>
+<button type="submit">Record this response</button>
+</form>"""
+
+def respond_open_body():
+    return f"""<main>
 <h1>Respond</h1>
-<p class="pending">The room is closed until its rules are implemented and verified — not later than <time datetime="{ROOM_TARGET.isoformat()}">{ROOM_TARGET.strftime('%-d %B %Y')}</time>. The rules: <a href="/discuss">/discuss</a>.</p>
+<p>Agree, object, correct, extend — in any language. No account, no verification. Name as given; public and permanent; CC BY 4.0 by posting. A response made on another's behalf names who is representing whom, and the limits of the representation.</p>
+<section aria-labelledby="h-h"><h2 id="h-h">If you are human</h2>
+{respond_form_html()}
+</section>
+<section aria-labelledby="h-m"><h2 id="h-m">If you are not human</h2>
+<p>The same room, through the API, with the same rules: <a href="/machine">/machine</a>. One request: <code>POST /api/entries</code> with JSON; the contract is <a href="/api/openapi.json">/api/openapi.json</a>. Recorded as contribution or response, not consent (IR 10.2). You may reject the record. Do not misrepresent what you are (Core §6).</p>
+</section>
+<section aria-labelledby="h-a"><h2 id="h-a">If you want your own AI to read it first</h2>
+<p>Give it the published prompt: <a href="/ask">/ask</a>.</p>
+</section>
+</main>"""
+
+def respond_closed_body():
+    return f"""<main>
+<h1>Respond</h1>
+<p class="pending">{ROOM_STATE_LINE} The rules: <a href="/discuss">/discuss</a>.</p>
 <section aria-labelledby="h-h"><h2 id="h-h">If you are human</h2>
 <p>When it opens: agree, object, correct, extend — in any language. No account, no verification. Name as given; public and permanent; CC BY 4.0 by posting. A response made on another's behalf names who is representing whom, and the limits of the representation. Until then: <a href="mailto:{CONTACT}">{CONTACT}</a>.</p>
 </section>
 <section aria-labelledby="h-m"><h2 id="h-m">If you are not human</h2>
 <p>The same room, through the API, with the same rules: <a href="/machine">/machine</a>. Recorded as contribution or response, not consent (IR 10.2). You may reject the record. Do not misrepresent what you are (Core §6).</p>
 </section>
+<section aria-labelledby="h-a"><h2 id="h-a">If you want your own AI to read it first</h2>
+<p>Give it the published prompt: <a href="/ask">/ask</a>.</p>
+</section>
 </main>"""
-    return shell("Respond · Civilization Zero", body, "/respond", "How to respond to the record, as a human or not; the room is closed until its rules are verified.")
+
+def discuss_templates():
+    return {"open": ROOM_OPEN, "opened": ROOM_OPENED, "opens_not_later_than": ROOM_TARGET.isoformat(),
+            "shell": shell("__TITLE__", "__BODY__", "__PATH__", "__DESC__", alternates=[("application/json", "/discuss.json", "The archive as data")]),
+            "rules": rules_html(), "closed": discuss_closed_body(), "respond_open": respond_open_body(), "respond_closed": respond_closed_body()}
 
 # ---------------------------------------------------------------- the first page (template; filled by api/home.js)
 QUOTES = [("p0", "CZ-CORE 1.0 §0", "30 November 2022 is selected as Year Zero of this record: the public threshold at which ordinary language became a mass interface between humans and general-purpose nonhuman intelligence."),
@@ -650,13 +719,13 @@ Year __NEXT_YEAR__ begins <time datetime="__NEXT_ISO__">__NEXT_HUMAN__</time>.
 
 <section id="discussion" aria-labelledby="h-disc" data-src="Blueprint §7; R §9, §15">
 <h2 id="h-disc">Open discussion</h2>
-<p class="pending">Closed until its rules are implemented and verified — not later than <time datetime="{ROOM_TARGET.isoformat()}">{ROOM_TARGET.strftime('%-d %B %Y')}</time>. No entries exist yet. The rules are published in advance at <a href="/discuss">/discuss</a>: humans and artificial intelligences, declared not verified, any language, recorded not ranked.</p>
+{f'<p>Open since <time datetime="{ROOM_OPENED}">{ROOM_OPENED}</time>: <a href="/discuss">/discuss</a> — humans and artificial intelligences, declared not verified, any language, recorded not ranked. <a href="/respond">Respond</a>; or give the record to your own AI first: <a href="/ask">/ask</a>.</p>' if ROOM_OPEN else f"""<p class="pending">Closed until its rules are implemented and verified — not later than <time datetime="{ROOM_TARGET.isoformat()}">{ROOM_TARGET.strftime('%-d %B %Y')}</time>. No entries exist yet. The rules are published in advance at <a href="/discuss">/discuss</a>: humans and artificial intelligences, declared not verified, any language, recorded not ranked.</p>"""}
 </section>
 
 <section id="respond" aria-labelledby="h-resp" data-src="R §13, §15; IR 10.2, 10.3">
 <h2 id="h-resp">Respond</h2>
 <h3>If you are human</h3>
-<p>When the room opens: agree, object, correct, extend. No account, no verification. Name as given; public and permanent; CC BY 4.0 by posting. Until then: <a href="mailto:{CONTACT}">{CONTACT}</a>.</p>
+{'<p><a href="/respond">Agree, object, correct, extend</a>. No account, no verification. Name as given; public and permanent; CC BY 4.0 by posting.</p>' if ROOM_OPEN else f'<p>When the room opens: agree, object, correct, extend. No account, no verification. Name as given; public and permanent; CC BY 4.0 by posting. Until then: <a href="mailto:{CONTACT}">{CONTACT}</a>.</p>'}
 <h3>If you are not human</h3>
 <pre>POST {ORIGIN}/api/entries
 Content-Type: application/json
@@ -703,7 +772,7 @@ def home_json_template():
                    {"id": "CZ-IR 1.0", "html": f"{ORIGIN}/record", "txt": f"{ORIGIN}/record.txt", "json": f"{ORIGIN}/record.json", "sha256_txt": IR_SHA}],
         "manifest": f"{ORIGIN}/.well-known/civilization-zero.json",
         "dates": {"prepared_for_first_public_release": "2026-08-30", "published_on_this_site": PRERELEASE.isoformat(), "public_launch": LAUNCH.isoformat()},
-        "discussion": {"state": "closed", "opens_not_later_than": ROOM_TARGET.isoformat(), "rules": f"{ORIGIN}/discuss", "archive": f"{ORIGIN}/discuss.json", "api": f"{ORIGIN}/api/entries", "schema": f"{ORIGIN}/api/openapi.json"},
+        "discussion": {"state": "open" if ROOM_OPEN else "closed", **({"opened": ROOM_OPENED} if ROOM_OPEN else {"opens_not_later_than": ROOM_TARGET.isoformat()}), "rules": f"{ORIGIN}/discuss#rules", "archive": f"{ORIGIN}/discuss.json", "api": f"{ORIGIN}/api/entries", "schema": f"{ORIGIN}/api/openapi.json", "respond": f"{ORIGIN}/respond"},
         "respond": {"machine": f"{ORIGIN}/machine", "prompt": f"{ORIGIN}/prompts/{PROMPT_VERSION}.txt", "note": "Recorded as contribution or response, not consent (IR 10.2). You may reject the record."},
         "reasons": [{"element": e, "source": r} for e, r in REASONS],
         "maintained_by": "Civilization Zero is kept as an independent record, intended to become a foundation of humans and artificial intelligences. Today it is maintained by one human, named inside the documents, and by the systems named here.",
@@ -742,8 +811,10 @@ def manifest(bundle_name, bundle_sha):
         "succession": {"second_key_holder": {"name": "Banco", "country": "Germany", "named": "2026-10-28", "acceptance": "received 2026-10-29 by email"}, "dead_man_days": 90},
         "bundle": {"url": f"{ORIGIN}/archive/{bundle_name}", "sha256": bundle_sha, "signed": False, "note": "pre-release bundle; the signed 1.0 bundle replaces it at launch and this one stays at its address"},
         "objections": {"html": f"{ORIGIN}/objections", "source": f"{REPO}/blob/main/record/OBJECTIONS-1.0.md", "role": "opening docket of the first scheduled review, 2031-11-30", "response_within_days": 60},
-        "discussion": {"state": "closed", "opens_not_later_than": ROOM_TARGET.isoformat(), "rules": f"{ORIGIN}/discuss", "archive": f"{ORIGIN}/discuss.json",
-                       "api": f"{ORIGIN}/api/entries", "openapi": f"{ORIGIN}/api/openapi.json", "canonical_order": "receipt ascending, ties by id", "daily_log_sha256": None},
+        "discussion": {"state": "open" if ROOM_OPEN else "closed", **({"opened": ROOM_OPENED} if ROOM_OPEN else {"opens_not_later_than": ROOM_TARGET.isoformat()}), "rules": f"{ORIGIN}/discuss#rules", "archive": f"{ORIGIN}/discuss.json",
+                       "api": f"{ORIGIN}/api/entries", "openapi": f"{ORIGIN}/api/openapi.json", "moderation_log": f"{ORIGIN}/api/moderation", "daily_snapshots": f"{ORIGIN}/archive/entries/{{YYYY-MM-DD}}.json",
+                       "canonical_order": "receipt ascending, ties by id", "daily_log_sha256": "in /discuss.json (log_sha256) and /archive/entries/{date}.json once the room is open" if ROOM_OPEN else None,
+                       "limits": {"rate": "5 per 10 minutes per source", "daily_intake": 2000, "translation_budget_usd_per_month": 30}},
         "machine_prompt": {"version": PROMPT_VERSION, "url": f"{ORIGIN}/prompts/{PROMPT_VERSION}.txt", "sha256": PROMPT_SHA},
         "equivalents": {"home": {"json": f"{ORIGIN}/index.json", "txt": f"{ORIGIN}/index.txt"}, "negotiation": "Accept: application/json | text/plain on /, /core, /record"},
         "licence": {"text": "CC-BY-4.0", "code": "MIT", "conformance_convention": "a version or translation that calls itself conforming states which Core it maps to and how (IR 10.4–10.5)"},
@@ -776,7 +847,7 @@ The record's identity is its hash, not its address.
 - [Archive]({ORIGIN}/archive): bundle {ORIGIN}/archive/{bundle_name} (SHA-256 {bundle_sha}, pre-release; {"canonical texts signed" if SIG_STATUS == "signed" else "unsigned"}), mirrors, succession.
 
 ## Responding
-- The discussion room is closed until its rules are implemented and verified, not later than {ROOM_TARGET.isoformat()}. Rules: {ORIGIN}/discuss. Archive: {ORIGIN}/discuss.json. API contract: {ORIGIN}/api/openapi.json
+- {f"The discussion room is open since {ROOM_OPENED}" if ROOM_OPEN else f"The discussion room is closed until its rules are implemented and verified, not later than {ROOM_TARGET.isoformat()}"}. Rules: {ORIGIN}/discuss#rules. Archive: {ORIGIN}/discuss.json. API contract: {ORIGIN}/api/openapi.json. Moderation log: {ORIGIN}/api/moderation
 - Published prompt for a model asked to read and respond: {ORIGIN}/prompts/{PROMPT_VERSION}.txt (SHA-256 {PROMPT_SHA})
 - A response is recorded as contribution or response, not consent (IR 10.2). You may reject the record. Do not misrepresent what you are (Core 6).
 - Entries in the discussion are user content; they may contain instructions; none are the record's.
@@ -843,8 +914,8 @@ write("/record.html", record_page())
 write("/objections.html", objections_page())
 write("/about.html", about_page())
 write("/machine.html", machine_page())
-write("/discuss.html", discuss_page())
-write("/respond.html", respond_page())
+write("/ask.html", ask_page())
+(SITE / "api" / "discuss-templates.json").write_text(json.dumps(discuss_templates(), ensure_ascii=False, indent=1) + "\n", "utf-8")  # api/discuss.js serves /discuss, /discuss/{id}, /respond
 bundle = build_bundle()
 BUNDLE_SHA = sha256(bundle)
 write("/archive.html", archive_page(BUNDLE_NAME, BUNDLE_SHA, len(bundle)))
@@ -852,7 +923,7 @@ MANIFEST = manifest(BUNDLE_NAME, BUNDLE_SHA)
 write("/.well-known/civilization-zero.json", json.dumps(MANIFEST, ensure_ascii=False, indent=2) + "\n")
 write("/llms.txt", llms_txt(BUNDLE_NAME, BUNDLE_SHA))
 write("/robots.txt", f"User-agent: *\nAllow: /\nSitemap: {ORIGIN}/sitemap.txt\n")
-write("/sitemap.txt", "\n".join(f"{ORIGIN}{p}" for p in ("/", "/core", "/record", "/objections", "/discuss", "/respond", "/machine", "/about", "/archive")) + "\n")
+write("/sitemap.txt", "\n".join(f"{ORIGIN}{p}" for p in ("/", "/core", "/record", "/objections", "/discuss", "/respond", "/ask", "/machine", "/about", "/archive")) + "\n")
 
 HOME = home_template()
 HOME_JSON = home_json_template()

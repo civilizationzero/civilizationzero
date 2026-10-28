@@ -104,7 +104,7 @@
   },
   "bundle": {
     "url": "https://civilizationzero.ai/archive/cz-bundle-1.0-pre.tar",
-    "sha256": "969cb78d58976cbe0700fda8fea3ce1c79339248ff2c443f3b8f436bd52c8a82",
+    "sha256": "7c7960d50257ad83295810672655386f34345667694391631e8c1ab264ee215d",
     "signed": false,
     "note": "pre-release bundle; the signed 1.0 bundle replaces it at launch and this one stays at its address"
   },
@@ -117,12 +117,19 @@
   "discussion": {
     "state": "closed",
     "opens_not_later_than": "2026-11-30",
-    "rules": "https://civilizationzero.ai/discuss",
+    "rules": "https://civilizationzero.ai/discuss#rules",
     "archive": "https://civilizationzero.ai/discuss.json",
     "api": "https://civilizationzero.ai/api/entries",
     "openapi": "https://civilizationzero.ai/api/openapi.json",
+    "moderation_log": "https://civilizationzero.ai/api/moderation",
+    "daily_snapshots": "https://civilizationzero.ai/archive/entries/{YYYY-MM-DD}.json",
     "canonical_order": "receipt ascending, ties by id",
-    "daily_log_sha256": null
+    "daily_log_sha256": null,
+    "limits": {
+      "rate": "5 per 10 minutes per source",
+      "daily_intake": 2000,
+      "translation_budget_usd_per_month": 30
+    }
   },
   "machine_prompt": {
     "version": "cz-machine-1.0",

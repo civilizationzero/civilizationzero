@@ -8,7 +8,7 @@
       "permanent": true
     },
     {
-      "source": "/:page(core|record|objections|discuss|respond|machine|about|archive).html",
+      "source": "/:page(core|record|objections|ask|machine|about|archive).html",
       "destination": "/:page",
       "permanent": true
     },
@@ -94,7 +94,7 @@
           "value": "(.*)application/json(.*)"
         }
       ],
-      "destination": "/discuss.json"
+      "destination": "/api/archive"
     },
     {
       "source": "/",
@@ -126,11 +126,15 @@
     },
     {
       "source": "/discuss",
-      "destination": "/discuss.html"
+      "destination": "/api/discuss"
     },
     {
       "source": "/respond",
-      "destination": "/respond.html"
+      "destination": "/api/discuss?page=respond"
+    },
+    {
+      "source": "/ask",
+      "destination": "/ask.html"
     },
     {
       "source": "/machine",
@@ -150,7 +154,26 @@
     },
     {
       "source": "/discuss/:id",
+      "has": [
+        {
+          "type": "header",
+          "key": "accept",
+          "value": "(.*)application/json(.*)"
+        }
+      ],
       "destination": "/api/entries?id=:id"
+    },
+    {
+      "source": "/discuss/:id",
+      "destination": "/api/discuss?id=:id"
+    },
+    {
+      "source": "/discuss.json",
+      "destination": "/api/archive"
+    },
+    {
+      "source": "/archive/entries/:date(\\d{4}-\\d{2}-\\d{2}).json",
+      "destination": "/api/archive?date=:date"
     }
   ],
   "headers": [
@@ -384,6 +407,34 @@
           "value": "public, max-age=3600"
         }
       ]
+    },
+    {
+      "source": "/discuss.json",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Vary",
+          "value": "Accept"
+        }
+      ]
+    },
+    {
+      "source": "/api/moderation",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        }
+      ]
+    }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/daily",
+      "schedule": "20 0 * * *"
     }
   ]
 }

@@ -40,18 +40,24 @@ class P(HTMLParser):
         if self.stack and self.stack[-1] == t: self.stack.pop()
         else: self.err.append((t, self.stack[-3:]))
 
-FUNCTION_ROUTES = {"/", "/index.json", "/index.txt", "/api/entries"}
+FUNCTION_ROUTES = {"/", "/index.json", "/index.txt", "/api/entries", "/discuss", "/discuss.json", "/respond", "/api/moderation", "/api/cron/daily"}
 def resolves(path):
-    if path in FUNCTION_ROUTES or re.match(r"^/api/entries/\d+$", path): return True
+    if path in FUNCTION_ROUTES or re.match(r"^/(api/entries|discuss)/\d+$", path) or re.match(r"^/archive/entries/\d{4}-\d{2}-\d{2}\.json$", path): return True
     p = path.lstrip("/")
     return (PUBLIC / p).exists() or (PUBLIC / (p + ".html")).exists()
 
 pages = sorted(PUBLIC.glob("*.html")) + [SITE / "preview" / "index.html"]
+DT = json.loads((SITE / "api" / "discuss-templates.json").read_text("utf-8"))
+def dshell(title, body, path): return DT["shell"].replace("__TITLE__", title).replace("__DESC__", "d").replace("__PATH__", path).replace("__BODY__", body)
+VIRTUAL = {"discuss.html": dshell("The open discussion", DT["closed"], "/discuss"),
+           "discuss-open.html": dshell("The open discussion", "<main><h1>The open discussion</h1><p>x</p>" + DT["rules"] + "</main>", "/discuss"),
+           "respond.html": dshell("Respond", DT["respond_closed"], "/respond"), "respond-open.html": dshell("Respond", DT["respond_open"], "/respond")}
+check(DT["open"] == ROOM_OPEN and DT["opens_not_later_than"] == "2026-11-30" and (not ROOM_OPEN or DT["opened"]), "discuss templates state")
 ids_by_page = {}
 parsed = {}
-for f in pages:
-    h = f.read_text("utf-8"); p = P(); p.feed(h); parsed[f] = p
-    name = "/" if f.name == "index.html" else "/" + f.stem
+for f in pages + [pathlib.Path("virtual") / n for n in VIRTUAL]:
+    h = VIRTUAL[f.name] if f.parent.name == "virtual" else f.read_text("utf-8"); p = P(); p.feed(h); parsed[f] = p
+    name = "/" if f.name == "index.html" else "/" + f.stem.replace("-open", "")
     ids_by_page[name] = p.ids
     check(not p.err and not p.stack, f"{f.name}: HTML nesting {p.err} unclosed {p.stack}")
     check(p.h1 == 1, f"{f.name}: {p.h1} h1 elements")
@@ -67,7 +73,7 @@ for f in pages:
     for m in re.findall(r'<script type="application/ld\+json">(.*?)</script>', h, re.S):
         try: json.loads(m)
         except Exception as e: fails.append(f"{f.name}: JSON-LD {e}")
-    check(len(to_text(h)) > 500, f"{f.name}: text extraction too short")
+    check(len(to_text(h)) > 500 or f.parent.name == "virtual", f"{f.name}: text extraction too short")
 # links and fragments, after all ids are known
 for f, p in parsed.items():
     for href in p.hrefs:
@@ -80,16 +86,15 @@ for f, p in parsed.items():
             if target in ids_by_page: check(frag in ids_by_page[target], f"{f.name}: missing anchor {href}")
 
 # 3. data files
-for name in ("core.json", "record.json", "core.schema.json", "discuss.json", "api/openapi.json", ".well-known/civilization-zero.json"):
+for name in ("core.json", "record.json", "core.schema.json", "api/openapi.json", ".well-known/civilization-zero.json"):
     try: json.loads((PUBLIC / name).read_text("utf-8"))
     except Exception as e: fails.append(f"{name}: {e}")
 man = json.loads((PUBLIC / ".well-known/civilization-zero.json").read_text("utf-8"))
 check({d["sha256"] for d in man["documents"]} == {CORE_SHA, IR_SHA}, "manifest hashes")
-check(man["signature"]["status"] in ("pending", "key published; signatures pending", "signed") and man["discussion"]["state"] == "closed", "manifest states")
+check(man["signature"]["status"] in ("pending", "key published; signatures pending", "signed") and man["discussion"]["state"] == ("open" if ROOM_OPEN else "closed"), "manifest states")
 oa = json.loads((PUBLIC / "api/openapi.json").read_text("utf-8"))
 check("/api/entries" in oa["paths"] and "429" in oa["paths"]["/api/entries"]["post"]["responses"], "openapi contract")
-dj = json.loads((PUBLIC / "discuss.json").read_text("utf-8"))
-check(dj["state"] == "closed" and dj["entries"] == [], "discuss.json closed state")
+check(not (PUBLIC / "discuss.json").exists() and not (PUBLIC / "discuss.html").exists() and not (PUBLIC / "respond.html").exists(), "discuss/respond must be served by the function, not static files")
 llms = (PUBLIC / "llms.txt").read_text("utf-8")
 check(CORE_SHA in llms and IR_SHA in llms, "llms.txt hashes")
 prompt = sorted((PUBLIC / "prompts").glob("*.txt"))[0].read_bytes()
@@ -153,7 +158,13 @@ check(man["signature"]["release_manifest_sha256"] == sha256((PUBLIC / ".well-kno
 # 6. vercel.json and the functions exist
 v = json.loads((SITE / "vercel.json").read_text("utf-8"))
 check(any(r.get("source") == "/" and "has" in r for r in v.get("rewrites", [])), "vercel.json: content negotiation for /")
-check((SITE / "api" / "home.js").exists() and (SITE / "api" / "entries.js").exists(), "functions missing")
+for fn in ("api/home.js", "api/entries.js", "api/discuss.js", "api/archive.js", "api/moderation.js", "api/cron/daily.js", "room/lib.js"):
+    check((SITE / fn).exists(), f"function missing: {fn}")
+check(any(c.get("path") == "/api/cron/daily" for c in v.get("crons", [])), "vercel.json: daily cron")
+check(any(r.get("source") == "/discuss.json" and r.get("destination") == "/api/archive" for r in v.get("rewrites", [])), "vercel.json: /discuss.json → function")
+for fn in ("api/entries.js", "api/discuss.js", "api/archive.js", "api/moderation.js", "api/cron/daily.js", "room/lib.js"):
+    r = subprocess.run(["node", "--check", str(SITE / fn)], capture_output=True)
+    check(r.returncode == 0, f"{fn}: syntax {r.stderr.decode()[:200]}")
 check(not (PUBLIC / "index.html").exists(), "public/index.html must not exist (the function serves /)")
 
 if fails:

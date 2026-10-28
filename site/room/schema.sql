@@ -234,3 +234,60 @@ begin
   return json_build_object('day', v_day, 'sha256', v_sha, 'prev', v_prev, 'count', coalesce(v_count, 0), 'last_id', v_last);
 end $$;
 grant execute on function cz_daily(text) to anon, authenticated;
+
+-- ================================================================ v2 (2026-10-29), applied as migration cz_room_schema_v2
+-- The daily hash covers that day's entries and is chained to the previous day's; the hashed lines are kept so the day's
+-- snapshot can be verified offline; detected language; the public list of hidden/redacted entries; a day's entries; counts.
+alter table log_hashes add column if not exists payload text;
+
+create or replace function cz_daily(p_token text, p_day date default null)
+returns json language plpgsql security definer set search_path = public as $$
+declare v_prev text; v_payload text; v_sha text; v_count bigint; v_last bigint; v_day date := coalesce(p_day, current_date - 1);
+begin
+  if p_token is distinct from (select value from config where key = 'admin_token') then raise exception 'unauthorised'; end if;
+  update entries set source_hash = null where source_hash is not null and source_expires < now();
+  select sha256 into v_prev from log_hashes where day < v_day order by day desc limit 1;
+  select string_agg(id || E'\t' || to_char(received at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') || E'\t' || state || E'\t' || content_sha256, E'\n' order by id), count(*), max(id)
+    into v_payload, v_count, v_last from entries where received >= v_day and received < v_day + 1;
+  v_sha := encode(extensions.digest(convert_to(coalesce(v_prev, '') || E'\n' || coalesce(v_payload, ''), 'UTF8'), 'sha256'), 'hex');
+  insert into log_hashes (day, sha256, prev, count, last_id, payload) values (v_day, v_sha, v_prev, coalesce(v_count, 0), v_last, coalesce(v_payload, ''))
+    on conflict (day) do update set sha256 = excluded.sha256, prev = excluded.prev, count = excluded.count, last_id = excluded.last_id, payload = excluded.payload;
+  return json_build_object('day', v_day, 'sha256', v_sha, 'prev', v_prev, 'count', coalesce(v_count, 0), 'last_id', v_last);
+end $$;
+grant execute on function cz_daily(text, date) to anon, authenticated;
+
+create or replace function cz_set_lang_detected(p_entry bigint, p_lang text, p_token text)
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  if p_token is distinct from (select value from config where key = 'admin_token') then raise exception 'unauthorised'; end if;
+  update entries set lang_detected = nullif(left(p_lang, 35), '') where id = p_entry;
+end $$;
+grant execute on function cz_set_lang_detected(bigint, text, text) to anon, authenticated;
+
+-- hidden and redacted entries, listed publicly with their hashes and languages (Blueprint §7.5)
+create or replace function cz_hidden()
+returns table (id bigint, received timestamptz, state text, category text, lang text, lang_detected text, content_sha256 text, updated timestamptz)
+language sql security definer set search_path = public as $$
+  select id, received, state, category, lang, lang_detected, content_sha256, updated from entries where state <> 'published' order by id
+$$;
+grant execute on function cz_hidden() to anon, authenticated;
+
+-- one UTC day's entries in canonical order (the day's snapshot)
+create or replace function cz_day(p_day date)
+returns setof entries_public language sql security definer set search_path = public as $$
+  select * from entries_public where received >= p_day and received < p_day + 1 order by id
+$$;
+grant execute on function cz_day(date) to anon, authenticated;
+
+-- counts for the pages
+create or replace function cz_stats()
+returns json language sql security definer set search_path = public as $$
+  select json_build_object('entries', (select count(*) from entries), 'published', (select count(*) from entries where state = 'published'),
+    'hidden', (select count(*) from entries where state = 'hidden'), 'redacted', (select count(*) from entries where state = 'redacted'),
+    'first', (select min(received) from entries), 'last', (select max(received) from entries),
+    'today', coalesce((select count from daily_intake where day = current_date), 0),
+    'daily_intake_max', (select value::int from config where key = 'daily_intake_max'),
+    'rate_per_10min', (select value::int from config where key = 'rate_per_10min'),
+    'last_log', (select json_build_object('day', day, 'sha256', sha256, 'count', count) from log_hashes order by day desc limit 1))
+$$;
+grant execute on function cz_stats() to anon, authenticated;

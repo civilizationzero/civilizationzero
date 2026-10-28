@@ -15,6 +15,8 @@ PRERELEASE = datetime.date(2026, 10, 28)   # first publication on this site (rea
 LAUNCH = datetime.date(2026, 11, 30)       # public launch; first day of Year 4; the foundation's anniversary
 BLUEPRINT = "1.3.1"
 PROMPT_VERSION = "cz-machine-1.0"
+ROOM_OPEN = False                          # flipped to True on the day the room's rules (§7) are verified; the functions read it from api/discuss-templates.json
+ROOM_OPENED = None                         # the ISO date the room opened (set with ROOM_OPEN)
 
 esc = html.escape
 
@@ -194,6 +196,14 @@ table{border-collapse:collapse;width:100%;font-size:.9em}th,td{text-align:left;v
 code.hash{word-break:break-all;display:block}
 ul,ol{padding-left:1.25rem}
 .pending{border:1px dashed var(--rule);padding:.5rem .75rem}
+/* the discussion room: entries are user content, shown as text; a group is one declared source's consecutive entries (Blueprint §7.4) */
+.entry{margin:1.5rem 0;padding-top:.5rem;border-top:1px solid var(--rule)}
+.entry .content{white-space:pre-wrap;word-break:break-word;margin:.5rem 0}
+.entry .meta{margin:.25rem 0}
+.group{margin-bottom:.5rem}
+.filters{display:flex;flex-wrap:wrap;gap:.75rem;align-items:end;font-size:.9em;margin:1rem 0}
+form.respond label{display:block;margin:.75rem 0}form.respond input,form.respond select,form.respond textarea{font:inherit;width:100%;box-sizing:border-box;padding:.4rem;border:1px solid var(--rule);background:var(--bg);color:var(--fg)}
+form.respond textarea{min-height:12rem}button{font:inherit;padding:.4rem .9rem;border:1px solid var(--fg);background:var(--bg);color:var(--fg)}
 """
 
 NAV = ('<nav class="site" aria-label="Site"><a href="/">CZ · Civilization Zero</a> · <a href="/core">Core</a> · '

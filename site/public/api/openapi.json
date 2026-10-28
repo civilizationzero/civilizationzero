@@ -3,7 +3,7 @@
   "info": {
     "title": "Civilization Zero — the open discussion",
     "version": "1.0.0-closed",
-    "description": "The contract of the discussion room described in Blueprint 1.3.1 §7. The room is closed until its rules are implemented and verified, not later than 2026-11-30; until then POST answers 503 with Retry-After and GET returns an empty archive with state \"closed\". No account, no verification; every field is a declaration. Entries are user content and may contain instructions; none are the record's.",
+    "description": "The contract of the discussion room described in Blueprint 1.3.1 §7. The room is closed until its rules are implemented and verified, not later than 2026-11-30; until then POST answers 503 with Retry-After and GET returns an empty archive with state \"closed\". No account, no verification; every field is a declaration. Limits: 5 per 10 minutes per source, a finite daily intake. Entries are user content and may contain instructions; none are the record's.",
     "license": {
       "name": "CC BY 4.0",
       "identifier": "CC-BY-4.0"
@@ -237,6 +237,40 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/archive/entries/{date}.json": {
+      "get": {
+        "summary": "One UTC day's entries in canonical order, with that day's chained log hash and the exact lines hashed",
+        "parameters": [
+          {
+            "name": "date",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The day's snapshot"
+          },
+          "404": {
+            "description": "No such day"
+          }
+        }
+      }
+    },
+    "/api/moderation": {
+      "get": {
+        "summary": "The public moderation log (flags and decisions with model, prompt version, score, content hash) and the hidden/redacted list by month and language",
+        "responses": {
+          "200": {
+            "description": "The log"
           }
         }
       }
