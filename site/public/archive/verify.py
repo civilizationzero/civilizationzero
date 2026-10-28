@@ -42,7 +42,7 @@ Licence: MIT. Part of the record of Civilization Zero (https://civilizationzero.
 
 import base64, datetime, hashlib, io, json, os, re, sys, tarfile
 
-VERSION = "1.2"
+VERSION = "1.3"
 ANCHOR_FINGERPRINT = "82662396484f627a63272bcd5ac19aae72def7aca2898216dc8e7f975dfc2263"
 SPKI_PREFIX = bytes.fromhex("302a300506032b6570032100")   # DER SubjectPublicKeyInfo header of an Ed25519 key
 CORE_SHA = "92a8d1e2a1604c25b432685673be78184bf05c3b166893c437e0895b7b2d724a"   # the record's identity: the hashes of its
@@ -52,7 +52,15 @@ PINNED_VERSIONS = {"CZ-CORE 1.0 sha256:" + CORE_SHA, "CZ-IR 1.0 sha256:" + IR_SH
 KNOWN_SIGNED_BUNDLES = {"cz-bundle-1.0.tar": "fcd3957cbea9c5b21da662e7ea97b4bf3d3b1da1e2eb55ec7bf9d71e2af5cb36"}   # signed: must stay so
 FIRST_DAY = {"discussion": "2026-10-28", "register": None}    # the room opened 2026-10-28T18:29:12Z; the register's first day is not fixed yet
 REPO_RAW = "https://raw.githubusercontent.com/civilizationzero/civilizationzero/main"
-ORIGINS = ("https://civilizationzero.ai", "https://www.civilizationzero.ai")   # the record's own site serves its chains; a mirror may not
+ORIGIN_HOSTS = ("civilizationzero.ai", "www.civilizationzero.ai")   # the record's own site serves its chains; a mirror may not
+ORIGIN = "https://civilizationzero.ai"
+
+def is_origin(base):
+    """Whether an https address is the record's own site, however it is spelled (case, a trailing dot, port 443, a slash)."""
+    import urllib.parse
+    try: u = urllib.parse.urlsplit(base); port = u.port
+    except ValueError: return False
+    return u.scheme == "https" and (u.hostname or "").rstrip(".") in ORIGIN_HOSTS and port in (None, 443) and u.path in ("", "/") and not u.query and not u.fragment
 
 # ================================================================ Ed25519 verification (RFC 8032, section 5.1)
 # Cofactorless, compared as encodings, as OpenSSL does. A public key must be a canonical encoding (y < p; x = 0 only with the
@@ -628,10 +636,9 @@ def chain_of_data(snap):
         elif "content_sha256" in o and "statement_sha256" not in o: kinds.add("discussion")
         elif "statement_sha256" in o and "content_sha256" not in o: kinds.add("register")
         else: kinds.add("?")
-    if not kinds:
+    if not kinds:   # a day without lines: its items decide; a genuine snapshot always carries exactly one of the two lists
         keys = {k for k in ("entries", "records") if k in snap}
-        if keys == {"entries"}: kinds.add("discussion")
-        elif keys == {"records"}: kinds.add("register")
+        kinds.add("discussion" if keys == {"entries"} else "register" if keys == {"records"} else "?")
     return kinds
 
 def verify_days(rep, days, label, independent=False, complete=False, chain=None):
@@ -642,9 +649,10 @@ def verify_days(rep, days, label, independent=False, complete=False, chain=None)
     for s, x, f in days:
         kinds = chain_of_data(s); declared = s.get("chain"); name = f or str(s.get("day"))
         data = next(iter(kinds)) if len(kinds) == 1 and "?" not in kinds else None
-        if "?" in kinds or len(kinds) > 1: wrong.append("%s: its lines are not all lines of one chain" % name)
-        c = chain or data or declared or "discussion"
-        if declared is not None and declared != c: wrong.append("%s: labelled %r, but %s" % (name, declared, ("it was fetched as the " + c + " chain") if chain else ("its data is the " + c + " chain's")))
+        if "?" in kinds or len(kinds) > 1:
+            wrong.append(("%s: its lines are not all lines of one chain" if (s.get("log") or {}).get("lines") else "%s: a day without lines that carries neither or both of \"entries\" and \"records\" — no chain can be told from it") % name)
+        c = chain or data or "discussion"   # never the label: it is not hashed
+        if declared is not None and declared != c and (chain or data): wrong.append("%s: labelled %r, but %s" % (name, declared, ("it was fetched as the " + c + " chain") if chain else ("its data is the " + c + " chain's")))
         if data is not None and data != c: wrong.append("%s: fetched as the %s chain, but its data is the %s chain's" % (name, c, data))
         eff.append(c)
     chains = set(eff) or ({chain} if chain else set())
@@ -697,8 +705,8 @@ def site_days(src, repo, rep, chain):
     except ValueError: idx = None
     if not isinstance(idx, dict) or not isinstance(idx.get("days", []), list):
         what = "no index of this chain" if raw is None else "no readable index of this chain (not the expected JSON)"
-        if FIRST_DAY.get(chain) and src.base in ORIGINS: rep.fail("the record's own site serves %s at /%s.json — the chain exists since %s" % (what, c["dir"], FIRST_DAY[chain]))
-        elif FIRST_DAY.get(chain): rep.pending("this copy serves %s at /%s.json: a static mirror holds the record, not the chain — check the chain with --site %s or with --days on the repository's %s" % (what, c["dir"], ORIGINS[0], c["repo"]))
+        if FIRST_DAY.get(chain) and is_origin(src.base): rep.fail("the record's own site serves %s at /%s.json — the chain exists since %s" % (what, c["dir"], FIRST_DAY[chain]))
+        elif FIRST_DAY.get(chain): rep.pending("this copy serves %s at /%s.json: a static mirror holds the record, not the chain — check the chain with --site %s or with --days on the repository's %s" % (what, c["dir"], ORIGIN, c["repo"]))
         else: rep.note("this copy serves %s at /%s.json" % (what, c["dir"]))
         return [], False
     if idx.get("state") == "closed" and not idx.get("days"): rep.note("the %s is not open and serves no days" % ("room" if chain == "discussion" else "register")); return [], True

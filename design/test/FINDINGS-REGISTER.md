@@ -203,9 +203,9 @@ fixed in 1.2 and re-run against its reproductions (`T1_front_trunc`, `R1_hidden_
 End truncation within a day is inherent: the newest hashed day has no successor, so until its copy and timestamp are in the
 repository (about half an hour after it is hashed) only copies held elsewhere can show that it changed.
 
-A third pass on the 1.2 fixes (UTC 20:01–20:04) found two more ways around them, both fixed before 1.2 was published and
+A third pass on the 1.2 fixes (UTC 20:01–20:04) found two more ways around them, both fixed and
 re-run against the reviewer's reproductions (`B1_relabel_trunc`, `H1_published_hidden_flag`, `H2_traced_hidden_flag`, and a
-local HTTPS site serving an honest and a relabelled chain, at two fixed clocks):
+local HTTPS site serving an honest and a relabelled chain, at two fixed clocks) — published, by mistake, still as 1.2 (W-1):
 
 | # | Finding (severity) | Status |
 |---|---|---|
@@ -213,4 +213,12 @@ local HTTPS site serving an honest and a relabelled chain, at two fixed clocks):
 | H-1 | `hidden` and `state` could disagree: a published entry or a traced record marked `hidden: true` had its text withheld without a failure (high) | **verified** — any disagreement FAILs (the site derives `hidden` from the state); what must be shown is decided by the state alone |
 | B-2 | With `--site`, the register's chain was never checked for completeness (its first day is not pinned while it is closed) | **verified** — the due-day check runs from the first day served; the register's first day will be pinned in the verifier when it opens |
 | M-1 (self-found) | A static mirror serves no chain: the new completeness check would have failed every mirror from 01:00 UTC 29 Oct | **verified** — a copy that serves no index of a chain is PENDING ("a static mirror holds the record, not the chain"); the record's own site serving none FAILs; an index listing a day twice FAILs |
+
+A fourth pass (UTC 20:07–20:10) on those fixes:
+
+| # | Finding (severity) | Status |
+|---|---|---|
+| O-1 | The record's own site was recognised by exact spelling: `https://CivilizationZero.ai`, `…ai:443`, `…ai.` or `https://WWW.civilizationzero.ai/` serving no chain got PENDING instead of FAIL (medium) | **verified** — the address is parsed (scheme https, host without a trailing dot, port absent or 443, no path) |
+| E-1 | A day with no lines and neither list still let the unhashed label choose its chain (low) | **verified** — such a day FAILs; the label never chooses |
+| W-1 | The third pass's fixes were published under the same number, 1.2 | **verified** — 1.3; every change to the file now changes its number |
 
