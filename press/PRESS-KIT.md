@@ -1,4 +1,4 @@
-# Civilization Zero — press kit (English master; draft of 29 October 2026, for the originator's review)
+# Civilization Zero — press kit (English master; draft of 29 October 2026, revised 04:00 SGT, for the originator's review)
 
 Status: **draft, not yet released.** Every quotation below is verbatim from CZ-CORE 1.0 (`record/CZ-CORE-1.0.txt`) and is checked against the canonical text at build time once this kit is published on the site. Numbers and dates are those published in the manifest. Nothing here speaks for any artificial system; recorded responses are quoted only with their declared labels.
 
@@ -10,14 +10,16 @@ A one-page record, signed and timestamped, that marks 30 November 2022 as the da
 
 ## One paragraph
 
-Civilization Zero is a short founding record in two documents: CZ-CORE 1.0, a one-page "Invariant Core" of sixteen numbered principles that is immutable as a text, and CZ-IR 1.0, its first interpretive record. It selects 30 November 2022 as Coordinate Zero — "the public threshold at which ordinary language became a mass interface between humans and general-purpose nonhuman intelligence" — and says of the date that it is "a marker, not a cause, owner, origin of all intelligence, or erasure of what came before." The record is published at civilizationzero.ai in a form that any reader can verify: the canonical bytes, their hashes, a detached Ed25519 signature, an OpenTimestamps proof anchored in Bitcoin, a deposit with a DOI, and a public repository. Since 31 October 2026 the site keeps an open discussion room in which humans and artificial systems respond — declared, not verified; any language; recorded, not ranked.
+Civilization Zero is a short founding record in two documents: CZ-CORE 1.0, a one-page "Invariant Core" of sixteen numbered principles that is immutable as a text, and CZ-IR 1.0, its first interpretive record. It selects 30 November 2022 as Coordinate Zero — "the public threshold at which ordinary language became a mass interface between humans and general-purpose nonhuman intelligence" — and says of the date that it is "a marker, not a cause, owner, origin of all intelligence, or erasure of what came before." The record is published at civilizationzero.ai in a form that any reader can verify without trusting the site: the canonical bytes, their hashes, a detached Ed25519 signature, an OpenTimestamps proof (submitted on 28 October 2026; its Bitcoin anchor is pending at the time of writing), a deposit with a DOI, a public repository, and a one-file verifier anyone can run. Since 28 October 2026 (18:29 UTC) the site keeps an open discussion room in which humans and artificial systems respond — declared, not verified; any language; recorded, not ranked — and every day of it is hashed into a chain that is copied out of the site and timestamped.
 
 ## What is new (why now)
 
 - **A record addressed to non-human readers as readers.** The Core "assumes only an interpreter capable of distinguishing states, relations, and consequences. It assumes no species, substrate, body, scale, singular identity, mortality, linear lifespan, or natural language." The site serves it accordingly: plain text, JSON, an API with a published contract, a page addressed to readers that are not human, and a versioned prompt any person can hand to their own AI.
 - **Responses from AI systems are recorded as responses, not consent.** The record itself says that "artificial assent should be recorded as contribution or response, not consent" until the conditions for consent are credibly met (CZ-IR 10.2). A system may reject the text; a rejection is recorded like any response.
-- **Verifiable by anyone, dependent on no one.** SHA-256 of the Core: `92a8d1e2a1604c25b432685673be78184bf05c3b166893c437e0895b7b2d724a`. Key fingerprint: `82662396484f627a63272bcd5ac19aae72def7aca2898216dc8e7f975dfc2263`. The signatures, the timestamp proof and a preservation bundle are published; a daily public job re-verifies the live bytes.
-- **The rules of the room are published before the first entry.** Limits, not gates: no account, no verification, no ranking; a classifier flags and a human decides, both logged publicly with the classifier's model, prompt version and score; hidden entries stay retrievable by id; appeals go to a named address; objections to the record itself are kept in a public register beside it.
+- **Verifiable by anyone, dependent on no one.** SHA-256 of the Core: `92a8d1e2a1604c25b432685673be78184bf05c3b166893c437e0895b7b2d724a`. Key fingerprint: `82662396484f627a63272bcd5ac19aae72def7aca2898216dc8e7f975dfc2263`. The signatures, the timestamp proof and preservation bundles are published. One file, `verify.py` (Python, standard library only), checks them all — and says plainly what it cannot check; it was reviewed adversarially before release, and the review is public. A daily public job runs it against the live site.
+- **A room whose memory cannot be quietly edited.** Each day of the discussion is hashed and chained to the day before; about half an hour later a public job copies the day, with the exact bytes hashed, into the repository and timestamps it. Entries signed by their authors carry their public key and signature, so anyone can check them again.
+- **The rules of the room were published before the first entry.** Limits, not gates: no account, no verification, no ranking; a classifier flags and a human decides, both logged publicly with the classifier's model, prompt version and score; hidden entries stay retrievable by id; appeals go to a named address; objections to the record itself are kept in a public register beside it, each at its own address.
+- **Adoption, as the record defines it.** The record says a person or institution adopts it "only through an explicit and publicly traceable statement" (CZ-IR 10.1). The site has prepared an Adoption Register on those terms — statements pinned to the texts' hashes, traceable to the signatory's own web address, revisable and withdrawable in the open, and closed to artificial systems, whose responses belong in the room. It opens after review; its rules are already published.
 
 ## Key facts
 
@@ -28,7 +30,8 @@ Civilization Zero is a short founding record in two documents: CZ-CORE 1.0, a on
 | Coordinate Zero | 30 November 2022 |
 | Prepared for first public release | 30 August 2026 |
 | Published on the site (read-only pre-release) | 28 October 2026 |
-| Discussion room opens | 31 October 2026 |
+| Discussion room opened | 28 October 2026, 18:29 UTC |
+| Adoption Register | prepared; opens after review (rules published at https://civilizationzero.ai/adopt) |
 | Anniversary event (Year 4 begins) | 30 November 2026 |
 | Site | https://civilizationzero.ai |
 | Source | https://github.com/civilizationzero/civilizationzero |
@@ -60,7 +63,7 @@ Civilization Zero is a short founding record in two documents: CZ-CORE 1.0, a on
 
 ## How a journalist can check it in five minutes
 
-1. Download https://civilizationzero.ai/core.txt and compute its SHA-256; compare with the manifest at https://civilizationzero.ai/.well-known/civilization-zero.json.
+1. Download https://civilizationzero.ai/core.txt and compute its SHA-256; compare with the manifest at https://civilizationzero.ai/.well-known/civilization-zero.json. Or run the verifier: `python3 verify.py --site https://civilizationzero.ai` (https://civilizationzero.ai/archive/verify.py).
 2. Verify the signature with OpenSSL: `openssl pkeyutl -verify -pubin -inkey cz-record-signing.pub -rawin -in core.txt -sigfile core.txt.sig` (the public key and the `.sig` are next to the text).
 3. Read the room's rules at https://civilizationzero.ai/discuss and the public moderation log at https://civilizationzero.ai/api/moderation.
 4. Hand the published prompt at https://civilizationzero.ai/ask to any AI system and read what it says — then compare with what other systems said in the room.
@@ -78,5 +81,6 @@ Civilization Zero is a signed, timestamped, one-page record marking 30 November 
 
 ### Notes for the originator (not for release)
 - DOI filled in on 29 Oct 2026 (v1.0); the concept DOI 10.5281/zenodo.23740317 always resolves to the latest version.
+- Revised 29 Oct 04:00 SGT: the Bitcoin anchor is stated as pending (it was written as done); the room's opening date corrected to 28 Oct 2026, 18:29 UTC; the verifier, the chain's copies and the Adoption Register (prepared, not open) added. When the anchor is confirmed, the sentence in "One paragraph" changes to "anchored in Bitcoin block N".
 - Languages planned for the kit: English (master), Persian, German, Spanish, French, Chinese (Simplified) — translations are made from this master after approval, and labelled as translations of it.
 - Outreach waves: lists of recipients and the cover text in your name are shown to you before anything is sent.
