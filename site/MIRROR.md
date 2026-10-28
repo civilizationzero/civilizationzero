@@ -5,8 +5,8 @@ functions (the first page's clock, the discussion room): the record is the stati
 
 ## What to mirror
 Everything under `site/public/` at a tagged release (`v1.0`, and each later one): the canonical texts (`core.txt`, `record.txt`),
-their JSON forms, the translations, `/.well-known/` (manifest, release manifest, public key, signatures, OpenTimestamps proof),
-`/archive/cz-bundle-*.tar`, the pages. The discussion archive (`/discuss.json`, `/archive/entries/{date}.json`) is dynamic;
+their JSON forms, the translations, `/.well-known/` (manifest, release manifest, public key, signatures, OpenTimestamps proof,
+the RFC 3161 time-stamp tokens and, in `/.well-known/tsa/`, FreeTSA's two certificates), `/archive/cz-bundle-*.tar`, the pages. The discussion archive (`/discuss.json`, `/archive/entries/{date}.json`) is dynamic;
 a mirror may keep dated copies of it.
 
 ## How (any static host; no build step)
@@ -16,8 +16,10 @@ git clone --branch v1.0 --depth 1 https://github.com/civilizationzero/civilizati
 #   nginx:   root /path/to/civilizationzero/site/public;  (serve .html for extension-less paths: try_files $uri $uri.html =404;)
 #   python:  cd civilizationzero/site/public && python3 -m http.server 8080
 ```
+Copy the files; do not link them. `verify.py --site-dir` refuses a link anywhere in the copy (to a file or a directory), so
+that what it checks is what lies in the directory.
 Content types that matter: `core.txt`, `record.txt`, `*.pub` as `text/plain; charset=utf-8`; `*.json` as `application/json`;
-`*.sig`, `*.ots` as `application/octet-stream`; `*.tar` as `application/x-tar`.
+`*.sig`, `*.ots` as `application/octet-stream`; `*.tsr` as `application/timestamp-reply`; `*.tar` as `application/x-tar`.
 
 ## Verify the mirror (same checks as the daily job)
 One command, no installs (Python 3.8 or later). `verify.py` is in the repository (`site/verify/verify.py` on `main`), in
@@ -28,7 +30,8 @@ python3 verify.py --site-dir /path/to/your/copy/of/site/public     # the files, 
 python3 verify.py --site https://mirror.example                     # the mirror as it is served
 ```
 It checks the key against its trust anchor, every signature, every hash in the release manifest, the translations, the
-timestamp proof and the bundles. A static mirror holds the record, not the daily chains of the discussion and the register
+timestamp proofs (the OpenTimestamps proof, and that each RFC 3161 token is over the release manifest), FreeTSA's certificates
+against the SHA-256 that freetsa.org publishes, and the bundles. A static mirror holds the record, not the daily chains of the discussion and the register
 (they are served by civilizationzero.ai and copied to this repository's `archive/`): for a mirror the verifier reports them
 as PENDING, not as a failure. The same steps with OpenSSL alone:
 ```sh
