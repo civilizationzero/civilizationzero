@@ -11,14 +11,23 @@ jobs:
       - name: The committed output must equal the rebuilt output (reproducible build)
         run: git diff --exit-code -- site/public site/api/home-templates.json
       - name: The functions answer as the contract says
+        env:
+          CZ_SALT: "build-time-verification-salt-not-used-in-production"
         run: |
           cd site && node -e '
           const h=require("./api/home.js"), e=require("./api/entries.js");
-          const run=(fn,req)=>new Promise(r=>{const res={h:{},setHeader(k,v){this.h[k]=v},end(b){r({status:this.statusCode,h:this.h,body:b})}};fn(req,res)});
+          const open=require("./api/discuss-templates.json").open;
+          const run=(fn,req)=>new Promise(r=>{const res={h:{},setHeader(k,v){this.h[k]=v},end(b){r({status:this.statusCode,h:this.h,body:b})}};fn(Object.assign({socket:{remoteAddress:"127.0.0.1"},on(){}},req),res)});
           (async()=>{
             let r=await run(h,{url:"/",headers:{accept:"application/json"}}); const o=JSON.parse(r.body); if(!(o.year>=3)) throw "home json";
             r=await run(h,{url:"/",headers:{accept:"text/html"}}); if(!r.body.includes("<h1")||r.body.includes("__YEAR__")) throw "home html";
-            r=await run(e,{url:"/api/entries",method:"POST",headers:{}}); if(r.status!==503||!r.h["Retry-After"]) throw "entries POST";
-            r=await run(e,{url:"/api/entries",method:"GET",headers:{}}); if(JSON.parse(r.body).state!=="closed") throw "entries GET";
-            console.log("functions ok");
+            if(open){
+              // open room, no database reachable here: an empty POST is refused as invalid before any storage; a GET fails closed (503) and records nothing
+              r=await run(e,{url:"/api/entries",method:"POST",headers:{}}); if(r.status!==400||JSON.parse(r.body).state!=="not accepted") throw "entries POST (open)";
+              r=await run(e,{url:"/api/entries",method:"GET",headers:{}}); if(r.status!==503||JSON.parse(r.body).error!=="unavailable") throw "entries GET (open, no db)";
+            } else {
+              r=await run(e,{url:"/api/entries",method:"POST",headers:{}}); if(r.status!==503||!r.h["Retry-After"]) throw "entries POST";
+              r=await run(e,{url:"/api/entries",method:"GET",headers:{}}); if(JSON.parse(r.body).state!=="closed") throw "entries GET";
+            }
+            console.log("functions ok (room " + (open ? "open" : "closed") + ")");
           })().catch(x=>{console.error(x);process.exit(1)})'
