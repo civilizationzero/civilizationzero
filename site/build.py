@@ -143,6 +143,25 @@ publish_sig("record.txt.sig", "/record.txt")
 if PUBKEY_PEM: write("/.well-known/cz-record-signing.pub", PUBKEY_PEM)
 OTS = SIGS / (RELEASE_NAME + ".ots")
 if OTS.exists(): write(f"/.well-known/{RELEASE_NAME}.ots", OTS.read_bytes())
+# RFC 3161 time-stamp tokens of the release manifest from authorities independent of OpenTimestamps (Blueprint §8: "a second,
+# independent timestamping service"), obtained and verified by the tsa-stamp workflow; published beside the manifest with the
+# certificates they were verified against (DigiCert's chain is in the token and ends in a root of the common trust stores)
+TSA_AUTHORITIES = {"freetsa": ("FreeTSA (freetsa.org, Germany)", "-CAfile tsa/freetsa-cacert.pem -untrusted tsa/freetsa-tsa.crt"),
+                   "digicert": ("DigiCert (timestamp.digicert.com)", "-CAfile <your system's trust store, e.g. /etc/ssl/certs/ca-certificates.crt>")}
+def tsa_time(b):
+    """The genTime of an RFC 3161 token (TimeStampResp): the GeneralizedTime that follows the serial number in TSTInfo."""
+    i = b.find(bytes.fromhex("060b2a864886f70d0109100104"))          # id-ct-TSTInfo
+    m = re.search(rb"\x18\x0f(\d{14})Z", b[i:]) if i >= 0 else None
+    if not m: return None
+    t = m.group(1).decode(); return f"{t[0:4]}-{t[4:6]}-{t[6:8]}T{t[8:10]}:{t[10:12]}:{t[12:14]}Z"
+TSA_TOKENS = []
+for _name, (_who, _how) in TSA_AUTHORITIES.items():
+    _f = SIGS / f"{RELEASE_NAME}.{_name}.tsr"
+    if _f.exists():
+        write(f"/.well-known/{RELEASE_NAME}.{_name}.tsr", _f.read_bytes())
+        TSA_TOKENS.append({"authority": _who, "token": f"{ORIGIN}/.well-known/{RELEASE_NAME}.{_name}.tsr", "sha256": sha256(_f.read_bytes()), "time": tsa_time(_f.read_bytes()),
+                           "over": f"{ORIGIN}/.well-known/{RELEASE_NAME}", "verify": f"openssl ts -verify -data {RELEASE_NAME} -in {RELEASE_NAME}.{_name}.tsr {_how}"})
+for _f in sorted((SIGS / "tsa").glob("*")) if (SIGS / "tsa").exists() else []: write(f"/.well-known/tsa/{_f.name}", _f.read_bytes())
 
 def ots_anchors(b):
     """Bitcoin block heights attested in an OpenTimestamps proof (tag 0588960d73d71901, then varbytes(varint height))."""
@@ -554,6 +573,10 @@ def signature_status_html():
         rows.append((label, f'signed · <a href="{path}.sig">{path}.sig</a>' if SIG_FILES.get(path) else '<span class="pending">signature pending</span>'))
     rows.append(("Timestamp", (f'<a href="/.well-known/{RELEASE_NAME}.ots">OpenTimestamps proof</a> of the release manifest — anchored in Bitcoin block {", ".join(str(h) for h in OTS_ANCHORS)}' + (" (one calendar still pending)" if OTS_PENDING else "") if OTS_ANCHORS
                              else f'<a href="/.well-known/{RELEASE_NAME}.ots">OpenTimestamps proof</a> of the release manifest, submitted to three calendars on <time datetime="2026-10-28">28 October 2026</time>; Bitcoin anchor pending') if OTS.exists() else f'<span class="pending">pending — target {LAUNCH.isoformat()}</span>'))
+    if TSA_TOKENS:
+        rows.append(("Second timestamp", "RFC 3161 time-stamp tokens of the release manifest from authorities independent of OpenTimestamps and of each other: "
+                     + "; ".join(f'<a href="{t["token"].replace(ORIGIN, "")}">{esc(t["authority"])}</a>, <time datetime="{t["time"]}">{t["time"].replace("T", " ").replace("Z", " UTC")}</time>' for t in TSA_TOKENS)
+                     + ' — each verified with OpenSSL when it was obtained; check one yourself: <code>openssl ts -verify -data cz-release-1.0.json -in cz-release-1.0.json.freetsa.tsr -CAfile freetsa-cacert.pem -untrusted freetsa-tsa.crt</code> (<a href="/.well-known/tsa/freetsa-cacert.pem">CA</a>, <a href="/.well-known/tsa/freetsa-tsa.crt">TSA certificate</a>)'))
     rows.append(("Verify", 'everything at once, without trusting this site: <a href="#h-verify">verify.py</a>; one file with OpenSSL ≥ 1.1.1: <code>openssl pkeyutl -verify -pubin -inkey cz-record-signing.pub -rawin -in core.txt -sigfile core.txt.sig</code>; the scripts are in the repository under <code>site/sign/</code> and <code>site/verify/</code>'))
     return '<table><tr><th>What</th><th>Status</th></tr>' + "".join(f"<tr><td>{a}</td><td>{b}</td></tr>" for a, b in rows) + "</table>"
 
@@ -578,8 +601,8 @@ python3 verify.py --site https://civilizationzero.ai   # this site or a mirror, 
 python3 verify.py --site-dir public/                  # a mirror's copy of the files
 python3 verify.py --days archive/discussion           # the discussion's daily snapshots
 python3 verify.py --self-test                         # its Ed25519, against RFC 8032</pre>
-<p>What it checks: the record's key against the fingerprint printed in it; the Ed25519 signatures of the release manifest, of the canonical texts and of each bundle; every hash the release manifest states, and that the canonical texts are the ones whose hashes are printed on this page; the structure of each bundle (plain names, no links, nothing twice) and which of its members no signature covers; that each OpenTimestamps proof commits to what it claims, following every path to its Bitcoin block; and, for each daily chain, that every day's hash is the hash of the previous day's hash and that day's lines, that the days run without a gap from the chain's first day (which the file pins), that every entry's content and every statement match their hashes, that nothing this site always shows is withheld and nothing it never shows is added, that every signature verifies with a proper key — and, with <code>--site</code>, that the site serves every day from the first to the last one due (a day is hashed by 00:20 UTC the next day) and that each day equals the copy and the timestamp proof kept in the public repository, which this site does not control.</p>
-<p>It says what it could not check, in its own levels: <strong>PENDING</strong> for what is missing here (an unsigned bundle, a proof not yet anchored, a day not yet copied), <strong>CHECK</strong> for the one fact it cannot hold offline — whether the Bitcoin block it names has the Merkle root it prints — and <strong>FAIL</strong> for anything wrong. <code>--strict</code> counts what is pending as a failure; <code>--json</code> gives the same report as data.</p>
+<p>What it checks: the record's key against the fingerprint printed in it; the Ed25519 signatures of the release manifest, of the canonical texts and of each bundle; every hash the release manifest states, and that the canonical texts are the ones whose hashes are printed on this page; the structure of each bundle (plain names, no links, nothing twice) and which of its members no signature covers; that each OpenTimestamps proof commits to what it claims, following every path to its Bitcoin block, and that each RFC 3161 token is over the release manifest's hash; and, for each daily chain, that every day's hash is the hash of the previous day's hash and that day's lines, that the days run without a gap from the chain's first day (which the file pins), that every entry's content and every statement match their hashes, that nothing this site always shows is withheld and nothing it never shows is added, that every signature verifies with a proper key — and, with <code>--site</code>, that the site serves every day from the first to the last one due (a day is hashed by 00:20 UTC the next day) and that each day equals the copy and the timestamp proof kept in the public repository, which this site does not control.</p>
+<p>It says what it could not check, in its own levels: <strong>PENDING</strong> for what is missing here (an unsigned bundle, a proof not yet anchored, a day not yet copied), <strong>CHECK</strong> for the facts it cannot hold offline — whether the Bitcoin block it names has the Merkle root it prints, and whether an RFC 3161 token's authority signed it (it prints the OpenSSL command) — and <strong>FAIL</strong> for anything wrong. <code>--strict</code> counts what is pending as a failure; <code>--json</code> gives the same report as data. The public daily run, <a href="{REPO}/actions/workflows/verify-live.yml">verify-live</a>, makes both outside checks: the Merkle root against two block explorers, and each token with OpenSSL.</p>
 <p>Its limits, stated plainly: a translation's text is covered by a bundle's signature, not by the release manifest; a declared name is never verified; a copy of the verifier can be altered together with the bundle it came with. Its trust anchor is the key fingerprint <code class="hash">{FINGERPRINT}</code>; compare it with one you obtained elsewhere — the <a href="https://doi.org/{DOI_CONCEPT}">DOI deposit</a>, the <a href="{REPO}">repository</a>, a printed copy, the second key-holder. Its Ed25519 is a plain implementation of RFC 8032, tested against the RFC's vectors and against OpenSSL; the site refuses the non-canonical and small-order keys on which OpenSSL is laxer, so the two checks agree on every key the site accepts. The verifier was reviewed adversarially before this version; the review and its findings are in the <a href="{REPO}/blob/main/design/test/FINDINGS-REGISTER.md">findings register</a>.</p>
 </section>
 <section aria-labelledby="h-days"><h2 id="h-days">The discussion, day by day</h2>
@@ -592,7 +615,7 @@ python3 verify.py --self-test                         # its Ed25519, against RFC
 </ul>
 </section>
 <section aria-labelledby="h-sig"><h2 id="h-sig">Signature and timestamp</h2>
-<p>A hash served by the same domain proves consistency, not that the operator changed nothing. So the record carries a key: Ed25519, generated on the originating human's own computer and held by two people (the originator; the second key-holder). What is signed, with detached signatures over the exact bytes: the <strong>release manifest</strong> <a href="/.well-known/{RELEASE_NAME}">/.well-known/{RELEASE_NAME}</a> (what CZ {RELEASE} is: the canonical texts, the prompt and the key — it changes only with a new release), <code>/core.txt</code>, <code>/record.txt</code>, and each bundle. The release manifest's hash is timestamped with OpenTimestamps; the proof file is kept beside it and in the bundle, with the Bitcoin block once confirmed.</p>
+<p>A hash served by the same domain proves consistency, not that the operator changed nothing. So the record carries a key: Ed25519, generated on the originating human's own computer and held by two people (the originator; the second key-holder). What is signed, with detached signatures over the exact bytes: the <strong>release manifest</strong> <a href="/.well-known/{RELEASE_NAME}">/.well-known/{RELEASE_NAME}</a> (what CZ {RELEASE} is: the canonical texts, the prompt and the key — it changes only with a new release), <code>/core.txt</code>, <code>/record.txt</code>, and each bundle. The release manifest's hash is timestamped twice, independently: with OpenTimestamps, whose proof is kept beside it and in the bundle with the Bitcoin block it is anchored in{(" (block " + ", ".join(str(h) for h in OTS_ANCHORS) + ")") if OTS_ANCHORS else " once confirmed"}; and with RFC 3161 time-stamp tokens from two authorities that do not depend on Bitcoin (Blueprint §8: "a second, independent timestamping service").</p>
 {signature_status_html()}
 </section>
 <section aria-labelledby="h-mir"><h2 id="h-mir">Mirrors and deposit</h2>
@@ -1015,7 +1038,8 @@ def manifest(bundle_name, bundle_sha, bundle_signed=False):
                       "note": "The key is generated and kept on the originating human's own device, never in the cloud; signatures are detached, over exact bytes."},
         "timestamp": {"status": OTS_STATUS, "submitted": "2026-10-28" if OTS.exists() else None, "target": LAUNCH.isoformat(), "service": "OpenTimestamps",
                       "proof": f"{ORIGIN}/.well-known/{RELEASE_NAME}.ots" if OTS.exists() else None, "over": f"{ORIGIN}/.well-known/{RELEASE_NAME}" if OTS.exists() else None,
-                      "anchor": {"chain": "bitcoin", "blocks": OTS_ANCHORS} if OTS_ANCHORS else None},
+                      "anchor": {"chain": "bitcoin", "blocks": OTS_ANCHORS} if OTS_ANCHORS else None,
+                      "rfc3161": TSA_TOKENS or None},
         "mirrors": [{"name": "GitHub", "url": REPO, "status": "live"}, {"name": "Internet Archive", "status": "snapshots", "snapshots": [u for u in IA_SNAPSHOTS.values()]}]
                    + [dict(m, status="verified daily by verify-live") for m in MIRRORS]
                    + ([] if len(MIRRORS) >= 2 else [{"name": "independent mirrors, one outside the originator's jurisdiction", "status": "pending", "how": f"{REPO}/blob/main/site/MIRROR.md"}]),
@@ -1128,6 +1152,7 @@ signatures, every hash, the timestamp proofs and the discussion's daily chain ca
 fingerprint {FINGERPRINT}: compare it with one obtained elsewhere (the DOI deposit, the repository, a printed copy, the
 second key-holder), because a copy of the verifier can be altered together with the bundle it came with. With OpenSSL
 alone: sign/verify.sh signatures/cz-record-signing.pub <file> (expects <file>.sig beside it).
+{("The release manifest is timestamped twice, independently: an OpenTimestamps proof (signatures/" + RELEASE_NAME + ".ots" + (", anchored in Bitcoin block " + ", ".join(str(h) for h in OTS_ANCHORS) if OTS_ANCHORS else "") + ") and RFC 3161 time-stamp tokens (" + ", ".join("signatures/" + RELEASE_NAME + "." + n + ".tsr" for n in TSA_AUTHORITIES if (SIGS / f"{RELEASE_NAME}.{n}.tsr").exists()) + "; check one with: openssl ts -verify -data signatures/" + RELEASE_NAME + " -in signatures/" + RELEASE_NAME + ".freetsa.tsr -CAfile signatures/tsa/freetsa-cacert.pem -untrusted signatures/tsa/freetsa-tsa.crt).") if TSA_TOKENS else ""}
 
 Hashing conventions: SHA-256 over the exact file bytes. Canonical texts are UTF-8, no byte-order mark, LF line endings, nothing normalised.
   record/CZ-CORE-1.0.txt  {CORE_SHA}
@@ -1153,7 +1178,8 @@ Licence: text CC BY 4.0, code MIT. Contact: {CONTACT}.
     members.append(("api/openapi.json", (PUBLIC / "api" / "openapi.json").read_bytes()))
     members.append((f".well-known/{RELEASE_NAME}", RELEASE_BYTES))
     for f in sorted(SIGS.glob("*")) if SIGS.exists() else []:
-        if (f.suffix in (".sig", ".ots") or f.name == RELEASE_NAME) and not f.name.startswith("cz-bundle-"): members.append((f"signatures/{f.name}", f.read_bytes()))   # a bundle cannot contain its own signature
+        if f.is_file() and (f.suffix in (".sig", ".ots", ".tsr") or f.name == RELEASE_NAME) and not f.name.startswith("cz-bundle-"): members.append((f"signatures/{f.name}", f.read_bytes()))   # a bundle cannot contain its own signature
+    for f in sorted((SIGS / "tsa").glob("*")) if (SIGS / "tsa").exists() else []: members.append((f"signatures/tsa/{f.name}", f.read_bytes()))
     if PUBKEY_PEM: members.append(("signatures/cz-record-signing.pub", PUBKEY_PEM))
     for f in sorted((SITE / "sign").glob("*")): members.append((f"sign/{f.name}", f.read_bytes()))
     members.append(("verify/verify.py", VERIFY_BYTES))

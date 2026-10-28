@@ -104,6 +104,19 @@ jobs:
               if not seen: print(f"::warning title=Bitcoin::block {height}: no explorer answered; the attestation stays to be checked")
           raise SystemExit(1 if bad else 0)
           EOF
+      - name: The RFC 3161 time-stamp tokens of the release manifest, with OpenSSL (the authorities' signatures, which verify.py cannot hold)
+        run: |
+          set -euo pipefail
+          for tsa in freetsa digicert; do
+            f=cz-release-1.0.json.$tsa.tsr
+            if ! curl -fsSL --retry 3 "https://civilizationzero.ai/.well-known/$f" -o "live/$f"; then echo "::notice title=RFC 3161::no $tsa token published"; continue; fi
+            cmp "live/$f" "site/signatures/$f"
+            case $tsa in
+              freetsa) openssl ts -verify -data live/.well-known/cz-release-1.0.json -in "live/$f" -CAfile site/signatures/tsa/freetsa-cacert.pem -untrusted site/signatures/tsa/freetsa-tsa.crt ;;
+              digicert) openssl ts -verify -data live/.well-known/cz-release-1.0.json -in "live/$f" -CAfile /etc/ssl/certs/ca-certificates.crt ;;
+            esac
+            echo "::notice title=RFC 3161::$tsa: $(openssl ts -reply -in "live/$f" -text | grep 'Time stamp')"
+          done
       - name: Every independent mirror listed in site/mirrors.json, with the same verifier
         run: |
           set -euo pipefail

@@ -32,7 +32,8 @@ is withheld and nothing it never shows is added, that every signature verifies, 
 every day from the first to the last one due (a day is hashed by 00:20 UTC the next day) and that each day equals the
 copy and timestamp proof kept in the public repository, which the site does not control.
 
-What it cannot check: whether a declared name is true; whether a Bitcoin block exists (CHECK); what a translation says
+What it cannot check: whether a declared name is true; whether a Bitcoin block exists, or whether an RFC 3161 token's
+authority signed it (CHECK: it prints what to compare and the command); what a translation says
 (a translation's text is covered by a bundle's signature, not by the release manifest); a copy of this file altered
 together with the bundle it came with. The trust anchor is the fingerprint below: compare it with one you obtained
 elsewhere — the DOI deposit (doi:10.5281/zenodo.23740317), the repository (github.com/civilizationzero/civilizationzero),
@@ -42,7 +43,7 @@ Licence: MIT. Part of the record of Civilization Zero (https://civilizationzero.
 
 import base64, datetime, hashlib, io, json, os, re, sys, tarfile
 
-VERSION = "1.4"
+VERSION = "1.5"
 ANCHOR_FINGERPRINT = "82662396484f627a63272bcd5ac19aae72def7aca2898216dc8e7f975dfc2263"
 SPKI_PREFIX = bytes.fromhex("302a300506032b6570032100")   # DER SubjectPublicKeyInfo header of an Ed25519 key
 CORE_SHA = "92a8d1e2a1604c25b432685673be78184bf05c3b166893c437e0895b7b2d724a"   # the record's identity: the hashes of its
@@ -377,6 +378,14 @@ def verify_record(src, rep, anchor, label):
         if ots:
             if verify_ots(rep, ots, rbytes, base): covered.add(ots_name)
         else: rep.pending(base + ": no timestamp proof present")
+        # the second, independent timestamp: RFC 3161 tokens from authorities that are not OpenTimestamps
+        for tsa in TSA_NAMES:
+            tname = ("signatures/" if src.kind == "bundle" else rname.rsplit("/", 1)[0] + "/") + base + "." + tsa + ".tsr"
+            tok = src.get(tname)
+            if tok is not None and verify_tsr(rep, tok, rbytes, base, base + "." + tsa + ".tsr", "signatures/tsa/" if src.kind == "bundle" else "/.well-known/tsa/"): covered.add(tname)
+        if src.kind == "bundle":
+            for n in src.list("signatures/tsa/"):
+                if n.endswith((".pem", ".crt")): rep.note("%s: an authority's certificate, kept beside its token; trust in it is yours to establish" % n); covered.add(n)
     # translations: their texts are not in the release manifest; each declares the Core it maps to (IR 10.5)
     core_sha = result.get("core_sha")
     if core_sha:
@@ -395,6 +404,75 @@ def verify_record(src, rep, anchor, label):
             rep.note("%d translations declare that they map to CZ-CORE 1.0 by its signed hash%s; a translation's text is covered by a bundle's signature, not by the release manifest"
                      % (len(trs), " and match the hashes in the site's unsigned manifest" if src.kind == "site" else ""))
     return result
+
+# ================================================================ RFC 3161 time-stamp tokens (a second, independent timestamp)
+TSA_NAMES = ("freetsa", "digicert")
+OID_SIGNED_DATA = bytes.fromhex("2a864886f70d010702")
+OID_TSTINFO = bytes.fromhex("2a864886f70d0109100104")
+HASH_OIDS = {bytes.fromhex("608648016503040201"): "sha256", bytes.fromhex("608648016503040202"): "sha384", bytes.fromhex("608648016503040203"): "sha512"}
+
+def _der(b, i, end):
+    """One DER element at b[i], within end: (tag, start of its content, end of its content)."""
+    if i + 2 > end: raise ValueError("truncated")
+    tag, n = b[i], b[i + 1]; i += 2
+    if tag & 0x1f == 0x1f: raise ValueError("a long tag")
+    if n & 0x80:
+        k = n & 0x7f
+        if not 1 <= k <= 4 or i + k > end: raise ValueError("a bad length")
+        n = int.from_bytes(b[i:i + k], "big"); i += k
+    if i + n > end: raise ValueError("truncated")
+    return tag, i, i + n
+
+def _items(b, s, e):
+    out, i = [], s
+    while i < e:
+        t, cs, ce = _der(b, i, e); out.append((t, cs, ce)); i = ce
+    return out
+
+def parse_tsr(b):
+    """An RFC 3161 TimeStampResp, or a bare time-stamp token: (hash name, hashed message, genTime). Reads the token's
+    TSTInfo; does not check the authority's signature (that needs its certificate chain: the CHECK this file prints)."""
+    if len(b) > 65536: raise ValueError("over 64 KB")
+    t, s, e = _der(b, 0, len(b))
+    if t != 0x30 or e != len(b): raise ValueError("not one DER sequence")
+    kids = _items(b, s, e)
+    if kids and kids[0][0] == 0x30:                     # TimeStampResp: PKIStatusInfo, then the token
+        st = _items(b, kids[0][1], kids[0][2])
+        if not st or st[0][0] != 0x02: raise ValueError("no status")
+        status = int.from_bytes(b[st[0][1]:st[0][2]], "big")
+        if status not in (0, 1): raise ValueError("the authority did not grant it (status %d)" % status)
+        if len(kids) < 2 or kids[1][0] != 0x30: raise ValueError("no token")
+        ci = _items(b, kids[1][1], kids[1][2])
+    else: ci = kids                                      # a bare ContentInfo
+    if len(ci) < 2 or ci[0][0] != 0x06 or b[ci[0][1]:ci[0][2]] != OID_SIGNED_DATA or ci[1][0] != 0xa0: raise ValueError("not a signed token")
+    t, s, e = _der(b, ci[1][1], ci[1][2])
+    sd = _items(b, s, e) if t == 0x30 else []
+    if len(sd) < 3 or sd[2][0] != 0x30: raise ValueError("no encapsulated content")
+    eci = _items(b, sd[2][1], sd[2][2])
+    if len(eci) < 2 or eci[0][0] != 0x06 or b[eci[0][1]:eci[0][2]] != OID_TSTINFO or eci[1][0] != 0xa0: raise ValueError("not a time-stamp token")
+    t, s, e = _der(b, eci[1][1], eci[1][2])
+    if t != 0x04: raise ValueError("no TSTInfo")
+    t, s, e = _der(b, s, e)
+    tst = _items(b, s, e) if t == 0x30 else []
+    if len(tst) < 5 or tst[2][0] != 0x30 or tst[4][0] != 0x18: raise ValueError("a malformed TSTInfo")
+    mi = _items(b, tst[2][1], tst[2][2])
+    if len(mi) != 2 or mi[0][0] != 0x30 or mi[1][0] != 0x04: raise ValueError("a malformed message imprint")
+    alg = _items(b, mi[0][1], mi[0][2])
+    if not alg or alg[0][0] != 0x06: raise ValueError("no hash algorithm")
+    gt = b[tst[4][1]:tst[4][2]].decode("ascii", "replace")
+    if not re.fullmatch(r"\d{14}(\.\d{1,6})?Z", gt): raise ValueError("a malformed time")
+    return HASH_OIDS.get(b[alg[0][1]:alg[0][2]]), b[mi[1][1]:mi[1][2]], gt
+
+def verify_tsr(rep, tok, data, data_name, label, certs):
+    """True when the token's message imprint is this file's hash (the authority's signature is the outside CHECK it prints)."""
+    try: name, digest, gt = parse_tsr(tok)
+    except (ValueError, IndexError) as e: rep.fail("%s: not a readable RFC 3161 time-stamp token (%s)" % (label, e)); return False
+    when = "%s-%s-%s %s:%s:%s UTC" % (gt[0:4], gt[4:6], gt[6:8], gt[8:10], gt[10:12], gt[12:14])
+    if not rep.check(name is not None and digest == hashlib.new(name, data).digest(),
+                     "%s: an RFC 3161 time-stamp token over %s %s, stating the time %s" % (label, name, digest.hex(), when),
+                     "%s: the token is over %s %s, not over this file" % (label, name or "an unknown hash", digest.hex())): return False
+    rep.add("CHECK", "%s: the authority's signature on it is not checked by this file — check it with OpenSSL: openssl ts -verify -data %s -in %s, with the authority's certificate chain (FreeTSA's is in %s; DigiCert's is in the token and ends in a root of the common trust stores)" % (label, data_name, label, certs))
+    return True
 
 def verify_ots(rep, ots, data, label):
     """True when the proof commits to the data (its Bitcoin attestations still need the outside CHECK it prints)."""
@@ -815,7 +893,7 @@ def main(argv):
         print(json.dumps({"verifier": "cz-verify " + VERSION, "trust_anchor": anchor, "summary": c, "strict": bool(opts.get("strict")),
                           "result": "fail" if failed else ("pass, with items not verified here" if c["PENDING"] or c["CHECK"] else "pass"), "items": rep.items}, ensure_ascii=True, indent=1))
     else:
-        tail = " — FAILED" if c["FAIL"] else (" — nothing failed" + ("; %d item(s) could not be verified here (PENDING)" % c["PENDING"] if c["PENDING"] else "") + ("; %d need a check against Bitcoin (CHECK)" % c["CHECK"] if c["CHECK"] else ""))
+        tail = " — FAILED" if c["FAIL"] else (" — nothing failed" + ("; %d item(s) could not be verified here (PENDING)" % c["PENDING"] if c["PENDING"] else "") + ("; %d need an outside check — a Bitcoin block, an authority's signature (CHECK)" % c["CHECK"] if c["CHECK"] else ""))
         if opts.get("strict") and c["PENDING"] and not c["FAIL"]: tail += " — counted as a failure (--strict)"
         print("\nsummary: " + ", ".join("%d %s" % (c[k], k) for k in LEVELS) + tail)
     return 1 if failed else 0

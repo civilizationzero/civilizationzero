@@ -460,6 +460,40 @@
       ]
     },
     {
+      "source": "/(.*).tsr",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/timestamp-reply"
+        },
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=3600"
+        }
+      ]
+    },
+    {
+      "source": "/.well-known/tsa/(.*)",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/x-pem-file"
+        },
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=3600"
+        }
+      ]
+    },
+    {
       "source": "/discuss.json",
       "headers": [
         {
