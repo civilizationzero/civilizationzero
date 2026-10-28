@@ -291,3 +291,13 @@ returns json language sql security definer set search_path = public as $$
     'last_log', (select json_build_object('day', day, 'sha256', sha256, 'count', count) from log_hashes order by day desc limit 1))
 $$;
 grant execute on function cz_stats() to anon, authenticated;
+
+-- ================================================================ v3 (2026-10-29), applied as migration cz_room_schema_v3_unclassified
+-- entries the classifier has not yet judged (no done '_classifier' row), for the daily retry
+create or replace function cz_unclassified(p_limit int default 50)
+returns table (id bigint, content text) language sql security definer set search_path = public as $$
+  select e.id, e.content from entries e
+  where e.state = 'published' and not exists (select 1 from translations t where t.entry_id = e.id and t.lang = '_classifier' and t.state = 'done')
+  order by e.id limit least(greatest(coalesce(p_limit, 50), 1), 200)
+$$;
+grant execute on function cz_unclassified(int) to anon, authenticated;

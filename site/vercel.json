@@ -3,6 +3,11 @@
   "trailingSlash": false,
   "redirects": [
     {
+      "source": "/:page(discuss|respond).html",
+      "destination": "/:page",
+      "permanent": true
+    },
+    {
       "source": "/core.:lang([a-z]{2,3}|[a-z]{2,3}-[A-Za-z0-9]+).html",
       "destination": "/core.:lang",
       "permanent": true

@@ -13,7 +13,10 @@ module.exports = async (req, res) => {
   const day = url.searchParams.get("day");
   try {
     const r = await rpc("cz_daily", { p_token: process.env.CZ_ADMIN_TOKEN, p_day: day && /^\d{4}-\d{2}-\d{2}$/.test(day) ? day : null });
-    return json(res, 200, { done: true, ...r }, { "Cache-Control": "no-store" });
+    // retry entries the classifier has not judged yet (a failed call is recorded as pending, never blocks a post)
+    let retried = 0;
+    try { for (const e of await rpc("cz_unclassified", { p_limit: 50 })) { await R.classify(e.id, e.content); retried++; } } catch (e) { console.error("retry", String(e.message || e).slice(0, 200)); }
+    return json(res, 200, { done: true, ...r, classifier_retried: retried }, { "Cache-Control": "no-store" });
   } catch (err) {
     return json(res, 500, { error: "server", detail: String(err.message || err).slice(0, 200) }, { "Cache-Control": "no-store" });
   }
