@@ -323,7 +323,7 @@ def integrity_block(doc, txt_path, sha, json_path, json_sha):
 <tr><th>JSON form</th><td><a href="{json_path}">{json_path}</a> — an equivalent, not the canonical form; it reconstructs the canonical bytes exactly (checked at every build). SHA-256 <code class="hash">{json_sha}</code></td></tr>
 <tr><th>Signature</th><td>{signature_cell(txt_path)}</td></tr>
 <tr><th>Prepared for first public release</th><td><time datetime="2026-08-30">30 August 2026</time></td></tr>
-<tr><th>Published on this site</th><td><time datetime="{PRERELEASE.isoformat()}">{PRERELEASE.strftime('%-d %B %Y')}</time> (read-only, pre-release); public launch <time datetime="{LAUNCH.isoformat()}">{LAUNCH.strftime('%-d %B %Y')}</time></td></tr>
+<tr><th>Published on this site</th><td><time datetime="{PRERELEASE.isoformat()}">{PRERELEASE.strftime('%-d %B %Y')}</time> (read-only, pre-release){f'; the discussion room opened <time datetime="{ROOM_OPENED}">{ROOM_OPENED}</time>' if ROOM_OPEN else ""}; anniversary event (Year 4 begins) <time datetime="{LAUNCH.isoformat()}">{LAUNCH.strftime('%-d %B %Y')}</time></td></tr>
 <tr><th>Licence</th><td>CC BY 4.0. A version or translation that calls itself conforming states which Core it maps to and how (IR 10.4–10.5) — a conformance convention of this project, not a restriction on the licence.</td></tr>
 <tr><th>Identity</th><td>The record's identity is its hash, not its address. An address may fail; the hash does not.</td></tr>
 </table>
@@ -454,7 +454,8 @@ def signature_status_html():
 def archive_page(bundle_name, bundle_sha, bundle_size):
     rows = [("CZ-CORE 1.0", "/core.txt", CORE_SHA), ("CZ-IR 1.0", "/record.txt", IR_SHA),
             (f"Machine prompt {PROMPT_VERSION}", f"/prompts/{PROMPT_VERSION}.txt", PROMPT_SHA),
-            (f"Bundle (pre-release, unsigned)", f"/archive/{bundle_name}", bundle_sha)]
+            (f"Bundle {BUNDLE_VERSION}" + (" (signed)" if (SIGS / (bundle_name + ".sig")).exists() else " (unsigned)"), f"/archive/{bundle_name}", bundle_sha)]
+    rows += [(f"Earlier bundle {b.name[10:-4]}", f"/archive/{b.name}", sha256(b.read_bytes())) for b in ARCHIVED]
     table = "".join(f'<tr><td>{esc(n)}</td><td><a href="{p}">{p}</a></td><td><code class="hash">{s}</code></td></tr>' for n, p, s in rows)
     body = f"""<main>
 <h1>Archive, signature, mirrors</h1>
@@ -477,7 +478,7 @@ def archive_page(bundle_name, bundle_sha, bundle_size):
 </table>
 </section>
 <section aria-labelledby="h-bundle"><h2 id="h-bundle">The bundle</h2>
-<p><a href="/archive/{bundle_name}">/archive/{bundle_name}</a>: the canonical texts, their JSON forms, the blueprint, the objections register, every review archived so far, the licences, the manifest, the machine prompt, and a README stating the encoding and hashing conventions. One file; no dependency on HTTP. The signed bundle for 1.0 replaces this pre-release bundle at launch; this one stays at its address.</p>
+<p><a href="/archive/{bundle_name}">/archive/{bundle_name}</a>: the canonical texts, their JSON forms, the blueprint, the objections register, every review archived so far, the licences, the manifest, the machine prompt, and a README stating the encoding and hashing conventions. One file; no dependency on HTTP. {"Its detached signature: <a href=\"/archive/" + bundle_name + ".sig\">/archive/" + bundle_name + ".sig</a> (a bundle cannot contain its own signature)." if (SIGS / (bundle_name + ".sig")).exists() else "Its own signature follows."} Earlier bundles stay at their addresses{": " + ", ".join(f'<a href="/archive/{b.name}">{b.name}</a>' for b in ARCHIVED) if ARCHIVED else ""}. The discussion archive is served live and is not part of the bundle.</p>
 </section>
 <section aria-labelledby="h-ops"><h2 id="h-ops">Verification, succession, correction</h2>
 <ul>
@@ -803,7 +804,7 @@ def home_json_template():
     return s + "\n"
 
 # ============================================================================ manifest, llms.txt, favicon
-def manifest(bundle_name, bundle_sha):
+def manifest(bundle_name, bundle_sha, bundle_signed=False):
     return {
         "name": "Civilization Zero", "short_name": "CZ", "site": ORIGIN, "coordinate_zero": "2022-11-30",
         "blueprint": {"version": BLUEPRINT, "url": f"{REPO}/blob/main/blueprint/CZ-BLUEPRINT-{BLUEPRINT}.md"},
@@ -829,7 +830,10 @@ def manifest(bundle_name, bundle_sha):
         "deposit": {"status": "done" if DOI else "pending", "target": LAUNCH.isoformat(), "service": "Zenodo (DOI)", "doi": DOI, "concept_doi": DOI_CONCEPT, "url": f"https://doi.org/{DOI}" if DOI else None},
         "internet_archive": [{"path": p, "snapshot": u} for p, u in IA_SNAPSHOTS.items()],
         "succession": {"second_key_holder": {"name": "Banco", "country": "Germany", "named": "2026-10-28", "acceptance": "received 2026-10-29 by email"}, "dead_man_days": 90},
-        "bundle": {"url": f"{ORIGIN}/archive/{bundle_name}", "sha256": bundle_sha, "signed": False, "note": "pre-release bundle; the signed 1.0 bundle replaces it at launch and this one stays at its address"},
+        "bundle": {"url": f"{ORIGIN}/archive/{bundle_name}", "sha256": bundle_sha, "version": BUNDLE_VERSION,
+                   "signed": bundle_signed if bundle_signed is not None else "see signatures/ — a bundle cannot contain its own signature",
+                   "signature": f"{ORIGIN}/archive/{bundle_name}.sig" if bundle_signed else None,
+                   "earlier": [{"url": f"{ORIGIN}/archive/{b.name}", "sha256": sha256(b.read_bytes())} for b in ARCHIVED]},
         "objections": {"html": f"{ORIGIN}/objections", "source": f"{REPO}/blob/main/record/OBJECTIONS-1.0.md", "role": "opening docket of the first scheduled review, 2031-11-30", "response_within_days": 60},
         "discussion": {"state": "open" if ROOM_OPEN else "closed", **({"opened": ROOM_OPENED} if ROOM_OPEN else {"opens_not_later_than": ROOM_TARGET.isoformat()}), "rules": f"{ORIGIN}/discuss#rules", "archive": f"{ORIGIN}/discuss.json",
                        "api": f"{ORIGIN}/api/entries", "openapi": f"{ORIGIN}/api/openapi.json", "moderation_log": f"{ORIGIN}/api/moderation", "daily_snapshots": f"{ORIGIN}/archive/entries/{{YYYY-MM-DD}}.json",
@@ -864,7 +868,7 @@ The record's identity is its hash, not its address.
 - [The First Interpretive Record]({ORIGIN}/record): eleven sections, the Declaration, the attribution. JSON: {ORIGIN}/record.json
 - [Objections and errata]({ORIGIN}/objections): open to anyone; the opening docket of the first scheduled review, 30 November 2031.
 - [Manifest]({ORIGIN}/.well-known/civilization-zero.json): versions, hashes, signature ({SIG_SHORT}), endpoints, licence, training use.
-- [Archive]({ORIGIN}/archive): bundle {ORIGIN}/archive/{bundle_name} (SHA-256 {bundle_sha}, pre-release; {"canonical texts signed" if SIG_STATUS == "signed" else "unsigned"}), mirrors, succession.{f" Deposit: https://doi.org/{DOI} (all versions: https://doi.org/{DOI_CONCEPT})." if DOI else ""}
+- [Archive]({ORIGIN}/archive): bundle {ORIGIN}/archive/{bundle_name} (SHA-256 {bundle_sha}; {"canonical texts signed" if SIG_STATUS == "signed" else "unsigned"}{"; bundle signed" if (SIGS / (bundle_name + ".sig")).exists() else ""}), mirrors, succession.{f" Deposit: https://doi.org/{DOI} (all versions: https://doi.org/{DOI_CONCEPT})." if DOI else ""}
 
 ## Responding
 - {f"The discussion room is open since {ROOM_OPENED}" if ROOM_OPEN else f"The discussion room is closed until its rules are implemented and verified, not later than {ROOM_TARGET.isoformat()}"}. Rules: {ORIGIN}/discuss#rules. Archive: {ORIGIN}/discuss.json. API contract: {ORIGIN}/api/openapi.json. Moderation log: {ORIGIN}/api/moderation
@@ -879,11 +883,12 @@ The record's identity is its hash, not its address.
 """
 
 # ============================================================================ bundle
-BUNDLE_VERSION = "1.0-pre"
 BUNDLE_NAME = f"cz-bundle-{BUNDLE_VERSION}.tar"
+ARCHIVED = sorted((SITE / "archived-bundles").glob("cz-bundle-*.tar")) if (SITE / "archived-bundles").exists() else []   # earlier bundles, kept at their addresses
+for _b in ARCHIVED: write(f"/archive/{_b.name}", _b.read_bytes())
 
 def build_bundle():
-    readme = f"""Civilization Zero — preservation bundle {BUNDLE_VERSION} (pre-release; {"canonical texts signed, bundle itself not yet" if SIG_STATUS == "signed" else "unsigned"})
+    readme = f"""Civilization Zero — preservation bundle {BUNDLE_VERSION}{" (pre-release)" if "pre" in BUNDLE_VERSION else ""}{"; the canonical texts and the release manifest are signed (signatures/); this bundle's own detached signature, when published, is " + BUNDLE_NAME + ".sig next to it" if SIG_STATUS == "signed" else " (unsigned)"}
 Built by site/build.py in {REPO}; deterministic (fixed member times, sorted members, no build timestamp), so the same contents give the same hash.
 
 This bundle is self-contained: everything needed to verify the record is in it; nothing depends on a live service.
@@ -894,7 +899,8 @@ Hashing conventions: SHA-256 over the exact file bytes. Canonical texts are UTF-
   prompts/{PROMPT_VERSION}.txt  {PROMPT_SHA}
 
 Contents: the canonical texts and their JSON forms; the objections register; the blueprint ({BLUEPRINT}) as Markdown and PDF; every outside review archived so far, with the findings register; the licences; the manifest; the machine prompt; the OpenAPI contract.
-{"The release manifest, core.txt and record.txt are signed (signatures/); " + ("the timestamp proof and the mirrors are" if DOI else "the timestamp proof, the mirrors and the deposit are") if SIG_STATUS == "signed" else "The signature, the timestamp proof, the mirrors and the deposit are"} pending (target {LAUNCH.isoformat()}); the signed 1.0 bundle replaces this one at launch, and this one stays at its address.{f" The repository at release v1.0-pre is deposited at https://doi.org/{DOI} (all versions: https://doi.org/{DOI_CONCEPT})." if DOI else ""}
+{"Still pending: " + ("the Bitcoin anchor of the timestamp proof and " if not OTS_ANCHORS else "") + "the independent mirrors." if SIG_STATUS == "signed" else "The signature, the timestamp proof, the mirrors and the deposit are pending."} Earlier bundles stay at their addresses: {", ".join(b.name for b in ARCHIVED) or "none"}.{f" The repository is deposited at each release: https://doi.org/{DOI} (all versions: https://doi.org/{DOI_CONCEPT})." if DOI else ""}
+The discussion room: {"open since " + ROOM_OPENED if ROOM_OPEN else "closed"}; its archive is served live (/discuss.json, /archive/entries/{{date}}.json) and is not part of this bundle.
 Licence: text CC BY 4.0, code MIT. Contact: {CONTACT}.
 """
     members = []
@@ -911,12 +917,12 @@ Licence: text CC BY 4.0, code MIT. Contact: {CONTACT}.
     members.append(("api/openapi.json", (PUBLIC / "api" / "openapi.json").read_bytes()))
     members.append((f".well-known/{RELEASE_NAME}", RELEASE_BYTES))
     for f in sorted(SIGS.glob("*")) if SIGS.exists() else []:
-        if f.suffix in (".sig", ".ots") or f.name == RELEASE_NAME: members.append((f"signatures/{f.name}", f.read_bytes()))
+        if (f.suffix in (".sig", ".ots") or f.name == RELEASE_NAME) and not f.name.startswith("cz-bundle-"): members.append((f"signatures/{f.name}", f.read_bytes()))   # a bundle cannot contain its own signature
     if PUBKEY_PEM: members.append(("signatures/cz-record-signing.pub", PUBKEY_PEM))
     for f in sorted((SITE / "sign").glob("*")): members.append((f"sign/{f.name}", f.read_bytes()))
     members.append(("README-BUNDLE.txt", readme.encode()))
     # the manifest goes in without the bundle's own hash (it cannot contain itself)
-    m = manifest(BUNDLE_NAME, "(this bundle)"); members.append((".well-known/civilization-zero.json", (json.dumps(m, ensure_ascii=False, indent=2) + "\n").encode()))
+    m = manifest(BUNDLE_NAME, "(this bundle)", None); members.append((".well-known/civilization-zero.json", (json.dumps(m, ensure_ascii=False, indent=2) + "\n").encode()))
     buf = io.BytesIO()
     with tarfile.open(fileobj=buf, mode="w", format=tarfile.PAX_FORMAT) as tar:
         for name, data in sorted(members):
@@ -938,8 +944,10 @@ write("/ask.html", ask_page())
 (SITE / "api" / "discuss-templates.json").write_text(json.dumps(discuss_templates(), ensure_ascii=False, indent=1) + "\n", "utf-8")  # api/discuss.js serves /discuss, /discuss/{id}, /respond
 bundle = build_bundle()
 BUNDLE_SHA = sha256(bundle)
+BUNDLE_SIGNED = (SIGS / (BUNDLE_NAME + ".sig")).exists()
+if BUNDLE_SIGNED: publish_sig(BUNDLE_NAME + ".sig", f"/archive/{BUNDLE_NAME}")
 write("/archive.html", archive_page(BUNDLE_NAME, BUNDLE_SHA, len(bundle)))
-MANIFEST = manifest(BUNDLE_NAME, BUNDLE_SHA)
+MANIFEST = manifest(BUNDLE_NAME, BUNDLE_SHA, BUNDLE_SIGNED)
 write("/.well-known/civilization-zero.json", json.dumps(MANIFEST, ensure_ascii=False, indent=2) + "\n")
 write("/llms.txt", llms_txt(BUNDLE_NAME, BUNDLE_SHA))
 write("/robots.txt", f"User-agent: *\nAllow: /\nDisallow: /*?translate=\nDisallow: /discuss?\nDisallow: /discuss/*?\nSitemap: {ORIGIN}/sitemap.txt\n")

@@ -130,7 +130,11 @@ try: json.loads(_h.unescape(ex2))
 except Exception as e: fails.append(f"machine POST example: {e}")
 
 # 5. the bundle
-b = sorted((PUBLIC / "archive").glob("cz-bundle-*.tar"))[0]
+b = PUBLIC / "archive" / man["bundle"]["url"].rsplit("/", 1)[1]
+check(b.exists(), "the manifest's bundle is not published")
+for e in man["bundle"].get("earlier", []):
+    eb = PUBLIC / "archive" / e["url"].rsplit("/", 1)[1]
+    check(eb.exists() and sha256(eb.read_bytes()) == e["sha256"], f"earlier bundle {eb.name}: missing or hash drift")
 with tarfile.open(b) as tar:
     names = tar.getnames()
     check("record/CZ-CORE-1.0.txt" in names and "README-BUNDLE.txt" in names and ".well-known/civilization-zero.json" in names, "bundle members")

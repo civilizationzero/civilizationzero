@@ -58,7 +58,8 @@
     "signed_files": [
       "/.well-known/cz-release-1.0.json",
       "/core.txt",
-      "/record.txt"
+      "/record.txt",
+      "/archive/cz-bundle-1.0.tar"
     ],
     "holders": [
       "the originator",
@@ -114,10 +115,17 @@
     "dead_man_days": 90
   },
   "bundle": {
-    "url": "https://civilizationzero.ai/archive/cz-bundle-1.0-pre.tar",
-    "sha256": "98ae7f13087b2172b95c30c89dfcde17fdf22e3748150e2db63c3bdaafefaf83",
-    "signed": false,
-    "note": "pre-release bundle; the signed 1.0 bundle replaces it at launch and this one stays at its address"
+    "url": "https://civilizationzero.ai/archive/cz-bundle-1.0.tar",
+    "sha256": "fcd3957cbea9c5b21da662e7ea97b4bf3d3b1da1e2eb55ec7bf9d71e2af5cb36",
+    "version": "1.0",
+    "signed": true,
+    "signature": "https://civilizationzero.ai/archive/cz-bundle-1.0.tar.sig",
+    "earlier": [
+      {
+        "url": "https://civilizationzero.ai/archive/cz-bundle-1.0-pre.tar",
+        "sha256": "d4071b67ea8dc628be41c05f4cdd0c7088f0c92b5f8e647db576afdb2d8db986"
+      }
+    ]
   },
   "objections": {
     "html": "https://civilizationzero.ai/objections",
@@ -126,8 +134,8 @@
     "response_within_days": 60
   },
   "discussion": {
-    "state": "closed",
-    "opens_not_later_than": "2026-11-30",
+    "state": "open",
+    "opened": "2026-10-29",
     "rules": "https://civilizationzero.ai/discuss#rules",
     "archive": "https://civilizationzero.ai/discuss.json",
     "api": "https://civilizationzero.ai/api/entries",
@@ -135,7 +143,7 @@
     "moderation_log": "https://civilizationzero.ai/api/moderation",
     "daily_snapshots": "https://civilizationzero.ai/archive/entries/{YYYY-MM-DD}.json",
     "canonical_order": "receipt ascending, ties by id",
-    "daily_log_sha256": null,
+    "daily_log_sha256": "in /discuss.json (log_sha256) and /archive/entries/{date}.json once the room is open",
     "limits": {
       "rate": "5 per 10 minutes per source",
       "daily_intake": 2000,

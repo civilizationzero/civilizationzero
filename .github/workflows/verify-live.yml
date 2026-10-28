@@ -45,6 +45,20 @@ jobs:
           assert man["signature"]["key_fingerprint"] == rel["key"]["fingerprint"]
           print("manifest consistent:", man["signature"]["status"], man["timestamp"]["status"])
           EOF
+      - name: The current bundle and its signature
+        run: |
+          set -euo pipefail
+          bundle=$(python3 -c "import json;print(json.load(open('live/.well-known/civilization-zero.json'))['bundle']['url'].rsplit('/',1)[1])")
+          mkdir -p live/archive
+          curl -fsSL --retry 3 "https://civilizationzero.ai/archive/$bundle" -o "live/archive/$bundle"
+          curl -fsSL --retry 3 "https://civilizationzero.ai/archive/$bundle.sig" -o "live/archive/$bundle.sig" || echo "no bundle signature published"
+          python3 - "$bundle" <<'EOF'
+          import json, hashlib, sys
+          b = sys.argv[1]; man = json.load(open("live/.well-known/civilization-zero.json"))
+          assert hashlib.sha256(open("live/archive/" + b, "rb").read()).hexdigest() == man["bundle"]["sha256"], "bundle hash drift"
+          print("bundle matches the manifest:", b)
+          EOF
+          [ -s "live/archive/$bundle.sig" ] && openssl pkeyutl -verify -pubin -inkey site/sign/cz-record-signing.pub -rawin -in "live/archive/$bundle" -sigfile "live/archive/$bundle.sig" && echo "verified: $bundle"
       - name: Signatures verify against the repository's public key
         run: |
           set -euo pipefail
