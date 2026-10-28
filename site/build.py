@@ -222,10 +222,11 @@ for f in sorted(TR_DIR.glob("CZ-CORE-1.0.*.json")) if TR_DIR.exists() else []:
 
 def translation_page(tr):
     lang, rtl = tr["lang"], tr.get("dir") == "rtl"
-    parts = [f'<p class="pending" lang="en" dir="ltr"><strong>{esc(tr["kind"].capitalize())}</strong> — {esc(tr["engine"])}, <time datetime="{tr["date"]}">{tr["date"]}</time>, '
+    parts = [f'<aside aria-label="Translation status"><p class="pending" lang="en" dir="ltr"><strong>{esc(tr["kind"].capitalize())}</strong> — {esc(tr["engine"])}, <time datetime="{tr["date"]}">{tr["date"]}</time>, '
              + ("reviewed by " + esc(tr["reviewed_by"]) if tr.get("reviewed_by") else "unreviewed") +
              f'. The English text is canonical: <a href="/core">/core</a>. Each statement below corresponds to the English statement at the same position (IR 10.5: a translation must expose how it maps to the Core). Corrections: <a href="mailto:{CONTACT}">{CONTACT}</a>.</p>']
     if tr.get("label_native"): parts.append(f'<p class="src">{esc(tr["label_native"])}</p>')
+    parts.append("</aside>")   # the status of the translation, in a landmark of its own (WCAG: all content in landmarks)
     parts.append(f'<header><h1>{esc(tr["title"])}</h1><p>{esc(tr["subtitle"])} · <code>CZ-CORE 1.0</code> · <span lang="en" dir="ltr">{tr["language_name_en"]}</span> · {esc(tr["language_name_native"])}</p><p id="preamble">{esc(tr["preamble"])}</p></header><main>')
     for pr in tr["principles"]:
         n = pr["n"]

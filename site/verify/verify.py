@@ -48,7 +48,7 @@ Licence: MIT. Part of the record of Civilization Zero (https://civilizationzero.
 
 import base64, datetime, hashlib, io, json, os, re, sys, tarfile
 
-VERSION = "1.12"
+VERSION = "1.13"
 ANCHOR_FINGERPRINT = "82662396484f627a63272bcd5ac19aae72def7aca2898216dc8e7f975dfc2263"
 SPKI_PREFIX = bytes.fromhex("302a300506032b6570032100")   # DER SubjectPublicKeyInfo header of an Ed25519 key
 CORE_SHA = "92a8d1e2a1604c25b432685673be78184bf05c3b166893c437e0895b7b2d724a"   # the record's identity: the hashes of its
@@ -441,7 +441,10 @@ def verify_record(src, rep, anchor, label):
         else:
             try:
                 man = jload(src.get(".well-known/civilization-zero.json") or b"{}")
-                trs = [("core.%s.json" % t["lang"], src.get("core.%s.json" % t["lang"]), t.get("sha256")) for t in man.get("translations", []) if re.fullmatch(r"[A-Za-z0-9-]{1,35}", str(t["lang"]))]
+                trs = []
+                for t in man.get("translations", []):
+                    if re.fullmatch(r"[A-Za-z0-9-]{1,35}", str(t["lang"])): trs.append(("core.%s.json" % t["lang"], src.get("core.%s.json" % t["lang"]), t.get("sha256")))
+                    else: rep.fail("the manifest lists a translation whose language tag %r is not a language tag" % (t["lang"],))
             except (ValueError, KeyError, TypeError, AttributeError): trs = []; rep.fail("the manifest's list of translations is not readable")
         bad = 0
         for name, b, stated in trs:
@@ -623,8 +626,8 @@ def verify_site_bundles(src, rep, anchor):
     try:
         man = jload(src.get(".well-known/civilization-zero.json") or b"{}")
         b = man.get("bundle")
-        if not b: rep.note("the manifest names no bundle"); return
-        entries = [b] + list(b.get("earlier", []))
+        if b: entries = [b] + list(b.get("earlier", []))
+        else: rep.note("the manifest names no bundle"); entries = []   # the bundles this verifier knows as signed are checked all the same
         seen = {e["url"].rsplit("/", 1)[-1] for e in entries}
     except (ValueError, KeyError, TypeError, AttributeError):
         rep.fail("the manifest's list of bundles is not readable"); entries, seen, b = [], set(), None

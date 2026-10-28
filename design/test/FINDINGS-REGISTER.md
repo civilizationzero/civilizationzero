@@ -284,6 +284,13 @@ parser for every input from a copy, for which too deep a nesting is malformed in
 member that cannot be read, FAILs; the site's unsigned manifest is read defensively; with `--site`, any answer but 200 or 404
 and any network failure FAILs for that path and the run goes on; a `--days` file that cannot be read is a usage error.
 
+An eleventh pass (UTC 21:51–21:54) on 1.12: every earlier case still FAILs and none stops the run; a non-404 answer for an
+optional file FAILs rather than reading as absent. Two findings, fixed in 1.13: a site manifest with no `bundle` entry
+returned before the bundles this verifier knows as signed were checked, so a copy that removed bundle 1.0 and said "no
+bundle" passed (medium; present since the pinned list was added) — the pinned bundles are now checked whatever the manifest
+says; and 1.12's new filter on the manifest's translation tags dropped a malformed entry silently where 1.11 had failed it
+(low) — such an entry FAILs.
+
 The same version moves the time from which a day is due from 01:00 to 02:00 UTC: the site's hosting plan runs its daily job at
 some time in the first hour of the day (UTC), not at 00:20 as the pages had said; the pages, the contract's notes and the
 daily-archive job (now 01:20 and 07:20 UTC) say so.
