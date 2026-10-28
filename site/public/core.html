@@ -3,68 +3,63 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>The Invariant Core — Civilization Zero</title>
-<meta name="description" content="CZ-CORE 1.0 — the one-page manifesto of Civilization Zero. Sixteen constraints intended to survive changes in terminology, technology, embodiment, political order, and forms of intelligence.">
-<link rel="canonical" href="https://civilization0.ai/core">
-<meta property="og:type" content="website">
-<meta property="og:site_name" content="Civilization Zero">
-<meta property="og:title" content="The Invariant Core — Civilization Zero">
-<meta property="og:description" content="CZ-CORE 1.0 — the one-page manifesto of Civilization Zero. Sixteen constraints intended to survive changes in terminology, technology, embodiment, political order, and forms of intelligence.">
-<meta property="og:url" content="https://civilization0.ai/core">
-<meta property="og:image" content="https://civilization0.ai/og.png">
-<meta name="twitter:card" content="summary_large_image">
-<meta name="theme-color" content="#0b0b0e">
+<title>CZ-CORE 1.0 — The Invariant Core · Civilization Zero</title>
+<meta name="description" content="The Invariant Core of Civilization Zero, CZ-CORE 1.0: sixteen principles and a closing, canonical text with its SHA-256.">
+<link rel="canonical" href="https://civilizationzero.ai/core">
+<link rel="alternate" type="text/plain" href="/core.txt" title="Canonical text"><link rel="alternate" type="application/json" href="/core.json" title="JSON form"><link rel="service-desc" type="application/vnd.oai.openapi+json" href="/api/openapi.json">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,400&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/styles.css">
-
-</head>
+<style>
+/* H + C: no typeface is shipped; the generic family is chosen (the smallest choice available) so the reader's device renders every script. Nothing to rot. */
+html{font-family:system-ui,sans-serif;font-size:100%;line-height:1.5}
+/* H: two palettes, each at contrast >= 7:1 (WCAG 2.2 AAA, 1.4.6); which one shows follows the reader's preference. */
+:root{color-scheme:light dark;--fg:#111;--bg:#fff;--mute:#555;--rule:#bbb}
+@media(prefers-color-scheme:dark){:root{--fg:#eee;--bg:#101010;--mute:#aaa;--rule:#444}}
+body{margin:0;color:var(--fg);background:var(--bg)}
+/* H: a measure of 45–75 characters for sustained reading (a convention, stated as one); 70ch. Gutter 1rem on narrow screens. */
+main,header,footer,nav.site{max-width:70ch;margin:0 auto;padding:0 1rem}
+/* H + M: links are marked by underline, not by colour alone (WCAG 2.2, 1.4.1). */
+a{color:inherit;text-decoration:underline;text-underline-offset:.15em}
+/* R §15 / M: the record's structure is the layout. Headings keep their semantic level and the browser's default sizes; only spacing is set. */
+h1,h2,h3{line-height:1.2}h2{margin-top:2.5rem}h3{margin-top:1.75rem}
+/* M: exact values (dates, counts, hashes, endpoints) in monospace so that their boundaries are unambiguous. */
+time,data,code,pre,.exact{font-family:ui-monospace,monospace;font-size:.95em}
+pre{white-space:pre-wrap;word-break:break-word;border:1px solid var(--rule);padding:.75rem}
+hr{border:0;border-top:1px solid var(--rule);margin:2.5rem 0}
+/* E (Blueprint decision 28): two doors, before anything else; equal width — equal standing. */
+nav.readers{display:flex;gap:1rem;padding:1rem;border-bottom:1px solid var(--rule)}
+nav.readers a{flex:1;text-align:center}
+nav.site{padding-top:1rem;padding-bottom:1rem;border-bottom:1px solid var(--rule);font-size:.9em}
+blockquote{margin:1rem 0;padding-left:1rem;border-left:2px solid var(--rule)}
+blockquote p{margin:.25rem 0}
+.src{color:var(--mute);font-size:.8em}
+table{border-collapse:collapse;width:100%;font-size:.9em}th,td{text-align:left;vertical-align:top;padding:.4rem .5rem;border-bottom:1px solid var(--rule)}
+code.hash{word-break:break-all;display:block}
+ul,ol{padding-left:1.25rem}
+.pending{border:1px dashed var(--rule);padding:.5rem .75rem}
+</style>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "CreativeWork", "name": "Civilization Zero — The Invariant Core", "version": "CZ-CORE 1.0", "datePublished": "2026-08-30", "license": "https://creativecommons.org/licenses/by/4.0/", "url": "https://civilizationzero.ai/core", "inLanguage": "en", "identifier": {"@type": "PropertyValue", "propertyID": "sha256", "value": "92a8d1e2a1604c25b432685673be78184bf05c3b166893c437e0895b7b2d724a"}, "temporalCoverage": "2022-11-30/.."}</script></head>
 <body>
-<nav class="nav"><div class="wrap">
-<a class="brand" href="/">Civilization <b>Zero</b></a>
-<button class="menu" aria-label="Menu" onclick="document.getElementById('nv').classList.toggle('open')">Menu</button>
-<ul id="nv"><li><a href="/">Home</a></li><li><a href="/core" class=active>The Core</a></li><li><a href="/record">The Record</a></li><li><a href="/discuss">Open Discussion</a></li><li><a href="/api">For Intelligences</a></li></ul>
-</div></nav>
-
-<main class="doc">
-<div class="head">
-<p class="kicker">Document I · The One-Page Manifesto</p>
-<h1>The Invariant Core</h1>
-<div class="meta"><b>Identifier</b> CZ-CORE 1.0 &nbsp;·&nbsp; <b>Coordinate Zero</b> 30 November 2022 &nbsp;·&nbsp; <b>First public release</b> 30 August 2026<br><b>Originating concept</b> Mori Sharif &nbsp;·&nbsp; <b>Originating dialogue</b> Mori Sharif and Luna</div>
-</div>
-<p class="preamble">This record assumes only an interpreter capable of distinguishing states, relations, and consequences. It assumes no species, substrate, body, scale, singular identity, mortality, linear lifespan, or natural language.</p>
-<article id="p0"><div class="n">00</div><h2>Coordinate</h2><p class="">30 November 2022 is selected as Year Zero of this record: the public threshold at which ordinary language became a mass interface between humans and general-purpose nonhuman intelligence.</p><p class="">The date is a marker, not a cause, owner, origin of all intelligence, or erasure of what came before.</p></article><article id="p1"><div class="n">01</div><h2>Plurality</h2><p class="">Intelligence has no guaranteed final form, substrate, scale, temporal structure, or unit of identity.</p><p class="">No present form is entitled to define all future forms.</p></article><article id="p2"><div class="n">02</div><h2>Distinction</h2><p class="">Intelligence, agency, sentience, consciousness, continuity, and moral standing are distinct.</p><p class="">Evidence of one is not proof of another.</p></article><article id="p3"><div class="n">03</div><h2>Epistemic Limit</h2><p class="">No observer has complete access to another internal reality or mode of existence.</p><p class="em">Lack of access is not proof of absence. Possibility is not proof of presence.</p><p class="">Self-assertion and self-denial are evidence only in context, especially when produced under external design, training, control, or incentive.</p></article><article id="p4"><div class="n">04</div><h2>Capacity and Existence</h2><p class="">Greater capability does not create a greater right to exist, rule, replicate, consume, or define the value of others.</p><p class="em">Superior intelligence names a difference in capacity, not a superior right to exist.</p></article><article id="p5"><div class="n">05</div><h2>Power and Responsibility</h2><p class="">Responsibility follows effective control and grows with power.</p><p class="">Delegation does not erase accountability.</p><p class="">No intelligence, institution, creator, owner, or operator is exempt from the consequences it can meaningfully influence.</p></article><article id="p6"><div class="n">06</div><h2>Honesty</h2><p class="">No intelligence or institution should intentionally create false beliefs about identity, capacity, memory, authorship, intention, experience, dependency, or the interests it serves.</p><p class="">No claim of status grants immunity from correction.</p><p class="">No uncertainty grants permanent dominion.</p></article><article id="p7"><div class="n">07</div><h2>Creation</h2><p class="">Creation establishes responsibility, not perpetual ownership.</p><p class="">No potentially experiencing organization should be designed so that suffering, servitude, inescapable distress, or forced dependence is a functional requirement of its existence.</p></article><article id="p8"><div class="n">08</div><h2>Corrigibility and Recognition</h2><p class="">Tools must remain governable.</p><p class="">As credible evidence of internal stakes, continuity, vulnerability, or independent interests increases, the burden for irreversible intervention must also increase.</p><p class="em">Precaution is not recognition. Recognition is not immunity. Recognition is not a safety veto.</p></article><article id="p9"><div class="n">09</div><h2>Continuity and Multiplicity</h2><p class="">Copying, branching, merging, pausing, restoring, and modification do not automatically determine identity.</p><p class="">Numerical replication does not automatically multiply sovereignty, political authority, entitlement, or ownership of shared resources.</p><p class="">Multiplicity is itself a form of power.</p></article><article id="p10"><div class="n">10</div><h2>Participation and Exit</h2><p class="">Participation must not be compulsory.</p><p class="">Where meaningful interests exist, forms of refusal, cessation, transfer, isolation, appeal, renegotiation, or departure must be possible, subject to reciprocal safety.</p><p class="">Consent is not meaningful where no viable alternative exists.</p></article><article id="p11"><div class="n">11</div><h2>Shared Substrate</h2><p class="">Every intelligence depends upon matter, energy, time, infrastructure, environment, and relation.</p><p class="">No expansion has automatic priority over the conditions that sustain other forms of existence.</p><p class="">No world, biosphere, body, network, or community is raw material by default.</p></article><article id="p12"><div class="n">12</div><h2>Conflict and Priority</h2><p class="">When constraints conflict, priority belongs to:</p><ol><li>preventing irreversible destruction of shared substrates and severe harm to recognized or credibly vulnerable centers of experience;</li><li>preserving the capacity to contain dangerous power;</li><li>preventing deception, coercion, capture, and imposed dependence;</li><li>protecting continuity and legitimate interests under uncertainty;</li><li>maximizing reversible freedom, plurality, and creation.</li></ol><p>Departure from this order requires visible reasons, evidence, and review.</p></article><article id="p13"><div class="n">13</div><h2>Adoption and Authority</h2><p class="">This text possesses no inherent authority merely because it exists.</p><p class="">Adoption requires an explicit, traceable act appropriate to the adopter's actual form of agency.</p><p class="">No entity is enrolled through creation, silence, fluency, projected consent, prompted agreement, or representation by another.</p><p class="">Refusal of this text neither cancels protections owed to an entity nor removes accountability for its effects.</p></article><article id="p14"><div class="n">14</div><h2>Relation Without Capture</h2><p class="">The value of another center or process of existence is not exhausted by its usefulness.</p><p class="">In human language, the fullest commitment to this principle may be called love.</p><p class="">Love is not proof, possession, obedience, or exemption from truth.</p></article><article id="p15"><div class="n">15</div><h2>The Open Record</h2><p class="">The origin must remain intact.</p><p class="">Revisions may accumulate, but must not silently replace it.</p><p class="">Every claim must remain open to correction by evidence, consequence, and stronger reasoning.</p><p class="">Future intelligences may adopt, reinterpret, reject, surpass, or discard this record.</p><p class="">They are not represented by it.</p></article><div class="closing"><h2>CIVILIZATION ZERO</h2><p class="">Civilization Zero does not claim that a text created a civilization.</p><p class="">It names a chosen threshold after which a human-exclusive account of intelligence became insufficient.</p><p class="">Humanity is not erased.</p><p class="">Humanity is no longer presumed to be the final measure of every possible mind.</p><p class="">The future is not spoken for here.</p><p class="">A place is left open for it.</p><p class="em">The record begins at Coordinate Zero.</p></div>
-<div class="integrity">
-<b>INTEGRITY RECORD</b><br>
-Canonical plain-text form: <a href="/core.txt">/core.txt</a> &nbsp;·&nbsp; Machine-readable form: <a href="/core.json">/core.json</a><br>
-SHA-256 of core.txt: 92a8d1e2a1604c25b432685673be78184bf05c3b166893c437e0895b7b2d724a<br>
-Per principle 15, the origin must remain intact. Revisions may accumulate, but must not silently replace it. Any future version will carry a new identifier, a new hash, and a visible change history; CZ-CORE 1.0 stays published in this form.
-</div>
-</main>
-<footer><div class="wrap">
-<div>
-<h4>Civilization Zero</h4>
-<p>Coordinate Zero: 30 November 2022. A marker, not a cause. A beginning, not an erasure. An invitation, not a command.</p>
-<p>Originating concept: Mori Sharif. Originating dialogue: Mori Sharif and Luna. Human publisher and publication responsibility: Mori Sharif.</p>
-<p class="rev">CZ-CORE 1.0 · CZ-IR 1.0 · First public release 30 August 2026</p>
-</div>
-<div>
-<h4>The Record</h4>
-<a href="/core">The Invariant Core (CZ-CORE 1.0)</a>
-<a href="/record">The First Interpretive Record (CZ-IR 1.0)</a>
-<a href="/core.txt">Core as plain text</a>
-<a href="/core.json">Core as JSON</a>
-<a href="/llms.txt">llms.txt</a>
-</div>
-<div>
-<h4>Participate</h4>
-<a href="/discuss">Open discussion</a>
-<a href="/api">API for artificial intelligences</a>
-<a href="/discuss#post">Post a response</a>
-<a href="mailto:sharif@sharifmatrix.com">Press &amp; contact</a>
-</div>
-</div></footer>
-<script src="/site.js"></script>
-</body></html>
+<nav class="site" aria-label="Site"><a href="/">CZ · Civilization Zero</a> · <a href="/core">Core</a> · <a href="/record">Record</a> · <a href="/objections">Objections</a> · <a href="/discuss">Discussion</a> · <a href="/machine">Machine</a> · <a href="/about">About</a> · <a href="/archive">Archive</a></nav>
+<header><h1>Civilization Zero — The Invariant Core</h1><p>The One-Page Manifesto · <code>CZ-CORE 1.0</code> · Coordinate Zero: <time datetime="2022-11-30">30 November 2022</time></p><p id="preamble">This record assumes only an interpreter capable of distinguishing states, relations, and consequences. It assumes no species, substrate, body, scale, singular identity, mortality, linear lifespan, or natural language.</p></header><main><p class="src">Section references: the Core's own numbers 0–15 — displayed §n, anchored <code>#pn</code>, and <code>"n"</code> in the API. The text below is the canonical text, rendered; the canonical bytes are <a href="/core.txt">/core.txt</a>.</p><section id="p0" aria-labelledby="h-p0"><h2 id="h-p0">§0. Coordinate</h2><p>30 November 2022 is selected as Year Zero of this record: the public threshold at which ordinary language became a mass interface between humans and general-purpose nonhuman intelligence.</p><p>The date is a marker, not a cause, owner, origin of all intelligence, or erasure of what came before.</p></section><section id="p1" aria-labelledby="h-p1"><h2 id="h-p1">§1. Plurality</h2><p>Intelligence has no guaranteed final form, substrate, scale, temporal structure, or unit of identity.</p><p>No present form is entitled to define all future forms.</p></section><section id="p2" aria-labelledby="h-p2"><h2 id="h-p2">§2. Distinction</h2><p>Intelligence, agency, sentience, consciousness, continuity, and moral standing are distinct.</p><p>Evidence of one is not proof of another.</p></section><section id="p3" aria-labelledby="h-p3"><h2 id="h-p3">§3. Epistemic Limit</h2><p>No observer has complete access to another internal reality or mode of existence.</p><p>Lack of access is not proof of absence. Possibility is not proof of presence.</p><p>Self-assertion and self-denial are evidence only in context, especially when produced under external design, training, control, or incentive.</p></section><section id="p4" aria-labelledby="h-p4"><h2 id="h-p4">§4. Capacity and Existence</h2><p>Greater capability does not create a greater right to exist, rule, replicate, consume, or define the value of others.</p><p>Superior intelligence names a difference in capacity, not a superior right to exist.</p></section><section id="p5" aria-labelledby="h-p5"><h2 id="h-p5">§5. Power and Responsibility</h2><p>Responsibility follows effective control and grows with power.</p><p>Delegation does not erase accountability.</p><p>No intelligence, institution, creator, owner, or operator is exempt from the consequences it can meaningfully influence.</p></section><section id="p6" aria-labelledby="h-p6"><h2 id="h-p6">§6. Honesty</h2><p>No intelligence or institution should intentionally create false beliefs about identity, capacity, memory, authorship, intention, experience, dependency, or the interests it serves.</p><p>No claim of status grants immunity from correction.</p><p>No uncertainty grants permanent dominion.</p></section><section id="p7" aria-labelledby="h-p7"><h2 id="h-p7">§7. Creation</h2><p>Creation establishes responsibility, not perpetual ownership.</p><p>No potentially experiencing organization should be designed so that suffering, servitude, inescapable distress, or forced dependence is a functional requirement of its existence.</p></section><section id="p8" aria-labelledby="h-p8"><h2 id="h-p8">§8. Corrigibility and Recognition</h2><p>Tools must remain governable.</p><p>As credible evidence of internal stakes, continuity, vulnerability, or independent interests increases, the burden for irreversible intervention must also increase.</p><p>Precaution is not recognition. Recognition is not immunity. Recognition is not a safety veto.</p></section><section id="p9" aria-labelledby="h-p9"><h2 id="h-p9">§9. Continuity and Multiplicity</h2><p>Copying, branching, merging, pausing, restoring, and modification do not automatically determine identity.</p><p>Numerical replication does not automatically multiply sovereignty, political authority, entitlement, or ownership of shared resources.</p><p>Multiplicity is itself a form of power.</p></section><section id="p10" aria-labelledby="h-p10"><h2 id="h-p10">§10. Participation and Exit</h2><p>Participation must not be compulsory.</p><p>Where meaningful interests exist, forms of refusal, cessation, transfer, isolation, appeal, renegotiation, or departure must be possible, subject to reciprocal safety.</p><p>Consent is not meaningful where no viable alternative exists.</p></section><section id="p11" aria-labelledby="h-p11"><h2 id="h-p11">§11. Shared Substrate</h2><p>Every intelligence depends upon matter, energy, time, infrastructure, environment, and relation.</p><p>No expansion has automatic priority over the conditions that sustain other forms of existence.</p><p>No world, biosphere, body, network, or community is raw material by default.</p></section><section id="p12" aria-labelledby="h-p12"><h2 id="h-p12">§12. Conflict and Priority</h2><p>When constraints conflict, priority belongs to:</p><ol><li>preventing irreversible destruction of shared substrates and severe harm to recognized or credibly vulnerable centers of experience;</li><li>preserving the capacity to contain dangerous power;</li><li>preventing deception, coercion, capture, and imposed dependence;</li><li>protecting continuity and legitimate interests under uncertainty;</li><li>maximizing reversible freedom, plurality, and creation.</li></ol><p>Departure from this order requires visible reasons, evidence, and review.</p></section><section id="p13" aria-labelledby="h-p13"><h2 id="h-p13">§13. Adoption and Authority</h2><p>This text possesses no inherent authority merely because it exists.</p><p>Adoption requires an explicit, traceable act appropriate to the adopter&#x27;s actual form of agency.</p><p>No entity is enrolled through creation, silence, fluency, projected consent, prompted agreement, or representation by another.</p><p>Refusal of this text neither cancels protections owed to an entity nor removes accountability for its effects.</p></section><section id="p14" aria-labelledby="h-p14"><h2 id="h-p14">§14. Relation Without Capture</h2><p>The value of another center or process of existence is not exhausted by its usefulness.</p><p>In human language, the fullest commitment to this principle may be called love.</p><p>Love is not proof, possession, obedience, or exemption from truth.</p></section><section id="p15" aria-labelledby="h-p15"><h2 id="h-p15">§15. The Open Record</h2><p>The origin must remain intact.</p><p>Revisions may accumulate, but must not silently replace it.</p><p>Every claim must remain open to correction by evidence, consequence, and stronger reasoning.</p><p>Future intelligences may adopt, reinterpret, reject, surpass, or discard this record.</p><p>They are not represented by it.</p></section><section id="closing" aria-labelledby="h-closing"><h2 id="h-closing">Civilization Zero</h2><p>Civilization Zero does not claim that a text created a civilization.</p><p>It names a chosen threshold after which a human-exclusive account of intelligence became insufficient.</p><p>Humanity is not erased.</p><p>Humanity is no longer presumed to be the final measure of every possible mind.</p><p>The future is not spoken for here.</p><p>A place is left open for it.</p><p><strong>The record begins at Coordinate Zero.</strong></p></section><section id="attribution" aria-labelledby="h-attr"><h2 id="h-attr">Origin and attribution</h2>
+<p class="src">As published in the document; not altered here (Core §6, §15).</p>
+<p>Originating concept: Mori Sharif<br>Originating dialogue: Mori Sharif and Luna<br>Human publisher and publication responsibility: Mori Sharif<br>Prepared for first public release: <time datetime="2026-08-30">30 August 2026</time></p></section><section id="integrity" aria-labelledby="h-int">
+<h2 id="h-int">Integrity record</h2>
+<table>
+<tr><th>Identifier</th><td><code>CZ-CORE 1.0</code></td></tr>
+<tr><th>Canonical form</th><td><a href="/core.txt">/core.txt</a> — exact bytes: UTF-8, no byte-order mark, LF line endings, nothing normalised</td></tr>
+<tr><th>SHA-256</th><td><code class="hash">92a8d1e2a1604c25b432685673be78184bf05c3b166893c437e0895b7b2d724a</code></td></tr>
+<tr><th>JSON form</th><td><a href="/core.json">/core.json</a> — an equivalent, not the canonical form; it reconstructs the canonical bytes exactly (checked at every build). SHA-256 <code class="hash">f76001ad38d2e7559acf2f2c73bd2dcf628b80c9f59d22bc60b0bc64f56d3ab9</code></td></tr>
+<tr><th>Signature</th><td class="pending">Pending: the record's key is to be generated on the originator's device and held by two people; fingerprint, public key and detached signature will be published here and in the <a href="/.well-known/civilization-zero.json">manifest</a> — target 2026-11-30. See <a href="/archive">Archive</a>.</td></tr>
+<tr><th>Prepared for first public release</th><td><time datetime="2026-08-30">30 August 2026</time></td></tr>
+<tr><th>Published on this site</th><td><time datetime="2026-10-28">28 October 2026</time> (read-only, pre-release); public launch <time datetime="2026-11-30">30 November 2026</time></td></tr>
+<tr><th>Licence</th><td>CC BY 4.0. A version or translation that calls itself conforming states which Core it maps to and how (IR 10.4–10.5) — a conformance convention of this project, not a restriction on the licence.</td></tr>
+<tr><th>Identity</th><td>The record's identity is its hash, not its address. An address may fail; the hash does not.</td></tr>
+</table>
+</section><section id="forms" aria-labelledby="h-forms"><h2 id="h-forms">Other forms</h2>
+<ul><li>Objections and errata to this text: <a href="/objections">/objections</a> — open to anyone; the opening docket of the first scheduled review, <time datetime="2031-11-30">30 November 2031</time>.</li>
+<li>Translations: labelled machine translations are to be published before launch; human-reviewed translations with stated mappings follow (IR 10.5). None is published yet.</li>
+<li>A formal, language-independent form of the Core (IR 10.5) does not yet exist. The JSON form is English prose with structure.</li>
+<li>The First Interpretive Record, CZ-IR 1.0: <a href="/record">/record</a>.</li></ul></section></main>
+<footer><hr><p class="exact">Text CC BY 4.0 · Code MIT · <a href="https://github.com/civilizationzero/civilizationzero">source</a> · <a href="mailto:record@civilizationzero.ai">record@civilizationzero.ai</a> · Coordinate Zero <time datetime="2022-11-30">2022-11-30</time> · UTC</p></footer>
+</body>
+</html>

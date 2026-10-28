@@ -7,7 +7,7 @@
   "originating_concept": "Mori Sharif",
   "originating_dialogue": "Mori Sharif and Luna",
   "human_publisher": "Mori Sharif",
-  "canonical_url": "https://civilization0.ai/core",
+  "canonical_url": "https://civilizationzero.ai/core",
   "preamble": "This record assumes only an interpreter capable of distinguishing states, relations, and consequences. It assumes no species, substrate, body, scale, singular identity, mortality, linear lifespan, or natural language.",
   "principles": [
     {
@@ -185,5 +185,7 @@
       6
     ]
   },
-  "sha256_of_core_txt": "92a8d1e2a1604c25b432685673be78184bf05c3b166893c437e0895b7b2d724a"
+  "sha256_of_core_txt": "92a8d1e2a1604c25b432685673be78184bf05c3b166893c437e0895b7b2d724a",
+  "canonical_text": "https://civilizationzero.ai/core.txt",
+  "note": "This JSON is an equivalent form of CZ-CORE 1.0, not the canonical one. The canonical form is the text file whose SHA-256 is given; this JSON reconstructs that file byte for byte and the build checks that it does. It is English prose with structure, not a language-independent form (IR 10.5): none exists yet."
 }

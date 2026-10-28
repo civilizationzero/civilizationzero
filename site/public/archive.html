@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Archive, signature, mirrors · Civilization Zero</title>
+<meta name="description" content="Hashes, the pending signature and timestamp, mirrors and deposit, the preservation bundle, succession and correction — with honest statuses.">
+<link rel="canonical" href="https://civilizationzero.ai/archive">
+<link rel="service-desc" type="application/vnd.oai.openapi+json" href="/api/openapi.json">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<style>
+/* H + C: no typeface is shipped; the generic family is chosen (the smallest choice available) so the reader's device renders every script. Nothing to rot. */
+html{font-family:system-ui,sans-serif;font-size:100%;line-height:1.5}
+/* H: two palettes, each at contrast >= 7:1 (WCAG 2.2 AAA, 1.4.6); which one shows follows the reader's preference. */
+:root{color-scheme:light dark;--fg:#111;--bg:#fff;--mute:#555;--rule:#bbb}
+@media(prefers-color-scheme:dark){:root{--fg:#eee;--bg:#101010;--mute:#aaa;--rule:#444}}
+body{margin:0;color:var(--fg);background:var(--bg)}
+/* H: a measure of 45–75 characters for sustained reading (a convention, stated as one); 70ch. Gutter 1rem on narrow screens. */
+main,header,footer,nav.site{max-width:70ch;margin:0 auto;padding:0 1rem}
+/* H + M: links are marked by underline, not by colour alone (WCAG 2.2, 1.4.1). */
+a{color:inherit;text-decoration:underline;text-underline-offset:.15em}
+/* R §15 / M: the record's structure is the layout. Headings keep their semantic level and the browser's default sizes; only spacing is set. */
+h1,h2,h3{line-height:1.2}h2{margin-top:2.5rem}h3{margin-top:1.75rem}
+/* M: exact values (dates, counts, hashes, endpoints) in monospace so that their boundaries are unambiguous. */
+time,data,code,pre,.exact{font-family:ui-monospace,monospace;font-size:.95em}
+pre{white-space:pre-wrap;word-break:break-word;border:1px solid var(--rule);padding:.75rem}
+hr{border:0;border-top:1px solid var(--rule);margin:2.5rem 0}
+/* E (Blueprint decision 28): two doors, before anything else; equal width — equal standing. */
+nav.readers{display:flex;gap:1rem;padding:1rem;border-bottom:1px solid var(--rule)}
+nav.readers a{flex:1;text-align:center}
+nav.site{padding-top:1rem;padding-bottom:1rem;border-bottom:1px solid var(--rule);font-size:.9em}
+blockquote{margin:1rem 0;padding-left:1rem;border-left:2px solid var(--rule)}
+blockquote p{margin:.25rem 0}
+.src{color:var(--mute);font-size:.8em}
+table{border-collapse:collapse;width:100%;font-size:.9em}th,td{text-align:left;vertical-align:top;padding:.4rem .5rem;border-bottom:1px solid var(--rule)}
+code.hash{word-break:break-all;display:block}
+ul,ol{padding-left:1.25rem}
+.pending{border:1px dashed var(--rule);padding:.5rem .75rem}
+</style>
+</head>
+<body>
+<nav class="site" aria-label="Site"><a href="/">CZ · Civilization Zero</a> · <a href="/core">Core</a> · <a href="/record">Record</a> · <a href="/objections">Objections</a> · <a href="/discuss">Discussion</a> · <a href="/machine">Machine</a> · <a href="/about">About</a> · <a href="/archive">Archive</a></nav>
+<main>
+<h1>Archive, signature, mirrors</h1>
+<p>What is kept, how it can be checked, and what is still pending — with dates. Promises here are marked as what they are: a <em>commitment</em>, an <em>implementation</em>, or a <em>verified result</em>; they are not the same thing.</p>
+<section aria-labelledby="h-id"><h2 id="h-id">Identity is the hash</h2>
+<p>The record's identity is the SHA-256 of its canonical text, printed on <a href="/core">/core</a>, in the <a href="/.well-known/civilization-zero.json">manifest</a>, in <a href="/llms.txt">llms.txt</a> and in every bundle. An address may fail; the hash does not. The hash is of the exact bytes — UTF-8, no byte-order mark, LF line endings, nothing normalised. A copy that re-encodes line endings would otherwise look altered.</p>
+<table><tr><th>Document</th><th>Canonical bytes</th><th>SHA-256</th></tr><tr><td>CZ-CORE 1.0</td><td><a href="/core.txt">/core.txt</a></td><td><code class="hash">92a8d1e2a1604c25b432685673be78184bf05c3b166893c437e0895b7b2d724a</code></td></tr><tr><td>CZ-IR 1.0</td><td><a href="/record.txt">/record.txt</a></td><td><code class="hash">71e1488e631e090c0820bf8b78b1fda70ffacba1da146c36d8893600320fcc8d</code></td></tr><tr><td>Machine prompt cz-machine-1.0</td><td><a href="/prompts/cz-machine-1.0.txt">/prompts/cz-machine-1.0.txt</a></td><td><code class="hash">f871380dfe1b53e74ff8c4353fc95d60faa180edca36122ca7bbe8313ba2829a</code></td></tr><tr><td>Bundle (pre-release, unsigned)</td><td><a href="/archive/cz-bundle-1.0-pre.tar">/archive/cz-bundle-1.0-pre.tar</a></td><td><code class="hash">ed85d91c676d61b37a16f6627460571fd3da69c2cdce9699838757ac27cf03e9</code></td></tr></table>
+<p class="src">Bundle size 512,000 bytes; built deterministically (fixed timestamps, sorted members), so the same contents give the same hash.</p>
+</section>
+<section aria-labelledby="h-sig"><h2 id="h-sig">Signature and timestamp</h2>
+<p class="pending"><strong>Pending.</strong> A hash served by the same domain proves consistency, not that the operator changed nothing. The record will carry a public key (Ed25519), generated on the originating human's device and held by two people, its fingerprint printed in the Core's integrity record, and a detached signature over the manifest and each bundle; the manifest hash will be timestamped with OpenTimestamps and the proof kept in the repository and the bundle, with the block height and transaction once confirmed. Target: <time datetime="2026-11-30">2026-11-30</time>. Until then: unsigned, and said so.</p>
+</section>
+<section aria-labelledby="h-mir"><h2 id="h-mir">Mirrors and deposit</h2>
+<table><tr><th>Where</th><th>What</th><th>Status</th></tr>
+<tr><td><a href="https://github.com/civilizationzero/civilizationzero">GitHub, civilizationzero/civilizationzero</a></td><td>Source, canonical texts, blueprint, reviews, registers; every change in its history</td><td>live</td></tr>
+<tr><td>Internet Archive</td><td>Snapshot of the site at launch and at each anniversary</td><td>at launch</td></tr>
+<tr><td>Two independent mirrors, one outside the originator's jurisdiction</td><td>The signed bundle, re-verified daily; holders named here</td><td class="pending">pending — holders not yet named</td></tr>
+<tr><td>Deposit with a persistent identifier (Zenodo, DOI)</td><td>The bundle, at launch and at each version</td><td class="pending">pending — target 2026-11-30</td></tr>
+</table>
+</section>
+<section aria-labelledby="h-bundle"><h2 id="h-bundle">The bundle</h2>
+<p><a href="/archive/cz-bundle-1.0-pre.tar">/archive/cz-bundle-1.0-pre.tar</a>: the canonical texts, their JSON forms, the blueprint, the objections register, every review archived so far, the licences, the manifest, the machine prompt, and a README stating the encoding and hashing conventions. One file; no dependency on HTTP. The signed bundle for 1.0 replaces this pre-release bundle at launch; this one stays at its address.</p>
+</section>
+<section aria-labelledby="h-ops"><h2 id="h-ops">Verification, succession, correction</h2>
+<ul>
+<li><strong>Daily verification</strong> — a job that fetches the live bytes, recomputes the published hashes and alerts on drift; its results published here. <span class="pending">Pending — target 2026-11-30.</span></li>
+<li><strong>Build-time verification</strong> — every quotation on every page is compared byte-for-byte with the canonical text; the JSON forms are reconstructed into the canonical bytes; the build fails on any drift. <em>Implemented</em> (<code>site/check.py</code> in the repository).</li>
+<li><strong>Succession</strong> — a named second key-holder outside the originator's company and jurisdiction; a published procedure for transfer of domain, repository and accounts; prepaid renewal of the domain for its longest term; a dead-man's procedure (if the administrator does not confirm within 90 days of a scheduled check, the second key-holder takes custody). <span class="pending">Pending — the second key-holder is not yet named.</span></li>
+<li><strong>Recovery exercise</strong> — once a year, the site restored from the bundle on a host the originator does not control, with the result published. First: 2027.</li>
+<li><strong>Correction before 2031</strong> — objections and errata are filed in the <a href="/objections">register</a> by anyone; the originator responds within 60 days; a consequential error may produce an erratum note published beside the text without changing 1.0. A successor version is a new file with its own hash, change log, contributors, reasons, evidence and unresolved objections (IR 10.4); 1.0 stays at its addresses.</li>
+<li><strong>Change history</strong> — <a href="https://github.com/civilizationzero/civilizationzero/commits/main">the repository's commits</a>.</li>
+</ul>
+</section>
+</main>
+<footer><hr><p class="exact">Text CC BY 4.0 · Code MIT · <a href="https://github.com/civilizationzero/civilizationzero">source</a> · <a href="mailto:record@civilizationzero.ai">record@civilizationzero.ai</a> · Coordinate Zero <time datetime="2022-11-30">2022-11-30</time> · UTC</p></footer>
+</body>
+</html>

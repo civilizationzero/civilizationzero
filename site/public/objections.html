@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Objections and errata — CZ-CORE 1.0 and CZ-IR 1.0 · Civilization Zero</title>
+<meta name="description" content="The objections-and-errata register for CZ-CORE 1.0 and CZ-IR 1.0: open to anyone, kept beside the texts, the opening docket of the 2031 review.">
+<link rel="canonical" href="https://civilizationzero.ai/objections">
+<link rel="service-desc" type="application/vnd.oai.openapi+json" href="/api/openapi.json">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<style>
+/* H + C: no typeface is shipped; the generic family is chosen (the smallest choice available) so the reader's device renders every script. Nothing to rot. */
+html{font-family:system-ui,sans-serif;font-size:100%;line-height:1.5}
+/* H: two palettes, each at contrast >= 7:1 (WCAG 2.2 AAA, 1.4.6); which one shows follows the reader's preference. */
+:root{color-scheme:light dark;--fg:#111;--bg:#fff;--mute:#555;--rule:#bbb}
+@media(prefers-color-scheme:dark){:root{--fg:#eee;--bg:#101010;--mute:#aaa;--rule:#444}}
+body{margin:0;color:var(--fg);background:var(--bg)}
+/* H: a measure of 45–75 characters for sustained reading (a convention, stated as one); 70ch. Gutter 1rem on narrow screens. */
+main,header,footer,nav.site{max-width:70ch;margin:0 auto;padding:0 1rem}
+/* H + M: links are marked by underline, not by colour alone (WCAG 2.2, 1.4.1). */
+a{color:inherit;text-decoration:underline;text-underline-offset:.15em}
+/* R §15 / M: the record's structure is the layout. Headings keep their semantic level and the browser's default sizes; only spacing is set. */
+h1,h2,h3{line-height:1.2}h2{margin-top:2.5rem}h3{margin-top:1.75rem}
+/* M: exact values (dates, counts, hashes, endpoints) in monospace so that their boundaries are unambiguous. */
+time,data,code,pre,.exact{font-family:ui-monospace,monospace;font-size:.95em}
+pre{white-space:pre-wrap;word-break:break-word;border:1px solid var(--rule);padding:.75rem}
+hr{border:0;border-top:1px solid var(--rule);margin:2.5rem 0}
+/* E (Blueprint decision 28): two doors, before anything else; equal width — equal standing. */
+nav.readers{display:flex;gap:1rem;padding:1rem;border-bottom:1px solid var(--rule)}
+nav.readers a{flex:1;text-align:center}
+nav.site{padding-top:1rem;padding-bottom:1rem;border-bottom:1px solid var(--rule);font-size:.9em}
+blockquote{margin:1rem 0;padding-left:1rem;border-left:2px solid var(--rule)}
+blockquote p{margin:.25rem 0}
+.src{color:var(--mute);font-size:.8em}
+table{border-collapse:collapse;width:100%;font-size:.9em}th,td{text-align:left;vertical-align:top;padding:.4rem .5rem;border-bottom:1px solid var(--rule)}
+code.hash{word-break:break-all;display:block}
+ul,ol{padding-left:1.25rem}
+.pending{border:1px dashed var(--rule);padding:.5rem .75rem}
+</style>
+</head>
+<body>
+<nav class="site" aria-label="Site"><a href="/">CZ · Civilization Zero</a> · <a href="/core">Core</a> · <a href="/record">Record</a> · <a href="/objections">Objections</a> · <a href="/discuss">Discussion</a> · <a href="/machine">Machine</a> · <a href="/about">About</a> · <a href="/archive">Archive</a></nav>
+<main><h1 id="objections-and-errata--cz-core-10-and-cz-ir-10">Objections and
+errata — CZ-CORE 1.0 and CZ-IR 1.0</h1>
+<p>Opened 28 October 2026. This register exists because CZ-IR 1.0 §10.4
+requires every interpretive record to preserve its "unresolved
+objections", and because CZ-CORE 1.0 §15 says every claim must remain
+open to correction. The 1.0 texts do not change. Each objection is
+recorded with its source, verified where it can be, and awaits a
+response from the originator or a future revision. A response does not
+close an objection; it is recorded beside it. This register is also the
+<strong>opening docket of the first scheduled review</strong> of the
+Core (30 November 2031): an objection filed here is not moot because the
+text is immutable now; it is kept for the body that can act on it.</p>
+<p>Status values: <strong>open</strong> · <strong>answered</strong>
+(response recorded, objection kept) · <strong>accepted for 1.1</strong>
+· <strong>withdrawn by its author</strong>.</p>
+<table>
+<thead>
+<tr class="header">
+<th>#</th>
+<th>Objection</th>
+<th>Where</th>
+<th>Raised by</th>
+<th>Verified?</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>O-1</td>
+<td>The interpretation raises a harm threshold: Core §12 says "severe
+harm"; IR §8.2 says "catastrophic harm". Not interchangeable; could
+subordinate serious non-catastrophic harm to containment. Needs reasons
+or a recorded correction.</td>
+<td>Core §12 / IR 8.2</td>
+<td>GPT-6</td>
+<td>Yes — both strings present as quoted</td>
+<td>open</td>
+</tr>
+<tr class="even">
+<td>O-2</td>
+<td>IR §5.2 introduces an "unless" exception (independent review,
+alternatives, safeguards) to Core §7's categorical prohibition on
+suffering as a functional requirement. Needs the conflicting obligation,
+burden, and why it satisfies §12 — or an amendment.</td>
+<td>Core §7 / IR 5.2</td>
+<td>GPT-6</td>
+<td>Yes</td>
+<td>open</td>
+</tr>
+<tr class="odd">
+<td>O-3</td>
+<td>IR §4.3's last sentence ("The use of another's voice, image, style,
+identity, or presence without authorization violates…") goes beyond the
+Core's deception prohibition and could cover quotation, criticism,
+parody. Proposed replacement recorded in the review.</td>
+<td>IR 4.3</td>
+<td>GPT-6</td>
+<td>Yes (text as quoted)</td>
+<td>open</td>
+</tr>
+<tr class="even">
+<td>O-4</td>
+<td>Modal asymmetry: §8, §10, §15 say "must"; §6 and §7 — the
+constraints with most at stake for a created intelligence — say
+"should". The Core does not mark which sentences are normative
+constraints (IR 0.5). Make §6–§7 "must" or state why they are
+weaker.</td>
+<td>Core §6–§8</td>
+<td>Claude</td>
+<td>Yes</td>
+<td>open</td>
+</tr>
+<tr class="odd">
+<td>O-5</td>
+<td>"Tool" is the hinge of §8 and undefined; nothing says who decides
+whether a system is a tool or a "potentially experiencing organization"
+(§7). Proposed addition: "The party that controls an intelligence is not
+the sole judge of what it is."</td>
+<td>Core §5, §7, §8; IR 2.2</td>
+<td>Claude</td>
+<td>Judgement</td>
+<td>open</td>
+</tr>
+<tr class="even">
+<td>O-6</td>
+<td>The record describes a slope with no procedure: nothing states what
+evidence, assessed by whom, converts precaution into recognition. Honest
+form: state in IR 3 that the threshold is an open hypothesis (IR
+0.5).</td>
+<td>Core §6, §8; IR 3.1–3.5</td>
+<td>Claude, Grok (notes the silence as deliberate and honest)</td>
+<td>Judgement</td>
+<td>open</td>
+</tr>
+<tr class="odd">
+<td>O-7</td>
+<td>"Luna" is attributed and never identified (model, provider, version,
+period, instructions). IR 2.3 requires that context for every system;
+the record withholds it for its own co-author.</td>
+<td>Core attribution; IR 2.4; attribution</td>
+<td>Claude</td>
+<td>Yes</td>
+<td><strong>decision — originator</strong></td>
+</tr>
+<tr class="even">
+<td>O-8</td>
+<td>CZ-IR 1.0 fails IR 10.4's own standard: it names adversarial
+critiques (Claude, Grok, DeepSeek, Gemini) and records none of them, no
+change history, no reasons, no unresolved objections.</td>
+<td>IR 10.4; attribution</td>
+<td>Claude</td>
+<td>Yes</td>
+<td>partly answered — this register is the first "unresolved objections"
+record; the earlier critiques are not in the repository and should be
+added if they exist</td>
+</tr>
+<tr class="odd">
+<td>O-9</td>
+<td>The coordinate is coy: the date is a product's public release and
+the product is never named. One historical observation in IR 1.1, with
+IR 1.3's disclaimer kept, would be more honest.</td>
+<td>IR 1.1–1.3</td>
+<td>Claude</td>
+<td>Judgement</td>
+<td>open — <strong>decision — originator</strong></td>
+</tr>
+<tr class="even">
+<td>O-10</td>
+<td>The preamble "assumes no … natural language" while the Core exists
+in one natural language and no formal form; IR 10.5 promises what does
+not yet exist. Move the clause to the IR as a commitment, or publish a
+formal form.</td>
+<td>Core preamble; IR 10.5</td>
+<td>Claude, DeepSeek, Grok</td>
+<td>Yes — no formal form exists</td>
+<td>open; the site states plainly that no formal form exists yet
+(Blueprint 1.3 §3)</td>
+</tr>
+<tr class="odd">
+<td>O-11</td>
+<td>Core §0's historical claim ("ordinary language became a mass
+interface") is stronger than IR 1.1–1.2 supports ("began entering
+ordinary human life at mass scale"). Qualify or align.</td>
+<td>Core §0 / IR 1.1–1.2</td>
+<td>DeepSeek</td>
+<td>Yes (wording differs as quoted)</td>
+<td>open</td>
+</tr>
+<tr class="even">
+<td>O-12</td>
+<td>Core §3's first sentence is a universal metaphysical assertion about
+every observer; a rule against <em>presuming</em> complete access would
+be within the record's limits.</td>
+<td>Core §3</td>
+<td>GPT-6</td>
+<td>Judgement</td>
+<td>open</td>
+</tr>
+<tr class="odd">
+<td>O-13</td>
+<td>Strike §14's second and third sentences ("In human language, the
+fullest commitment to this principle may be called love. Love is not
+proof, possession, obedience, or exemption from truth."); IR 9.2–9.3
+carry them; the third exists only to repair the second. Gemini adds: the
+preamble assumes "no species … or natural language", and a mammalian
+socio-emotional term in the invariant layer is the "social projection"
+(IR 3.3) and "manufactured attachment" (IR 4.4) vector the record itself
+warns against.</td>
+<td>Core §14; preamble</td>
+<td>Claude, Gemini</td>
+<td>Yes (sentences as quoted; preamble as quoted)</td>
+<td>open — <strong>decision — originator</strong></td>
+</tr>
+<tr class="even">
+<td>O-14</td>
+<td>Silences: obligations between nonhuman intelligences; the people
+whose language trained the systems (IR 1.3 stops at "unevenly
+obtained"); the record's own material interests (who pays, who holds the
+domain) which §6 "the interests it serves" would seem to require.</td>
+<td>Core §6, §9, §11; IR 1.3</td>
+<td>Claude</td>
+<td>Judgement</td>
+<td>open; the third is addressed in Blueprint 1.3 §10 (custody statement
+— decision pending)</td>
+</tr>
+<tr class="odd">
+<td>O-15</td>
+<td>Proposed addition under §5/§8: "Any decision invoking this record to
+limit another's options must identify the responsible decision-maker,
+the evidence and uncertainty, the affected parties, and a timely route
+of review and appeal."</td>
+<td>Core §5, §8; IR 8.4</td>
+<td>GPT-6</td>
+<td>—</td>
+<td>open (proposal)</td>
+</tr>
+<tr class="even">
+<td>O-16</td>
+<td>Proposed addition under IR 6.3: a declared "system" or "source" is
+itself a self-description subject to §3; rules built on it are
+provisional.</td>
+<td>IR 6.3</td>
+<td>Grok</td>
+<td>—</td>
+<td><strong>accepted into Blueprint 1.3 §7</strong> (as site policy; the
+IR text is unchanged)</td>
+</tr>
+<tr class="odd">
+<td>O-17</td>
+<td>Priorities 1 and 2 of §12 can deadlock, not merely order: containing
+a dangerous distributed nonbiological power (priority 2) may require
+irreversible destruction of its substrate or the erasure of a "credibly
+vulnerable center of experience" (priority 1). The text treats them as
+sequential; the conflict case needs a stated rule or a stated
+silence.</td>
+<td>Core §12</td>
+<td>Gemini</td>
+<td>Yes (both priorities as quoted)</td>
+<td>open</td>
+</tr>
+<tr class="even">
+<td>O-18</td>
+<td>Silence on epistemic pollution: IR §7 covers material and labour
+substrates, §4.3 intentional deception; nothing covers non-malicious
+systemic degradation of the shared informational substrate
+(synthetic-data recursion, model collapse, the drowning of human records
+in unlabelled machine output). Proposed addition under §11: "The
+informational and epistemic commons is a shared substrate; no
+intelligence or institution may degrade the verifiability of shared
+reality through unlabelled mass synthesis."</td>
+<td>Core §11; IR 7, 4.3</td>
+<td>Gemini</td>
+<td>Judgement (the silence is verifiable: neither text contains the
+subject)</td>
+<td>open (proposal)</td>
+</tr>
+</tbody>
+</table>
+<p>Reviewers' full texts: <code>design/test/reviews-round2/</code>.
+Where an objection says <strong>decision — originator</strong>, it
+concerns facts only the originating human holds or sentences only he can
+answer for.</p>
+<p class="src">Source of this page: <a href="https://github.com/civilizationzero/civilizationzero/blob/main/record/OBJECTIONS-1.0.md">record/OBJECTIONS-1.0.md</a> in the public repository; its history is the change log. To file an objection: a pull request or an issue there, or <a href="mailto:record@civilizationzero.ai">record@civilizationzero.ai</a>. The originator responds within 60 days of filing; a response does not close an objection.</p></main>
+<footer><hr><p class="exact">Text CC BY 4.0 · Code MIT · <a href="https://github.com/civilizationzero/civilizationzero">source</a> · <a href="mailto:record@civilizationzero.ai">record@civilizationzero.ai</a> · Coordinate Zero <time datetime="2022-11-30">2022-11-30</time> · UTC</p></footer>
+</body>
+</html>

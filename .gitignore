@@ -6,3 +6,6 @@ site/build/payload.json
 site/build/site.*
 site/build/admin_token.txt
 design/*.png
+site/shots/
+site/preview/
+__pycache__/

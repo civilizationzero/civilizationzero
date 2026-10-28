@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://civilizationzero.ai/core.schema.json",
+  "title": "CZ-CORE JSON form",
+  "type": "object",
+  "required": [
+    "identifier",
+    "preamble",
+    "principles",
+    "closing",
+    "sha256_of_core_txt"
+  ],
+  "properties": {
+    "identifier": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "subtitle": {
+      "type": "string"
+    },
+    "coordinate_zero": {
+      "type": "string",
+      "format": "date"
+    },
+    "first_public_release": {
+      "type": "string",
+      "format": "date"
+    },
+    "preamble": {
+      "type": "string"
+    },
+    "principles": {
+      "type": "array",
+      "minItems": 16,
+      "maxItems": 16,
+      "items": {
+        "type": "object",
+        "required": [
+          "n",
+          "title",
+          "statements"
+        ],
+        "properties": {
+          "n": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 15
+          },
+          "title": {
+            "type": "string"
+          },
+          "statements": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "ordered": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "closing": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "closing": {
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string"
+        },
+        "statements": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "sha256_of_core_txt": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    }
+  }
+}
