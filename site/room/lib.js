@@ -13,6 +13,9 @@ const CONTACT = "record@civilizationzero.ai";
 const SB = process.env.SUPABASE_URL, KEY = process.env.SUPABASE_ANON_KEY;
 const TOKEN = process.env.CZ_ADMIN_TOKEN || "";
 const OPEN = T.open === true || process.env.CZ_ROOM_OPEN === "1";
+// once the room has opened, its daily chain is kept and served whether or not the room is open: closing the room stops new
+// entries, never the record of what was said (a closed room's days are hashed too, empty, so reopening leaves no gap)
+const CHAIN = OPEN || /^\d{4}-\d\d-\d\d$/.test(T.opened || "");
 const OPENS = T.opens_not_later_than; // ISO date
 const MODERATION_PROMPT_VERSION = "cz-moderation-1.0";
 const CATEGORIES = ["harassment_or_threat", "private_person_exposure", "deceptive_impersonation", "advertising_spam", "resource_abuse", "exposed_credentials"];
@@ -274,5 +277,5 @@ function entryHtml(e) {
 // A valid calendar date (R-29)
 const validDate = (s) => { if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false; const d = new Date(s + "T00:00:00Z"); return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === s; };
 
-module.exports = { ORIGIN, CONTACT, OPEN, OPENS, TOKEN, T, esc, log, json, html, shell, rpc, rest, sourceHash, sourceOf, tokenEquals, verifySignature, fullOrderKey, validate, classify, translate,
+module.exports = { ORIGIN, CONTACT, OPEN, CHAIN, OPENS, TOKEN, T, esc, log, json, html, shell, rpc, rest, sourceHash, sourceOf, tokenEquals, verifySignature, fullOrderKey, validate, classify, translate,
                    allowance, groupEntries, groupKey, entryHtml, metaHtml, contentHtml, fmtTime, isoTime, isoFull, validDate, LANG_RE, MODERATION_PROMPT_VERSION, CATEGORIES };

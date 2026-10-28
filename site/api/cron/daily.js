@@ -4,14 +4,14 @@
 // and `?day=YYYY-MM-DD` to compute up to that day, or `?day=…&force=1` to recompute from that day on (revisions are public).
 const R = require("../../room/lib.js");
 const G = require("../../room/register.js");
-const { OPEN, json, rpc } = R;
+const { CHAIN, json, rpc } = R;
 
 module.exports = async (req, res) => {
   const url = new URL(req.url, "http://x");
   const auth = (req.headers["authorization"] || "").replace(/^Bearer\s+/i, "");
   const ok = R.tokenEquals(auth, process.env.CRON_SECRET || "") || R.tokenEquals(auth, R.TOKEN);
   if (!ok) return json(res, 401, { error: "unauthorised" }, { "Cache-Control": "no-store" });
-  if (!OPEN) return json(res, 200, { state: "closed", done: false }, { "Cache-Control": "no-store" });
+  if (!CHAIN) return json(res, 200, { state: "closed", done: false }, { "Cache-Control": "no-store" });   // before the room first opened
   const day = url.searchParams.get("day");
   // 1. retry entries the classifier has not judged yet (a failed call is recorded as pending, never blocks a post)
   let retried = 0;

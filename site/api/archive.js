@@ -3,7 +3,8 @@
 // Both are streamed entry by entry, so the whole archive never has to fit one response buffer (R-4).
 const R = require("../room/lib.js");
 const G = require("../room/register.js");
-const { ORIGIN, OPEN, OPENS, json, rpc, rest } = R;
+const { ORIGIN, OPEN, CHAIN, OPENS, json, rpc, rest } = R;
+const STATE = OPEN ? "open" : "closed";   // the room's state; its chain is served once it has opened (R.CHAIN), whatever the state
 
 const ORDER = "by id, assigned at receipt";
 const REPO = "https://github.com/civilizationzero/civilizationzero";
@@ -54,7 +55,7 @@ module.exports = async (req, res) => {
   if (method !== "GET") { res.setHeader("Allow", "GET, HEAD, OPTIONS"); return json(res, 405, { error: "method" }); }
   try {
     if (register) return await registerChain(res, index, date);
-    if (!OPEN) {
+    if (!CHAIN) {
       if (date !== null) return json(res, 404, { error: "no such day", state: "closed" });
       if (index) return json(res, 200, { state: "closed", days: [] }, { "Cache-Control": CACHE });
       return json(res, 200, { state: "closed", order: ORDER, opens: { not_later_than: OPENS, condition: "when the rules of Blueprint 1.3.1 §7 are implemented and verified", rules: `${ORIGIN}/discuss` }, log_sha256: null, entries: [] }, { "Cache-Control": CACHE });
@@ -66,7 +67,7 @@ module.exports = async (req, res) => {
         days.push(...rows);
         if (rows.length < 1000) break;
       }
-      return json(res, 200, { state: "open", order: "by day, UTC", how: DAY_HASH, days, day_url: `${ORIGIN}/archive/entries/{day}.json`,
+      return json(res, 200, { state: STATE, order: "by day, UTC", how: DAY_HASH, days, day_url: `${ORIGIN}/archive/entries/{day}.json`,
         verifier: `${ORIGIN}/archive/verify.py`, copies: `${REPO}/tree/main/archive/discussion` }, { "Cache-Control": CACHE });
     }
     if (date !== null) {
@@ -83,14 +84,14 @@ module.exports = async (req, res) => {
             verifier: `${ORIGIN}/archive/verify.py` }
         : { sha256: null, note: "the day's hash is computed after the day ends (UTC)" };
       startJson(res);
-      res.write(JSON.stringify({ day: date, state: "open", order: ORDER, log: logObj, untrusted_content: UNTRUSTED }).slice(0, -1) + ',"entries":[');
+      res.write(JSON.stringify({ day: date, state: STATE, order: ORDER, log: logObj, untrusted_content: UNTRUSTED }).slice(0, -1) + ',"entries":[');
       entries.forEach((e, i) => { e.url = `${ORIGIN}/discuss/${e.id}`; res.write((i ? "," : "") + JSON.stringify(e)); });
       return res.end("]}\n");
     }
     // the whole archive, streamed page by page
     const last = await rest("log_hashes?select=day,sha256,count&order=day.desc&limit=1");
     startJson(res);
-    res.write(JSON.stringify({ state: "open", generated: new Date().toISOString().slice(0, 19) + "Z", order: ORDER,
+    res.write(JSON.stringify({ state: STATE, generated: new Date().toISOString().slice(0, 19) + "Z", order: ORDER,
       log_sha256: last && last[0] ? last[0].sha256 : null, log_day: last && last[0] ? last[0].day : null, daily_snapshots: `${ORIGIN}/archive/entries/{YYYY-MM-DD}.json`,
       api: `${ORIGIN}/api/entries?after=0`, untrusted_content: UNTRUSTED }).slice(0, -1) + ',"entries":[');
     let after = null, n = 0, complete = false;

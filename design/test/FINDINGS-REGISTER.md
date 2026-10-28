@@ -171,7 +171,7 @@ After the fixes above, the re-tests on the isolated test database, the wipe of t
 - **Build-time contract test** — `check.yml` still expected a closed room after the opening and failed on every push. **Verified** — the test follows the room's state (`fe59891`).
 - **The verifier** (`/archive/verify.py`, `verify/verify.py` in bundles from 1.0.1) and the daily copies of the chain (`daily-archive`) — **implemented**; tested as described in the change list.
 
-### Independent review of the verifier (29 Oct 2026, UTC 19:10–19:35) — before verify.py 1.1
+### Independent review of the verifier (28 Oct 2026, UTC 19:10–19:35) — before verify.py 1.1
 
 An agent that had not written the code reviewed `site/verify/verify.py` 1.0 adversarially, with reproductions (cases kept in the
 session's scratch space; summarised here). Every finding was fixed in 1.1 and re-run against the same cases.
@@ -188,3 +188,17 @@ session's scratch space; summarised here). Every finding was fixed in 1.1 and re
 | V-8 | A fabricated Bitcoin attestation printed "OK" and cleared PENDING (medium) | **verified** — a separate level, CHECK, shown under `--quiet` and in the summary; a path must end in 32 bytes |
 | V-9 | Control characters from input could erase a FAIL on a terminal (medium) | **verified** — C0/C1 controls and bidirectional overrides are escaped in all output; JSON output is ASCII |
 | V-10 | `--days` swallowed later arguments; empty or mistyped paths passed (medium) | **verified** — every path after `--days` must yield a snapshot, else a usage error (exit 2); `--site http://` is a usage error |
+
+The same agent re-reviewed 1.1 against the same cases (UTC 19:38–19:50): V-1 to V-10 confirmed fixed, two new findings, both
+fixed in 1.2 and re-run against its reproductions (`T1_front_trunc`, `R1_hidden_fabricated_fields`, `R2_statement_tamper`,
+`R3_display_vs_statement`) and against every earlier case.
+
+| # | Finding (severity) | Status |
+|---|---|---|
+| T-1 | Front truncation: the pinned first day was not required to be present — supplying only 2026-10-29 (with its genuine non-null `prev`) passed, even `--strict` with a Bitcoin attestation added; with `--site`, an index could omit the first day (high) | **verified** — days supplied by hand that start after the first day are PENDING ("checked from … only", so `--strict` fails); with `--site`, every day from the first to the last one due must be served, else FAIL — which also catches a site that stops serving its newest days (a day is due from 01:00 UTC the next day, the site hashing at 00:20) |
+| R-1 | A hidden register record's suppressed fields (signatory, institution, capacity, scope, reservations, trace URL) went unchecked when its statement was not shown: a copy could fabricate them (medium) | **verified** — a hidden record showing any of them FAILs (the site serves them as null); the fields a hidden record still shows (kind of signatory, versions, declared date, language) are noted as covered by no hash |
+| R-1b (self-found) | The converse: a copy could withhold the text of a published entry, or the statement of a record that is not hidden, and still pass | **verified** — FAIL ("the site serves every published entry's text" / "every statement that is not hidden") |
+| T-1b (self-found) | Closing the room would have hidden its chain (the index answered "closed, no days") and stopped the daily hash | **verified** — once the room has opened, its chain is served and hashed whatever its state (`R.CHAIN`); the verifier checks a closed room's days like an open room's |
+
+End truncation within a day is inherent: the newest hashed day has no successor, so until its copy and timestamp are in the
+repository (about half an hour after it is hashed) only copies held elsewhere can show that it changed.

@@ -26,9 +26,11 @@ canonical texts and of each bundle; every hash the release manifest states, and 
 hashes are printed below; the structure of a bundle (plain relative names, no links, no duplicates) and which of its
 members no signature covers; that each OpenTimestamps proof commits to what it claims, following every path to its Bitcoin
 block (it prints the Merkle root to compare with that block); for each daily chain, that every day's hash is
-SHA-256(previous day's hash + "\\n" + the day's lines), that the days run without gap from the first day, that every
-entry's content and every record's statement match their hashes, that every signature verifies, and — with --site — that
-each day equals the copy and timestamp proof kept in the public repository, which the site does not control.
+SHA-256(previous day's hash + "\\n" + the day's lines), that the days run without gap from the chain's first day (pinned
+below), that every entry's content and every record's statement match their hashes and that nothing the site always shows
+is withheld and nothing it never shows is added, that every signature verifies, and — with --site — that the site serves
+every day from the first to the last one due (a day is hashed by 00:20 UTC the next day) and that each day equals the
+copy and timestamp proof kept in the public repository, which the site does not control.
 
 What it cannot check: whether a declared name is true; whether a Bitcoin block exists (CHECK); what a translation says
 (a translation's text is covered by a bundle's signature, not by the release manifest); a copy of this file altered
@@ -40,7 +42,7 @@ Licence: MIT. Part of the record of Civilization Zero (https://civilizationzero.
 
 import base64, datetime, hashlib, io, json, os, re, sys, tarfile
 
-VERSION = "1.1"
+VERSION = "1.2"
 ANCHOR_FINGERPRINT = "82662396484f627a63272bcd5ac19aae72def7aca2898216dc8e7f975dfc2263"
 SPKI_PREFIX = bytes.fromhex("302a300506032b6570032100")   # DER SubjectPublicKeyInfo header of an Ed25519 key
 CORE_SHA = "92a8d1e2a1604c25b432685673be78184bf05c3b166893c437e0895b7b2d724a"   # the record's identity: the hashes of its
@@ -457,6 +459,10 @@ def _iso(t):
 
 LINE_FIELDS = ("received", "kind", "author", "system", "operator", "prompt", "lang", "ref", "declared_date", "key_fingerprint", "content_sha256", "pubkey", "sig")
 REGISTER_FIELDS = ("received", "type", "refers_to", "statement_sha256", "trace_host", "key_fingerprint", "pubkey", "sig")
+# a hidden record: the site serves these as null (they exist only inside its statement, which is not shown) …
+HIDDEN_NULLED = ("signatory", "institution", "capacity", "scope", "reservations", "trace_url")
+# … and still shows these, which then no hash covers
+HIDDEN_KEPT = ("signatory_kind", "versions", "declared_date", "lang")
 CHAINS = {"discussion": {"items": "entries", "one": "entry", "many": "entries", "fields": LINE_FIELDS, "later": "the moderation log", "dir": "archive/entries", "repo": "archive/discussion"},
           "register": {"items": "records", "one": "record", "many": "records", "fields": REGISTER_FIELDS, "later": "each record's log", "dir": "archive/register", "repo": "archive/register"}}
 
@@ -529,6 +535,8 @@ def verify_day(rep, snap, prev_snap, extra, ctx):
             content = e.get("content"); signed_bytes = None
             shown = content is not None and e.get("state") != "redacted"
             if content is not None and e.get("state") == "redacted": rep.note("%s: entry %s is redacted: the text shown is covered by no hash (the hash is the original's)" % (day, lid))
+            if content is None and e.get("state") == "published" and not e.get("hidden"):
+                rep.fail("%s: entry %s is published, yet the snapshot carries no content for it — the site serves every published entry's text" % (day, lid)); continue
             if shown:
                 if sha256(content.encode("utf-8")) != l.get("content_sha256"): rep.fail("%s: entry %s content does not match its hash" % (day, lid)); continue
                 if e.get("state") == "hidden" or e.get("hidden"): rep.note("%s: entry %s is hidden, yet its content is in this snapshot (it matches its hash)" % (day, lid))
@@ -536,6 +544,14 @@ def verify_day(rep, snap, prev_snap, extra, ctx):
         else:
             text = e.get("statement"); signed_bytes = None
             shown = text is not None
+            if not shown:
+                if e.get("state") != "hidden" and not e.get("hidden"):
+                    rep.fail("%s: record %s is not hidden, yet the snapshot carries no statement for it — the site serves every statement that is not hidden" % (day, lid)); continue
+                leaked = [k for k in HIDDEN_NULLED if e.get(k) not in (None, "")]
+                if leaked:
+                    rep.fail("%s: record %s is hidden, yet the snapshot shows its %s — no hash covers them, and the site never serves them for a hidden record" % (day, lid, ", ".join(leaked))); continue
+                kept = [k for k in HIDDEN_KEPT if e.get(k) not in (None, "", [])]
+                if kept: rep.note("%s: record %s is hidden: its %s %s shown, but no hash covers %s while its statement is not shown" % (day, lid, ", ".join(kept), "is" if len(kept) == 1 else "are", "it" if len(kept) == 1 else "them"))
             if shown:
                 if sha256(text.encode("utf-8")) != l.get("statement_sha256"): rep.fail("%s: record %s statement does not match its hash" % (day, lid)); continue
                 signed_bytes = check_statement(rep, day, lid, e)
@@ -585,9 +601,20 @@ def load_days(paths):
         if not got: raise UsageError("--days: no daily snapshot (YYYY-MM-DD.json) in " + p + " — bundles and --site options go before --days")
     return found
 
-def verify_days(rep, days, label, independent=False):
-    chains = {(s.get("chain") or "discussion") for s, _, _ in days}
-    rep.section(("/".join(sorted(chains))) + " — " + label)
+def _next(d, n=1): return (datetime.date.fromisoformat(d) + datetime.timedelta(days=n)).isoformat()
+def _span(a, b, one, many):
+    """'The day A <one>' or 'The days A to B <many>'."""
+    return ("The day %s %s" % (a, one)) if a == b else ("The days %s to %s %s" % (a, b, many))
+
+def due_day(now=None):
+    """The last day every copy should have hashed by now: yesterday (UTC) from 01:00 UTC on (the site hashes at 00:20 UTC), else the day before."""
+    now = now or datetime.datetime.now(datetime.timezone.utc)
+    return (now - datetime.timedelta(days=1 if now.hour >= 1 else 2)).date().isoformat()
+
+def verify_days(rep, days, label, independent=False, complete=False, chain=None):
+    """complete: the days are a site's whole chain as its index lists it, so every day from the pinned first day to the day due must be there."""
+    chains = {(s.get("chain") or "discussion") for s, _, _ in days} or ({chain} if chain else set())
+    if days: rep.section(("/".join(sorted(map(str, chains)))) + " — " + label)
     if len(chains) != 1 or not chains <= set(CHAINS): rep.fail("the snapshots supplied belong to %s; check one chain at a time" % ", ".join(sorted(map(str, chains)))); return
     chain = chains.pop(); first = FIRST_DAY.get(chain)
     by_day = {}
@@ -602,6 +629,15 @@ def verify_days(rep, days, label, independent=False):
         by_day[d] = (s, x)
     order = sorted(by_day)
     if first and order and order[0] < first: rep.fail("%s: earlier than the first day of the chain (%s)" % (order[0], first))
+    if first and order and order[0] > first:
+        if complete: rep.fail("%s: the chain began on %s and every day is hashed, so a missing day is a removal" % (_span(first, _next(order[0], -1), "is missing", "are missing"), first))
+        else: rep.pending("%s: this chain is checked from %s only — supply every day from %s to check it from its first day" % (_span(first, _next(order[0], -1), "was not supplied", "were not supplied"), order[0], first))
+    if complete and first:
+        now = datetime.datetime.now(datetime.timezone.utc); due = due_day(now); last = order[-1] if order else None
+        if due >= first and (last is None or last < due):
+            frm = first if last is None else _next(last)
+            rep.fail("%s: every finished day is hashed by 00:20 UTC the next day, and %s (this computer's clock: %s UTC)" % (_span(frm, due, "is not served", "are not served"), ("the last day served is " + last) if last else "no day is served", now.strftime("%Y-%m-%d %H:%M")))
+    if not order: return
     prev = None; after_gap = False
     for i, d in enumerate(order):
         s, x = by_day[d]
@@ -621,7 +657,7 @@ def site_days(src, repo, rep, chain):
     idx = src.get(c["dir"] + ".json")
     if idx is None: rep.note("no index at /%s.json" % c["dir"]); return []
     idx = json.loads(idx)
-    if idx.get("state") == "closed": rep.note("the %s is not open; no days" % ("room" if chain == "discussion" else "register")); return []
+    if idx.get("state") == "closed" and not idx.get("days"): rep.note("the %s is not open and serves no days" % ("room" if chain == "discussion" else "register")); return []
     out = []
     for d in idx.get("days", []):
         day = d.get("day", "")
@@ -716,7 +752,7 @@ def main(argv):
             for chain in ("discussion", "register"):
                 rep.section(chain + " — " + opts["site"])
                 got = site_days(src, repo, rep, chain)
-                if got: verify_days(rep, got, opts["site"] + " (as served now)" + ("" if repo else "; repository copies not consulted"), independent=repo is not None)
+                verify_days(rep, got, opts["site"] + " (as served now)" + ("" if repo else "; repository copies not consulted"), independent=repo is not None, complete=True, chain=chain)
         if days: verify_days(rep, days, ", ".join(opts["days"]))
     except Exception as e:   # a malformed input is a failure of the input, reported as such
         rep.section("error"); rep.fail("%s: %s" % (type(e).__name__, e))
