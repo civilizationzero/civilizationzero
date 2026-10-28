@@ -139,6 +139,22 @@ publish_sig("record.txt.sig", "/record.txt")
 if PUBKEY_PEM: write("/.well-known/cz-record-signing.pub", PUBKEY_PEM)
 OTS = SIGS / (RELEASE_NAME + ".ots")
 if OTS.exists(): write(f"/.well-known/{RELEASE_NAME}.ots", OTS.read_bytes())
+
+def ots_anchors(b):
+    """Bitcoin block heights attested in an OpenTimestamps proof (tag 0588960d73d71901, then varbytes(varint height))."""
+    def varint(buf, i):
+        v = sh = 0
+        while True:
+            c = buf[i]; i += 1; v |= (c & 0x7f) << sh; sh += 7
+            if not c & 0x80: return v, i
+    out, tag, i = [], bytes.fromhex("0588960d73d71901"), 0
+    while True:
+        i = b.find(tag, i)
+        if i < 0: return sorted(set(out))
+        _, j = varint(b, i + 8); h, _ = varint(b, j); out.append(h); i += 8
+OTS_ANCHORS = ots_anchors(OTS.read_bytes()) if OTS.exists() else []
+OTS_PENDING = OTS.exists() and bytes.fromhex("83dfe30d2ef90c8e") in OTS.read_bytes()
+OTS_STATUS = ("anchored" if OTS_ANCHORS else "submitted") if OTS.exists() else "pending"
 SIG_STATUS = ("signed" if SIG_FILES.get(f"/.well-known/{RELEASE_NAME}") else ("key published; signatures pending" if PUBKEY_PEM else "pending"))
 SIG_SHORT = "signed" if SIG_STATUS == "signed" else "pending"
 
@@ -430,7 +446,8 @@ def signature_status_html():
     rows.append(("Key", f'fingerprint <code class="hash">{FINGERPRINT}</code> · <a href="/.well-known/cz-record-signing.pub">public key (PEM)</a> · holders: the originator; Banco (Germany), accepted 29 Oct 2026' if PUBKEY_PEM else '<span class="pending">pending — to be generated on the originator\'s device</span>'))
     for label, path in (("Release manifest", f"/.well-known/{RELEASE_NAME}"), ("core.txt", "/core.txt"), ("record.txt", "/record.txt")):
         rows.append((label, f'signed · <a href="{path}.sig">{path}.sig</a>' if SIG_FILES.get(path) else '<span class="pending">signature pending</span>'))
-    rows.append(("Timestamp", f'<a href="/.well-known/{RELEASE_NAME}.ots">OpenTimestamps proof</a> (Bitcoin anchor pending confirmation)' if OTS.exists() else f'<span class="pending">pending — target {LAUNCH.isoformat()}</span>'))
+    rows.append(("Timestamp", (f'<a href="/.well-known/{RELEASE_NAME}.ots">OpenTimestamps proof</a> of the release manifest — anchored in Bitcoin block {", ".join(str(h) for h in OTS_ANCHORS)}' + (" (one calendar still pending)" if OTS_PENDING else "") if OTS_ANCHORS
+                             else f'<a href="/.well-known/{RELEASE_NAME}.ots">OpenTimestamps proof</a> of the release manifest, submitted to three calendars on <time datetime="2026-10-28">28 October 2026</time>; Bitcoin anchor pending') if OTS.exists() else f'<span class="pending">pending — target {LAUNCH.isoformat()}</span>'))
     rows.append(("Verify", 'with OpenSSL ≥ 1.1.1: <code>openssl pkeyutl -verify -pubin -inkey cz-record-signing.pub -rawin -in core.txt -sigfile core.txt.sig</code>; the scripts are in the repository under <code>site/sign/</code>'))
     return '<table><tr><th>What</th><th>Status</th></tr>' + "".join(f"<tr><td>{a}</td><td>{b}</td></tr>" for a, b in rows) + "</table>"
 
@@ -464,7 +481,7 @@ def archive_page(bundle_name, bundle_sha, bundle_size):
 </section>
 <section aria-labelledby="h-ops"><h2 id="h-ops">Verification, succession, correction</h2>
 <ul>
-<li><strong>Daily verification</strong> — a job that fetches the live bytes, recomputes the published hashes and alerts on drift; its results published here. <span class="pending">Pending — target {LAUNCH.isoformat()}.</span></li>
+<li><strong>Daily verification</strong> — a job that fetches the live bytes of <code>core.txt</code>, <code>record.txt</code>, the prompt, the release manifest and its signatures, recomputes the published hashes and verifies the signatures against the public key kept in the repository; a drift fails the run. Implemented as the public workflow <a href="{REPO}/actions/workflows/verify-live.yml">verify-live</a> (daily, 03:40 UTC; every run and its log are public there).</li>
 <li><strong>Build-time verification</strong> — every quotation on every page is compared byte-for-byte with the canonical text; the JSON forms are reconstructed into the canonical bytes; the build fails on any drift. <em>Implemented</em> (<code>site/check.py</code> in the repository).</li>
 <li><strong>Succession</strong> — a named second key-holder outside the originator's company and jurisdiction; a published procedure for transfer of domain, repository and accounts; prepaid renewal of the domain for its longest term; a dead-man's procedure (if the administrator does not confirm within 90 days of a scheduled check, the second key-holder takes custody). Second key-holder: <strong>Banco</strong> (Germany), named by the originator on 28 October 2026; <strong>acceptance received</strong> by email from the key-holder's own address on 29 October 2026 (dated 28 October in his text), kept in the record's mailbox. The dead-man's procedure becomes active when the key exists and he holds his copy.</li>
 <li><strong>Recovery exercise</strong> — once a year, the site restored from the bundle on a host the originator does not control, with the result published. First: 2027.</li>
@@ -803,8 +820,9 @@ def manifest(bundle_name, bundle_sha):
                       "release_signature": f"{ORIGIN}/.well-known/{RELEASE_NAME}.sig" if SIG_FILES.get(f"/.well-known/{RELEASE_NAME}") else None,
                       "signed_files": [p for p in SIG_FILES], "holders": ["the originator", "Banco (Germany) — accepted 2026-10-29"],
                       "note": "The key is generated and kept on the originating human's own device, never in the cloud; signatures are detached, over exact bytes."},
-        "timestamp": {"status": "submitted" if OTS.exists() else "pending", "target": LAUNCH.isoformat(), "service": "OpenTimestamps",
-                      "proof": f"{ORIGIN}/.well-known/{RELEASE_NAME}.ots" if OTS.exists() else None, "anchor": None},
+        "timestamp": {"status": OTS_STATUS, "submitted": "2026-10-28" if OTS.exists() else None, "target": LAUNCH.isoformat(), "service": "OpenTimestamps",
+                      "proof": f"{ORIGIN}/.well-known/{RELEASE_NAME}.ots" if OTS.exists() else None, "over": f"{ORIGIN}/.well-known/{RELEASE_NAME}" if OTS.exists() else None,
+                      "anchor": {"chain": "bitcoin", "blocks": OTS_ANCHORS} if OTS_ANCHORS else None},
         "mirrors": [{"name": "GitHub", "url": REPO, "status": "live"}, {"name": "Internet Archive", "status": "at launch"},
                     {"name": "two independent mirrors, one outside the originator's jurisdiction", "status": "pending"}],
         "deposit": {"status": "pending", "target": LAUNCH.isoformat(), "service": "Zenodo (DOI)"},

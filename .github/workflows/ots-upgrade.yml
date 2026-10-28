@@ -1,0 +1,31 @@
+# Upgrades the OpenTimestamps proof of the release manifest once the calendars have anchored it in Bitcoin
+# (Blueprint 1.3.1 §8). Run by hand (workflow_dispatch). If the proof changes, the upgraded .ots is committed; the site is
+# rebuilt and deployed separately. The proof's own verification (`ots verify`) needs a Bitcoin node and is left to readers.
+name: ots-upgrade
+on:
+  workflow_dispatch:
+jobs:
+  upgrade:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install --quiet opentimestamps-client
+      - name: Upgrade the proof
+        run: |
+          set -euo pipefail
+          f=site/signatures/cz-release-1.0.json.ots
+          sha256sum "$f"
+          ots info "$f" | head -5
+          ots upgrade "$f" || true          # exits non-zero while any attestation is still pending
+          rm -f "$f.bak"
+          ots info "$f" | grep -E "verify|Bitcoin" || true
+          sha256sum "$f"
+      - name: Commit if changed
+        run: |
+          if git diff --quiet; then echo "no change yet"; exit 0; fi
+          git config user.name "cz-ots-upgrade"; git config user.email "record@civilizationzero.ai"
+          git add site/signatures/cz-release-1.0.json.ots
+          git commit -m "OpenTimestamps proof upgraded (Bitcoin attestation)"
+          git push
