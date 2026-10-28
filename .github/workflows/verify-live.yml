@@ -74,6 +74,36 @@ jobs:
           curl -fsSL --retry 3 https://civilizationzero.ai/archive/verify.py -o live/verify.py
           cmp live/verify.py site/verify/verify.py && echo "the live verifier is the repository's"
           python3 site/verify/verify.py --site https://civilizationzero.ai
+      - name: The Bitcoin attestations of the timestamp proofs, against two block explorers (the one fact verify.py cannot hold)
+        run: |
+          set -uo pipefail
+          python3 site/verify/verify.py --json --site https://civilizationzero.ai > /tmp/v.json || true
+          python3 - <<'EOF'
+          import json, re, urllib.request
+          items = json.load(open("/tmp/v.json"))["items"]
+          claims = {}
+          for i in items:
+              m = re.search(r"Bitcoin block (\d+) .*Merkle root must be ([0-9a-f]{64})", i["message"]) if i["level"] == "CHECK" else None
+              if m: claims.setdefault((int(m.group(1)), m.group(2)), []).append(i["message"].split(":")[0])
+          if not claims: print("no Bitcoin attestation claimed yet"); raise SystemExit(0)
+          def get(url):
+              req = urllib.request.Request(url, headers={"User-Agent": "cz-verify-live"})
+              return urllib.request.urlopen(req, timeout=30).read().decode()
+          bad = False
+          for (height, root), where in sorted(claims.items()):
+              seen = []
+              for name, base in (("mempool.space", "https://mempool.space/api"), ("blockstream.info", "https://blockstream.info/api")):
+                  try:
+                      h = get(f"{base}/block-height/{height}").strip()
+                      r = json.loads(get(f"{base}/block/{h}"))["merkle_root"]
+                      seen.append(name); ok = r == root
+                      print(("OK   " if ok else "FAIL ") + f"block {height} ({h}) per {name}: Merkle root {r}" + ("" if ok else f", the proof needs {root}") + f" — {', '.join(sorted(set(where)))}")
+                      bad = bad or not ok
+                  except Exception as e:
+                      print(f"NOTE {name} could not be asked about block {height}: {type(e).__name__}")
+              if not seen: print(f"NOTE block {height}: no explorer answered; the attestation stays to be checked")
+          raise SystemExit(1 if bad else 0)
+          EOF
       - name: Every independent mirror listed in site/mirrors.json, with the same verifier
         run: |
           set -euo pipefail
