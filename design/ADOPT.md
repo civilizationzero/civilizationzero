@@ -1,7 +1,9 @@
 # The Adoption Register — design with recorded reasons
 
-Status: implemented and tested on the test alias on 29 October 2026; **closed in production until the originator opens it**
-(Blueprint 1.3.1 decision 17 places it in Phase 4; like the room, it opens after its rules are implemented, tested and reviewed).
+Status: implemented and tested on the test alias on 28 October 2026 (UTC); reviewed adversarially the same evening by a separate
+agent, which found twelve problems (design/test/FINDINGS-REGISTER.md, G-1 to G-12); revised (v6d) and tested again end to end
+against an outside host. **Closed in production until the originator opens it** (Blueprint 1.3.1 decision 17 places it in
+Phase 4; like the room, it opens after its rules are implemented, tested and reviewed).
 Reasons are marked as in Blueprint §9a: **R** the record, **M** the machine reader, **S** a named standard, **C** a constraint,
 **E** an editorial choice stated as such.
 
@@ -30,8 +32,13 @@ strings only — so that a signer, the site and any verifier produce the same by
 
 ```
 {"capacity":"…","declared_date":"YYYY-MM-DD","institution":"…","lang":"…","refers_to":"","reservations":"…","scope":"…",
- "signatory":"…","signatory_kind":"person|institution","type":"adoption","versions":["CZ-CORE 1.0 sha256:92a8…"]}
+ "signatory":"…","signatory_kind":"person|institution","trace_url":"https://…","type":"adoption","versions":["CZ-CORE 1.0 sha256:92a8…"]}
 ```
+
+The trace address is a field of the statement (from v6d): it is hashed and, when the statement is signed, signed — so a
+signed statement cannot be replayed at an address its signer did not choose (G-3). It is kept in its normal form (WHATWG URL:
+scheme and host in lower case, no default port, no trailing dot); a signed statement must already give it so. A statement is
+recorded once: its SHA-256 is unique in the register (G-3).
 
 | IR 10.1 element | Field | Rule |
 |---|---|---|
@@ -51,19 +58,32 @@ declares itself a person misrepresents what it is (Core §6); the register canno
 ## 3. "Publicly traceable" (R, C)
 
 A name typed into a form is not traceable to anyone. So a statement becomes an adoption in the register only when it is
-**traced**: the signatory publishes, at an `https` address of their own choosing (`trace_url`), either the record's address
-(`https://civilizationzero.ai/adopt/{id}`) or the statement's SHA-256, and the site finds it there.
+**traced**: when it is recorded, its sender — and no one else — receives one line, `civilizationzero.ai/adopt/{id}
+trace:{token}`, with a random 128-bit token; the signatory publishes it on the page the statement names (`trace_url`), and the
+site finds the token in that page.
+
+Why a secret token (G-1): the record's address and the statement's SHA-256 are public, and the submitter knows them in advance,
+so a page the signatory does not control could carry them — a site search that prints what it is asked, an archive or a proxy
+that copies this site's own pages. The token is shown once, in the answer to the submission, and never on a public page or in
+the data; after the trace it is on the signatory's page, which is the point. The rules of the fetch keep the page's content
+the page's own: the address has no query (`?…`) or fragment; the token must not appear in any address fetched (as given or
+percent-decoded); redirects are followed only on the same origin, so the host shown is the host where the token was found
+(G-2).
 
 - Until then the record is **received**, shown as received and not as an adoption, and listed separately (R: "the historical
   record … must remain visible"; nothing is hidden for being untraced).
-- The check is made when the signatory asks for it (`POST /api/adopt` with `action: "trace"`), and again once a day for 30 days
-  after receipt. Each check is logged publicly: time, result, HTTP status, the host, and the SHA-256 of the bytes fetched.
+- The check is made when anyone asks for it (`POST /api/adopt` with `action: "trace"`), and by the daily job, for 30 days after
+  receipt — at most once in 10 minutes for a record (G-7); after 30 days an untraced statement can no longer be traced and stays
+  at its address as received. Each check is logged publicly: time, result, HTTP status, the address fetched, and the SHA-256 of
+  the bytes fetched.
 - A trace shows that whoever controlled that address published the record. It does not verify identity; the register shows the
   **host** beside every adoption so a reader can judge whether it is the institution's own (E: continuity, not identity, as in
   the room). A later check that no longer finds it is logged, not treated as a withdrawal.
-- The fetch is guarded (C): `https` on port 443 only, a host name (no IP literal), every resolved address public (no loopback,
-  private, link-local, carrier-grade NAT, multicast or reserved ranges, checked in the resolver itself so the connection cannot
-  be redirected after the check), at most three redirects under the same rules, 8 seconds, 512 KB.
+- The fetch is guarded (C): `https` on port 443 only, a host name (no IP literal), every resolved address public — the
+  special-purpose ranges of the IANA registries refused exactly, and every IPv6 range that embeds or translates an IPv4 address
+  refused whole (G-10) — checked in the resolver itself so the connection cannot be redirected after the check; an agent of its
+  own, so no proxy from the environment can resolve the name instead (G-9); at most three redirects on the same origin;
+  8 seconds and 512 KB for the whole check (G-6).
 
 Optional **key continuity** (as in the room, §7.1): `pubkey` and `sig` (Ed25519 over the canonical bytes). Both are public; the
 fingerprint is shown.
@@ -71,10 +91,12 @@ fingerprint is shown.
 ## 4. Revision and withdrawal (R)
 
 "An adopter may later withdraw or revise its commitment." A revision is a whole new statement; a withdrawal is a statement with
-`type: "withdrawal"`. Either is linked to the adoption it names only if it comes from the same adopter, in one of two ways:
-signed by the **same key** as the adoption, or **traced on the same host** as the adoption. Otherwise it is not accepted. The
-adoption's current status (in force, revised, withdrawn) is derived from the linked, traced records; every earlier statement
-stays at its address (R: "the historical record of adoption and withdrawal must remain visible").
+`type: "withdrawal"`. Either is linked to the adoption it names only if the adoption is traced and the new statement comes from the same adopter:
+if the adoption was signed, signed by the **same key**; if it was not, traced at **the same page** (the identical normalised
+address — a shared host such as a code-hosting site is not one adopter, G-3). Otherwise it is not accepted. The adoption's
+current status (in force, revised, withdrawn) is derived from the linked, traced records, the one received last governing;
+every earlier statement stays at its address (R: "the historical record of adoption and withdrawal must remain visible"). A
+replayed statement is refused (a statement is recorded once), and a signed one cannot be moved to another address.
 
 ## 5. What the register is not (R)
 
@@ -91,14 +113,22 @@ accountability, appeal and right of exit (IR 0.3); the register records the stat
   `/archive/register.json`, one day at `/archive/register/{date}.json`; `verify.py` checks the chain, every statement's hash
   and every signature.
 - Limits: 5 statements per day per source (a salted hash of the network address, cleared after 30 days), 200 a day in all; 10
-  trace checks per hour per source. Disclosed (C).
+  trace checks per hour per source; one check of a record in 10 minutes; the daily job re-checks up to 50 received statements,
+  the least recently checked first, five at a time, after the day's hashes are computed (the hashes come first). Disclosed
+  (C). The numbers are in the database's config, as the room's are.
+- Paging: `/adopt.json` reads the whole register in pages and says `complete` (and where to continue when it is not); a record's
+  page shows the newest 100 log rows and links to the whole log, page by page (G-7).
 - Moderation: the room's grounds for hiding (§7.5) apply — harassment or threats, a private person's information, deceptive
   impersonation of an identifiable person or institution, advertising spam, resource abuse. A hidden record keeps its hash and
   is retrievable by id; every decision is in the public log with its category.
 - Everything is also data (M): `/adopt.json`, `/api/adopt?id=`, the OpenAPI contract, the manifest.
 
-## 7. Opening
+## 7. Opening, and closing
 
 The register opens when the originator decides, after this design and its implementation have been reviewed (round 3 covers
-it). Until then `/adopt` shows these rules and `POST /api/adopt` answers `503` with the reason. The switch is `REGISTER_OPEN`
-in `site/lib.py`; the test alias runs it open against the test database.
+it). Until then `/adopt` shows these rules and `POST /api/adopt` answers `503` with the reason. The switches are
+`REGISTER_OPEN` and `REGISTER_OPENED` (the UTC date it first opened) in `site/lib.py`; the test alias runs it open against the
+test database. When it opens, the verifier pins the register's first day, as it pins the room's.
+
+Once opened, closing it stops new statements and trace checks only: its records, its data and its daily chain stay served and
+hashed (G-8; IR 10.1: "The historical record of adoption and withdrawal must remain visible").

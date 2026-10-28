@@ -222,3 +222,34 @@ A fourth pass (UTC 20:07–20:10) on those fixes:
 | E-1 | A day with no lines and neither list still let the unhashed label choose its chain (low) | **verified** — such a day FAILs; the label never chooses |
 | W-1 | The third pass's fixes were published under the same number, 1.2 | **verified** — 1.3; every change to the file now changes its number |
 
+
+### Security review of the Adoption Register (28 Oct 2026, UTC 19:49–20:10) — before it opens
+
+A separate agent reviewed `site/room/register.js`, `site/api/adopt.js` and schema v6b adversarially: it ran the real trace
+check against a local HTTPS server on a public-looking loopback address (names in `/etc/hosts`; a search page that echoes its
+query, an open redirect, a slow drip, a redirect chain) and loaded the schema into a local PostgreSQL 16 set up with Supabase's
+roles and default privileges. Its scripts are kept in the session's scratch space. Every finding was fixed the same night
+(schema v6c and v6d, applied to the test and production databases; the code in `f2859f9`) and the register was tested again end
+to end on the test alias against an outside host (raw.githubusercontent.com): an unsigned adoption and a signed one traced; a
+revision of the unsigned one at its own page accepted and at another page refused; a withdrawal of the signed one with its key
+from another page accepted, traced, and the adoption shown withdrawn; the same withdrawal without the key, with another key,
+replayed, or moved to another address refused; a revision of an untraced adoption refused; a duplicate statement (the same
+statement with its address spelled differently) refused; a query in the address refused; a second check within 10 minutes
+answered 429; the token absent from every public page and from the data.
+
+| # | Finding (severity) | Status |
+|---|---|---|
+| G-1 | A statement could be marked traced without its signatory publishing anything: the needle (the record's address or the statement's SHA-256) was public and known in advance, so a page that echoes its query, or an archive or proxy copying this site's pages, carried it (high) | **verified** — a secret 128-bit token per record, shown once to the submitter and never on a public page or in the data, is what the trace must find; no query or fragment in the trace address; the token in any address fetched (as given or percent-decoded) is refused; this site's own aliases are refused as trace hosts |
+| G-2 | The host shown could differ from where the trace was found: redirects could leave it (an open redirect lent its domain) (high) | **verified** — redirects only on the same origin; the address logged is the one where the token was found |
+| G-3 | A stranger could revise or withdraw someone else's adoption: "same host" (e.g. a code-hosting site) is not the same adopter; a signed withdrawal could be replayed, and its trace address was not signed (high) | **verified** — the trace address is part of the statement (hashed and signed); a statement is recorded once (unique SHA-256); only a traced adoption can be revised or withdrawn; a signed adoption only with the same key, an unsigned one only at the identical page |
+| G-4 | Under Supabase's default privileges the publishable key could write through the public views (`register_public`, and the room's `entries_public`): they ran with their owner's rights and were automatically updatable (high) | **verified** — both views `security_invoker` (v6c, applied to production at 20:12 UTC); anon reads them only through the functions; checked as anon on both databases: the views return no rows directly, the functions return all. No row was changed through them (the production room had no entries yet) |
+| G-5 | `cz_token_ok` failed open when no token hash was configured (medium) | **verified** — fails closed (v6c) |
+| G-6 | The daily job did less than the pages said: at most 20 records within 25 s, one check could take 14.8 s through redirects (medium) | **verified** — 8 s for the whole check; five checks at a time; up to 50 a day, the least recently checked first; the pages state those numbers. The job now computes the day hashes first and does the timed work after, within a budget |
+| G-7 | Abuse and silent truncation: unlimited checks of any record by many sources, an unbounded log, the record page showing the oldest 1,000 log rows, `/adopt.json` silently stopping at 20,000 records, untraced statements listed forever (medium) | **verified** — one check of a record in 10 minutes, only within 30 days of receipt; the newest 100 log rows on the page and the whole log in pages as data; `/adopt.json` reads every page and says `complete`; the untraced list shows the last 30 days |
+| G-8 | Closing the register after opening would have hidden every record and its chain (medium) | **verified** — once opened (`REGISTER_OPENED`), its records, data and chain stay served and hashed whatever its state |
+| G-9 | An environment proxy setting (`NODE_USE_ENV_PROXY`) would bypass the address guard (low) | **verified** — the fetch uses an agent of its own |
+| G-10 | The address blocklist was inexact: it refused public ranges (192.0.0.0/16, 198.51/16, 203.0/16) and missed fec0::/10, Teredo, ::ffff:0:0/96, 100::/64 (low) | **verified** — the IANA special-purpose ranges exactly (`net.BlockList`, one list per family; 58 boundary cases tested) |
+| G-11 | Inputs that passed validation broke a database check and were answered "try again" (upper-case scheme, `https:host/…`, host names over 253 characters, statements over 12,000 characters after escaping) (low) | **verified** — the address is stored in its normal form; host and statement lengths are checked before the database |
+| G-12 | Display: "traced at" printed for an adoption never traced; an adoption both "in force" and "received, not traced" (low) | **verified** — only a traced adoption can be revised or withdrawn, and only a traced statement shows where it was traced |
+
+The verifier (1.4) checks the statement's trace address against the record's.

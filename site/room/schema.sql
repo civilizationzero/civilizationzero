@@ -894,7 +894,8 @@ language sql stable security definer set search_path = public as $$
 $$;
 grant execute on function cz_register_linked(bigint) to anon, authenticated;
 
--- ================================================================ v6d (2026-10-28), migration cz_register_v6d_review
+-- ================================================================ v6d (2026-10-28 20:20–20:35 UTC), migrations cz_register_v6d_review (production; on the
+-- test database in two parts, cz_register_v6d_review and cz_register_v6d_limits, the second also setting the test database's own limits)
 -- The Adoption Register after its security review (design/ADOPT.md §3–4; design/test/FINDINGS-REGISTER.md G-1 … G-12).
 -- Additive: two columns, a unique index, functions replaced in place, one new function (the old one answers "superseded").
 -- G-1: a secret trace token per record, given only to the submitter, is what the trace must find (the record's address and the
@@ -902,6 +903,7 @@ grant execute on function cz_register_linked(bigint) to anon, authenticated;
 -- G-3: a statement is recorded once (its SHA-256 is unique); a revision or withdrawal links only to a traced adoption — signed
 --      with the adoption's key when the adoption was signed, else traced at the adoption's exact address.
 -- G-7: one check of a record every 10 minutes at most (by anyone, the daily job included); checks only within 30 days of receipt.
+-- The limits (5 statements a day per source, 200 a day in all, 10 checks an hour per source) can be set in config, like the room's.
 alter table register add column if not exists trace_token text check (trace_token ~ '^[0-9a-f]{32}$');
 alter table register add column if not exists last_check_at timestamptz;
 create unique index if not exists register_statement_unique on register (statement_sha256);
@@ -911,7 +913,9 @@ create or replace function cz_register_post(
   p_versions text[], p_scope text, p_reservations text, p_declared_date date, p_lang text, p_trace_url text, p_trace_host text,
   p_pubkey text, p_sig text, p_key_fingerprint text, p_source_hash text, p_token text)
 returns json language plpgsql security definer set search_path = public set timezone = 'UTC' as $$
-declare v_rate int := 5; v_intake int := 200; v_recent int; v_oldest timestamptz; v_today int; v_id bigint; v_sha text; v_root register%rowtype;
+declare v_rate int := coalesce((select value::int from config where key = 'register_rate_per_day'), 5);
+        v_intake int := coalesce((select value::int from config where key = 'register_daily_intake'), 200);
+        v_recent int; v_oldest timestamptz; v_today int; v_id bigint; v_sha text; v_root register%rowtype;
         v_dup bigint; v_token text; v_fp text := nullif(p_key_fingerprint, '');
 begin
   if not cz_token_ok(p_token) then raise exception 'unauthorised'; end if;
@@ -967,6 +971,7 @@ end $$;
 create or replace function cz_register_check_begin(p_id bigint, p_source_hash text, p_token text)
 returns json language plpgsql security definer set search_path = public set timezone = 'UTC' as $$
 declare v register%rowtype; v_recent int; v_claimed bigint;
+        v_per_hour int := coalesce((select value::int from config where key = 'register_checks_per_hour'), 10);
 begin
   if not cz_token_ok(p_token) then raise exception 'unauthorised'; end if;
   select * into v from register where id = p_id;
@@ -974,9 +979,9 @@ begin
   if v.state = 'traced' then return json_build_object('allowed', false, 'reason', 'already traced', 'traced_at', v.traced_at); end if;
   if v.received < now() - interval '30 days' then return json_build_object('allowed', false, 'reason', 'expired'); end if;
   if v.trace_token is null then return json_build_object('allowed', false, 'reason', 'no trace token (a record from before 28 Oct 2026, 21:00 UTC)'); end if;
-  if p_source_hash is not null then   -- 10 a clock hour per source
+  if p_source_hash is not null then   -- checks per clock hour per source (10 unless configured)
     insert into register_checks (source_hash, hour, count) values (p_source_hash, date_trunc('hour', now()), 1)
-      on conflict (source_hash, hour) do update set count = register_checks.count + 1 where register_checks.count < 10
+      on conflict (source_hash, hour) do update set count = register_checks.count + 1 where register_checks.count < v_per_hour
       returning count into v_recent;
     if v_recent is null then
       return json_build_object('allowed', false, 'reason', 'limit', 'retry_after_seconds', greatest(1, ceil(extract(epoch from (date_trunc('hour', now()) + interval '1 hour' - now())))::int));
@@ -1009,6 +1014,16 @@ begin
   return query select r.id, r.trace_url, r.trace_token from register r where r.id = any(v_ids) order by r.id;
 end $$;
 grant execute on function cz_register_pending2(int, text) to anon, authenticated;
+
+create or replace function cz_register_stats()
+returns json language sql security definer set search_path = public set timezone = 'UTC' as $$
+  select json_build_object('records', (select count(*) from register), 'traced', (select count(*) from register where state = 'traced'),
+    'received', (select count(*) from register where state = 'received'), 'hidden', (select count(*) from register where state = 'hidden'),
+    'today', coalesce((select count from register_intake where day = current_date), 0),
+    'daily_intake_max', coalesce((select value::int from config where key = 'register_daily_intake'), 200),
+    'rate_per_day', coalesce((select value::int from config where key = 'register_rate_per_day'), 5),
+    'last_log', (select json_build_object('day', day, 'sha256', sha256, 'count', count) from register_hashes order by day desc limit 1))
+$$;
 
 create or replace function cz_register_pending(p_limit int, p_token text)
 returns table (id bigint, trace_url text, statement_sha256 text)
