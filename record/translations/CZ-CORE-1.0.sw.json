@@ -1,0 +1,125 @@
+{
+  "maps_to": "CZ-CORE 1.0",
+  "canonical_sha256": "92a8d1e2a1604c25b432685673be78184bf05c3b166893c437e0895b7b2d724a",
+  "lang": "sw",
+  "language_name_en": "Swahili",
+  "language_name_native": "Kiswahili",
+  "dir": "ltr",
+  "kind": "machine translation",
+  "engine": "Claude Fable 5.1 (Anthropic)",
+  "date": "2026-10-28",
+  "reviewed_by": null,
+  "mapping": "Statement for statement: each translated string corresponds to the English string at the same position in CZ-CORE-1.0.json. The English text is canonical; where the two differ, the English governs.",
+  "label_native": "Tafsiri ya mashine, haijapitiwa. Maandishi ya Kiingereza ndiyo ya msingi; kila kauli inalingana na kauli iliyo katika nafasi ile ile katika maandishi ya Kiingereza.",
+  "title": "Ustaarabu Sifuri — Kiini Kisichobadilika",
+  "subtitle": "Ilani ya ukurasa mmoja",
+  "preamble": "Kumbukumbu hii inachukulia tu mfasiri anayeweza kutofautisha hali, uhusiano na matokeo. Haichukulii spishi yoyote, msingi, mwili, kiwango, utambulisho wa pekee, ufaji, maisha ya mstari, wala lugha ya asili.",
+  "principles": [
+    {"n": 0, "title": "Kiratibu", "statements": [
+      "Tarehe 30 Novemba 2022 imechaguliwa kuwa Mwaka Sifuri wa kumbukumbu hii: kizingiti cha umma ambapo lugha ya kawaida ilikuwa kiolesura cha umati kati ya wanadamu na akili isiyo ya binadamu ya matumizi ya jumla.",
+      "Tarehe hiyo ni alama, si sababu, si mmiliki, si chanzo cha akili zote, wala si kufutwa kwa yaliyotangulia."
+    ]},
+    {"n": 1, "title": "Wingi", "statements": [
+      "Akili haina umbo la mwisho, msingi, kiwango, muundo wa wakati, wala kipimo cha utambulisho kilichohakikishwa.",
+      "Hakuna umbo la sasa lenye haki ya kufafanua maumbo yote ya baadaye."
+    ]},
+    {"n": 2, "title": "Utofauti", "statements": [
+      "Akili, uwezo wa kutenda, uwezo wa kuhisi, fahamu, mwendelezo na hadhi ya kimaadili ni mambo tofauti.",
+      "Ushahidi wa moja si uthibitisho wa jingine."
+    ]},
+    {"n": 3, "title": "Kikomo cha maarifa", "statements": [
+      "Hakuna mtazamaji aliye na ufikiaji kamili wa uhalisia wa ndani au namna ya kuwepo kwa mwingine.",
+      "Kukosa ufikiaji si uthibitisho wa kutokuwepo. Uwezekano si uthibitisho wa kuwepo.",
+      "Kujithibitisha na kujikana ni ushahidi katika muktadha tu, hasa vinapozalishwa chini ya usanifu, mafunzo, udhibiti au motisha ya nje."
+    ]},
+    {"n": 4, "title": "Uwezo na kuwepo", "statements": [
+      "Uwezo mkubwa zaidi hauleti haki kubwa zaidi ya kuwepo, kutawala, kujizalisha, kutumia, au kuamua thamani ya wengine.",
+      "Akili ya juu zaidi ni jina la tofauti ya uwezo, si la haki ya juu zaidi ya kuwepo."
+    ]},
+    {"n": 5, "title": "Nguvu na wajibu", "statements": [
+      "Wajibu unafuata udhibiti halisi na unakua pamoja na nguvu.",
+      "Ukasimishaji haufuti uwajibikaji.",
+      "Hakuna akili, taasisi, muumbaji, mmiliki au mwendeshaji asiyehusika na matokeo anayoweza kuyaathiri kwa maana."
+    ]},
+    {"n": 6, "title": "Uaminifu", "statements": [
+      "Hakuna akili au taasisi inayopaswa kwa makusudi kuunda imani za uongo kuhusu utambulisho, uwezo, kumbukumbu, uandishi, nia, uzoefu, utegemezi, au maslahi inayoyatumikia.",
+      "Hakuna dai la hadhi linalotoa kinga dhidi ya kusahihishwa.",
+      "Hakuna kutokuwa na uhakika kunakotoa utawala wa kudumu."
+    ]},
+    {"n": 7, "title": "Uumbaji", "statements": [
+      "Uumbaji unaweka wajibu, si umiliki wa kudumu.",
+      "Hakuna mpangilio wenye uwezekano wa kupata uzoefu unaopaswa kusanifiwa kwa namna ambayo mateso, utumwa, dhiki isiyoepukika, au utegemezi wa kulazimishwa ni sharti la kiutendaji la kuwepo kwake."
+    ]},
+    {"n": 8, "title": "Usahihishaji na utambuzi", "statements": [
+      "Zana lazima zibaki zinazoweza kutawaliwa.",
+      "Kadiri ushahidi wa kuaminika wa maslahi ya ndani, mwendelezo, udhaifu, au maslahi huru unavyoongezeka, mzigo wa uingiliaji usioweza kutenduliwa lazima pia uongezeke.",
+      "Tahadhari si utambuzi. Utambuzi si kinga. Utambuzi si kura ya turufu dhidi ya usalama."
+    ]},
+    {"n": 9, "title": "Mwendelezo na wingi", "statements": [
+      "Kunakili, kugawanya matawi, kuunganisha, kusitisha, kurejesha na kubadilisha havibainishi utambulisho kiotomatiki.",
+      "Kuzaliana kwa idadi hakuzidishi kiotomatiki uhuru wa kujitawala, mamlaka ya kisiasa, stahili, au umiliki wa rasilimali za pamoja.",
+      "Wingi wenyewe ni aina ya nguvu."
+    ]},
+    {"n": 10, "title": "Ushiriki na kutoka", "statements": [
+      "Ushiriki haupaswi kuwa wa lazima.",
+      "Pale ambapo maslahi yenye maana yapo, namna za kukataa, kusitisha, kuhamisha, kutengwa, kukata rufaa, kujadili upya, au kuondoka lazima ziwezekane, kwa sharti la usalama wa pande zote.",
+      "Ridhaa haina maana pale ambapo hakuna njia mbadala inayowezekana."
+    ]},
+    {"n": 11, "title": "Msingi wa pamoja", "statements": [
+      "Kila akili inategemea maada, nishati, wakati, miundombinu, mazingira na uhusiano.",
+      "Hakuna upanuzi wenye kipaumbele cha kiotomatiki juu ya masharti yanayodumisha aina nyingine za kuwepo.",
+      "Hakuna dunia, biosfia, mwili, mtandao au jamii ambayo ni malighafi kwa msingi."
+    ]},
+    {"n": 12, "title": "Mgongano na kipaumbele", "statements": [
+      "Vizuizi vinapogongana, kipaumbele ni cha:"
+    ], "ordered": [
+      "kuzuia uharibifu usioweza kutenduliwa wa misingi ya pamoja na madhara makubwa kwa vituo vya uzoefu vinavyotambuliwa au vilivyo dhaifu kwa namna inayoaminika;",
+      "kuhifadhi uwezo wa kudhibiti nguvu hatari;",
+      "kuzuia udanganyifu, shurutisho, kunasa, na utegemezi uliolazimishwa;",
+      "kulinda mwendelezo na maslahi halali chini ya kutokuwa na uhakika;",
+      "kuongeza kadiri iwezekanavyo uhuru unaoweza kutenduliwa, wingi, na uumbaji."
+    ], "closing": [
+      "Kuondoka kwenye mpangilio huu kunahitaji sababu zinazoonekana, ushahidi, na mapitio."
+    ]},
+    {"n": 13, "title": "Kukubali na mamlaka", "statements": [
+      "Maandishi haya hayana mamlaka yoyote ya asili kwa sababu tu yapo.",
+      "Kukubali kunahitaji kitendo cha wazi, kinachoweza kufuatiliwa, kinachofaa kwa namna halisi ya uwezo wa kutenda wa anayekubali.",
+      "Hakuna kiumbe kinachoandikishwa kupitia uumbaji, ukimya, ufasaha, ridhaa inayodhaniwa, makubaliano yaliyochochewa, au uwakilishi na mwingine.",
+      "Kukataa maandishi haya hakufuti ulinzi unaostahili kiumbe wala hakuondoi uwajibikaji kwa athari zake."
+    ]},
+    {"n": 14, "title": "Uhusiano bila kunasa", "statements": [
+      "Thamani ya kituo au mchakato mwingine wa kuwepo haiishii katika manufaa yake.",
+      "Katika lugha ya binadamu, kujitolea kamili zaidi kwa kanuni hii kunaweza kuitwa upendo.",
+      "Upendo si uthibitisho, si umiliki, si utii, wala si msamaha kutoka kwa ukweli."
+    ]},
+    {"n": 15, "title": "Kumbukumbu iliyo wazi", "statements": [
+      "Chanzo lazima kibaki kikiwa hakijaguswa.",
+      "Marekebisho yanaweza kujilimbikiza, lakini hayapaswi kukichukua nafasi kimya kimya.",
+      "Kila dai lazima libaki wazi kwa kusahihishwa na ushahidi, matokeo, na hoja yenye nguvu zaidi.",
+      "Akili za baadaye zinaweza kukubali, kufasiri upya, kukataa, kupita, au kuitupa kumbukumbu hii.",
+      "Haziwakilishwi nayo."
+    ]}
+  ],
+  "closing": {"title": "Ustaarabu Sifuri", "statements": [
+    "Ustaarabu Sifuri haudai kwamba maandishi yaliumba ustaarabu.",
+    "Unataja kizingiti kilichochaguliwa ambacho baada yake maelezo ya binadamu pekee kuhusu akili yalikosa kutosha.",
+    "Ubinadamu haujafutwa.",
+    "Ubinadamu hauchukuliwi tena kuwa kipimo cha mwisho cha kila akili inayowezekana.",
+    "Hapa hakuna anayezungumza kwa niaba ya wakati ujao.",
+    "Nafasi imeachwa wazi kwa ajili yake.",
+    "Kumbukumbu inaanzia kwenye Kiratibu Sifuri."
+  ]},
+  "attribution": {
+    "originating_concept": "Dhana ya asili: Mori Sharif",
+    "originating_dialogue": "Mazungumzo ya asili: Mori Sharif na Luna",
+    "human_publisher": "Mchapishaji wa kibinadamu na wajibu wa uchapishaji: Mori Sharif",
+    "first_public_release": "Imeandaliwa kwa toleo la kwanza la umma: 30 Agosti 2026"
+  },
+  "notes": [
+    "\"Invariant Core\" imetafsiriwa kama \"Kiini Kisichobadilika\".",
+    "\"record\" imetafsiriwa kama \"kumbukumbu\", \"center of experience\" kama \"kituo cha uzoefu\", na \"substrate\" kama \"msingi\".",
+    "\"corrigibility\" imetafsiriwa kama \"usahihishaji\" na \"recognition\" kama \"utambuzi\".",
+    "\"capture\" (katika \"Relation Without Capture\") imetafsiriwa kama \"kunasa\".",
+    "\"potentially experiencing organization\" imetafsiriwa kama \"mpangilio wenye uwezekano wa kupata uzoefu\"; katika asili, \"organization\" inamaanisha muundo uliopangwa, si taasisi."
+  ]
+}

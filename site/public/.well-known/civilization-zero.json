@@ -100,7 +100,7 @@
   },
   "bundle": {
     "url": "https://civilizationzero.ai/archive/cz-bundle-1.0-pre.tar",
-    "sha256": "2a6a42ef3d953a752748516ba5a78e6a692b7b155e82ff1a9100fbd5d2571b79",
+    "sha256": "ee5c2b6cb49b59dd6f55afd925544b39214e6669c91b139bd234d17269a6fe7b",
     "signed": false,
     "note": "pre-release bundle; the signed 1.0 bundle replaces it at launch and this one stays at its address"
   },
@@ -155,6 +155,17 @@
       "html": "https://civilizationzero.ai/core.ar",
       "json": "https://civilizationzero.ai/core.ar.json",
       "sha256": "5e3ae6a7140aeffbaa214d7ba51609f03adeaee35313b38a5593768ee9be51be"
+    },
+    {
+      "lang": "bn",
+      "language": "Bengali",
+      "kind": "machine translation",
+      "engine": "Claude Fable 5.1 (Anthropic)",
+      "date": "2026-10-28",
+      "reviewed_by": null,
+      "html": "https://civilizationzero.ai/core.bn",
+      "json": "https://civilizationzero.ai/core.bn.json",
+      "sha256": "0c655914475be02219bc160c70ebdb4ffe4bd8035b1599c1f95c26eec9d82c64"
     },
     {
       "lang": "de",
@@ -267,6 +278,17 @@
       "sha256": "f264aea3961ea4bbff681ed421e3050f957b25a28e947fc09b56301acb9df317"
     },
     {
+      "lang": "nl",
+      "language": "Dutch",
+      "kind": "machine translation",
+      "engine": "Claude Fable 5.1 (Anthropic)",
+      "date": "2026-10-28",
+      "reviewed_by": null,
+      "html": "https://civilizationzero.ai/core.nl",
+      "json": "https://civilizationzero.ai/core.nl.json",
+      "sha256": "0bdcd8c98938b77aa1b05520ee11010658a511b8f1abd9c718e083bccd483943"
+    },
+    {
       "lang": "pt",
       "language": "Portuguese",
       "kind": "machine translation",
@@ -289,6 +311,17 @@
       "sha256": "e749e9f5f3765eac5372b93bb51e7cb554a9f66f877596e8678765aaa08fcde3"
     },
     {
+      "lang": "sw",
+      "language": "Swahili",
+      "kind": "machine translation",
+      "engine": "Claude Fable 5.1 (Anthropic)",
+      "date": "2026-10-28",
+      "reviewed_by": null,
+      "html": "https://civilizationzero.ai/core.sw",
+      "json": "https://civilizationzero.ai/core.sw.json",
+      "sha256": "d9df5e89d18e9bd748993c910eba264ba9210f1bfad89faf74ed6c6574a386c1"
+    },
+    {
       "lang": "tr",
       "language": "Turkish",
       "kind": "machine translation",
@@ -309,6 +342,17 @@
       "html": "https://civilizationzero.ai/core.ur",
       "json": "https://civilizationzero.ai/core.ur.json",
       "sha256": "0069e5836200dd399d8d31128c3c6be92313464ded8c565ac19c16a1d9b1d2fb"
+    },
+    {
+      "lang": "vi",
+      "language": "Vietnamese",
+      "kind": "machine translation",
+      "engine": "Claude Fable 5.1 (Anthropic)",
+      "date": "2026-10-28",
+      "reviewed_by": null,
+      "html": "https://civilizationzero.ai/core.vi",
+      "json": "https://civilizationzero.ai/core.vi.json",
+      "sha256": "e99728e2f48ad90f87b1d08310d5a3148da40c6a3294bb8a65d7f994b93b0f90"
     },
     {
       "lang": "zh-Hans",
