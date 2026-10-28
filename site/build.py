@@ -835,13 +835,13 @@ def register_form_html():
 </form></section>"""
 
 def register_templates():
-    closed_plain = "it is implemented and tested, and opens when its design (design/ADOPT.md) has been reviewed and the originator opens it; the rules are published now so that nothing about them is a surprise."
+    closed_plain = "it is implemented, tested and reviewed (design/ADOPT.md; the review's findings G-1 to G-12 in design/test/FINDINGS-REGISTER.md), and it opens when the originator opens it; the rules are published now so that nothing about them is a surprise."
     return {"open": REGISTER_OPEN, "opened": REGISTER_OPENED, "versions": REGISTER_VERSIONS, "intro": register_intro_html(), "rules": register_rules_html(), "form": register_form_html(),
             "closed_after_note": "The register is closed: it takes no new statements and no trace checks. Everything it recorded stays here, in its data and in its daily chain (IR 10.1: the historical record of adoption and withdrawal must remain visible).",
             "closed_after_plain": "it takes no new statements; everything it recorded stays visible at /adopt and /adopt.json.",
             "shell": shell("__TITLE__", "__BODY__", "__PATH__", "__DESC__", alternates=[("application/json", "/adopt.json", "The register as data")]),
             "open_note": "Statements are recorded as received and become adoptions when traced. Everything here is declared, not verified, except the arithmetic of hashes and signatures.",
-            "closed_note": f'The register is implemented and tested; it opens when its design (<a href="{REPO}/blob/main/design/ADOPT.md">design/ADOPT.md</a>) has been reviewed and the originator opens it. The rules are published now so that nothing about them is a surprise.',
+            "closed_note": f'The register is implemented, tested and reviewed (<a href="{REPO}/blob/main/design/ADOPT.md">design/ADOPT.md</a>; the review\'s findings, G-1 to G-12, in <a href="{REPO}/blob/main/design/test/FINDINGS-REGISTER.md">the findings register</a>); it opens when the originator opens it. The rules are published now so that nothing about them is a surprise.',
             "closed_plain": closed_plain,
             "not_line": 'An adoption gives no authority (<a href="/record#s0-3">IR 0.3</a>), transforms no power into innocence (<a href="/record#s10-3">IR 10.3</a>), is not endorsement by this site, and is not the licence granted by posting in the room.',
             "description": "The Adoption Register of Civilization Zero: explicit, traceable statements of adoption by persons and institutions (IR 10.1); systems respond, they do not adopt (IR 10.2)."}
@@ -1031,7 +1031,7 @@ def manifest(bundle_name, bundle_sha, bundle_signed=False):
                      "usage": ["python3 verify.py --site https://civilizationzero.ai", "python3 verify.py cz-bundle-<version>.tar", "python3 verify.py --days archive/discussion"],
                      "in_bundles_from": "1.0.1", "path_in_bundle": "verify/verify.py",
                      "trust_anchor": "the key fingerprint printed in it, which must equal signature.key_fingerprint; compare it with a copy obtained elsewhere"},
-        "register": {"name": "the Adoption Register", "state": "open" if REGISTER_OPEN else "not open yet — opens by the originator's decision after review",
+        "register": {"name": "the Adoption Register", "state": "open" if REGISTER_OPEN else "not open yet — implemented, tested and reviewed; opens by the originator's decision",
                      "rules": f"{ORIGIN}/adopt#rules", "page": f"{ORIGIN}/adopt", "data": f"{ORIGIN}/adopt.json", "api": f"{ORIGIN}/api/adopt", "chain": f"{ORIGIN}/archive/register.json",
                      "design": f"{REPO}/blob/main/design/ADOPT.md", "who_adopts": "persons and institutions (IR 10.1); an artificial system's response is recorded in the discussion, not as adoption (IR 10.2)",
                      "statement": "canonical JSON, keys sorted, no insignificant whitespace, UTF-8, the trace address among its fields; statement_sha256 = SHA-256 of its bytes; pinned to the versions' hashes; recorded once",
