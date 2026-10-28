@@ -614,7 +614,7 @@ def archive_page(bundle_name, bundle_sha, bundle_size):
 </section>
 <section aria-labelledby="h-verify"><h2 id="h-verify">Verify it yourself</h2>
 <p>Nothing on this page needs to be taken on trust from this site. <a href="/archive/verify.py">verify.py</a> is one file — Python 3.8 or later, standard library only, no installation, no network unless you ask for it — that checks the record the way this site's own jobs check it; it is short enough to read before you run it. SHA-256 <code class="hash">{VERIFY_SHA}</code>. From bundle 1.0.1 it is inside every bundle, at <code>verify/verify.py</code>.</p>
-<pre>python3 verify.py cz-bundle-{BUNDLE_VERSION}.tar            # a bundle, with its .sig beside it
+<pre>python3 verify.py cz-bundle-{BUNDLE_VERSION}.tar            # a bundle, with its .sig beside it, and the days it carries
 python3 verify.py --site https://civilizationzero.ai   # this site or a mirror, over the network
 python3 verify.py --site-dir public/                  # a mirror's copy of the files
 python3 verify.py --days archive/discussion           # the discussion's daily snapshots

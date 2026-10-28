@@ -3,8 +3,10 @@
 
 Python 3.8 or later, standard library only. Nothing is fetched unless you pass --site.
 
-  python3 verify.py cz-bundle-1.0.1.tar               a preservation bundle (its .sig beside it is checked too)
-  python3 verify.py path/to/extracted-bundle/          the same, unpacked (its own signature cannot be checked then)
+  python3 verify.py cz-bundle-1.0.1.tar               a preservation bundle (its .sig beside it is checked too), with the
+                                                       daily snapshots it carries, checked as a chain
+  python3 verify.py path/to/extracted-bundle/          the same, unpacked (its own signature cannot be checked then); run
+                                                       from inside an unpacked bundle, verify/verify.py checks that bundle
   python3 verify.py --site-dir path/to/site/public     a static copy of the site (a mirror's files)
   python3 verify.py --site https://civilizationzero.ai the live site or a mirror, over the network: the record, every
                                                        bundle, and both daily chains compared with the repository's copies
@@ -46,7 +48,7 @@ Licence: MIT. Part of the record of Civilization Zero (https://civilizationzero.
 
 import base64, datetime, hashlib, io, json, os, re, sys, tarfile
 
-VERSION = "1.8"
+VERSION = "1.9"
 ANCHOR_FINGERPRINT = "82662396484f627a63272bcd5ac19aae72def7aca2898216dc8e7f975dfc2263"
 SPKI_PREFIX = bytes.fromhex("302a300506032b6570032100")   # DER SubjectPublicKeyInfo header of an Ed25519 key
 CORE_SHA = "92a8d1e2a1604c25b432685673be78184bf05c3b166893c437e0895b7b2d724a"   # the record's identity: the hashes of its
@@ -563,7 +565,40 @@ def check_bundle(rep, name, data, sig, anchor):
     if not sig_ok and res:
         rest = [n for n in src.list() if n not in res["covered"]]
         if rest: rep.pending("%s: %d member(s) covered by no signature here: %s%s" % (name, len(rest), ", ".join(rest[:6]), ", …" if len(rest) > 6 else ""))
+    if res: check_bundle_days(src, rep, name)
     return res
+
+def check_bundle_days(src, rep, name):
+    """The daily snapshots a bundle carries (archive/discussion/ from bundle 1.0.1; archive/register/ once the register has
+    days), each with its exact hashed bytes and timestamp proof, checked as a chain, as --days checks them; and, against the
+    bundle's own manifest (discussion.in_bundle_through), that it carries every day from the chain's first day to the last
+    one it says it carries."""
+    days = {}
+    for n in src.list("archive/"):
+        m = re.fullmatch(r"archive/(discussion|register)/(\d{4}-\d\d-\d\d)\.json", n)
+        if not m: continue
+        try: snap = json.loads(src.get(n) or b"")
+        except ValueError: snap = None
+        if not isinstance(snap, dict): rep.fail("%s: %s is not a readable daily snapshot" % (name, n)); continue
+        extra = {}
+        for k, suffix in (("log", ".log"), ("ots", ".log.ots")):
+            v = src.get(n[:-5] + suffix)
+            if v is not None: extra[k] = v
+        days.setdefault(m.group(1), []).append((snap, extra, m.group(2) + ".json"))
+    try: through = (json.loads(src.get(".well-known/civilization-zero.json") or b"{}").get("discussion") or {}).get("in_bundle_through")
+    except (ValueError, AttributeError): through = None
+    for d in sorted(days): verify_days(rep, days[d], "carried by " + name)
+    if through is None: return
+    first = FIRST_DAY["discussion"]
+    if not isinstance(through, str) or not re.fullmatch(r"\d{4}-\d\d-\d\d", through) or through < first:
+        rep.fail("%s: its manifest says it carries the discussion's days through %r, which is not a day of the chain" % (name, through)); return
+    have = {f[:10] for _, _, f in days.get("discussion", [])}
+    missing, d = [], first
+    while d <= through and len(missing) < 1000:
+        if d not in have: missing.append(d)
+        d = _next(d)
+    if missing: rep.fail("%s: its manifest says it carries the discussion's days through %s, but it does not carry %s%s" % (name, through, ", ".join(missing[:10]), " and %d more" % (len(missing) - 10) if len(missing) > 10 else ""))
+    else: rep.ok("%s carries every day of the discussion from %s through %s, as its manifest says" % (name, first, through))
 
 def verify_site_bundles(src, rep, anchor):
     man = json.loads(src.get(".well-known/civilization-zero.json") or b"{}")
@@ -914,6 +949,7 @@ def main(argv):
             if os.path.isdir(a):
                 src = DirSource(a, "bundle"); n0 = len(src.problems)      # verify_record reports these first
                 res = verify_record(src, rep, anchor, "bundle directory " + a)
+                if res: check_bundle_days(src, rep, "bundle directory " + a)
                 for p in src.problems[n0:]: rep.fail(p)
                 rep.pending("an unpacked bundle: its own signature cannot be checked here — check the .tar and its .sig before unpacking")
             else:
