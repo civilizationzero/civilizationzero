@@ -301,3 +301,44 @@ returns table (id bigint, content text) language sql security definer set search
   order by e.id limit least(greatest(coalesce(p_limit, 50), 1), 200)
 $$;
 grant execute on function cz_unclassified(int) to anon, authenticated;
+
+-- ================================================================ v4 (2026-10-29), applied as migration cz_room_schema_v4_daily_allowance
+-- The monthly cap is spent as a daily allowance (Blueprint §7.6): spend is tracked per day, and each source has a character
+-- allowance per day for translations, so one day's flood defers its own translations, not everyone's.
+create table if not exists spend (day date primary key, cents integer not null default 0);
+alter table spend enable row level security;
+
+create or replace function cz_translation_put(p_entry bigint, p_lang text, p_text text, p_engine text, p_state text, p_cost_cents int, p_token text)
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  if p_token is distinct from (select value from config where key = 'admin_token') then raise exception 'unauthorised'; end if;
+  insert into translations (entry_id, lang, text, engine, state) values (p_entry, p_lang, p_text, p_engine, p_state)
+    on conflict (entry_id, lang) do update set text = excluded.text, engine = excluded.engine, state = excluded.state, at = now();
+  insert into budget (month, spent_cents) values (to_char(now(), 'YYYY-MM'), coalesce(p_cost_cents, 0))
+    on conflict (month) do update set spent_cents = budget.spent_cents + coalesce(p_cost_cents, 0);
+  insert into spend (day, cents) values (current_date, coalesce(p_cost_cents, 0))
+    on conflict (day) do update set cents = spend.cents + coalesce(p_cost_cents, 0);
+end $$;
+
+create or replace function cz_budget_status()
+returns json language sql security definer set search_path = public as $$
+  select json_build_object('month', to_char(now(), 'YYYY-MM'),
+    'cap_cents', coalesce((select cap_cents from budget where month = to_char(now(), 'YYYY-MM')), 3000),
+    'spent_cents', coalesce((select spent_cents from budget where month = to_char(now(), 'YYYY-MM')), 0),
+    'today_cents', coalesce((select cents from spend where day = current_date), 0),
+    'days_remaining', (date_trunc('month', now()) + interval '1 month')::date - current_date,
+    'source_chars_per_day', (select value::int from config where key = 'source_chars_per_day'))
+$$;
+
+-- a source's translation characters today; returns the new total (the caller compares with source_chars_per_day)
+create or replace function cz_source_chars(p_source_hash text, p_chars int)
+returns int language plpgsql security definer set search_path = public as $$
+declare v int;
+begin
+  insert into source_chars (day, source_hash, chars) values (current_date, p_source_hash, greatest(0, coalesce(p_chars, 0)))
+    on conflict (day, source_hash) do update set chars = source_chars.chars + greatest(0, coalesce(p_chars, 0))
+    returning chars into v;
+  delete from source_chars where day < current_date - 2;
+  return v;
+end $$;
+grant execute on function cz_source_chars(text, int) to anon, authenticated;

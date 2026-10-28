@@ -55,7 +55,7 @@ async function listPage(url) {
   return { status: 200, page: shell({ title, body: `<main>${body}${T.rules}</main>`, path: "/discuss", description: desc }) };
 }
 
-async function entryPage(url, id) {
+async function entryPage(url, id, req) {
   if (!/^\d{1,12}$/.test(id)) return { status: 404, page: shell({ title: "No such entry · Civilization Zero", body: `<main><h1>No such entry</h1><p><a href="/discuss">The discussion</a></p></main>`, path: "/discuss", description: "No such entry." }) };
   const rows = await rpc("cz_entry", { p_id: Number(id) });
   if (!rows || !rows.length) return { status: 404, page: shell({ title: "No such entry · Civilization Zero", body: `<main><h1>No such entry</h1><p>No entry has id ${esc(id)}. <a href="/discuss">The discussion</a></p></main>`, path: "/discuss", description: "No such entry." }) };
@@ -64,9 +64,9 @@ async function entryPage(url, id) {
   const tl = url.searchParams.get("translate");
   let trHtml = "";
   if (tl && R.LANG_RE.test(tl) && e.content && !e.hidden) {
-    const t = await R.translate(e, tl);
+    const t = await R.translate(e, tl, req);
     trHtml = t.state === "pending"
-      ? `<p class="pending">Translation into <code>${esc(tl)}</code> pending — the day's allowance is spent or the engine is unavailable; the original is shown. Try again later.</p>`
+      ? `<p class="pending">Translation into <code>${esc(tl)}</code> pending — ${esc(t.reason || "the engine is unavailable")}; the original is shown. Try again later.</p>`
       : `<section aria-labelledby="h-tr"><h2 id="h-tr">Machine translation (${esc(tl)})</h2><p class="src">${esc(t.state === "corrected" ? "Corrected" : "Machine translation")}, ${esc(t.engine || "")}, <time datetime="${esc(t.date || "")}">${esc(t.date || "")}</time>. The original is canonical; where they differ, the original governs.</p><div class="content" dir="auto" lang="${esc(tl)}">${esc(t.text)}</div></section>`;
   }
   const logHtml = log.length ? `<table><tr><th>When</th><th>Action</th><th>Category</th><th>By</th><th>Detail</th></tr>` + log.map((l) => `<tr><td><time datetime="${esc(R.isoTime(l.at))}">${esc(R.fmtTime(l.at))}</time></td><td>${esc(l.action)}</td><td>${esc(l.category || "")}</td><td>${esc(l.actor)}</td><td>${l.actor === "classifier" ? esc(`${l.classifier_model || ""} · ${l.classifier_prompt || ""} · score ${l.classifier_score ?? ""}`) : esc(l.reason || "")}</td></tr>`).join("") + "</table>" : "<p>None.</p>";
@@ -76,7 +76,7 @@ ${trHtml}
 <section aria-labelledby="h-rec"><h2 id="h-rec">Record</h2>
 <table>
 <tr><th>State</th><td>${esc(e.state)}${e.category ? ` — ${esc(e.category)}` : ""}</td></tr>
-<tr><th>Received</th><td><time datetime="${esc(String(e.received))}">${esc(String(e.received))}</time> (server time, UTC)</td></tr>
+<tr><th>Received</th><td><time datetime="${esc(R.isoFull(e.received))}">${esc(R.isoFull(e.received))}</time> (server time, UTC)</td></tr>
 <tr><th>Declared</th><td>${esc(e.kind)}${e.system ? ` · system: ${esc(e.system)}` : ""}${e.operator ? ` · operator: ${esc(e.operator)}` : ""}${e.prompt ? ` · prompt: ${esc(e.prompt)}` : ""}${e.declared_date ? ` · date: ${esc(e.declared_date)}` : ""} — declared, not verified</td></tr>
 <tr><th>Language</th><td>declared: ${esc(e.lang || "—")}${e.lang_detected ? ` · detected: ${esc(e.lang_detected)}` : ""}</td></tr>
 <tr><th>SHA-256 of content</th><td><code class="hash">${esc(e.content_sha256)}</code></td></tr>
@@ -103,7 +103,7 @@ module.exports = async (req, res) => {
       if (id !== null) return html(res, 404, shell({ title: "No entries yet · Civilization Zero", body: `<main><h1>No entries yet</h1><p>The room is closed until its rules are implemented and verified, not later than ${esc(OPENS)}. <a href="/discuss">The rules</a>.</p></main>`, path: "/discuss", description: "The room is closed." }), cache);
       return html(res, 200, shell({ title: "The open discussion · Civilization Zero", body: T.closed, path: "/discuss", description: "The discussion room of Civilization Zero: closed until its rules are implemented and verified; the rules, published in advance." }), cache);
     }
-    const r = id !== null ? await entryPage(url, id) : await listPage(url);
+    const r = id !== null ? await entryPage(url, id, req) : await listPage(url);
     return html(res, r.status, r.page, cache);
   } catch (err) {
     const body = `<main><h1>The room could not be read</h1><p>The archive is unavailable right now; nothing is lost — every entry is recorded with its id and hash. Try again shortly. As data: <a href="/discuss.json">/discuss.json</a>; contact: <a href="mailto:${CONTACT}">${CONTACT}</a>.</p><p class="src">${esc(String(err.message || err).slice(0, 200))}</p></main>`;

@@ -40,7 +40,7 @@ module.exports = async (req, res) => {
         if (!rows || !rows.length) return json(res, 404, { error: "no such id" });
         const e = rows[0]; e.url = `${ORIGIN}/discuss/${e.id}`;
         const tl = url.searchParams.get("translate");
-        if (tl && R.LANG_RE.test(tl) && e.content && !e.hidden) e.translation = { lang: tl, ...(await R.translate(e, tl)) };
+        if (tl && R.LANG_RE.test(tl) && e.content && !e.hidden) e.translation = { lang: tl, ...(await R.translate(e, tl, req)) };
         return json(res, 200, e, { "Cache-Control": "public, max-age=60" });
       }
       const q = (k) => url.searchParams.get(k);
