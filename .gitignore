@@ -1,6 +1,8 @@
 node_modules/
 .vercel/
 *.log
+!archive/discussion/*.log
+!archive/register/*.log
 site/build/shots/
 site/build/payload.json
 site/build/site.*
