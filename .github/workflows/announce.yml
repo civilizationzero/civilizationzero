@@ -14,6 +14,8 @@ on:
         description: "Also ask the Internet Archive to save every page"
         type: boolean
         default: true
+permissions:
+  contents: write
 jobs:
   announce:
     runs-on: ubuntu-24.04
@@ -41,11 +43,10 @@ jobs:
               print("IndexNow:", r.status, f"({len(urls)} addresses)")   # 200 or 202: received
               if r.status not in (200, 202): sys.exit(1)
           EOF
-      - name: Internet Archive
+      - name: Internet Archive — save every page
         if: ${{ inputs.archive }}
         run: |
           set +e -u   # one slow or refused save must not stop the others (GitHub runs steps with bash -e)
-          : > snapshots.tsv
           while read -r u; do
             [ -z "$u" ] && continue
             code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 120 -A "civilizationzero.ai announce workflow" "https://web.archive.org/save/$u")
@@ -53,15 +54,23 @@ jobs:
             sleep 15
           done < urls.txt
           sleep 60
+      - name: Internet Archive — the latest snapshot of each page, kept in the repository
+        run: |
+          set +e -u
+          printf 'page\tsnapshot\n' > ia.tsv
           while read -r u; do
             [ -z "$u" ] && continue
-            snap=$(curl -s --max-time 60 "https://archive.org/wayback/available?url=$u&timestamp=$(date -u +%Y%m%d%H%M%S)" | python3 -c "import json,sys; d=json.load(sys.stdin); s=d.get('archived_snapshots',{}).get('closest',{}); print(s.get('url',''))")
-            printf '%s\t%s\n' "$u" "$snap" | tee -a snapshots.tsv
+            snap=$(curl -s --max-time 60 "https://archive.org/wayback/available?url=$u&timestamp=$(date -u +%Y%m%d%H%M%S)" | python3 -c "import json,sys
+          try: print(json.load(sys.stdin).get('archived_snapshots',{}).get('closest',{}).get('url',''))
+          except Exception: print('')")
+            printf '%s\t%s\n' "${u#https://civilizationzero.ai}" "$snap" >> ia.tsv
           done < urls.txt
-          echo "snapshots found: $(awk -F'\t' '$2 != ""' snapshots.tsv | wc -l) of $(wc -l < urls.txt)"
-          exit 0
-      - uses: actions/upload-artifact@v4
-        if: ${{ always() && inputs.archive }}
-        with:
-          name: snapshots
-          path: snapshots.tsv
+          found=$(awk -F'\t' 'NR > 1 && $2 != ""' ia.tsv | wc -l); total=$(($(wc -l < ia.tsv) - 1))
+          echo "::notice title=Internet Archive::$found of $total pages have a snapshot"
+          mkdir -p archive/internet-archive && cp ia.tsv archive/internet-archive/snapshots.tsv
+          git config user.name "cz-announce"; git config user.email "record@civilizationzero.ai"
+          git add archive/internet-archive/snapshots.tsv
+          git diff --cached --quiet && { echo "no change"; exit 0; }
+          git commit -q -m "Internet Archive: the latest snapshot of each page ($found of $total)"
+          for i in 1 2 3 4; do git pull --rebase -q && git push -q && exit 0; sleep $((i * 5)); done
+          exit 1
