@@ -49,7 +49,7 @@ def resolves(path):
 
 pages = sorted(PUBLIC.glob("*.html")) + [SITE / "preview" / "index.html"]
 DT = json.loads((SITE / "api" / "discuss-templates.json").read_text("utf-8"))
-def dshell(title, body, path): return DT["shell"].replace("__TITLE__", title).replace("__DESC__", "d").replace("__PATH__", path).replace("__BODY__", body)
+def dshell(title, body, path): return DT["shell"].replace("__TITLE__", title).replace("__DESC__", "d").replace("__PATH__", path).replace("__HEAD__", "").replace("__BODY__", body)
 VIRTUAL = {"discuss.html": dshell("The open discussion", DT["closed"], "/discuss"),
            "discuss-open.html": dshell("The open discussion", "<main><h1>The open discussion</h1><p>x</p>" + DT["rules"] + "</main>", "/discuss"),
            "respond.html": dshell("Respond", DT["respond_closed"], "/respond"), "respond-open.html": dshell("Respond", DT["respond_open"], "/respond")}
@@ -64,7 +64,7 @@ for f in pages + [pathlib.Path("virtual") / n for n in VIRTUAL]:
     check(p.h1 == 1, f"{f.name}: {p.h1} h1 elements")
     expected_lang = f.stem.split(".")[1] if f.stem.startswith("core.") and f.stem.count(".") == 1 else "en"
     check(p.lang == expected_lang, f"{f.name}: lang {p.lang!r}, expected {expected_lang!r}")
-    check({"utf-8", "viewport", "description", "canonical", "icon", "service-desc"} <= p.attrs_seen, f"{f.name}: head metadata {p.attrs_seen}")
+    check({"utf-8", "viewport", "description", "icon", "service-desc"} | ({"canonical"} if f.name != "404.html" else set()) <= p.attrs_seen, f"{f.name}: head metadata {p.attrs_seen}")
     for t in p.times:
         check(re.fullmatch(r"\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}(:\d{2})?Z)?|P\d+D", t), f"{f.name}: invalid datetime {t!r}")
     for bad in ("civilization0.ai", "observator", "N-H", "N-M", "N-F", "__YEAR__", "__ASOF"):
@@ -85,6 +85,34 @@ for f, p in parsed.items():
         if frag:
             target = "/" if path in ("/", "") else path
             if target in ids_by_page: check(frag in ids_by_page[target], f"{f.name}: missing anchor {href}")
+
+# 2b. for indexers and link previews (Blueprint §3.1): each page names its address and its preview; the Core's languages link
+# to each other both ways; the sitemaps list every public page; the not-found page is not for indexing
+import struct, xml.etree.ElementTree as ET
+core_cluster = sorted(PUBLIC.glob("core*.html"))
+cluster_links = {f'<link rel="alternate" hreflang="en" href="{ORIGIN}/core">', f'<link rel="alternate" hreflang="x-default" href="{ORIGIN}/core">'} | \
+    {f'<link rel="alternate" hreflang="{f.stem.split(".", 1)[1]}" href="{ORIGIN}/{f.stem}">' for f in core_cluster if "." in f.stem}
+canonicals = set()
+for f in pages + [pathlib.Path("virtual") / n for n in VIRTUAL]:
+    h = VIRTUAL[f.name] if f.parent.name == "virtual" else f.read_text("utf-8")
+    if f.name == "404.html":
+        check('<meta name="robots" content="noindex">' in h and 'rel="canonical"' not in h, "404.html: noindex and no canonical address"); continue
+    canon = re.search(r'<link rel="canonical" href="([^"]+)">', h)
+    check(canon and f'<meta property="og:url" content="{canon.group(1)}">' in h, f"{f.name}: og:url is not the canonical address")
+    if canon: canonicals.add(canon.group(1))
+    check(f'<meta property="og:image" content="{ORIGIN}/og.png">' in h and '<meta name="twitter:card" content="summary_large_image">' in h, f"{f.name}: link-preview metadata")
+    check(h.count("<title>") == 1 and "__TITLE__" not in h.split("<body>")[0], f"{f.name}: one title")
+    if f in core_cluster: check(cluster_links <= set(re.findall(r'<link rel="alternate" hreflang="[^"]+" href="[^"]+">', h)), f"{f.name}: hreflang group incomplete")
+sm = ET.fromstring((PUBLIC / "sitemap.xml").read_bytes())
+NS = "{http://www.sitemaps.org/schemas/sitemap/0.9}"
+locs = [u.find(NS + "loc").text for u in sm.findall(NS + "url")]
+check(len(locs) == len(set(locs)) and canonicals - {f"{ORIGIN}/discuss", f"{ORIGIN}/respond"} <= set(locs) and {f"{ORIGIN}/discuss", f"{ORIGIN}/respond", f"{ORIGIN}/adopt"} <= set(locs),
+      f"sitemap.xml: pages missing {sorted(canonicals - set(locs))}")
+check((PUBLIC / "sitemap.txt").read_text("utf-8").split() == locs, "sitemap.txt and sitemap.xml differ")
+rb = (PUBLIC / "robots.txt").read_text("utf-8")
+check(f"Sitemap: {ORIGIN}/sitemap.xml" in rb and "Disallow: /admin" in rb, "robots.txt: sitemap and the administrator's page")
+og = (PUBLIC / "og.png").read_bytes()
+check(og[:8] == b"\x89PNG\r\n\x1a\n" and struct.unpack(">II", og[16:24]) == (1200, 630), "og.png: a 1200x630 PNG")
 
 # 3. data files
 for name in ("core.json", "record.json", "core.schema.json", "api/openapi.json", ".well-known/civilization-zero.json", "objections.json"):

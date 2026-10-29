@@ -229,9 +229,28 @@ FOOTER = (f'<footer><hr><p class="exact">Text CC BY 4.0 · Code MIT · <a href="
           f'<a href="mailto:{CONTACT}">{CONTACT}</a> · Coordinate Zero <time datetime="2022-11-30">2022-11-30</time> · UTC</p></footer>')
 
 
-def shell(title, body, path, description, alternates=(), ldjson=None, nav=True, extra_head=""):
+# Search and link-preview metadata (Blueprint §3.1: crawlers, indexers and archivers are readers too). Named standards only —
+# Open Graph, schema.org, hreflang, sitemaps.org — and nothing that observes a reader. The preview image is the mark, the
+# site's one image (§9).
+GOOGLE_SITE_VERIFICATION = ""   # Google Search Console, "HTML tag" method: the content value of its meta tag, when the originator has added the property
+OG_IMAGE = ("/og.png", 1200, 630, "The mark of Civilization Zero: a C that is an unclosed zero")
+
+def shell(title, body, path, description, alternates=(), ldjson=None, nav=True, extra_head="", hreflangs=(), og_type="website", robots=None, crumbs=True):
     alt = "".join(f'<link rel="alternate" type="{t}" href="{h}" title="{esc(n)}">' for t, h, n in alternates)
-    ld = "".join(f'<script type="application/ld+json">{json.dumps(o, ensure_ascii=False)}</script>' for o in (ldjson or []))
+    hl = "".join(f'<link rel="alternate" hreflang="{l}" href="{ORIGIN}{h}">' for l, h in hreflangs)
+    objs = list(ldjson or [])
+    if crumbs and path not in ("/", "__PATH__"):   # where the page sits: Home > page (schema.org BreadcrumbList)
+        objs.append({"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [
+            {"@type": "ListItem", "position": 1, "name": "Civilization Zero", "item": f"{ORIGIN}/"},
+            {"@type": "ListItem", "position": 2, "name": title.replace(" · Civilization Zero", ""), "item": f"{ORIGIN}{path}"}]})
+    ld = "".join(f'<script type="application/ld+json">{json.dumps(o, ensure_ascii=False).replace("</", "<\\/")}</script>' for o in objs)
+    meta = (f'<meta name="robots" content="{robots}">\n' if robots else "") + \
+           (f'<meta name="google-site-verification" content="{esc(GOOGLE_SITE_VERIFICATION)}">\n' if GOOGLE_SITE_VERIFICATION else "")
+    og = (f'<meta property="og:site_name" content="Civilization Zero"><meta property="og:type" content="{og_type}">'
+          f'<meta property="og:title" content="{esc(title)}"><meta property="og:description" content="{esc(description)}">'
+          f'<meta property="og:url" content="{ORIGIN}{path}"><meta property="og:image" content="{ORIGIN}{OG_IMAGE[0]}">'
+          f'<meta property="og:image:width" content="{OG_IMAGE[1]}"><meta property="og:image:height" content="{OG_IMAGE[2]}">'
+          f'<meta property="og:image:alt" content="{esc(OG_IMAGE[3])}"><meta name="twitter:card" content="summary_large_image">\n')
     return f"""<!doctype html>
 <html lang="en">
 <head>
@@ -239,9 +258,10 @@ def shell(title, body, path, description, alternates=(), ldjson=None, nav=True, 
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{esc(title)}</title>
 <meta name="description" content="{esc(description)}">
-<link rel="canonical" href="{ORIGIN}{path}">
-{alt}<link rel="service-desc" type="application/vnd.oai.openapi+json" href="/api/openapi.json">
-<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+{meta}<link rel="canonical" href="{ORIGIN}{path}">
+{alt}{hl}<link rel="service-desc" type="application/vnd.oai.openapi+json" href="/api/openapi.json">
+{og}<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)"><meta name="theme-color" content="#101010" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <style>{CSS}</style>
 {ld}{extra_head}</head>
 <body>

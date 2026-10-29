@@ -50,11 +50,12 @@ function html(res, status, page, headers = {}) {
   res.end(page);
 }
 
-// The page shell comes from the build (same stylesheet, nav and footer as every static page). Function replacements, so that
-// "$&", "$`" and the like in user content are never interpreted (R-2).
-const put = (s, mark, value) => s.replace(mark, () => value);
-function shell({ title, body, path, description }) {
-  return put(put(put(put(T.shell, "__TITLE__", esc(title)), "__DESC__", esc(description)), "__PATH__", esc(path)), "__BODY__", body);
+// The page shell comes from the build (same stylesheet, nav and footer as every static page). One pass over the template: every
+// placeholder is replaced wherever it occurs (the title, description and address appear in the link-preview metadata too), by a
+// function, so that "$&", "$`" and the like in user content are never interpreted (R-2), and nothing inserted is scanned again.
+const fill = (s, v) => s.replace(/__(TITLE|DESC|PATH|HEAD|BODY)__/g, (m, k) => (Object.prototype.hasOwnProperty.call(v, k) ? v[k] : ""));
+function shell({ title, body, path, description, head }) {
+  return fill(T.shell, { TITLE: esc(title), DESC: esc(description), PATH: esc(path), HEAD: head || "", BODY: body });
 }
 
 // ---------------------------------------------------------------- database
@@ -277,5 +278,5 @@ function entryHtml(e) {
 // A valid calendar date (R-29)
 const validDate = (s) => { if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false; const d = new Date(s + "T00:00:00Z"); return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === s; };
 
-module.exports = { ORIGIN, CONTACT, OPEN, CHAIN, OPENS, TOKEN, T, esc, log, json, html, shell, rpc, rest, sourceHash, sourceOf, tokenEquals, verifySignature, fullOrderKey, validate, classify, translate,
+module.exports = { ORIGIN, CONTACT, OPEN, CHAIN, OPENS, TOKEN, T, esc, log, json, html, shell, fill, rpc, rest, sourceHash, sourceOf, tokenEquals, verifySignature, fullOrderKey, validate, classify, translate,
                    allowance, groupEntries, groupKey, entryHtml, metaHtml, contentHtml, fmtTime, isoTime, isoFull, validDate, LANG_RE, MODERATION_PROMPT_VERSION, CATEGORIES };

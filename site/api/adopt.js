@@ -28,10 +28,9 @@ function jsonPost(res, status, body, headers = {}) {
 // sends no Origin (a program), never from another site's page
 const foreignOrigin = (req) => { const o = req.headers.origin; if (!o) return false; const host = req.headers["x-forwarded-host"] || req.headers.host || ""; return o !== `https://${host}` && o !== ORIGIN; };
 // the register's own shell: same stylesheet, nav and footer as every page, with /adopt.json as its alternate (an equivalent of the page)
-const put = (t, mark, value) => t.replace(mark, () => value);
-const page = (title, body, path, description, alt) => {
+const page = (title, body, path, description, alt, head) => {
   const shellFor = alt ? RT.shell.replace('href="/adopt.json" title="The register as data"', () => `href="${esc(alt)}" title="This record as data"`) : RT.shell;
-  return put(put(put(put(shellFor, "__TITLE__", esc(`${title} · Civilization Zero`)), "__DESC__", esc(description)), "__PATH__", esc(path)), "__BODY__", `<main>${body}</main>`);
+  return R.fill(shellFor, { TITLE: esc(`${title} · Civilization Zero`), DESC: esc(description), PATH: esc(path), HEAD: head || "", BODY: `<main>${body}</main>` });
 };
 const stateLine = () => (G.OPEN ? `<p><strong>Open.</strong> ${RT.open_note}</p>`
   : G.CHAIN ? `<p class="pending"><strong>Closed.</strong> ${RT.closed_after_note}</p>` : `<p class="pending"><strong>Not open yet.</strong> ${RT.closed_note}</p>`);

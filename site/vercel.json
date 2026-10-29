@@ -3,6 +3,17 @@
   "trailingSlash": false,
   "redirects": [
     {
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "civilization-zero.vercel.app"
+        }
+      ],
+      "destination": "https://civilizationzero.ai/:path*",
+      "permanent": true
+    },
+    {
       "source": "/:page(discuss|respond).html",
       "destination": "/:page",
       "permanent": true
@@ -242,6 +253,21 @@
         {
           "key": "Permissions-Policy",
           "value": "interest-cohort=()"
+        }
+      ]
+    },
+    {
+      "source": "/(.*)",
+      "missing": [
+        {
+          "type": "host",
+          "value": "civilizationzero.ai"
+        }
+      ],
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex"
         }
       ]
     },
@@ -551,6 +577,28 @@
         {
           "key": "Link",
           "value": "</adopt.json>; rel=\"alternate\"; type=\"application/json\""
+        }
+      ]
+    },
+    {
+      "source": "/(og.png|apple-touch-icon.png)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=86400"
+        }
+      ]
+    },
+    {
+      "source": "/sitemap.xml",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/xml; charset=utf-8"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=3600"
         }
       ]
     }

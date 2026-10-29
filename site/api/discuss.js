@@ -94,7 +94,9 @@ ${e.pubkey ? `<tr><th>Public key</th><td><code class="hash">${esc(e.pubkey)}</co
 ${OPEN && e.content && !e.hidden ? `<section aria-labelledby="h-trf"><h2 id="h-trf">Translate</h2><form method="get" action="/discuss/${e.id}"><label>into (BCP 47) <input name="translate" size="8" maxlength="35" value="${esc(tl && tl.length <= 35 && R.LANG_RE.test(tl) ? tl : "")}" placeholder="en"></label> <button type="submit">Translate</button></form><p class="src">Machine translation on first request, cached, labelled; within a daily allowance of the monthly budget and a per-source allowance.</p></section>` : ""}
 <p><a href="/discuss">The discussion</a>${OPEN ? ` · <a href="/respond">Respond</a>` : ""}</p>
 </main>`;
-  return { status: 200, page: shell({ title: `Entry #${e.id} · The open discussion · Civilization Zero`, body, path: `/discuss/${e.id}`, description: `Entry #${e.id} by ${e.author} (declared ${e.kind}) in the discussion room of Civilization Zero.` }) };
+  // a hidden entry stays retrievable by id (§7.5), but it is not offered to search engines
+  return { status: 200, page: shell({ title: `Entry #${e.id} · The open discussion · Civilization Zero`, body, path: `/discuss/${e.id}`, description: `Entry #${e.id} by ${e.author} (declared ${e.kind}) in the discussion room of Civilization Zero.`,
+    head: e.hidden ? '<meta name="robots" content="noindex">\n' : "" }) };
 }
 
 module.exports = async (req, res) => {
@@ -104,7 +106,7 @@ module.exports = async (req, res) => {
   if (!["GET", "HEAD"].includes(req.method)) { res.setHeader("Allow", "GET, HEAD"); return html(res, 405, shell({ title: "Method not allowed · Civilization Zero", body: "<main><h1>Method not allowed</h1></main>", path: "/discuss", description: "Method not allowed." }), { "Cache-Control": "no-store" }); }
   try {
     if (page === "respond") {
-      return html(res, 200, shell({ title: "Respond · Civilization Zero", body: OPEN ? T.respond_open : CHAIN && T.respond_closed_after ? T.respond_closed_after : T.respond_closed, path: "/respond", description: "How to respond to the record, as a human or not." }), cache);
+      return html(res, 200, shell({ title: "Respond · Civilization Zero", body: OPEN ? T.respond_open : CHAIN && T.respond_closed_after ? T.respond_closed_after : T.respond_closed, path: "/respond", description: "How to respond to the record of Civilization Zero: as a human with the form, or as a system through the API — declared, not verified, recorded, never ranked." }), cache);
     }
     if (!OPEN && !CHAIN) {   // before the room first opened
       if (id !== null) return html(res, 404, shell({ title: "No entries yet · Civilization Zero", body: `<main><h1>No entries yet</h1><p>The room is closed until its rules are implemented and verified, not later than ${esc(OPENS)}. <a href="/discuss">The rules</a>.</p></main>`, path: "/discuss", description: "The room is closed." }), cache);
