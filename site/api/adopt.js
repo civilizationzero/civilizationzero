@@ -56,7 +56,7 @@ async function allRecords(start = null) {
 
 const day = (t) => String(t || "").slice(0, 10);
 const recent = (t) => Date.now() - Date.parse(t) < UNTRACED_DAYS * 86400000;
-const who = (r) => r.hidden ? `<i>hidden (${esc(r.category || "unspecified")})</i>` : `<b>${esc(r.signatory)}</b>${r.signatory_kind === "institution" ? ` for <b>${esc(r.institution)}</b>${r.capacity ? ` (${esc(r.capacity)})` : ""}` : r.capacity ? ` (${esc(r.capacity)})` : ""}`;
+const who = (r) => r.hidden ? `<i>hidden (${esc(r.category || "unspecified")})</i>` : `<b>${R.decl(r.signatory)}</b>${r.signatory_kind === "institution" ? ` for <b>${R.decl(r.institution)}</b>${r.capacity ? ` (${R.decl(r.capacity)})` : ""}` : r.capacity ? ` (${R.decl(r.capacity)})` : ""}`;   // declared names, isolated (R3-22)
 const versionsText = (r) => (r.versions || []).map((v) => esc(v.split(" sha256:")[0])).join(" and ") || "—";
 
 function summaryHtml(root, st) {

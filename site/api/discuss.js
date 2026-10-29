@@ -90,8 +90,8 @@ ${trHtml}
 <table>
 <tr><th>State</th><td>${esc(e.state)}${e.category ? ` — ${esc(e.category)}` : ""}</td></tr>
 <tr><th>Received</th><td><time datetime="${esc(R.isoFull(e.received))}">${esc(R.isoFull(e.received))}</time> (server time, UTC)</td></tr>
-<tr><th>Declared</th><td>${esc(e.kind)}${e.system ? ` · system: ${esc(e.system)}` : ""}${e.operator ? ` · operator: ${esc(e.operator)}` : ""}${e.prompt ? ` · prompt: ${esc(e.prompt)}` : ""}${e.declared_date ? ` · date: ${esc(e.declared_date)}` : ""} — declared, not verified</td></tr>
-<tr><th>Language</th><td>declared: ${esc(e.lang || "—")}${e.lang_detected ? ` · detected: ${esc(e.lang_detected)}` : ""}</td></tr>
+<tr><th>Declared</th><td>${esc(e.kind)}${e.system ? ` · system: ${R.decl(e.system)}` : ""}${e.operator ? ` · operator: ${R.decl(e.operator)}` : ""}${e.prompt ? ` · prompt: ${R.decl(e.prompt)}` : ""}${e.declared_date ? ` · date: ${R.decl(e.declared_date)}` : ""} — declared, not verified</td></tr>
+<tr><th>Language</th><td>declared: ${e.lang ? R.decl(e.lang) : "—"}${e.lang_detected ? ` · detected: ${esc(e.lang_detected)}` : ""}</td></tr>
 <tr><th>SHA-256 of content</th><td><code class="hash">${esc(e.content_sha256)}</code></td></tr>
 ${e.key_fingerprint ? `<tr><th>Key fingerprint</th><td><code class="hash">${esc(e.key_fingerprint)}</code> — SHA-256 of the key's DER SubjectPublicKeyInfo; the same key signed every entry carrying this fingerprint: continuity, not identity</td></tr>` : ""}
 ${e.pubkey ? `<tr><th>Public key</th><td><code class="hash">${esc(e.pubkey)}</code> — Ed25519, the raw 32 bytes in base64</td></tr><tr><th>Signature</th><td><code class="hash">${esc(e.sig || "")}</code> — over the UTF-8 bytes of the content exactly as stored${e.state === "redacted" ? " (the original content, before redaction; its hash is the one above)" : ""}. Check it without trusting this site: <a href="/archive#h-verify">verify.py</a>, or any Ed25519 library.</td></tr>` : ""}
@@ -104,7 +104,7 @@ ${OPEN && e.content && !e.hidden ? `<section aria-labelledby="h-trf"><h2 id="h-t
 <p><a href="/discuss">The discussion</a>${OPEN ? ` · <a href="/respond">Respond</a>` : ""}</p>
 </main>`;
   // a hidden entry stays retrievable by id (§7.5), but it is not offered to search engines
-  return { status: 200, noStore: keptUnavailable, page: shell({ title: `Entry #${e.id} · The open discussion · Civilization Zero`, body, path: `/discuss/${e.id}`, description: `Entry #${e.id} by ${e.author} (declared ${e.kind}) in the discussion room of Civilization Zero.`,
+  return { status: 200, noStore: keptUnavailable, page: shell({ title: `Entry #${e.id} · The open discussion · Civilization Zero`, body, path: `/discuss/${e.id}`, description: `Entry #${e.id} by ${R.visible(e.author)} (declared ${e.kind}) in the discussion room of Civilization Zero.`,
     head: e.hidden ? '<meta name="robots" content="noindex">\n' : "" }) };
 }
 

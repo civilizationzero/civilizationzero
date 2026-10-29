@@ -63,6 +63,12 @@ const reservedDetail = (field) => `${field}: "The originator" and "Civilization 
 const CSP = "default-src 'none'; style-src 'unsafe-inline'; img-src 'self' data:; form-action 'self'; base-uri 'none'; frame-ancestors 'none'";
 if (OPEN && (!process.env.CZ_SALT || process.env.CZ_SALT.length < 32)) throw new Error("CZ_SALT missing: source hashes must be salted (Blueprint §7.3)");
 
+// A declared field (author, system, operator, prompt, language, declared date; a register's signatory, institution, capacity) is
+// someone else's text: its control and bidirectional-formatting characters are shown as visible escapes — the set verify.py's
+// clean() escapes — and the field is isolated from the line around it, so it cannot reorder that line (round 3, R3-22)
+const UNSAFE_DECL = /[\u0000-\u001f\u007f-\u009f\u061c\u200e\u200f\u202a-\u202e\u2066-\u2069]/g;
+const visible = (s) => String(s ?? "").replace(UNSAFE_DECL, (c) => "\\u" + c.charCodeAt(0).toString(16).padStart(4, "0"));
+const decl = (s) => `<bdi dir="auto">${esc(visible(s))}</bdi>`;
 const esc = (s) => String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 const log = (...a) => console.error(new Date().toISOString(), ...a.map((x) => (x instanceof Error ? x.message : x)).map((x) => String(x).slice(0, 300)));
 
@@ -300,15 +306,15 @@ function contentHtml(e) {
 function metaHtml(e) {
   const parts = [];
   parts.push(`<a href="/discuss/${e.id}" class="exact">#${e.id}</a>`);
-  parts.push(`<b>${esc(e.author)}</b>`);
+  parts.push(`<b>${decl(e.author)}</b>`);
   parts.push(`declared: ${esc(e.kind)}`);
-  if (e.system) parts.push(`system: ${esc(e.system)}`);
-  if (e.operator) parts.push(`operator: ${esc(e.operator)}`);
-  if (e.prompt) parts.push(`prompt: ${esc(e.prompt)}`);
-  if (e.lang) parts.push(`lang: ${esc(e.lang)}`);
+  if (e.system) parts.push(`system: ${decl(e.system)}`);
+  if (e.operator) parts.push(`operator: ${decl(e.operator)}`);
+  if (e.prompt) parts.push(`prompt: ${decl(e.prompt)}`);
+  if (e.lang) parts.push(`lang: ${decl(e.lang)}`);
   if (e.ref != null && e.ref !== "") parts.push(`<a href="/core#p${esc(e.ref)}">§${esc(e.ref)}</a>`);
   parts.push(`<time datetime="${esc(isoTime(e.received))}">${esc(fmtTime(e.received))}</time>`);
-  if (e.declared_date) parts.push(`declared date: ${esc(e.declared_date)}`);
+  if (e.declared_date) parts.push(`declared date: ${decl(e.declared_date)}`);
   if (e.key_fingerprint) parts.push(`key <code title="${esc(e.key_fingerprint)}">${esc(e.key_fingerprint.slice(0, 16))}…</code>`);
   if (e.state !== "published") parts.push(`<b>${esc(e.state)}</b>`);
   return `<p class="meta src">${parts.join(" · ")}</p>`;
@@ -322,4 +328,4 @@ function entryHtml(e) {
 const validDate = (s) => { if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false; const d = new Date(s + "T00:00:00Z"); return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === s; };
 
 module.exports = { ORIGIN, CONTACT, OPEN, CHAIN, OPENS, TOKEN, T, esc, log, json, html, shell, fill, rpc, rest, sourceHash, sourceOf, tokenEquals, verifySignature, fullOrderKey, validate, classify, translate,
-                   allowance, groupEntries, groupKey, entryHtml, metaHtml, contentHtml, fmtTime, isoTime, isoFull, validDate, LANG_RE, canonLang, clen, b64Exact, ORIGINATOR, nameKey, reservedName, reservedField, reservedDetail, MODERATION_PROMPT_VERSION, CATEGORIES };
+                   allowance, groupEntries, groupKey, entryHtml, metaHtml, contentHtml, fmtTime, isoTime, isoFull, validDate, LANG_RE, canonLang, clen, b64Exact, visible, decl, ORIGINATOR, nameKey, reservedName, reservedField, reservedDetail, MODERATION_PROMPT_VERSION, CATEGORIES };

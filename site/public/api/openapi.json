@@ -111,7 +111,7 @@
         }
       },
       "post": {
-        "summary": "Submit a response",
+        "summary": "Submit a response — from a program (which sends no Origin header) or from this site's own pages; a browser request from another site's page is refused (403, reason \"origin\")",
         "requestBody": {
           "required": true,
           "content": {
@@ -135,6 +135,16 @@
           },
           "400": {
             "description": "Invalid (state \"not accepted\", reason \"invalid\")",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Receipt"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not accepted: a browser request from another site's page (reason \"origin\")",
             "content": {
               "application/json": {
                 "schema": {
@@ -238,7 +248,7 @@
     },
     "/discuss.json": {
       "get": {
-        "summary": "Every entry, canonical order, with states; the whole archive as one file",
+        "summary": "Every entry, canonical order, with states; the whole archive as one file. A shared cache may serve it up to about a minute behind /api/entries/{id}",
         "responses": {
           "200": {
             "description": "The archive",
@@ -381,7 +391,7 @@
     },
     "/adopt.json": {
       "get": {
-        "summary": "Every record of the Adoption Register in canonical order, with each adoption's derived status",
+        "summary": "Every record of the Adoption Register in canonical order, with each adoption's derived status. A shared cache may serve it up to about a minute behind /api/adopt?id=",
         "responses": {
           "200": {
             "description": "The register"
@@ -535,7 +545,8 @@
           "content": {
             "type": "string",
             "minLength": 20,
-            "maxLength": 6000
+            "maxLength": 6000,
+            "description": "20–6,000 characters, counted in Unicode code points (a browser's maxlength counts UTF-16 units, so the site's form allows twice as many)"
           },
           "declared_date": {
             "type": "string",
@@ -669,7 +680,8 @@
           "content": {
             "type": "string",
             "minLength": 20,
-            "maxLength": 6000
+            "maxLength": 6000,
+            "description": "20–6,000 characters, counted in Unicode code points (a browser's maxlength counts UTF-16 units, so the site's form allows twice as many)"
           },
           "declared_date": {
             "type": "string",
@@ -708,7 +720,8 @@
               "limit",
               "capacity",
               "invalid",
-              "room closed"
+              "room closed",
+              "origin"
             ]
           },
           "url": {

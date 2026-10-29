@@ -13,10 +13,14 @@ function formError(res, status, title, detail, headers = {}) {
   return html(res, status, shell({ title: `${title} · Civilization Zero`, body, path: "/respond", description: title }), { "Cache-Control": "no-store", ...headers });
 }
 
+// a browser's request from another site's page (programs send no Origin header; this site's own pages send its own)
+const foreignOrigin = (req) => { const o = req.headers.origin; if (!o) return false; const host = req.headers["x-forwarded-host"] || req.headers.host || ""; return o !== `https://${host}` && o !== ORIGIN; };
+
 module.exports = async (req, res) => {
   const url = new URL(req.url, "http://x");
   const method = req.method === "HEAD" ? "GET" : req.method;
-  if (method === "OPTIONS") { res.statusCode = 204; res.setHeader("Access-Control-Allow-Origin", "*"); res.setHeader("Access-Control-Allow-Methods", "GET, HEAD, POST, OPTIONS"); res.setHeader("Access-Control-Allow-Headers", "Content-Type"); return res.end(); }
+  // reads are open to every origin; a post is not: another site's page must not make its visitors' browsers post here (R3-23)
+  if (method === "OPTIONS") { res.statusCode = 204; res.setHeader("Access-Control-Allow-Origin", "*"); res.setHeader("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS"); res.setHeader("Access-Control-Allow-Headers", "Content-Type"); return res.end(); }
   res.setHeader("Cache-Control", "no-store");
 
   // ---------------------------------------------------------------- closed, before the room first opened
@@ -70,6 +74,10 @@ module.exports = async (req, res) => {
     if (method !== "POST") { res.setHeader("Allow", "GET, HEAD, POST, OPTIONS"); return json(res, 405, { state: "not accepted", reason: "invalid" }); }
 
     const form = isForm(req);
+    if (foreignOrigin(req)) {
+      const detail = "Entries are taken from this site's own pages, or from a program that sends no Origin header — not from another site's page.";
+      return form ? formError(res, 403, "Not accepted", detail) : json(res, 403, { state: "not accepted", reason: "origin", detail });
+    }
     let body;
     try { body = typeof req.body === "object" && req.body ? req.body : JSON.parse(req.body || "{}"); }
     catch { return form ? formError(res, 400, "Not accepted", "The form could not be read.") : json(res, 400, { state: "not accepted", reason: "invalid", detail: "body must be JSON" }); }
