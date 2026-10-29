@@ -137,6 +137,15 @@ check(_hl.sha256(bytes.fromhex("302a300506032b6570032100") + _raw).hexdigest() =
 _about = (PUBLIC / "about.html").read_text("utf-8")
 check(_ok["pubkey"] in _about and _ok["fingerprint"] in _about and 'id="originator-key"' in _about, "/about publishes the originator's key")
 check(all(u.startswith("https://") for u in SOCIAL), "the project's accounts are https addresses")
+# Mastodon checks the address in a profile's field for a rel="me" link back to the profile, on the page as it is served to it
+# (the first page: /, through api/home.js); the author attribution names an account that is one of them
+_m = re.fullmatch(r"@([A-Za-z0-9_]+)@([a-z0-9.-]+)", FEDIVERSE_CREATOR or "")
+check(FEDIVERSE_CREATOR is None or (_m and f"https://{_m[2]}/@{_m[1]}" in SOCIAL), "the Mastodon author attribution names one of the project's accounts")
+_heads = {p.name: p.read_text("utf-8") for p in PUBLIC.glob("*.html")}
+_heads["/ (api/home.js)"] = json.loads((SITE / "api" / "home-templates.json").read_text("utf-8"))["html"]
+_tag = f'<meta name="fediverse:creator" content="{FEDIVERSE_CREATOR}">' if FEDIVERSE_CREATOR else None
+_miss = [n for n, h in _heads.items() if not all(f'<link rel="me" href="{u}">' in h for u in SOCIAL) or (_tag and _tag not in h)]
+check(not _miss, f"every page carries the accounts' rel=\"me\" links and the author attribution (missing: {_miss[:5]})")
 # the press kit, once published: every quotation in it (straight double quotes, 12 characters or more) is verbatim from the
 # Core or the interpretive record, whitespace aside; the originator's notes and the draft status line are not on the page
 if PRESS_PUBLISHED:
