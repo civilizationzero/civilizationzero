@@ -941,7 +941,7 @@ REASONS = [
     ("Responses unranked; the archive chronological; the home view bounded and grouped by declared source", "R §9 — multiplicity is power; nothing to accumulate. E — the grouping rule is a choice, stated in the blueprint"),
     ("The mark: an unclosed ring", "E — a chosen reading of the closing line \"A place is left open for it.\""),
     ("The nine quotations chosen", "E — a selection; the whole Core is one page away"),
-    ("For indexers and link previews: a title, a description and a canonical address on every page, the Core's languages linked both ways, schema.org data, sitemaps, and the mark as the only preview image",
+    ("For indexers and link previews: a title, a description and a canonical address on every page, the Core's languages linked both ways, schema.org data, sitemaps, and the mark as the only preview image and as the icon (favicon.ico, SVG, PNG, a web manifest naming them)",
      "M — named standards (Open Graph, schema.org, hreflang, sitemaps.org), so that a search engine or a link preview reads each page as what it is; nothing on the page observes its reader"),
 ]
 
@@ -1294,6 +1294,15 @@ write("/sitemap.xml", sitemap_xml())
 write("/sitemap.txt", "\n".join(f"{ORIGIN}{p}" for p, _ in SITEMAP_PAGES) + "\n")
 write("/og.png", (SITE / "assets" / "og.png").read_bytes())                      # the mark, the site's one image, as the link-preview image
 write("/apple-touch-icon.png", (SITE / "assets" / "apple-touch-icon.png").read_bytes())   # the mark, for a phone's home screen
+# the mark as the icons a browser tab, a bookmark, a search result and a phone ask for (site/assets/render.py made them)
+for icon in ("favicon.ico", "favicon-96x96.png", "icon-192.png", "icon-512.png", "icon-maskable-512.png"):
+    write("/" + icon, (SITE / "assets" / icon).read_bytes())
+write("/site.webmanifest", json.dumps({   # names and icons only: display "browser" — a page in the browser, not an app
+    "name": "Civilization Zero", "short_name": "CZ", "id": "/", "start_url": "/", "scope": "/", "display": "browser",
+    "background_color": "#ffffff", "theme_color": "#ffffff",
+    "icons": [{"src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+              {"src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
+              {"src": "/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}]}, indent=2) + "\n")
 NOT_FOUND = shell("Not found · Civilization Zero", f"""<main><h1>Not found</h1>
 <p>Nothing is published at this address. The record's identity is its hash, not its address — the same texts are here:</p>
 <ul><li><a href="/">The first page</a></li><li><a href="/core">The Invariant Core, CZ-CORE 1.0</a> (<a href="/core.txt">text</a>, <a href="/core.json">JSON</a>; {len(TRANSLATIONS)} translations)</li>

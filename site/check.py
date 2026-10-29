@@ -113,6 +113,24 @@ rb = (PUBLIC / "robots.txt").read_text("utf-8")
 check(f"Sitemap: {ORIGIN}/sitemap.xml" in rb and "Disallow: /admin" in rb, "robots.txt: sitemap and the administrator's page")
 og = (PUBLIC / "og.png").read_bytes()
 check(og[:8] == b"\x89PNG\r\n\x1a\n" and struct.unpack(">II", og[16:24]) == (1200, 630), "og.png: a 1200x630 PNG")
+# the icons: every page names them; each file is what its name says (a PNG of its size; an ICO of 16, 32 and 48 pixels)
+ICON_HEAD = ('<link rel="icon" href="/favicon-96x96.png" type="image/png" sizes="96x96"><link rel="icon" href="/favicon.svg" type="image/svg+xml">'
+             '<link rel="shortcut icon" href="/favicon.ico"><link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180">'
+             '<link rel="manifest" href="/site.webmanifest">')
+for f in pages + [pathlib.Path("virtual") / n for n in VIRTUAL]:
+    h = VIRTUAL[f.name] if f.parent.name == "virtual" else f.read_text("utf-8")
+    check(h.split("</head>")[0].count(ICON_HEAD) == 1, f"{f.name}: the icon links")
+def png_size(b): return struct.unpack(">II", b[16:24]) if b[:8] == b"\x89PNG\r\n\x1a\n" else None
+for name, side in (("apple-touch-icon.png", 180), ("favicon-96x96.png", 96), ("icon-192.png", 192), ("icon-512.png", 512), ("icon-maskable-512.png", 512)):
+    check(png_size((PUBLIC / name).read_bytes()) == (side, side), f"{name}: a {side}x{side} PNG")
+ico = (PUBLIC / "favicon.ico").read_bytes()
+reserved, kind, count = struct.unpack("<HHH", ico[:6])
+check(reserved == 0 and kind == 1 and sorted((ico[6 + 16 * i] or 256) for i in range(count)) == [16, 32, 48], "favicon.ico: 16, 32 and 48 pixels")
+svg = (PUBLIC / "favicon.svg").read_text("utf-8")
+check(svg.startswith("<svg") and "prefers-color-scheme:dark" in svg, "favicon.svg: the mark, light and dark")
+wm = json.loads((PUBLIC / "site.webmanifest").read_text("utf-8"))
+check(wm["display"] == "browser" and wm["start_url"] == "/" and all(png_size((PUBLIC / i["src"].lstrip("/")).read_bytes()) == tuple(map(int, i["sizes"].split("x"))) for i in wm["icons"]),
+      "site.webmanifest: its icons exist at the sizes it states")
 
 # 3. data files
 for name in ("core.json", "record.json", "core.schema.json", "api/openapi.json", ".well-known/civilization-zero.json", "objections.json"):
