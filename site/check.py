@@ -129,6 +129,14 @@ check(reserved == 0 and kind == 1 and sorted((ico[6 + 16 * i] or 256) for i in r
 check(re.fullmatch(r"[0-9a-f]{32}", INDEXNOW_KEY) and (PUBLIC / f"{INDEXNOW_KEY}.txt").read_text("utf-8") == INDEXNOW_KEY, "the IndexNow key file")
 check(ATPROTO_DID is None or (re.fullmatch(r"did:plc:[a-z2-7]{24}", ATPROTO_DID) and (PUBLIC / ".well-known/atproto-did").read_text("utf-8") == ATPROTO_DID), "the Bluesky handle file")
 check(all(u.startswith("https://") for u in SOCIAL), "the project's accounts are https addresses")
+# the press kit, once published: every quotation in it (straight double quotes, 12 characters or more) is verbatim from the
+# Core or the interpretive record, whitespace aside; the originator's notes and the draft status line are not on the page
+if PRESS_PUBLISHED:
+    _press = to_text((PUBLIC / "press.html").read_text("utf-8"))
+    _norm = lambda t: re.sub(r"\s+", " ", t)
+    _bad = [q for q in re.findall(r'"([^"]*)"', _press) if len(q) >= 12 and _norm(q) not in _norm(CORE_TXT) and _norm(q) not in _norm(IR_TXT)]
+    check(not _bad, f"press: quotations not verbatim: {_bad[:3]}")
+    check("Notes for the originator" not in _press and "draft, not yet released" not in _press, "press: the originator's notes and the draft line stay off the page")
 svg = (PUBLIC / "favicon.svg").read_text("utf-8")
 check(svg.startswith("<svg") and "prefers-color-scheme:dark" in svg, "favicon.svg: the mark, light and dark")
 wm = json.loads((PUBLIC / "site.webmanifest").read_text("utf-8"))

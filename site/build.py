@@ -555,6 +555,54 @@ def objections_page():
                  alternates=[("application/json", "/objections.json", "The register as data")])
 
 # ---------------------------------------------------------------- /about
+# ---------------------------------------------------------------- the press kit (press/PRESS-KIT.md), once the originator approves it
+def md_inline(s):
+    codes = []
+    def keep(m): codes.append(m.group(1)); return f"\x00{len(codes) - 1}\x00"
+    s = re.sub(r"`([^`]+)`", keep, s)
+    out = esc(s, quote=False)
+    out = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", out)
+    out = re.sub(r"(https://[^\s<)\x00]+[^\s<).,;:\x00])", r'<a href="\1">\1</a>', out)
+    return re.sub(r"\x00(\d+)\x00", lambda m: f"<code>{esc(codes[int(m.group(1))], quote=False)}</code>", out)
+
+def md_blocks(md):
+    out, lines, i, para = [], md.split("\n"), 0, []
+    def flush():
+        if para: out.append("<p>" + md_inline(" ".join(para)) + "</p>"); para.clear()
+    while i < len(lines):
+        l = lines[i]
+        if l.startswith("## "):
+            flush(); t = l[3:].strip(); out.append(f'<h2 id="h-{re.sub(r"[^a-z0-9]+", "-", t.lower()).strip("-")}">{md_inline(t)}</h2>')
+        elif l.startswith("- ") or re.match(r"\d+\. ", l):
+            flush(); ordered = not l.startswith("- "); items = []
+            while i < len(lines) and (lines[i].startswith("- ") if not ordered else re.match(r"\d+\. ", lines[i])):
+                items.append(re.sub(r"^(- |\d+\. )", "", lines[i])); i += 1
+            tag = "ol" if ordered else "ul"
+            out.append(f"<{tag}>" + "".join(f"<li>{md_inline(x)}</li>" for x in items) + f"</{tag}>"); continue
+        elif l.startswith("|"):
+            flush(); rows = []
+            while i < len(lines) and lines[i].startswith("|"): rows.append(lines[i]); i += 1
+            cells = [[c.strip() for c in r.strip().strip("|").split("|")] for r in rows if not re.fullmatch(r"\|[\s|:-]+\|", r.strip())]
+            body = [r for r in cells if any(r)]
+            out.append('<div class="scroll"><table>' + "".join(f'<tr><th scope="row">{md_inline(r[0])}</th><td>{md_inline(" | ".join(r[1:]))}</td></tr>' for r in body) + "</table></div>"); continue
+        elif not l.strip(): flush()
+        else: para.append(l.strip())
+        i += 1
+    flush()
+    return "\n".join(out)
+
+def press_page():
+    md = (ROOT / "press" / "PRESS-KIT.md").read_text("utf-8").split("\n### Notes for the originator")[0].rstrip().rstrip("-").rstrip()
+    body = f"""<main>
+<h1>Press kit</h1>
+<p class="src">For journalists and researchers. Every quotation below is verbatim from CZ-CORE 1.0 or CZ-IR 1.0, and the build checks it. The same kit as text: <a href="{REPO}/blob/main/press/PRESS-KIT.md">press/PRESS-KIT.md</a>. Contact: <a href="mailto:{CONTACT}">{CONTACT}</a>.</p>
+{md_blocks(md[md.index("## One line"):])}
+<h2 id="h-images">Images</h2>
+<p>The mark, CZ, black on white — the only image that stands for the record: <a href="/og.png">1200 × 630</a>, <a href="/icon-512.png">512 × 512</a>.</p>
+</main>"""
+    return shell("Press kit · Civilization Zero", body, "/press", "Facts, verbatim quotations, how to check the record in five minutes, and a contact: for journalists and researchers.")
+
+
 def about_page():
     body = f"""<main>
 <h1>About this site</h1>
@@ -1264,6 +1312,7 @@ write("/record.html", record_page())
 write("/objections.html", objections_page())
 write("/objections.json", json.dumps(objections_json(), ensure_ascii=False, indent=2) + "\n")
 write("/about.html", about_page())
+if PRESS_PUBLISHED: write("/press.html", press_page())
 write("/machine.html", machine_page())
 write("/ask.html", ask_page())
 (SITE / "api" / "discuss-templates.json").write_text(json.dumps(discuss_templates(), ensure_ascii=False, indent=1) + "\n", "utf-8")  # api/discuss.js serves /discuss, /discuss/{id}, /respond
@@ -1281,7 +1330,7 @@ write("/llms.txt", llms_txt(BUNDLE_NAME, BUNDLE_SHA))
 # Every public page, once; the Core with its translations as one group of languages (hreflang, both ways); lastmod only where it
 # is known exactly — the canonical texts and the translations do not change. The administrator's page is not for indexing.
 SITEMAP_PAGES = [("/", None), ("/core", PRERELEASE.isoformat()), ("/record", PRERELEASE.isoformat()), ("/objections", None), ("/discuss", None),
-                 ("/respond", None), ("/adopt", None), ("/ask", None), ("/machine", None), ("/about", None), ("/archive", None)] + \
+                 ("/respond", None), ("/adopt", None), ("/ask", None), ("/machine", None), ("/about", None), ("/archive", None)] + ([("/press", None)] if PRESS_PUBLISHED else []) + \
                 [(f"/core.{t['lang']}", t["date"]) for t in TRANSLATIONS]
 def sitemap_xml():
     core_group = {h for _, h in HREFLANGS}
