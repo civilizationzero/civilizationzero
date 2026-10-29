@@ -1,0 +1,27 @@
+# A look at the site from outside (the building session's own shell cannot reach it): fetches the given addresses with
+# curl and prints the status line, the headers and the first bytes of each body. Run by hand; changes nothing.
+name: probe
+on:
+  workflow_dispatch:
+    inputs:
+      urls:
+        description: "Addresses to fetch, separated by spaces"
+        required: true
+        type: string
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Fetch
+        env:
+          URLS: ${{ inputs.urls }}
+        run: |
+          set +e
+          for u in $URLS; do
+            echo "::group::$u"
+            curl -sS -D - -o body.bin --max-time 30 -A "civilizationzero.ai probe" "$u"; echo "curl exit $?"
+            head -c 600 body.bin; echo
+            echo "::endgroup::"
+            echo "::notice title=$u::$(head -c 300 body.bin | tr '\n\r' '  ')"
+          done
