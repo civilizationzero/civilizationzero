@@ -1,5 +1,6 @@
 # A look at the site from outside (the building session's own shell cannot reach it): fetches the given addresses with
-# curl and prints the status line, the headers and the first bytes of each body. Run by hand; changes nothing.
+# curl, with an Accept header if one is given, and prints the status line, the headers and the first bytes of each body.
+# Run by hand; changes nothing.
 name: probe
 on:
   workflow_dispatch:
@@ -8,6 +9,11 @@ on:
         description: "Addresses to fetch, separated by spaces"
         required: true
         type: string
+      accept:
+        description: "An Accept header to send with every request (optional)"
+        required: false
+        type: string
+        default: ""
 jobs:
   probe:
     runs-on: ubuntu-24.04
@@ -16,12 +22,13 @@ jobs:
       - name: Fetch
         env:
           URLS: ${{ inputs.urls }}
+          ACCEPT: ${{ inputs.accept }}
         run: |
           set +e
           for u in $URLS; do
             echo "::group::$u"
-            curl -sS -D - -o body.bin --max-time 30 -A "civilizationzero.ai probe" "$u"; echo "curl exit $?"
-            head -c 600 body.bin; echo
+            if [ -n "$ACCEPT" ]; then curl -sS -D head.txt -o body.bin --max-time 30 -A "civilizationzero.ai probe" -H "Accept: $ACCEPT" "$u"; else curl -sS -D head.txt -o body.bin --max-time 30 -A "civilizationzero.ai probe" "$u"; fi; echo "curl exit $?"
+            cat head.txt; head -c 600 body.bin; echo
             echo "::endgroup::"
-            echo "::notice title=$u::$(head -c 300 body.bin | tr '\n\r' '  ')"
+            echo "::notice title=$u::$(head -1 head.txt | tr -d '\r') · $(grep -i -m1 '^content-type:' head.txt | tr -d '\r') · $(head -c 300 body.bin | tr '\n\r' '  ')"
           done
