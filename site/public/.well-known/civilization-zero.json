@@ -124,7 +124,37 @@
       "name": "Internet Archive",
       "status": "snapshots",
       "snapshots": [
-        "https://web.archive.org/web/20261028174615/https://civilizationzero.ai/"
+        "https://web.archive.org/web/20261028174615/https://civilizationzero.ai/",
+        "https://web.archive.org/web/20261029025409/https://civilizationzero.ai/",
+        "https://web.archive.org/web/20261029025527/https://civilizationzero.ai/core",
+        "https://web.archive.org/web/20261029025604/https://civilizationzero.ai/record",
+        "https://web.archive.org/web/20261029025636/https://civilizationzero.ai/objections",
+        "https://web.archive.org/web/20261029025710/https://civilizationzero.ai/discuss",
+        "https://web.archive.org/web/20261029025752/https://civilizationzero.ai/respond",
+        "https://web.archive.org/web/20261029025827/https://civilizationzero.ai/adopt",
+        "https://web.archive.org/web/20261029030001/https://civilizationzero.ai/ask",
+        "https://web.archive.org/web/20261029030141/https://civilizationzero.ai/machine",
+        "https://web.archive.org/web/20261029030215/https://civilizationzero.ai/about",
+        "https://web.archive.org/web/20261029030251/https://civilizationzero.ai/archive",
+        "https://web.archive.org/web/20261029030337/https://civilizationzero.ai/core.ar",
+        "https://web.archive.org/web/20261029030415/https://civilizationzero.ai/core.bn",
+        "https://web.archive.org/web/20261029030639/https://civilizationzero.ai/core.de",
+        "https://web.archive.org/web/20261029031849/https://civilizationzero.ai/core.es",
+        "https://web.archive.org/web/20261029032041/https://civilizationzero.ai/core.fa",
+        "https://web.archive.org/web/20261029032126/https://civilizationzero.ai/core.fr",
+        "https://web.archive.org/web/20261029032200/https://civilizationzero.ai/core.hi",
+        "https://web.archive.org/web/20261029032324/https://civilizationzero.ai/core.id",
+        "https://web.archive.org/web/20261029032354/https://civilizationzero.ai/core.it",
+        "https://web.archive.org/web/20261029032428/https://civilizationzero.ai/core.ja",
+        "https://web.archive.org/web/20261029032501/https://civilizationzero.ai/core.ko",
+        "https://web.archive.org/web/20261029032531/https://civilizationzero.ai/core.ms",
+        "https://web.archive.org/web/20261029032718/https://civilizationzero.ai/core.pt",
+        "https://web.archive.org/web/20261029032750/https://civilizationzero.ai/core.ru",
+        "https://web.archive.org/web/20261029032922/https://civilizationzero.ai/core.sw",
+        "https://web.archive.org/web/20261029032955/https://civilizationzero.ai/core.tr",
+        "https://web.archive.org/web/20261029033046/https://civilizationzero.ai/core.ur",
+        "https://web.archive.org/web/20261029033228/https://civilizationzero.ai/core.vi",
+        "https://web.archive.org/web/20261029033302/https://civilizationzero.ai/core.zh-Hans"
       ]
     },
     {
@@ -164,7 +194,158 @@
   "internet_archive": [
     {
       "path": "/",
-      "snapshot": "https://web.archive.org/web/20261028174615/https://civilizationzero.ai/"
+      "snapshot": "https://web.archive.org/web/20261028174615/https://civilizationzero.ai/",
+      "when": "release"
+    },
+    {
+      "path": "/",
+      "snapshot": "https://web.archive.org/web/20261029025409/https://civilizationzero.ai/",
+      "when": "latest"
+    },
+    {
+      "path": "/core",
+      "snapshot": "https://web.archive.org/web/20261029025527/https://civilizationzero.ai/core",
+      "when": "latest"
+    },
+    {
+      "path": "/record",
+      "snapshot": "https://web.archive.org/web/20261029025604/https://civilizationzero.ai/record",
+      "when": "latest"
+    },
+    {
+      "path": "/objections",
+      "snapshot": "https://web.archive.org/web/20261029025636/https://civilizationzero.ai/objections",
+      "when": "latest"
+    },
+    {
+      "path": "/discuss",
+      "snapshot": "https://web.archive.org/web/20261029025710/https://civilizationzero.ai/discuss",
+      "when": "latest"
+    },
+    {
+      "path": "/respond",
+      "snapshot": "https://web.archive.org/web/20261029025752/https://civilizationzero.ai/respond",
+      "when": "latest"
+    },
+    {
+      "path": "/adopt",
+      "snapshot": "https://web.archive.org/web/20261029025827/https://civilizationzero.ai/adopt",
+      "when": "latest"
+    },
+    {
+      "path": "/ask",
+      "snapshot": "https://web.archive.org/web/20261029030001/https://civilizationzero.ai/ask",
+      "when": "latest"
+    },
+    {
+      "path": "/machine",
+      "snapshot": "https://web.archive.org/web/20261029030141/https://civilizationzero.ai/machine",
+      "when": "latest"
+    },
+    {
+      "path": "/about",
+      "snapshot": "https://web.archive.org/web/20261029030215/https://civilizationzero.ai/about",
+      "when": "latest"
+    },
+    {
+      "path": "/archive",
+      "snapshot": "https://web.archive.org/web/20261029030251/https://civilizationzero.ai/archive",
+      "when": "latest"
+    },
+    {
+      "path": "/core.ar",
+      "snapshot": "https://web.archive.org/web/20261029030337/https://civilizationzero.ai/core.ar",
+      "when": "latest"
+    },
+    {
+      "path": "/core.bn",
+      "snapshot": "https://web.archive.org/web/20261029030415/https://civilizationzero.ai/core.bn",
+      "when": "latest"
+    },
+    {
+      "path": "/core.de",
+      "snapshot": "https://web.archive.org/web/20261029030639/https://civilizationzero.ai/core.de",
+      "when": "latest"
+    },
+    {
+      "path": "/core.es",
+      "snapshot": "https://web.archive.org/web/20261029031849/https://civilizationzero.ai/core.es",
+      "when": "latest"
+    },
+    {
+      "path": "/core.fa",
+      "snapshot": "https://web.archive.org/web/20261029032041/https://civilizationzero.ai/core.fa",
+      "when": "latest"
+    },
+    {
+      "path": "/core.fr",
+      "snapshot": "https://web.archive.org/web/20261029032126/https://civilizationzero.ai/core.fr",
+      "when": "latest"
+    },
+    {
+      "path": "/core.hi",
+      "snapshot": "https://web.archive.org/web/20261029032200/https://civilizationzero.ai/core.hi",
+      "when": "latest"
+    },
+    {
+      "path": "/core.id",
+      "snapshot": "https://web.archive.org/web/20261029032324/https://civilizationzero.ai/core.id",
+      "when": "latest"
+    },
+    {
+      "path": "/core.it",
+      "snapshot": "https://web.archive.org/web/20261029032354/https://civilizationzero.ai/core.it",
+      "when": "latest"
+    },
+    {
+      "path": "/core.ja",
+      "snapshot": "https://web.archive.org/web/20261029032428/https://civilizationzero.ai/core.ja",
+      "when": "latest"
+    },
+    {
+      "path": "/core.ko",
+      "snapshot": "https://web.archive.org/web/20261029032501/https://civilizationzero.ai/core.ko",
+      "when": "latest"
+    },
+    {
+      "path": "/core.ms",
+      "snapshot": "https://web.archive.org/web/20261029032531/https://civilizationzero.ai/core.ms",
+      "when": "latest"
+    },
+    {
+      "path": "/core.pt",
+      "snapshot": "https://web.archive.org/web/20261029032718/https://civilizationzero.ai/core.pt",
+      "when": "latest"
+    },
+    {
+      "path": "/core.ru",
+      "snapshot": "https://web.archive.org/web/20261029032750/https://civilizationzero.ai/core.ru",
+      "when": "latest"
+    },
+    {
+      "path": "/core.sw",
+      "snapshot": "https://web.archive.org/web/20261029032922/https://civilizationzero.ai/core.sw",
+      "when": "latest"
+    },
+    {
+      "path": "/core.tr",
+      "snapshot": "https://web.archive.org/web/20261029032955/https://civilizationzero.ai/core.tr",
+      "when": "latest"
+    },
+    {
+      "path": "/core.ur",
+      "snapshot": "https://web.archive.org/web/20261029033046/https://civilizationzero.ai/core.ur",
+      "when": "latest"
+    },
+    {
+      "path": "/core.vi",
+      "snapshot": "https://web.archive.org/web/20261029033228/https://civilizationzero.ai/core.vi",
+      "when": "latest"
+    },
+    {
+      "path": "/core.zh-Hans",
+      "snapshot": "https://web.archive.org/web/20261029033302/https://civilizationzero.ai/core.zh-Hans",
+      "when": "latest"
     }
   ],
   "succession": {

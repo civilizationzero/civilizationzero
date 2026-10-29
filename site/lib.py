@@ -38,7 +38,15 @@ INDEXNOW_KEY = "5dbddf2e3c978c9f9cf5e54812ab90ef"   # public by design: /<key>.t
 PRESS_PUBLISHED = False   # the press kit at /press, from press/PRESS-KIT.md: published once the originator approves the kit
 ATPROTO_DID = "did:plc:gwscq3c3msvucpbatvrrm2f4"   # set 29 Oct 2026 (the account civilizationzero.bsky.social); "did:plc:…" from Bluesky ("I have my own domain", "No DNS panel"); the handle is then @civilizationzero.ai
 SOCIAL = ["https://bsky.app/profile/civilizationzero.ai"]   # profile addresses: each is a rel="me" link on every page and a schema.org sameAs of the publisher
-IA_SNAPSHOTS = {"/": "https://web.archive.org/web/20261028174615/https://civilizationzero.ai/"}   # Internet Archive snapshots, by path
+IA_RELEASE = {"/": "https://web.archive.org/web/20261028174615/https://civilizationzero.ai/"}   # the snapshot at release (28 Oct 2026)
+def _ia_latest():   # the latest Internet Archive snapshot of each page, as the workflow `announce` keeps it in the repository
+    f = ROOT / "archive" / "internet-archive" / "snapshots.tsv"
+    if not f.exists(): return {}
+    rows = [l.split("\t") for l in f.read_text("utf-8").splitlines()[1:] if "\t" in l]
+    return {p: "https://" + u.split("://", 1)[1] for p, u in rows if u.startswith(("http://web.archive.org/web/", "https://web.archive.org/web/"))}
+IA_SNAPSHOTS = _ia_latest() or dict(IA_RELEASE)   # Internet Archive snapshots, by path (the latest of each)
+_ia_tsv = ROOT / "archive" / "internet-archive" / "snapshots.tsv"
+IA_PAGES_LISTED = max(0, len(_ia_tsv.read_text("utf-8").splitlines()) - 1) if _ia_tsv.exists() else 0   # pages the last run looked for
 RATE_PER_10MIN = 5                         # the room's limits, disclosed on /machine and in the rules (the database config carries the live values)
 DAILY_INTAKE = 2000
 
