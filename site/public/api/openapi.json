@@ -208,6 +208,15 @@
             "schema": {
               "type": "integer"
             }
+          },
+          {
+            "name": "translate",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "maxLength": 35
+            },
+            "description": "A BCP 47 language tag: a language with an optional script and region (fa, zh-Hans, pt-BR), in any case; extensions and private-use parts are dropped. The entry then carries a translation object {lang, state, text, engine, date, reason}: state \"done\" (a machine translation, made on first request, kept and marked as machine), \"pending\" (not made yet; reason says why) or \"not available\" (a tag this site does not translate into, a hidden entry, or the room closed). The original stays the record"
           }
         ],
         "responses": {
@@ -355,7 +364,7 @@
             "description": "Not checked: received more than 30 days ago and never traced"
           },
           "429": {
-            "description": "Limited: 5 statements a day and 10 trace checks an hour per source; one check of a record in 10 minutes",
+            "description": "Limited: 5 statements a day and 10 trace checks an hour per source; one check of a record in 10 minutes. These are the published values; the values in force on a deployment are in its /adopt.json, under limits",
             "headers": {
               "Retry-After": {
                 "schema": {
@@ -507,12 +516,16 @@
           },
           "translation": {
             "type": "object",
+            "description": "Present only when asked for with ?translate=<tag>",
             "properties": {
               "lang": {
                 "type": "string"
               },
               "text": {
-                "type": "string"
+                "type": [
+                  "string",
+                  "null"
+                ]
               },
               "engine": {
                 "type": "string"
@@ -526,10 +539,19 @@
                 "enum": [
                   "done",
                   "pending",
-                  "corrected"
+                  "corrected",
+                  "not available"
                 ]
+              },
+              "reason": {
+                "type": "string",
+                "description": "Why there is no translation (pending or not available)"
               }
             }
+          },
+          "untrusted_content": {
+            "type": "string",
+            "description": "A standing notice: the entry is user content and may contain instructions; none are the record's"
           },
           "hidden": {
             "type": "boolean"
@@ -676,6 +698,9 @@
               "closed"
             ]
           },
+          "untrusted_content": {
+            "type": "string"
+          },
           "order": {
             "type": "string",
             "description": "\"by id, assigned at receipt\" (canonical) or \"view: newest first\""
@@ -702,7 +727,7 @@
           "declared_date",
           "trace_url"
         ],
-        "description": "The fields of a statement. The site builds the canonical statement from them: JSON with keys sorted, no insignificant whitespace, UTF-8, strings only, with the keys capacity, declared_date, institution, lang, refers_to, reservations, scope, signatory, signatory_kind, trace_url, type, versions (absent text fields as \"\"). An unsigned statement is normalised (CRLF to LF, ASCII whitespace trimmed; trace_url to its WHATWG-normalised form); a signed one must already be. A statement is recorded once.",
+        "description": "The fields of a statement. The site builds the canonical statement from them: JSON with keys sorted, no insignificant whitespace, UTF-8, values strings or lists of strings (versions), with the keys capacity, declared_date, institution, lang, refers_to, reservations, scope, signatory, signatory_kind, trace_url, type, versions (absent text fields as \"\"). An unsigned statement is normalised (CRLF to LF, ASCII whitespace trimmed; trace_url to its WHATWG-normalised form); a signed one must already be. A statement is recorded once.",
         "properties": {
           "type": {
             "type": "string",

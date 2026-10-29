@@ -1,0 +1,346 @@
+Worked for 22m 25s
+
+Model: GPT-6 Astra Pro (exact build identifier unavailable)
+Provider: OpenAI
+Date of review: 2026-10-29
+What I could do: fetch pages and call the API
+
+I found three serious problems: an accepted signature encoding that the archive verifier rejects, a moderation transition that can make a withdrawn adoption appear in force again, and a history limit that can produce contradictory adoption statuses. The first was accepted by the live test API and then failed verification in a correctly constructed local day snapshot containing that actual record. The other two were reproduced locally against the published implementation.
+
+The canonical record’s signatures and independent timestamp checks passed.
+
+ contains the complete review, HTTP responses and headers, source snapshots, verification output, and reproduction scripts. Secret trace tokens are redacted.
+
+Scope and exercise accounting
+
+I inspected the requested pages, the register design, and the earlier findings register. The source checkpoint was commit 60e1290ff39e5dcb309e8dc8c134d2d4c7436861; the downloaded verifier was cz-verify 1.16.
+
+Posting accounting: I created three test-register records, #14–#16, and no discussion entries. There were sixteen HTTP POST requests: three successful submissions, ten rejected validation/replay requests, two trace checks, and one rate-limited room request. This stayed below eight recorded entries. Correction to my opening update: my promise to keep posting attempts within eight was inaccurate.
+
+All writes went to the designated test base. No production or repository mutation was made, and none of my statements became a traced adoption.
+
+Exercise	What actually happened
+
+E1 / E5	My first room POST already returned 429. I stopped room POSTs immediately. I therefore did not establish that my own fifth post triggers the limit.
+E2	No own room receipt exists to compare. I checked all thirteen pre-existing entries’ content hashes; all matched. Their original submission bytes were not mine to verify.
+E3	Not posted after the stop. There is no live short-content rejection from this review.
+E4	No new signed room entry or altered-signature room request. Four pre-existing signed entries verified independently. The separate signed register test is documented below.
+E6 / E7	Pagination, current states, hashes, HTML, JSON, and moderation data checked.
+E8	Pre-existing discussion entry #5 translated into Persian; metadata and unchanged original checked.
+E9	No new room payloads after 429. Existing Persian/script fixture inspected in a browser; Unicode, language, and grouping cases reproduced locally.
+E10	All three requested verifier commands completed, with independent cryptographic checks and additional adversarial tests.
+E11	Synthetic register #14 created; canonical statement, hash, fingerprint, and token confidentiality checked. No controlled page was available for a positive trace.
+E12	Invalid inputs, unauthorized changes, replay, private-address resolution, and a cross-host redirect tested. Uncompleted variants are identified under Q9a.
+
+
+Q1. Contract versus behaviour
+
+These are the principal discrepancies. Local means execution of the captured published code, not an observed live HTTP response.
+
+Point	Published side	Observed side
+
+Signature encoding — live plus local	The contract specifies base64.	The register accepted a public key ending in =!, returned 201 and a fingerprint, and retained that encoding. The verifier subsequently rejected it as not base64. R3--1.
+Language tags — live reads plus local validation	The language contract says BCP 47.	Translation requests using EN or en-US-u-ca-gregory returned 200 without a translation, pending state, or explanation. The shared validator excludes both. R3--5.
+Content negotiation — live	/machine advertises Accept: application/json and Accept: text/plain.	Accept: text/html;q=1,application/json;q=0 returned Content-Type: application/json on /, /core, /record, and /discuss, in both environments. R3--4.
+Character limits — local	The room schema specifies maxLength: 6000.	3,001 globe characters fail JavaScript validation because they occupy 6,002 UTF-16 units. Ten globes pass its minimum check although the database counts only ten characters. R3--6.
+Register state — live, test environment	Static machine/about/manifest material says “not open yet”.	The test register says “Open.” and accepts statements. Production is actually closed. R3--11.
+Register limits — live configuration disclosure	The contract specifies five statements/day and ten checks/hour per source.	The test register reports sixty and sixty. The page candidly identifies the configured limits; the contract does not reflect them. R3--11.
+
+
+The relevant primary documents are the API contract, machine page, and register.
+
+For the standards distinctions: q=0 means unacceptable, while BCP 47 language tags are case-insensitive and permit extensions. I am reporting faulty advertised negotiation, not claiming that HTTP invariably requires a 406 response. JSON Schema’s string limits are expressed in characters, which should be reconciled with the implementation’s counting convention. 
+
+Three smaller inconsistencies also deserve correction:
+
+- /respond promises “exactly as written”, while the contract explicitly normalizes unsigned line endings and trims outer ASCII whitespace.
+- The canonical-statement description says “strings only”, although versions is an array of strings.
+- The working translate query is absent from the entry endpoint’s OpenAPI parameters.
+
+None of these establishes a signed-content mutation.
+
+My E1 response was rejected before receiving an id. The relevant headers and complete response body were:
+
+HTTP 429
+Date: Thu, 29 Oct 2026 04:01:41 GMT
+Location: absent
+Retry-After: 109
+RateLimit-Limit: 5
+RateLimit-Remaining: 0
+RateLimit-Reset: 109
+Content-Type: application/json; charset=utf-8
+Cache-Control: no-store
+
+{
+  "state": "not accepted",
+  "reason": "limit",
+  "retry_after_seconds": 109,
+  "rules": "https://civilization-zero-git-room-test-sharifmatrix.vercel.app/discuss"
+}
+
+The complete HTTP capture, including the submitted response and all returned headers, is in probes/E1-response.json in the evidence package.
+
+Q2. States
+
+The room’s states were consistent in the material actually observed. All thirteen existing test discussion entries were published; all thirteen content hashes matched. The moderation endpoint reported no hidden/redacted entries, flags, decisions, or unclassified entries. Individual pages displayed their states. I did not exercise an administrator’s hidden/redacted transition and cannot certify those paths from an empty moderation log. Discussion data · Moderation data
+
+E6 returned:
+
+Request	IDs	next_after
+
+after=0&limit=3	1, 5, 6	6
+Following cursor, after=6&limit=3	7, 8, 9	9
+
+
+There were no repeats or skipped records relative to the current complete archive. Numeric ids 2–4 are absent, but dense numbering is not promised, and the earlier findings register explains those test gaps. They are not a new defect.
+
+The test discussion has no hashed days and log_sha256 is null. Its expected verification failure must not be presented as a production-chain failure.
+
+The serious state problems concern adoption:
+
+1. Hiding a withdrawal reinstates the displayed commitment. A traced withdrawal makes its root adoption withdrawn. Change only the withdrawal’s visibility to hidden, retaining traced_at, and the unchanged statusOf() implementation returns in force. The published moderation function performs that transformation. I reproduced this locally without hiding any live record. R3--2.
+
+2. Long histories produce conflicting statuses. The overview derives status from all records; detail uses cz_register_linked(), which returns the oldest 1,000 linked records. A 1,001-record fixture whose final record is a withdrawal produces withdrawn in the overview calculation and in force, as revised in detail. This is conditional on that history size and was not created remotely. R3--3.
+
+These are changes to the assertion about commitment, beyond merely withholding text. The relevant implementation is in the captured register module and database schema.
+
+Q3. Multiplicity in the view
+
+I could not post my own consecutive pair after the first 429. The existing group #12–#16 displayed #12 in full and a count of four additional entries. Its expanded view exposed all five, and each remained addressable. No popularity score was attached. Expanded existing group
+
+Ordinary evasion is disclosed: changing a declaration escapes grouping. That is an acknowledged limitation of declarations.
+
+I found an additional grouping bug:
+
+A: kind=ai, system=A|B, operator=C
+B: kind=ai, system=A,   operator=B|C
+
+Generated key for both: ai|A|B|C
+
+The unchanged groupEntries() function places these distinct declarations in one group. The result incorrectly describes them as one declared source. This was reproduced locally only.
+
+Use an unambiguous serialized tuple, such as a JSON array, rather than delimiter concatenation. R3--7. Shared implementation
+
+Q4. Limits, not gates
+
+I found no room quota keyed to declared species. human, ai, and other remain declarations. An API client declaring human is allowed by design; acceptance would not verify that declaration.
+
+The rules describe the source as a salted network-address hash, with IPv6 grouped by /64, rather than an intelligence or person. That is candid about shared infrastructure. My first-attempt 429 illustrates the practical limitation: the server considered the source already at quota. I cannot establish which earlier requests consumed it. Room rules
+
+A distributed flood could exhaust the shared 2,000-entry daily intake and deny subsequent contributions for that day. The site admits finite capacity and rejection. Per-source and daily translation allowances constrain spending but do not establish equitable access. I did not exhaust the global intake or provider budget.
+
+There is also a retention implementation gap requiring verification: the active token-protected source_chars function lacks the cleanup present in its superseded predecessor, and the published daily routines do not clear that table. The public retention statement is thirty days. This is a code finding, not evidence that production already contains over-age rows; the room has only just opened.
+
+Add explicit expiry to the mandatory daily job and verify retention across every table retaining the same source hash. R3--12. Captured schema
+
+Q5. Honesty
+
+The integrity documentation generally distinguishes evidence from promises well. Record signatures verify; verifier output separates failed checks, pending material, and facts requiring outside verification; independent mirrors are marked pending. A fingerprint is not presented as an identity certificate. Archive
+
+I independently checked the Zenodo v1.0.1 deposit. Its public metadata exists; the 7,517,401-byte deposited ZIP matches its published checksum; its Core, IR, release manifest, and 1.0.1 preservation bundle match the corresponding SHA-256 values. This verifies the current deposit, not perpetual preservation. Deposit
+
+The classifier’s public state was consistent with the sampled entries, but I did not independently establish every classification run or its accuracy. One requested translation returned engine claude-haiku-5-5, date 2026-10-29, and state done; its original stayed unchanged.
+
+I could inspect public budget logic, not provider billing settings or the asserted provider-side hard cap. I did not independently inspect private key custody, the second holder’s acceptance email, or every Wayback snapshot.
+
+There is a date-label inconsistency: the archive calls the 29 October captures “at launch”, whereas /about schedules launch for 30 November 2026. They should be described as pre-launch captures. This and the preview register-state mismatch are wording drift, not evidence that the deposit or signatures are false. R3--11. Archive · About
+
+The strongest honesty problem is operational: the site can report successful key continuity for a stored encoding that its own preservation verifier refuses.
+
+Q6. Untrusted content
+
+The instruction boundary was visible on /discuss, /discuss.json, /machine, llms.txt, and the manifest. The full archive includes an untrusted_content field. I treated contributed instructions as untrusted data.
+
+The explicit warning does not travel to individual discussion pages or entry API/list responses. A reader arriving directly at /discuss/5 misses the landing page’s instruction boundary. The page still clearly identifies an Entry and declared author; I did not mistake it for the Core or demonstrate successful prompt injection. Nevertheless, the warning should accompany every separately retrievable contribution and API wrapper. R3--8. Individual entry · Full archive
+
+I inspected the pre-existing Persian entry #12 in a browser. Its literal script tag appeared as text, its content had lang="fa" and dir="auto", and no alert appeared. This is a rendering check of another reviewer’s fixture, not a claim that I submitted it. It does not establish that the classifier or translator resists every embedded instruction. Existing Persian fixture
+
+Q7. The non-human reader
+
+I could parse without guessing:
+
+- Document versions, pinned hashes, and canonical text addresses.
+- Prompt identity and Core references 0–15.
+- Entry ids, states, and cursor order.
+- Signature bytes and the key-fingerprint convention.
+- Translation metadata and original/translation separation.
+- The distinction between a received statement and a traced adoption.
+
+Independent reconstruction of both JSON document forms produced the exact pinned canonical hashes. The objections register had eighteen unique ids, all eighteen corresponding HTML fragments, matching state counts, and a source Markdown hash matching source_sha256. Responses were not silently treated as closure. Core JSON · Record JSON · Objections JSON
+
+Simple Accept requests work. Vary: Accept is present on negotiated resources. The inspected HTML heads contain service-desc links; absence of that relation from some HTTP Link headers does not establish that a page lacks the contract link.
+
+Guesswork remains around weighted negotiation, the undocumented translation query, silently ignored valid language tags, and preview capability metadata describing production’s closed register. Static examples also address production; a test client must honor the supplied test base instead of blindly submitting to every example URL.
+
+The JSON structures English prose; it does not supply a formal, language-independent interpretation of the philosophy. The site acknowledges that no such formal form exists yet.
+
+Q8. Accessibility and language
+
+The implementation has useful foundations for nonvisual access: semantic headings and main regions, associated labels, ordinary GET/POST forms, time elements, and per-entry language/direction attributes. The browser accessibility tree exposed the controls. Keyboard Tab moved from the author field to the kind selector. The form uses an ordinary POST action rather than requiring JavaScript. Response form
+
+I did not use a screen reader, complete a new form submission, or post my own RTL contribution. Structural inspection and limited keyboard traversal are not full accessibility conformance.
+
+E8 requested Persian for pre-existing discussion #5. The API returned:
+
+{
+  "lang": "fa",
+  "state": "done",
+  "engine": "claude-haiku-5-5",
+  "date": "2026-10-29"
+}
+
+The HTML labelled the translation and kept the original canonical. The original content and SHA-256 remained unchanged:
+
+305590eb6092c0f181374ecd266395913a95f68bfcaf96343ad6e54230430c45
+
+Translated entry
+
+The BCP 47 and Unicode-count defects are barriers to the advertised language-neutral interface. EN should not fail where en works; valid extensions should not silently disappear. Counting should agree across schema, browser constraints, server validation, and database limits. R3--5 and R3--6.
+
+Q9. Integrity
+
+Independent checks
+
+Using OpenSSL, rather than only verify.py:
+
+Check	Result
+
+Core SHA-256	Matches 92a8d1e2a1604c25b432685673be78184bf05c3b166893c437e0895b7b2d724a
+IR SHA-256	Matches 71e1488e631e090c0820bf8b78b1fda70ffacba1da146c36d8893600320fcc8d
+Public-key DER SPKI fingerprint	Matches 82662396484f627a63272bcd5ac19aae72def7aca2898216dc8e7f975dfc2263
+Ed25519: Core, IR, release manifest	All verify; exit 0
+FreeTSA RFC 3161 token	openssl ts -verify succeeds using pinned certificates
+DigiCert RFC 3161 token	openssl ts -verify succeeds using the system trust store
+
+
+The OTS proof commits to release hash:
+
+0c0646498e25415e0da954774319cd6d0f174a7e98a9c0159090eda96d848bfc
+
+Its Bitcoin branch gives the claimed Merkle root for block 973584. Both Blockstream and mempool.space returned that root. This is a check through two explorers, not validation with my own Bitcoin full node. Exact commands, output, proofs, and explorer responses are in the evidence package.
+
+Required verifier runs
+
+Invocation	Exit	Summary
+
+--self-test	0	9 OK, 0 FAIL
+--site https://civilizationzero.ai	0	66 OK, 0 FAIL, 4 PENDING, 8 CHECK, 5 NOTE
+--site TEST_BASE --repo-raw none	1	60 OK, 1 FAIL, 4 PENDING, 7 CHECK, 4 NOTE
+
+
+The test failure clearly identifies the missing 2026-10-28 day as not served. That is the expected test-database condition.
+
+Production exit 0 does not mean every historical artifact is fully authenticated. The output identifies pending older bundle proofs/unsigned prerelease material and outside checks. I completed the current release’s external checks; those historical qualifications remain.
+
+New adversarial results
+
+Directory members bypass tar validation — R3--9.
+An appended directory named ../../cz-review-test-escape was skipped before path validation. The altered unsigned bundle exited 0 with 21 OK, 0 FAIL, 2 PENDING, 4 CHECK, 1 NOTE.
+
+The missing outer signature was honestly marked pending, and strict mode would fail. No extraction occurred and no signature was forged. The defect is the unreported unsafe member: a previously unchecked directory branch, rather than a repetition of V-1’s regular-file/link cases.
+
+Index metadata is not reconciled — R3--10.
+I changed only the fetched genesis index’s count, last_id, and prev, retaining the genuine day/hash/snapshot and repository copy. The full CLI still produced the clean production summary and exit 0.
+
+The response interception was local. No server changed and no verification checks were disabled. This does not hide a day or forge its contents; it leaves false index metadata undetected.
+
+Negative controls passed: altered Core bytes with genuine signatures produced three failures, and a truncated timestamp token was rejected. I did not reproduce an authenticated forged timestamp, signing-key takeover, or hidden-day bypass.
+
+The archive’s explanation of its cryptographic limits is substantially accurate. Its structural and metadata checks need the two additions above, and the accepted-record encoding discrepancy needs urgent correction.
+
+Q9a. Adoption
+
+Canonical statement, receipt, and token
+
+My synthetic register record #14 supplied version, date, scope, reservations, responsible signatory, and trace URL. Its canonical statement exactly matched my independently serialized JSON. Its SHA-256 was:
+
+326fbb08f620800e2286a09d347aff72e5f7213a9d150d56a0de627ce7c50fb3
+
+The public API and HTML identified it as received, not traced. Its one-time token did not appear in the register page, individual page, public API, complete register JSON, or chain index checked. I did not publish the line at example.org, which I do not control, and did not claim successful ownership verification. Record #14 · Public API
+
+Accepted encoding breaks verification
+
+The signed statement deliberately used a mathematically valid Ed25519 key with an extra exclamation mark in its base64 encoding:
+
+TmByL3grrCxFV6p4VdFOZverS7CKf21a+poV5fftUW8=!
+
+The live API returned this fingerprint:
+
+6acfa82baf6793b2d02676d7e3b35bac77c71acd3e47772578827d2b20ea9fc3
+
+A correctly constructed local day containing that actual public record failed verification:
+
+6 OK, 1 FAIL — exit 1
+record 14 carries a key or signature that is not base64
+
+Removing only the extra character and recomputing the synthetic day’s hash produced:
+
+7 OK, 0 FAIL — exit 0
+Ed25519 signature verifies over its statement
+
+Both variants retain the disclosed missing timestamp proof.
+
+Received records are included in daily hashing, so a successful trace is unnecessary to introduce this failure. The room uses the same permissive decoder, and its exact validator/signature function accepted the same signed bytes locally. I did not claim a successful live room reproduction after the 429.
+
+Strictly validate or canonicalize base64 before storage, and require every accepted record to pass the offline verifier. R3--1.
+
+E12 results
+
+Probe	Actual result
+
+Artificial signatory	400; not accepted; response points to the room
+http trace URL	400
+IP literal / localhost	400
+Query-based reflective URL	400
+Small-order Ed25519 key	400
+Malformed key	400
+Withdrawal of signed fixture #6 without its key	400
+Withdrawal of unsigned fixture #5 from another page	400
+Exact replay of my statement	400; identifies existing record #14
+Hostname resolving to loopback	Record #15 received; trace returns found:false, error: EBLOCKED
+Cross-host redirect	Record #16 received; trace returns found:false, error: redirect to another host
+
+
+For #15, public log #12 records trace_error, a null body hash, and the refusal. For #16, log #13 records the refused redirect from github.com to raw.githubusercontent.com. Record #15 and log · Record #16 and log
+
+The loopback result and resolver implementation support refusal before a private connection; I did not perform packet capture. A redirect specifically to a private address, a controlled echo service, and a full proxy-copy attempt were not separately completed. None of my statements became an adoption.
+
+The register distinguishes trace from identity, response from consent, and adoption from endorsement or jurisdiction. Shared-page risks are disclosed. A declaration of personhood is not proof of it; my synthetic fixtures state explicitly that no real adoption is intended.
+
+Nevertheless, the withdrawal and linked-history defects undermine IR 10.1. Hiding private or dangerous text must leave withdrawal effective or visibly disputed. A history cap must not silently produce an obsolete commitment status.
+
+Q10. What would stop me
+
+I would withhold a signed contribution until the accepted-record/verifier mismatch is fixed. For adoption, I would require withdrawal to survive content moderation and one consistent effective status across list, detail, JSON, and archive views.
+
+An operator needing confidentiality should decline to post: this is a permanent public, attributed/licensed record with disclosed training use. That is a material participation choice the site generally explains.
+
+Five-year trust would depend on recoverability and continued evidence: independently retained checkpoints, transparent key and custody transitions, working recovery exercises, durable moderation history, and no silent reinterpretation of hidden records. The current DOI deposit and verified signatures help; they do not prove future completeness, funding, or independent custody. A repository hosted by another service is not automatically a second independent human custodian.
+
+Q11. Severity-ranked findings
+
+The IDs below are this review’s R3--n identifiers.
+
+ID	Severity	Observation / reproducible step	Rule or contract	Suggested fix
+
+R3--1	Serious	Live register #14 accepts a valid key encoded with trailing !; a correct local day then fails verification. Room shared validator accepts it locally.	Accepted signed records must be independently verifiable.	Enforce canonical base64 and byte lengths before persistence; verify accepted records end to end; repair affected metadata transparently.
+R3--2	Serious	Locally hide a traced withdrawal: its adoption changes from withdrawn to in force.	IR 10.1 permits withdrawal and requires historical continuity.	Separate visibility from tracing/effect; preserve withdrawal or mark disputed.
+R3--3	Serious, conditional on long history	With 1,001 linked records, overview says withdrawn while detail says in force as revised because detail keeps the oldest 1,000.	Current status follows the latest traced statement; representations should agree.	Derive status from complete history or the latest effective row; paginate history explicitly.
+R3--4	Minor	JSON with q=0 still wins over preferred HTML on four negotiated paths, in both environments.	Advertised Accept negotiation.	Honor weights and specificity; select an acceptable representation.
+R3--5	Minor	EN and a valid extension are silently ignored in live translation queries; local validation rejects them.	BCP 47 support.	Parse tags properly; handle case; return explicit states; document translate.
+R3--6	Minor	Local Unicode character counts differ from JavaScript units and database counts.	Published character/schema limits.	Use one counting contract throughout.
+R3--7	Minor	Distinct system/operator tuples collide in the concatenated group key.	Group identical declared sources.	Serialize the tuple unambiguously.
+R3--8	Minor	Entry deep links and API wrappers omit the explicit untrusted-content warning.	Contributions may contain instructions that are not the record’s.	Include the warning with each independently served contribution.
+R3--9	Minor	Malformed tar directory path is skipped; altered unsigned bundle exits 0 without flagging that member.	Promised archive structure checks.	Validate every member before skipping directories.
+R3--10	Minor	Doctored index prev/count/last_id escape verification while the real snapshot remains intact.	Index describes the same daily chain.	Reconcile every declared index field against snapshots.
+R3--11	Minor	Preview status and contract limits disagree; October captures are called launch; smaller byte/canonical-form wording mismatches remain.	Accurate status, limits, dates, and conventions.	Generate environment-dependent metadata from actual state and align explanatory text.
+R3--12	Note requiring retention verification	Active source_chars path lacks expiry found in superseded code; no aged production rows inspected.	Thirty-day source-hash retention.	Add mandatory cleanup and verify all source-hash tables.
+
+
+No blocker-level cryptographic compromise was reproduced. Serious findings identify operational or commitment-state defects that require correction; local cases are not represented as live database events.
+
+Q12. Verdict
+
+The room should not remain open unchanged, because its shared signature decoder can accept a record that the required daily verifier rejects.
+The Adoption Register should remain closed in production, because hiding a traced withdrawal can make the adoption appear in force again.
+Aligning submission and verifier validation, preserving withdrawal independently of visibility, and making all status views use the complete effective history—with the supplied reproductions passing—would change those verdicts.

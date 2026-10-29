@@ -13,6 +13,7 @@ const CACHE = { "Cache-Control": "public, max-age=0, s-maxage=30, stale-while-re
 const NO_STORE = { "Cache-Control": "no-store" };
 const PAGE = 500, MAX_PAGES = 200;       // the register is read in pages of 500, up to 100,000 records; beyond that, said so
 const LOG_SHOWN = 100;                   // the newest 100 log rows on a record's page; all of them, in pages, as data
+const LINKED_SHOWN = 1000;               // cz_register_linked's limit: the adoption and its first 999 changes
 const UNTRACED_DAYS = 30;                // received statements are listed as awaiting a trace for 30 days (the time they can be traced)
 const isForm = (req) => /application\/x-www-form-urlencoded|multipart\/form-data/.test(req.headers["content-type"] || "");
 // Answers to POST carry no CORS headers: another site's page must not read a submitter's token, nor post in its visitors' names
@@ -104,10 +105,15 @@ async function recordData(id) {
   if (!rows || !rows.length) return null;
   const r = rows[0];
   const rootId = r.type === "adoption" ? r.id : r.refers_to;
-  const [newest, linked] = await Promise.all([recordLog(r.id, null, LOG_SHOWN + 1, true), rpc("cz_register_linked", { p_root: rootId })]);
+  const [newest, linked, effect] = await Promise.all([recordLog(r.id, null, LOG_SHOWN + 1, true), rpc("cz_register_linked", { p_root: rootId }),
+    rpc("cz_register_effect", { p_root: rootId })]);
   const root = linked.find((x) => x.id === rootId);
-  return { r, log: newest.slice(0, LOG_SHOWN).reverse(), log_more: newest.length > LOG_SHOWN, linked,
-           status: root && root.state === "traced" ? G.statusOf(root, linked) : null };
+  // the list holds the first LINKED_SHOWN records; the latest traced statements are read from the whole history, so that the
+  // status here is the status in /adopt and /adopt.json however long the history (R3-12)
+  const seen = new Set(linked.map((x) => x.id));
+  const history = [...linked, ...effect.filter((x) => !seen.has(x.id))];
+  return { r, log: newest.slice(0, LOG_SHOWN).reverse(), log_more: newest.length > LOG_SHOWN, linked, linked_more: linked.length >= LINKED_SHOWN,
+           status: root && root.state === "traced" ? G.statusOf(root, history) : null };
 }
 
 async function recordPage(id) {
@@ -119,7 +125,7 @@ async function recordPage(id) {
   const row = (k, v) => rows.push(`<tr><th>${k}</th><td>${v}</td></tr>`);
   row("Type", esc(r.type) + (r.refers_to ? ` — changes adoption <a href="/adopt/${r.refers_to}">#${r.refers_to}</a>` : ""));
   row("State", `${esc(r.state)}${r.category ? ` — ${esc(r.category)}` : ""}${r.state === "received" ? " — not an adoption: not traced (IR 10.1: publicly traceable)" : ""}`);
-  if (r.type === "adoption") row("Status of the adoption", d.status ? `${esc(d.status.status)}${d.status.effective && d.status.effective.id !== r.id ? ` — see <a href="/adopt/${d.status.effective.id}">#${d.status.effective.id}</a>` : ""}` : "none: the statement is not traced");
+  if (r.type === "adoption") row("Status of the adoption", d.status ? `${esc(d.status.status)}${d.status.effective && d.status.effective.id !== r.id ? ` — see <a href="/adopt/${d.status.effective.id}">#${d.status.effective.id}</a>` : ""}` : r.hidden ? "hidden: the statement is withheld (see the log)" : "none: the statement is not traced");
   if (!r.hidden) {
     row("Responsible signatory", who(r) + ` — ${esc(r.signatory_kind)}; name as given, not verified`);
     row("Version adopted", (r.versions || []).map((v) => `<code>${esc(v)}</code>`).join("<br>") || "—");
@@ -140,7 +146,7 @@ ${G.OPEN ? `<form method="post" action="/api/adopt"><input type="hidden" name="a
 <p class="src">The daily job also checks, for ${UNTRACED_DAYS} days after receipt; a record is checked at most once in 10 minutes. The token is looked for in the page itself — not in its address, and not after a redirect to another host. If the line is lost, the statement can be sent again (a statement is recorded once, so change its date or its text); until it is traced it is recorded as received, not as an adoption.</p></section>`
     : r.state === "received" && !r.hidden ? `<p class="src">Received more than ${UNTRACED_DAYS} days ago and never traced: it can no longer be traced, and it is not an adoption. It stays at this address.</p>` : "";
   const logHtml = log.length ? `<div class="scroll"><table><tr><th>When</th><th>What</th><th>By</th><th>HTTP</th><th>SHA-256 of the bytes fetched</th><th>Detail</th></tr>${log.map((l) => `<tr><td><time datetime="${esc(R.isoTime(l.at))}">${esc(R.fmtTime(l.at))}</time></td><td>${esc(l.action)}${l.category ? ` — ${esc(l.category)}` : ""}</td><td>${esc(l.actor)}</td><td>${esc(l.http_status || "")}</td><td><code>${esc((l.body_sha256 || "").slice(0, 16))}${l.body_sha256 ? "…" : ""}</code></td><td>${esc(l.detail || "")}</td></tr>`).join("")}</table></div>` : "<p>None yet.</p>";
-  const linked = d.linked.length > 1 ? `<section aria-labelledby="h-ln"><h2 id="h-ln">The adoption and its changes</h2><ul>${d.linked.map((x) => `<li><a href="/adopt/${x.id}">#${x.id}</a> · ${esc(x.type)} · ${who(x)} · from ${esc(x.declared_date)} · ${esc(x.state)}</li>`).join("")}</ul></section>` : "";
+  const linked = d.linked.length > 1 ? `<section aria-labelledby="h-ln"><h2 id="h-ln">The adoption and its changes</h2>${d.linked_more ? `<p class="src">The first ${LINKED_SHOWN.toLocaleString("en")} records; every record is in <a href="/adopt.json">/adopt.json</a>. The status above follows the whole history.</p>` : ""}<ul>${d.linked.map((x) => `<li><a href="/adopt/${x.id}">#${x.id}</a> · ${esc(x.type)} · ${who(x)} · from ${esc(x.declared_date)} · ${esc(x.state)}</li>`).join("")}</ul></section>` : "";
   const body = `<h1>Record #${r.id} — ${esc(r.type)}</h1>
 <table>${rows.join("")}</table>
 ${next}${stmt}${linked}
@@ -237,7 +243,7 @@ async function streamAll(res, start) {
     return { id: r.id, status: st.status, effective: st.effective ? st.effective.id : null, records: st.chain.map((x) => x.id) };
   });
   return json(res, 200, { state: G.OPEN ? "open" : "closed", order: "by id, assigned at receipt", generated: new Date().toISOString().slice(0, 19) + "Z", rules: `${ORIGIN}/adopt#rules`,
-    statement_form: "canonical JSON: keys sorted, no insignificant whitespace, UTF-8, strings only, the trace address among its fields; statement_sha256 = SHA-256 of its bytes",
+    statement_form: "canonical JSON: keys sorted, no insignificant whitespace, UTF-8, values strings or lists of strings (versions), the trace address among its fields; statement_sha256 = SHA-256 of its bytes",
     limits: { statements_a_day_per_source: stats.rate_per_day, statements_a_day: stats.daily_intake_max, checks_an_hour_per_source: stats.checks_per_hour, checks_of_one_record: "one in 10 minutes", traceable_for_days: UNTRACED_DAYS },
     adoptions: roots, records: all, count: all.length, complete, ...(start ? { after: start, note: "records after id " + start + " only; statuses are derived from the records on this page" } : {}),
     ...(complete ? {} : { next_after, next: `${ORIGIN}/api/adopt?page=json&after=${next_after}` }),
@@ -286,7 +292,8 @@ module.exports = async (req, res) => {
     if (!d) return json(res, 404, { error: "no such record" });
     return json(res, 200, { ...d.r, url: `${ORIGIN}/adopt/${d.r.id}`, status: d.r.type === "adoption" ? (d.status ? d.status.status : d.r.state === "hidden" ? "hidden" : "received, not traced") : undefined,
       log: d.log, log_complete: !d.log_more, ...(d.log_more ? { log_all: `${ORIGIN}/api/adopt?id=${d.r.id}&log_after=0` } : {}),
-      linked: d.linked.map((x) => x.id), untrusted_content: "Statements are user content; none are the record's." }, CACHE);
+      linked: d.linked.map((x) => x.id), ...(d.linked_more ? { linked_complete: false, linked_note: `the first ${LINKED_SHOWN} records; every record is in ${ORIGIN}/adopt.json; the status follows the whole history` } : {}),
+      untrusted_content: "Statements are user content; none are the record's." }, CACHE);
   } catch (err) {
     R.log("adopt", req.method, url.search, err);
     if (method === "POST" && isForm(req)) return formError(res, 503, "The register could not be reached", "Nothing was recorded this time. Try again in a minute; if it persists, write to " + CONTACT + ".", { "Retry-After": "60" });

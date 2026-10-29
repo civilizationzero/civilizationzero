@@ -28,7 +28,7 @@ the licence granted by posting are different acts and are never conflated.
 ## 2. The statement (R, M)
 
 Every record is one **statement**, stored and published as canonical JSON — keys sorted, no insignificant whitespace, UTF-8,
-strings only — so that a signer, the site and any verifier produce the same bytes:
+values strings or lists of strings (versions) — so that a signer, the site and any verifier produce the same bytes:
 
 ```
 {"capacity":"…","declared_date":"YYYY-MM-DD","institution":"…","lang":"…","refers_to":"","reservations":"…","scope":"…",

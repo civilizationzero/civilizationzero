@@ -42,6 +42,10 @@ module.exports = async (req, res) => {
     try { out.register = await rpc("cz_register_daily", { p_token: R.TOKEN, p_day, p_force }); }
     catch (e) { R.log("register daily", e); out.register = { error: String(e.message).slice(0, 200) }; }
   }
+  // 2b. source hashes older than 30 days, in every table that holds one (Blueprint 1.3.1 §7.3; R3-21: the translation allowance's
+  //     table had lost its expiry)
+  try { out.sources_expired = await rpc("cz_expire_sources", { p_token: R.TOKEN }); }
+  catch (e) { R.log("expire sources", e); out.sources_expired = { error: String(e.message).slice(0, 200) }; }
   // 3. while the register is open: re-check the traces of received statements (at most 30 days old, the least recently checked
   //    first, each record at most once in 10 minutes), five at a time, within the budget; a record is claimed when it is checked
   if (G.OPEN) {

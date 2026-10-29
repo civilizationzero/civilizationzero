@@ -1139,3 +1139,37 @@ language sql stable security definer set search_path = public as $$
   order by f.id asc limit 200
 $$;
 grant execute on function cz_flags_open() to anon, authenticated;
+
+-- ================================================================ R3 (2026-10-29), migration cz_r3_effect_retention (both databases)
+-- Round 3 of the external reviews (design/test/FINDINGS-REGISTER.md R3-12, R3-21). Additive: two new functions.
+-- R3-12: the status of an adoption follows the latest traced statement of its whole history. cz_register_linked lists the
+--        first 1,000 records only, so a record's page also reads, from the full history, the latest traced statement and the
+--        latest traced statement of what was committed (a hidden statement keeps the effect it had: R3-11).
+create or replace function cz_register_effect(p_root bigint) returns setof register_public
+language sql stable security definer set search_path = public as $$
+  (select * from register_public where (id = p_root or refers_to = p_root) and (state = 'traced' or (state = 'hidden' and traced_at is not null))
+     order by id desc limit 1)
+  union
+  (select * from register_public where (id = p_root or refers_to = p_root) and (state = 'traced' or (state = 'hidden' and traced_at is not null))
+     and type <> 'withdrawal' order by id desc limit 1)
+$$;
+grant execute on function cz_register_effect(bigint) to anon, authenticated;
+-- R3-21: source hashes are kept 30 days at most (Blueprint 1.3.1 §7.3), in every table that holds one. The translation
+--        allowance (source_chars) lost its expiry when cz_source_chars took a token (R-8); the daily job calls this, and it
+--        replaces an old hash with a random value instead of removing the row (the day's counts stay).
+create or replace function cz_expire_sources(p_token text) returns json
+language plpgsql security definer set search_path = public set timezone = 'UTC' as $$
+declare a bigint; b bigint; c bigint; d bigint;
+begin
+  if not cz_token_ok(p_token) then raise exception 'unauthorised'; end if;
+  update entries set source_hash = null where source_hash is not null and source_expires < now();
+  get diagnostics a = row_count;
+  update register set source_hash = null where source_hash is not null and source_expires < now();
+  get diagnostics b = row_count;
+  update register_checks set source_hash = 'expired:' || gen_random_uuid()::text where hour < now() - interval '30 days' and source_hash not like 'expired:%';
+  get diagnostics c = row_count;
+  update source_chars set source_hash = 'expired:' || gen_random_uuid()::text where day < current_date - 30 and source_hash not like 'expired:%';
+  get diagnostics d = row_count;
+  return json_build_object('entries', a, 'register', b, 'register_checks', c, 'source_chars', d);
+end $$;
+grant execute on function cz_expire_sources(text) to anon, authenticated;

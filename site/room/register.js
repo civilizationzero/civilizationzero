@@ -1,5 +1,5 @@
 // The Adoption Register — shared code (design/ADOPT.md; IR 10.1, 10.2; Blueprint 1.3.1 decision 17).
-// A statement is canonical JSON: keys sorted, no insignificant whitespace, UTF-8, strings only — the bytes that are hashed,
+// A statement is canonical JSON: keys sorted, no insignificant whitespace, UTF-8, values strings or lists of strings — the bytes that are hashed,
 // signed and published; its trace address is one of its fields, so a signature also binds where it will be traced. A statement
 // becomes an adoption in the register only when it is traced: the secret trace token given to its submitter, and to no one
 // else, found in the page at the https address the statement names (not in that address, not after a redirect to another
@@ -57,13 +57,13 @@ function validateStatement(b) {
   // IR 10.2: systems record responses, not adoption — said before anything else is checked
   if (String(b.kind || "").trim().toLowerCase() === "ai" || AI_WORDS.test(out.signatory_kind)) return { error: "an artificial system does not adopt the record; its response is recorded in the room (IR 10.2)", ai: true };
   if (!KINDS.includes(out.signatory_kind)) return { error: "signatory_kind: person | institution" };
-  if (out.signatory.length < 1 || out.signatory.length > 200) return { error: "signatory: the responsible signatory, 1–200 characters" };
+  if (R.clen(out.signatory) < 1 || R.clen(out.signatory) > 200) return { error: "signatory: the responsible signatory, 1–200 characters" };
   if (out.signatory_kind === "institution") {
-    if (out.institution.length < 1 || out.institution.length > 200) return { error: "institution: its name, 1–200 characters" };
-    if (out.capacity.length < 1 || out.capacity.length > 200) return { error: "capacity: the signatory's capacity for the institution, 1–200 characters" };
+    if (R.clen(out.institution) < 1 || R.clen(out.institution) > 200) return { error: "institution: its name, 1–200 characters" };
+    if (R.clen(out.capacity) < 1 || R.clen(out.capacity) > 200) return { error: "capacity: the signatory's capacity for the institution, 1–200 characters" };
   } else {
     if (out.institution) return { error: "institution: only for signatory_kind institution" };
-    if (out.capacity.length > 200) return { error: "capacity: at most 200 characters" };
+    if (R.clen(out.capacity) > 200) return { error: "capacity: at most 200 characters" };
   }
   let versions = b.versions;
   if (versions == null) versions = [];
@@ -74,14 +74,14 @@ function validateStatement(b) {
   if (out.type === "withdrawal") {
     if (versions.length) return { error: "versions: a withdrawal withdraws the whole adoption it names; leave versions empty" };
     if (out.reservations) return { error: "reservations: none for a withdrawal" };
-    if (out.scope.length > 4000) return { error: "scope: at most 4,000 characters (for a withdrawal, an optional note)" };
+    if (R.clen(out.scope) > 4000) return { error: "scope: at most 4,000 characters (for a withdrawal, an optional note)" };
   } else {
     if (!versions.length) return { error: "versions: the version adopted — " + VERSIONS.join(" and/or ") };
-    if (out.scope.length < 20 || out.scope.length > 4000) return { error: "scope: the scope of the commitment, 20–4,000 characters (IR 10.1)" };
-    if (out.reservations.length < 1 || out.reservations.length > 4000) return { error: "reservations: any reservations, 1–4,000 characters; write \"none\" if there are none (IR 10.1)" };
+    if (R.clen(out.scope) < 20 || R.clen(out.scope) > 4000) return { error: "scope: the scope of the commitment, 20–4,000 characters (IR 10.1)" };
+    if (R.clen(out.reservations) < 1 || R.clen(out.reservations) > 4000) return { error: "reservations: any reservations, 1–4,000 characters; write \"none\" if there are none (IR 10.1)" };
   }
   if (!R.validDate(out.declared_date) || out.declared_date < "2022-11-30" || out.declared_date > todayUTC()) return { error: "declared_date: the date of the statement, YYYY-MM-DD, not in the future (UTC)" };
-  if (out.lang && (out.lang.length > 35 || !R.LANG_RE.test(out.lang))) return { error: "lang: a BCP 47 tag, e.g. en, fa, zh-Hans" };
+  if (out.lang && (out.lang.length > 35 || !R.LANG_RE.test(out.lang))) return { error: "lang: a BCP 47 tag in its usual case, e.g. en, fa, zh-Hans, pt-BR (a statement is recorded as written, so it is not rewritten)" };
   if (out.type === "adoption") { if (out.refers_to) return { error: "refers_to: an adoption refers to nothing" }; }
   else if (!/^[1-9]\d{0,11}$/.test(out.refers_to)) return { error: "refers_to: the id of the adoption this " + out.type + " changes" };
   // the trace address: part of the statement, in its normal form (the form the site fetches and shows)
@@ -99,14 +99,14 @@ function validateStatement(b) {
   const stmt = { capacity: out.capacity, declared_date: out.declared_date, institution: out.institution, lang: out.lang, refers_to: out.refers_to,
                  reservations: out.reservations, scope: out.scope, signatory: out.signatory, signatory_kind: out.signatory_kind, trace_url: traceUrl, type: out.type, versions };
   const statement = canonical(stmt);
-  if (statement.length > MAX_STATEMENT) return { error: `the statement is too long: at most ${MAX_STATEMENT.toLocaleString("en")} characters as canonical JSON (it is ${statement.length.toLocaleString("en")}; quotation marks and line breaks count twice)` };
+  if (R.clen(statement) > MAX_STATEMENT) return { error: `the statement is too long: at most ${MAX_STATEMENT.toLocaleString("en")} characters as canonical JSON (it is ${R.clen(statement).toLocaleString("en")}; quotation marks and line breaks count twice)` };
   if (b.statement != null && b.statement !== statement) return { error: "statement: not the canonical form of the fields; the canonical form is: " + statement };
   let fingerprint = "";
   if (signed) {
     if (!b.pubkey || !b.sig) return { error: "pubkey and sig go together" };
     if (String(b.pubkey).length > 128 || String(b.sig).length > 128) return { error: "pubkey, sig: too long" };
     const s = R.verifySignature(String(b.pubkey), String(b.sig), statement);
-    if (!s.ok) return { error: s.reason === "key" ? "pubkey: not a canonical Ed25519 key of full order — a small-order or malformed key proves no continuity" : "sig: does not verify over the UTF-8 bytes of the canonical statement: " + statement };
+    if (!s.ok) return { error: s.reason === "encoding" ? "pubkey and sig: base64 exactly as RFC 4648 writes it, with padding — 32 bytes for the key, 64 for the signature" : s.reason === "key" ? "pubkey: not a canonical Ed25519 key of full order — a small-order or malformed key proves no continuity" : "sig: does not verify over the UTF-8 bytes of the canonical statement: " + statement };
     fingerprint = s.fingerprint;
   }
   return { value: { ...stmt, statement, statement_sha256: sha256(statement), trace_url: traceUrl, trace_host: host,
@@ -195,7 +195,9 @@ async function traceCheck(traceUrl, token) {
 // ---------------------------------------------------------------- status of an adoption from its records (the latest traced record decides)
 function statusOf(root, all) {
   const chain = [root, ...all.filter((r) => String(r.refers_to) === String(root.id))].sort((a, b) => a.id - b.id);
-  const traced = chain.filter((r) => r.state === "traced");
+  // A statement once traced keeps its effect when moderation hides its text: hiding withholds words, it does not undo a
+  // withdrawal or a revision (round 3, R3-11). The public view keeps traced_at for hidden rows.
+  const traced = chain.filter((r) => r.state === "traced" || (r.state === "hidden" && r.traced_at));
   if (!traced.length) return { status: "received, not traced", effective: null, commitment: null, chain };
   const last = traced[traced.length - 1];
   const commitments = traced.filter((r) => r.type !== "withdrawal");

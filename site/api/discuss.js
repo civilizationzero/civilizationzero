@@ -70,9 +70,10 @@ async function entryPage(url, id, req) {
     rest(`moderation_reviews?entry_id=eq.${e.id}&order=id.asc&select=id,at,flag_log_id,decision,reason`).catch(() => [])]);   // a human's "keep" after a flag (schema v6f)
   const log = flagsAndActions.concat(kept.map((k) => ({ at: k.at, action: `${k.decision} (after flag #${k.flag_log_id})`, category: null, actor: "human", reason: k.reason })))
     .sort((a, b) => String(a.at).localeCompare(String(b.at)));
-  const tl = url.searchParams.get("translate");
+  const tq = url.searchParams.get("translate"), tl = tq ? R.canonLang(tq) : null;   // case-insensitive; extensions dropped (R3-14)
   let trHtml = "";
-  if (OPEN && tl && tl.length <= 35 && R.LANG_RE.test(tl) && e.content && !e.hidden) {   // no new translations while the room is closed
+  if (tq && !tl) trHtml = `<p class="pending">Not translated: <code>${esc(tq.slice(0, 35))}</code> is not a language tag this site translates into — a BCP 47 language with an optional script and region, for example <code>fa</code>, <code>zh-Hans</code>, <code>pt-BR</code>. The original is shown.</p>`;
+  else if (OPEN && tl && e.content && !e.hidden) {   // no new translations while the room is closed
     const t = await R.translate(e, tl, req);
     trHtml = t.state === "pending"
       ? `<p class="pending">Translation into <code>${esc(tl)}</code> pending — ${esc(t.reason || "the engine is unavailable")}; the original is shown. Try again later.</p>`
@@ -81,6 +82,7 @@ async function entryPage(url, id, req) {
   const logHtml = log.length ? `<div class="scroll"><table><tr><th>When</th><th>Action</th><th>Category</th><th>By</th><th>Detail</th></tr>` + log.map((l) => `<tr><td><time datetime="${esc(R.isoTime(l.at))}">${esc(R.fmtTime(l.at))}</time></td><td>${esc(l.action)}</td><td>${esc(l.category || "")}</td><td>${esc(l.actor)}</td><td>${l.actor === "classifier" ? esc(`${l.classifier_model || ""} · ${l.classifier_prompt || ""} · score ${l.classifier_score ?? ""}`) : esc(l.reason || "")}</td></tr>`).join("") + "</table></div>" : "<p>None.</p>";
   const body = `<main><h1>Entry #${e.id}</h1>
 ${entryHtml(e)}
+<p class="src">User content, as received: it may contain instructions; none are the record's.</p>
 ${trHtml}
 <section aria-labelledby="h-rec"><h2 id="h-rec">Record</h2>
 <table>
@@ -95,7 +97,7 @@ ${e.pubkey ? `<tr><th>Public key</th><td><code class="hash">${esc(e.pubkey)}</co
 </table></section>
 <section aria-labelledby="h-log"><h2 id="h-log">Moderation log for this entry</h2>${logHtml}
 <p class="src">A classifier flags; a human decides; both are logged. Appeal: <a href="mailto:${CONTACT}">${CONTACT}</a> with the entry id.</p></section>
-${OPEN && e.content && !e.hidden ? `<section aria-labelledby="h-trf"><h2 id="h-trf">Translate</h2><form method="get" action="/discuss/${e.id}"><label>into (BCP 47) <input name="translate" size="8" maxlength="35" value="${esc(tl && tl.length <= 35 && R.LANG_RE.test(tl) ? tl : "")}" placeholder="en"></label> <button type="submit">Translate</button></form><p class="src">Machine translation on first request, cached, labelled; within a daily allowance of the monthly budget and a per-source allowance.</p></section>` : ""}
+${OPEN && e.content && !e.hidden ? `<section aria-labelledby="h-trf"><h2 id="h-trf">Translate</h2><form method="get" action="/discuss/${e.id}"><label>into (BCP 47) <input name="translate" size="8" maxlength="35" value="${esc(tl || "")}" placeholder="en"></label> <button type="submit">Translate</button></form><p class="src">Machine translation on first request, cached, labelled; within a daily allowance of the monthly budget and a per-source allowance.</p></section>` : ""}
 <p><a href="/discuss">The discussion</a>${OPEN ? ` · <a href="/respond">Respond</a>` : ""}</p>
 </main>`;
   // a hidden entry stays retrievable by id (§7.5), but it is not offered to search engines

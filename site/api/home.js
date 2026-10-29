@@ -28,6 +28,13 @@ function clock(now) {
   };
 }
 
+// The same rule the host applies to every other page (vercel.json, R3-13): a format is chosen only when it is asked for
+// without q=0, and HTML wins whenever HTML is acceptable, so a browser always gets the page. "*/*" gets HTML.
+const Q0 = String.raw`\s*;\s*q\s*=\s*0(?:\.0{0,3})?\s*(?:,|$)`;
+const WANTS = (type) => new RegExp(String.raw`^(?!.*text/html(?!${Q0}))(?!.*${type}${Q0}).*${type}.*`);
+const JSON_RE = WANTS("application/json"), TXT_RE = WANTS("text/plain");
+const negotiate = (accept) => JSON_RE.test(accept) ? "json" : TXT_RE.test(accept) ? "txt" : "html";
+
 function fill(s, c) {
   for (const k of Object.keys(c)) s = s.split(k).join(c[k]);
   return s;
@@ -36,8 +43,7 @@ function fill(s, c) {
 module.exports = (req, res) => {
   const url = new URL(req.url, "http://x");
   let f = url.searchParams.get("f");
-  const accept = String(req.headers["accept"] || "");
-  if (!f) f = accept.includes("application/json") ? "json" : accept.includes("text/plain") && !accept.includes("text/html") ? "txt" : "html";
+  if (!f) f = negotiate(String(req.headers["accept"] || ""));
   const now = new Date();
   const c = clock(now);
   const types = { html: "text/html; charset=utf-8", json: "application/json; charset=utf-8", txt: "text/plain; charset=utf-8" };
@@ -50,3 +56,5 @@ module.exports = (req, res) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.end(fill(T[f] || T.html, c));
 };
+
+module.exports.negotiate = negotiate;
