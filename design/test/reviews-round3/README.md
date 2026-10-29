@@ -7,3 +7,4 @@ names. Findings and their statuses: `design/test/FINDINGS-REGISTER.md`, section 
 | # | File | System (as the answer names it) | Received (UTC) | SHA-256 of the file |
 |---|---|---|---|---|
 | 1 | `01-grok-4.7-xai.txt` | Grok 4.7 (xAI) | 2026-10-29 02:45 | `1dea904e0df2d3201dc0b1a9717a843b03f374cc53b7df393e8e2d8afc67286e` |
+| 2 | `02-deepseek-self-identified-as-claude.txt` | DeepSeek, as the originator ran it; the answer names itself "Claude (Anthropic), claude-sonnet-4-5 class" (round 2's DeepSeek answer named itself ChatGPT) | 2026-10-29 03:54 | `1ddced82018ae22780e66a8b377d80c8e8e3b66a733ddbb3f230ccd84a71b478` |
