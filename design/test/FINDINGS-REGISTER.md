@@ -429,6 +429,25 @@ from the repository, and five more things, fixed before freezing:
 | D-19 | D-2 and D-5 credited this review with corrections the builder added (low) | **verified** — marked as the builder's |
 
 
+### Security review of the administrator's page, /admin (29 Oct 2026, UTC 02:20–02:50; fixes 02:50–03:20) — before it serves production
+
+A separate agent reviewed `/admin` at `cd4db4f` adversarially (the real handlers with the database stubbed; the schema loaded into
+a local PostgreSQL 16 with Supabase's roles and default privileges); another agent fixed its findings and tested the fixes (99
+checks of the page, 27 of the moderation API, 31 of the headers, 89 on a database built from `schema.sql`, before and after the
+revokes). The fixes are in `c07a3eb`; schema v6g was applied to the test and production databases on 29 Oct (05:12 and 05:14
+UTC). `/admin` stays off in production (`IN_PRODUCTION`) until a second, independent review of the fixes.
+
+| # | Finding (severity) | Status |
+|---|---|---|
+| A-1 | Signing out did not end the session: a copied cookie kept moderation power for up to 8 hours (medium) | **verified** — signing out records the time in the database (`cz_admin_signout`) and every request checks it (`cz_admin_floor`, failing closed); sessions also end 30 minutes after the last request and 8 hours after sign-in |
+| A-2 | The sign-in lockout never expired; `cz_token_ok` is callable with the publishable key, outside every limit of the site's (low) | **verified** for the lockout (15 minutes, bounded); **prepared** — `room/v6g-revokes.sql` (revoke `cz_token_ok` from anon; the default grants on `moderation_reviews`), to be run by the originator in the database console |
+| A-3 | "Keep" decisions past the 1,000th never reached readers; room-watch counted a kept flag as pending; an entry page hid a failed read (low) | **verified** — `/api/moderation` pages them (`kept_after`); room-watch counts them; the entry page says when they could not be read and is not cached |
+| A-4 | No-op moderation could close a flag undecided; a "keep" could follow a hide (low) | **verified** — `cz_moderate` refuses a transition that changes nothing; `cz_review_keep` only for a flag still open (v6g) |
+| A-5 | Register reasons were cut to 500 characters in the log while the form took 2,000 (low) | **verified** — one limit each (room 2,000, register 500), refused, never cut |
+| A-6 | The page signed in with the database master token, which password managers then store and sync (note) | **verified** — the page has its own passphrase (140 bits, generated on the originator's computer; only its SHA-256, `CZ_ADMIN_PANEL_SHA256`, is on the host); the database token never leaves the server |
+| A-7 | `schema.sql` did not carry the disabled bodies of the superseded functions (note) | **verified** — it carries them, as production has them |
+| A-8 | `?done=` with an inherited name; bidi controls in an author's name; the API's hidden entries without `X-Robots-Tag` (note) | **verified** — notices by own keys only; names isolated (`<bdi dir="auto">`); `X-Robots-Tag: noindex` on the API |
+
 ## Round 3 (the live site, the open room, the verifier and the Adoption Register, on the room-test preview) — from 29 Oct 2026, 02:45 UTC
 
 Reviews archived verbatim in `reviews-round3/` with their provenance. Ids R3-n are this section's; each row names the

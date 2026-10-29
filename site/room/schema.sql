@@ -1173,7 +1173,7 @@ begin
   return json_build_object('entries', a, 'register', b, 'register_checks', c, 'source_chars', d);
 end $$;
 grant execute on function cz_expire_sources(text) to anon, authenticated;
--- ================================================================ v6g (2026-10-29), migration cz_admin_v6g_review (to be applied)
+-- ================================================================ v6g (2026-10-29), migration cz_admin_v6g_review (test and production, 05:12 and 05:14 UTC)
 -- The administrator's page, /admin, after its security review (design/test/FINDINGS-REGISTER.md A-1 … A-8). Additive: two new
 -- functions, functions replaced in place, and one new config row that only cz_admin_signout writes; no table is altered and no
 -- row is deleted. The grants on anon and authenticated, and cz_token_ok's, are left as they are: their revocation is prepared
