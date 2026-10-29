@@ -81,7 +81,7 @@ Civilization Zero is a signed, timestamped, one-page record marking 30 November 
 ---
 
 ### Notes for the originator (not for release)
-- DOI filled in on 29 Oct 2026 (v1.0); the concept DOI 10.5281/zenodo.23740317 always resolves to the latest version.
+- DOI filled in on 28 Oct 2026, 18:38 UTC (v1.0); the concept DOI 10.5281/zenodo.23740317 always resolves to the latest version.
 - Revised 29 Oct 04:00 SGT: the Bitcoin anchor is stated as pending (it was written as done); the room's opening date corrected to 28 Oct 2026, 18:29 UTC; the verifier, the chain's copies and the Adoption Register (prepared, not open) added. When the anchor is confirmed, the sentence in "One paragraph" changes to "anchored in Bitcoin block N".
 - Revised 29 Oct 05:00 SGT: the anchor confirmed — the OpenTimestamps proof of the release manifest carries a Bitcoin attestation for block 973,584 (hash 00000000000000000000a00abaa0825058c26793af5b5d3ef8783cb30aafda7c), whose Merkle root (5ba1324c…7f1009) verify.py derives from the proof and the public verify-live run checked against mempool.space and blockstream.info (run 40767634912); "One paragraph" says so.
 - Revised 29 Oct 05:50 SGT: the second timestamp (RFC 3161, FreeTSA and DigiCert, verified with OpenSSL every day by verify-live) added to "One paragraph", "What is new" and "Key facts"; the verifier's review is public, finding by finding.

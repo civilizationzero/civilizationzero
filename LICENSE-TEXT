@@ -4,9 +4,11 @@ under the Creative Commons Attribution 4.0 International licence (CC BY 4.0).
 
 Full licence text: https://creativecommons.org/licenses/by/4.0/legalcode
 
-Integrity convention (from CZ-IR 1.0, sections 10.4 and 10.5):
-Any version, amendment, or translation of the Core must preserve its version
-identifier, publication date, change history, contributors, reasons for change,
-evidence relied upon, and unresolved objections; and must expose how it maps to
-the Core. No revision may silently replace the origin. CZ-CORE 1.0 remains
-permanently accessible in its original form.
+Integrity convention (from CZ-IR 1.0, sections 10.4 and 10.5) — a conformance
+convention of this project, not a restriction on the licence: CC BY 4.0 alone
+governs what anyone may do with these texts. A version, amendment, or translation
+that calls itself conforming to the Core preserves its version identifier,
+publication date, change history, contributors, reasons for change, evidence
+relied upon, and unresolved objections, and states how it maps to the Core. This
+project replaces no origin silently: CZ-CORE 1.0 remains permanently accessible in
+its original form.

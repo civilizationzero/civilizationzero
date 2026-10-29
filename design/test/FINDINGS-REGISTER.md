@@ -73,7 +73,7 @@ their section ("the verifier review's G-1"). Reviewer abbreviations: G6 = "GPT-6
 | 43 | Reader taxonomy too coarse; affected non-readers (IR 8.3) missing; non-English readers; crawlers/archivers; operator-prompted vs autonomous | G6, CL, DS | **verified** — §3 rewritten |
 | 44 | "Point of observation" understates editorial power | DS, G6, CL | **verified** — §1 rewritten: "it records; it is not the transition; it chose its coordinate, its language and its room, and says so" |
 | 45 | "Images are decorative only" vs the mark with a title | CL | **verified** |
-| 46 | Licence integrity convention must not read as a CC BY restriction | G6 | **verified** — stated as a conformance convention of the project |
+| 46 | Licence integrity convention must not read as a CC BY restriction | G6 | **verified** — stated as a conformance convention of the project (in `LICENSE-TEXT` itself only from bundle 1.0.1: D-16) |
 | 47 | "Distinct systems" → "distinct declared system labels" | G6 | **verified** |
 | 48 | "Five systems found the markup unreadable" misstates G6's review | G6 | **verified** — corrected in §9 history |
 | 49 | "All owned and fixed" overclaims; need a findings register with statuses | G6 | **verified** — this file |
@@ -113,7 +113,7 @@ Also from GM, on the record itself: the §14 "love" sentences (joins O-13), the 
 
 Recorded in `record/OBJECTIONS-1.0.md`, not here. The 1.0 bytes do not change. Responses are the originator's.
 
-## Internal review of the room's implementation (29 Oct 2026) — before round 3
+## Internal review of the room's implementation (28 Oct 2026, UTC; 29 October in Kuala Lumpur) — before round 3
 
 Before the public round 3, the implementation of the room (`site/api/*`, `site/room/*`) was reviewed by an independent agent (Claude Fable 5.1, run with the files and Blueprint §7 only, without the builder's notes). Its report is archived verbatim in `reviews-internal/2026-10-29-room-review.md`. Statuses below are as of 29 Oct 2026, 02:00 SGT; **verified** means a reproducible test on the room-test preview (the same database) or a local test named in the commit `12ce60d` / `086fdef`.
 
@@ -166,7 +166,7 @@ Deferred to 1.4 (stated, not hidden): proof-of-work on POST (§7.3), an allow-li
 After the fixes above, the re-tests on the isolated test database, the wipe of the test entries (by the originator, in the database console) and the production deployment at commit `cbf6330`, the room is open at https://civilizationzero.ai/discuss. Release `v1.0` (tag at `9d7b157`+) is deposited as doi:10.5281/zenodo.23741225; the signed bundle 1.0 is `cz-bundle-1.0.tar` (SHA-256 `fcd3957cbea9c5b21da662e7ea97b4bf3d3b1da1e2eb55ec7bf9d71e2af5cb36`). Round 3 (five outside systems, `PROMPT-ROUND3.txt`) runs against the test alias on 30 October; its findings are recorded below when they arrive.
 
 
-### After the opening — 29 October 2026 (UTC 28 Oct 18:50 onward)
+### After the opening — 28 October 2026, from 18:50 UTC (29 October in Kuala Lumpur)
 
 - **C-12 (self-found)** — the site stated the opening date in local time (2026-10-29) although it keeps time in UTC; in UTC the room opened 2026-10-28T18:29:12Z. **Verified** — corrected in the build from bundle 1.0.1; bundle 1.0 keeps its signed statement; recorded in `blueprint/CHANGES-FOR-1.4.md`.
 - **C-v6a (self-found)** — entry signatures were checkable only by the server (only the fingerprint was public). **Verified** — `pubkey` and `sig` are public fields and part of the day line, applied before the first day was hashed.
@@ -197,7 +197,7 @@ fixed in 1.2 and re-run against its reproductions (`T1_front_trunc`, `R1_hidden_
 
 | # | Finding (severity) | Status |
 |---|---|---|
-| T-1 | Front truncation: the pinned first day was not required to be present — supplying only 2026-10-29 (with its genuine non-null `prev`) passed, even `--strict` with a Bitcoin attestation added; with `--site`, an index could omit the first day (high) | **verified** — days supplied by hand that start after the first day are PENDING ("checked from … only", so `--strict` fails); with `--site`, every day from the first to the last one due must be served, else FAIL — which also catches a site that stops serving its newest days (a day is due from 01:00 UTC the next day, the site hashing at 00:20; from 1.10, 02:00 UTC, the host running the site's job at some time in the first hour) |
+| T-1 | Front truncation: the pinned first day was not required to be present — supplying only 2026-10-29 (with its genuine non-null `prev`) passed, even `--strict` with a Bitcoin attestation added; with `--site`, an index could omit the first day (high) | **verified** — days supplied by hand that start after the first day are PENDING ("checked from … only", so `--strict` fails); with `--site`, every day from the first to the last one due must be served, else FAIL — which also catches a site that stops serving its newest days (a day is due from 01:00 UTC the next day, the site then assumed to hash at 00:20; from 1.10, 02:00 UTC, the host running the site's job at some time in the first hour) |
 | R-1 | A hidden register record's suppressed fields (signatory, institution, capacity, scope, reservations, trace URL) went unchecked when its statement was not shown: a copy could fabricate them (medium) | **verified** — a hidden record showing any of them FAILs (the site serves them as null); the fields a hidden record still shows (kind of signatory, versions, declared date, language) are noted as covered by no hash |
 | R-1b (self-found) | The converse: a copy could withhold the text of a published entry, or the statement of a record that is not hidden, and still pass | **verified** — FAIL ("the site serves every published entry's text" / "every statement that is not hidden") |
 | T-1b (self-found) | Closing the room would have hidden its chain (the index answered "closed, no days") and stopped the daily hash | **verified** — once the room has opened, its chain is served and hashed whatever its state (`R.CHAIN`); the verifier checks a closed room's days like an open room's |
@@ -395,17 +395,18 @@ showed four things wrong around it, none in the hashing:
 ### Review of bundle 1.0.1's documents before it is frozen (29 Oct 2026, UTC 00:50–01:05), by a separate agent
 
 Bundle 1.0.1 is to be frozen and signed, and a sentence frozen into it can only be corrected by an erratum in a later bundle.
-A separate agent read every generated or edited document of the candidate (not the canonical texts, the translations, the
-blueprint, the objections or the archived reviews) against the repository and its history: six findings that would mislead
-a reader, eight details. All were fixed before freezing:
+A separate agent read the documents of the candidate that are generated or were edited that night — the bundle's README, the
+repository's README, `sign/` (README and the scripts' comments), `record/ZENODO.md`, the round-3 note, the site manifest, the
+contract's descriptions, this register from the verifier's review on, and the verifier's docstring and messages — against
+the repository and its history: six findings that would mislead a reader, eight details. All were fixed before freezing:
 
 | # | Finding (severity) | Status |
 |---|---|---|
 | D-1 | The manifest gave the archive's canonical order as "receipt ascending, ties by id", against its own day hash, the snapshots, the contract and the hashing code, which order by id — R-18 had said the wording was changed everywhere (high) | **verified** — "by id, assigned at receipt" |
-| D-2 | The second key-holder's acceptance was dated 29 October, the date in Kuala Lumpur, though it was recorded at 16:16 UTC on 28 October — the slip C-12 corrected for the room's opening; so were the mailbox's and the database project's "live since" (the project was created at 13:28 UTC on 28 October) (high) | **verified** — 28 October (UTC) in the manifest, on /archive, on /about and in the blueprint's two status lines (its PDF regenerated: only those two lines differ) |
+| D-2 | The second key-holder's acceptance was dated 29 October, the date in Kuala Lumpur, though it was recorded at 16:16 UTC on 28 October — the slip C-12 corrected for the room's opening; so were the mailbox's and the database project's "live since" (the project was created at 13:28 UTC on 28 October) (high) | **verified** — 28 October (UTC) in the manifest, on /archive, on /about and in the blueprint's two status lines (its PDF regenerated: only those two lines differ); the mailbox and the database project were added by the builder (the project's creation time is its provider's record) |
 | D-3 | `record/ZENODO.md` said the deposit was the signed bundle with loose files, and dated v1.0-pre 29 October; each deposit is the repository at its tag, both made on 28 October (UTC), v1.0-pre before bundle 1.0 was signed (high) | **verified** — the file says how and what was deposited, the bundle list as the manual fallback; `.zenodo.json`, whose notes the next release deposits, no longer says the room opens on 31 October |
 | D-4 | The paragraph on the time a day is due (01:00 → 02:00 UTC) stood after the fifteenth pass, as if verify.py 1.16 had made the change; it was 1.10 (`c4cd6e7`); T-1 and the note on end truncation still gave 01:00 and "about half an hour" (high) | **verified** — the paragraph stands after the eighth pass and names 1.10; T-1 and the note give the times in force |
-| D-5 | `sign/README.md` and /archive said OpenSSL 1.1.1 verifies the signatures; `-rawin` exists only from OpenSSL 3.0 (high) | **verified** — "OpenSSL 3.0 or later" in the README, both scripts and /archive |
+| D-5 | `sign/README.md` and /archive said OpenSSL 1.1.1 verifies the signatures; `-rawin` exists only from OpenSSL 3.0 (high) | **verified** — "OpenSSL 3.0 or later" in the README, both scripts and (added by the builder) /archive |
 | D-6 | `sign/README.md` said each frozen bundle is signed; 1.0-pre is frozen and unsigned (high) | **verified** — "each bundle from 1.0 on" |
 | D-7 | The bundle README's OpenSSL line (`sign/verify.sh … <file>`, the signature beside the file) worked inside the bundle for the release manifest only (low) | **verified** — a command for each canonical text with its signature in `signatures/` |
 | D-8 | X-9 counted "all 69" members of 1.0.1; frozen with its first day it has 72 (low) | **verified** — no count for 1.0.1 |
@@ -415,3 +416,14 @@ a reader, eight details. All were fixed before freezing:
 | D-12 | The bundle README said everything needed to verify is inside and that the verifier checks "every hash"; the Bitcoin block header and the authorities' signatures need an outside check, and in a bundle the site manifest's translation hashes are not compared (low) | **verified** — it names the two outside facts and says "every hash the release manifest states" |
 | D-13 | `sign/README.md` said the key's fingerprint is published there; it was not (low) | **verified** — the fingerprint is in it |
 | D-14 | The contract said `log_sha256` is null "while the room is closed or before the first day ends"; it is null only until the room's first day is hashed — a room closed after opening still serves it (low) | **verified** — corrected in the contract |
+
+A second pass on the fixes (UTC 01:12–01:19) found every one of D-1 to D-14 in place, the candidate rebuilt byte for byte
+from the repository, and five more things, fixed before freezing:
+
+| # | Finding (severity) | Status |
+|---|---|---|
+| D-15 | This section first said the review read "every generated or edited document"; it read those now listed (high) | **verified** — the list |
+| D-16 | `LICENSE-TEXT` stated the integrity convention as a condition on every version — "must preserve … must expose" — though #46 (verified in round 2) and decision 21 make it a conformance convention, not a restriction on the licence; the file had not changed since the first commit (high) | **verified** — the file says that CC BY 4.0 alone governs use, and states the convention for what calls itself conforming |
+| D-17 | `record/ZENODO.md`'s fallback form said "copy exactly" but differed from `.zenodo.json`, which the deposits used: the title, and the relation to the site in the opposite direction (low) | **verified** — `.zenodo.json` governs; the title and the relations as there |
+| D-18 | Two headings of this register dated events by the date in Kuala Lumpur (the room's internal review, the hours after the opening); T-1 still said the site hashed at 00:20; the press kit gave the v1.0 DOI the same local date (low) | **verified** — UTC dates; T-1 says what was then assumed |
+| D-19 | D-2 and D-5 credited this review with corrections the builder added (low) | **verified** — marked as the builder's |
