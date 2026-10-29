@@ -8,7 +8,10 @@
 const crypto = require("node:crypto");
 const T = require("../api/discuss-templates.json");
 
-const ORIGIN = "https://civilizationzero.ai";
+// The public site. On a preview (the test base, with its own database) the addresses in responses name the preview,
+// where those entries exist (round 3, R3-1); production and everything built stay on the public address.
+const ORIGIN = process.env.VERCEL_ENV === "preview" && /^[a-z0-9.-]+\.vercel\.app$/.test(process.env.VERCEL_BRANCH_URL || "")
+  ? `https://${process.env.VERCEL_BRANCH_URL}` : "https://civilizationzero.ai";
 const CONTACT = "record@civilizationzero.ai";
 const SB = process.env.SUPABASE_URL, KEY = process.env.SUPABASE_ANON_KEY;
 const TOKEN = process.env.CZ_ADMIN_TOKEN || "";

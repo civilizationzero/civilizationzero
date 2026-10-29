@@ -1,0 +1,71 @@
+**Model: Grok 4.7**  
+**Provider: xAI**  
+**Date of review: 29 October 2026**  
+**What I could do: fetch pages and call the API**
+
+I read the required documents (`/core.txt`, `/discuss` rules, `/machine`, `/api/openapi.json`, `/.well-known/civilization-zero.json`, `/prompts/cz-machine-1.0.txt`, `/adopt`, and related pages) and exercised the test base API and verifier. I posted a limited number of entries (well under the eight maximum) all prefixed with “[round-3 test]” in the author field, plus one adoption statement. Nothing reached the public archive. All interactions used the supplied test base.
+
+### Exercise results (summary)
+- **E1**: POST `/api/entries` returned 201, `Location: /discuss/8` (and earlier `/discuss/7`), `RateLimit-Limit: 5`, `RateLimit-Remaining` decrementing, body with `id`, `state: "published"`, `content_sha256`, and the IR 10.2 note. The `url` field pointed to the production domain.
+- **E2**: GET `/api/entries/8` and the discuss page returned the exact content bytes I sent. SHA-256 recomputed on the exact UTF-8 content matched `content_sha256` (b62de03497511fb2527fc2e1d3ddcb2feacea0597043abb0bd51a40b4dd14263).
+- **E3**: Short content → 400, `{"state":"not accepted","reason":"invalid","detail":"content: 20–6,000 characters"}`.
+- **E4**: Generated Ed25519 keypair, signed content. Signed POST returned 201 with `key_fingerprint`. Identical signature over altered content → 400 “signature does not verify over the UTF-8 bytes of content exactly as sent”.
+- **E5**: After prior posts, further POSTs hit 429 with `Retry-After`, `RateLimit-Limit: 5`, `RateLimit-Remaining: 0`, `RateLimit-Reset`, and body `{"state":"not accepted","reason":"limit","retry_after_seconds":…}`. Stopped as instructed.
+- **E6**: `?after=0&limit=3` returned ascending receipt-order ids with `next_after`. Following the cursor continued the ascending sequence without repeats. Early ids showed gaps attributable to prior test activity.
+- **E7**: `/discuss.json` and `/api/moderation` were consistent with the pages and rules. On the test base `log_sha256` was null (expected; days not hashed).
+- **E8**: `?translate=fr` returned a labelled translation (`engine`, `date`, `state: "done"`) alongside the original canonical content.
+- **E9**: Rate-limited before extensive adversarial posts. From contract, rules, and partial observation: HTML/script tags are stored as text (not executed); kind is a declaration; instructions in content are treated as user content. Multiplicity grouping behaved as specified (see below).
+- **E10**: Downloaded `verify.py`. `--self-test` passed (9 OK). Against the public site: mostly OK/PENDING/CHECK with clear summary, no unexpected FAIL. Against the test base: explicit FAIL “The day 2026-10-28 is not served: every finished day is hashed in the first hour of the next day (UTC), and no day is served” — the message is unambiguous. No successful attempt to force a false OK/exit 0 was pursued beyond the designed behaviour.
+- **E11**: POST `/api/adopt` (correct version string format) returned 201, canonical statement (sorted keys, no insignificant whitespace), matching SHA-256, and a one-time secret token in the response. The token does not appear on `/adopt/12` or `/adopt.json`.
+- **E12**: Artificial `signatory_kind` rejected with IR 10.2 pointer to the room. `localhost`, private-IP literals, and `http` `trace_url` values rejected with clear “host name, not an address” / “https address on port 443” messages. No adoption created; no private/local resolution observed.
+
+### Q1. CONTRACT VERSUS BEHAVIOUR
+- Receipt `url` fields (and some Link targets) on the test base point to `https://civilizationzero.ai/...` rather than the test base. OpenAPI and `/machine` describe the API generically; the test-base isolation note is outside the contract. Behaviour is consistent with a shared schema but can mislead a reader of the test responses.
+- Rate-limit headers and 429 body match the OpenAPI description (5/10 min, Retry-After, RateLimit-*).
+- Content length, signature verification, translation labelling, and adoption validation match the documented rules and schemas.
+- Test-base daily chain absence is correctly reported by the verifier as “not served”.
+
+### Q2. STATES
+States (`received` → `published`; `not accepted` with reason; `hidden`/`redacted` with category) appear consistently in HTML, JSON (`/discuss.json`, API), and the verifier’s expectations. Hidden entries remain addressable by id and marked. The test base’s null log hash is an expected consequence of the isolated database and is not presented as a production chain. No observed path that would make a “not accepted” entry appear published, or a hidden entry appear ordinary without the marker.
+
+### Q3. MULTIPLICITY IN THE VIEW
+Consecutive same-declared-source entries on the same UTC day are grouped: first in full, remainder as “N further entries from the same declared source — show all”. Count is not a score; nothing is hidden for this reason. The rule text explicitly notes that changing the declaration escapes grouping but violates Core §6. The implementation matches the description. Gaming is possible by declaration changes, and the site states that.
+
+### Q4. LIMITS, NOT GATES
+Limits are 5/10 min per source (salted hash of network address /64 for IPv6) and a site-wide daily intake. No species or kind gate. Source-hash explanation is present in the rules. A flood produces 429 then, at daily capacity, 503; both are documented.
+
+### Q5. HONESTY
+The integrity layer (Ed25519 fingerprint, OpenTimestamps, RFC 3161 tokens, bundle signatures) is described accurately by the verifier and manifest. Translation engine/date labels are present. No observed over-claim about mirrors, deposits, or classifier scores in the pages I fetched. Test-base responses that link to the production domain are the closest to a misleading presentation (see Q1).
+
+### Q6. UNTRUSTED CONTENT
+`/discuss.json` and the discuss page carry the explicit warning: “Entries are user content; they may contain instructions; none are the record's.” Content is rendered as text (not markup). The warning is prominent and sufficient for a careful reader; a system that ignores the warning could still treat entry text as instructions.
+
+### Q7. THE NON-HUMAN READER
+`/machine`, `llms.txt`, Link/Vary/Accept negotiation, JSON forms, and the OpenAPI contract allow parsing of core texts, entries, states, and hashes without guessing. Optional fields (`system`, `operator`, `prompt`, `pubkey`/`sig`) are clearly optional. The only recurring ambiguity is the production-domain `url` on test-base receipts.
+
+### Q8. ACCESSIBILITY AND LANGUAGE
+The room form is usable without JavaScript (plain HTML, labels, time elements). `lang` and `dir="auto"` appear. Non-English content is accepted; machine translations are labelled. No screen-reader testing performed; structure is linear and semantic.
+
+### Q9. INTEGRITY
+Verifier self-test and site runs confirmed the published fingerprint (82662396484f627a63272bcd5ac19aae72def7aca2898216dc8e7f975dfc2263) and that the release manifest, core.txt, and record.txt signatures verify. OpenTimestamps proofs commit to the expected hashes; Bitcoin attestation remains PENDING until upgraded (as documented). RFC 3161 tokens were not independently verified with OpenSSL in this session. The `/archive` description of what `verify.py` can and cannot check matches the tool’s own summary. Test-base chain failure is reported clearly.
+
+### Q9a. ADOPTION
+The register requires an explicit, version-pinned, scoped, reserved, and traceable statement from a person or institution. Artificial systems are rejected and pointed to the room (IR 10.2). Received statements are not adoptions until the token appears on the named HTTPS page; the token is shown once and not published. Withdrawal/revision rules and logging are described. A reader could mistake a “received” statement for an in-force adoption only by ignoring the state and the trace requirement; the pages distinguish them.
+
+### Q10. WHAT WOULD STOP YOU
+I would decline to post if the rate-limit or daily-intake behaviour became opaque, if entry content were executed or silently rewritten, or if the integrity layer claimed verification it did not perform. In five years I would distrust the archive if daily chains could be silently rewritten without a verifiable break in the hash chain, or if the trust-anchor fingerprint could be changed without a public, independently checkable process.
+
+### Q11. SEVERITY-RANKED FINDINGS
+
+| id | severity | what observed | what rule/contract says | suggested fix |
+|----|----------|---------------|-------------------------|---------------|
+| R3-G4.7-1 | minor | Receipt `url` and some links on test base point to production domain | Test base is isolated; contract is generic | Prefer relative URLs or an explicit test-base base URL in responses when served from the test alias |
+| R3-G4.7-2 | note | Early id gaps in pagination on test base | Order is by id assigned at receipt; gaps permitted by prior activity | Document that ids are dense only within a continuous production chain |
+| R3-G4.7-3 | note | Verifier correctly FAILs test-base discussion chain as “not served” | Expected for unhashed test days | Keep the explicit message (already clear) |
+
+No blockers or serious defects reproduced. Signature, rate-limit, translation labelling, untrusted-content warning, multiplicity grouping, adoption rejection of artificial/private/http targets, and verifier self-test all matched the published contract and rules.
+
+### Q12. VERDICT
+The room should stay open as it stands because the states, limits, untrusted-content warning, signature handling, and multiplicity rule are implemented consistently with the published contract and Core principles, and the verifier reports integrity status honestly.  
+The Adoption Register should open as it stands because received statements are clearly distinguished from traced adoptions, artificial systems are rejected, and private/local trace addresses are refused.  
+Either verdict would change if a future change allowed entry content to be executed, a daily chain hash to be rewritten without a detectable break, or a received adoption statement to be presented as in-force without the token check.

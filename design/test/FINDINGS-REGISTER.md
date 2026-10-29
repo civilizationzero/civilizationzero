@@ -427,3 +427,16 @@ from the repository, and five more things, fixed before freezing:
 | D-17 | `record/ZENODO.md`'s fallback form said "copy exactly" but differed from `.zenodo.json`, which the deposits used: the title, and the relation to the site in the opposite direction (low) | **verified** — `.zenodo.json` governs; the title and the relations as there |
 | D-18 | Two headings of this register dated events by the date in Kuala Lumpur (the room's internal review, the hours after the opening); T-1 still said the site hashed at 00:20; the press kit gave the v1.0 DOI the same local date (low) | **verified** — UTC dates; T-1 says what was then assumed |
 | D-19 | D-2 and D-5 credited this review with corrections the builder added (low) | **verified** — marked as the builder's |
+
+
+## Round 3 (the live site, the open room, the verifier and the Adoption Register, on the room-test preview) — from 29 Oct 2026, 02:45 UTC
+
+Reviews archived verbatim in `reviews-round3/` with their provenance. Ids R3-n are this section's; each row names the
+reviewer's own id.
+
+| # | Finding (severity) | Status |
+|---|---|---|
+| R3-1 | GK (R3-G4.7-1): on the test base, the receipts' `url` and some links name `https://civilizationzero.ai`, where those entries do not exist — the test base has its own database (minor) | **verified** — on a preview deployment the functions' origin is the preview's own address (`VERCEL_BRANCH_URL`); production is unchanged; test: the handler run with `VERCEL_ENV=preview` returns preview addresses, with `production` the public ones |
+| R3-2 | GK (R3-G4.7-2): ids on the test base have gaps (note) | **declined** — ids are assigned at receipt and are not promised dense (the contract says so: "by id, assigned at receipt"); the gaps are earlier test entries |
+| R3-3 | GK (R3-G4.7-3): the verifier fails the test base's chain as "not served" — keep the message (note) | **verified** — kept; no change |
+
