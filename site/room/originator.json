@@ -1,0 +1,9 @@
+{
+  "role": "the originator",
+  "purpose": "signs the originator's entries in the discussion room; the names reserved to the originator are accepted only on entries signed with this key",
+  "created": "2026-10-29",
+  "algorithm": "Ed25519",
+  "pubkey": "ih//tcjuVbXC+fM9sLLD0qPcjm+TrpnExmuhRR2Hpw8=",
+  "fingerprint": "d7b023453e93bca78515377f17bda354e3c6d253aaa7e96b3b0c54ed35319651",
+  "fingerprint_of": "SHA-256 of the DER-encoded SubjectPublicKeyInfo of the key, as for every key on this site"
+}

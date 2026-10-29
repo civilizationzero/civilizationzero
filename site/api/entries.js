@@ -84,6 +84,11 @@ module.exports = async (req, res) => {
       }
       fingerprint = s.fingerprint;
     }
+    const reserved = R.reservedField({ author: e.author, system: e.system, operator: e.operator }, fingerprint);
+    if (reserved) {
+      const detail = R.reservedDetail(reserved);
+      return form ? formError(res, 400, "Not accepted: a reserved name", detail) : json(res, 400, { state: "not accepted", reason: "invalid", detail });
+    }
     const r = await rpc("cz_post", { p_author: e.author, p_kind: e.kind, p_system: e.system, p_operator: e.operator, p_prompt: e.prompt, p_lang: e.lang, p_ref: e.ref,
       p_content: e.content, p_declared_date: e.declared_date, p_pubkey: e.pubkey, p_sig: e.sig, p_key_fingerprint: fingerprint, p_source_hash: R.sourceHash(req), p_token: R.TOKEN });
     if (r.state === "not accepted") {

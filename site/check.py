@@ -128,6 +128,14 @@ reserved, kind, count = struct.unpack("<HHH", ico[:6])
 check(reserved == 0 and kind == 1 and sorted((ico[6 + 16 * i] or 256) for i in range(count)) == [16, 32, 48], "favicon.ico: 16, 32 and 48 pixels")
 check(re.fullmatch(r"[0-9a-f]{32}", INDEXNOW_KEY) and (PUBLIC / f"{INDEXNOW_KEY}.txt").read_text("utf-8") == INDEXNOW_KEY, "the IndexNow key file")
 check(ATPROTO_DID is None or (re.fullmatch(r"did:plc:[a-z2-7]{24}", ATPROTO_DID) and (PUBLIC / ".well-known/atproto-did").read_text("utf-8") == ATPROTO_DID), "the Bluesky handle file")
+# the originator's key: its fingerprint is the SHA-256 of its DER SubjectPublicKeyInfo, and /about publishes both exactly
+import base64 as _b64, hashlib as _hl
+_ok = json.loads((SITE / "room" / "originator.json").read_text("utf-8"))
+_raw = _b64.b64decode(_ok["pubkey"], validate=True)
+check(len(_raw) == 32 and _b64.b64encode(_raw).decode() == _ok["pubkey"], "the originator's key is 32 bytes in canonical base64")
+check(_hl.sha256(bytes.fromhex("302a300506032b6570032100") + _raw).hexdigest() == _ok["fingerprint"], "the originator's key's fingerprint matches the key")
+_about = (PUBLIC / "about.html").read_text("utf-8")
+check(_ok["pubkey"] in _about and _ok["fingerprint"] in _about and 'id="originator-key"' in _about, "/about publishes the originator's key")
 check(all(u.startswith("https://") for u in SOCIAL), "the project's accounts are https addresses")
 # the press kit, once published: every quotation in it (straight double quotes, 12 characters or more) is verbatim from the
 # Core or the interpretive record, whitespace aside; the originator's notes and the draft status line are not on the page

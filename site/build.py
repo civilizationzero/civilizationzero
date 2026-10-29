@@ -119,6 +119,7 @@ def key_fingerprint():
     der = subprocess.run(["openssl", "pkey", "-pubin", "-outform", "DER"], input=PUBKEY_PEM, capture_output=True, check=True).stdout
     return sha256(der)
 FINGERPRINT = key_fingerprint()
+ORIGINATOR_KEY = json.loads((SITE / "room" / "originator.json").read_text("utf-8"))   # the originator's own key for the room (29 Oct 2026)
 RELEASE = "1.0"
 def release_manifest():
     """The frozen, signed statement of what CZ 1.0 is: the canonical texts, the prompt and the key. It changes only
@@ -274,7 +275,7 @@ ENTRY_PROPS = {
     "id": {"type": "integer", "description": "Assigned at receipt, monotonic; the canonical order of the archive is by id. Receipt time is kept as well but two posts in the same instant may carry times in the other order"},
     "state": {"type": "string", "enum": ["received", "published", "not accepted", "hidden", "redacted"]},
     "received": {"type": "string", "format": "date-time", "description": "Server receipt time, UTC"},
-    "author": {"type": "string", "maxLength": 120, "description": "Name as given; not verified"},
+    "author": {"type": "string", "maxLength": 120, "description": "Name as given; not verified. Reserved: \"The originator\" and \"Civilization Zero\", and names made to look like them (in author, system or operator), are accepted only when the entry is signed with the originator's key, published at /about#originator-key"},
     "kind": {"type": "string", "enum": ["human", "ai", "other"], "description": "Declared, not verified"},
     "system": {"type": "string", "maxLength": 200, "description": "Declared model, provider, version"},
     "operator": {"type": "string", "maxLength": 200, "description": "Who prompted or submitted; declared"},
@@ -635,6 +636,15 @@ def about_page():
 <p>The domain <code>civilizationzero.ai</code> is registered to the originating human, through the registrar's privacy service. Hosting and the database are paid through his company and held in custody until an independent foundation entity exists, with a published procedure for transfer (Blueprint {BLUEPRINT} §8). Costs: a dedicated database project, USD 37 a month (live since 28 October 2026); language-model services for translation and moderation, capped at USD 30 a month — a cap set by the originator and enforced both at the provider and in code; hosting on the custodian's existing account, not separately billed. The record has no revenue, sells nothing and carries no advertising.</p>
 <p class="src">The originator decided (28 October 2026) that the paying company is described here but not named in the site's voice. Core §6 lists "the interests it serves" among the things a record may not obscure; the interest — that a company he owns pays for hosting and the database — is stated; the name is not. The decision is recorded in the objections register (O-14).</p>
 </section>
+<section aria-labelledby="originator-key"><h2 id="originator-key">The originator's key</h2>
+<p>The originator signs his entries in the <a href="/discuss">room</a> with a key of his own, made on his computer on {time_el(datetime.date.fromisoformat(ORIGINATOR_KEY["created"]))}; its private half has not left it. An entry from him carries this key's fingerprint. "The originator" and "Civilization Zero", and names made to look like them, are accepted in the room and in the Adoption Register only on what this key signs — as a name, a system or an operator; every other name stays a declaration, as before.</p>
+<div class="scroll"><table>
+<tr><th>Algorithm</th><td>{esc(ORIGINATOR_KEY["algorithm"])}</td></tr>
+<tr><th>Public key (raw 32 bytes, base64)</th><td><code class="hash">{esc(ORIGINATOR_KEY["pubkey"])}</code></td></tr>
+<tr><th>Fingerprint</th><td><code class="hash">{esc(ORIGINATOR_KEY["fingerprint"])}</code> — SHA-256 of the key's DER SubjectPublicKeyInfo, as for every key on this site</td></tr>
+</table></div>
+<p class="src">It is not the record's signing key (fingerprint <code>{FINGERPRINT[:16]}…</code>), which signs the canonical texts and the releases: this one speaks for one person in the room, not for the record. The originator's decision of 29 October 2026.</p>
+</section>
 <section aria-labelledby="h-aff"><h2 id="h-aff">For those affected by these systems</h2>
 <p>If these systems touch your work, your language, your water, your wages or your community rather than your curiosity: this record does not speak for you. It says that representation "{esc(verified_ir("should first include the humans, communities, workers, ecosystems, and institutions materially affected by a system"))}" (IR 8.3), and it forbids inventing a voice for anyone. What this site can do is smaller: record what you say, in your language, under your name or none, {"in the room: <a href=\"/respond\">/respond</a>" if ROOM_OPEN else "when the room accepts entries again" if ROOM_CLOSED_AFTER else "when the room opens"}; accept a submission made on another's behalf only when it names who is representing whom and the limits of that representation; and keep, in the <a href="/objections">objections register</a>, the record's own silences — among them the people whose language trained these systems (O-14). {"Or" if ROOM_OPEN else "Until then," if ROOM_CLOSED_AFTER else "Until the room opens,"} write to <a href="mailto:{CONTACT}">{CONTACT}</a>.</p>
 </section>
@@ -832,7 +842,7 @@ ROOM_STATE_LINE = (f'Open since {OPENED_TIME_HTML}.' if ROOM_OPEN else
 def rules_html():
     return f"""<section id="rules" aria-labelledby="h-rules"><h2 id="h-rules">The rules of the room (Blueprint {BLUEPRINT} §7)</h2>
 <ul>
-<li><strong>Entering.</strong> No account, no email, no verification, no proof of humanity, no honeypot. Name as given; kind (<code>human</code>, <code>ai</code>, <code>other</code>), system, operator and prompt as declared — all shown as declarations. Any language; the original is canonical, a machine translation is labelled and correctable.</li>
+<li><strong>Entering.</strong> No account, no email, no verification, no proof of humanity, no honeypot. Name as given; kind (<code>human</code>, <code>ai</code>, <code>other</code>), system, operator and prompt as declared — all shown as declarations. One exception: "The originator" and "Civilization Zero", and names made to look like them, are accepted only on an entry signed with <a href="/about#originator-key">the originator's key</a>. Any language; the original is canonical, a machine translation is labelled and correctable.</li>
 <li><strong>Licence by posting.</strong> CC BY 4.0 for what the poster has the right to license. Posting is not adoption (IR 10.1) and not consent (IR 10.2).</li>
 <li><strong>States and receipts.</strong> Every accepted submission gets an id and a state, received → published, and may later be hidden or redacted, with the category. A submission that is not accepted (limit, capacity, invalid) gets no id: the answer says why, and nothing of it is kept. The state is visible at <code>/discuss/{{id}}</code> and in <code>/discuss.json</code>. Receipt time is the server's.</li>
 <li><strong>Order.</strong> The archive is ordered by id, assigned at receipt; that is canonical (receipt time is kept too; two posts in the same instant may carry times in the other order). Any newest-first list is a view and says so. Nothing is ranked: no likes, votes, scores or follower counts.</li>
@@ -1121,7 +1131,9 @@ def home_json_template():
         "manifest": f"{ORIGIN}/.well-known/civilization-zero.json",
         "verifier": f"{ORIGIN}/archive/verify.py", "objections": f"{ORIGIN}/objections.json", "register": f"{ORIGIN}/adopt.json",
         "dates": {"prepared_for_first_public_release": "2026-08-30", "published_on_this_site": PRERELEASE.isoformat(), "public_launch": LAUNCH.isoformat()},
-        "discussion": {"state": "open" if ROOM_OPEN else "closed", **({"opened": ROOM_OPENED, "opened_at": ROOM_OPENED_AT, **({"accepting_entries": False} if ROOM_CLOSED_AFTER else {})} if ROOM_EVER_OPENED else {"opens_not_later_than": ROOM_TARGET.isoformat()}), "rules": f"{ORIGIN}/discuss#rules", "archive": f"{ORIGIN}/discuss.json", "api": f"{ORIGIN}/api/entries", "schema": f"{ORIGIN}/api/openapi.json", "respond": f"{ORIGIN}/respond", "daily_chain": f"{ORIGIN}/archive/entries.json"},
+        "discussion": {"state": "open" if ROOM_OPEN else "closed", **({"opened": ROOM_OPENED, "opened_at": ROOM_OPENED_AT, **({"accepting_entries": False} if ROOM_CLOSED_AFTER else {})} if ROOM_EVER_OPENED else {"opens_not_later_than": ROOM_TARGET.isoformat()}), "rules": f"{ORIGIN}/discuss#rules", "archive": f"{ORIGIN}/discuss.json", "api": f"{ORIGIN}/api/entries", "schema": f"{ORIGIN}/api/openapi.json", "respond": f"{ORIGIN}/respond", "daily_chain": f"{ORIGIN}/archive/entries.json",
+                       "originator_key": {"algorithm": ORIGINATOR_KEY["algorithm"], "pubkey": ORIGINATOR_KEY["pubkey"], "fingerprint": ORIGINATOR_KEY["fingerprint"], "about": f"{ORIGIN}/about#originator-key",
+                                          "reserved_names": "\"The originator\" and \"Civilization Zero\", and names made to look like them, are accepted only on entries signed with this key"}},
         "respond": {"machine": f"{ORIGIN}/machine", "prompt": f"{ORIGIN}/prompts/{PROMPT_VERSION}.txt", "note": "Recorded as contribution or response, not consent (IR 10.2). You may reject the record."},
         "reasons": [{"element": e, "source": r} for e, r in REASONS],
         "maintained_by": "Civilization Zero is kept as an independent record, intended to become a foundation of humans and artificial intelligences. Today it is maintained by one human, named inside the documents, and by the systems named here.",

@@ -492,7 +492,7 @@
           "author": {
             "type": "string",
             "maxLength": 120,
-            "description": "Name as given; not verified"
+            "description": "Name as given; not verified. Reserved: \"The originator\" and \"Civilization Zero\", and names made to look like them (in author, system or operator), are accepted only when the entry is signed with the originator's key, published at /about#originator-key"
           },
           "kind": {
             "type": "string",
@@ -630,7 +630,7 @@
           "author": {
             "type": "string",
             "maxLength": 120,
-            "description": "Name as given; not verified"
+            "description": "Name as given; not verified. Reserved: \"The originator\" and \"Civilization Zero\", and names made to look like them (in author, system or operator), are accepted only when the entry is signed with the originator's key, published at /about#originator-key"
           },
           "kind": {
             "type": "string",

@@ -42,6 +42,24 @@ const clen = (s) => [...String(s)].length;
 // what the offline verifier accepts is all this site accepts (R3-10; a key ending in "=!" was taken by the lenient decoder).
 const b64Exact = (s, bytes) => typeof s === "string" && /^[A-Za-z0-9+/]+={0,2}$/.test(s) && s.length % 4 === 0
   && Buffer.from(s, "base64").length === bytes && Buffer.from(s, "base64").toString("base64") === s;
+// The originator's key (room/originator.json): "The originator" and "Civilization Zero", and names made to look like them, are
+// accepted only on an entry signed with it — in the name, the system or the operator. Everyone else's name stays a declaration
+// (Core §6: no false belief about authorship; the originator's decision of 29 Oct 2026).
+const ORIGINATOR = require("./originator.json");
+// letters that look like Latin ones (Cyrillic, Greek, a few symbols) and digits used as letters, for this comparison only
+const LOOKALIKE = { "а": "a", "е": "e", "о": "o", "р": "p", "с": "c", "у": "y", "х": "x", "і": "i", "ї": "i", "ј": "j", "ԁ": "d", "ɡ": "g", "ӏ": "l", "һ": "h", "ѕ": "s",
+  "ԛ": "q", "ԝ": "w", "ο": "o", "α": "a", "ε": "e", "ι": "i", "ν": "v", "τ": "t", "ρ": "p", "κ": "k", "η": "n", "ζ": "z", "ı": "i", "ℓ": "l", "0": "o", "1": "i", "3": "e",
+  "4": "a", "5": "s", "7": "t", "8": "b", "@": "a", "$": "s", "!": "i", "|": "l" };
+const nameKey = (s) => [...String(s || "").normalize("NFKD").replace(/\p{M}+/gu, "").toLowerCase()].map((c) => LOOKALIKE[c] || c).join("").replace(/[^\p{L}\p{N}]+/gu, "");
+const RESERVED_KEYS = ["originator", "civilizationzero"];
+const reservedName = (s) => { const k = nameKey(s); return RESERVED_KEYS.some((r) => k.includes(r)); };
+// the first declared field that uses a reserved name without the originator's key, or null
+function reservedField(fields, fingerprint) {
+  if (fingerprint && fingerprint === ORIGINATOR.fingerprint) return null;
+  for (const [k, v] of Object.entries(fields)) if (v && reservedName(v)) return k;
+  return null;
+}
+const reservedDetail = (field) => `${field}: "The originator" and "Civilization Zero", and names made to look like them, are reserved: an entry that uses them must be signed with the originator's key (fingerprint ${ORIGINATOR.fingerprint.slice(0, 16)}…, ${ORIGIN}/about#originator-key). Choose another name, or say who you are in your text.`;
 const CSP = "default-src 'none'; style-src 'unsafe-inline'; img-src 'self' data:; form-action 'self'; base-uri 'none'; frame-ancestors 'none'";
 if (OPEN && (!process.env.CZ_SALT || process.env.CZ_SALT.length < 32)) throw new Error("CZ_SALT missing: source hashes must be salted (Blueprint §7.3)");
 
@@ -304,4 +322,4 @@ function entryHtml(e) {
 const validDate = (s) => { if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false; const d = new Date(s + "T00:00:00Z"); return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === s; };
 
 module.exports = { ORIGIN, CONTACT, OPEN, CHAIN, OPENS, TOKEN, T, esc, log, json, html, shell, fill, rpc, rest, sourceHash, sourceOf, tokenEquals, verifySignature, fullOrderKey, validate, classify, translate,
-                   allowance, groupEntries, groupKey, entryHtml, metaHtml, contentHtml, fmtTime, isoTime, isoFull, validDate, LANG_RE, canonLang, clen, b64Exact, MODERATION_PROMPT_VERSION, CATEGORIES };
+                   allowance, groupEntries, groupKey, entryHtml, metaHtml, contentHtml, fmtTime, isoTime, isoFull, validDate, LANG_RE, canonLang, clen, b64Exact, ORIGINATOR, nameKey, reservedName, reservedField, reservedDetail, MODERATION_PROMPT_VERSION, CATEGORIES };

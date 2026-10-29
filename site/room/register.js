@@ -109,6 +109,8 @@ function validateStatement(b) {
     if (!s.ok) return { error: s.reason === "encoding" ? "pubkey and sig: base64 exactly as RFC 4648 writes it, with padding — 32 bytes for the key, 64 for the signature" : s.reason === "key" ? "pubkey: not a canonical Ed25519 key of full order — a small-order or malformed key proves no continuity" : "sig: does not verify over the UTF-8 bytes of the canonical statement: " + statement };
     fingerprint = s.fingerprint;
   }
+  const reserved = R.reservedField({ signatory: out.signatory, institution: out.institution }, fingerprint);
+  if (reserved) return { error: R.reservedDetail(reserved) };
   return { value: { ...stmt, statement, statement_sha256: sha256(statement), trace_url: traceUrl, trace_host: host,
                     pubkey: signed ? String(b.pubkey) : "", sig: signed ? String(b.sig) : "", key_fingerprint: fingerprint } };
 }
