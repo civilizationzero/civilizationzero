@@ -1090,3 +1090,52 @@ returns json language sql security definer set search_path = public set timezone
     'last_log', (select json_build_object('day', day, 'sha256', sha256, 'count', count) from register_hashes order by day desc limit 1))
 $$;
 notify pgrst, 'reload schema';
+
+-- ================================================================ v6f (2026-10-29), migration cz_moderation_reviews_v6f
+-- Blueprint §7.5: "a classifier flags; a human decides; both actions are logged publicly". A decision to keep a flagged entry
+-- was not logged anywhere (the log held only flags and the hide/redact/unhide/unredact actions). Additive: a public table of
+-- the administrator's "keep" decisions, one per flag, with the entry's content hash and a written reason; the function that
+-- records one (the administrator's token); and the list of flags still awaiting a human decision.
+create table if not exists moderation_reviews (
+  id             bigint generated always as identity primary key,
+  at             timestamptz not null default now(),
+  flag_log_id    bigint not null unique references moderation_log(id),
+  entry_id       bigint not null references entries(id),
+  decision       text not null check (decision = 'keep'),
+  content_sha256 text not null,
+  reason         text not null check (char_length(reason) between 1 and 2000)
+);
+alter table moderation_reviews enable row level security;
+create policy "moderation reviews are public" on moderation_reviews for select using (true);
+grant select on moderation_reviews to anon, authenticated;
+
+create or replace function cz_review_keep(p_flag bigint, p_reason text, p_token text) returns jsonb
+language plpgsql security definer set search_path = public set timezone = 'UTC' as $$
+declare v_entry bigint; v_sha text;
+begin
+  if not cz_token_ok(p_token) then raise exception 'unauthorised'; end if;
+  if coalesce(char_length(btrim(p_reason)), 0) < 1 then raise exception 'a written reason is required'; end if;
+  select f.entry_id, e.content_sha256 into v_entry, v_sha
+    from moderation_log f join entries e on e.id = f.entry_id where f.id = p_flag and f.action = 'flag';
+  if not found then raise exception 'no such flag'; end if;
+  begin
+    insert into moderation_reviews (flag_log_id, entry_id, decision, content_sha256, reason) values (p_flag, v_entry, 'keep', v_sha, left(p_reason, 2000));
+  exception when unique_violation then raise exception 'already decided';
+  end;
+  return jsonb_build_object('flag', p_flag, 'entry', v_entry, 'decision', 'keep');
+end $$;
+grant execute on function cz_review_keep(bigint, text, text) to anon, authenticated;
+
+-- the flags still awaiting a human decision: a classifier's flag on an entry that is still published, with no human action on
+-- that entry after the flag and no "keep" recorded for it (all of it public already; listed in one place for the administrator)
+create or replace function cz_flags_open() returns table (flag_id bigint, flagged_at timestamptz, entry_id bigint, category text, classifier_model text,
+  classifier_prompt text, classifier_score numeric, received timestamptz, author text, kind text, lang text, content text, content_sha256 text)
+language sql stable security definer set search_path = public as $$
+  select f.id, f.at, e.id, f.category, f.classifier_model, f.classifier_prompt, f.classifier_score, e.received, e.author, e.kind, e.lang, e.content, e.content_sha256
+  from moderation_log f join entries e on e.id = f.entry_id
+  where f.action = 'flag' and e.state = 'published'
+    and not exists (select 1 from moderation_log h where h.entry_id = f.entry_id and h.actor = 'human' and h.action in ('hide', 'unhide', 'redact', 'unredact') and h.id > f.id)
+    and not exists (select 1 from moderation_reviews r where r.flag_log_id = f.id)
+  order by f.id asc limit 200
+$$;
+grant execute on function cz_flags_open() to anon, authenticated;

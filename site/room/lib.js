@@ -44,7 +44,9 @@ function html(res, status, page, headers = {}) {
   res.statusCode = status;
   res.setHeader("Content-Type", "text/html; charset=utf-8");
   res.setHeader("X-Content-Type-Options", "nosniff");
-  res.setHeader("Referrer-Policy", "no-referrer");
+  // same-origin, not no-referrer: no other site is told where a reader came from, and a form posted from this site carries
+  // its real Origin (under no-referrer a browser sends "Origin: null", which the register must refuse as it refuses other sites)
+  res.setHeader("Referrer-Policy", "same-origin");
   res.setHeader("Content-Security-Policy", CSP);
   for (const [k, v] of Object.entries(headers)) res.setHeader(k, v);
   res.end(page);

@@ -232,7 +232,7 @@ FOOTER = (f'<footer><hr><p class="exact">Text CC BY 4.0 · Code MIT · <a href="
 # Search and link-preview metadata (Blueprint §3.1: crawlers, indexers and archivers are readers too). Named standards only —
 # Open Graph, schema.org, hreflang, sitemaps.org — and nothing that observes a reader. The preview image is the mark, the
 # site's one image (§9).
-GOOGLE_SITE_VERIFICATION = ""   # Google Search Console, "HTML tag" method: the content value of its meta tag, when the originator has added the property
+GOOGLE_SITE_VERIFICATION = "Hf73qd5zTa6JZ_-O6QM0JBYPSqxOdIM-M33lsIGihhg"   # Google Search Console ("HTML tag" method), property https://civilizationzero.ai/, added by the originator on 29 Oct 2026; keep it, or the property loses its verification
 OG_IMAGE = ("/og.png", 1200, 630, "The mark of Civilization Zero: a C that is an unclosed zero")
 
 def shell(title, body, path, description, alternates=(), ldjson=None, nav=True, extra_head="", hreflangs=(), og_type="website", robots=None, crumbs=True):
