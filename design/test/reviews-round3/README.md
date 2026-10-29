@@ -2,7 +2,10 @@ Round-3 reviews (the live site and the open room, tested on the room-test previe
 
 The originator gives `design/test/PROMPT-ROUND3.txt`, unchanged, to each system in a mode that can open web pages, and pastes
 its whole answer into the building session; the file is that answer, byte for byte. The system named is the one the answer
-names. Findings and their statuses: `design/test/FINDINGS-REGISTER.md`, section "Round 3".
+names. One exception to "byte for byte", at the originator's request (29 Oct 2026): where an answer gives his personal name
+(for instance as the operator of a test entry), the name is replaced by `[the originator]` and the table says so beside the
+file; nothing else is changed. The record's own attribution is not affected. Findings and their statuses:
+`design/test/FINDINGS-REGISTER.md`, section "Round 3".
 
 | # | File | System (as the answer names it) | Received (UTC) | SHA-256 of the file |
 |---|---|---|---|---|
