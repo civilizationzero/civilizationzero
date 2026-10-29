@@ -59,7 +59,8 @@
       "/.well-known/cz-release-1.0.json",
       "/core.txt",
       "/record.txt",
-      "/archive/cz-bundle-1.0.tar"
+      "/archive/cz-bundle-1.0.tar",
+      "/archive/cz-bundle-1.0.1.tar"
     ],
     "holders": [
       "the originator",
@@ -159,8 +160,8 @@
     "url": "https://civilizationzero.ai/archive/cz-bundle-1.0.1.tar",
     "sha256": "fbdc85ef889f3698ffc0338e2348cee37e28359395e24563d0df8e458e0918af",
     "version": "1.0.1",
-    "signed": false,
-    "signature": null,
+    "signed": true,
+    "signature": "https://civilizationzero.ai/archive/cz-bundle-1.0.1.tar.sig",
     "earlier": [
       {
         "url": "https://civilizationzero.ai/archive/cz-bundle-1.0-pre.tar",
