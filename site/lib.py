@@ -37,7 +37,7 @@ INDEXNOW_KEY = "5dbddf2e3c978c9f9cf5e54812ab90ef"   # public by design: /<key>.t
 # rel="me". Filled in as each account exists; until then nothing is emitted.
 PRESS_PUBLISHED = False   # the press kit at /press, from press/PRESS-KIT.md: published once the originator approves the kit
 ATPROTO_DID = "did:plc:gwscq3c3msvucpbatvrrm2f4"   # set 29 Oct 2026 (the account civilizationzero.bsky.social); "did:plc:…" from Bluesky ("I have my own domain", "No DNS panel"); the handle is then @civilizationzero.ai
-SOCIAL = ["https://bsky.app/profile/civilizationzero.ai"]   # profile addresses: each is a rel="me" link on every page and a schema.org sameAs of the publisher
+SOCIAL = ["https://bsky.app/profile/civilizationzero.ai", "https://x.com/czrecord"]   # profile addresses: each is a rel="me" link on every page and a schema.org sameAs of the publisher
 IA_RELEASE = {"/": "https://web.archive.org/web/20261028174615/https://civilizationzero.ai/"}   # the snapshot at release (28 Oct 2026)
 def _ia_latest():   # the latest Internet Archive snapshot of each page, as the workflow `announce` keeps it in the repository
     f = ROOT / "archive" / "internet-archive" / "snapshots.tsv"
