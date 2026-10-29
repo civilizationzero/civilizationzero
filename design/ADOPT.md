@@ -114,7 +114,10 @@ accountability, appeal and right of exit (IR 0.3); the register records the stat
   statement_sha256, trace_url, key fingerprint, public key and signature, state and category. The index is
   `/archive/register.json`, one day at `/archive/register/{date}.json`; `verify.py` checks the chain, every statement's hash
   and every signature, and that each revision or withdrawal names an earlier, traced adoption and comes from its key (if it
-  was signed) or its page (if not) — the rule of §4, checked on the hashed lines.
+  was signed) or its page (if not) — the rule of §4, checked on the hashed lines. The public `daily-archive` job copies each
+  hashed day to the repository (`archive/register/{date}.json`, `.log` = the exact hashed bytes, `.log.ots` = the
+  OpenTimestamps proof of the day's hash), as it does the room's; `ots-upgrade` upgrades those proofs and `verify-live` checks
+  the copies.
 - Limits: 5 statements per day per source (a salted hash of the network address, cleared after 30 days), 200 a day in all; 10
   trace checks per hour per source; one check of a record in 10 minutes (a check refused for that reason costs nothing); the
   daily job re-checks up to 50 received statements, those that waited longest since their last check (or their receipt)

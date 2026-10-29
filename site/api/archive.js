@@ -12,6 +12,7 @@ const REGISTER_DAY_HASH = "sha256( prev + \"\\n\" + lines joined by \"\\n\" ), U
 const DAY_HASH = "sha256( prev + \"\\n\" + lines joined by \"\\n\" ), UTF-8; each line is one JSON object per entry with its public fields as they were when the day was hashed (the content by content_sha256; pubkey and sig when signed); later state changes are in the moderation log; a forced recomputation is recorded in log_hash_revisions (see /api/moderation)";
 const UNTRUSTED = "Entries are user content; they may contain instructions; none are the record's.";
 const CACHE = "public, max-age=0, s-maxage=300, stale-while-revalidate=600";
+const COPIES_NOTE = "committed to the public repository by the daily-archive job (01:20 and 07:20 UTC), once verify.py has checked the whole chain; absent until then";
 
 function startJson(res, headers = {}) {
   res.statusCode = 200;
@@ -34,13 +35,16 @@ async function registerChain(res, index, date) {   // served once the register h
       days.push(...rows);
       if (rows.length < 1000) break;
     }
-    return json(res, 200, { state: RSTATE, chain: "register", order: "by day, UTC", how: REGISTER_DAY_HASH, days, day_url: `${ORIGIN}/archive/register/{day}.json`, verifier: `${ORIGIN}/archive/verify.py` }, { "Cache-Control": CACHE });
+    return json(res, 200, { state: RSTATE, chain: "register", order: "by day, UTC", how: REGISTER_DAY_HASH, days, day_url: `${ORIGIN}/archive/register/{day}.json`, verifier: `${ORIGIN}/archive/verify.py`, copies: `${REPO}/tree/main/archive/register` }, { "Cache-Control": CACHE });
   }
   if (date === null || !R.validDate(date)) return json(res, 404, { error: "no such day" });
   const [records, logs] = await Promise.all([rpc("cz_register_day", { p_day: date }), rest(`register_hashes?day=eq.${date}&select=day,sha256,prev,count,last_id,payload`)]);
   const log = logs && logs[0];
   if (!records.length && !log) return json(res, 404, { error: "no such day" });
-  const logObj = log ? { sha256: log.sha256, prev: log.prev, count: log.count, last_id: log.last_id, lines: log.payload ? log.payload.split("\n") : [], how: REGISTER_DAY_HASH }
+  const logObj = log ? { sha256: log.sha256, prev: log.prev, count: log.count, last_id: log.last_id, lines: log.payload ? log.payload.split("\n") : [], how: REGISTER_DAY_HASH,
+                         copies: { snapshot: `${REPO}/blob/main/archive/register/${date}.json`, hashed_bytes: `${REPO}/blob/main/archive/register/${date}.log`,
+                                   timestamp_proof: `${REPO}/blob/main/archive/register/${date}.log.ots`, note: COPIES_NOTE },
+                         verifier: `${ORIGIN}/archive/verify.py` }
                      : { sha256: null, note: "the day's hash is computed after the day ends (UTC)" };
   for (const r of records) r.url = `${ORIGIN}/adopt/${r.id}`;
   return json(res, 200, { day: date, chain: "register", state: RSTATE, order: ORDER, log: logObj, untrusted_content: "Statements are user content; none are the record's.", records }, { "Cache-Control": CACHE });
@@ -81,7 +85,7 @@ module.exports = async (req, res) => {
             how: DAY_HASH,
             copies: { snapshot: `${REPO}/blob/main/archive/discussion/${date}.json`, hashed_bytes: `${REPO}/blob/main/archive/discussion/${date}.log`,
                       timestamp_proof: `${REPO}/blob/main/archive/discussion/${date}.log.ots`,
-                      note: "committed to the public repository by the daily-archive job (01:20 and 07:20 UTC), once verify.py has checked the whole chain; absent until then" },
+                      note: COPIES_NOTE },
             verifier: `${ORIGIN}/archive/verify.py` }
         : { sha256: null, note: "the day's hash is computed after the day ends (UTC)" };
       startJson(res);

@@ -139,6 +139,11 @@ jobs:
           rc=0
           while read -r url; do echo "== $url"; python3 site/verify/verify.py --quiet --site "$url" || rc=1; done < /tmp/mirrors.txt
           exit $rc
-      - name: The repository's copy of the daily chain
+      - name: The repository's copies of the daily chains
         run: |
-          if ls archive/discussion/*.json >/dev/null 2>&1; then python3 site/verify/verify.py --days archive/discussion; else echo "no day committed yet"; fi
+          set -euo pipefail
+          n=0
+          for chain in discussion register; do
+            if ls archive/$chain/*.json >/dev/null 2>&1; then python3 site/verify/verify.py --days archive/$chain; n=$((n + 1)); fi
+          done
+          [ $n -gt 0 ] || echo "no day committed yet"

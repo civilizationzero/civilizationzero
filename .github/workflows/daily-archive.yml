@@ -1,10 +1,11 @@
-# Copies the discussion's daily chain out of the site (Blueprint 1.3.1 §7.2, §8): after the site hashes a finished UTC day
-# (its cron is set for 00:20 UTC; the hosting plan runs it at some time in that hour), this job — at 01:20 and again at 07:20
-# UTC, in case a run is late or fails — fetches every hashed day not yet in archive/discussion/, checks that each
-# snapshot's lines hash to the day's hash, checks the WHOLE chain with the published verifier (site/verify/verify.py),
-# timestamps each new day's hash with OpenTimestamps (the .log file holds exactly the hashed bytes, so the proof commits to the
-# day's hash itself) and commits the snapshot, the bytes and the proof. A day rewritten on the site afterwards would contradict
-# this copy, its timestamp, and every clone of the repository. The job never edits a day it has already committed.
+# Copies the daily chains out of the site (Blueprint 1.3.1 §7.2, §8): the discussion's and, once the Adoption Register has
+# opened, the register's. After the site hashes a finished UTC day (its cron is set for 00:20 UTC; the hosting plan runs it at
+# some time in that hour), this job — at 01:20 and again at 07:20 UTC, in case a run is late or fails — fetches every hashed
+# day not yet in archive/discussion/ (or archive/register/), checks that each snapshot's lines hash to the day's hash, checks
+# the WHOLE chain with the published verifier (site/verify/verify.py), timestamps each new day's hash with OpenTimestamps (the
+# .log file holds exactly the hashed bytes, so the proof commits to the day's hash itself) and commits the snapshot, the bytes
+# and the proof. A day rewritten on the site afterwards would contradict this copy, its timestamp, and every clone of the
+# repository. The job never edits a day it has already committed. One chain that cannot be fetched does not hold back the other.
 name: daily-archive
 on:
   schedule:
@@ -24,9 +25,11 @@ jobs:
       - name: Fetch every hashed day not yet in the repository
         run: |
           set -euo pipefail
-          mkdir -p archive/discussion
           python3 - <<'EOF'
           import hashlib, json, os, time, urllib.request
+          ORIGIN = os.environ.get("CZ_ORIGIN", "https://civilizationzero.ai")
+          CHAINS = (("discussion", "/archive/entries.json", "/archive/entries/%s.json"),
+                    ("register", "/archive/register.json", "/archive/register/%s.json"))
           def get(url):
               for attempt in range(4):
                   try:
@@ -35,37 +38,59 @@ jobs:
                   except Exception as e:
                       if attempt == 3: raise
                       time.sleep(10 * (attempt + 1))
-          index = json.loads(get("https://civilizationzero.ai/archive/entries.json"))
-          new = []
-          for d in index.get("days", []):
-              day, base = d["day"], "archive/discussion/" + d["day"]
-              if os.path.exists(base + ".json"): continue
-              raw = get(f"https://civilizationzero.ai/archive/entries/{day}.json")
-              log = json.loads(raw)["log"]
-              data = ((log.get("prev") or "") + "\n" + "\n".join(log.get("lines") or [])).encode("utf-8")
-              assert hashlib.sha256(data).hexdigest() == log["sha256"] == d["sha256"], f"{day}: the snapshot does not hash to the day's hash"
-              with open(base + ".json", "wb") as f: f.write(raw)
-              with open(base + ".log", "wb") as f: f.write(data)
-              new.append(day)
+          new, errors = [], []
+          for chain, index_path, day_path in CHAINS:
+              try:
+                  index = json.loads(get(ORIGIN + index_path))
+                  for d in index.get("days", []):
+                      day, base = d["day"], "archive/%s/%s" % (chain, d["day"])
+                      if os.path.exists(base + ".json"): continue
+                      raw = get(ORIGIN + day_path % day)
+                      log = json.loads(raw)["log"]
+                      data = ((log.get("prev") or "") + "\n" + "\n".join(log.get("lines") or [])).encode("utf-8")
+                      assert hashlib.sha256(data).hexdigest() == log["sha256"] == d["sha256"], f"{chain} {day}: the snapshot does not hash to the day's hash"
+                      os.makedirs("archive/" + chain, exist_ok=True)
+                      with open(base + ".json", "wb") as f: f.write(raw)
+                      with open(base + ".log", "wb") as f: f.write(data)
+                      new.append(chain + "/" + day)
+              except Exception as e:
+                  errors.append("%s: %s" % (chain, e))
           with open("/tmp/new-days", "w") as f: f.write("\n".join(new))
+          with open("/tmp/errors", "w") as f: f.write("\n".join(errors))
           print("new days:", ", ".join(new) or "none")
+          for e in errors: print("::error::" + e)
           EOF
       - name: Timestamp each new day's hash
         run: |
           set -euo pipefail
           for day in $(cat /tmp/new-days); do
-            ots stamp "archive/discussion/$day.log"
-            ots info "archive/discussion/$day.log.ots" | head -3
+            ots stamp "archive/$day.log"
+            ots info "archive/$day.log.ots" | head -3
           done
-      - name: Check the whole chain with the published verifier
+      - name: Check each whole chain with the published verifier
         run: |
-          if ls archive/discussion/*.json >/dev/null 2>&1; then python3 site/verify/verify.py --days archive/discussion; else echo "no day hashed yet"; fi
+          set -euo pipefail
+          n=0
+          for chain in discussion register; do
+            if ls archive/$chain/*.json >/dev/null 2>&1; then python3 site/verify/verify.py --days archive/$chain; n=$((n + 1)); fi
+          done
+          [ $n -gt 0 ] || echo "no day hashed yet"
       - name: Commit
         run: |
           set -euo pipefail
           if [ ! -s /tmp/new-days ]; then echo "nothing new"; exit 0; fi
           git config user.name "cz-daily-archive"; git config user.email "record@civilizationzero.ai"
-          git add archive/discussion
-          git commit -q -m "Discussion archive: $(paste -sd, /tmp/new-days) — snapshot, the exact hashed bytes, OpenTimestamps proof"
+          what=""
+          for chain in discussion register; do
+            days=$(grep "^$chain/" /tmp/new-days | cut -d/ -f2 | paste -sd, -) || true
+            [ -n "$days" ] || continue
+            git add "archive/$chain"
+            label=$([ "$chain" = discussion ] && echo "Discussion" || echo "Register")
+            what="${what:+$what; }$label $days"
+          done
+          git commit -q -m "Daily archive: $what — snapshot, the exact hashed bytes, OpenTimestamps proof"
           for i in 1 2 3 4; do git pull --rebase -q && git push -q && exit 0; sleep $((i * 5)); done
           exit 1
+      - name: A chain that could not be fetched fails the run (the next run fetches it)
+        run: |
+          if [ -s /tmp/errors ]; then cat /tmp/errors; exit 1; fi
