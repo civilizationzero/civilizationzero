@@ -22,7 +22,10 @@ REGISTER_OPEN = False                      # the Adoption Register (design/ADOPT
 REGISTER_OPENED = None                     # the UTC date it first opened (set with REGISTER_OPEN; then kept): from then on its records and chain stay served
 BUNDLE_VERSION = "1.0.1"                   # the current preservation bundle; earlier bundles stay at their addresses (site/archived-bundles/)
 BUNDLE_DAYS_THROUGH = "2026-10-28"                # the last UTC day of the discussion archive (archive/discussion/) the current bundle carries; None = none yet
-DOI = "10.5281/zenodo.23741225"            # Zenodo DOI of the current release (v1.0, released 2026-10-28 18:36 UTC); the concept DOI resolves to the latest version
+DOI_VERSIONS = [("v1.0.1", "10.5281/zenodo.23751341", "2026-10-29"),   # Zenodo deposits, newest first: one per GitHub release (the repository at its tag)
+                ("v1.0", "10.5281/zenodo.23741225", "2026-10-28"),
+                ("v1.0-pre", "10.5281/zenodo.23740318", "2026-10-28")]
+DOI = DOI_VERSIONS[0][1]                   # the latest release's DOI; the concept DOI below always resolves to the latest version
 DOI_CONCEPT = "10.5281/zenodo.23740317"
 IA_SNAPSHOTS = {"/": "https://web.archive.org/web/20261028174615/https://civilizationzero.ai/"}   # Internet Archive snapshots, by path
 RATE_PER_10MIN = 5                         # the room's limits, disclosed on /machine and in the rules (the database config carries the live values)

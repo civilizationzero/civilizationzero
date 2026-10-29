@@ -6,7 +6,7 @@ in `.zenodo.json`; each deposit is the repository at the release's tag.
 **Deposited (28 October 2026, UTC):** v1.0-pre — doi:10.5281/zenodo.23740318 (the repository at tag `v1.0-pre`, with the
 unsigned pre-release bundle); v1.0 — doi:10.5281/zenodo.23741225 (at tag `v1.0`, with the signed bundle 1.0 and its
 signature); all versions — doi:10.5281/zenodo.23740317. Each later GitHub release is archived as a new version of the same
-record.
+record: v1.0.1 — doi:10.5281/zenodo.23751341 (29 October 2026, UTC; the signed bundle 1.0.1 and its signature).
 
 **Fallback, not used so far: a manual deposit.** It would hold the signed preservation bundle of the release (the canonical
 texts and their JSON forms, the objections register, the blueprint, every outside review and the findings register, the
