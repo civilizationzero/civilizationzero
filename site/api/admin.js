@@ -22,6 +22,7 @@ const NEVER = "disagreement, rejection of the record, hostility to the project, 
 const COOKIE = "__Host-cz_admin";
 const MAX_AGE_MS = 8 * 3600 * 1000;    // a session ends 8 hours after sign-in at the latest
 const IDLE_MS = 30 * 60 * 1000;        // and 30 minutes after its last request
+const CLOCK_MARGIN_MS = 2000;          // between the function's clock and the database's (see session())
 const REASON_MAX = 2000, REGISTER_REASON_MAX = 500;   // the room's and the register's limits for a written reason (characters)
 // failed sign-ins per source (the salted hash of the address), in this instance: 10 within 15 minutes of the first lock that
 // source out until those 15 minutes are over. Entries expire and the map is bounded; the passphrase's entropy (128 bits or more)
@@ -43,8 +44,10 @@ function passphraseOk(pass, panel) {
   if (typeof pass !== "string" || !pass || pass.length > 1024) return false;
   return crypto.timingSafeEqual(crypto.createHash("sha256").update(pass, "utf8").digest(), Buffer.from(panel, "hex"));
 }
-// two keys, one for the cookie and one for the CSRF tokens, so that neither can stand in for the other
-const keyOf = (label, panel) => crypto.createHmac("sha256", R.TOKEN).update(`${label}|${panel}`).digest();
+// two keys, one for the cookie and one for the CSRF tokens, so that neither can stand in for the other; both bound to the kind of
+// deployment, so that a session from a preview (which shares the secrets but reads the test database's sign-outs) is not one in
+// production, and the reverse
+const keyOf = (label, panel) => crypto.createHmac("sha256", R.TOKEN).update(`${label}|${panel}|${process.env.VERCEL_ENV || "local"}`).digest();
 const macOf = (label, panel, s) => crypto.createHmac("sha256", keyOf(label, panel)).update(s).digest("base64url");
 function same(a, b) { const x = Buffer.from(String(a)), y = Buffer.from(String(b)); return x.length === y.length && crypto.timingSafeEqual(x, y); }
 function cookies(req) {
@@ -52,14 +55,18 @@ function cookies(req) {
   for (const part of String(req.headers.cookie || "").split(";")) { const i = part.indexOf("="); if (i > 0) out[part.slice(0, i).trim()] = part.slice(i + 1).trim(); }
   return out;
 }
-// the cookie's payload { n (nonce), iat, exp, seen } (milliseconds) if its MAC verifies and it has neither expired nor idled out
-function cookieSession(c, panel, now) {
+// the cookie's payload { n (nonce), iat, exp, seen } (milliseconds) if its MAC verifies, whatever its age
+function cookiePayload(c, panel) {
   if (!c || c.length > 512) return null;
   const [p, s, extra] = c.split(".");
   if (!p || !s || extra !== undefined || !same(s, macOf("cz-admin-cookie-v2", panel, p))) return null;
   let v; try { v = JSON.parse(Buffer.from(p, "base64url").toString("utf8")); } catch { return null; }
-  if (!v || typeof v.n !== "string" || ![v.iat, v.exp, v.seen].every(Number.isFinite) || v.exp !== v.iat + MAX_AGE_MS) return null;
-  return now < v.exp && now - v.seen < IDLE_MS ? v : null;
+  return v && typeof v.n === "string" && [v.iat, v.exp, v.seen].every(Number.isFinite) && v.exp === v.iat + MAX_AGE_MS ? v : null;
+}
+// the same, if it has neither expired nor idled out
+function cookieSession(c, panel, now) {
+  const v = cookiePayload(c, panel);
+  return v && now < v.exp && now - v.seen < IDLE_MS ? v : null;
 }
 // the latest sign-out, from the database: a session issued at or before it has ended. Fails closed: an error is thrown, never ignored.
 async function signedOutAt() {
@@ -74,7 +81,10 @@ async function session(req, panel) {
   const c = cookies(req)[COOKIE];
   const v = cookieSession(c, panel, Date.now());
   if (!v) return { s: null, presented: !!c };
-  return { s: v.iat > await signedOutAt() ? v : null, presented: true };
+  // the session's iat is the function's clock, the sign-out the database's: a session must be younger than the latest sign-out
+  // by CLOCK_MARGIN_MS, so that a clock a little ahead cannot keep a session the sign-out ended (fails closed: a sign-in in the
+  // seconds right after a sign-out has to be repeated)
+  return { s: v.iat > await signedOutAt() + CLOCK_MARGIN_MS ? v : null, presented: true };
 }
 function cookieOf(v, panel, now) {
   const p = Buffer.from(JSON.stringify(v)).toString("base64url");
@@ -114,6 +124,7 @@ const page = (title, body) => R.shell({ title: `${title} · Civilization Zero`, 
   body: `<main class="admin">${body}</main>` });
 const redirect = (res, to, headers = {}) => { res.statusCode = 303; res.setHeader("Location", to); res.setHeader("Cache-Control", "no-store"); for (const [k, v] of Object.entries(headers)) res.setHeader(k, v); res.end(); };
 const t = (x) => (x ? `<time datetime="${esc(R.isoTime(x))}">${esc(R.fmtTime(x))}</time>` : "—");
+const num = (x) => (Number.isFinite(Number(x)) ? String(Number(x)) : "?");   // counts and ids from the database, printed as numbers only
 const opts = (list, sel) => list.map((c) => `<option value="${esc(c)}"${c === sel ? " selected" : ""}>${esc(c.replace(/_/g, " "))}</option>`).join("");
 const hidden = (s, panel) => `<input type="hidden" name="csrf" value="${esc(csrfOf(s, panel))}">`;
 const bdi = (x) => `<bdi dir="auto">${esc(x)}</bdi>`;   // a string someone else wrote, isolated from the text around it (any direction)
@@ -148,19 +159,19 @@ async function dashboard(s, panel, notice, error) {
   const csrf = hidden(s, panel);
 
   const status = `<section aria-labelledby="h-st"><h2 id="h-st">Status</h2><table>
-<tr><th>The room</th><td>${R.OPEN ? "open" : R.CHAIN ? "closed to new entries (it opened before)" : "not open"}${st ? ` · ${st.entries} entries (${st.published} published, ${st.hidden} hidden, ${st.redacted} redacted) · today ${st.today} of ${st.daily_intake_max} · ${st.unclassified} not yet screened by the classifier` : ` · ${na}`}</td></tr>
-<tr><th>Daily chain</th><td>${st ? (lastDay ? `last hashed day ${esc(lastDay)} (${st.last_log.count} entries)` : "no day hashed yet") : na}${chainLate ? ` <strong>— yesterday (${esc(yesterday)}) is not hashed yet: check the daily job's logs</strong>` : ""} · <a href="/archive/entries.json">the chain</a></td></tr>
+<tr><th>The room</th><td>${R.OPEN ? "open" : R.CHAIN ? "closed to new entries (it opened before)" : "not open"}${st ? ` · ${num(st.entries)} entries (${num(st.published)} published, ${num(st.hidden)} hidden, ${num(st.redacted)} redacted) · today ${num(st.today)} of ${num(st.daily_intake_max)} · ${num(st.unclassified)} not yet screened by the classifier` : ` · ${na}`}</td></tr>
+<tr><th>Daily chain</th><td>${st ? (lastDay ? `last hashed day ${esc(lastDay)} (${num(st.last_log.count)} entries)` : "no day hashed yet") : na}${chainLate ? ` <strong>— yesterday (${esc(yesterday)}) is not hashed yet: check the daily job's logs</strong>` : ""} · <a href="/archive/entries.json">the chain</a></td></tr>
 <tr><th>Translation budget</th><td>${bu ? `${esc(bu.month || "")}: ${cents(bu.spent_cents)} of ${cents(bu.cap_cents)}` : na}</td></tr>
-<tr><th>Adoption Register</th><td>${G.OPEN ? "open" : G.CHAIN ? "closed to new statements (it opened before)" : "not open (opening is a change in the build)"}${rs ? ` · ${rs.traced} traced, ${rs.received} received and not traced, ${rs.hidden} hidden` : ""} · <a href="/adopt">/adopt</a></td></tr>
+<tr><th>Adoption Register</th><td>${G.OPEN ? "open" : G.CHAIN ? "closed to new statements (it opened before)" : "not open (opening is a change in the build)"}${rs ? ` · ${num(rs.traced)} traced, ${num(rs.received)} received and not traced, ${num(rs.hidden)} hidden` : ""} · <a href="/adopt">/adopt</a></td></tr>
 <tr><th>Time</th><td>${esc(now.toISOString().slice(0, 16).replace("T", " "))} UTC</td></tr></table></section>`;
 
   let flagHtml;
   if (!flags.ok) flagHtml = `<p>${na}</p>`;
   else if (!flags.v.length) flagHtml = "<p>None. Every flag has a human decision.</p>";
-  else flagHtml = flags.v.map((f) => `<fieldset><legend>Flag #${f.flag_id} on <a href="/discuss/${f.entry_id}">entry #${f.entry_id}</a></legend>
+  else flagHtml = flags.v.map((f) => `<fieldset><legend>Flag #${num(f.flag_id)} on <a href="/discuss/${num(f.entry_id)}">entry #${num(f.entry_id)}</a></legend>
 <p class="src">${t(f.flagged_at)} · ${esc((f.category || "").replace(/_/g, " "))} · score ${esc(f.classifier_score)} · ${esc(f.classifier_model || "")} (${esc(f.classifier_prompt || "")}) · by ${bdi(f.author)} (declared ${esc(f.kind)}${f.lang ? `, ${esc(f.lang)}` : ""}), received ${t(f.received)}</p>
 <div class="content" dir="auto" lang="${esc(f.lang || "")}">${esc(f.content || "")}</div>
-<form class="respond" method="post" action="/admin">${csrf}<input type="hidden" name="do" value="decide"><input type="hidden" name="flag" value="${f.flag_id}"><input type="hidden" name="entry" value="${f.entry_id}">
+<form class="respond" method="post" action="/admin">${csrf}<input type="hidden" name="do" value="decide"><input type="hidden" name="flag" value="${num(f.flag_id)}"><input type="hidden" name="entry" value="${num(f.entry_id)}">
 <div class="row"><label>Decision <select name="decision"><option value="keep">keep — no ground applies</option><option value="hide">hide</option><option value="redact">redact</option></select></label>
 <label>Category (for hide or redact) <select name="category"><option value="">—</option><optgroup label="hide">${opts(HIDE)}</optgroup><optgroup label="redact">${opts(REDACT)}</optgroup></select></label></div>
 <label>Written reason (public) <input name="reason" required maxlength="2000"></label>
@@ -178,10 +189,10 @@ async function dashboard(s, panel, notice, error) {
 <label>For a redaction: the content with markers in place of what is removed <textarea name="redacted_text" maxlength="6000"></textarea></label>
 <p><button type="submit">Apply</button></p></form></section>`;
 
-  const recentRows = recent.ok ? recent.v.map((e) => `<tr><td><a href="/discuss/${e.id}">#${e.id}</a></td><td>${t(e.received)}</td><td>${esc(e.state)}${e.category ? ` — ${esc(e.category)}` : ""}</td><td>${bdi(e.author)} (${esc(e.kind)})</td><td>${bdi(String(e.content || e.redacted_text || "").slice(0, 120))}${String(e.content || "").length > 120 ? "…" : ""}</td></tr>`).join("") : "";
+  const recentRows = recent.ok ? recent.v.map((e) => `<tr><td><a href="/discuss/${num(e.id)}">#${num(e.id)}</a></td><td>${t(e.received)}</td><td>${esc(e.state)}${e.category ? ` — ${esc(e.category)}` : ""}</td><td>${bdi(e.author)} (${esc(e.kind)})</td><td>${bdi(String(e.content || e.redacted_text || "").slice(0, 120))}${String(e.content || "").length > 120 ? "…" : ""}</td></tr>`).join("") : "";
   const recentSec = `<section aria-labelledby="h-re"><h2 id="h-re">Newest entries</h2>${recent.ok ? (recentRows ? `<div class="scroll"><table><tr><th>Id</th><th>Received</th><th>State</th><th>Declared author</th><th>Beginning</th></tr>${recentRows}</table></div>` : "<p>No entries yet.</p>") : `<p>${na}</p>`}</section>`;
 
-  const hiddenSec = `<section aria-labelledby="h-hi"><h2 id="h-hi">Hidden and redacted</h2>${hiddenList.ok ? (hiddenList.v.length ? "<ul>" + hiddenList.v.map((h) => `<li><a href="/discuss/${h.id}">#${h.id}</a> — ${esc(h.state)}, ${esc(h.category || "")}, decided ${t(h.updated)}</li>`).join("") + "</ul>" : "<p>None.</p>") : `<p>${na}</p>`}<p class="src">To reverse a decision, use "Act on an entry" with unhide or unredact, and a reason.</p></section>`;
+  const hiddenSec = `<section aria-labelledby="h-hi"><h2 id="h-hi">Hidden and redacted</h2>${hiddenList.ok ? (hiddenList.v.length ? "<ul>" + hiddenList.v.map((h) => `<li><a href="/discuss/${num(h.id)}">#${num(h.id)}</a> — ${esc(h.state)}, ${esc(h.category || "")}, decided ${t(h.updated)}</li>`).join("") + "</ul>" : "<p>None.</p>") : `<p>${na}</p>`}<p class="src">To reverse a decision, use "Act on an entry" with unhide or unredact, and a reason.</p></section>`;
 
   const trSec = `<section aria-labelledby="h-tr"><h2 id="h-tr">Correct a machine translation</h2>
 <form class="respond" method="post" action="/admin">${csrf}<input type="hidden" name="do" value="translation">
@@ -263,8 +274,13 @@ async function perform(b) {
   return { error: "unknown action" };
 }
 
-// Held back from production until the findings of its security review (29 Oct 2026) are fixed; previews serve it.
-const IN_PRODUCTION = false;
+// Served in production since its second, independent review (29 Oct 2026): no blocker (FINDINGS-REGISTER, "/admin").
+// Runbook. To revoke the passphrase, change CZ_ADMIN_PANEL_SHA256 and also rotate CZ_ADMIN_TOKEN (in the environment and in
+// config admin_token_sha256), then redeploy: every older deployment keeps the variables it was built with, and only the new
+// database token makes their /admin fail closed. To end every session on every deployment at once, sign out (or, as the
+// database owner, set config admin_sessions_not_before to a later time; it never moves back on its own). Locked out after ten
+// wrong passphrases from one address: wait 15 minutes or change network.
+const IN_PRODUCTION = true;
 
 module.exports = async (req, res) => {
   const url = new URL(req.url, "http://x");
@@ -307,10 +323,12 @@ module.exports = async (req, res) => {
       failures.delete(src);
       return redirect(res, "/admin?done=signed_in", { "Set-Cookie": newSession(panel) });
     }
-    const { s, presented } = await session(req, panel);
-    if (!s) return send(res, 401, loginPage({ alert: "The session has ended. Sign in again." }), presented ? { "Set-Cookie": endSession() } : {});
-    if (!same(String(b.csrf || ""), csrfOf(s, panel))) return send(res, 403, page("Administration", '<h1>Not accepted</h1><p>The form is out of date. <a href="/admin">Reload the page</a> and try again.</p>'), { "Set-Cookie": slide(s, panel) });
     if (b.do === "logout") {   // on the server: every session issued until now ends, wherever its cookie is
+      // honoured from any cookie this page issued, even one that has idled out or expired, with that cookie's own CSRF token:
+      // raising the latest sign-out can only end sessions, never open one (second review, N1)
+      const v = cookiePayload(cookies(req)[COOKIE], panel);
+      if (!v) return send(res, 401, loginPage({ alert: "The session has ended. Sign in again." }), cookies(req)[COOKIE] ? { "Set-Cookie": endSession() } : {});
+      if (!same(String(b.csrf || ""), csrfOf(v, panel))) return send(res, 403, page("Administration", '<h1>Not accepted</h1><p>The form is out of date. <a href="/admin">Reload the page</a> and try again.</p>'));
       try { await rpc("cz_admin_signout", { p_token: R.TOKEN }); }
       catch (e) {
         R.log("admin: sign-out", e);
@@ -318,6 +336,9 @@ module.exports = async (req, res) => {
       }
       return redirect(res, "/admin?done=signed_out", { "Set-Cookie": endSession() });
     }
+    const { s, presented } = await session(req, panel);
+    if (!s) return send(res, 401, loginPage({ alert: "The session has ended. Sign in again." }), presented ? { "Set-Cookie": endSession() } : {});
+    if (!same(String(b.csrf || ""), csrfOf(s, panel))) return send(res, 403, page("Administration", '<h1>Not accepted</h1><p>The form is out of date. <a href="/admin">Reload the page</a> and try again.</p>'), { "Set-Cookie": slide(s, panel) });
     let r;
     try { r = await perform(b); }
     catch (e) { const known = errText(e); if (!known) throw e; r = { error: known }; }

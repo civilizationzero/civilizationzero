@@ -68,7 +68,10 @@ jobs:
               if l["actor"] == "human" and l["action"] in ("hide", "unhide", "redact", "unredact"):
                   last_human[l["entry_id"]] = max(last_human.get(l["entry_id"], 0), l["id"])
           kept_flags = {k["flag_log_id"] for k in kept}
-          flags = [l for l in log if l["action"] == "flag" and l["id"] not in kept_flags and last_human.get(l["entry_id"], 0) < l["id"]]
+          # and, as the administrator's page counts them, a flag on an entry that is hidden or redacted now is not awaiting anyone
+          # (a hide can land before the classifier's flag is written)
+          not_published = {h["id"] for h in mod.get("hidden_and_redacted", [])}
+          flags = [l for l in log if l["action"] == "flag" and l["id"] not in kept_flags and l["entry_id"] not in not_published and last_human.get(l["entry_id"], 0) < l["id"]]
           lines = [f"- entry #{f['entry_id']} — {f['category']} (score {f['classifier_score']}) — https://civilizationzero.ai/discuss/{f['entry_id']}" for f in flags]
           n = len(latest.get("entries", []))
           newest = latest["entries"][0]["id"] if n else 0

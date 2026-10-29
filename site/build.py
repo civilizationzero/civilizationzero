@@ -361,8 +361,12 @@ OPENAPI = {
         "/archive/register/{date}.json": {"get": {"summary": "One UTC day of the register, with its chained hash and the exact lines hashed",
                                                   "parameters": [{"name": "date", "in": "path", "required": True, "schema": {"type": "string", "format": "date"}}],
                                                   "responses": {"200": {"description": "The day"}, "404": {"description": "No such day"}}}},
-        "/api/moderation": {"get": {"summary": "The public moderation log (flags and decisions with model, prompt version, score, content hash) and the hidden/redacted list by month and language",
-                                    "responses": {"200": {"description": "The log"}}}},
+        "/api/moderation": {"get": {"summary": "The public moderation log (flags and decisions with model, prompt version, score, content hash), the keep decisions after flags, and the hidden/redacted list by month and language",
+                                    "parameters": [
+                                        {"name": "after", "in": "query", "schema": {"type": "integer", "default": 0}, "description": "The log (log): rows with an id greater than this, ascending; the next page is ?after=<next_after>, null on the last page"},
+                                        {"name": "kept_after", "in": "query", "schema": {"type": "integer", "default": 0}, "description": "The keep decisions (kept_after_flag): rows with an id greater than this, ascending; the next page is ?kept_after=<next_kept_after>, null on the last page; \"unavailable\" when they could not be read just now (such an answer is not cached)"},
+                                        {"name": "limit", "in": "query", "schema": {"type": "integer", "minimum": 1, "maximum": 500, "default": 500}, "description": "Rows per page in each of the two lists; the two cursors are independent"}],
+                                    "responses": {"200": {"description": "The log, with next_after and next_kept_after"}}}},
     },
     "components": {"schemas": {
         "Entry": {"type": "object", "properties": ENTRY_PROPS, "required": ["id", "state", "received", "author", "kind", "content_sha256"]},

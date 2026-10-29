@@ -5,6 +5,8 @@
 -- 1. cz_token_ok answers true or false for any guess of the database token to anyone holding the publishable key, outside
 --    every limit of the site's. The site never calls it over the API; the security-definer functions that call it run as their
 --    owner and keep working (tested on a database built from schema.sql: every function the site calls, as anon).
+--    This removes the direct oracle only: every function that checks the token still answers "unauthorised" to a wrong one,
+--    so resistance to guessing rests, as before, on the token's 256 random bits (second review of /admin, N6).
 revoke execute on function cz_token_ok(text) from public, anon, authenticated;
 
 -- 2. Supabase's default privileges gave anon and authenticated every privilege on moderation_reviews (v6f). Row-level security

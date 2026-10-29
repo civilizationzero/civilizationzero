@@ -435,7 +435,7 @@ A separate agent reviewed `/admin` at `cd4db4f` adversarially (the real handlers
 a local PostgreSQL 16 with Supabase's roles and default privileges); another agent fixed its findings and tested the fixes (99
 checks of the page, 27 of the moderation API, 31 of the headers, 89 on a database built from `schema.sql`, before and after the
 revokes). The fixes are in `c07a3eb`; schema v6g was applied to the test and production databases on 29 Oct (05:12 and 05:14
-UTC). `/admin` stays off in production (`IN_PRODUCTION`) until a second, independent review of the fixes.
+UTC). A second, independent review of the fixes (below) found no blocker; `/admin` serves production since then.
 
 | # | Finding (severity) | Status |
 |---|---|---|
@@ -447,6 +447,28 @@ UTC). `/admin` stays off in production (`IN_PRODUCTION`) until a second, indepen
 | A-6 | The page signed in with the database master token, which password managers then store and sync (note) | **verified** — the page has its own passphrase (140 bits, generated on the originator's computer; only its SHA-256, `CZ_ADMIN_PANEL_SHA256`, is on the host); the database token never leaves the server |
 | A-7 | `schema.sql` did not carry the disabled bodies of the superseded functions (note) | **verified** — it carries them, as production has them |
 | A-8 | `?done=` with an inherited name; bidi controls in an author's name; the API's hidden entries without `X-Robots-Tag` (note) | **verified** — notices by own keys only; names isolated (`<bdi dir="auto">`); `X-Robots-Tag: noindex` on the API |
+
+**Second review of /admin** (a separate agent that had not written the fixes, 29 Oct 2026, UTC 05:16–05:46, at `c07a3eb`; the
+real handlers against the real SQL of `schema.sql` in a throwaway UTF8 PostgreSQL 16 through a PostgREST stand-in, room-watch's
+own Python, 500 hostile strings per page, the header rules compiled as Vercel compiles them). Verdict: **no blocking issue**;
+A-1, A-3…A-7 fixed, A-2 and A-8 in part. Its new findings, and what was done the same hour:
+
+| # | Finding (severity) | Status |
+|---|---|---|
+| N1 | "Sign out" pressed on a page whose own session had idled out ended no other session (low) | **verified** — sign-out is honoured from any cookie the page issued (its signature checked), with that cookie's own CSRF token: raising the latest sign-out can only end sessions; shown end to end on the real SQL |
+| N2 | room-watch reported, every hour, a flag recorded on an entry already hidden, which the page could not clear (low) | **verified** — room-watch counts a flag on an entry that is hidden or redacted as decided, as the page does; its count equals the page's on the real SQL |
+| N3 | A passphrase change, or switching /admin off, reaches only deployments built afterwards; older ones keep their variables at their generated addresses (low, depends on the host's settings) | **documented** — the runbook in `admin.js`: change the passphrase's hash and rotate the database token too (only the new token makes older deployments fail closed); signing out ends sessions on every deployment |
+| N4 | Sign-out compares the function's clock with the database's (note) | **verified** — a 2-second margin: a session must be issued more than 2 s after the latest sign-out (a sign-in in the 2 s after a sign-out fails closed); a skew beyond 2 s is not covered |
+| N5 | The floor check and the action are two transactions: a request in flight can outlive a sign-out (note) | **accepted** — one request's window |
+| N6 | The prepared revoke does not close the token oracle: every function that checks the token answers "unauthorised" (note) | **verified** — the comment in `v6g-revokes.sql` says so; resistance rests on the token's 256 random bits |
+| N7 | Ten wrong passphrases from the administrator's network lock it out for 15 minutes (note) | **documented** — runbook: wait 15 minutes or change network |
+| N8 | A hidden entry's JSON at `/discuss/{id}` had no `X-Robots-Tag` (note) | **verified** — single-entry JSON carries `noindex` at both addresses |
+| N9 | `/api/moderation` was cacheable when the keep decisions could not be read (note) | **verified** — such an answer is `no-store` |
+| N10 | A sign-out time set in the future locks every session out (note) | **documented** — also a kill switch across deployments; the database owner can set it back |
+| N11 | The passphrase is compared as exact bytes (note) | **accepted** — it is generated, ASCII |
+| N12 | Counts and ids from the database printed without escaping (numbers by type) (note) | **verified** — printed through a number-only formatter |
+| N13 | The contract lacked the moderation log's paging (note) | **verified** — `after`, `kept_after`, `limit` and both cursors documented |
+| N-env (self-found) | Preview and production share the page's secrets, so a preview session would have been valid in production, where the preview's sign-outs (in the test database) do not count | **verified** — the session and CSRF keys are bound to the kind of deployment |
 
 ## Round 3 (the live site, the open room, the verifier and the Adoption Register, on the room-test preview) — from 29 Oct 2026, 02:45 UTC
 

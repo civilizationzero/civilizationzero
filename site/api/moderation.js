@@ -46,7 +46,7 @@ module.exports = async (req, res) => {
         hidden_and_redacted: hidden.map((h) => ({ id: h.id, received: h.received, state: h.state, category: h.category, lang: h.lang, lang_detected: h.lang_detected, content_sha256: h.content_sha256, decided: h.updated, url: `${ORIGIN}/discuss/${h.id}` })),
         hidden_by_language: byLang, hidden_by_month_and_language: byMonth, day_hash_revisions: revisions,
         appeal: `${R.CONTACT} with the entry id; receipt within 7 days; a written reason; where the complaint concerns the administrator, the second key-holder decides` },
-        { "Cache-Control": "public, max-age=0, s-maxage=60" });
+        { "Cache-Control": kept === null ? "no-store" : "public, max-age=0, s-maxage=60" });   // a response missing its keep decisions is not cached
     }
     if (method !== "POST") { res.setHeader("Allow", "GET, HEAD, POST, OPTIONS"); return json(res, 405, { error: "method" }); }
     const src = R.sourceHash(req), now = Date.now();
