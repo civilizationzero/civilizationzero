@@ -29,3 +29,4 @@ https://civilizationzero.ai/core.tr
 https://civilizationzero.ai/core.ur
 https://civilizationzero.ai/core.vi
 https://civilizationzero.ai/core.zh-Hans
+https://civilizationzero.ai/themes/test-theme
