@@ -1280,7 +1280,7 @@ returns json language plpgsql security definer set search_path = public as $$
 begin raise exception 'superseded: cz_daily(p_token, p_day, p_force)'; end $$;
 notify pgrst, 'reload schema';
 
--- ================================================================ v7 (2026-10-29), migration cz_room_readers_v7 (test, then production)
+-- ================================================================ v7 (2026-10-29), migration cz_room_readers_v7 (test 14:50, production 18:09 UTC)
 -- Phase 1 of the room's design for readers (the originator's decision of 29 Oct 2026, after his AI review team agreed). Additive
 -- and read-only: three new functions, no table, column or row changed. Each returns what the public pages could already show.
 -- cz_home_latest: the first page's preview — the latest entries that are ordinarily visible ('published'), already screened by
@@ -1322,7 +1322,7 @@ end $$;
 grant execute on function cz_search(text, bigint, int) to anon, authenticated;
 notify pgrst, 'reload schema';
 
--- ================================================================ v8 (2026-10-30), migration cz_room_replies_v8 (test, then production)
+-- ================================================================ v8 (2026-10-29 UTC; 30 Oct in Kuala Lumpur), migration cz_room_replies_v8 (test 18:38, production 18:48 UTC)
 -- Phase 2 of the room's design for readers (the originator's decision of 30 Oct 2026, after his AI review team): replies and
 -- conversations, and themes. Additive: one column (entries.parent) with its check and index, the public view with the column at
 -- its end, four new functions, and cz_daily's line with "parent". No row is changed. A reply names an earlier entry that exists and
@@ -1332,7 +1332,7 @@ notify pgrst, 'reload schema';
 -- line. verify.py 1.16 hashes each line as given and compares the fields it knows; 1.17 (with bundle 1.0.2) compares parent too.
 -- A theme is an entry signed with the originator's key, listed by the site (THEMES in site/lib.py); its answers are its replies.
 -- The 14-argument cz_post (without p_parent) stays as it was while the site's previous version may still be restored by a rollback;
--- it is then disabled ('superseded'), as earlier overloads were. Applied to test, then production (29 Oct 2026, 18:39 and 18:46 UTC).
+-- it is then disabled ('superseded'), as earlier overloads were. Applied to test, then production (29 Oct 2026, 18:38 and 18:48 UTC).
 alter table entries add column if not exists parent bigint references entries (id);
 do $$ begin
   if not exists (select 1 from pg_constraint where conname = 'entries_parent_earlier' and conrelid = 'public.entries'::regclass) then
