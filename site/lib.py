@@ -243,6 +243,8 @@ ul,ol{padding-left:1.25rem}
 .group{margin-bottom:.5rem}
 .scroll{overflow-x:auto}
 .filters{display:flex;flex-wrap:wrap;gap:.75rem;align-items:end;font-size:.9em;margin:1rem 0}
+/* E: the room one click from the first screen, and its sections as topics (the originator's decision of 29 Oct 2026, after his AI review team) */
+p.room-line{border-left:3px solid var(--fg);padding-left:.75rem}ul.sections{columns:2 16rem;column-gap:2rem}ul.sections li{break-inside:avoid;margin:.2rem 0}
 .filters select,.filters input{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--rule);padding:.2rem .3rem}
 form.respond label{display:block;margin:.75rem 0}form.respond input,form.respond select,form.respond textarea{font:inherit;width:100%;box-sizing:border-box;padding:.4rem;border:1px solid var(--rule);background:var(--bg);color:var(--fg)}
 form.respond textarea{min-height:12rem}form.respond input[type=checkbox],form.respond input[type=radio]{width:1.25rem;height:1.25rem;vertical-align:-.25rem;margin:0 .5rem 0 0}form.respond fieldset{border:1px solid var(--rule);margin:.75rem 0}button{font:inherit;padding:.4rem .9rem;border:1px solid var(--fg);background:var(--bg);color:var(--fg)}

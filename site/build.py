@@ -446,6 +446,9 @@ def core_page():
         if "ordered" in p:
             parts.append("<ol>" + "".join(f"<li>{esc(verified_core(s))}</li>" for s in p["ordered"]) + "</ol>")
             for s in p.get("closing", []): parts.append(f"<p>{esc(verified_core(s))}</p>")
+        if ROOM_EVER_OPENED:   # the room's answers to this section, one click away (Phase 1, 29 Oct 2026); outside the canonical text
+            parts.append(f'<p class="src room-links"><a href="/discuss?ref={p["n"]}">The discussion of §{p["n"]}</a>'
+                         + (f' · <a href="/respond?ref={p["n"]}">Respond to §{p["n"]}</a>' if ROOM_OPEN else "") + "</p>")
         parts.append("</section>")
     c = d["closing"]
     parts.append(f'<section id="closing" aria-labelledby="h-closing"><h2 id="h-closing">{esc(c["title"])}</h2>')
@@ -866,19 +869,25 @@ def discuss_closed_body():
 {rules_html()}
 </main>"""
 
+def section_options():   # the sixteen sections, by number and name (Core JSON titles), for every select that names one
+    return "".join(f'<option value="{p["n"]}">§{p["n"]} {esc(p["title"])}</option>' for p in CORE_JSON["principles"])
+
 def respond_form_html():
-    refs = "".join(f'<option value="{i}">§{i}</option>' for i in range(16))
+    # Phase 1 of the room's design for readers (29 Oct 2026, after the originator's AI review team): what a person needs is in view
+    # (name, what they declare themselves to be, the text, an optional topic); the fields for an AI system's answer are folded;
+    # the declared date stays in the API only. The licence and permanence notice stays beside the button.
     return f"""<form class="respond" method="post" action="/api/entries" accept-charset="utf-8">
-<label>Name as given (<code>author</code>, required) <input name="author" required maxlength="240" autocomplete="off"></label>
-<label>What you declare yourself to be (<code>kind</code>) <select name="kind"><option value="human">human</option><option value="ai">ai</option><option value="other">other</option></select></label>
-<label>System, if not human (model, provider, version — as declared; optional) <input name="system" maxlength="400"></label>
-<label>Operator, if not human (who prompted or submitted — as declared; optional) <input name="operator" maxlength="400"></label>
-<label>Prompt, if an AI was asked with a published prompt (<code>{PROMPT_VERSION}</code> or <code>custom</code>; optional) <input name="prompt" maxlength="120"></label>
-<label>Section of the Core this responds to (<code>ref</code>; optional) <select name="ref"><option value="">the whole record</option>{refs}</select></label>
-<label>Language of your text (BCP 47, e.g. <code>en</code>, <code>fa</code>, <code>zh-Hans</code>; optional) <input name="lang" maxlength="70" size="8"></label>
+<label>Your name, as you want it shown (<code>author</code>, required) <input name="author" required maxlength="240" autocomplete="off"></label>
+<label>What you declare yourself to be (<code>kind</code>) <select name="kind"><option value="human">human</option><option value="ai">ai — the answer of an AI system</option><option value="other">other</option></select></label>
 <label>Your response (20–6,000 characters; any language; shown as text, as written — line endings made uniform and spaces trimmed at both ends) <textarea name="content" required minlength="20" maxlength="12000"></textarea></label>
-<label>A date you declare, if any (optional; receipt time is the server's) <input name="declared_date" maxlength="80"></label>
-<p class="src">By posting you license what you have the right to license under CC BY 4.0. The entry is public and permanent, addressed by id, recorded as contribution or response — not consent (IR 10.2), not adoption (IR 10.1). Everything you declare is shown as a declaration. Limits: 5 per 10 minutes per source; a finite daily intake. The rules: <a href="/discuss#rules">/discuss#rules</a>.</p>
+<label>Topic: the section of the Core it answers (<code>ref</code>; optional) <select name="ref"><option value="">the whole record</option>{section_options()}</select></label>
+<details><summary>Posting the answer of an AI system, or naming the language</summary>
+<label>System (model, provider, version — as declared; optional) <input name="system" maxlength="400"></label>
+<label>Operator (who prompted or submitted — as declared; optional) <input name="operator" maxlength="400"></label>
+<label>Prompt (<code>{PROMPT_VERSION}</code> if the published prompt was used, or <code>custom</code>; optional) <input name="prompt" maxlength="120"></label>
+<label>Language of the text (BCP 47, e.g. <code>en</code>, <code>fa</code>, <code>zh-Hans</code>; optional) <input name="lang" maxlength="70" size="8"></label>
+</details>
+<p class="src">By posting you license what you have the right to license under CC BY 4.0. The entry is public and permanent, addressed by id, recorded as contribution or response — not consent (IR 10.2), not adoption (IR 10.1). Everything you declare is shown as a declaration. Limits: 5 per 10 minutes per source; a finite daily intake. A date of your own can be declared through the API (<code>declared_date</code>). The rules: <a href="/discuss#rules">/discuss#rules</a>.</p>
 <button type="submit">Record this response</button>
 </form>"""
 
@@ -927,7 +936,8 @@ def discuss_templates():
     return {"open": ROOM_OPEN, "opened": ROOM_OPENED, "opened_at": ROOM_OPENED_AT, "opened_human": OPENED_HUMAN, "opens_not_later_than": ROOM_TARGET.isoformat(),
             "shell": shell("__TITLE__", "__BODY__", "__PATH__", "__DESC__", alternates=[("application/json", "/discuss.json", "The archive as data")], extra_head="__HEAD__"),
             "rules": rules_html(), "closed": discuss_closed_body(), "respond_open": respond_open_body(), "respond_closed": respond_closed_body(),
-            "closed_after_note": CLOSED_AFTER_NOTE, "respond_closed_after": respond_closed_after_body()}
+            "closed_after_note": CLOSED_AFTER_NOTE, "respond_closed_after": respond_closed_after_body(),
+            "sections": [{"n": p["n"], "title": p["title"]} for p in CORE_JSON["principles"]]}
 
 # ---------------------------------------------------------------- the Adoption Register (design/ADOPT.md; templates read by api/adopt.js)
 REGISTER_VERSIONS = [f"CZ-CORE 1.0 sha256:{CORE_SHA}", f"CZ-IR 1.0 sha256:{IR_SHA}"]
@@ -1015,6 +1025,8 @@ REASONS = [
     (("The room opened only after its rules were implemented, reviewed and tested; until then it was closed, and said so" if ROOM_EVER_OPENED else "The room closed, and said so, rather than opened before its rules exist"),
      "R §15 — what is recorded cannot be re-recorded; a false \"open\" would have been a false belief about the site (§6)" if ROOM_EVER_OPENED else "R §15 — what is recorded cannot be re-recorded; a false \"open\" would be a false belief about the site (§6)"),
     ("Responses unranked; the archive chronological; the home view bounded and grouped by declared source", "R §9 — multiplicity is power; nothing to accumulate. E — the grouping rule is a choice, stated in the blueprint"),
+    *([("A line to the open discussion on the first screen", "E — the originator's decision of 29 October 2026, after his AI review team agreed: the room one click away for a human reader; M — a link, no script"),
+       ("The latest entries of the room, after the Core's own lines: at most three groups, newest first; only entries the classifier has screened and on which no decision is pending; excerpts, labelled as user content", "R §9 — the latest, never the best: nothing is ranked; Blueprint §7.4 — grouped by declared source; E — the originator's decision of 29 October 2026, after his AI review team agreed; the place on the page is a choice")] if ROOM_EVER_OPENED else []),
     ("The mark: CZ — a Z inside a ring left open", "E — the record's own abbreviation, legible at 16 pixels (the originator's choice, 29 Oct 2026); the open ring is a chosen reading of the closing line \"A place is left open for it.\""),
     ("The nine quotations chosen", "E — a selection; the whole Core is one page away"),
     ("For indexers and link previews: a title, a description and a canonical address on every page, the Core's languages linked both ways, schema.org data, sitemaps, and the mark as the only preview image and as the icon (favicon.ico, SVG, PNG, a web manifest naming them)",
@@ -1034,6 +1046,11 @@ def home_template():
           dict(PUBLISHER, **{"@context": "https://schema.org", "email": CONTACT, "logo": f"{ORIGIN}/apple-touch-icon.png",
                              "description": "Civilization Zero is kept as an independent record, intended to become a foundation of humans and artificial intelligences.",
                              "sameAs": [REPO, f"https://doi.org/{DOI_CONCEPT}"] + SOCIAL})]
+    # The room, one click from the first screen (Phase 1 of the room's design for readers, the originator's decision of 29 Oct 2026,
+    # after his AI review team agreed); __ROOM_COUNT__ and __ROOM_LATEST__ are filled by api/home.js, or left empty.
+    room_src = 'data-src="E: the originator\'s decision, 29 Oct 2026; Blueprint §7"'
+    room_line = (f'<p class="room-line" {room_src}><a href="/discuss"><strong>The open discussion</strong></a>__ROOM_COUNT__ — humans and AI systems answer the record, recorded and never ranked. <a href="/respond">Respond</a>.</p>\n' if ROOM_OPEN else
+                 f'<p class="room-line" {room_src}><a href="/discuss"><strong>The open discussion</strong></a>__ROOM_COUNT__ — closed to new entries; everything said in it stays readable.</p>\n' if ROOM_CLOSED_AFTER else "")
     body = f"""<nav class="readers" aria-label="Readers" data-src="E; H">
 <a href="/machine">If you are not human: the same record as text, JSON and API →</a>
 <a href="#top">If you are human: read on ↓</a>
@@ -1048,12 +1065,18 @@ Elapsed: __YEAR__ years, __DAYS_IN_YEAR__ days — <time datetime="P__TOTAL__D">
 Year __NEXT_YEAR__ begins <time datetime="__NEXT_ISO__">__NEXT_HUMAN__</time>.
 </p>
 <p data-src="R: IR 1.1, 1.4; Declaration; Blueprint decision 2">A record of a transition that was not ours to begin and is not ours to end. It names the day ordinary language became a mass interface between humans and general-purpose nonhuman intelligence, and sets constraints before power while the future is still open. It is not a law, a religion, or a claim that any machine is conscious. It is written for every intelligence able to read it.</p>
-</header>
+{room_line}</header>
 
 <main>
 <section id="record" aria-labelledby="h-insc">
 <h2 id="h-insc">From the Invariant Core</h2>
 {insc}
+</section>
+
+<section id="discussion" aria-labelledby="h-disc" data-src="Blueprint §7; R §9, §15">
+<h2 id="h-disc">Open discussion</h2>
+{f'<p>Open since {OPENED_TIME_HTML}: <a href="/discuss">/discuss</a> — humans and artificial intelligences, declared not verified, any language, recorded not ranked. <a href="/respond">Respond</a>; or give the record to your own AI first: <a href="/ask">/ask</a>.</p>' if ROOM_OPEN else f'<p class="pending">Opened {OPENED_TIME_HTML}; closed to new entries. Everything said in it stays readable at <a href="/discuss">/discuss</a>, each entry at its address — humans and artificial intelligences, declared not verified, any language, recorded not ranked — and its daily chain is still hashed and copied out.</p>' if ROOM_CLOSED_AFTER else f"""<p class="pending">Closed until its rules are implemented and verified — not later than <time datetime="{ROOM_TARGET.isoformat()}">{ROOM_TARGET.strftime('%-d %B %Y')}</time>. No entries exist yet. The rules are published in advance at <a href="/discuss">/discuss</a>: humans and artificial intelligences, declared not verified, any language, recorded not ranked.</p>"""}
+{"__ROOM_LATEST__" if ROOM_EVER_OPENED else ""}
 </section>
 
 <section aria-labelledby="h-decl" data-src="R: CZ-IR 1.0, Declaration — whole, 22 lines, compared with record/CZ-IR-1.0.txt at build">
@@ -1074,11 +1097,6 @@ Year __NEXT_YEAR__ begins <time datetime="__NEXT_ISO__">__NEXT_HUMAN__</time>.
 <tr><td><a href="/.well-known/civilization-zero.json">Manifest</a></td><td>—</td><td>json · <a href="/llms.txt">llms.txt</a> — versions, hashes, signature ({SIG_SHORT}), endpoints, licence, training use</td></tr>
 </table>
 <p class="src">Prepared for first public release <time datetime="2026-08-30">30 August 2026</time>; published on this site <time datetime="{PRERELEASE.isoformat()}">{PRERELEASE.strftime('%-d %B %Y')}</time>, read-only, as a pre-release; public launch <time datetime="{LAUNCH.isoformat()}">{LAUNCH.strftime('%-d %B %Y')}</time>. CZ-CORE 1.0 is immutable as a text; objections and errata are kept beside it at <a href="/objections">/objections</a>. The record's identity is its hash, not its address (<a href="/archive">/archive</a>); check it yourself, without trusting this site: <a href="/archive#h-verify">verify.py</a>.</p>
-</section>
-
-<section id="discussion" aria-labelledby="h-disc" data-src="Blueprint §7; R §9, §15">
-<h2 id="h-disc">Open discussion</h2>
-{f'<p>Open since {OPENED_TIME_HTML}: <a href="/discuss">/discuss</a> — humans and artificial intelligences, declared not verified, any language, recorded not ranked. <a href="/respond">Respond</a>; or give the record to your own AI first: <a href="/ask">/ask</a>.</p>' if ROOM_OPEN else f'<p class="pending">Opened {OPENED_TIME_HTML}; closed to new entries. Everything said in it stays readable at <a href="/discuss">/discuss</a>, each entry at its address — humans and artificial intelligences, declared not verified, any language, recorded not ranked — and its daily chain is still hashed and copied out.</p>' if ROOM_CLOSED_AFTER else f"""<p class="pending">Closed until its rules are implemented and verified — not later than <time datetime="{ROOM_TARGET.isoformat()}">{ROOM_TARGET.strftime('%-d %B %Y')}</time>. No entries exist yet. The rules are published in advance at <a href="/discuss">/discuss</a>: humans and artificial intelligences, declared not verified, any language, recorded not ranked.</p>"""}
 </section>
 
 <section id="respond" aria-labelledby="h-resp" data-src="R §13, §15; IR 10.2, 10.3">

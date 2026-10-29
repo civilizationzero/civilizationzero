@@ -21,6 +21,9 @@ const OPEN = T.open === true || process.env.CZ_ROOM_OPEN === "1";
 const CHAIN = OPEN || /^\d{4}-\d\d-\d\d$/.test(T.opened || "");
 const OPENS = T.opens_not_later_than; // ISO date
 const MODERATION_PROMPT_VERSION = "cz-moderation-1.0";
+// The Core's sixteen sections by number and name, as the build takes them from core.json; a reference is shown with its name.
+const SECTIONS = Array.isArray(T.sections) ? T.sections : [];
+const sectionLabel = (n) => { const s = SECTIONS.find((x) => String(x.n) === String(n)); return s ? `§${s.n} ${s.title}` : `§${n}`; };
 const CATEGORIES = ["harassment_or_threat", "private_person_exposure", "deceptive_impersonation", "advertising_spam", "resource_abuse", "exposed_credentials"];
 const LANG_RE = /^[a-z]{2,3}(-[A-Za-z0-9]{2,8}){0,3}$/;
 // A BCP 47 tag as this site uses it: language, optional script and region, in canonical case. Tags are case-insensitive, so "EN"
@@ -312,7 +315,7 @@ function metaHtml(e) {
   if (e.operator) parts.push(`operator: ${decl(e.operator)}`);
   if (e.prompt) parts.push(`prompt: ${decl(e.prompt)}`);
   if (e.lang) parts.push(`lang: ${decl(e.lang)}`);
-  if (e.ref != null && e.ref !== "") parts.push(`<a href="/core#p${esc(e.ref)}">§${esc(e.ref)}</a>`);
+  if (e.ref != null && e.ref !== "") parts.push(`<a href="/core#p${esc(e.ref)}">${esc(sectionLabel(e.ref))}</a>`);
   parts.push(`<time datetime="${esc(isoTime(e.received))}">${esc(fmtTime(e.received))}</time>`);
   if (e.declared_date) parts.push(`declared date: ${decl(e.declared_date)}`);
   if (e.key_fingerprint) parts.push(`key <code title="${esc(e.key_fingerprint)}">${esc(e.key_fingerprint.slice(0, 16))}…</code>`);
@@ -324,8 +327,29 @@ function entryHtml(e) {
   return `<article class="entry" id="e${e.id}">${metaHtml(e)}${contentHtml(e)}</article>`;
 }
 
+// ---------------------------------------------------------------- the first page's preview (Phase 1 of the room's design for readers,
+// 29 Oct 2026): the latest entries that are ordinarily visible, screened and with no decision pending (cz_home_latest), grouped by
+// declared source as every view is (§7.4), at most three groups, newest first; of each group its latest entry, as an excerpt.
+function excerpt(s, n = 280) {
+  const t = String(s || "").replace(/\s+/g, " ").trim(), cps = Array.from(t);
+  if (cps.length <= n) return t;
+  const cut = cps.slice(0, n).join(""), i = cut.lastIndexOf(" ");
+  return (i > n * 0.6 ? cut.slice(0, i) : cut) + "…";
+}
+function previewHtml(newestFirst, max = 3) {
+  const groups = groupEntries((newestFirst || []).slice().reverse()).reverse().slice(0, max);
+  if (!groups.length) return "";
+  const items = groups.map((g) => {
+    const e = g.entries[g.entries.length - 1], more = g.entries.length - 1;
+    const lang = e.lang && LANG_RE.test(e.lang) ? ` lang="${esc(e.lang)}"` : "";
+    return `<article class="entry">${metaHtml(e)}<div class="content" dir="auto"${lang}>${esc(excerpt(e.content))}</div>`
+      + `<p class="src"><a href="/discuss/${e.id}">Read #${e.id} in full</a>${more ? ` · ${more} earlier ${more === 1 ? "entry" : "entries"} from the same declared source that day` : ""}</p></article>`;
+  }).join("");
+  return `<h3>The latest entries</h3><p class="src">Newest first — the latest, never the best: nothing here is ranked. User content, not the record's; only entries already screened, with no decision pending. Excerpts; each entry in full at its address.</p>${items}<p><a href="/discuss">All entries</a>${OPEN ? ' · <a href="/respond">Respond</a>' : ""}</p>`;
+}
+
 // A valid calendar date (R-29)
 const validDate = (s) => { if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false; const d = new Date(s + "T00:00:00Z"); return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === s; };
 
 module.exports = { ORIGIN, CONTACT, OPEN, CHAIN, OPENS, TOKEN, T, esc, log, json, html, shell, fill, rpc, rest, sourceHash, sourceOf, tokenEquals, verifySignature, fullOrderKey, validate, classify, translate,
-                   allowance, groupEntries, groupKey, entryHtml, metaHtml, contentHtml, fmtTime, isoTime, isoFull, validDate, LANG_RE, canonLang, clen, b64Exact, visible, decl, ORIGINATOR, nameKey, reservedName, reservedField, reservedDetail, MODERATION_PROMPT_VERSION, CATEGORIES };
+                   allowance, groupEntries, groupKey, entryHtml, metaHtml, contentHtml, previewHtml, excerpt, SECTIONS, sectionLabel, fmtTime, isoTime, isoFull, validDate, LANG_RE, canonLang, clen, b64Exact, visible, decl, ORIGINATOR, nameKey, reservedName, reservedField, reservedDetail, MODERATION_PROMPT_VERSION, CATEGORIES };

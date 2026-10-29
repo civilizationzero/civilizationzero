@@ -40,12 +40,35 @@ function fill(s, c) {
   return s;
 }
 
-module.exports = (req, res) => {
+// The room on the first page (Phase 1 of the room's design for readers, 29 Oct 2026): the number of entries in the first screen's line
+// and the latest groups after the Core's own lines. Read from the database at request time, within 1.5 seconds; if the database is
+// slow or down, the page is served without them (the clock never waits on the room). The room's code is loaded only here.
+const ROOM_MS = 1500;
+async function room() {
+  const R = require("../room/lib.js");
+  const [rows, stats] = await Promise.all([R.rpc("cz_home_latest", { p_limit: 30 }), R.rpc("cz_stats", {})]);
+  const n = Number(stats && stats.entries);
+  return { "__ROOM_COUNT__": Number.isFinite(n) ? ` (<data value="${n}">${n.toLocaleString("en-US")}</data> ${n === 1 ? "entry" : "entries"})` : "",
+           "__ROOM_LATEST__": R.previewHtml(Array.isArray(rows) ? rows : []) };
+}
+async function roomOrNothing() {
+  if (!T.html.includes("__ROOM_")) return {};
+  let timer;
+  try {
+    return await Promise.race([room(), new Promise((resolve) => { timer = setTimeout(() => resolve({}), ROOM_MS); })]);
+  } catch (e) {
+    console.error(JSON.stringify({ at: "home.room", error: String(e && e.message || e).slice(0, 200) }));
+    return {};
+  } finally { clearTimeout(timer); }
+}
+
+module.exports = async (req, res) => {
   const url = new URL(req.url, "http://x");
   let f = url.searchParams.get("f");
   if (!f) f = negotiate(String(req.headers["accept"] || ""));
   const now = new Date();
-  const c = clock(now);
+  const c = { ...clock(now), "__ROOM_COUNT__": "", "__ROOM_LATEST__": "" };
+  if ((T[f] ? f : "html") === "html") Object.assign(c, await roomOrNothing());
   const types = { html: "text/html; charset=utf-8", json: "application/json; charset=utf-8", txt: "text/plain; charset=utf-8" };
   res.statusCode = 200;
   res.setHeader("Content-Type", types[f] || types.html);

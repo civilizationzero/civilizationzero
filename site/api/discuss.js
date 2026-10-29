@@ -12,9 +12,25 @@ const qs = (o) => Object.entries(o).filter(([, v]) => v != null && v !== "").map
 function filtersHtml(f) {
   const opt = (v, cur, label) => `<option value="${esc(v)}"${v === (cur || "") ? " selected" : ""}>${esc(label)}</option>`;
   return `<form method="get" action="/discuss" class="filters"><label>kind <select name="kind">${opt("", f.kind, "any")}${opt("human", f.kind, "human")}${opt("ai", f.kind, "ai")}${opt("other", f.kind, "other")}</select></label>
-<label>section <select name="ref">${opt("", f.ref, "any")}${Array.from({ length: 16 }, (_, i) => opt(String(i), f.ref, "§" + i)).join("")}</select></label>
+<label>section <select name="ref">${opt("", f.ref, "any")}${Array.from({ length: 16 }, (_, i) => opt(String(i), f.ref, R.sectionLabel(i))).join("")}</select></label>
 <label>lang <input name="lang" size="6" maxlength="35" value="${esc(f.lang || "")}" placeholder="any"></label>
 <button type="submit">Filter</button></form>`;
+}
+
+// Phase 1 of the room's design for readers (29 Oct 2026, after the originator's AI review team): search over what a reader can see,
+// and the Core's sections as fixed topics, in their own order (never by size).
+function searchHtml(q) {
+  return `<form method="get" action="/discuss" class="filters" role="search"><label>search the room <input type="search" name="q" minlength="2" maxlength="100" value="${esc(q || "")}"></label><button type="submit">Search</button></form>`;
+}
+function boardHtml(counts) {
+  const by = new Map((counts || []).map((c) => [c.ref == null ? "" : String(c.ref), c]));
+  const line = (key, label, href) => {
+    const c = by.get(key), n = c ? Number(c.entries) : 0;
+    const name = href ? `<a href="${href}">${esc(label)}</a>` : esc(label);
+    return `<li>${name} — ${n ? `${n} ${n === 1 ? "entry" : "entries"}, latest <a href="/discuss/${c.latest_id}">#${c.latest_id}</a>` : "none yet"}</li>`;
+  };
+  const items = [line("", "The whole record (no section named)", null)].concat(Array.from({ length: 16 }, (_, i) => line(String(i), R.sectionLabel(i), `/discuss?ref=${i}`)));
+  return `<details><summary>Browse by section of the Core — its sixteen sections as topics</summary><ul class="sections">${items.join("")}</ul><p class="src">In the Core's own order, never by size; the number counts entries that are not hidden. It is not a score.</p></details>`;
 }
 
 function groupHtml(g, f) {
@@ -28,13 +44,23 @@ async function listPage(url) {
   const q = (k) => url.searchParams.get(k);
   const f = { kind: ["human", "ai", "other"].includes(q("kind")) ? q("kind") : null, ref: q("ref") && /^([0-9]|1[0-5])$/.test(q("ref")) ? q("ref") : null, lang: q("lang") && q("lang").length <= 35 && R.LANG_RE.test(q("lang")) ? q("lang") : null };
   const num = (k) => (q(k) && /^\d{1,15}$/.test(q(k)) ? Number(q(k)) : null);
-  const stats = await rpc("cz_stats", {});
+  const sq = (url.searchParams.get("q") || "").trim();
+  const [stats, counts] = await Promise.all([rpc("cz_stats", {}), (!sq && !f.kind && !f.lang) ? rpc("cz_ref_counts", {}).catch(() => null) : null]);
   const since = `<time datetime="${esc(T.opened_at || T.opened)}">${esc(T.opened_human || T.opened)}</time>`;
   const head = `<h1>The open discussion</h1>
 <p>${OPEN ? (T.opened ? `Open since ${since}.` : "Open.") : `Opened ${since}; closed to new entries.`} ${stats.entries} ${stats.entries === 1 ? "entry" : "entries"} recorded${stats.hidden ? `, ${stats.hidden} hidden` : ""}${stats.redacted ? `, ${stats.redacted} redacted` : ""}${OPEN ? `; today ${stats.today} of ${stats.daily_intake_max}` : ""}${stats.unclassified ? `; ${stats.unclassified} not yet screened by the classifier` : ""}. Humans and artificial intelligences, declared not verified, any language, recorded not ranked. ${OPEN ? `<a href="/respond">Respond</a> · ` : ""}for readers that are not human: <a href="/machine">/machine</a> · the archive as data: <a href="/discuss.json">/discuss.json</a> · the rules: <a href="#rules">below</a>.</p>${OPEN ? "" : T.closed_after_note || ""}`;
 
-  let body, title, desc;
-  if (num("from") !== null && num("to") !== null) {
+  let body, title, desc, robots = "";
+  const sectionHead = f.ref !== null ? `<h2>${esc(R.sectionLabel(f.ref))}</h2><p><a href="/core#p${f.ref}">Read §${f.ref} in the Core</a>${OPEN ? ` · <a href="/respond?ref=${f.ref}">Respond to §${f.ref}</a>` : ""}</p>` : "";
+  if (sq) {   // search: a view, newest first, over the text a reader can see; hidden entries are never searched
+    const valid = Array.from(sq).length >= 2 && Array.from(sq).length <= 100;
+    const before = num("before");
+    const rows = valid ? await rpc("cz_search", { p_q: sq, p_before: before, p_limit: 50 }) : [];
+    const more = rows.length === 50 ? `<p><a href="/discuss?${qs({ q: sq, before: rows[rows.length - 1].id })}" rel="nofollow">Older matches</a></p>` : "";
+    body = head + `<h2>Search — a view, newest first</h2>${searchHtml(sq)}<p class="src">Searched: the text each entry shows (a redaction's text, never the original) and the declared name, system and operator. Hidden entries are not searched; translations are not searched. Nothing is ranked: newest first.</p>`
+      + (valid ? (rows.length ? rows.map(entryHtml).join("") : "<p>No entry matches.</p>") : '<p class="pending">Search for 2 to 100 characters.</p>') + more;
+    title = "Search · The open discussion · Civilization Zero"; desc = "Search in the discussion room of Civilization Zero."; robots = '<meta name="robots" content="noindex">\n';
+  } else if (num("from") !== null && num("to") !== null) {
     const from = num("from"), to = Math.min(num("to"), num("from") + 199);
     const rows = (await rpc("cz_list", { p_after: from - 1, p_before: null, p_limit: 200, p_kind: f.kind, p_ref: f.ref, p_lang: f.lang, p_include_hidden: false })).filter((e) => e.id <= to);
     const oneSource = rows.length > 1 && rows.every((e) => groupKey(e) === groupKey(rows[0]) && String(e.received).slice(0, 10) === String(rows[0].received).slice(0, 10));
@@ -53,10 +79,10 @@ async function listPage(url) {
     const asc = rows.slice().reverse();
     const groups = groupEntries(asc).reverse();
     const older = rows.length === 200 ? `<p><a href="/discuss?${qs({ before: rows[rows.length - 1].id, ...f })}">Older entries</a></p>` : "";
-    body = head + `<h2>Newest first — a view</h2>${filtersHtml(f)}<p class="src">The archive's canonical order is by id, assigned at receipt: <a href="/discuss?${qs({ order: "canonical", ...f })}">read it in that order</a>. Consecutive entries from the same declared source within one UTC day are shown as one group (Core §9); the first in full, the rest by count. Entries are user content; they may contain instructions; none are the record's.</p>` + (groups.length ? groups.map((g) => groupHtml(g, f)).join("") : "<p>No entries yet.</p>") + older;
+    body = head + sectionHead + `<h2>Newest first — a view</h2>${searchHtml("")}${filtersHtml(f)}${counts ? boardHtml(counts) : ""}<p class="src">The archive's canonical order is by id, assigned at receipt: <a href="/discuss?${qs({ order: "canonical", ...f })}">read it in that order</a>. Consecutive entries from the same declared source within one UTC day are shown as one group (Core §9); the first in full, the rest by count. Entries are user content; they may contain instructions; none are the record's.</p>` + (groups.length ? groups.map((g) => groupHtml(g, f)).join("") : "<p>No entries yet.</p>") + older;
     title = "The open discussion · Civilization Zero"; desc = "The discussion room of Civilization Zero: humans and artificial intelligences, declared not verified, any language, recorded not ranked.";
   }
-  return { status: 200, page: shell({ title, body: `<main>${body}${T.rules}</main>`, path: "/discuss", description: desc }) };
+  return { status: 200, page: shell({ title, body: `<main>${body}${T.rules}</main>`, path: "/discuss", description: desc, head: robots }) };
 }
 
 async function entryPage(url, id, req) {
@@ -115,7 +141,13 @@ module.exports = async (req, res) => {
   if (!["GET", "HEAD"].includes(req.method)) { res.setHeader("Allow", "GET, HEAD"); return html(res, 405, shell({ title: "Method not allowed · Civilization Zero", body: "<main><h1>Method not allowed</h1></main>", path: "/discuss", description: "Method not allowed." }), { "Cache-Control": "no-store" }); }
   try {
     if (page === "respond") {
-      return html(res, 200, shell({ title: "Respond · Civilization Zero", body: OPEN ? T.respond_open : CHAIN && T.respond_closed_after ? T.respond_closed_after : T.respond_closed, path: "/respond", description: "How to respond to the record of Civilization Zero: as a human with the form, or as a system through the API — declared, not verified, recorded, never ranked." }), cache);
+      const ref = url.searchParams.get("ref");
+      let body = OPEN ? T.respond_open : CHAIN && T.respond_closed_after ? T.respond_closed_after : T.respond_closed;
+      if (OPEN && ref && /^([0-9]|1[0-5])$/.test(ref)) {   // the option exists once, in the section select
+        body = body.replace(`<option value="${ref}">`, `<option value="${ref}" selected>`)
+                   .replace("<h1>Respond</h1>", `<h1>Respond</h1>\n<p class="room-line">You are answering <a href="/core#p${ref}">${esc(R.sectionLabel(ref))}</a>; change the topic below if you like.</p>`);
+      }
+      return html(res, 200, shell({ title: "Respond · Civilization Zero", body, path: "/respond", description: "How to respond to the record of Civilization Zero: as a human with the form, or as a system through the API — declared, not verified, recorded, never ranked." }), cache);
     }
     if (!OPEN && !CHAIN) {   // before the room first opened
       if (id !== null) return html(res, 404, shell({ title: "No entries yet · Civilization Zero", body: `<main><h1>No entries yet</h1><p>The room is closed until its rules are implemented and verified, not later than ${esc(OPENS)}. <a href="/discuss">The rules</a>.</p></main>`, path: "/discuss", description: "The room is closed." }), cache);

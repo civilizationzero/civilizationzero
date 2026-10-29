@@ -80,6 +80,7 @@ for f, p in parsed.items():
     for href in p.hrefs:
         if href.startswith(("http", "mailto:")): continue
         path, _, frag = href.partition("#")
+        path = path.partition("?")[0]   # a query names a view of a page the function serves (/discuss?ref=6), not another page
         if path == "" : path = "/" if f.name == "index.html" else "/" + f.stem
         check(resolves(path), f"{f.name}: dead link {href}")
         if frag:
@@ -181,10 +182,39 @@ check(sha256(prompt) == man["machine_prompt"]["sha256"], "prompt hash in manifes
 T = json.loads((SITE / "api" / "home-templates.json").read_text("utf-8"))
 sample = {"__YEAR__": "3", "__DAYS_IN_YEAR__": "332", "__TOTAL__": "1428", "__TOTAL_FMT__": "1,428", "__NEXT_YEAR__": "4", "__NEXT_ISO__": "2026-11-30",
           "__NEXT_HUMAN__": "30 November 2026", "__ASOF_ISO__": "2026-10-28T10:00Z", "__ASOF_HUMAN__": "2026-10-28 10:00 UTC"}
-def fill(s):
+# the room's two places on the first page (Phase 1, 29 Oct 2026) are filled by api/home.js from the database, after the clock and
+# last of all, so that nothing in an entry is ever filled again; with the database slow or down, both are left empty
+import subprocess
+ROOM_KEYS = ("__ROOM_COUNT__", "__ROOM_LATEST__")
+def fill(s, room=("", "")):
     for k in ("__TOTAL_FMT__", "__YEAR__", "__DAYS_IN_YEAR__", "__TOTAL__", "__NEXT_YEAR__", "__NEXT_ISO__", "__NEXT_HUMAN__", "__ASOF_ISO__", "__ASOF_HUMAN__"):
         s = s.replace(k, sample[k])
+    for k, v in zip(ROOM_KEYS, room):
+        s = s.replace(k, v)
     return s
+ROOM_EVER = DT["open"] is True or bool(re.fullmatch(r"\d{4}-\d\d-\d\d", DT.get("opened") or ""))   # as room/lib.js's CHAIN
+if ROOM_EVER:
+    _hd, _rest = T["html"].split("</header>", 1)
+    check(T["html"].count("__ROOM_COUNT__") == 1 and "__ROOM_COUNT__" in _hd.rsplit('<p class="room-line"', 1)[-1], "home: the room's line, with its count, is in the first screen (the header)")
+    _disc = re.search(r'<section id="discussion".*?</section>', T["html"], re.S)
+    check(T["html"].count("__ROOM_LATEST__") == 1 and _disc and "__ROOM_LATEST__" in _disc.group(0), "home: the latest entries are in the discussion section")
+    check(T["html"].index('id="discussion"') < T["html"].index('id="h-decl"'), "home: the discussion follows the Core's lines, before the Declaration")
+    # a preview as room/lib.js renders it, from entries that try to break out of their place (markup, a placeholder, a long text)
+    _rows = [{"id": 3, "received": "2026-10-29T10:00:00+00:00", "state": "published", "author": "</p><script>x</script>", "kind": "ai", "system": "S __YEAR__", "operator": None,
+              "prompt": None, "lang": "en", "ref": "6", "content": "Text with </article> and __ASOF_HUMAN__ " + "word " * 80, "content_sha256": "0" * 64, "declared_date": None,
+              "key_fingerprint": None, "hidden": False},
+             {"id": 2, "received": "2026-10-29T09:00:00+00:00", "state": "published", "author": "A", "kind": "human", "system": None, "operator": None, "prompt": None,
+              "lang": None, "ref": None, "content": "Short.", "content_sha256": "1" * 64, "declared_date": None, "key_fingerprint": None, "hidden": False}]
+    _r = subprocess.run(["node", "-e", "process.stdout.write(require(process.argv[1]).previewHtml(JSON.parse(process.argv[2])))", str(SITE / "room" / "lib.js"), json.dumps(_rows)],
+                        capture_output=True, env={"PATH": "/usr/bin:/bin:/usr/local/bin", "CZ_SALT": "check-only-" + "0" * 32})
+    check(_r.returncode == 0 and "<h3>The latest entries</h3>" in _r.stdout.decode(), f"home: the room's preview renders ({_r.stderr.decode()[:200]})")
+    _prev = _r.stdout.decode()
+    for _room in (("", ""), (' (<data value="2">2</data> entries)', _prev)):
+        _pg = P(); _pg.feed(fill(T["html"], _room)); check(not _pg.err and not _pg.stack, f"home with the room {'filled' if _room[1] else 'empty'}: HTML nesting {_pg.err[:3]} {_pg.stack[-3:]}")
+    check("<script>" not in _prev and "S __YEAR__" in _prev and "__ASOF_HUMAN__" in _prev and _prev.count('<article class="entry">') == 2, "home: the preview escapes entries, and is never filled again")
+else:
+    check(not any("__ROOM_" in T[x] for x in ("html", "json", "txt")), "home: no room placeholders before the room has opened")
+check("__ROOM_" not in T["json"], "home: the data form carries no room placeholder (api/home.js reads the room for the page only; the text form's are left empty)")
 for ext in ("html", "json", "txt"):
     filled = fill(T[ext])
     check("__" not in re.sub(r"https?://\S+", "", filled), f"home template {ext}: placeholder left")

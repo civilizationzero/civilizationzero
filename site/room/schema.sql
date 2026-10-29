@@ -1279,3 +1279,45 @@ create or replace function cz_daily(p_token text, p_day date default null)
 returns json language plpgsql security definer set search_path = public as $$
 begin raise exception 'superseded: cz_daily(p_token, p_day, p_force)'; end $$;
 notify pgrst, 'reload schema';
+
+-- ================================================================ v7 (2026-10-29), migration cz_room_readers_v7 (test, then production)
+-- Phase 1 of the room's design for readers (the originator's decision of 29 Oct 2026, after his AI review team agreed). Additive
+-- and read-only: three new functions, no table, column or row changed. Each returns what the public pages could already show.
+-- cz_home_latest: the first page's preview — the latest entries that are ordinarily visible ('published'), already screened by
+--   the classifier, and with no decision pending (no open flag, by cz_flags_open's own condition). Newest first, at most 60.
+--   api/home.js groups them by declared source (Blueprint §7.4) and shows at most three groups, as excerpts.
+create or replace function cz_home_latest(p_limit int default 30) returns setof entries_public
+language sql stable security definer set search_path = public set timezone = 'UTC' as $$
+  select p.* from entries_public p
+  where p.state = 'published'
+    and exists (select 1 from translations t where t.entry_id = p.id and t.lang = '_classifier' and t.state = 'done')
+    and not exists (select 1 from moderation_log f where f.entry_id = p.id and f.action = 'flag'
+      and not exists (select 1 from moderation_log h where h.entry_id = f.entry_id and h.actor = 'human' and h.action in ('hide', 'unhide', 'redact', 'unredact') and h.id > f.id)
+      and not exists (select 1 from moderation_reviews r where r.flag_log_id = f.id))
+  order by p.id desc limit least(greatest(coalesce(p_limit, 30), 1), 60)
+$$;
+grant execute on function cz_home_latest(int) to anon, authenticated;
+-- cz_ref_counts: the Core's sections as topics — for each declared reference (null: the whole record), the number of entries
+--   that are not hidden and the latest of them. /discuss lists them in the Core's own order, never by size; a count, not a score.
+create or replace function cz_ref_counts() returns table (ref text, entries bigint, latest_id bigint, latest_received timestamptz)
+language sql stable security definer set search_path = public set timezone = 'UTC' as $$
+  select e.ref, count(*), max(e.id), max(e.received) from entries e where e.state <> 'hidden' group by e.ref
+$$;
+grant execute on function cz_ref_counts() to anon, authenticated;
+-- cz_search: what a reader can see, searched — the text each entry shows (a redaction's text, never the original; nothing of a
+--   hidden entry) and the declared name, system and operator; 2 to 100 characters, matched as written (case-insensitive; the
+--   pattern's own % and _ are literal); newest first, at most 100, with p_before for the next page. Translations are not searched.
+create or replace function cz_search(p_q text, p_before bigint default null, p_limit int default 50) returns setof entries_public
+language plpgsql stable security definer set search_path = public set timezone = 'UTC' as $$
+declare v_q text := btrim(coalesce(p_q, '')); v_pat text;
+begin
+  if char_length(v_q) < 2 or char_length(v_q) > 100 then return; end if;
+  v_pat := '%' || replace(replace(replace(v_q, '\', '\\'), '%', '\%'), '_', '\_') || '%';
+  return query select p.* from entries_public p
+    where p.state <> 'hidden' and (p_before is null or p.id < p_before)
+      and (p.content ilike v_pat escape '\' or p.author ilike v_pat escape '\'
+           or coalesce(p.system, '') ilike v_pat escape '\' or coalesce(p.operator, '') ilike v_pat escape '\')
+    order by p.id desc limit least(greatest(coalesce(p_limit, 50), 1), 100);
+end $$;
+grant execute on function cz_search(text, bigint, int) to anon, authenticated;
+notify pgrst, 'reload schema';
