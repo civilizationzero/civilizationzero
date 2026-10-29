@@ -157,7 +157,7 @@
   },
   "bundle": {
     "url": "https://civilizationzero.ai/archive/cz-bundle-1.0.1.tar",
-    "sha256": "f657e724a8dadb8659f907266fd25c202ce7a5c92eecbd82e61165e5231a2b7f",
+    "sha256": "fbdc85ef889f3698ffc0338e2348cee37e28359395e24563d0df8e458e0918af",
     "version": "1.0.1",
     "signed": false,
     "signature": null,
@@ -244,7 +244,7 @@
       "files": "{date}.json (snapshot), {date}.log (the exact hashed bytes), {date}.log.ots (OpenTimestamps proof of the day's hash)",
       "job": "https://github.com/civilizationzero/civilizationzero/actions/workflows/daily-archive.yml"
     },
-    "in_bundle_through": null,
+    "in_bundle_through": "2026-10-28",
     "limits": {
       "rate": "5 per 10 minutes per source",
       "daily_intake": 2000,
