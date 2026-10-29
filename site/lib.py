@@ -28,6 +28,10 @@ DOI_VERSIONS = [("v1.0.1", "10.5281/zenodo.23751341", "2026-10-29"),   # Zenodo 
 DOI = DOI_VERSIONS[0][1]                   # the latest release's DOI; the concept DOI below always resolves to the latest version
 DOI_CONCEPT = "10.5281/zenodo.23740317"
 INDEXNOW_KEY = "5dbddf2e3c978c9f9cf5e54812ab90ef"   # public by design: /<key>.txt shows search engines (IndexNow) that the site chose it
+# The project's own accounts elsewhere. Each verifies against this site: Bluesky by /.well-known/atproto-did, Mastodon by
+# rel="me". Filled in as each account exists; until then nothing is emitted.
+ATPROTO_DID = None   # "did:plc:…" from Bluesky ("I have my own domain", "No DNS panel"); the handle is then @civilizationzero.ai
+SOCIAL = []         # profile addresses: each is a rel="me" link on every page and a schema.org sameAs of the publisher
 IA_SNAPSHOTS = {"/": "https://web.archive.org/web/20261028174615/https://civilizationzero.ai/"}   # Internet Archive snapshots, by path
 RATE_PER_10MIN = 5                         # the room's limits, disclosed on /machine and in the rules (the database config carries the live values)
 DAILY_INTAKE = 2000
@@ -272,7 +276,7 @@ def shell(title, body, path, description, alternates=(), ldjson=None, nav=True, 
 {alt}{hl}<link rel="service-desc" type="application/vnd.oai.openapi+json" href="/api/openapi.json">
 {og}<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)"><meta name="theme-color" content="#101010" media="(prefers-color-scheme: dark)">
 <link rel="icon" href="/favicon-96x96.png" type="image/png" sizes="96x96"><link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="shortcut icon" href="/favicon.ico"><link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180"><link rel="manifest" href="/site.webmanifest"><meta name="apple-mobile-web-app-title" content="Civilization Zero">
-<style>{CSS}</style>
+{"".join(f'<link rel="me" href="{esc(u)}">' for u in SOCIAL)}<style>{CSS}</style>
 {ld}{extra_head}</head>
 <body>
 {NAV if nav else ""}
