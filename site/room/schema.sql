@@ -1173,3 +1173,109 @@ begin
   return json_build_object('entries', a, 'register', b, 'register_checks', c, 'source_chars', d);
 end $$;
 grant execute on function cz_expire_sources(text) to anon, authenticated;
+-- ================================================================ v6g (2026-10-29), migration cz_admin_v6g_review (to be applied)
+-- The administrator's page, /admin, after its security review (design/test/FINDINGS-REGISTER.md A-1 … A-8). Additive: two new
+-- functions, functions replaced in place, and one new config row that only cz_admin_signout writes; no table is altered and no
+-- row is deleted. The grants on anon and authenticated, and cz_token_ok's, are left as they are: their revocation is prepared
+-- separately in room/v6g-revokes.sql.
+-- A-1: signing out ends every open session of the page on the server. cz_admin_signout records the time (config
+--      admin_sessions_not_before; it never moves back); the page refuses any session issued at or before it (cz_admin_floor,
+--      read on every authenticated request; -infinity until the first sign-out).
+-- A-4: cz_moderate refuses a transition that changes nothing — a hide of a hidden entry ('already hidden'), an unhide of an
+--      entry that is not hidden ('not hidden'), an unredact of an entry that is not redacted ('not redacted'; a hidden entry is
+--      unhidden first) — so that a mistyped id cannot close a flag with no decision on it; a redaction of a redacted entry stays
+--      allowed (it changes the text). The entry's row is locked while it is decided. cz_review_keep records a "keep" only while
+--      the flag is still open by cz_flags_open's own condition ('already decided' otherwise). Otherwise both are as before.
+-- A-7: the superseded signatures raise in a database built from this file as they do in production, where they were disabled
+--      by migrations this file did not record (their definitions as read from production's catalog on 29 Oct 2026). Likewise
+--      v5e: cz_moderate below carries its change (an unhide that returns an entry to 'redacted' restores the redaction's own
+--      category), which production has had since v5e and this file only described.
+create or replace function cz_admin_signout(p_token text) returns timestamptz
+language plpgsql security definer set search_path = public set timezone = 'UTC' as $$
+declare v_at timestamptz;
+begin
+  if not cz_token_ok(p_token) then raise exception 'unauthorised'; end if;
+  insert into config (key, value) values ('admin_sessions_not_before', to_char(now() at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"'))
+    on conflict (key) do update set value = case when config.value::timestamptz >= excluded.value::timestamptz then config.value else excluded.value end
+    returning value::timestamptz into v_at;
+  return v_at;
+end $$;
+grant execute on function cz_admin_signout(text) to anon, authenticated;
+
+create or replace function cz_admin_floor(p_token text) returns timestamptz
+language plpgsql stable security definer set search_path = public set timezone = 'UTC' as $$
+begin
+  if not cz_token_ok(p_token) then raise exception 'unauthorised'; end if;
+  return coalesce((select value::timestamptz from config where key = 'admin_sessions_not_before'), '-infinity'::timestamptz);
+end $$;
+grant execute on function cz_admin_floor(text) to anon, authenticated;
+
+-- LIVE cz_moderate: as v5d2 with v5e's unhide, and no transition that changes nothing
+create or replace function cz_moderate(p_entry bigint, p_action text, p_category text, p_reason text, p_redacted_text text, p_token text)
+returns void language plpgsql security definer set search_path = public set timezone = 'UTC' as $$
+declare v_state text; v_redacted text;
+begin
+  if not cz_token_ok(p_token) then raise exception 'unauthorised'; end if;
+  select state, redacted_text into v_state, v_redacted from entries where id = p_entry for update;
+  if not found then raise exception 'no such entry'; end if;
+  if p_action = 'hide' and v_state = 'hidden' then raise exception 'already hidden'; end if;
+  if p_action = 'unhide' and v_state <> 'hidden' then raise exception 'not hidden'; end if;
+  if p_action = 'unredact' and v_state <> 'redacted' then raise exception 'not redacted'; end if;
+  if p_action = 'hide' then update entries set state = 'hidden', category = p_category, updated = now() where id = p_entry;
+  elsif p_action = 'unhide' then
+    if v_redacted is not null then
+      update entries set state = 'redacted', updated = now(),
+        category = (select m.category from moderation_log m where m.entry_id = p_entry and m.action = 'redact' order by m.id desc limit 1) where id = p_entry;
+    else update entries set state = 'published', category = null, updated = now() where id = p_entry; end if;
+  elsif p_action = 'redact' then update entries set state = 'redacted', category = p_category, redacted_text = p_redacted_text, updated = now() where id = p_entry;
+  elsif p_action = 'unredact' then update entries set state = 'published', category = null, redacted_text = null, updated = now() where id = p_entry;
+  else raise exception 'unknown action'; end if;
+  if p_action in ('hide', 'redact') then
+    update translations set text = null, state = 'pending', engine = 'withdrawn: entry ' || p_action, at = now() where entry_id = p_entry and lang <> '_classifier';
+  end if;
+  insert into moderation_log (entry_id, action, category, actor, content_sha256, reason)
+    select id, p_action, p_category, 'human', content_sha256, p_reason from entries where id = p_entry;
+end $$;
+
+-- LIVE cz_review_keep: as v6f, for a flag that is still open (the entry published, no human decision on it after the flag, no keep yet)
+create or replace function cz_review_keep(p_flag bigint, p_reason text, p_token text) returns jsonb
+language plpgsql security definer set search_path = public set timezone = 'UTC' as $$
+declare v_entry bigint; v_sha text; v_state text;
+begin
+  if not cz_token_ok(p_token) then raise exception 'unauthorised'; end if;
+  if coalesce(char_length(btrim(p_reason)), 0) < 1 then raise exception 'a written reason is required'; end if;
+  select f.entry_id, e.content_sha256, e.state into v_entry, v_sha, v_state
+    from moderation_log f join entries e on e.id = f.entry_id where f.id = p_flag and f.action = 'flag' for update of e;
+  if not found then raise exception 'no such flag'; end if;
+  if v_state <> 'published'
+     or exists (select 1 from moderation_log h where h.entry_id = v_entry and h.actor = 'human' and h.action in ('hide', 'unhide', 'redact', 'unredact') and h.id > p_flag)
+     or exists (select 1 from moderation_reviews r where r.flag_log_id = p_flag) then
+    raise exception 'already decided';
+  end if;
+  begin
+    insert into moderation_reviews (flag_log_id, entry_id, decision, content_sha256, reason) values (p_flag, v_entry, 'keep', v_sha, left(p_reason, 2000));
+  exception when unique_violation then raise exception 'already decided';
+  end;
+  return jsonb_build_object('flag', p_flag, 'entry', v_entry, 'decision', 'keep');
+end $$;
+
+-- superseded and disabled, exactly as in production (v5: cz_post with 13 arguments, cz_translation_put, cz_source_chars(text, int),
+-- cz_daily(text), cz_daily(text, date); v6d's cz_register_pending is recorded above)
+create or replace function cz_post(
+  p_author text, p_kind text, p_system text, p_operator text, p_prompt text, p_lang text, p_ref text,
+  p_content text, p_declared_date text, p_pubkey text, p_sig text, p_key_fingerprint text, p_source_hash text)
+returns json language plpgsql security definer set search_path = public as $$
+begin raise exception 'superseded: cz_post now requires p_token'; end $$;
+create or replace function cz_translation_put(p_entry bigint, p_lang text, p_text text, p_engine text, p_state text, p_cost_cents int, p_token text)
+returns void language plpgsql security definer set search_path = public as $$
+begin raise exception 'superseded: use cz_translation_store'; end $$;
+create or replace function cz_source_chars(p_source_hash text, p_chars int)
+returns int language plpgsql security definer set search_path = public as $$
+begin raise exception 'superseded: cz_source_chars now requires p_token'; end $$;
+create or replace function cz_daily(p_token text)
+returns json language plpgsql security definer set search_path = public as $$
+begin raise exception 'superseded: cz_daily(p_token, p_day, p_force)'; end $$;
+create or replace function cz_daily(p_token text, p_day date default null)
+returns json language plpgsql security definer set search_path = public as $$
+begin raise exception 'superseded: cz_daily(p_token, p_day, p_force)'; end $$;
+notify pgrst, 'reload schema';

@@ -625,6 +625,15 @@
       ]
     },
     {
+      "source": "/api/((?!admin$).*)",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex"
+        }
+      ]
+    },
+    {
       "source": "/(admin|api/admin)",
       "headers": [
         {

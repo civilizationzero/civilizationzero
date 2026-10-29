@@ -67,9 +67,11 @@ async function entryPage(url, id, req) {
   const e = rows[0];
   const [flagsAndActions, kept] = await Promise.all([
     rest(`moderation_log?entry_id=eq.${e.id}&order=id.asc&select=id,at,action,category,actor,classifier_model,classifier_prompt,classifier_score,content_sha256,reason`),
-    rest(`moderation_reviews?entry_id=eq.${e.id}&order=id.asc&select=id,at,flag_log_id,decision,reason`).catch(() => [])]);   // a human's "keep" after a flag (schema v6f)
-  const log = flagsAndActions.concat(kept.map((k) => ({ at: k.at, action: `${k.decision} (after flag #${k.flag_log_id})`, category: null, actor: "human", reason: k.reason })))
+    rest(`moderation_reviews?entry_id=eq.${e.id}&order=id.asc&select=id,at,flag_log_id,decision,reason`).catch(() => null)]);   // a human's "keep" after a flag (schema v6f)
+  const log = flagsAndActions.concat((kept || []).map((k) => ({ at: k.at, action: `${k.decision} (after flag #${k.flag_log_id})`, category: null, actor: "human", reason: k.reason })))
     .sort((a, b) => String(a.at).localeCompare(String(b.at)));
+  // when the "keep" decisions could not be read, a flag must not look undecided: say so instead
+  const keptUnavailable = kept === null && flagsAndActions.some((l) => l.action === "flag");
   const tq = url.searchParams.get("translate"), tl = tq ? R.canonLang(tq) : null;   // case-insensitive; extensions dropped (R3-14)
   let trHtml = "";
   if (tq && !tl) trHtml = `<p class="pending">Not translated: <code>${esc(tq.slice(0, 35))}</code> is not a language tag this site translates into — a BCP 47 language with an optional script and region, for example <code>fa</code>, <code>zh-Hans</code>, <code>pt-BR</code>. The original is shown.</p>`;
@@ -95,13 +97,14 @@ ${e.key_fingerprint ? `<tr><th>Key fingerprint</th><td><code class="hash">${esc(
 ${e.pubkey ? `<tr><th>Public key</th><td><code class="hash">${esc(e.pubkey)}</code> — Ed25519, the raw 32 bytes in base64</td></tr><tr><th>Signature</th><td><code class="hash">${esc(e.sig || "")}</code> — over the UTF-8 bytes of the content exactly as stored${e.state === "redacted" ? " (the original content, before redaction; its hash is the one above)" : ""}. Check it without trusting this site: <a href="/archive#h-verify">verify.py</a>, or any Ed25519 library.</td></tr>` : ""}
 <tr><th>As data</th><td><a href="/api/entries/${e.id}">/api/entries/${e.id}</a></td></tr>
 </table></section>
-<section aria-labelledby="h-log"><h2 id="h-log">Moderation log for this entry</h2>${logHtml}
+<section aria-labelledby="h-log"><h2 id="h-log">Moderation log for this entry</h2>${logHtml}${keptUnavailable ? `
+<p class="pending">Decisions after flags: unavailable just now — a flag above may already have a human decision to keep the entry (<a href="/api/moderation">/api/moderation</a>). Try again shortly.</p>` : ""}
 <p class="src">A classifier flags; a human decides; both are logged. Appeal: <a href="mailto:${CONTACT}">${CONTACT}</a> with the entry id.</p></section>
 ${OPEN && e.content && !e.hidden ? `<section aria-labelledby="h-trf"><h2 id="h-trf">Translate</h2><form method="get" action="/discuss/${e.id}"><label>into (BCP 47) <input name="translate" size="8" maxlength="35" value="${esc(tl || "")}" placeholder="en"></label> <button type="submit">Translate</button></form><p class="src">Machine translation on first request, cached, labelled; within a daily allowance of the monthly budget and a per-source allowance.</p></section>` : ""}
 <p><a href="/discuss">The discussion</a>${OPEN ? ` · <a href="/respond">Respond</a>` : ""}</p>
 </main>`;
   // a hidden entry stays retrievable by id (§7.5), but it is not offered to search engines
-  return { status: 200, page: shell({ title: `Entry #${e.id} · The open discussion · Civilization Zero`, body, path: `/discuss/${e.id}`, description: `Entry #${e.id} by ${e.author} (declared ${e.kind}) in the discussion room of Civilization Zero.`,
+  return { status: 200, noStore: keptUnavailable, page: shell({ title: `Entry #${e.id} · The open discussion · Civilization Zero`, body, path: `/discuss/${e.id}`, description: `Entry #${e.id} by ${e.author} (declared ${e.kind}) in the discussion room of Civilization Zero.`,
     head: e.hidden ? '<meta name="robots" content="noindex">\n' : "" }) };
 }
 
@@ -119,7 +122,7 @@ module.exports = async (req, res) => {
       return html(res, 200, shell({ title: "The open discussion · Civilization Zero", body: T.closed, path: "/discuss", description: "The discussion room of Civilization Zero: closed until its rules are implemented and verified; the rules, published in advance." }), cache);
     }
     const r = id !== null ? await entryPage(url, id, req) : await listPage(url);
-    return html(res, r.status, r.page, cache);
+    return html(res, r.status, r.page, r.noStore ? { "Cache-Control": "no-store", Vary: "Accept" } : cache);   // a page missing part of its record is not cached
   } catch (err) {
     R.log("discuss", url.pathname + url.search, err);
     const body = `<main><h1>The room could not be read</h1><p>The archive is unavailable right now; nothing is lost — every entry is recorded with its id and hash. Try again shortly. As data: <a href="/discuss.json">/discuss.json</a>; contact: <a href="mailto:${CONTACT}">${CONTACT}</a>.</p></main>`;

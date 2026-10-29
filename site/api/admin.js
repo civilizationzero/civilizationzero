@@ -1,10 +1,15 @@
 // The administrator's page, /admin (Blueprint §7.5: "a classifier flags; a human decides; both actions are logged publicly").
-// Server-rendered forms, no script. One person signs in with the administrator's token (CZ_ADMIN_TOKEN). The session is a
-// cookie signed under a key derived from that token (so rotating the token ends every session): HttpOnly, Secure,
-// SameSite=Strict, 8 hours. Every action is a POST from this page — same origin, with a per-session CSRF token — and goes
-// through the same database functions as POST /api/moderation, which log it publicly; a "keep" after a flag is logged too
-// (moderation_reviews, schema v6f). The page shows what the public data already shows, plus the forms. No CORS, no cache,
-// never indexed. The register's and the room's switches (open, closed) stay in the build, where a change is a reviewed commit.
+// Server-rendered forms, no script. One person signs in with the administrator's passphrase: the page's own credential, whose
+// SHA-256 (lowercase hex) is the deployment's CZ_ADMIN_PANEL_SHA256 — never the database token, CZ_ADMIN_TOKEN, which stays on
+// the server and is used only for the database calls. The session is a cookie (HttpOnly, Secure, SameSite=Strict) signed under
+// a key derived from the database token and the passphrase's hash (changing either ends every session); it ends 30 minutes
+// after the last request, 8 hours after sign-in at the latest, or when the administrator signs out — on the server: signing out
+// records the time in the database (cz_admin_signout, schema v6g), and every request checks that its session was issued after
+// the latest sign-out (cz_admin_floor; if that check cannot be made, the page refuses). Every action is a POST from this page —
+// same origin, with a per-session CSRF token under a key of its own — and goes through the same database functions as
+// POST /api/moderation, which log it publicly; a "keep" after a flag is logged too (moderation_reviews, schema v6f). The page
+// shows what the public data already shows, plus the forms. No CORS, no cache, never indexed. The register's and the room's
+// switches (open, closed) stay in the build, where a change is a reviewed commit.
 "use strict";
 const crypto = require("node:crypto");
 const R = require("../room/lib.js");
@@ -15,36 +20,78 @@ const HIDE = ["harassment_or_threat", "private_person_exposure", "deceptive_impe
 const REDACT = ["exposed_credentials", "private_data", "no_right_to_publish", "lawful_erasure"];
 const NEVER = "disagreement, rejection of the record, hostility to the project, obscenity in quotation or evidence, discomfort";
 const COOKIE = "__Host-cz_admin";
-const MAX_AGE = 8 * 3600;
-const failures = new Map();   // per source, in this instance: failed sign-ins (the token is 256 bits; this only slows a flood)
+const MAX_AGE_MS = 8 * 3600 * 1000;    // a session ends 8 hours after sign-in at the latest
+const IDLE_MS = 30 * 60 * 1000;        // and 30 minutes after its last request
+const REASON_MAX = 2000, REGISTER_REASON_MAX = 500;   // the room's and the register's limits for a written reason (characters)
+// failed sign-ins per source (the salted hash of the address), in this instance: 10 within 15 minutes of the first lock that
+// source out until those 15 minutes are over. Entries expire and the map is bounded; the passphrase's entropy (128 bits or more)
+// is what resists guessing — this only slows a flood, and spares the administrator a lockout that outlasts its window.
+const LOCK_MAX = 10, LOCK_WINDOW_MS = 15 * 60 * 1000, LOCK_SOURCES = 5000;
+const failures = new Map();   // source hash → { first, count }, in the order of each window's first failure
 const DONE = { signed_in: "Signed in.", kept: "Kept — the decision is in the public log.", hidden: "Hidden — logged publicly.", unhidden: "Unhidden — logged publicly.",
   redacted: "Redacted — logged publicly.", unredacted: "Unredacted — logged publicly.", corrected: "Translation corrected — logged publicly.",
   register_hidden: "Register record hidden — logged in its log.", register_unhidden: "Register record unhidden — logged in its log." };
 
-// ---------------------------------------------------------------- session and request checks
-const key = () => crypto.createHmac("sha256", R.TOKEN).update("cz-admin-session-v1").digest();
-const mac = (s) => crypto.createHmac("sha256", key()).update(s).digest("base64url");
+// ---------------------------------------------------------------- credential, session and request checks
+const sha256hex = (s) => crypto.createHash("sha256").update(String(s), "utf8").digest("hex");
+// the passphrase's SHA-256 as configured, or null (missing, malformed, or the hash of the database token itself)
+function panelHash() {
+  const h = String(process.env.CZ_ADMIN_PANEL_SHA256 || "").trim().toLowerCase();
+  return /^[0-9a-f]{64}$/.test(h) && h !== sha256hex(R.TOKEN) ? h : null;
+}
+function passphraseOk(pass, panel) {
+  if (typeof pass !== "string" || !pass || pass.length > 1024) return false;
+  return crypto.timingSafeEqual(crypto.createHash("sha256").update(pass, "utf8").digest(), Buffer.from(panel, "hex"));
+}
+// two keys, one for the cookie and one for the CSRF tokens, so that neither can stand in for the other
+const keyOf = (label, panel) => crypto.createHmac("sha256", R.TOKEN).update(`${label}|${panel}`).digest();
+const macOf = (label, panel, s) => crypto.createHmac("sha256", keyOf(label, panel)).update(s).digest("base64url");
 function same(a, b) { const x = Buffer.from(String(a)), y = Buffer.from(String(b)); return x.length === y.length && crypto.timingSafeEqual(x, y); }
 function cookies(req) {
   const out = {};
   for (const part of String(req.headers.cookie || "").split(";")) { const i = part.indexOf("="); if (i > 0) out[part.slice(0, i).trim()] = part.slice(i + 1).trim(); }
   return out;
 }
-function session(req) {
-  if (!R.TOKEN) return null;
-  const c = cookies(req)[COOKIE];
+// the cookie's payload { n (nonce), iat, exp, seen } (milliseconds) if its MAC verifies and it has neither expired nor idled out
+function cookieSession(c, panel, now) {
   if (!c || c.length > 512) return null;
   const [p, s, extra] = c.split(".");
-  if (!p || !s || extra !== undefined || !same(s, mac(p))) return null;
+  if (!p || !s || extra !== undefined || !same(s, macOf("cz-admin-cookie-v2", panel, p))) return null;
   let v; try { v = JSON.parse(Buffer.from(p, "base64url").toString("utf8")); } catch { return null; }
-  return v && typeof v.n === "string" && Number.isFinite(v.exp) && v.exp > Date.now() / 1000 ? v : null;
+  if (!v || typeof v.n !== "string" || ![v.iat, v.exp, v.seen].every(Number.isFinite) || v.exp !== v.iat + MAX_AGE_MS) return null;
+  return now < v.exp && now - v.seen < IDLE_MS ? v : null;
 }
-function newSession() {
-  const p = Buffer.from(JSON.stringify({ n: crypto.randomBytes(18).toString("base64url"), exp: Math.floor(Date.now() / 1000) + MAX_AGE })).toString("base64url");
-  return `${COOKIE}=${p}.${mac(p)}; Path=/; Max-Age=${MAX_AGE}; HttpOnly; Secure; SameSite=Strict`;
+// the latest sign-out, from the database: a session issued at or before it has ended. Fails closed: an error is thrown, never ignored.
+async function signedOutAt() {
+  const f = await rpc("cz_admin_floor", { p_token: R.TOKEN });
+  if (f === "-infinity") return -Infinity;
+  const t = typeof f === "string" ? Date.parse(f) : NaN;
+  if (!Number.isFinite(t)) throw new Error("cz_admin_floor: not a time");
+  return t;
 }
+// { s: the session or null, presented: whether a cookie came with the request }; one database call when the cookie is valid
+async function session(req, panel) {
+  const c = cookies(req)[COOKIE];
+  const v = cookieSession(c, panel, Date.now());
+  if (!v) return { s: null, presented: !!c };
+  return { s: v.iat > await signedOutAt() ? v : null, presented: true };
+}
+function cookieOf(v, panel, now) {
+  const p = Buffer.from(JSON.stringify(v)).toString("base64url");
+  const maxAge = Math.max(1, Math.floor(Math.min(IDLE_MS, v.exp - now) / 1000));   // the browser drops it when it idles out, never after exp
+  return `${COOKIE}=${p}.${macOf("cz-admin-cookie-v2", panel, p)}; Path=/; Max-Age=${maxAge}; HttpOnly; Secure; SameSite=Strict`;
+}
+function newSession(panel) { const now = Date.now(); return cookieOf({ n: crypto.randomBytes(18).toString("base64url"), iat: now, exp: now + MAX_AGE_MS, seen: now }, panel, now); }
+const slide = (s, panel) => { const now = Date.now(); return cookieOf({ n: s.n, iat: s.iat, exp: s.exp, seen: now }, panel, now); };   // every authenticated response
 const endSession = () => `${COOKIE}=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Strict`;
-const csrfOf = (s) => mac("csrf:" + s.n);
+const csrfOf = (s, panel) => macOf("cz-admin-csrf-v2", panel, "csrf:" + s.n);
+function pruneFailures(now) { for (const [k, f] of failures) if (now - f.first >= LOCK_WINDOW_MS) failures.delete(k); }
+function recordFailure(src, now) {
+  const f = failures.get(src);
+  if (f) { f.count++; return; }
+  failures.set(src, { first: now, count: 1 });
+  while (failures.size > LOCK_SOURCES) failures.delete(failures.keys().next().value);   // the oldest window goes first
+}
 // a form posted from this page carries this site's own origin (the site's Referrer-Policy is same-origin); anything else — another
 // site, "null", a missing header — is refused before the session is even looked at
 const sameOrigin = (req) => { const host = req.headers["x-forwarded-host"] || req.headers.host || ""; return !!host && req.headers.origin === `https://${host}`; };
@@ -68,20 +115,23 @@ const page = (title, body) => R.shell({ title: `${title} · Civilization Zero`, 
 const redirect = (res, to, headers = {}) => { res.statusCode = 303; res.setHeader("Location", to); res.setHeader("Cache-Control", "no-store"); for (const [k, v] of Object.entries(headers)) res.setHeader(k, v); res.end(); };
 const t = (x) => (x ? `<time datetime="${esc(R.isoTime(x))}">${esc(R.fmtTime(x))}</time>` : "—");
 const opts = (list, sel) => list.map((c) => `<option value="${esc(c)}"${c === sel ? " selected" : ""}>${esc(c.replace(/_/g, " "))}</option>`).join("");
-const hidden = (s) => `<input type="hidden" name="csrf" value="${esc(csrfOf(s))}">`;
+const hidden = (s, panel) => `<input type="hidden" name="csrf" value="${esc(csrfOf(s, panel))}">`;
+const bdi = (x) => `<bdi dir="auto">${esc(x)}</bdi>`;   // a string someone else wrote, isolated from the text around it (any direction)
+const chars = (s) => [...s].length;                     // characters as the database counts them (code points)
 
-function loginPage(message, status = 200) {
+function loginPage({ alert = "", status = "" } = {}) {
   return page("Administration", `<h1>Administration</h1>
-${message ? `<p class="notice" role="alert">${esc(message)}</p>` : ""}
-<p>For the administrator of civilizationzero.ai. Sign in with the administrator's token; it is checked against the hash kept in the database and is never stored here.</p>
+${alert ? `<p class="notice" role="alert">${esc(alert)}</p>` : ""}${status ? `<p class="notice" role="status">${esc(status)}</p>` : ""}
+<p>For the administrator of civilizationzero.ai. Sign in with the administrator's passphrase — this page's own credential, not the database token. It is checked against its SHA-256, kept in this deployment's settings, and is never stored here.</p>
 <form class="respond" method="post" action="/admin"><input type="hidden" name="do" value="login">
-<label>Administrator token <input type="password" name="token" autocomplete="current-password" required minlength="16" maxlength="512"></label>
+<label>User name <input name="username" value="administrator" readonly autocomplete="username"></label>
+<label>Passphrase <input type="password" name="passphrase" autocomplete="current-password" required minlength="16" maxlength="512"></label>
 <p><button type="submit">Sign in</button></p></form>
-<p class="src">The session lasts 8 hours, in a cookie only this site can read. Every decision made here is logged publicly with its date, category, entry and written reason (<a href="/api/moderation">/api/moderation</a>); nothing done here is hidden from readers.</p>`);
+<p class="src">A session is kept in a cookie only this site can read. It ends 30 minutes after its last use, 8 hours after signing in at the latest, or when you sign out — signing out ends every open session of this page, in every browser. Every decision made here is logged publicly with its date, category, entry and written reason (<a href="/api/moderation">/api/moderation</a>); nothing done here is hidden from readers.</p>`);
 }
 
 // ---------------------------------------------------------------- the page
-async function dashboard(s, notice, error) {
+async function dashboard(s, panel, notice, error) {
   const settle = (p) => p.then((v) => ({ ok: true, v }), (e) => ({ ok: false, e }));
   const [stats, budget, flags, recent, hiddenList, reviews, log, rstats] = await Promise.all([
     settle(rpc("cz_stats", {})), settle(rpc("cz_budget_status", {})), settle(rpc("cz_flags_open", {})),
@@ -95,7 +145,7 @@ async function dashboard(s, notice, error) {
   const lastDay = st && st.last_log ? st.last_log.day : null;
   const chainLate = R.CHAIN && now.getUTCHours() >= 2 && lastDay && lastDay < yesterday;
   const cents = (c) => (c == null ? "—" : `USD ${(Number(c) / 100).toFixed(2)}`);
-  const csrf = hidden(s);
+  const csrf = hidden(s, panel);
 
   const status = `<section aria-labelledby="h-st"><h2 id="h-st">Status</h2><table>
 <tr><th>The room</th><td>${R.OPEN ? "open" : R.CHAIN ? "closed to new entries (it opened before)" : "not open"}${st ? ` · ${st.entries} entries (${st.published} published, ${st.hidden} hidden, ${st.redacted} redacted) · today ${st.today} of ${st.daily_intake_max} · ${st.unclassified} not yet screened by the classifier` : ` · ${na}`}</td></tr>
@@ -108,8 +158,8 @@ async function dashboard(s, notice, error) {
   if (!flags.ok) flagHtml = `<p>${na}</p>`;
   else if (!flags.v.length) flagHtml = "<p>None. Every flag has a human decision.</p>";
   else flagHtml = flags.v.map((f) => `<fieldset><legend>Flag #${f.flag_id} on <a href="/discuss/${f.entry_id}">entry #${f.entry_id}</a></legend>
-<p class="src">${t(f.flagged_at)} · ${esc((f.category || "").replace(/_/g, " "))} · score ${esc(f.classifier_score)} · ${esc(f.classifier_model || "")} (${esc(f.classifier_prompt || "")}) · by ${esc(f.author)} (declared ${esc(f.kind)}${f.lang ? `, ${esc(f.lang)}` : ""}), received ${t(f.received)}</p>
-<div class="content" lang="${esc(f.lang || "")}">${esc(f.content || "")}</div>
+<p class="src">${t(f.flagged_at)} · ${esc((f.category || "").replace(/_/g, " "))} · score ${esc(f.classifier_score)} · ${esc(f.classifier_model || "")} (${esc(f.classifier_prompt || "")}) · by ${bdi(f.author)} (declared ${esc(f.kind)}${f.lang ? `, ${esc(f.lang)}` : ""}), received ${t(f.received)}</p>
+<div class="content" dir="auto" lang="${esc(f.lang || "")}">${esc(f.content || "")}</div>
 <form class="respond" method="post" action="/admin">${csrf}<input type="hidden" name="do" value="decide"><input type="hidden" name="flag" value="${f.flag_id}"><input type="hidden" name="entry" value="${f.entry_id}">
 <div class="row"><label>Decision <select name="decision"><option value="keep">keep — no ground applies</option><option value="hide">hide</option><option value="redact">redact</option></select></label>
 <label>Category (for hide or redact) <select name="category"><option value="">—</option><optgroup label="hide">${opts(HIDE)}</optgroup><optgroup label="redact">${opts(REDACT)}</optgroup></select></label></div>
@@ -128,7 +178,7 @@ async function dashboard(s, notice, error) {
 <label>For a redaction: the content with markers in place of what is removed <textarea name="redacted_text" maxlength="6000"></textarea></label>
 <p><button type="submit">Apply</button></p></form></section>`;
 
-  const recentRows = recent.ok ? recent.v.map((e) => `<tr><td><a href="/discuss/${e.id}">#${e.id}</a></td><td>${t(e.received)}</td><td>${esc(e.state)}${e.category ? ` — ${esc(e.category)}` : ""}</td><td>${esc(e.author)} (${esc(e.kind)})</td><td>${esc(String(e.content || e.redacted_text || "").slice(0, 120))}${String(e.content || "").length > 120 ? "…" : ""}</td></tr>`).join("") : "";
+  const recentRows = recent.ok ? recent.v.map((e) => `<tr><td><a href="/discuss/${e.id}">#${e.id}</a></td><td>${t(e.received)}</td><td>${esc(e.state)}${e.category ? ` — ${esc(e.category)}` : ""}</td><td>${bdi(e.author)} (${esc(e.kind)})</td><td>${bdi(String(e.content || e.redacted_text || "").slice(0, 120))}${String(e.content || "").length > 120 ? "…" : ""}</td></tr>`).join("") : "";
   const recentSec = `<section aria-labelledby="h-re"><h2 id="h-re">Newest entries</h2>${recent.ok ? (recentRows ? `<div class="scroll"><table><tr><th>Id</th><th>Received</th><th>State</th><th>Declared author</th><th>Beginning</th></tr>${recentRows}</table></div>` : "<p>No entries yet.</p>") : `<p>${na}</p>`}</section>`;
 
   const hiddenSec = `<section aria-labelledby="h-hi"><h2 id="h-hi">Hidden and redacted</h2>${hiddenList.ok ? (hiddenList.v.length ? "<ul>" + hiddenList.v.map((h) => `<li><a href="/discuss/${h.id}">#${h.id}</a> — ${esc(h.state)}, ${esc(h.category || "")}, decided ${t(h.updated)}</li>`).join("") + "</ul>" : "<p>None.</p>") : `<p>${na}</p>`}<p class="src">To reverse a decision, use "Act on an entry" with unhide or unredact, and a reason.</p></section>`;
@@ -145,13 +195,13 @@ async function dashboard(s, notice, error) {
 <div class="row"><label>Record id <input name="id" inputmode="numeric" pattern="[0-9]{1,12}" required></label>
 <label>Action <select name="action"><option value="hide">hide</option><option value="unhide">unhide</option></select></label>
 <label>Category (hide) <select name="category"><option value="">— (unhide)</option>${opts(HIDE)}</select></label></div>
-<label>Written reason (public) <input name="reason" required maxlength="2000"></label>
+<label>Written reason (public; at most ${REGISTER_REASON_MAX} characters, the register's limit) <input name="reason" required maxlength="${REGISTER_REASON_MAX}"></label>
 <p><button type="submit">Apply</button></p></form></section>`;
 
-  const logRows = (log.ok ? log.v.map((l) => ({ at: l.at, text: `${l.action}${l.category ? ` — ${l.category}` : ""} · entry #${l.entry_id} · ${l.actor}${l.reason ? ` · ${String(l.reason).slice(0, 140)}` : ""}` })) : [])
-    .concat(reviews.ok ? reviews.v.map((r) => ({ at: r.at, text: `keep after flag #${r.flag_log_id} · entry #${r.entry_id} · human · ${String(r.reason).slice(0, 140)}` })) : [])
+  const logRows = (log.ok ? log.v.map((l) => ({ at: l.at, text: `${l.action}${l.category ? ` — ${l.category}` : ""} · entry #${l.entry_id} · ${l.actor}`, reason: l.reason })) : [])
+    .concat(reviews.ok ? reviews.v.map((r) => ({ at: r.at, text: `keep after flag #${r.flag_log_id} · entry #${r.entry_id} · human`, reason: r.reason })) : [])
     .sort((a, b) => String(b.at).localeCompare(String(a.at))).slice(0, 15);
-  const logSec = `<section aria-labelledby="h-lg"><h2 id="h-lg">Latest decisions and flags</h2>${logRows.length ? "<ul>" + logRows.map((l) => `<li>${t(l.at)} — ${esc(l.text)}</li>`).join("") + "</ul>" : "<p>None yet.</p>"}<p class="src">Everything here is public: <a href="/api/moderation">/api/moderation</a>.</p></section>`;
+  const logSec = `<section aria-labelledby="h-lg"><h2 id="h-lg">Latest decisions and flags</h2>${logRows.length ? "<ul>" + logRows.map((l) => `<li>${t(l.at)} — ${esc(l.text)}${l.reason ? ` · ${bdi(String(l.reason).slice(0, 140))}` : ""}</li>`).join("") + "</ul>" : "<p>None yet.</p>"}${reviews.ok ? "" : `<p class="src">The "keep" decisions are ${na}; this list may lack some.</p>`}<p class="src">Everything here is public: <a href="/api/moderation">/api/moderation</a>.</p></section>`;
 
   const links = `<section aria-labelledby="h-ln"><h2 id="h-ln">Elsewhere</h2><ul>
 <li>Checks and copies: <a href="https://github.com/civilizationzero/civilizationzero/actions">GitHub Actions</a> (verify-live, daily-archive, ots-upgrade, room-watch)</li>
@@ -162,16 +212,21 @@ async function dashboard(s, notice, error) {
   return page("Administration", `<h1>Administration</h1>
 ${notice ? `<p class="notice" role="status">${esc(notice)}</p>` : ""}${error ? `<p class="notice" role="alert"><strong>Not done:</strong> ${esc(error)}</p>` : ""}
 <form method="post" action="/admin">${csrf}<input type="hidden" name="do" value="logout"><button type="submit">Sign out</button></form>
+<p class="src">Signing out ends every open session of this page, in every browser. A session also ends 30 minutes after its last use, and 8 hours after signing in.</p>
 ${status}${flagsSec}${act}${recentSec}${hiddenSec}${trSec}${regSec}${logSec}${links}`);
 }
 
 // ---------------------------------------------------------------- actions
 const id12 = (v) => (/^\d{1,12}$/.test(String(v || "")) ? Number(v) : null);
-const errText = (e) => { const m = String(e && e.message || ""); for (const k of ["no such entry", "no such record", "no such flag", "already decided", "already hidden", "not hidden", "a written reason is required"]) if (m.includes(k)) return k; return null; };
+// the database's refusals that mean "not done, nothing changed"; anything else is an error (503, its detail not shown)
+const errText = (e) => { const m = String(e && e.message || ""); for (const k of ["no such entry", "no such record", "no such flag", "already decided", "already hidden", "not hidden", "not redacted", "a written reason is required"]) if (m.includes(k)) return k; return null; };
 
 async function perform(b) {
-  const reason = String(b.reason || "").trim().slice(0, 2000);
+  const reason = typeof b.reason === "string" ? b.reason.trim() : "";
   if (!reason) return { error: "a written reason is required" };
+  // a reason longer than the limit is refused, never cut: the public log shows exactly what was written
+  if (b.do === "register" && chars(reason) > REGISTER_REASON_MAX) return { error: `the written reason: at most ${REGISTER_REASON_MAX} characters for the register (this one has ${chars(reason)})` };
+  if (chars(reason) > REASON_MAX) return { error: `the written reason: at most ${REASON_MAX.toLocaleString("en")} characters (this one has ${chars(reason)})` };
   if (b.do === "decide") {
     const flag = id12(b.flag), entry = id12(b.entry), decision = String(b.decision || "");
     if (!flag || !entry) return { error: "the flag or the entry is missing" };
@@ -219,38 +274,55 @@ module.exports = async (req, res) => {
     res.setHeader("X-Robots-Tag", "noindex, nofollow"); return res.end("Not found\n");
   }
   try {
-    if (!R.TOKEN) return send(res, 503, page("Administration", "<h1>Administration</h1><p>Not configured: the administrator's token is not set for this deployment.</p>"));
+    const panel = panelHash();
+    if (!R.TOKEN || !panel) return send(res, 503, page("Administration", "<h1>Administration</h1><p>Not configured: this deployment needs the database token (CZ_ADMIN_TOKEN) and the SHA-256 of the administrator's passphrase (CZ_ADMIN_PANEL_SHA256: 64 hexadecimal characters, not the hash of the database token).</p>"));
     if (method === "GET") {
-      const s = session(req);
-      if (!s) return send(res, 200, loginPage(""));
-      const done = DONE[url.searchParams.get("done")] || "";
+      const { s, presented } = await session(req, panel);   // a failed check of the latest sign-out is thrown: 503 below
+      if (!s) {
+        const status = url.searchParams.get("done") === "signed_out" ? "Signed out. Every open session of this page has ended." : "";
+        return send(res, 200, loginPage({ status, alert: presented && !status ? "The session has ended. Sign in again." : "" }), presented ? { "Set-Cookie": endSession() } : {});
+      }
+      const key = url.searchParams.get("done");
+      const done = key && Object.hasOwn(DONE, key) ? DONE[key] : "";
       const id = id12(url.searchParams.get("id"));
-      return send(res, 200, await dashboard(s, done ? done + (id ? ` (#${id})` : "") : ""));
+      return send(res, 200, await dashboard(s, panel, done ? done + (id ? ` (#${id})` : "") : ""), { "Set-Cookie": slide(s, panel) });
     }
     if (method !== "POST") return send(res, 405, page("Administration", "<h1>Method not allowed</h1>"), { Allow: "GET, HEAD, POST" });
     if (!sameOrigin(req)) return send(res, 403, page("Administration", "<h1>Not accepted</h1><p>This page takes forms only from itself.</p>"));
     let b; try { b = typeof req.body === "object" && req.body ? req.body : Object.fromEntries(new URLSearchParams(String(req.body || ""))); } catch { b = {}; }
     if (b.do === "login") {
-      const src = R.sourceHash(req);
-      if ((failures.get(src) || 0) >= 10) return send(res, 429, loginPage("Too many failed attempts from this address. Try again later."), { "Retry-After": "900" });
-      if (!R.tokenEquals(String(b.token || ""), R.TOKEN)) {
-        failures.set(src, (failures.get(src) || 0) + 1);
+      const src = R.sourceHash(req), now = Date.now();
+      pruneFailures(now);
+      const f = failures.get(src);
+      if (f && f.count >= LOCK_MAX) {
+        const wait = Math.max(1, Math.ceil((f.first + LOCK_WINDOW_MS - now) / 1000));
+        return send(res, 429, loginPage({ alert: `Too many failed attempts from this address. Try again in ${Math.ceil(wait / 60)} minute${wait > 60 ? "s" : ""}.` }), { "Retry-After": String(wait) });
+      }
+      if (!passphraseOk(b.passphrase, panel)) {
+        recordFailure(src, now);
         R.log("admin: failed sign-in");
         await new Promise((r) => setTimeout(r, 400));
-        return send(res, 401, loginPage("That is not the administrator's token."));
+        return send(res, 401, loginPage({ alert: "That is not the administrator's passphrase." }));
       }
       failures.delete(src);
-      return redirect(res, "/admin?done=signed_in", { "Set-Cookie": newSession() });
+      return redirect(res, "/admin?done=signed_in", { "Set-Cookie": newSession(panel) });
     }
-    const s = session(req);
-    if (!s) return send(res, 401, loginPage("The session has ended. Sign in again."));
-    if (!same(String(b.csrf || ""), csrfOf(s))) return send(res, 403, page("Administration", '<h1>Not accepted</h1><p>The form is out of date. <a href="/admin">Reload the page</a> and try again.</p>'));
-    if (b.do === "logout") return redirect(res, "/admin", { "Set-Cookie": endSession() });
+    const { s, presented } = await session(req, panel);
+    if (!s) return send(res, 401, loginPage({ alert: "The session has ended. Sign in again." }), presented ? { "Set-Cookie": endSession() } : {});
+    if (!same(String(b.csrf || ""), csrfOf(s, panel))) return send(res, 403, page("Administration", '<h1>Not accepted</h1><p>The form is out of date. <a href="/admin">Reload the page</a> and try again.</p>'), { "Set-Cookie": slide(s, panel) });
+    if (b.do === "logout") {   // on the server: every session issued until now ends, wherever its cookie is
+      try { await rpc("cz_admin_signout", { p_token: R.TOKEN }); }
+      catch (e) {
+        R.log("admin: sign-out", e);
+        return send(res, 503, page("Administration", '<h1>Not signed out</h1><p>The database could not be reached, so the open sessions of this page have not been ended. <a href="/admin">Back to the page</a>, then sign out again.</p>'), { "Retry-After": "30" });
+      }
+      return redirect(res, "/admin?done=signed_out", { "Set-Cookie": endSession() });
+    }
     let r;
     try { r = await perform(b); }
     catch (e) { const known = errText(e); if (!known) throw e; r = { error: known }; }
-    if (r.error) return send(res, 400, await dashboard(s, "", r.error));
-    return redirect(res, `/admin?done=${r.done}${r.id ? `&id=${r.id}` : ""}`);
+    if (r.error) return send(res, 400, await dashboard(s, panel, "", r.error), { "Set-Cookie": slide(s, panel) });
+    return redirect(res, `/admin?done=${r.done}${r.id ? `&id=${r.id}` : ""}`, { "Set-Cookie": slide(s, panel) });
   } catch (err) {
     R.log("admin", req.method, err);
     return send(res, 503, page("Administration", '<h1>Unavailable</h1><p>The database could not be reached; nothing was changed by this request unless the public log shows it. <a href="/admin">Try again</a>.</p>'), { "Retry-After": "30" });
