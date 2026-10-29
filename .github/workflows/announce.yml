@@ -6,6 +6,10 @@ name: announce
 on:
   workflow_dispatch:
     inputs:
+      indexnow:
+        description: "Send the sitemap's addresses to IndexNow"
+        type: boolean
+        default: true
       archive:
         description: "Also ask the Internet Archive to save every page"
         type: boolean
@@ -22,6 +26,7 @@ jobs:
           curl -fsSL --retry 3 https://civilizationzero.ai/sitemap.txt -o urls.txt
           wc -l urls.txt
       - name: IndexNow
+        if: ${{ inputs.indexnow }}
         run: |
           set -euo pipefail
           KEY=$(python3 -c "import re;print(re.search(r'INDEXNOW_KEY = \"([0-9a-f]{32})\"', open('site/lib.py').read()).group(1))")
@@ -39,7 +44,7 @@ jobs:
       - name: Internet Archive
         if: ${{ inputs.archive }}
         run: |
-          set -uo pipefail
+          set +e -u   # one slow or refused save must not stop the others (GitHub runs steps with bash -e)
           : > snapshots.tsv
           while read -r u; do
             [ -z "$u" ] && continue
@@ -53,8 +58,10 @@ jobs:
             snap=$(curl -s --max-time 60 "https://archive.org/wayback/available?url=$u&timestamp=$(date -u +%Y%m%d%H%M%S)" | python3 -c "import json,sys; d=json.load(sys.stdin); s=d.get('archived_snapshots',{}).get('closest',{}); print(s.get('url',''))")
             printf '%s\t%s\n' "$u" "$snap" | tee -a snapshots.tsv
           done < urls.txt
+          echo "snapshots found: $(awk -F'\t' '$2 != ""' snapshots.tsv | wc -l) of $(wc -l < urls.txt)"
+          exit 0
       - uses: actions/upload-artifact@v4
-        if: ${{ inputs.archive }}
+        if: ${{ always() && inputs.archive }}
         with:
           name: snapshots
           path: snapshots.tsv
