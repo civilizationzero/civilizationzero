@@ -126,6 +126,7 @@ for name, side in (("apple-touch-icon.png", 180), ("favicon-96x96.png", 96), ("i
 ico = (PUBLIC / "favicon.ico").read_bytes()
 reserved, kind, count = struct.unpack("<HHH", ico[:6])
 check(reserved == 0 and kind == 1 and sorted((ico[6 + 16 * i] or 256) for i in range(count)) == [16, 32, 48], "favicon.ico: 16, 32 and 48 pixels")
+check(re.fullmatch(r"[0-9a-f]{32}", INDEXNOW_KEY) and (PUBLIC / f"{INDEXNOW_KEY}.txt").read_text("utf-8") == INDEXNOW_KEY, "the IndexNow key file")
 svg = (PUBLIC / "favicon.svg").read_text("utf-8")
 check(svg.startswith("<svg") and "prefers-color-scheme:dark" in svg, "favicon.svg: the mark, light and dark")
 wm = json.loads((PUBLIC / "site.webmanifest").read_text("utf-8"))

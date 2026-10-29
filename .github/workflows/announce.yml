@@ -1,0 +1,60 @@
+# Tells search engines which pages the site has (IndexNow: Bing, Yandex, Seznam, Naver and Yep share what one of them
+# receives) and asks the Internet Archive to keep a copy of every page (Blueprint 1.3.1 §8: snapshots at release, at launch
+# and at each anniversary). Pages come from the site's own sitemap. Run by hand after a release or a change of pages; the
+# snapshot addresses are printed and kept as the run's artifact, to be listed on /archive and in the manifest.
+name: announce
+on:
+  workflow_dispatch:
+    inputs:
+      archive:
+        description: "Also ask the Internet Archive to save every page"
+        type: boolean
+        default: true
+jobs:
+  announce:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v5
+      - name: The site's pages, from its sitemap
+        run: |
+          set -euo pipefail
+          curl -fsSL --retry 3 https://civilizationzero.ai/sitemap.txt -o urls.txt
+          wc -l urls.txt
+      - name: IndexNow
+        run: |
+          set -euo pipefail
+          KEY=$(python3 -c "import re;print(re.search(r'INDEXNOW_KEY = \"([0-9a-f]{32})\"', open('site/lib.py').read()).group(1))")
+          test "$(curl -fsSL https://civilizationzero.ai/$KEY.txt)" = "$KEY"   # the key file is served
+          python3 - "$KEY" <<'EOF'
+          import json, sys, urllib.request
+          key = sys.argv[1]
+          urls = [u.strip() for u in open("urls.txt") if u.strip()]
+          body = json.dumps({"host": "civilizationzero.ai", "key": key, "keyLocation": f"https://civilizationzero.ai/{key}.txt", "urlList": urls}).encode()
+          req = urllib.request.Request("https://api.indexnow.org/indexnow", data=body, headers={"Content-Type": "application/json; charset=utf-8"})
+          with urllib.request.urlopen(req, timeout=60) as r:
+              print("IndexNow:", r.status, f"({len(urls)} addresses)")   # 200 or 202: received
+              if r.status not in (200, 202): sys.exit(1)
+          EOF
+      - name: Internet Archive
+        if: ${{ inputs.archive }}
+        run: |
+          set -uo pipefail
+          : > snapshots.tsv
+          while read -r u; do
+            [ -z "$u" ] && continue
+            code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 120 -A "civilizationzero.ai announce workflow" "https://web.archive.org/save/$u")
+            echo "save $code $u"
+            sleep 15
+          done < urls.txt
+          sleep 60
+          while read -r u; do
+            [ -z "$u" ] && continue
+            snap=$(curl -s --max-time 60 "https://archive.org/wayback/available?url=$u&timestamp=$(date -u +%Y%m%d%H%M%S)" | python3 -c "import json,sys; d=json.load(sys.stdin); s=d.get('archived_snapshots',{}).get('closest',{}); print(s.get('url',''))")
+            printf '%s\t%s\n' "$u" "$snap" | tee -a snapshots.tsv
+          done < urls.txt
+      - uses: actions/upload-artifact@v4
+        if: ${{ inputs.archive }}
+        with:
+          name: snapshots
+          path: snapshots.tsv

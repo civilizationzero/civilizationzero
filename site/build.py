@@ -222,7 +222,9 @@ for f in sorted(TR_DIR.glob("CZ-CORE-1.0.*.json")) if TR_DIR.exists() else []:
 
 # The Core in every language it is published in, linked both ways (hreflang); x-default is the canonical English text
 HREFLANGS = [("en", "/core")] + [(t["lang"], f"/core.{t['lang']}") for t in TRANSLATIONS] + [("x-default", "/core")]
-PUBLISHER = {"@type": "Project", "@id": f"{ORIGIN}/#publisher", "name": "Civilization Zero", "url": f"{ORIGIN}/"}
+# sameAs: the places that are the same project — its repository and its deposit (social accounts are added once they exist)
+PUBLISHER = {"@type": "Project", "@id": f"{ORIGIN}/#publisher", "name": "Civilization Zero", "url": f"{ORIGIN}/",
+             "sameAs": [REPO, f"https://doi.org/{DOI_CONCEPT}"]}
 
 def translation_page(tr):
     lang, rtl = tr["lang"], tr.get("dir") == "rtl"
@@ -1291,6 +1293,7 @@ def sitemap_xml():
     return "\n".join(out) + "\n"
 write("/robots.txt", f"User-agent: *\nAllow: /\nDisallow: /*?translate=\nDisallow: /discuss?\nDisallow: /discuss/*?\nDisallow: /admin\nSitemap: {ORIGIN}/sitemap.xml\nSitemap: {ORIGIN}/sitemap.txt\n")
 write("/sitemap.xml", sitemap_xml())
+write(f"/{INDEXNOW_KEY}.txt", INDEXNOW_KEY)   # IndexNow: the workflow `announce` tells search engines which pages exist or changed
 write("/sitemap.txt", "\n".join(f"{ORIGIN}{p}" for p, _ in SITEMAP_PAGES) + "\n")
 write("/og.png", (SITE / "assets" / "og.png").read_bytes())                      # the mark, the site's one image, as the link-preview image
 write("/apple-touch-icon.png", (SITE / "assets" / "apple-touch-icon.png").read_bytes())   # the mark, for a phone's home screen
