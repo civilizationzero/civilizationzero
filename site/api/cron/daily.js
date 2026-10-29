@@ -37,8 +37,15 @@ module.exports = async (req, res) => {
     try { Object.assign(out, await rpc("cz_daily", { p_token: R.TOKEN, p_day, p_force })); }
     catch (err) { R.log("daily", err); failed = err; }
   }
-  // 2. the register's chain (once it has opened, whatever its state)
+  // 2. the register's chain (once it has opened, whatever its state). As for the room, the chain begins on the day the register
+  //    opened: while no day is hashed yet, that day is hashed first, so that a missed run cannot lose it
   if (G.CHAIN) {
+    if (!p_day && R.validDate(G.RT.opened || "") && G.RT.opened < new Date().toISOString().slice(0, 10)) {
+      try {
+        const rs = await rpc("cz_register_stats", {});
+        if (rs && !rs.last_log) out.register_first_day = await rpc("cz_register_daily", { p_token: R.TOKEN, p_day: G.RT.opened, p_force: true });
+      } catch (err) { R.log("register daily first day", err); }
+    }
     try { out.register = await rpc("cz_register_daily", { p_token: R.TOKEN, p_day, p_force }); }
     catch (e) { R.log("register daily", e); out.register = { error: String(e.message).slice(0, 200) }; }
   }

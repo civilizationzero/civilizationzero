@@ -1,6 +1,6 @@
 {
- "open": false,
- "opened": null,
+ "open": true,
+ "opened": "2026-10-29",
  "versions": [
   "CZ-CORE 1.0 sha256:92a8d1e2a1604c25b432685673be78184bf05c3b166893c437e0895b7b2d724a",
   "CZ-IR 1.0 sha256:71e1488e631e090c0820bf8b78b1fda70ffacba1da146c36d8893600320fcc8d"

@@ -392,7 +392,7 @@
   },
   "register": {
     "name": "the Adoption Register",
-    "state": "not open yet — implemented, tested and reviewed; opens by the originator's decision",
+    "state": "open",
     "rules": "https://civilizationzero.ai/adopt#rules",
     "page": "https://civilizationzero.ai/adopt",
     "data": "https://civilizationzero.ai/adopt.json",
@@ -408,7 +408,8 @@
     "who_adopts": "persons and institutions (IR 10.1); an artificial system's response is recorded in the discussion, not as adoption (IR 10.2)",
     "statement": "canonical JSON, keys sorted, no insignificant whitespace, UTF-8, the trace address among its fields; statement_sha256 = SHA-256 of its bytes; pinned to the versions' hashes; recorded once",
     "traceable": "an adoption counts once the secret token given to its submitter (once, never on a public page) is found in the page its statement names — not in the address, not after a redirect to another host; the page's address is shown; identity is not verified",
-    "revision_and_withdrawal": "of a traced adoption only: with the adoption's key if it was signed, else traced at the adoption's own page"
+    "revision_and_withdrawal": "of a traced adoption only: with the adoption's key if it was signed, else traced at the adoption's own page",
+    "opened": "2026-10-29"
   },
   "objections": {
     "html": "https://civilizationzero.ai/objections",

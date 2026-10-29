@@ -23,8 +23,8 @@ PROMPT_VERSION = "cz-machine-1.0"
 ROOM_OPEN = True                           # flipped on the day the room's rules (§7) were verified; the functions read it from api/discuss-templates.json
 ROOM_OPENED = "2026-10-28"                 # the UTC date the room opened (set with ROOM_OPEN). Bundle 1.0 says 2026-10-29: the local date in
 ROOM_OPENED_AT = "2026-10-28T18:29:12Z"    # Kuala Lumpur (UTC+8); the site keeps time in UTC, corrected from bundle 1.0.1 (CHANGES-FOR-1.4, C-12)
-REGISTER_OPEN = False                      # the Adoption Register (design/ADOPT.md): opens by the originator's decision after review
-REGISTER_OPENED = None                     # the UTC date it first opened (set with REGISTER_OPEN; then kept): from then on its records and chain stay served
+REGISTER_OPEN = True                       # the Adoption Register (design/ADOPT.md): opened by the originator's decision after round 3 (29 Oct 2026, 08:05 UTC)
+REGISTER_OPENED = "2026-10-29"             # the UTC date it first opened (set with REGISTER_OPEN; then kept): from then on its records and chain stay served
 BUNDLE_VERSION = "1.0.1"                   # the current preservation bundle; earlier bundles stay at their addresses (site/archived-bundles/)
 BUNDLE_DAYS_THROUGH = "2026-10-28"                # the last UTC day of the discussion archive (archive/discussion/) the current bundle carries; None = none yet
 DOI_VERSIONS = [("v1.0.1", "10.5281/zenodo.23751341", "2026-10-29"),   # Zenodo deposits, newest first: one per GitHub release (the repository at its tag)

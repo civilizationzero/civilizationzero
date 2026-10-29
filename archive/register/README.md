@@ -11,4 +11,4 @@ Once the Adoption Register has opened, the public job `daily-archive` (`.github/
 Check them with the verifier: `python3 site/verify/verify.py --days archive/register`. The job never edits a day it has
 already committed. The discussion room's chain is copied the same way into `archive/discussion/`.
 
-Until the register has opened, this folder holds no day.
+The register opened on 29 October 2026 (UTC). Its first day is hashed in the first hour of the next day (UTC) and copied here by the job's next run; until then this folder holds no day.

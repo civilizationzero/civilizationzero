@@ -503,3 +503,5 @@ reviewer's own id.
 | R3-24 | CL (R3-CF-3): the whole-collection JSON can lag the per-record views by the shared cache's window (note) | **verified** — the contract says so for `/discuss.json` and `/adopt.json` (up to about a minute) |
 | R3-25 | CL (Q1a): the contract gave the content's length without its unit (note) | **verified** — "counted in Unicode code points" |
 
+Round 3 closed with five answers (Grok, DeepSeek, Gemini without web access, GPT-6 Astra Pro, Claude). No blocker; every finding is fixed and live except R3-18 and R3-19, which come with verify.py 1.17 and bundle 1.0.2. On the strength of the last two reviews, the originator opened the Adoption Register on 29 October 2026 (UTC); the register's first day is pinned in verify.py 1.17.
+
