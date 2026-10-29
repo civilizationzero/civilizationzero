@@ -31,7 +31,7 @@ INDEXNOW_KEY = "5dbddf2e3c978c9f9cf5e54812ab90ef"   # public by design: /<key>.t
 # The project's own accounts elsewhere. Each verifies against this site: Bluesky by /.well-known/atproto-did, Mastodon by
 # rel="me". Filled in as each account exists; until then nothing is emitted.
 ATPROTO_DID = "did:plc:gwscq3c3msvucpbatvrrm2f4"   # set 29 Oct 2026 (the account civilizationzero.bsky.social); "did:plc:…" from Bluesky ("I have my own domain", "No DNS panel"); the handle is then @civilizationzero.ai
-SOCIAL = []         # profile addresses: each is a rel="me" link on every page and a schema.org sameAs of the publisher
+SOCIAL = ["https://bsky.app/profile/civilizationzero.ai"]   # profile addresses: each is a rel="me" link on every page and a schema.org sameAs of the publisher
 IA_SNAPSHOTS = {"/": "https://web.archive.org/web/20261028174615/https://civilizationzero.ai/"}   # Internet Archive snapshots, by path
 RATE_PER_10MIN = 5                         # the room's limits, disclosed on /machine and in the rules (the database config carries the live values)
 DAILY_INTAKE = 2000
