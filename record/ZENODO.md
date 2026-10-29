@@ -1,13 +1,18 @@
 # Zenodo deposit — metadata for the 1.0 record (Blueprint 1.3.1 §8)
 
-**Primary path (29 Oct 2026):** the Zenodo–GitHub integration archives every GitHub release of this repository with the metadata in `.zenodo.json`; releases: `v1.0-pre` (29 Oct), `v1.0` (opening day). The manual form below is the fallback.
+**How it is deposited:** the Zenodo–GitHub integration archives every GitHub release of this repository, with the metadata
+in `.zenodo.json`; each deposit is the repository at the release's tag.
 
-**Deposited (28 October 2026, UTC):** v1.0-pre — doi:10.5281/zenodo.23740318; v1.0 — doi:10.5281/zenodo.23741225; all versions — doi:10.5281/zenodo.23740317. Each later GitHub release is archived as a new version of the same record.
+**Deposited (28 October 2026, UTC):** v1.0-pre — doi:10.5281/zenodo.23740318 (the repository at tag `v1.0-pre`, with the
+unsigned pre-release bundle); v1.0 — doi:10.5281/zenodo.23741225 (at tag `v1.0`, with the signed bundle 1.0 and its
+signature); all versions — doi:10.5281/zenodo.23740317. Each later GitHub release is archived as a new version of the same
+record.
 
-What is deposited: the signed preservation bundle `cz-bundle-1.0.tar` (the canonical texts and their JSON forms, the
-objections register, the blueprint, every outside review and the findings register, the licences, the manifest, the
-machine prompt, the OpenAPI contract, the public key, the detached signatures and the OpenTimestamps proof), plus the two
-canonical text files on their own so they are readable in the Zenodo viewer, plus `cz-bundle-1.0.tar.sig`.
+**Fallback, not used so far: a manual deposit.** It would hold the signed preservation bundle of the release (the canonical
+texts and their JSON forms, the objections register, the blueprint, every outside review and the findings register, the
+licences, the manifest, the machine prompt, the OpenAPI contract, the public key, the detached signatures and the timestamp
+proofs), plus the two canonical text files on their own so they are readable in the Zenodo viewer, plus the bundle's
+signature.
 
 Fill the form at https://zenodo.org/uploads/new with these fields (copy exactly):
 

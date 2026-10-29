@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Verifies detached Ed25519 signatures against the published public key. Anyone can run this.
+# Verifies detached Ed25519 signatures against the published public key. Anyone can run this (OpenSSL 3.0 or later).
 #   bash verify.sh cz-record-signing.pub file1 [file2 ...]      (expects file.sig beside each file)
 set -uo pipefail
 PUB="${1:?public key (PEM)}"; shift; rc=0

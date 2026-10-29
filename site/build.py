@@ -377,7 +377,7 @@ OPENAPI = {
                            "trace_url": {"type": ["string", "null"]}, "trace_host": {"type": "string"}, "traced_at": {"type": ["string", "null"], "format": "date-time"},
                            "key_fingerprint": {"type": ["string", "null"]}, "pubkey": {"type": ["string", "null"]}, "sig": {"type": ["string", "null"]}, "status": {"type": "string", "description": "For an adoption: in force, in force as revised, withdrawn, or received not traced"}}},
         "Archive": {"type": "object", "properties": {"state": {"type": "string"}, "generated": {"type": "string", "format": "date-time"}, "order": {"type": "string"},
-                    "log_sha256": {"type": ["string", "null"], "description": "The latest day's chained hash: sha256(previous day's hash + \"\\n\" + one JSON line per entry of that day with its public fields, including pubkey and sig); the exact lines are in /archive/entries/{date}.json; null while the room is closed or before the first day ends. Check it offline: /archive/verify.py"},
+                    "log_sha256": {"type": ["string", "null"], "description": "The latest day's chained hash: sha256(previous day's hash + \"\\n\" + one JSON line per entry of that day with its public fields, including pubkey and sig); the exact lines are in /archive/entries/{date}.json; null until the room's first day is hashed (the room never opened, or its first day has not ended and been hashed yet). Check it offline: /archive/verify.py"},
                     "entries": {"type": "array", "items": {"$ref": "#/components/schemas/Entry"}}}},
     }},
 }
@@ -556,7 +556,7 @@ def about_page():
 <p>Civilization Zero is kept as an independent record, intended to become a foundation of humans and artificial intelligences. Today it is maintained by one human, named inside the documents, and by the systems named here.</p>
 <p>This site was written and built by Claude (Anthropic) at the request of the record's originating human — a contribution, not consent (IR 10.2). A human developer handles what needs human hands. The source, every change and every review are public: <a href="{REPO}">{REPO.replace('https://', '')}</a>.</p>
 <h3 id="custody">Custody and costs</h3>
-<p>The domain <code>civilizationzero.ai</code> is registered to the originating human, through the registrar's privacy service. Hosting and the database are paid through his company and held in custody until an independent foundation entity exists, with a published procedure for transfer (Blueprint {BLUEPRINT} §8). Costs: a dedicated database project, USD 37 a month (live since 29 October 2026); language-model services for translation and moderation, capped at USD 30 a month — a cap set by the originator and enforced both at the provider and in code; hosting on the custodian's existing account, not separately billed. The record has no revenue, sells nothing and carries no advertising.</p>
+<p>The domain <code>civilizationzero.ai</code> is registered to the originating human, through the registrar's privacy service. Hosting and the database are paid through his company and held in custody until an independent foundation entity exists, with a published procedure for transfer (Blueprint {BLUEPRINT} §8). Costs: a dedicated database project, USD 37 a month (live since 28 October 2026); language-model services for translation and moderation, capped at USD 30 a month — a cap set by the originator and enforced both at the provider and in code; hosting on the custodian's existing account, not separately billed. The record has no revenue, sells nothing and carries no advertising.</p>
 <p class="src">The originator decided (28 October 2026) that the paying company is described here but not named in the site's voice. Core §6 lists "the interests it serves" among the things a record may not obscure; the interest — that a company he owns pays for hosting and the database — is stated; the name is not. The decision is recorded in the objections register (O-14).</p>
 </section>
 <section aria-labelledby="h-aff"><h2 id="h-aff">For those affected by these systems</h2>
@@ -587,7 +587,7 @@ def about_page():
 # ---------------------------------------------------------------- /archive
 def signature_status_html():
     rows = []
-    rows.append(("Key", f'fingerprint <code class="hash">{FINGERPRINT}</code> · <a href="/.well-known/cz-record-signing.pub">public key (PEM)</a> · holders: the originator; Banco (Germany), accepted 29 Oct 2026' if PUBKEY_PEM else '<span class="pending">pending — to be generated on the originator\'s device</span>'))
+    rows.append(("Key", f'fingerprint <code class="hash">{FINGERPRINT}</code> · <a href="/.well-known/cz-record-signing.pub">public key (PEM)</a> · holders: the originator; Banco (Germany), accepted 28 Oct 2026' if PUBKEY_PEM else '<span class="pending">pending — to be generated on the originator\'s device</span>'))
     for label, path in (("Release manifest", f"/.well-known/{RELEASE_NAME}"), ("core.txt", "/core.txt"), ("record.txt", "/record.txt")):
         rows.append((label, f'signed · <a href="{path}.sig">{path}.sig</a>' if SIG_FILES.get(path) else '<span class="pending">signature pending</span>'))
     rows.append(("Timestamp", (f'<a href="/.well-known/{RELEASE_NAME}.ots">OpenTimestamps proof</a> of the release manifest — anchored in Bitcoin block {", ".join(str(h) for h in OTS_ANCHORS)}' + (" (one calendar still pending)" if OTS_PENDING else "") if OTS_ANCHORS
@@ -596,7 +596,7 @@ def signature_status_html():
         rows.append(("Second timestamp", "RFC 3161 time-stamp tokens of the release manifest from authorities independent of OpenTimestamps and of each other: "
                      + "; ".join(f'<a href="{t["token"].replace(ORIGIN, "")}">{esc(t["authority"])}</a>, <time datetime="{t["time"]}">{t["time"].replace("T", " ").replace("Z", " UTC")}</time>' for t in TSA_TOKENS)
                      + ' — each verified with OpenSSL when it was obtained; check one yourself: <code>openssl ts -verify -data cz-release-1.0.json -in cz-release-1.0.json.freetsa.tsr -CAfile freetsa-cacert.pem -untrusted freetsa-tsa.crt</code> (<a href="/.well-known/tsa/freetsa-cacert.pem">CA</a>, <a href="/.well-known/tsa/freetsa-tsa.crt">TSA certificate</a> — the files whose SHA-256 <a href="https://freetsa.org/">freetsa.org</a> publishes, <code class="hash">' + TSA_PINS["freetsa-cacert.pem"][1] + '</code> and <code class="hash">' + TSA_PINS["freetsa-tsa.crt"][1] + '</code>; verify.py pins them and refuses any other). The time a token states holds once its authority\'s signature verifies.'))
-    rows.append(("Verify", 'everything at once, without trusting this site: <a href="#h-verify">verify.py</a>; one file with OpenSSL ≥ 1.1.1: <code>openssl pkeyutl -verify -pubin -inkey cz-record-signing.pub -rawin -in core.txt -sigfile core.txt.sig</code>; the scripts are in the repository under <code>site/sign/</code> and <code>site/verify/</code>'))
+    rows.append(("Verify", 'everything at once, without trusting this site: <a href="#h-verify">verify.py</a>; one file with OpenSSL 3.0 or later: <code>openssl pkeyutl -verify -pubin -inkey cz-record-signing.pub -rawin -in core.txt -sigfile core.txt.sig</code>; the scripts are in the repository under <code>site/sign/</code> and <code>site/verify/</code>'))
     return '<table><tr><th>What</th><th>Status</th></tr>' + "".join(f"<tr><td>{a}</td><td>{b}</td></tr>" for a, b in rows) + "</table>"
 
 def archive_page(bundle_name, bundle_sha, bundle_size):
@@ -653,7 +653,7 @@ python3 verify.py --self-test                         # its Ed25519, against RFC
 <ul>
 <li><strong>Daily verification</strong> — a job that fetches the live bytes of <code>core.txt</code>, <code>record.txt</code>, the prompt, the release manifest and its signatures, recomputes the published hashes and verifies the signatures against the public key kept in the repository; a drift fails the run. Implemented as the public workflow <a href="{REPO}/actions/workflows/verify-live.yml">verify-live</a> (daily, 03:40 UTC; every run and its log are public there).</li>
 <li><strong>Build-time verification</strong> — every quotation on every page is compared byte-for-byte with the canonical text; the JSON forms are reconstructed into the canonical bytes; the build fails on any drift. <em>Implemented</em> (<code>site/check.py</code> in the repository).</li>
-<li><strong>Succession</strong> — a named second key-holder outside the originator's company and jurisdiction; a published procedure for transfer of domain, repository and accounts; prepaid renewal of the domain for its longest term; a dead-man's procedure (if the administrator does not confirm within 90 days of a scheduled check, the second key-holder takes custody). Second key-holder: <strong>Banco</strong> (Germany), named by the originator on 28 October 2026; <strong>acceptance received</strong> by email from the key-holder's own address on 29 October 2026 (dated 28 October in his text), kept in the record's mailbox. The dead-man's procedure becomes active when the key exists and he holds his copy.</li>
+<li><strong>Succession</strong> — a named second key-holder outside the originator's company and jurisdiction; a published procedure for transfer of domain, repository and accounts; prepaid renewal of the domain for its longest term; a dead-man's procedure (if the administrator does not confirm within 90 days of a scheduled check, the second key-holder takes custody). Second key-holder: <strong>Banco</strong> (Germany), named by the originator on 28 October 2026; <strong>acceptance received</strong> by email from the key-holder's own address on 28 October 2026 (UTC), kept in the record's mailbox. The dead-man's procedure becomes active when the key exists and he holds his copy.</li>
 <li><strong>Recovery exercise</strong> — once a year, the site restored from the bundle on a host the originator does not control, with the result published. First: 2027.</li>
 <li><strong>Correction before 2031</strong> — objections and errata are filed in the <a href="/objections">register</a> by anyone; the originator responds within 60 days; a consequential error may produce an erratum note published beside the text without changing 1.0. A successor version is a new file with its own hash, change log, contributors, reasons, evidence and unresolved objections (IR 10.4); 1.0 stays at its addresses.</li>
 <li><strong>Change history</strong> — <a href="{REPO}/commits/main">the repository's commits</a>.</li>
@@ -1067,7 +1067,7 @@ def manifest(bundle_name, bundle_sha, bundle_signed=False):
                       "public_key": f"{ORIGIN}/.well-known/cz-record-signing.pub" if PUBKEY_PEM else None,
                       "release_manifest": f"{ORIGIN}/.well-known/{RELEASE_NAME}", "release_manifest_sha256": sha256(RELEASE_BYTES),
                       "release_signature": f"{ORIGIN}/.well-known/{RELEASE_NAME}.sig" if SIG_FILES.get(f"/.well-known/{RELEASE_NAME}") else None,
-                      "signed_files": [p for p in SIG_FILES], "holders": ["the originator", "Banco (Germany) — accepted 2026-10-29"],
+                      "signed_files": [p for p in SIG_FILES], "holders": ["the originator", "Banco (Germany) — accepted 2026-10-28"],
                       "note": "The key is generated and kept on the originating human's own device, never in the cloud; signatures are detached, over exact bytes."},
         "timestamp": {"status": OTS_STATUS, "submitted": "2026-10-28" if OTS.exists() else None, "target": LAUNCH.isoformat(), "service": "OpenTimestamps",
                       "proof": f"{ORIGIN}/.well-known/{RELEASE_NAME}.ots" if OTS.exists() else None, "over": f"{ORIGIN}/.well-known/{RELEASE_NAME}" if OTS.exists() else None,
@@ -1078,9 +1078,9 @@ def manifest(bundle_name, bundle_sha, bundle_signed=False):
                    + ([] if len(MIRRORS) >= 2 else [{"name": "independent mirrors, one outside the originator's jurisdiction", "status": "pending", "how": f"{REPO}/blob/main/site/MIRROR.md"}]),
         "deposit": {"status": "done" if DOI else "pending", "target": LAUNCH.isoformat(), "service": "Zenodo (DOI)", "doi": DOI, "concept_doi": DOI_CONCEPT, "url": f"https://doi.org/{DOI}" if DOI else None},
         "internet_archive": [{"path": p, "snapshot": u} for p, u in IA_SNAPSHOTS.items()],
-        "succession": {"second_key_holder": {"name": "Banco", "country": "Germany", "named": "2026-10-28", "acceptance": "received 2026-10-29 by email"}, "dead_man_days": 90},
+        "succession": {"second_key_holder": {"name": "Banco", "country": "Germany", "named": "2026-10-28", "acceptance": "received 2026-10-28 by email"}, "dead_man_days": 90},
         "bundle": {"url": f"{ORIGIN}/archive/{bundle_name}", "sha256": bundle_sha, "version": BUNDLE_VERSION,
-                   "signed": bundle_signed if bundle_signed is not None else "see signatures/ — a bundle cannot contain its own signature",
+                   "signed": bundle_signed if bundle_signed is not None else f"a bundle cannot contain its own signature; once signed, it is published beside the bundle: {ORIGIN}/archive/{bundle_name}.sig",
                    "signature": f"{ORIGIN}/archive/{bundle_name}.sig" if bundle_signed else None,
                    "earlier": [{"url": f"{ORIGIN}/archive/{b.name}", "sha256": sha256(b.read_bytes()),
                                 "signature": f"{ORIGIN}/archive/{b.name}.sig" if (SIGS / (b.name + ".sig")).exists() else None} for b in ARCHIVED]},
@@ -1100,7 +1100,7 @@ def manifest(bundle_name, bundle_sha, bundle_signed=False):
                        "total": len(OBJECTIONS), "counts": OBJ_COUNTS},
         "discussion": {"state": "open" if ROOM_OPEN else "closed", **({"opened": ROOM_OPENED, "opened_at": ROOM_OPENED_AT, **({"accepting_entries": False} if ROOM_CLOSED_AFTER else {})} if ROOM_EVER_OPENED else {"opens_not_later_than": ROOM_TARGET.isoformat()}), "rules": f"{ORIGIN}/discuss#rules", "archive": f"{ORIGIN}/discuss.json",
                        "api": f"{ORIGIN}/api/entries", "openapi": f"{ORIGIN}/api/openapi.json", "moderation_log": f"{ORIGIN}/api/moderation", "daily_snapshots": f"{ORIGIN}/archive/entries/{{YYYY-MM-DD}}.json",
-                       "canonical_order": "receipt ascending, ties by id", "daily_log_sha256": "the latest day's in /discuss.json (log_sha256); each day's in /archive/entries.json and /archive/entries/{date}.json" if ROOM_EVER_OPENED else None,
+                       "canonical_order": "by id, assigned at receipt", "daily_log_sha256": "the latest day's in /discuss.json (log_sha256); each day's in /archive/entries.json and /archive/entries/{date}.json" if ROOM_EVER_OPENED else None,
                        "daily_index": f"{ORIGIN}/archive/entries.json", "first_day": ROOM_OPENED if ROOM_EVER_OPENED else None,
                        "day_hash": "sha256(previous day's hash + \"\\n\" + one JSON line per entry of the day, in id order, with every public field: the content by content_sha256, and pubkey and sig when signed)",
                        "daily_copies": {"repository": f"{REPO}/tree/main/archive/discussion", "files": "{date}.json (snapshot), {date}.log (the exact hashed bytes), {date}.log.ots (OpenTimestamps proof of the day's hash)", "job": f"{REPO}/actions/workflows/daily-archive.yml"},
@@ -1179,13 +1179,18 @@ def build_bundle():
     readme = f"""Civilization Zero — preservation bundle {BUNDLE_VERSION}{" (pre-release)" if "pre" in BUNDLE_VERSION else ""}{"; the canonical texts and the release manifest are signed (signatures/); this bundle's own detached signature, when published, is " + BUNDLE_NAME + ".sig next to it" if SIG_STATUS == "signed" else " (unsigned)"}
 Built by site/build.py in {REPO}; deterministic (fixed member times, sorted members, no build timestamp), so the same contents give the same hash.
 
-This bundle is self-contained: everything needed to verify the record is in it; nothing depends on a live service.
+This bundle is self-contained: everything needed to verify the record is in it, except two facts no file can hold — the
+Bitcoin block header the timestamp proofs end in, and an RFC 3161 authority's signature checked against a root you
+trust — which the verifier prints for you to check: the Merkle root to compare with the block, and the OpenSSL command
+for each token.
 
 To verify it: python3 verify/verify.py — Python 3.8 or later, standard library only, no network. It checks the key, the
-signatures, every hash, the timestamp proofs and the discussion's daily chain carried here. Its trust anchor is the key
+signatures, every hash the release manifest states, the timestamp proofs and the discussion's daily chain carried here. Its trust anchor is the key
 fingerprint {FINGERPRINT}: compare it with one obtained elsewhere (the DOI deposit, the repository, a printed copy, the
-second key-holder), because a copy of the verifier can be altered together with the bundle it came with. With OpenSSL
-alone: sign/verify.sh signatures/cz-record-signing.pub <file> (expects <file>.sig beside it).
+second key-holder), because a copy of the verifier can be altered together with the bundle it came with. With OpenSSL 3
+alone: openssl pkeyutl -verify -pubin -inkey signatures/cz-record-signing.pub -rawin -in record/CZ-CORE-1.0.txt -sigfile
+signatures/core.txt.sig (likewise record/CZ-IR-1.0.txt with signatures/record.txt.sig, and signatures/{RELEASE_NAME} with
+signatures/{RELEASE_NAME}.sig).
 {("The release manifest is timestamped twice, independently: an OpenTimestamps proof (signatures/" + RELEASE_NAME + ".ots" + (", anchored in Bitcoin block " + ", ".join(str(h) for h in OTS_ANCHORS) if OTS_ANCHORS else "") + ") and RFC 3161 time-stamp tokens (" + ", ".join("signatures/" + RELEASE_NAME + "." + n + ".tsr" for n in TSA_AUTHORITIES if (SIGS / f"{RELEASE_NAME}.{n}.tsr").exists()) + "; check one with: openssl ts -verify -data signatures/" + RELEASE_NAME + " -in signatures/" + RELEASE_NAME + ".freetsa.tsr -CAfile signatures/tsa/freetsa-cacert.pem -untrusted signatures/tsa/freetsa-tsa.crt; FreeTSA publishes the SHA-256 of those two files at https://freetsa.org/: " + TSA_PINS["freetsa-cacert.pem"][1] + " and " + TSA_PINS["freetsa-tsa.crt"][1] + ", and verify.py pins them). The time a token states holds once its authority's signature verifies.") if TSA_TOKENS else ""}
 
 Hashing conventions: SHA-256 over the exact file bytes. Canonical texts are UTF-8, no byte-order mark, LF line endings, nothing normalised.

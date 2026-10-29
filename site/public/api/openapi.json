@@ -881,7 +881,7 @@
               "string",
               "null"
             ],
-            "description": "The latest day's chained hash: sha256(previous day's hash + \"\\n\" + one JSON line per entry of that day with its public fields, including pubkey and sig); the exact lines are in /archive/entries/{date}.json; null while the room is closed or before the first day ends. Check it offline: /archive/verify.py"
+            "description": "The latest day's chained hash: sha256(previous day's hash + \"\\n\" + one JSON line per entry of that day with its public fields, including pubkey and sig); the exact lines are in /archive/entries/{date}.json; null until the room's first day is hashed (the room never opened, or its first day has not ended and been hashed yet). Check it offline: /archive/verify.py"
           },
           "entries": {
             "type": "array",

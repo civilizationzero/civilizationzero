@@ -1,15 +1,18 @@
 # Signing the record
 
-The record's key is an Ed25519 key pair generated on the originating human's own computer (`keygen.sh`), never in the cloud. The private key is held by two people (the originator and the second key-holder, Banco); the public key and its fingerprint are published here, on `/archive`, in the Core's integrity record and in the manifest.
+The record's key is an Ed25519 key pair generated on the originating human's own computer (`keygen.sh`), never in the cloud. The private key is held by two people (the originator and the second key-holder, Banco); the public key is published here (`cz-record-signing.pub`), and with its fingerprint
+(`82662396484f627a63272bcd5ac19aae72def7aca2898216dc8e7f975dfc2263`) on `/archive`, in the Core's integrity record and in the
+manifest.
 
 What is signed, with detached signatures (`<file>.sig`, raw 64-byte Ed25519 over the exact file bytes):
 - `/.well-known/cz-release-1.0.json` — the release manifest: what CZ 1.0 is (the canonical texts, the machine prompt and the
   key, by their hashes); it changes only with a new release. The site's manifest, `/.well-known/civilization-zero.json`,
   changes with every build and is not signed; it names the release manifest and its signature.
 - `/core.txt`, `/record.txt` — the canonical texts
-- `/archive/cz-bundle-<version>.tar` — each frozen bundle (a bundle cannot contain its own signature; it is published beside it)
+- `/archive/cz-bundle-<version>.tar` — each bundle from 1.0 on, once frozen (the pre-release bundle 1.0-pre is unsigned; a
+  bundle cannot contain its own signature, which is published beside it)
 
-Verify (anyone, with OpenSSL ≥ 1.1.1):
+Verify (anyone, with OpenSSL 3.0 or later; `-rawin` is not in 1.1.1):
 
     openssl pkeyutl -verify -pubin -inkey cz-record-signing.pub -rawin -in core.txt -sigfile core.txt.sig
 

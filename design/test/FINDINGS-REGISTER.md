@@ -8,7 +8,9 @@ A finding is not "fixed" because a line was written. Each entry below carries a 
 - **declined** — not adopted, with the reason.
 - **decision** — not the builder's to make; waiting on the originator.
 
-Reviews are archived verbatim in `reviews/` (round 1, first page) and `reviews-round2/` (round 2, blueprint and record). Reviewer abbreviations: G6 = "GPT-6 Astra Pro" (OpenAI); DS = DeepSeek (self-identified as ChatGPT); CL = Claude Fable 5.1 (Anthropic); GK = Grok 4.7 (xAI); GM = Gemini (Google; its round-2 review arrived after Blueprint 1.3 was issued and is folded into 1.3.1).
+Reviews are archived verbatim in `reviews/` (round 1, first page) and `reviews-round2/` (round 2, blueprint and record). Ids are
+unique within a section, not across the register: a few were used again by a later review (R-1; G-1 to G-3) — cite them with
+their section ("the verifier review's G-1"). Reviewer abbreviations: G6 = "GPT-6 Astra Pro" (OpenAI); DS = DeepSeek (self-identified as ChatGPT); CL = Claude Fable 5.1 (Anthropic); GK = Grok 4.7 (xAI); GM = Gemini (Google; its round-2 review arrived after Blueprint 1.3 was issued and is folded into 1.3.1).
 
 ## Round 1 (first page) — re-stated with honest statuses
 
@@ -171,7 +173,7 @@ After the fixes above, the re-tests on the isolated test database, the wipe of t
 - **Build-time contract test** — `check.yml` still expected a closed room after the opening and failed on every push. **Verified** — the test follows the room's state (`fe59891`).
 - **The verifier** (`/archive/verify.py`, `verify/verify.py` in bundles from 1.0.1) and the daily copies of the chain (`daily-archive`) — **implemented**; tested as described in the change list.
 
-### Independent review of the verifier (28 Oct 2026, UTC 19:10–19:35) — before verify.py 1.1
+### Review of the verifier by a separate agent (28 Oct 2026, UTC 19:10–19:35) — before verify.py 1.1
 
 An agent that had not written the code reviewed `site/verify/verify.py` 1.0 adversarially, with reproductions (cases kept in the
 session's scratch space; summarised here). Every finding was fixed in 1.1 and re-run against the same cases.
@@ -195,13 +197,14 @@ fixed in 1.2 and re-run against its reproductions (`T1_front_trunc`, `R1_hidden_
 
 | # | Finding (severity) | Status |
 |---|---|---|
-| T-1 | Front truncation: the pinned first day was not required to be present — supplying only 2026-10-29 (with its genuine non-null `prev`) passed, even `--strict` with a Bitcoin attestation added; with `--site`, an index could omit the first day (high) | **verified** — days supplied by hand that start after the first day are PENDING ("checked from … only", so `--strict` fails); with `--site`, every day from the first to the last one due must be served, else FAIL — which also catches a site that stops serving its newest days (a day is due from 01:00 UTC the next day, the site hashing at 00:20) |
+| T-1 | Front truncation: the pinned first day was not required to be present — supplying only 2026-10-29 (with its genuine non-null `prev`) passed, even `--strict` with a Bitcoin attestation added; with `--site`, an index could omit the first day (high) | **verified** — days supplied by hand that start after the first day are PENDING ("checked from … only", so `--strict` fails); with `--site`, every day from the first to the last one due must be served, else FAIL — which also catches a site that stops serving its newest days (a day is due from 01:00 UTC the next day, the site hashing at 00:20; from 1.10, 02:00 UTC, the host running the site's job at some time in the first hour) |
 | R-1 | A hidden register record's suppressed fields (signatory, institution, capacity, scope, reservations, trace URL) went unchecked when its statement was not shown: a copy could fabricate them (medium) | **verified** — a hidden record showing any of them FAILs (the site serves them as null); the fields a hidden record still shows (kind of signatory, versions, declared date, language) are noted as covered by no hash |
 | R-1b (self-found) | The converse: a copy could withhold the text of a published entry, or the statement of a record that is not hidden, and still pass | **verified** — FAIL ("the site serves every published entry's text" / "every statement that is not hidden") |
 | T-1b (self-found) | Closing the room would have hidden its chain (the index answered "closed, no days") and stopped the daily hash | **verified** — once the room has opened, its chain is served and hashed whatever its state (`R.CHAIN`); the verifier checks a closed room's days like an open room's |
 
 End truncation within a day is inherent: the newest hashed day has no successor, so until its copy and timestamp are in the
-repository (about half an hour after it is hashed) only copies held elsewhere can show that it changed.
+repository (within hours of its hashing: daily-archive runs at 01:20 and 07:20 UTC) only copies held elsewhere can show that it
+changed.
 
 A third pass on the 1.2 fixes (UTC 20:01–20:04) found two more ways around them, both fixed and
 re-run against the reviewer's reproductions (`B1_relabel_trunc`, `H1_published_hidden_flag`, `H2_traced_hidden_flag`, and a
@@ -251,7 +254,7 @@ the bytes at that path, which is what is checked; the sixth pass's cases hold. T
 
 | # | Finding (severity) | Status |
 |---|---|---|
-| X-9 | Unicode case folding: `casefold()` leaves the dotless ı unchanged, so a member `sıgnatures/tsa/freetsa-cacert.pem` (which a file system comparing names by their upper case, as NTFS does, would put in `signatures/tsa/`) escaped the lower-case rule; only an unsigned copy could carry it (low) | **verified** — a bundle's member names must be ASCII (all 64 of 1.0 and all 69 of 1.0.1 are), which removes every case-folding and normalisation alias at once |
+| X-9 | Unicode case folding: `casefold()` leaves the dotless ı unchanged, so a member `sıgnatures/tsa/freetsa-cacert.pem` (which a file system comparing names by their upper case, as NTFS does, would put in `signatures/tsa/`) escaped the lower-case rule; only an unsigned copy could carry it (low) | **verified** — a bundle's member names must be ASCII (all 64 of 1.0 are, and every member of 1.0.1), which removes every case-folding and normalisation alias at once |
 | X-8 | A link was reported up to three times (by the walk, as missing, and again when read) (low, wording) | **verified** — a path under a link the walk found is not reported again when read |
 
 1.9 added one check before bundle 1.0.1 was frozen with the room's first day inside it: a bundle's own daily snapshots
@@ -265,6 +268,10 @@ its snapshot FAILs; a bad or impossible `in_bundle_through` FAILs. Two findings,
 |---|---|---|
 | G-3, G-1 | "Carries every day of the discussion" counted file names, not discussion days: the genesis day re-labelled as a register day (`"records": []` for `"entries": []`, the same hashed bytes), or a real register day, saved under `archive/discussion/`, was checked as the register's chain and still counted, so the OK line was false (medium) | **verified** — a bundle's days are checked as the chain of the directory they are carried in (data of the other chain FAILs, as with `--site`), and only days whose data is the discussion's count as carried |
 | G-2 | A snapshot whose `log` was not an object stopped the run through the catch-all (exit 1, but no later checks) (low) | **verified** — every snapshot's form is checked first (an object; its log an object with strings and integers where they belong; its items lists); a malformed one FAILs and the run goes on |
+
+The same version, 1.10, moves the time from which a day is due from 01:00 to 02:00 UTC: the site's hosting plan runs its daily job at
+some time in the first hour of the day (UTC), not at 00:20 as the pages had said; the pages, the contract's notes and the
+daily-archive job (now 01:20 and 07:20 UTC) say so.
 
 A ninth pass (UTC 21:41–21:43) on 1.10: G-1 to G-3 hold, no OK line is false, and every earlier case still FAILs; but crafted
 field types could still stop a run through its last-resort handler (exit 1, later checks skipped) — a line or entry whose id is
@@ -324,10 +331,6 @@ night — while no day is hashed, hash the room's opening day first, so that a m
 against the real `cz_daily` on a local PostgreSQL 16, that without `p_force` the call started at the first entry's day and
 could still skip the opening day (medium); the call is now forced to that one day (safe: nothing is hashed yet).
 
-The same version moves the time from which a day is due from 01:00 to 02:00 UTC: the site's hosting plan runs its daily job at
-some time in the first hour of the day (UTC), not at 00:20 as the pages had said; the pages, the contract's notes and the
-daily-archive job (now 01:20 and 07:20 UTC) say so.
-
 
 ### Security review of the Adoption Register (28 Oct 2026, UTC 19:49–20:10) — before it opens
 
@@ -383,7 +386,32 @@ showed four things wrong around it, none in the hashing:
 
 | # | Finding (severity) | Status |
 |---|---|---|
-| O-1 | The repository's `.gitignore` ignored `*.log`, so the first copy of the day (commit `ca57806`) held the snapshot and the timestamp proof but not the exact hashed bytes; the verifier did not object, since those bytes follow from the snapshot (low) | **verified** — the file added in `812da47` (1 byte; its SHA-256 is the day's hash, which the proof commits to) and `.gitignore` keeps `archive/discussion/*.log` and `archive/register/*.log`; verify-live's check of the repository's copies passed (run 40794420733) |
-| O-2 | The Adoption Register's daily chain would not have left the site: `daily-archive` copied the room's days only, though the register's are hashed and chained the same way (medium; the register is not open, so nothing was lost) | **verified** — `daily-archive` copies both chains (one that cannot be fetched no longer holds back the other; the run still fails), `ots-upgrade` upgrades both chains' proofs, verify-live checks both copies; tested offline against a stub of the site (both chains, a second run, a chain down, the register closed) and by real runs |
-| O-3 | `sign/README.md` named the site's manifest (`civilization-zero.json`, rebuilt at every build and never signed) as signed, instead of the release manifest `cz-release-1.0.json` (low) | **verified** — corrected from bundle 1.0.1; bundle 1.0, signed, keeps the old sentence |
-| O-4 | `record/ZENODO.md` still gave a planned deposit date (31 October) after both deposits were made on 28 October (low) | **verified** — the file states the deposits and their DOIs |
+| OP-1 | The repository's `.gitignore` ignored `*.log`, so the first copy of the day (commit `ca57806`) held the snapshot and the timestamp proof but not the exact hashed bytes; the verifier did not object, since those bytes follow from the snapshot (low) | **verified** — the file added in `812da47` (1 byte; its SHA-256 is the day's hash, which the proof commits to) and `.gitignore` keeps `archive/discussion/*.log` and `archive/register/*.log`; verify-live's check of the repository's copies passed (run 40794420733) |
+| OP-2 | The Adoption Register's daily chain would not have left the site: `daily-archive` copied the room's days only, though the register's are hashed and chained the same way (medium; the register is not open, so nothing was lost) | **verified** — `daily-archive` copies both chains (one that cannot be fetched no longer holds back the other; the run still fails), `ots-upgrade` upgrades both chains' proofs, verify-live checks both copies; tested offline against a stub of the site (both chains, a second run, a chain down, the register closed) and by real runs |
+| OP-3 | `sign/README.md` named the site's manifest (`civilization-zero.json`, rebuilt at every build and never signed) as signed, instead of the release manifest `cz-release-1.0.json` (low) | **verified** — corrected from bundle 1.0.1; bundle 1.0, signed, keeps the old sentence |
+| OP-4 | `record/ZENODO.md` still gave a planned deposit date (31 October) after both deposits were made on 28 October (low) | **verified** — the file states the deposits and their DOIs |
+
+
+### Review of bundle 1.0.1's documents before it is frozen (29 Oct 2026, UTC 00:50–01:05), by a separate agent
+
+Bundle 1.0.1 is to be frozen and signed, and a sentence frozen into it can only be corrected by an erratum in a later bundle.
+A separate agent read every generated or edited document of the candidate (not the canonical texts, the translations, the
+blueprint, the objections or the archived reviews) against the repository and its history: six findings that would mislead
+a reader, eight details. All were fixed before freezing:
+
+| # | Finding (severity) | Status |
+|---|---|---|
+| D-1 | The manifest gave the archive's canonical order as "receipt ascending, ties by id", against its own day hash, the snapshots, the contract and the hashing code, which order by id — R-18 had said the wording was changed everywhere (high) | **verified** — "by id, assigned at receipt" |
+| D-2 | The second key-holder's acceptance was dated 29 October, the date in Kuala Lumpur, though it was recorded at 16:16 UTC on 28 October — the slip C-12 corrected for the room's opening; so were the mailbox's and the database project's "live since" (the project was created at 13:28 UTC on 28 October) (high) | **verified** — 28 October (UTC) in the manifest, on /archive, on /about and in the blueprint's two status lines (its PDF regenerated: only those two lines differ) |
+| D-3 | `record/ZENODO.md` said the deposit was the signed bundle with loose files, and dated v1.0-pre 29 October; each deposit is the repository at its tag, both made on 28 October (UTC), v1.0-pre before bundle 1.0 was signed (high) | **verified** — the file says how and what was deposited, the bundle list as the manual fallback; `.zenodo.json`, whose notes the next release deposits, no longer says the room opens on 31 October |
+| D-4 | The paragraph on the time a day is due (01:00 → 02:00 UTC) stood after the fifteenth pass, as if verify.py 1.16 had made the change; it was 1.10 (`c4cd6e7`); T-1 and the note on end truncation still gave 01:00 and "about half an hour" (high) | **verified** — the paragraph stands after the eighth pass and names 1.10; T-1 and the note give the times in force |
+| D-5 | `sign/README.md` and /archive said OpenSSL 1.1.1 verifies the signatures; `-rawin` exists only from OpenSSL 3.0 (high) | **verified** — "OpenSSL 3.0 or later" in the README, both scripts and /archive |
+| D-6 | `sign/README.md` said each frozen bundle is signed; 1.0-pre is frozen and unsigned (high) | **verified** — "each bundle from 1.0 on" |
+| D-7 | The bundle README's OpenSSL line (`sign/verify.sh … <file>`, the signature beside the file) worked inside the bundle for the release manifest only (low) | **verified** — a command for each canonical text with its signature in `signatures/` |
+| D-8 | X-9 counted "all 69" members of 1.0.1; frozen with its first day it has 72 (low) | **verified** — no count for 1.0.1 |
+| D-9 | Ids used twice in the register (R-1, O-1, G-1 to G-3) (low) | **verified** — the builder's operations findings renamed OP-1 to OP-4; a note at the top says how to cite the others |
+| D-10 | README.md called the room's review "independent"; the archived report is an internal review by a separate agent (low) | **verified** — "a review of its implementation by a separate agent (internal; archived …)" |
+| D-11 | The manifest inside a bundle pointed to `signatures/` for the bundle's own signature, which cannot be there (low) | **verified** — it gives the signature's address beside the bundle |
+| D-12 | The bundle README said everything needed to verify is inside and that the verifier checks "every hash"; the Bitcoin block header and the authorities' signatures need an outside check, and in a bundle the site manifest's translation hashes are not compared (low) | **verified** — it names the two outside facts and says "every hash the release manifest states" |
+| D-13 | `sign/README.md` said the key's fingerprint is published there; it was not (low) | **verified** — the fingerprint is in it |
+| D-14 | The contract said `log_sha256` is null "while the room is closed or before the first day ends"; it is null only until the room's first day is hashed — a room closed after opening still serves it (low) | **verified** — corrected in the contract |

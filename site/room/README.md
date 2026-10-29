@@ -29,7 +29,7 @@ rebuild, commit, deploy. Preview deployments may set `CZ_ROOM_OPEN=1` to behave 
 `ANTHROPIC_API_KEY` (workspace cap USD 30/month, decision 20), optional `CZ_CLASSIFIER_MODEL`, `CZ_PRICE_IN_CENTS_PER_MTOK`, `CZ_PRICE_OUT_CENTS_PER_MTOK`.
 
 ## Opened
-The room opened in production on 29 October 2026 (commit `cbf6330`), after the independent review (`design/test/reviews-internal/`) and the tests below; the test entries were wiped and ids restarted at 1 before opening. Previews use the separate test project `civilization-zero-test` (delete after round 3).
+The room opened in production on 28 October 2026 at 18:29:12 UTC (29 October in Kuala Lumpur; commit `cbf6330`), after the internal review by a separate agent (`design/test/reviews-internal/`) and the tests below; the test entries were wiped and ids restarted at 1 before opening. Previews use the separate test project `civilization-zero-test` (delete after round 3).
 
 ## Verified (29 Oct 2026)
 Schema smoke test inside a rolled-back transaction: five posts accepted, the sixth answered `not accepted / limit / retry_after_seconds 600`;

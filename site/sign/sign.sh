@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Signs files with the record key, producing detached Ed25519 signatures (<file>.sig, raw 64 bytes).
+# Signs files with the record key, producing detached Ed25519 signatures (<file>.sig, raw 64 bytes). Needs OpenSSL 3.0 or later.
 #   bash sign.sh /path/to/CZ-keys/cz-record-signing.key file1 [file2 ...]
 set -euo pipefail
 KEY="${1:?private key}"; shift
