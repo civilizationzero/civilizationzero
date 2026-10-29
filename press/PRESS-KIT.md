@@ -34,6 +34,7 @@ Civilization Zero is a short founding record in two documents: CZ-CORE 1.0, a on
 | Adoption Register | implemented, tested and reviewed; opens by the originator's decision (rules published at https://civilizationzero.ai/adopt) |
 | Timestamp | OpenTimestamps proof of the release manifest, anchored in Bitcoin block 973,584; RFC 3161 time-stamp tokens of the same file from FreeTSA and DigiCert (28 October 2026, 20:58:12 UTC) |
 | Anniversary event (Year 4 begins) | 30 November 2026 |
+| First review of the Core | 30 November 2027, the fifth anniversary of Coordinate Zero: by a committee drawn by lot from volunteers among those who take part; a change needs two-thirds of the committee and ratification in a private vote of identity-verified participants. CZ-CORE 1.0 itself is never replaced; a change is a new version beside it. The committee's charter is published in draft on 30 November 2026 |
 | Site | https://civilizationzero.ai |
 | Source | https://github.com/civilizationzero/civilizationzero |
 | Deposit (DOI) | 10.5281/zenodo.23751341 (v1.0.1); 10.5281/zenodo.23741225 (v1.0); all versions 10.5281/zenodo.23740317 |
@@ -87,3 +88,4 @@ Civilization Zero is a signed, timestamped, one-page record marking 30 November 
 - Revised 29 Oct 05:50 SGT: the second timestamp (RFC 3161, FreeTSA and DigiCert, verified with OpenSSL every day by verify-live) added to "One paragraph", "What is new" and "Key facts"; the verifier's review is public, finding by finding.
 - Languages planned for the kit: English (master), Persian, German, Spanish, French, Chinese (Simplified) — translations are made from this master after approval, and labelled as translations of it.
 - Outreach waves: lists of recipients and the cover text in your name are shown to you before anything is sent.
+- Revised 29 Oct 11:40 SGT: the first review of the Core (30 Nov 2027, the originator's decision of 29 Oct) added to "Key facts".
