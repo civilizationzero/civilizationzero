@@ -1331,6 +1331,8 @@ notify pgrst, 'reload schema';
 -- another) from 2026-10-29, the first day with entries (2026-10-28 had none), so the chain has one line format from its first
 -- line. verify.py 1.16 hashes each line as given and compares the fields it knows; 1.17 (with bundle 1.0.2) compares parent too.
 -- A theme is an entry signed with the originator's key, listed by the site (THEMES in site/lib.py); its answers are its replies.
+-- The 14-argument cz_post (without p_parent) stays as it was while the site's previous version may still be restored by a rollback;
+-- it is then disabled ('superseded'), as earlier overloads were. Applied to test, then production (29 Oct 2026, 18:39 and 18:46 UTC).
 alter table entries add column if not exists parent bigint references entries (id);
 do $$ begin
   if not exists (select 1 from pg_constraint where conname = 'entries_parent_earlier' and conrelid = 'public.entries'::regclass) then
