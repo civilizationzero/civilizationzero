@@ -1,1 +1,1 @@
-Round-3 reviews (the live site and the open room, tested on the room-test preview), archived verbatim as they arrive (30 Oct 2026).
+Round-3 reviews (the live site and the open room, tested on the room-test preview) are archived here verbatim, with their provenance, as they arrive.

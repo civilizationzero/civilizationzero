@@ -372,3 +372,18 @@ v6e (applied to both databases) and the code that follows `120db99`:
 | G2-4 | A check refused as "too soon" still counted against the caller's hourly quota (low) | **verified** — the 10-minute rule is checked first and costs nothing; the quota is counted before the record is claimed, so a source over its quota cannot claim (and block) a record |
 | G2-5 | The token was readable cross-origin (`Access-Control-Allow-Origin: *` on the answer to POST): another site could post statements from its visitors' browsers and read their tokens (low) | **verified** — answers to POST carry no CORS headers, the preflight no longer allows POST, and a POST whose `Origin` is another site is refused (403) |
 | G2-6 | The daily job could be starved: its list took never-checked records first and claimed all fifty at once (low) | **verified** — the list claims nothing and is ordered by the time since each record's last check (or its receipt); each record is claimed when it is actually checked |
+
+
+### Operations — the first day of the chain (29 Oct 2026, UTC 00:00–00:50), found by the builder
+
+The site's daily job ran for the first time between 00:00 and 00:28 UTC and hashed the room's opening day, 2026-10-28: no
+entries that day, so the day's hash is SHA-256 of a single line break, `01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b`,
+with no previous day. Copying it out of the site, and reading the bundle that is to carry it before freezing that bundle,
+showed four things wrong around it, none in the hashing:
+
+| # | Finding (severity) | Status |
+|---|---|---|
+| O-1 | The repository's `.gitignore` ignored `*.log`, so the first copy of the day (commit `ca57806`) held the snapshot and the timestamp proof but not the exact hashed bytes; the verifier did not object, since those bytes follow from the snapshot (low) | **verified** — the file added in `812da47` (1 byte; its SHA-256 is the day's hash, which the proof commits to) and `.gitignore` keeps `archive/discussion/*.log` and `archive/register/*.log`; verify-live's check of the repository's copies passed (run 40794420733) |
+| O-2 | The Adoption Register's daily chain would not have left the site: `daily-archive` copied the room's days only, though the register's are hashed and chained the same way (medium; the register is not open, so nothing was lost) | **verified** — `daily-archive` copies both chains (one that cannot be fetched no longer holds back the other; the run still fails), `ots-upgrade` upgrades both chains' proofs, verify-live checks both copies; tested offline against a stub of the site (both chains, a second run, a chain down, the register closed) and by real runs |
+| O-3 | `sign/README.md` named the site's manifest (`civilization-zero.json`, rebuilt at every build and never signed) as signed, instead of the release manifest `cz-release-1.0.json` (low) | **verified** — corrected from bundle 1.0.1; bundle 1.0, signed, keeps the old sentence |
+| O-4 | `record/ZENODO.md` still gave a planned deposit date (31 October) after both deposits were made on 28 October (low) | **verified** — the file states the deposits and their DOIs |

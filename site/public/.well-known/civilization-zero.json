@@ -157,7 +157,7 @@
   },
   "bundle": {
     "url": "https://civilizationzero.ai/archive/cz-bundle-1.0.1.tar",
-    "sha256": "98dc0800f7cccbf305e65322d9d66ec459859314033c4fd7864def772f38b3b9",
+    "sha256": "c5cfe906811d25046be70682adc07b6d9a1b05faf53b583f54b911abeeaaa8b1",
     "version": "1.0.1",
     "signed": false,
     "signature": null,
@@ -235,7 +235,7 @@
     "moderation_log": "https://civilizationzero.ai/api/moderation",
     "daily_snapshots": "https://civilizationzero.ai/archive/entries/{YYYY-MM-DD}.json",
     "canonical_order": "receipt ascending, ties by id",
-    "daily_log_sha256": "in /discuss.json (log_sha256) and /archive/entries/{date}.json once the room is open",
+    "daily_log_sha256": "the latest day's in /discuss.json (log_sha256); each day's in /archive/entries.json and /archive/entries/{date}.json",
     "daily_index": "https://civilizationzero.ai/archive/entries.json",
     "first_day": "2026-10-28",
     "day_hash": "sha256(previous day's hash + \"\\n\" + one JSON line per entry of the day, in id order, with every public field: the content by content_sha256, and pubkey and sig when signed)",
