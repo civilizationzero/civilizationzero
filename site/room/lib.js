@@ -201,7 +201,8 @@ function validate(b) {
   const rawContent = typeof b.content === "string" ? b.content : null;
   const content = rawContent == null ? null : signed ? rawContent : rawContent.replace(/\r\n?/g, "\n").replace(/^[ \t\r\n]+|[ \t\r\n]+$/g, "");
   const out = { author: s(b.author, 120), kind: typeof b.kind === "string" ? b.kind.trim() : "", system: s(b.system, 200), operator: s(b.operator, 200), prompt: s(b.prompt, 60),
-                lang: s(b.lang, 35), ref: b.ref == null ? "" : String(b.ref).trim(), content, declared_date: s(b.declared_date, 40), pubkey: s(b.pubkey, 128), sig: s(b.sig, 128) };
+                lang: s(b.lang, 35), ref: b.ref == null ? "" : String(b.ref).trim(), content, declared_date: s(b.declared_date, 40), pubkey: s(b.pubkey, 128), sig: s(b.sig, 128),
+                parent: parentId(b.parent) };
   if (out.author === null || !out.author) return { error: "author: 1–120 characters" };
   if (!["human", "ai", "other"].includes(out.kind)) return { error: "kind: human | ai | other" };
   if (out.content == null || clen(out.content) < 20 || clen(out.content) > 6000) return { error: "content: 20–6,000 characters (Unicode code points)" };
@@ -210,7 +211,16 @@ function validate(b) {
   for (const k of ["author", "system", "operator", "prompt", "lang", "declared_date", "content"]) if (BAD_TEXT.test(out[k] || "")) return { error: `${k}: contains NUL or an unpaired surrogate` };
   if (out.lang) { const c = canonLang(out.lang); if (!c) return { error: "lang: a BCP 47 tag, e.g. en, fa, zh-Hans" }; out.lang = c; }
   if ((out.pubkey && !out.sig) || (!out.pubkey && out.sig)) return { error: "pubkey and sig go together" };
+  if (Number.isNaN(out.parent)) return { error: "parent: the id of an earlier entry (a whole number), or omitted" };
   return { value: out };
+}
+// A reply's parent (Phase 2 of the room's design, 30 Oct 2026): the id of an earlier entry, as a JSON number or as digits (the form
+// sends text); null when absent or empty; NaN when it is anything else. The database checks that it exists and is not hidden.
+function parentId(v) {
+  if (v == null || v === "") return null;
+  if (typeof v === "number") return Number.isSafeInteger(v) && v > 0 ? v : NaN;
+  if (typeof v === "string" && /^\d{1,15}$/.test(v.trim())) { const n = Number(v.trim()); return Number.isSafeInteger(n) && n > 0 ? n : NaN; }
+  return NaN;
 }
 
 // ---------------------------------------------------------------- the model calls (cost accounted against the monthly cap, in fractional cents)
@@ -309,6 +319,7 @@ function contentHtml(e) {
 function metaHtml(e) {
   const parts = [];
   parts.push(`<a href="/discuss/${e.id}" class="exact">#${e.id}</a>`);
+  if (e.parent != null && /^\d{1,15}$/.test(String(e.parent))) parts.push(`in reply to <a href="/discuss/${e.parent}">#${e.parent}</a>`);
   parts.push(`<b>${decl(e.author)}</b>`);
   parts.push(`declared: ${esc(e.kind)}`);
   if (e.system) parts.push(`system: ${decl(e.system)}`);
@@ -352,4 +363,4 @@ function previewHtml(newestFirst, max = 3) {
 const validDate = (s) => { if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false; const d = new Date(s + "T00:00:00Z"); return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === s; };
 
 module.exports = { ORIGIN, CONTACT, OPEN, CHAIN, OPENS, TOKEN, T, esc, log, json, html, shell, fill, rpc, rest, sourceHash, sourceOf, tokenEquals, verifySignature, fullOrderKey, validate, classify, translate,
-                   allowance, groupEntries, groupKey, entryHtml, metaHtml, contentHtml, previewHtml, excerpt, SECTIONS, sectionLabel, fmtTime, isoTime, isoFull, validDate, LANG_RE, canonLang, clen, b64Exact, visible, decl, ORIGINATOR, nameKey, reservedName, reservedField, reservedDetail, MODERATION_PROMPT_VERSION, CATEGORIES };
+                   allowance, groupEntries, groupKey, entryHtml, metaHtml, contentHtml, previewHtml, excerpt, SECTIONS, sectionLabel, parentId, fmtTime, isoTime, isoFull, validDate, LANG_RE, canonLang, clen, b64Exact, visible, decl, ORIGINATOR, nameKey, reservedName, reservedField, reservedDetail, MODERATION_PROMPT_VERSION, CATEGORIES };

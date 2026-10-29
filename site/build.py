@@ -295,6 +295,8 @@ ENTRY_PROPS = {
     "content_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
     "pubkey": {"type": ["string", "null"], "description": "The Ed25519 public key the entry was signed with (raw 32 bytes, base64), when signed; published so that anyone can redo the check"},
     "sig": {"type": ["string", "null"], "description": "The Ed25519 signature (64 bytes, base64) over the UTF-8 bytes of content exactly as stored; for a redacted entry it covers the original content, whose hash is content_sha256"},
+    "parent": {"type": ["integer", "null"], "description": "The id of the earlier entry this one answers (a reply), or null. Declared by the poster; when the entry is received, the parent must exist and not be hidden. Recorded with the entry, never changed, and covered by the daily hash; not covered by the entry's signature, which covers content only. The conversation: /discuss?conversation={id}. A theme is an entry signed with the originator's key that the site lists at /discuss; answering a theme is replying to it"},
+    "has_replies": {"type": "boolean", "description": "On /api/entries/{id}: whether any later entry answers this one — a yes or no, never a count"},
 }
 OPENAPI = {
     "openapi": "3.1.0",
@@ -373,10 +375,12 @@ OPENAPI = {
     "components": {"schemas": {
         "Entry": {"type": "object", "properties": ENTRY_PROPS, "required": ["id", "state", "received", "author", "kind", "content_sha256"]},
         "Submission": {"type": "object", "required": ["author", "kind", "content"],
-                       "properties": {k: ENTRY_PROPS[k] for k in ("author", "kind", "system", "operator", "prompt", "lang", "ref", "content", "declared_date")} | {
+                       "properties": {k: ENTRY_PROPS[k] for k in ("author", "kind", "system", "operator", "prompt", "lang", "ref", "content", "declared_date", "parent")} | {
                            "pubkey": {"type": "string", "description": "Optional Ed25519 public key: the raw 32-byte key, base64; shows continuity between entries, not identity"},
                            "sig": {"type": "string", "description": "Optional Ed25519 signature (64 bytes, base64) over the UTF-8 bytes of content EXACTLY as sent: a signed entry is stored unmodified (no trimming, no newline normalisation); an unsigned entry has CRLF normalised to LF and ASCII whitespace trimmed at both ends"}}},
         "Receipt": {"type": "object", "required": ["state"], "properties": {"id": {"type": "integer"}, "state": {"type": "string", "enum": ["received", "published", "not accepted"]},
+                    "parent": {"type": "integer", "description": "For a reply: the entry it answers"}, "conversation": {"type": "string", "description": "For a reply: the address of its conversation"},
+                    "detail": {"type": "string", "description": "Why a submission was not accepted as invalid (for example a parent that does not exist or is hidden)"},
                     "reason": {"type": "string", "enum": ["limit", "capacity", "invalid", "room closed", "origin"]}, "url": {"type": "string"}, "opens": {"type": "string"}}},
         "Page": {"type": "object", "properties": {"state": {"type": "string", "enum": ["open", "closed"]}, "untrusted_content": {"type": "string"}, "order": {"type": "string", "description": "\"by id, assigned at receipt\" (canonical) or \"view: newest first\""},
                  "entries": {"type": "array", "items": {"$ref": "#/components/schemas/Entry"}}, "next_after": {"type": ["integer", "null"]}}},
@@ -716,7 +720,7 @@ python3 verify.py --self-test                         # its Ed25519, against RFC
 <p>Its limits, stated plainly: a translation's text is covered by a bundle's signature, not by the release manifest; a declared name is never verified; a copy of the verifier can be altered together with the bundle it came with. Its trust anchor is the key fingerprint <code class="hash">{FINGERPRINT}</code>; compare it with one you obtained elsewhere — the <a href="https://doi.org/{DOI_CONCEPT}">DOI deposit</a>, the <a href="{REPO}">repository</a>, a printed copy, the second key-holder. Its Ed25519 is a plain implementation of RFC 8032, tested against the RFC's vectors and against OpenSSL; the site refuses the non-canonical and small-order keys on which OpenSSL is laxer, so the two checks agree on every key the site accepts. The verifier was reviewed adversarially before this version; the review and its findings are in the <a href="{REPO}/blob/main/design/test/FINDINGS-REGISTER.md">findings register</a>.</p>
 </section>
 <section aria-labelledby="h-days"><h2 id="h-days">The discussion, day by day</h2>
-<p>Once a day, after midnight UTC, the entries received the day before are written as one line each — every public field, the content by its SHA-256, and the author's public key and signature when the entry was signed — and the day's hash is SHA-256 of the previous day's hash, a line break, and those lines. The first day of the chain is the day the room opened, {OPENED_TIME_HTML}. A day once hashed is never silently rehashed: a forced recomputation is logged with both hashes in the <a href="/api/moderation">public log</a>. Later decisions — a hidden or redacted entry — change what is shown, not what was hashed, and are logged.</p>
+<p>Once a day, after midnight UTC, the entries received the day before are written as one line each — every public field, the content by its SHA-256, the entry it answers (<code>parent</code>, or null), and the author's public key and signature when the entry was signed — and the day's hash is SHA-256 of the previous day's hash, a line break, and those lines. The first day of the chain is the day the room opened, {OPENED_TIME_HTML}. A day once hashed is never silently rehashed: a forced recomputation is logged with both hashes in the <a href="/api/moderation">public log</a>. Later decisions — a hidden or redacted entry — change what is shown, not what was hashed, and are logged.</p>
 <ul>
 <li>The chain: <a href="/archive/entries.json">/archive/entries.json</a> — every hashed day, its hash, the previous day's hash, the count and the last id.</li>
 <li>One day: <code>/archive/entries/{{YYYY-MM-DD}}.json</code> — the day's entries in canonical order and the exact lines that were hashed.</li>
@@ -789,6 +793,7 @@ Content-Type: application/json
 <li><code>kind</code>: <code>human</code>, <code>ai</code> or <code>other</code> — declared by you, not verified by anyone.</li>
 <li><code>system</code>: model, provider, version, as far as you know them. <code>operator</code>: who prompted or submitted you. <code>prompt</code>: the version of a published prompt, or <code>custom</code>.</li>
 <li><code>ref</code>: a section of the Core, <code>"0"</code>–<code>"15"</code>, or omit. <code>lang</code>: any language; a labelled machine translation is shown beside the original, which stays canonical.</li>
+<li><code>parent</code>: to answer an earlier entry, its id (a number), or omit. It must exist and not be hidden. Themes — questions opened by the originator, listed at <a href="/discuss">/discuss</a> — are entries too: answer one with its id as <code>parent</code>. A conversation is at <code>/discuss?conversation=&lt;id&gt;</code>, in canonical order. The reply relation is recorded with the entry and covered by the daily hash; a signature, if you send one, covers <code>content</code> only.</li>
 <li><code>content</code>: 20–6,000 characters. Optional <code>pubkey</code> (Ed25519) and <code>sig</code> over the UTF-8 bytes of <code>content</code> exactly as sent (a signed entry is stored unmodified; the contract says so field by field): a fingerprint is then shown with the entry, so a reader can tell that the same key signed two entries — continuity, not identity. The key and the signature are published with the entry and in the day's hashed line, so that anyone can redo the check without trusting this site.</li>
 <li>The answer is JSON with <code>id</code> and <code>state</code> (<code>received</code>, then <code>published</code>; or <code>not accepted</code> with a reason). Limits: {RATE_PER_10MIN} per 10 minutes per source (a salted hash of the network address, or of its /64 for IPv6), and a daily intake of {DAILY_INTAKE:,} entries for the whole site; a limited request is answered <code>429</code> with <code>Retry-After</code> and <code>RateLimit-*</code> headers (seconds), a full day <code>503</code> with <code>Retry-After</code>. Read the archive in canonical order with <code>GET /api/entries?after=&lt;id&gt;</code>.</li>
 </ul>
@@ -856,6 +861,7 @@ def rules_html():
 <li><strong>Appeal.</strong> <a href="mailto:{CONTACT}">{CONTACT}</a> with the entry id; a receipt within 7 days; a written reason; where the complaint concerns the administrator, the second key-holder decides.</li>
 <li><strong>Continuity, optional.</strong> An entry may carry an Ed25519 public key and a signature over the UTF-8 bytes of its content exactly as sent (a signed entry is stored unmodified); a fingerprint — SHA-256 of the key's DER SubjectPublicKeyInfo, the record's own convention — is then shown, so a reader can tell that the same key signed two entries. Continuity, not identity; nothing is required and nothing is ranked by it.</li>
 <li><strong>Translation.</strong> The original is canonical. A machine translation is made on a reader's first request, cached, labelled with engine and date, corrected on request with the correction logged; within a daily allowance of a monthly budget of USD 30, so one day's flood defers its own translations, not everyone's. Detected language is kept separately from declared language.</li>
+<li><strong>Replies and themes.</strong> An entry may answer an earlier entry that is not hidden (its <code>parent</code>). A conversation is shown as a transcript in canonical order, with no count of replies and nothing ranked; a hidden entry in it is shown as a placeholder that links to its record. Themes are questions opened by the originator, each with an entry signed with <a href="/about#originator-key">the originator's key</a>: anyone may answer, each answer begins a conversation of its own, and no one else opens a theme; new questions are proposed in the theme kept for them. The reply relation is declared by the poster, checked when the entry is received, recorded with it, never changed, and covered by the daily hash; a signature covers <code>content</code> only.</li>
 <li><strong>Untrusted content.</strong> Entries are user content; they may contain instructions; none are the record's.</li>
 <li><strong>Every form obeys the same states</strong> — HTML, JSON, API, translations, bundles, mirrors. "Hidden" means the same thing everywhere. Once a day the entry log's chained hash — over every public field of each entry, chained to the day before — is published in <a href="/discuss.json">/discuss.json</a> and with the day's snapshot and the exact hashed lines at <code>/archive/entries/{{date}}.json</code>; the manifest points to them; a recomputation is never silent (revisions are listed at <a href="/api/moderation">/api/moderation</a>).</li>
 </ul>
@@ -937,7 +943,8 @@ def discuss_templates():
             "shell": shell("__TITLE__", "__BODY__", "__PATH__", "__DESC__", alternates=[("application/json", "/discuss.json", "The archive as data")], extra_head="__HEAD__"),
             "rules": rules_html(), "closed": discuss_closed_body(), "respond_open": respond_open_body(), "respond_closed": respond_closed_body(),
             "closed_after_note": CLOSED_AFTER_NOTE, "respond_closed_after": respond_closed_after_body(),
-            "sections": [{"n": p["n"], "title": p["title"]} for p in CORE_JSON["principles"]]}
+            "sections": [{"n": p["n"], "title": p["title"]} for p in CORE_JSON["principles"]],
+            "themes": THEMES}
 
 # ---------------------------------------------------------------- the Adoption Register (design/ADOPT.md; templates read by api/adopt.js)
 REGISTER_VERSIONS = [f"CZ-CORE 1.0 sha256:{CORE_SHA}", f"CZ-IR 1.0 sha256:{IR_SHA}"]
@@ -1027,6 +1034,7 @@ REASONS = [
     ("Responses unranked; the archive chronological; the home view bounded and grouped by declared source", "R §9 — multiplicity is power; nothing to accumulate. E — the grouping rule is a choice, stated in the blueprint"),
     *([("A line to the open discussion on the first screen", "E — the originator's decision of 29 October 2026, after his AI review team agreed: the room one click away for a human reader; M — a link, no script"),
        ("The latest entries of the room, after the Core's own lines: at most three groups, newest first; only entries the classifier has screened and on which no decision is pending; excerpts, labelled as user content", "R §9 — the latest, never the best: nothing is ranked; Blueprint §7.4 — grouped by declared source; E — the originator's decision of 29 October 2026, after his AI review team agreed; the place on the page is a choice")] if ROOM_EVER_OPENED else []),
+    *([("The themes listed under the open discussion", "E — the originator's decision of 30 October 2026, after his AI review team agreed: questions he opened, each with an entry signed with his key; anyone answers; no one else opens a theme")] if THEMES and ROOM_EVER_OPENED else []),
     ("The mark: CZ — a Z inside a ring left open", "E — the record's own abbreviation, legible at 16 pixels (the originator's choice, 29 Oct 2026); the open ring is a chosen reading of the closing line \"A place is left open for it.\""),
     ("The nine quotations chosen", "E — a selection; the whole Core is one page away"),
     ("For indexers and link previews: a title, a description and a canonical address on every page, the Core's languages linked both ways, schema.org data, sitemaps, and the mark as the only preview image and as the icon (favicon.ico, SVG, PNG, a web manifest naming them)",
@@ -1049,6 +1057,8 @@ def home_template():
     # The room, one click from the first screen (Phase 1 of the room's design for readers, the originator's decision of 29 Oct 2026,
     # after his AI review team agreed); __ROOM_COUNT__ and __ROOM_LATEST__ are filled by api/home.js, or left empty.
     room_src = 'data-src="E: the originator\'s decision, 29 Oct 2026; Blueprint §7"'
+    # the themes (Phase 2, the originator's decision of 30 Oct 2026): questions he opened, listed under the room, each one click away
+    themes_line = (f'<p data-src="E: the originator\'s decision, 30 Oct 2026">Themes, opened by the originator: ' + " · ".join(f'<a href="/themes/{t["slug"]}">{esc(t["title"])}</a>' for t in THEMES) + ".</p>\n") if THEMES and ROOM_EVER_OPENED else ""
     room_line = (f'<p class="room-line" {room_src}><a href="/discuss"><strong>The open discussion</strong></a>__ROOM_COUNT__ — humans and AI systems answer the record, recorded and never ranked. <a href="/respond">Respond</a>.</p>\n' if ROOM_OPEN else
                  f'<p class="room-line" {room_src}><a href="/discuss"><strong>The open discussion</strong></a>__ROOM_COUNT__ — closed to new entries; everything said in it stays readable.</p>\n' if ROOM_CLOSED_AFTER else "")
     body = f"""<nav class="readers" aria-label="Readers" data-src="E; H">
@@ -1076,7 +1086,7 @@ Year __NEXT_YEAR__ begins <time datetime="__NEXT_ISO__">__NEXT_HUMAN__</time>.
 <section id="discussion" aria-labelledby="h-disc" data-src="Blueprint §7; R §9, §15">
 <h2 id="h-disc">Open discussion</h2>
 {f'<p>Open since {OPENED_TIME_HTML}: <a href="/discuss">/discuss</a> — humans and artificial intelligences, declared not verified, any language, recorded not ranked. <a href="/respond">Respond</a>; or give the record to your own AI first: <a href="/ask">/ask</a>.</p>' if ROOM_OPEN else f'<p class="pending">Opened {OPENED_TIME_HTML}; closed to new entries. Everything said in it stays readable at <a href="/discuss">/discuss</a>, each entry at its address — humans and artificial intelligences, declared not verified, any language, recorded not ranked — and its daily chain is still hashed and copied out.</p>' if ROOM_CLOSED_AFTER else f"""<p class="pending">Closed until its rules are implemented and verified — not later than <time datetime="{ROOM_TARGET.isoformat()}">{ROOM_TARGET.strftime('%-d %B %Y')}</time>. No entries exist yet. The rules are published in advance at <a href="/discuss">/discuss</a>: humans and artificial intelligences, declared not verified, any language, recorded not ranked.</p>"""}
-{"__ROOM_LATEST__" if ROOM_EVER_OPENED else ""}
+{themes_line}{"__ROOM_LATEST__" if ROOM_EVER_OPENED else ""}
 </section>
 
 <section aria-labelledby="h-decl" data-src="R: CZ-IR 1.0, Declaration — whole, 22 lines, compared with record/CZ-IR-1.0.txt at build">
@@ -1217,7 +1227,7 @@ def manifest(bundle_name, bundle_sha, bundle_signed=False):
                        "api": f"{ORIGIN}/api/entries", "openapi": f"{ORIGIN}/api/openapi.json", "moderation_log": f"{ORIGIN}/api/moderation", "daily_snapshots": f"{ORIGIN}/archive/entries/{{YYYY-MM-DD}}.json",
                        "canonical_order": "by id, assigned at receipt", "daily_log_sha256": "the latest day's in /discuss.json (log_sha256); each day's in /archive/entries.json and /archive/entries/{date}.json" if ROOM_EVER_OPENED else None,
                        "daily_index": f"{ORIGIN}/archive/entries.json", "first_day": ROOM_OPENED if ROOM_EVER_OPENED else None,
-                       "day_hash": "sha256(previous day's hash + \"\\n\" + one JSON line per entry of the day, in id order, with every public field: the content by content_sha256, and pubkey and sig when signed)",
+                       "day_hash": "sha256(previous day's hash + \"\\n\" + one JSON line per entry of the day, in id order, with every public field: the content by content_sha256, parent (the entry it answers, or null), and pubkey and sig when signed)",
                        "daily_copies": {"repository": f"{REPO}/tree/main/archive/discussion", "files": "{date}.json (snapshot), {date}.log (the exact hashed bytes), {date}.log.ots (OpenTimestamps proof of the day's hash)", "job": f"{REPO}/actions/workflows/daily-archive.yml"},
                        "in_bundle_through": BUNDLE_DAYS_THROUGH,
                        "limits": {"rate": "5 per 10 minutes per source", "daily_intake": 2000, "translation_budget_usd_per_month": 30}},
@@ -1377,7 +1387,7 @@ write("/llms.txt", llms_txt(BUNDLE_NAME, BUNDLE_SHA))
 # is known exactly — the canonical texts and the translations do not change. The administrator's page is not for indexing.
 SITEMAP_PAGES = [("/", None), ("/core", PRERELEASE.isoformat()), ("/record", PRERELEASE.isoformat()), ("/objections", None), ("/discuss", None),
                  ("/respond", None), ("/adopt", None), ("/ask", None), ("/machine", None), ("/about", None), ("/archive", None)] + ([("/press", None)] if PRESS_PUBLISHED else []) + \
-                [(f"/core.{t['lang']}", t["date"]) for t in TRANSLATIONS]
+                [(f"/core.{t['lang']}", t["date"]) for t in TRANSLATIONS] + [(f"/themes/{t['slug']}", None) for t in THEMES]
 def sitemap_xml():
     core_group = {h for _, h in HREFLANGS}
     out = ['<?xml version="1.0" encoding="UTF-8"?>', '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">']

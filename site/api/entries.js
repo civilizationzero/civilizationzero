@@ -49,7 +49,7 @@ module.exports = async (req, res) => {
       const id = url.searchParams.get("id");
       if (id !== null) {
         if (!/^\d{1,12}$/.test(id)) return json(res, 404, { error: "no such id" });
-        const rows = await rpc("cz_entry2", { p_id: Number(id) });
+        const rows = await rpc("cz_entry3", { p_id: Number(id) });   // as cz_entry2, with parent and has_replies (schema v8)
         if (!rows || !rows.length) return json(res, 404, { error: "no such id" });
         const e = rows[0]; e.url = `${ORIGIN}/discuss/${e.id}`;
         const tq = url.searchParams.get("translate"), tl = tq == null ? null : R.canonLang(tq);
@@ -98,7 +98,12 @@ module.exports = async (req, res) => {
       return form ? formError(res, 400, "Not accepted: a reserved name", detail) : json(res, 400, { state: "not accepted", reason: "invalid", detail });
     }
     const r = await rpc("cz_post", { p_author: e.author, p_kind: e.kind, p_system: e.system, p_operator: e.operator, p_prompt: e.prompt, p_lang: e.lang, p_ref: e.ref,
-      p_content: e.content, p_declared_date: e.declared_date, p_pubkey: e.pubkey, p_sig: e.sig, p_key_fingerprint: fingerprint, p_source_hash: R.sourceHash(req), p_token: R.TOKEN });
+      p_content: e.content, p_declared_date: e.declared_date, p_pubkey: e.pubkey, p_sig: e.sig, p_key_fingerprint: fingerprint, p_source_hash: R.sourceHash(req),
+      p_parent: e.parent, p_token: R.TOKEN });
+    // a reply whose parent does not exist or is hidden: refused before anything is counted (schema v8)
+    if (r.state === "not accepted" && r.reason === "invalid") {
+      return form ? formError(res, 400, "Not accepted: invalid", r.detail || "invalid") : json(res, 400, { state: "not accepted", reason: "invalid", detail: r.detail || "invalid" });
+    }
     if (r.state === "not accepted") {
       const h = { "Retry-After": String(r.retry_after_seconds) };
       if (r.reason === "limit") Object.assign(h, { "RateLimit-Limit": String(r.limit), "RateLimit-Remaining": "0", "RateLimit-Reset": String(r.reset) });
@@ -111,6 +116,7 @@ module.exports = async (req, res) => {
     await R.classify(r.id, e.content);
     if (form) { res.statusCode = 303; res.setHeader("Location", `/discuss/${r.id}`); return res.end(); }
     return json(res, 201, { id: r.id, state: r.state, url: `${ORIGIN}/discuss/${r.id}`, content_sha256: r.content_sha256, key_fingerprint: fingerprint || undefined,
+      parent: e.parent || undefined, conversation: e.parent ? `${ORIGIN}/discuss?conversation=${r.id}` : undefined,
       note: "Recorded as contribution or response, not consent (IR 10.2). Declared, not verified." },
       { Location: `/discuss/${r.id}`, "RateLimit-Limit": String(r.limit), "RateLimit-Remaining": String(r.remaining) });
   } catch (err) {

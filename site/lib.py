@@ -35,6 +35,12 @@ DOI_CONCEPT = "10.5281/zenodo.23740317"
 INDEXNOW_KEY = "5dbddf2e3c978c9f9cf5e54812ab90ef"   # public by design: /<key>.txt shows search engines (IndexNow) that the site chose it
 # The project's own accounts elsewhere. Each verifies against this site: Bluesky by /.well-known/atproto-did, Mastodon by
 # rel="me". Filled in as each account exists; until then nothing is emitted.
+# Themes of the room (Phase 2 of its design for readers, the originator's decision of 30 Oct 2026, after his AI review team): questions
+# the originator opens, each with an entry signed with his key; anyone answers by replying to it (parent = the entry's id), and each
+# answer begins a conversation of its own; no one else opens a theme. The one marked "proposals" collects proposals for new
+# questions. Each: {"slug": "…" (a-z, 0-9, hyphens), "title": "…", "entry": <the opening entry's id>, "opened": "YYYY-MM-DD"}
+# (+ "proposals": True). Served at /themes/<slug>. Empty until the originator has approved the opening texts and they are posted.
+THEMES = []
 PRESS_PUBLISHED = False   # the press kit at /press, from press/PRESS-KIT.md: published once the originator approves the kit
 ATPROTO_DID = "did:plc:gwscq3c3msvucpbatvrrm2f4"   # set 29 Oct 2026 (the account civilizationzero.bsky.social); "did:plc:…" from Bluesky ("I have my own domain", "No DNS panel"); the handle is then @civilizationzero.ai
 SOCIAL = ["https://bsky.app/profile/civilizationzero.ai", "https://x.com/czrecord", "https://mastodon.social/@civilizationzero"]   # profile addresses: each is a rel="me" link on every page and a schema.org sameAs of the publisher

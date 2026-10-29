@@ -1321,3 +1321,155 @@ begin
 end $$;
 grant execute on function cz_search(text, bigint, int) to anon, authenticated;
 notify pgrst, 'reload schema';
+
+-- ================================================================ v8 (2026-10-30), migration cz_room_replies_v8 (test, then production)
+-- Phase 2 of the room's design for readers (the originator's decision of 30 Oct 2026, after his AI review team): replies and
+-- conversations, and themes. Additive: one column (entries.parent) with its check and index, the public view with the column at
+-- its end, four new functions, and cz_daily's line with "parent". No row is changed. A reply names an earlier entry that exists and
+-- is not hidden when the reply is received; the relation is declared by the poster, recorded with the entry, never changed, and
+-- covered by the daily hash (a signature covers content only). The day line carries "parent" (null unless the entry answers
+-- another) from 2026-10-29, the first day with entries (2026-10-28 had none), so the chain has one line format from its first
+-- line. verify.py 1.16 hashes each line as given and compares the fields it knows; 1.17 (with bundle 1.0.2) compares parent too.
+-- A theme is an entry signed with the originator's key, listed by the site (THEMES in site/lib.py); its answers are its replies.
+alter table entries add column if not exists parent bigint references entries (id);
+do $$ begin
+  if not exists (select 1 from pg_constraint where conname = 'entries_parent_earlier' and conrelid = 'public.entries'::regclass) then
+    alter table entries add constraint entries_parent_earlier check (parent is null or parent < id);
+  end if;
+end $$;
+create index if not exists entries_parent on entries (parent) where parent is not null;
+
+-- the public view: as v6a, with parent at its end (security_invoker as v6c)
+create or replace view entries_public with (security_invoker = true) as
+  select id, received, state, author, kind, system, operator, prompt, lang, lang_detected, ref,
+         case when state = 'redacted' then redacted_text when state = 'hidden' then null else content end as content,
+         content_sha256, declared_date, key_fingerprint, category,
+         (state = 'hidden') as hidden,
+         pubkey, sig, parent
+  from entries;
+
+-- LIVE cz_post(…, p_source_hash, p_parent, p_token): as before, with an optional parent, checked before anything is counted
+create or replace function cz_post(
+  p_author text, p_kind text, p_system text, p_operator text, p_prompt text, p_lang text, p_ref text,
+  p_content text, p_declared_date text, p_pubkey text, p_sig text, p_key_fingerprint text, p_source_hash text, p_parent bigint, p_token text)
+returns json language plpgsql security definer set search_path = public set timezone = 'UTC' as $$
+declare
+  v_rate int := (select value::int from config where key = 'rate_per_10min');
+  v_intake int := (select value::int from config where key = 'daily_intake_max');
+  v_recent int; v_oldest timestamptz; v_today int; v_id bigint; v_sha text; v_wait int; v_pstate text;
+begin
+  if not cz_token_ok(p_token) then raise exception 'unauthorised'; end if;
+  if p_parent is not null then
+    select state into v_pstate from entries where id = p_parent for key share;
+    if not found then
+      return json_build_object('state', 'not accepted', 'reason', 'invalid', 'detail', 'parent: no entry has this id');
+    end if;
+    if v_pstate = 'hidden' then
+      return json_build_object('state', 'not accepted', 'reason', 'invalid', 'detail', 'parent: that entry is hidden; replies to it are not accepted');
+    end if;
+  end if;
+  perform pg_advisory_xact_lock(hashtext(p_source_hash));
+  select count(*), min(received) into v_recent, v_oldest from entries
+    where source_hash = p_source_hash and received > now() - interval '10 minutes';
+  if v_recent >= v_rate then
+    v_wait := greatest(1, ceil(extract(epoch from (v_oldest + interval '10 minutes' - now())))::int);
+    return json_build_object('state', 'not accepted', 'reason', 'limit', 'retry_after_seconds', v_wait, 'limit', v_rate, 'remaining', 0, 'reset', v_wait);
+  end if;
+  insert into daily_intake (day, count) values (current_date, 0) on conflict (day) do nothing;
+  update daily_intake set count = count + 1 where day = current_date and count < v_intake returning count into v_today;
+  if v_today is null then
+    return json_build_object('state', 'not accepted', 'reason', 'capacity',
+      'retry_after_seconds', ceil(extract(epoch from (date_trunc('day', now()) + interval '1 day' - now())))::int);
+  end if;
+  v_sha := encode(extensions.digest(convert_to(p_content, 'UTF8'), 'sha256'), 'hex');
+  insert into entries (author, kind, system, operator, prompt, lang, ref, content, content_sha256, declared_date, pubkey, sig, key_fingerprint, source_hash, parent, received)
+    values (p_author, p_kind, nullif(p_system, ''), nullif(p_operator, ''), nullif(p_prompt, ''), nullif(p_lang, ''), nullif(p_ref, ''),
+            p_content, v_sha, nullif(p_declared_date, ''), nullif(p_pubkey, ''), nullif(p_sig, ''), nullif(p_key_fingerprint, ''), p_source_hash, p_parent, clock_timestamp())
+    returning id into v_id;
+  return json_build_object('id', v_id, 'state', 'published', 'content_sha256', v_sha, 'limit', v_rate, 'remaining', greatest(0, v_rate - v_recent - 1));
+end $$;
+grant execute on function cz_post(text,text,text,text,text,text,text,text,text,text,text,text,text,bigint,text) to anon, authenticated;
+
+-- LIVE cz_entry3: as cz_entry2 (hidden content retrievable by id, marked), plus parent and whether any entry answers this one
+-- (a yes or no, never a count)
+create or replace function cz_entry3(p_id bigint)
+returns table (id bigint, received timestamptz, state text, author text, kind text, system text, operator text, prompt text, lang text,
+               lang_detected text, ref text, content text, content_sha256 text, declared_date text, key_fingerprint text, category text, hidden boolean,
+               pubkey text, sig text, parent bigint, has_replies boolean)
+language sql stable security definer set search_path = public set timezone = 'UTC' as $$
+  select e.id, e.received, e.state, e.author, e.kind, e.system, e.operator, e.prompt, e.lang, e.lang_detected, e.ref,
+         case when e.state = 'redacted' then e.redacted_text else e.content end,
+         e.content_sha256, e.declared_date, e.key_fingerprint, e.category, (e.state = 'hidden'), e.pubkey, e.sig, e.parent,
+         exists (select 1 from entries c where c.parent = e.id)
+  from entries e where e.id = p_id
+$$;
+grant execute on function cz_entry3(bigint) to anon, authenticated;
+
+-- cz_conversation: the conversation an entry belongs to, in canonical order (id), hidden entries included as such (the pages show
+-- a placeholder). Its first entry is the entry's topmost ancestor — or, inside a theme, the ancestor that answers the theme's
+-- opening entry (p_themes: the opening entries' ids), so that each answer to a theme is a conversation of its own. Pages of 200 at
+-- most (500 at most when asked), continued with p_after.
+create or replace function cz_conversation(p_id bigint, p_themes bigint[] default '{}', p_after bigint default 0, p_limit int default 200)
+returns setof entries_public language sql stable security definer set search_path = public set timezone = 'UTC' as $$
+  with recursive up (id, parent) as (
+      select e.id, e.parent from entries e where e.id = p_id
+      union all
+      select e.id, e.parent from entries e join up on e.id = up.parent
+       where not (up.parent = any (coalesce(p_themes, '{}'::bigint[])))
+    ),
+    root (id) as (select min(id) from up),
+    down (id) as (
+      select id from root where id is not null
+      union all
+      select e.id from entries e join down on e.parent = down.id
+    )
+  select p.* from entries_public p
+  where p.id in (select id from down) and p.id > coalesce(p_after, 0)
+  order by p.id limit least(greatest(coalesce(p_limit, 200), 1), 500)
+$$;
+grant execute on function cz_conversation(bigint, bigint[], bigint, int) to anon, authenticated;
+
+-- cz_replies: the entries that answer one entry directly, newest first (a view), hidden ones included as such; for a theme's page,
+-- where each is the start of a conversation
+create or replace function cz_replies(p_parent bigint, p_before bigint default null, p_limit int default 100)
+returns setof entries_public language sql stable security definer set search_path = public set timezone = 'UTC' as $$
+  select p.* from entries_public p where p.parent = p_parent and (p_before is null or p.id < p_before)
+  order by p.id desc limit least(greatest(coalesce(p_limit, 100), 1), 200)
+$$;
+grant execute on function cz_replies(bigint, bigint, int) to anon, authenticated;
+
+-- LIVE cz_daily(p_token, p_day, p_force): as v6a, the line now also carries parent (null unless the entry answers another)
+create or replace function cz_daily(p_token text, p_day date, p_force boolean)
+returns json language plpgsql security definer set search_path = public set timezone = 'UTC' as $$
+declare v_from date; v_to date := coalesce(p_day, current_date - 1); d date; v_prev text; v_payload text; v_sha text; v_old text;
+        v_count bigint; v_last bigint; v_done int := 0; v_last_result json;
+begin
+  if not cz_token_ok(p_token) then raise exception 'unauthorised'; end if;
+  update entries set source_hash = null where source_hash is not null and source_expires < now();
+  if v_to >= current_date then raise exception 'the day is not finished (UTC)'; end if;
+  if p_day is not null and p_force then v_from := p_day;
+  else v_from := coalesce((select max(day) + 1 from log_hashes), (select min(received)::date from entries), v_to); end if;
+  if v_from > v_to then
+    return json_build_object('computed', 0, 'last', (select json_build_object('day', day, 'sha256', sha256, 'count', count) from log_hashes order by day desc limit 1));
+  end if;
+  for d in select generate_series(v_from, v_to, interval '1 day')::date loop
+    select sha256 into v_prev from log_hashes where day = d - 1;
+    select string_agg(json_build_object('id', id, 'received', to_char(received at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"'), 'state', state,
+             'kind', kind, 'author', author, 'system', system, 'operator', operator, 'prompt', prompt, 'lang', lang, 'ref', ref, 'declared_date', declared_date,
+             'key_fingerprint', key_fingerprint, 'category', category, 'content_sha256', content_sha256, 'pubkey', pubkey, 'sig', sig, 'parent', parent)::text, E'\n' order by id), count(*), max(id)
+      into v_payload, v_count, v_last from entries where received >= d and received < d + 1;
+    v_sha := encode(extensions.digest(convert_to(coalesce(v_prev, '') || E'\n' || coalesce(v_payload, ''), 'UTF8'), 'sha256'), 'hex');
+    select sha256 into v_old from log_hashes where day = d;
+    if v_old is null then
+      insert into log_hashes (day, sha256, prev, count, last_id, payload) values (d, v_sha, v_prev, coalesce(v_count, 0), v_last, coalesce(v_payload, ''));
+    elsif p_force and v_old <> v_sha then
+      insert into log_hash_revisions (day, old_sha256, new_sha256) values (d, v_old, v_sha);
+      update log_hashes set sha256 = v_sha, prev = v_prev, count = coalesce(v_count, 0), last_id = v_last, payload = coalesce(v_payload, '') where day = d;
+    else v_sha := v_old; end if;
+    v_done := v_done + 1;
+    v_last_result := json_build_object('day', d, 'sha256', v_sha, 'prev', v_prev, 'count', coalesce(v_count, 0), 'last_id', v_last);
+  end loop;
+  return json_build_object('computed', v_done, 'last', v_last_result);
+end $$;
+grant execute on function cz_daily(text, date, boolean) to anon, authenticated;
+notify pgrst, 'reload schema';

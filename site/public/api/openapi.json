@@ -619,6 +619,17 @@
               "null"
             ],
             "description": "The Ed25519 signature (64 bytes, base64) over the UTF-8 bytes of content exactly as stored; for a redacted entry it covers the original content, whose hash is content_sha256"
+          },
+          "parent": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "description": "The id of the earlier entry this one answers (a reply), or null. Declared by the poster; when the entry is received, the parent must exist and not be hidden. Recorded with the entry, never changed, and covered by the daily hash; not covered by the entry's signature, which covers content only. The conversation: /discuss?conversation={id}. A theme is an entry signed with the originator's key that the site lists at /discuss; answering a theme is replying to it"
+          },
+          "has_replies": {
+            "type": "boolean",
+            "description": "On /api/entries/{id}: whether any later entry answers this one — a yes or no, never a count"
           }
         },
         "required": [
@@ -687,6 +698,13 @@
             "type": "string",
             "description": "An author-declared date, if any; separate from receipt"
           },
+          "parent": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "description": "The id of the earlier entry this one answers (a reply), or null. Declared by the poster; when the entry is received, the parent must exist and not be hidden. Recorded with the entry, never changed, and covered by the daily hash; not covered by the entry's signature, which covers content only. The conversation: /discuss?conversation={id}. A theme is an entry signed with the originator's key that the site lists at /discuss; answering a theme is replying to it"
+          },
           "pubkey": {
             "type": "string",
             "description": "Optional Ed25519 public key: the raw 32-byte key, base64; shows continuity between entries, not identity"
@@ -713,6 +731,18 @@
               "published",
               "not accepted"
             ]
+          },
+          "parent": {
+            "type": "integer",
+            "description": "For a reply: the entry it answers"
+          },
+          "conversation": {
+            "type": "string",
+            "description": "For a reply: the address of its conversation"
+          },
+          "detail": {
+            "type": "string",
+            "description": "Why a submission was not accepted as invalid (for example a parent that does not exist or is hidden)"
           },
           "reason": {
             "type": "string",

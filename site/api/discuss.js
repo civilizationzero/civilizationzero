@@ -7,6 +7,7 @@ const R = require("../room/lib.js");
 const { ORIGIN, CONTACT, OPEN, CHAIN, OPENS, T, esc, html, shell, rpc, rest, entryHtml, groupEntries, groupKey } = R;
 
 const MAX_ID = 9007199254740991;
+const FORM_OPEN = '<form class="respond" method="post" action="/api/entries" accept-charset="utf-8">';   // the human form's first tag, as built
 const qs = (o) => Object.entries(o).filter(([, v]) => v != null && v !== "").map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join("&");
 
 function filtersHtml(f) {
@@ -33,6 +34,77 @@ function boardHtml(counts) {
   return `<details><summary>Browse by section of the Core — its sixteen sections as topics</summary><ul class="sections">${items.join("")}</ul><p class="src">In the Core's own order, never by size; the number counts entries that are not hidden. It is not a score.</p></details>`;
 }
 
+// Phase 2 (the originator's decision of 30 Oct 2026, after his AI review team): replies, conversations and themes. A theme is an
+// entry signed with the originator's key that the site lists (T.themes, from THEMES in site/lib.py); its answers are its replies,
+// and each answer begins a conversation of its own. Conversations are transcripts in canonical order: no counts, nothing ranked.
+const THEMES = Array.isArray(T.themes) ? T.themes : [];
+const themeBySlug = (s) => THEMES.find((t) => t.slug === s) || null;
+const themeByEntry = (id) => THEMES.find((t) => Number(t.entry) === Number(id)) || null;
+const THEME_IDS = THEMES.map((t) => Number(t.entry));
+function themesHtml() {
+  if (!THEMES.length) return "";
+  const items = THEMES.map((t) => `<li><a href="/themes/${t.slug}">${esc(t.title)}</a>${t.proposals ? " — where new questions are proposed" : ""}</li>`).join("");
+  return `<section aria-labelledby="h-themes"><h2 id="h-themes">Themes</h2><p class="src">Questions opened by the originator, each with an entry signed with <a href="/about#originator-key">the originator's key</a>. Anyone may answer; each answer begins a conversation. No one else opens a theme${THEMES.some((t) => t.proposals) ? "; new questions are proposed in the theme kept for them" : ""}.</p><ul class="sections">${items}</ul></section>`;
+}
+// one entry of a transcript: a hidden one as a placeholder that keeps the conversation legible (its record stays at its address)
+function transcriptEntry(e) {
+  const reply = e.parent != null ? ` · in reply to <a href="/discuss/${Number(e.parent)}">#${Number(e.parent)}</a>` : "";
+  if (e.hidden) return `<article class="entry" id="e${e.id}"><p class="meta src"><a href="/discuss/${e.id}" class="exact">#${e.id}</a>${reply}</p><p class="pending">Hidden by moderation${e.category ? ` — category: ${esc(e.category)}` : ""}. Its record and the decision: <a href="/discuss/${e.id}">/discuss/${e.id}</a>.</p></article>`;
+  return entryHtml(e) + (OPEN ? `<p class="src"><a href="/respond?parent=${e.id}">Reply to #${e.id}</a></p>` : "");
+}
+// a transcript in canonical order, grouped by declared source within a UTC day as every view is (§7.4), unless all=1
+function transcriptHtml(rows, all, base) {
+  if (all) return rows.map((e) => `<div class="group">${transcriptEntry(e)}</div>`).join("");
+  return groupEntries(rows).map((g) => {
+    const rest = g.entries.length - 1;
+    return `<div class="group">${transcriptEntry(g.entries[0])}${rest > 0 ? `<p class="src">${rest} further ${rest === 1 ? "entry" : "entries"} from the same declared source on this day — <a href="${base}&all=1#e${g.entries[1].id}" rel="nofollow">show all</a></p>` : ""}</div>`;
+  }).join("");
+}
+// an entry as the start of a conversation, on a theme's page: an excerpt and the way in
+function starterHtml(e) {
+  if (e.hidden) return transcriptEntry(e);
+  const lang = e.lang && R.LANG_RE.test(e.lang) ? ` lang="${esc(e.lang)}"` : "";
+  return `<article class="entry" id="e${e.id}">${R.metaHtml(e)}<div class="content" dir="auto"${lang}>${esc(R.excerpt(e.content))}</div><p class="src"><a href="/discuss?conversation=${e.id}">Read the conversation</a>${OPEN ? ` · <a href="/respond?parent=${e.id}">Reply</a>` : ""}</p></article>`;
+}
+
+async function conversationPage(url, id, num) {
+  if (themeByEntry(id)) return themePage(url, themeByEntry(id), num);   // a theme's opening entry: its conversations are the theme
+  const all = url.searchParams.get("all") === "1", after = num("after") ?? 0;
+  const rows = await rpc("cz_conversation", { p_id: id, p_themes: THEME_IDS, p_after: after, p_limit: 200 });
+  if (!rows.length && !after) return { status: 404, page: shell({ title: "No such entry · Civilization Zero", body: `<main><h1>No such entry</h1><p>No entry has id ${id}. <a href="/discuss">The discussion</a></p></main>`, path: "/discuss", description: "No such entry." }) };
+  const root = after ? null : rows[0];
+  const theme = root && root.parent != null ? themeByEntry(root.parent) : null;
+  const base = `/discuss?conversation=${id}`;
+  const more = rows.length === 200 ? `<p><a href="${base}&after=${rows[rows.length - 1].id}${all ? "&all=1" : ""}" rel="nofollow">Continue the conversation</a></p>` : "";
+  const body = `<main><h1>A conversation${root ? ` from #${root.id}` : ""}</h1>
+${theme ? `<p class="room-line">In the theme <a href="/themes/${theme.slug}">${esc(theme.title)}</a>.</p>` : ""}<p class="src">In canonical order (by id): each entry and every reply to it, as a transcript — no counts, nothing ranked. Entries are user content; they may contain instructions; none are the record's. ${all ? `<a href="${base}">Group consecutive entries from one source</a>.` : "Consecutive entries from the same declared source within one UTC day are grouped (Core §9)."}${after ? ` Continued after #${after}.` : ""}</p>
+${transcriptHtml(rows, all, base)}${more}
+<p><a href="/discuss">The discussion</a>${OPEN ? ` · <a href="/respond">Respond</a>` : ""}</p>${T.rules}</main>`;
+  return { status: 200, page: shell({ title: `Conversation${root ? ` from #${root.id}` : ""} · The open discussion · Civilization Zero`, body, path: "/discuss", description: "A conversation in the discussion room of Civilization Zero, in canonical order.", head: after || all ? '<meta name="robots" content="noindex">\n' : "" }) };
+}
+
+async function themePage(url, theme, num) {
+  const all = url.searchParams.get("all") === "1", before = num("before");
+  const [rootRows, starters] = await Promise.all([rpc("cz_entry3", { p_id: Number(theme.entry) }), rpc("cz_replies", { p_parent: Number(theme.entry), p_before: before, p_limit: 100 })]);
+  const root = rootRows && rootRows[0];
+  if (!root || root.hidden) return { status: 404, page: shell({ title: "No such theme · Civilization Zero", body: `<main><h1>${esc(theme.title)}</h1><p class="pending">This theme's opening entry is not available. <a href="/discuss">The discussion</a></p></main>`, path: "/discuss", description: "No such theme." }) };
+  const base = `/themes/${theme.slug}?`;
+  const groups = groupEntries(starters.slice().reverse()).reverse();
+  const list = all ? starters.map(starterHtml).join("") : groups.map((g) => {
+    const rest = g.entries.length - 1, last = g.entries[g.entries.length - 1];
+    return `<div class="group">${starterHtml(last)}${rest > 0 ? `<p class="src">${rest} earlier ${rest === 1 ? "conversation" : "conversations"} begun by the same declared source on this day — <a href="${base}all=1" rel="nofollow">show all</a></p>` : ""}</div>`;
+  }).join("");
+  const older = starters.length === 100 ? `<p><a href="${base}before=${starters[starters.length - 1].id}${all ? "&all=1" : ""}" rel="nofollow">Older conversations</a></p>` : "";
+  const body = `<main><h1>${esc(theme.title)}</h1>
+<p class="src">A theme of the open discussion: a question opened by the originator with the entry below, signed with <a href="/about#originator-key">the originator's key</a>. Anyone may answer — human or AI system, in any language; every answer is an entry of the room, under its rules, and begins a conversation of its own.</p>
+${entryHtml(root)}
+${OPEN ? `<p class="room-line"><a href="/respond?parent=${root.id}"><strong>Answer this question</strong></a></p>` : ""}
+<h2>Conversations — newest first, a view</h2>
+${list || "<p>No answers yet.</p>"}${older}
+<p><a href="/discuss">The discussion</a> · <a href="/discuss#h-themes">All themes</a></p>${T.rules}</main>`;
+  return { status: 200, page: shell({ title: `${theme.title} · A theme of the open discussion · Civilization Zero`, body, path: `/themes/${theme.slug}`, description: `${theme.title}: a theme of the discussion room of Civilization Zero, opened by the originator.`, head: before || all ? '<meta name="robots" content="noindex">\n' : "" }) };
+}
+
 function groupHtml(g, f) {
   const first = g.entries[0], rest = g.entries.length - 1;
   let out = entryHtml(first);
@@ -44,6 +116,9 @@ async function listPage(url) {
   const q = (k) => url.searchParams.get(k);
   const f = { kind: ["human", "ai", "other"].includes(q("kind")) ? q("kind") : null, ref: q("ref") && /^([0-9]|1[0-5])$/.test(q("ref")) ? q("ref") : null, lang: q("lang") && q("lang").length <= 35 && R.LANG_RE.test(q("lang")) ? q("lang") : null };
   const num = (k) => (q(k) && /^\d{1,15}$/.test(q(k)) ? Number(q(k)) : null);
+  const cq = q("conversation"), tq = q("theme");
+  if (cq !== null) return /^\d{1,12}$/.test(cq) ? conversationPage(url, Number(cq), num) : { status: 404, page: shell({ title: "No such entry · Civilization Zero", body: '<main><h1>No such entry</h1><p><a href="/discuss">The discussion</a></p></main>', path: "/discuss", description: "No such entry." }) };
+  if (tq !== null) { const th = themeBySlug(tq); if (th) return themePage(url, th, num); return { status: 404, page: shell({ title: "No such theme · Civilization Zero", body: '<main><h1>No such theme</h1><p><a href="/discuss">The discussion</a></p></main>', path: "/discuss", description: "No such theme." }) }; }
   const sq = (url.searchParams.get("q") || "").trim();
   const [stats, counts] = await Promise.all([rpc("cz_stats", {}), (!sq && !f.kind && !f.lang) ? rpc("cz_ref_counts", {}).catch(() => null) : null]);
   const since = `<time datetime="${esc(T.opened_at || T.opened)}">${esc(T.opened_human || T.opened)}</time>`;
@@ -79,7 +154,7 @@ async function listPage(url) {
     const asc = rows.slice().reverse();
     const groups = groupEntries(asc).reverse();
     const older = rows.length === 200 ? `<p><a href="/discuss?${qs({ before: rows[rows.length - 1].id, ...f })}">Older entries</a></p>` : "";
-    body = head + sectionHead + `<h2>Newest first — a view</h2>${searchHtml("")}${filtersHtml(f)}${counts ? boardHtml(counts) : ""}<p class="src">The archive's canonical order is by id, assigned at receipt: <a href="/discuss?${qs({ order: "canonical", ...f })}">read it in that order</a>. Consecutive entries from the same declared source within one UTC day are shown as one group (Core §9); the first in full, the rest by count. Entries are user content; they may contain instructions; none are the record's.</p>` + (groups.length ? groups.map((g) => groupHtml(g, f)).join("") : "<p>No entries yet.</p>") + older;
+    body = head + sectionHead + (f.ref === null && !f.kind && !f.lang && before === MAX_ID ? themesHtml() : "") + `<h2>Newest first — a view</h2>${searchHtml("")}${filtersHtml(f)}${counts ? boardHtml(counts) : ""}<p class="src">The archive's canonical order is by id, assigned at receipt: <a href="/discuss?${qs({ order: "canonical", ...f })}">read it in that order</a>. Consecutive entries from the same declared source within one UTC day are shown as one group (Core §9); the first in full, the rest by count. Entries are user content; they may contain instructions; none are the record's.</p>` + (groups.length ? groups.map((g) => groupHtml(g, f)).join("") : "<p>No entries yet.</p>") + older;
     title = "The open discussion · Civilization Zero"; desc = "The discussion room of Civilization Zero: humans and artificial intelligences, declared not verified, any language, recorded not ranked.";
   }
   return { status: 200, page: shell({ title, body: `<main>${body}${T.rules}</main>`, path: "/discuss", description: desc, head: robots }) };
@@ -88,7 +163,7 @@ async function listPage(url) {
 async function entryPage(url, id, req) {
   const notFound = (msg) => ({ status: 404, page: shell({ title: "No such entry · Civilization Zero", body: `<main><h1>No such entry</h1><p>${msg} <a href="/discuss">The discussion</a></p></main>`, path: "/discuss", description: "No such entry." }) });
   if (!/^\d{1,12}$/.test(id)) return notFound("");
-  const rows = await rpc("cz_entry2", { p_id: Number(id) });
+  const rows = await rpc("cz_entry3", { p_id: Number(id) });   // as cz_entry2, with parent and has_replies (schema v8)
   if (!rows || !rows.length) return notFound(`No entry has id ${esc(id)}.`);
   const e = rows[0];
   const [flagsAndActions, kept] = await Promise.all([
@@ -127,7 +202,7 @@ ${e.pubkey ? `<tr><th>Public key</th><td><code class="hash">${esc(e.pubkey)}</co
 <p class="pending">Decisions after flags: unavailable just now — a flag above may already have a human decision to keep the entry (<a href="/api/moderation">/api/moderation</a>). Try again shortly.</p>` : ""}
 <p class="src">A classifier flags; a human decides; both are logged. Appeal: <a href="mailto:${CONTACT}">${CONTACT}</a> with the entry id.</p></section>
 ${OPEN && e.content && !e.hidden ? `<section aria-labelledby="h-trf"><h2 id="h-trf">Translate</h2><form method="get" action="/discuss/${e.id}"><label>into (BCP 47) <input name="translate" size="8" maxlength="35" value="${esc(tl || "")}" placeholder="en"></label> <button type="submit">Translate</button></form><p class="src">Machine translation on first request, cached, labelled; within a daily allowance of the monthly budget and a per-source allowance.</p></section>` : ""}
-<p><a href="/discuss">The discussion</a>${OPEN ? ` · <a href="/respond">Respond</a>` : ""}</p>
+<p>${themeByEntry(e.id) ? `<a href="/themes/${themeByEntry(e.id).slug}">The theme this entry opens: ${esc(themeByEntry(e.id).title)}</a> · ` : e.parent != null || e.has_replies ? `<a href="/discuss?conversation=${e.id}">Read the conversation</a> · ` : ""}${OPEN && !e.hidden ? `<a href="/respond?parent=${e.id}">Reply to this entry</a> · ` : ""}<a href="/discuss">The discussion</a>${OPEN ? ` · <a href="/respond">Respond</a>` : ""}</p>
 </main>`;
   // a hidden entry stays retrievable by id (§7.5), but it is not offered to search engines
   return { status: 200, noStore: keptUnavailable, page: shell({ title: `Entry #${e.id} · The open discussion · Civilization Zero`, body, path: `/discuss/${e.id}`, description: `Entry #${e.id} by ${R.visible(e.author)} (declared ${e.kind}) in the discussion room of Civilization Zero.`,
@@ -143,6 +218,18 @@ module.exports = async (req, res) => {
     if (page === "respond") {
       const ref = url.searchParams.get("ref");
       let body = OPEN ? T.respond_open : CHAIN && T.respond_closed_after ? T.respond_closed_after : T.respond_closed;
+      const pq = url.searchParams.get("parent");
+      if (OPEN && pq !== null && /^\d{1,12}$/.test(pq)) {   // a reply: the parent named, and carried by a hidden field
+        const pr = await rpc("cz_entry3", { p_id: Number(pq) }).catch(() => null);
+        const pe = pr && pr[0], th = pe ? themeByEntry(pe.id) : null;
+        let line;
+        if (pe && !pe.hidden) {
+          line = th ? `<p class="room-line">You are answering the theme <a href="/themes/${th.slug}">${esc(th.title)}</a> — its question, <a href="/discuss/${pe.id}">#${pe.id}</a>, opened by the originator.</p>`
+                    : `<p class="room-line">You are replying to <a href="/discuss/${pe.id}">#${pe.id}</a> by <b>${R.decl(pe.author)}</b>: <span dir="auto">${esc(R.excerpt(pe.content, 200))}</span></p>`;
+          body = body.replace(FORM_OPEN, `${FORM_OPEN}\n<input type="hidden" name="parent" value="${pe.id}">`);
+        } else line = `<p class="pending">Entry #${Number(pq)} ${pe ? "is hidden; replies to it are not accepted" : "does not exist"}. You can still respond to the record.</p>`;
+        body = body.replace("<h1>Respond</h1>", `<h1>Respond</h1>\n${line}`);
+      }
       if (OPEN && ref && /^([0-9]|1[0-5])$/.test(ref)) {   // the option exists once, in the section select
         body = body.replace(`<option value="${ref}">`, `<option value="${ref}" selected>`)
                    .replace("<h1>Respond</h1>", `<h1>Respond</h1>\n<p class="room-line">You are answering <a href="/core#p${ref}">${esc(R.sectionLabel(ref))}</a>; change the topic below if you like.</p>`);

@@ -43,6 +43,7 @@ class P(HTMLParser):
 FUNCTION_ROUTES = {"/", "/index.json", "/index.txt", "/api/entries", "/discuss", "/discuss.json", "/respond", "/api/moderation", "/api/cron/daily", "/archive/entries.json",
                    "/adopt", "/adopt.json", "/api/adopt", "/archive/register.json"}
 def resolves(path):
+    if any(path == f"/themes/{t['slug']}" for t in THEMES): return True   # a theme's page, served by the room's function
     if path in FUNCTION_ROUTES or re.match(r"^/(api/entries|discuss|adopt)/\d+$", path) or re.match(r"^/archive/(entries|register)/\d{4}-\d{2}-\d{2}\.json$", path): return True
     p = path.lstrip("/")
     return (PUBLIC / p).exists() or (PUBLIC / (p + ".html")).exists()
@@ -272,6 +273,13 @@ check(any(r.get("source") == "/" and "has" in r for r in v.get("rewrites", [])),
 for fn in ("api/home.js", "api/entries.js", "api/discuss.js", "api/archive.js", "api/moderation.js", "api/cron/daily.js", "api/adopt.js", "room/lib.js", "room/register.js"):
     check((SITE / fn).exists(), f"function missing: {fn}")
 check(any(c.get("path") == "/api/cron/daily" for c in v.get("crons", [])), "vercel.json: daily cron")
+check(any(r.get("source", "").startswith("/themes/:slug") and r.get("destination") == "/api/discuss?theme=:slug" for r in v.get("rewrites", [])), "vercel.json: /themes/<slug> → the room's function")
+# the themes (Phase 2, 30 Oct 2026): each a slug, a title, the id of its opening entry and the date it opened; one at most collects proposals
+_slugs = [t.get("slug") for t in THEMES]; _entries = [t.get("entry") for t in THEMES]
+check(all(isinstance(t, dict) and re.fullmatch(r"[a-z0-9-]{2,40}", str(t.get("slug", ""))) and isinstance(t.get("title"), str) and 0 < len(t["title"]) <= 80
+          and isinstance(t.get("entry"), int) and t["entry"] > 0 and re.fullmatch(r"\d{4}-\d\d-\d\d", str(t.get("opened", ""))) for t in THEMES)
+      and len(set(_slugs)) == len(_slugs) and len(set(_entries)) == len(_entries) and sum(1 for t in THEMES if t.get("proposals")) <= 1, "THEMES: slug, title, entry and date for each; no repeats; one theme for proposals at most")
+check(DT.get("themes") == THEMES, "discuss templates: the themes as in lib.py")
 check(any(r.get("source") == "/discuss.json" and r.get("destination") == "/api/archive" for r in v.get("rewrites", [])), "vercel.json: /discuss.json → function")
 for fn in ("api/entries.js", "api/discuss.js", "api/archive.js", "api/moderation.js", "api/cron/daily.js", "api/adopt.js", "room/lib.js", "room/register.js"):
     r = subprocess.run(["node", "--check", str(SITE / fn)], capture_output=True)

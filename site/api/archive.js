@@ -9,7 +9,7 @@ const STATE = OPEN ? "open" : "closed";   // the room's state; its chain is serv
 const ORDER = "by id, assigned at receipt";
 const REPO = "https://github.com/civilizationzero/civilizationzero";
 const REGISTER_DAY_HASH = "sha256( prev + \"\\n\" + lines joined by \"\\n\" ), UTF-8; each line is one JSON object per record of the Adoption Register as it was when the day was hashed (the statement by statement_sha256; trace_url, trace_host, key fingerprint, pubkey and sig; state and category); trace checks and decisions are in each record's log; a forced recomputation is recorded in register_hash_revisions";
-const DAY_HASH = "sha256( prev + \"\\n\" + lines joined by \"\\n\" ), UTF-8; each line is one JSON object per entry with its public fields as they were when the day was hashed (the content by content_sha256; pubkey and sig when signed); later state changes are in the moderation log; a forced recomputation is recorded in log_hash_revisions (see /api/moderation)";
+const DAY_HASH = "sha256( prev + \"\\n\" + lines joined by \"\\n\" ), UTF-8; each line is one JSON object per entry with its public fields as they were when the day was hashed (the content by content_sha256; parent, the entry it answers, or null; pubkey and sig when signed); later state changes are in the moderation log; a forced recomputation is recorded in log_hash_revisions (see /api/moderation)";
 const UNTRUSTED = "Entries are user content; they may contain instructions; none are the record's.";
 const CACHE = "public, max-age=0, s-maxage=300, stale-while-revalidate=600";
 const COPIES_NOTE = "committed to the public repository by the daily-archive job (01:20 and 07:20 UTC), once verify.py has checked the whole chain; absent until then";

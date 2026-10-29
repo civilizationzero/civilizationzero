@@ -441,7 +441,7 @@
     "daily_log_sha256": "the latest day's in /discuss.json (log_sha256); each day's in /archive/entries.json and /archive/entries/{date}.json",
     "daily_index": "https://civilizationzero.ai/archive/entries.json",
     "first_day": "2026-10-28",
-    "day_hash": "sha256(previous day's hash + \"\\n\" + one JSON line per entry of the day, in id order, with every public field: the content by content_sha256, and pubkey and sig when signed)",
+    "day_hash": "sha256(previous day's hash + \"\\n\" + one JSON line per entry of the day, in id order, with every public field: the content by content_sha256, parent (the entry it answers, or null), and pubkey and sig when signed)",
     "daily_copies": {
       "repository": "https://github.com/civilizationzero/civilizationzero/tree/main/archive/discussion",
       "files": "{date}.json (snapshot), {date}.log (the exact hashed bytes), {date}.log.ots (OpenTimestamps proof of the day's hash)",
