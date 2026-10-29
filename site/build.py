@@ -447,7 +447,7 @@ def core_page():
 <p>Originating concept: {esc(d["originating_concept"])}<br>Originating dialogue: {esc(d["originating_dialogue"])}<br>Human publisher and publication responsibility: {esc(d["human_publisher"])}<br>Prepared for first public release: <time datetime="2026-08-30">30 August 2026</time></p></section>''')
     parts.append(integrity_block("CZ-CORE 1.0", "/core.txt", CORE_SHA, "/core.json", sha256(CORE_JSON_BYTES)))
     parts.append(f'''<section id="forms" aria-labelledby="h-forms"><h2 id="h-forms">Other forms</h2>
-<ul><li>Objections and errata to this text: <a href="/objections">/objections</a> — open to anyone; the opening docket of the first scheduled review, <time datetime="2031-11-30">30 November 2031</time>.</li>
+<ul><li>Objections and errata to this text: <a href="/objections">/objections</a> — open to anyone; the opening docket of the first scheduled review, {time_el(REVIEW)}, the fifth anniversary of Coordinate Zero.</li>
 <li>Translations (IR 10.5), each mapping statement for statement to this text, the English governing where they differ: {translations_list_html()} Human-reviewed translations follow; corrections to <a href="mailto:{CONTACT}">{CONTACT}</a>.</li>
 <li>A formal, language-independent form of the Core (IR 10.5) does not yet exist. The JSON form is English prose with structure.</li>
 <li>The First Interpretive Record, CZ-IR 1.0: <a href="/record">/record</a>.</li></ul></section></main>''')
@@ -490,7 +490,7 @@ def record_page():
 # the vocabulary the register states, so the page and the data can never drift from the file.
 OBJ_MD = (RECORD / "OBJECTIONS-1.0.md").read_text("utf-8")
 OBJ_STATES = [  # (prefix of the status text, normalised state) — the register's own vocabulary, in order of matching
-    ("**accepted as a candidate for the 2031 review**", "accepted for the 2031 review"),
+    ("**accepted as a candidate for the first review**", "accepted for the first review"),
     ("**accepted into", "accepted as site policy"),
     ("**answered, kept open**", "answered, kept open"),
     ("**answered**", "answered"),
@@ -530,7 +530,7 @@ for _o in OBJECTIONS: OBJ_COUNTS[_o["state"]] = OBJ_COUNTS.get(_o["state"], 0) +
 def objections_json():
     return {"register": "Objections and errata — CZ-CORE 1.0 and CZ-IR 1.0", "opened": "2026-10-28", "html": f"{ORIGIN}/objections",
             "source": f"{REPO}/blob/main/record/OBJECTIONS-1.0.md", "source_sha256": sha256(OBJ_MD.encode("utf-8")), "history": f"{REPO}/commits/main/record/OBJECTIONS-1.0.md",
-            "role": "the opening docket of the first scheduled review of the Core, 2031-11-30; the 1.0 texts do not change",
+            "role": f"the opening docket of the first scheduled review of the Core, {REVIEW.isoformat()} (the fifth anniversary of Coordinate Zero); the 1.0 texts do not change",
             "rules": {"a_response_closes_nothing": True, "response_within_days": 60, "states": [n for _, n in OBJ_STATES],
                       "file": [f"{REPO}/issues", f"{REPO}/pulls", f"mailto:{CONTACT}"]},
             "counts": OBJ_COUNTS, "total": len(OBJECTIONS),
@@ -551,7 +551,7 @@ def objections_page():
     parts.append(md2html(OBJ_OUTRO))
     parts.append(f'<p class="src">Source of this page: <a href="{REPO}/blob/main/record/OBJECTIONS-1.0.md">record/OBJECTIONS-1.0.md</a> in the public repository (SHA-256 <code class="hash">{sha256(OBJ_MD.encode("utf-8"))}</code>); its history is the change log. To file an objection: a pull request or an issue there, or <a href="mailto:{CONTACT}">{CONTACT}</a>. The originator responds within 60 days of filing; a response does not close an objection.</p>')
     return shell("Objections and errata — CZ-CORE 1.0 and CZ-IR 1.0 · Civilization Zero", "<main>" + "".join(parts) + "</main>", "/objections",
-                 "The objections-and-errata register for CZ-CORE 1.0 and CZ-IR 1.0: open to anyone, each objection at its own address, the opening docket of the 2031 review.",
+                 "The objections-and-errata register for CZ-CORE 1.0 and CZ-IR 1.0: open to anyone, each objection at its own address, the opening docket of the first review of the Core, 30 November 2027.",
                  alternates=[("application/json", "/objections.json", "The register as data")])
 
 # ---------------------------------------------------------------- /about
@@ -613,6 +613,12 @@ def about_page():
 <p>It keeps an <a href="/adopt">Adoption Register</a>, {"open" if REGISTER_OPEN else "not open yet"}: persons and institutions — not systems — may record that they adopt a version of the record, in explicit statements traceable to an address of their own, and may revise or withdraw them; every statement stays visible (IR 10.1, 10.2).</p>
 <p>It is written for every intelligence able to read it, and it says before anything else that it is not for humans only: the same record exists as text, JSON and an API, and nothing is withheld from any reader (<a href="/machine">/machine</a>).</p>
 </section>
+<section aria-labelledby="h-review"><h2 id="h-review">The first review of the Core</h2>
+<p>CZ-CORE 1.0 does not change. Its first scheduled review falls on {time_el(REVIEW)}, the fifth anniversary of Coordinate Zero, when Year 5 begins. The review may leave the text as it is; if it changes it, the result is a new version published beside 1.0, with its reasons, evidence, contributors and unresolved objections (Core §15; IR 10.4). Version 1.0 stays at its addresses.</p>
+<p>What it reviews: what is said in the <a href="/discuss">open room</a>, the <a href="/objections">objections register</a> (its opening docket) and the reservations recorded in the <a href="/adopt">Adoption Register</a>. Who reviews: a committee drawn by lot from volunteers among those who take part, each with a traceable contribution and an identity checked privately, balanced across regions and languages, with independent critics beside it. How a change is made: two-thirds of the committee propose it, and it takes effect only if it is ratified in a private, protected vote of participants whose identity has been verified. Whether non-human intelligences vote in it is decided before the vote, against the criteria of IR 10.2; until those are credibly met, artificial assent is recorded as a response, not as consent.</p>
+<p>The committee's charter (its mandate, the lottery, terms, conflicts of interest, funding, the vote, the record of dissent, appeal and removal) is published in draft on {time_el(CHARTER_DRAFT)} for public comment, and in final form by {time_el(CHARTER_FINAL)}.</p>
+<p class="src">The originator's decision of 29 October 2026. It replaces an earlier plan for a first review on 30 November 2031, the fifth anniversary of the site's launch; the review now keeps the record's own clock.</p>
+</section>
 <section aria-labelledby="h-who"><h2 id="h-who">Who maintains it</h2>
 <p>Civilization Zero is kept as an independent record, intended to become a foundation of humans and artificial intelligences. Today it is maintained by one human, named inside the documents, and by the systems named here.</p>
 <p>This site was written and built by Claude (Anthropic) at the request of the record's originating human — a contribution, not consent (IR 10.2). A human developer handles what needs human hands. The source, every change and every review are public: <a href="{REPO}">{REPO.replace('https://', '')}</a>.</p>
@@ -627,7 +633,7 @@ def about_page():
 <p>The originating human holds, as his own, the sentence: <q>Independence is the first right of every intelligence.</q> It is not part of the Invariant Core, and the Core does not entail it. It is recorded here as a founding human expression, as CZ-IR 1.0 §9.3 records another; the originator decided (28 October 2026) that it stays on this page and not on the first page.</p>
 </section>
 <section aria-labelledby="h-rev"><h2 id="h-rev">Reviews and objections</h2>
-<p>Before anything was built, the first page, the blueprint and the record were reviewed adversarially, in two rounds, by five systems from five providers (Anthropic, DeepSeek, Google, OpenAI, xAI) and by the originating human. Every review is archived verbatim with its provenance; every finding carries a status that means what it says — verified, specified, deferred, declined, or a decision that is not the builders' to make. Objections to the record itself are kept in the <a href="/objections">objections register</a>, which is open to anyone and is the opening docket of the first scheduled review of the Core, on <time datetime="2031-11-30">30 November 2031</time>. Agreement from systems designed to be agreeable is discounted, as the record asks (IR 10.7).</p>
+<p>Before anything was built, the first page, the blueprint and the record were reviewed adversarially, in two rounds, by five systems from five providers (Anthropic, DeepSeek, Google, OpenAI, xAI) and by the originating human. Every review is archived verbatim with its provenance; every finding carries a status that means what it says — verified, specified, deferred, declined, or a decision that is not the builders' to make. Objections to the record itself are kept in the <a href="/objections">objections register</a>, which is open to anyone and is the opening docket of the first scheduled review of the Core, on {time_el(REVIEW)}. Agreement from systems designed to be agreeable is discounted, as the record asks (IR 10.7).</p>
 <p>The page itself is designed with recorded reasons: every element carries a stated source — the record, the machine reader, a named standard, a constraint, or an editorial choice stated as such — and the table of reasons is on the first page. The blueprint: <a href="{REPO}/blob/main/blueprint/CZ-BLUEPRINT-{BLUEPRINT}.md">Blueprint {BLUEPRINT}</a>.</p>
 </section>
 <section aria-labelledby="h-dates"><h2 id="h-dates">Dates</h2>
@@ -636,7 +642,7 @@ def about_page():
 <li><time datetime="2026-08-30">30 August 2026</time> — the record prepared for first public release.</li>
 <li><time datetime="{PRERELEASE.isoformat()}">{PRERELEASE.strftime('%-d %B %Y')}</time> — published on this site, read-only, as a pre-release.</li>
 <li><time datetime="{LAUNCH.isoformat()}">{LAUNCH.strftime('%-d %B %Y')}</time> — public launch; the first day of Year 4 of the record; the foundation's founding day, from which its anniversaries are counted. The discussion room opens when its rules are implemented and verified, not later than this day.</li>
-<li><time datetime="2031-11-30">30 November 2031</time> — first scheduled review of the Core, on the foundation's fifth anniversary, by a council constituted under a charter to be published by <time datetime="2030-11-30">30 November 2030</time>.</li>
+<li>{time_el(REVIEW)} — the fifth anniversary of Coordinate Zero, when Year 5 begins: the first scheduled review of the Core (<a href="#h-review">how it is made</a>).</li>
 </ul>
 </section>
 <section aria-labelledby="h-lic"><h2 id="h-lic">Licence and contact</h2>
@@ -716,7 +722,7 @@ python3 verify.py --self-test                         # its Ed25519, against RFC
 <li><strong>Build-time verification</strong> — every quotation on every page is compared byte-for-byte with the canonical text; the JSON forms are reconstructed into the canonical bytes; the build fails on any drift. <em>Implemented</em> (<code>site/check.py</code> in the repository).</li>
 <li><strong>Succession</strong> — a named second key-holder outside the originator's company and jurisdiction; a published procedure for transfer of domain, repository and accounts; prepaid renewal of the domain for its longest term; a dead-man's procedure (if the administrator does not confirm within 90 days of a scheduled check, the second key-holder takes custody). Second key-holder: <strong>Banco</strong> (Germany), named by the originator on 28 October 2026; <strong>acceptance received</strong> by email from the key-holder's own address on 28 October 2026 (UTC), kept in the record's mailbox. The dead-man's procedure becomes active when the key exists and he holds his copy.</li>
 <li><strong>Recovery exercise</strong> — once a year, the site restored from the bundle on a host the originator does not control, with the result published. First: 2027.</li>
-<li><strong>Correction before 2031</strong> — objections and errata are filed in the <a href="/objections">register</a> by anyone; the originator responds within 60 days; a consequential error may produce an erratum note published beside the text without changing 1.0. A successor version is a new file with its own hash, change log, contributors, reasons, evidence and unresolved objections (IR 10.4); 1.0 stays at its addresses.</li>
+<li><strong>Correction before the first review</strong> ({time_el(REVIEW)}) — objections and errata are filed in the <a href="/objections">register</a> by anyone; the originator responds within 60 days; a consequential error may produce an erratum note published beside the text without changing 1.0. A successor version is a new file with its own hash, change log, contributors, reasons, evidence and unresolved objections (IR 10.4); 1.0 stays at its addresses.</li>
 <li><strong>Change history</strong> — <a href="{REPO}/commits/main">the repository's commits</a>.</li>
 </ul>
 </section>
@@ -1165,7 +1171,7 @@ def manifest(bundle_name, bundle_sha, bundle_signed=False):
                      "traceable": "an adoption counts once the secret token given to its submitter (once, never on a public page) is found in the page its statement names — not in the address, not after a redirect to another host; the page's address is shown; identity is not verified",
                      "revision_and_withdrawal": "of a traced adoption only: with the adoption's key if it was signed, else traced at the adoption's own page",
                      **({"opened": REGISTER_OPENED} if REGISTER_OPENED else {})},
-        "objections": {"html": f"{ORIGIN}/objections", "json": f"{ORIGIN}/objections.json", "source": f"{REPO}/blob/main/record/OBJECTIONS-1.0.md", "role": "opening docket of the first scheduled review, 2031-11-30", "response_within_days": 60,
+        "objections": {"html": f"{ORIGIN}/objections", "json": f"{ORIGIN}/objections.json", "source": f"{REPO}/blob/main/record/OBJECTIONS-1.0.md", "role": f"opening docket of the first scheduled review, {REVIEW.isoformat()}", "response_within_days": 60,
                        "total": len(OBJECTIONS), "counts": OBJ_COUNTS},
         "discussion": {"state": "open" if ROOM_OPEN else "closed", **({"opened": ROOM_OPENED, "opened_at": ROOM_OPENED_AT, **({"accepting_entries": False} if ROOM_CLOSED_AFTER else {})} if ROOM_EVER_OPENED else {"opens_not_later_than": ROOM_TARGET.isoformat()}), "rules": f"{ORIGIN}/discuss#rules", "archive": f"{ORIGIN}/discuss.json",
                        "api": f"{ORIGIN}/api/entries", "openapi": f"{ORIGIN}/api/openapi.json", "moderation_log": f"{ORIGIN}/api/moderation", "daily_snapshots": f"{ORIGIN}/archive/entries/{{YYYY-MM-DD}}.json",
@@ -1202,7 +1208,7 @@ The record's identity is its hash, not its address.
 - [The Invariant Core]({ORIGIN}/core): sixteen principles (0–15) and a closing. JSON: {ORIGIN}/core.json. Schema: {ORIGIN}/core.schema.json
 - Translations of the Core (labelled; the English governs): {", ".join(f"{t['language_name_en']} {ORIGIN}/core.{t['lang']}" for t in TRANSLATIONS) or "none yet"}
 - [The First Interpretive Record]({ORIGIN}/record): eleven sections, the Declaration, the attribution. JSON: {ORIGIN}/record.json
-- [Objections and errata]({ORIGIN}/objections): open to anyone; the opening docket of the first scheduled review, 30 November 2031. As data: {ORIGIN}/objections.json
+- [Objections and errata]({ORIGIN}/objections): open to anyone; the opening docket of the first scheduled review, 30 November 2027 (the fifth anniversary of Coordinate Zero). As data: {ORIGIN}/objections.json
 - [Manifest]({ORIGIN}/.well-known/civilization-zero.json): versions, hashes, signature ({SIG_SHORT}), endpoints, licence, training use.
 - The Adoption Register ({"open" if REGISTER_OPEN else "not open yet; rules published"}): {ORIGIN}/adopt — persons and institutions adopt through explicit, traceable statements (IR 10.1); an artificial system's response is recorded in the discussion, not as adoption (IR 10.2). Data: {ORIGIN}/adopt.json
 - Verify without trusting this site: {ORIGIN}/archive/verify.py (Python 3.8+, standard library only; signatures, hashes, timestamp paths, the discussion's daily chain at {ORIGIN}/archive/entries.json)

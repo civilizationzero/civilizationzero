@@ -233,7 +233,7 @@
     "html": "https://civilizationzero.ai/objections",
     "json": "https://civilizationzero.ai/objections.json",
     "source": "https://github.com/civilizationzero/civilizationzero/blob/main/record/OBJECTIONS-1.0.md",
-    "role": "opening docket of the first scheduled review, 2031-11-30",
+    "role": "opening docket of the first scheduled review, 2027-11-30",
     "response_within_days": 60,
     "total": 18,
     "counts": {
@@ -241,7 +241,7 @@
       "answered, kept open": 1,
       "partly answered": 1,
       "answered": 1,
-      "accepted for the 2031 review": 1,
+      "accepted for the first review": 1,
       "accepted as site policy": 1
     }
   },

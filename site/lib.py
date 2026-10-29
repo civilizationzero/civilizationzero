@@ -13,6 +13,11 @@ CONTACT = "record@civilizationzero.ai"
 COORDINATE = datetime.date(2022, 11, 30)
 PRERELEASE = datetime.date(2026, 10, 28)   # first publication on this site (read-only, pre-release)
 LAUNCH = datetime.date(2026, 11, 30)       # public launch; first day of Year 4; the foundation's anniversary
+REVIEW = datetime.date(2027, 11, 30)       # first scheduled review of the Core: Coordinate Zero's fifth anniversary, Year 5 begins
+                                           # (the originator's decision of 29 Oct 2026; it replaced 30 Nov 2031, the launch's fifth)
+CHARTER_DRAFT = datetime.date(2026, 11, 30)   # the review committee's charter, in draft for public comment
+CHARTER_FINAL = datetime.date(2027, 3, 31)    # ... and in final form
+def time_el(d): return f'<time datetime="{d.isoformat()}">{d.day} {d.strftime("%B %Y")}</time>'   # a date as the pages print it
 BLUEPRINT = "1.3.1"
 PROMPT_VERSION = "cz-machine-1.0"
 ROOM_OPEN = True                           # flipped on the day the room's rules (§7) were verified; the functions read it from api/discuss-templates.json

@@ -3,14 +3,14 @@
   "opened": "2026-10-28",
   "html": "https://civilizationzero.ai/objections",
   "source": "https://github.com/civilizationzero/civilizationzero/blob/main/record/OBJECTIONS-1.0.md",
-  "source_sha256": "aab2cf368fa970a9f63df41afb25276d36fd2d3b9e4623d35f3e0563d52d7fe0",
+  "source_sha256": "eeb35b07cec7d75224374dca269fa58abc4a84154eaa5493c4169cd149a4d10f",
   "history": "https://github.com/civilizationzero/civilizationzero/commits/main/record/OBJECTIONS-1.0.md",
-  "role": "the opening docket of the first scheduled review of the Core, 2031-11-30; the 1.0 texts do not change",
+  "role": "the opening docket of the first scheduled review of the Core, 2027-11-30 (the fifth anniversary of Coordinate Zero); the 1.0 texts do not change",
   "rules": {
     "a_response_closes_nothing": true,
     "response_within_days": 60,
     "states": [
-      "accepted for the 2031 review",
+      "accepted for the first review",
       "accepted as site policy",
       "answered, kept open",
       "answered",
@@ -28,7 +28,7 @@
     "answered, kept open": 1,
     "partly answered": 1,
     "answered": 1,
-    "accepted for the 2031 review": 1,
+    "accepted for the first review": 1,
     "accepted as site policy": 1
   },
   "total": 18,
@@ -121,7 +121,7 @@
       "raised_by": "Claude",
       "verified": "Judgement",
       "state": "answered",
-      "status": "answered — originator's response, 28 Oct 2026: a historical note is recorded here without changing the text: 30 November 2022 is the date of the public release of ChatGPT (OpenAI). The record does not name it, because the coordinate marks a threshold — ordinary language becoming a mass interface — not a product. The objection is kept; the council of 2031 may move the note into the text."
+      "status": "answered — originator's response, 28 Oct 2026: a historical note is recorded here without changing the text: 30 November 2022 is the date of the public release of ChatGPT (OpenAI). The record does not name it, because the coordinate marks a threshold — ordinary language becoming a mass interface — not a product. The objection is kept; the council of 2031 may move the note into the text. (The first review was moved to 30 Nov 2027 by the originator's decision of 29 Oct 2026.)"
     },
     {
       "id": "O-10",
@@ -160,8 +160,8 @@
       "where": "Core §14; preamble",
       "raised_by": "Claude, Gemini",
       "verified": "Yes (sentences as quoted; preamble as quoted)",
-      "state": "accepted for the 2031 review",
-      "status": "accepted as a candidate for the 2031 review — originator's response, 28 Oct 2026: the objection is accepted; the removal of §14's second and third sentences from the Core, keeping them only in IR 9.2–9.3, is placed on the opening docket of the first scheduled review (30 Nov 2031). CZ-CORE 1.0 is unchanged."
+      "state": "accepted for the first review",
+      "status": "accepted as a candidate for the first review — originator's response, 28 Oct 2026: the objection is accepted; the removal of §14's second and third sentences from the Core, keeping them only in IR 9.2–9.3, is placed on the opening docket of the first scheduled review (30 Nov 2031). CZ-CORE 1.0 is unchanged. (The first review was moved to 30 Nov 2027 by the originator's decision of 29 Oct 2026.)"
     },
     {
       "id": "O-14",
