@@ -1,0 +1,27 @@
+Model: Gemini
+Provider: Google
+Date of review: 2026-10-29
+What I could do: read pasted text only
+I cannot fetch live URLs, issue HTTP requests to the API, or run verify.py against live endpoints in this environment. Per your instructions, I can review only what you paste directly into our conversation.
+Preliminary Note on Your Prompt Text
+Before you paste the site artifacts, note that several angle-bracket placeholders in your prompt template appear to have been stripped by a Markdown/HTML sanitizer or copy-paste pipeline:
+ * Provider:  (missing <provider>)
+ * E11: signatory "[round-3 test] " (missing placeholder after the space) and POST {"action":"trace","id":} (missing <id> value, resulting in invalid JSON syntax in the prompt text)
+ * Q11: id (R3--n) (missing <model> between the hyphens)
+If this prompt is published in your repository (e.g., as a Markdown file) without code fences or escaped &lt;...&gt; entities, HTML-aware renderers will silently strip those tokens.
+What to Paste for the Full Round 3 Review
+Paste as many of the following artifacts (or curl/verifier transcripts) as you want covered, and I will audit them against each other and answer E1–E12 (from the contract, code, and any transcripts you provide) and Q1–Q12 in full:
+ * Core & Manifests:
+   * /core.txt and /.well-known/civilization-zero.json
+   * /.well-known/cz-release-1.0.json and /.well-known/cz-record-signing.pub
+ * API Contract & Machine-Readable Docs:
+   * /api/openapi.json
+   * /machine, /llms.txt, and /prompts/cz-machine-1.0.txt
+ * Pages & Rules:
+   * /discuss (specifically "The rules of the room" and raw HTML form markup if you want Q8 evaluated directly)
+   * /adopt and design/ADOPT.md
+   * /archive (specifically "Verify it yourself")
+   * /objections.json
+ * Verifier & Backend/Test Transcripts:
+   * The full source of /archive/verify.py
+   * (Optional) Relevant route handlers or transcripts of curl -i calls for /api/entries, /api/moderation, /api/adopt, and python3 verify.py runs.
