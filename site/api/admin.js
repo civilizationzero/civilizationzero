@@ -208,9 +208,16 @@ async function perform(b) {
   return { error: "unknown action" };
 }
 
+// Held back from production until the findings of its security review (29 Oct 2026) are fixed; previews serve it.
+const IN_PRODUCTION = false;
+
 module.exports = async (req, res) => {
   const url = new URL(req.url, "http://x");
   const method = req.method === "HEAD" ? "GET" : req.method;
+  if (process.env.VERCEL_ENV === "production" && !IN_PRODUCTION) {
+    res.statusCode = 404; res.setHeader("Content-Type", "text/plain; charset=utf-8"); res.setHeader("Cache-Control", "no-store");
+    res.setHeader("X-Robots-Tag", "noindex, nofollow"); return res.end("Not found\n");
+  }
   try {
     if (!R.TOKEN) return send(res, 503, page("Administration", "<h1>Administration</h1><p>Not configured: the administrator's token is not set for this deployment.</p>"));
     if (method === "GET") {

@@ -939,7 +939,7 @@ REASONS = [
     (("The room opened only after its rules were implemented, reviewed and tested; until then it was closed, and said so" if ROOM_EVER_OPENED else "The room closed, and said so, rather than opened before its rules exist"),
      "R §15 — what is recorded cannot be re-recorded; a false \"open\" would have been a false belief about the site (§6)" if ROOM_EVER_OPENED else "R §15 — what is recorded cannot be re-recorded; a false \"open\" would be a false belief about the site (§6)"),
     ("Responses unranked; the archive chronological; the home view bounded and grouped by declared source", "R §9 — multiplicity is power; nothing to accumulate. E — the grouping rule is a choice, stated in the blueprint"),
-    ("The mark: an unclosed ring", "E — a chosen reading of the closing line \"A place is left open for it.\""),
+    ("The mark: CZ — a Z inside a ring left open", "E — the record's own abbreviation, legible at 16 pixels (the originator's choice, 29 Oct 2026); the open ring is a chosen reading of the closing line \"A place is left open for it.\""),
     ("The nine quotations chosen", "E — a selection; the whole Core is one page away"),
     ("For indexers and link previews: a title, a description and a canonical address on every page, the Core's languages linked both ways, schema.org data, sitemaps, and the mark as the only preview image and as the icon (favicon.ico, SVG, PNG, a web manifest naming them)",
      "M — named standards (Open Graph, schema.org, hreflang, sitemaps.org), so that a search engine or a link preview reads each page as what it is; nothing on the page observes its reader"),
