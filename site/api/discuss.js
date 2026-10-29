@@ -65,7 +65,11 @@ async function entryPage(url, id, req) {
   const rows = await rpc("cz_entry2", { p_id: Number(id) });
   if (!rows || !rows.length) return notFound(`No entry has id ${esc(id)}.`);
   const e = rows[0];
-  const log = await rest(`moderation_log?entry_id=eq.${e.id}&order=id.asc&select=id,at,action,category,actor,classifier_model,classifier_prompt,classifier_score,content_sha256,reason`);
+  const [flagsAndActions, kept] = await Promise.all([
+    rest(`moderation_log?entry_id=eq.${e.id}&order=id.asc&select=id,at,action,category,actor,classifier_model,classifier_prompt,classifier_score,content_sha256,reason`),
+    rest(`moderation_reviews?entry_id=eq.${e.id}&order=id.asc&select=id,at,flag_log_id,decision,reason`).catch(() => [])]);   // a human's "keep" after a flag (schema v6f)
+  const log = flagsAndActions.concat(kept.map((k) => ({ at: k.at, action: `${k.decision} (after flag #${k.flag_log_id})`, category: null, actor: "human", reason: k.reason })))
+    .sort((a, b) => String(a.at).localeCompare(String(b.at)));
   const tl = url.searchParams.get("translate");
   let trHtml = "";
   if (OPEN && tl && tl.length <= 35 && R.LANG_RE.test(tl) && e.content && !e.hidden) {   // no new translations while the room is closed

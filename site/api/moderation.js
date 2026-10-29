@@ -20,9 +20,10 @@ module.exports = async (req, res) => {
       if (!OPEN && !CHAIN) return json(res, 200, { state: "closed", log: [], hidden_and_redacted: [], grounds }, { "Cache-Control": "public, max-age=300" });   // before it first opened; afterwards the log stays public
       const num = (k) => (url.searchParams.get(k) && /^\d{1,12}$/.test(url.searchParams.get(k)) ? Number(url.searchParams.get(k)) : null);
       const after = num("after") ?? 0, limit = Math.min(500, Math.max(1, num("limit") ?? 500));
-      const [log, hidden, revisions, stats] = await Promise.all([
+      const [log, hidden, revisions, stats, kept] = await Promise.all([
         rest(`moderation_log?id=gt.${after}&order=id.asc&limit=${limit}&select=id,at,entry_id,action,category,actor,classifier_model,classifier_prompt,classifier_score,content_sha256,reason`),
         rpc("cz_hidden", {}), rest("log_hash_revisions?select=id,at,day,old_sha256,new_sha256&order=id.asc&limit=500"), rpc("cz_stats", {}),
+        rest("moderation_reviews?select=id,at,flag_log_id,entry_id,decision,content_sha256,reason&order=id.asc&limit=1000").catch(() => null),
       ]);
       const byLang = {}, byMonth = {};
       for (const h of hidden) {
@@ -31,7 +32,8 @@ module.exports = async (req, res) => {
       }
       return json(res, 200, { state: OPEN ? "open" : "closed", order: "log id ascending", next_after: log.length === limit ? log[log.length - 1].id : null, grounds,
         classifier: { prompt_version: R.MODERATION_PROMPT_VERSION, flags_only: true, unclassified_entries: stats.unclassified, note: "an entry not yet screened is published all the same; the daily job retries" },
-        log, hidden_and_redacted: hidden.map((h) => ({ id: h.id, received: h.received, state: h.state, category: h.category, lang: h.lang, lang_detected: h.lang_detected, content_sha256: h.content_sha256, decided: h.updated, url: `${ORIGIN}/discuss/${h.id}` })),
+        log, kept_after_flag: kept === null ? "unavailable" : kept.map((k) => ({ ...k, actor: "human", note: "a human decided that no ground applies to this flag" })),
+        hidden_and_redacted: hidden.map((h) => ({ id: h.id, received: h.received, state: h.state, category: h.category, lang: h.lang, lang_detected: h.lang_detected, content_sha256: h.content_sha256, decided: h.updated, url: `${ORIGIN}/discuss/${h.id}` })),
         hidden_by_language: byLang, hidden_by_month_and_language: byMonth, day_hash_revisions: revisions,
         appeal: `${R.CONTACT} with the entry id; receipt within 7 days; a written reason; where the complaint concerns the administrator, the second key-holder decides` },
         { "Cache-Control": "public, max-age=0, s-maxage=60" });

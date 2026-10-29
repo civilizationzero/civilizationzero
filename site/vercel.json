@@ -36,6 +36,10 @@
   ],
   "rewrites": [
     {
+      "source": "/admin",
+      "destination": "/api/admin"
+    },
+    {
       "source": "/",
       "has": [
         {
@@ -601,6 +605,19 @@
           "value": "public, max-age=3600"
         }
       ]
+    },
+    {
+      "source": "/(admin|api/admin)",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "no-store"
+        }
+      ]
     }
   ],
   "crons": [
@@ -626,6 +643,9 @@
       "maxDuration": 30
     },
     "api/adopt.js": {
+      "maxDuration": 30
+    },
+    "api/admin.js": {
       "maxDuration": 30
     }
   }
