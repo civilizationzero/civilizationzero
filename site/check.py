@@ -172,7 +172,8 @@ check(f'd="{_mo}"' in svg and f'd="{_mz}"' in svg and f'd="{_lo}"' in MARK and f
 check(all("M56.57,41.93" not in p.read_text("utf-8") and "ring left open" not in p.read_text("utf-8") for p in PUBLIC.rglob("*.html")), "the mark: the earlier ring and Z are on no page")
 # the mark at the head of every page (the originator's request of 30 Oct 2026, CZ 1430): beside the name, in the navigation's link to the
 # first page — on every static page, every page of the room and of the register; the first page has it once, larger, in its heading
-_navmark = re.compile(r'<a class="home" href="/"( aria-current="page")?>' + re.escape(NAV_MARK) + "CZ · Civilization Zero</a>")
+# the name line: the full name first, the short name beside it (31 Oct 2026; the site name asked of Google, build.py WebSite)
+_navmark = re.compile(r'<a class="home" href="/"( aria-current="page")?>' + re.escape(NAV_MARK) + re.escape("Civilization Zero (CZ)") + "</a>")
 _nav_pages = {f.name: (VIRTUAL[f.name] if f.parent.name == "virtual" else f.read_text("utf-8")) for f in pages + [pathlib.Path("virtual") / n for n in VIRTUAL] if f.name != "index.html"}
 _nav_pages["the register's shell (api/adopt.js)"] = json.loads((SITE / "api" / "register-templates.json").read_text("utf-8"))["shell"]
 _missing = [n for n, h in _nav_pages.items() if len(_navmark.findall(h)) != 1]
@@ -204,14 +205,14 @@ check(sha256(prompt) == man["machine_prompt"]["sha256"], "prompt hash in manifes
 T = json.loads((SITE / "api" / "home-templates.json").read_text("utf-8"))
 sample = {"__YEAR__": "3", "__DAYS_IN_YEAR__": "332", "__TOTAL__": "1428", "__TOTAL_FMT__": "1,428", "__NEXT_YEAR__": "4", "__NEXT_ISO__": "2026-11-30",
           "__NEXT_HUMAN__": "30 November 2026", "__ASOF_ISO__": "2026-10-28T10:00Z", "__ASOF_HUMAN__": "2026-10-28 10:00 UTC",
-          "__CZ_ISO__": "2026-10-28", "__CZ_STAMP__": "CZ 1428", "__CZ_DOYN__": "332", "__CZ_SINCE__": "3 years and 332 days", "__CZ_TO_NEXT_N__": "33", "__CZ_TO_NEXT__": "33 days", "__CZ_NEXT_DAY__": "1461"}
+          "__CZ_ISO__": "2026-10-28", "__CZ_STAMP__": "CZ 1428", "__CZ_DOYN__": "332", "__CZ_SINCE__": "3 years and 332 days", "__CZ_TO_NEXT_N__": "33", "__CZ_TO_NEXT__": "33 days", "__CZ_NEXT_DAY__": "1461", "__UTC_DAY_SHORT__": "28 Oct 2026"}
 # the room's two places on the first page (Phase 1, 29 Oct 2026) are filled by api/home.js from the database, after the clock and
 # last of all, so that nothing in an entry is ever filled again; with the database slow or down, both are left empty
 import subprocess
 ROOM_KEYS = ("__ROOM_COUNT__", "__ROOM_LATEST__")
 def fill(s, room=("", "")):
     for k in ("__TOTAL_FMT__", "__YEAR__", "__DAYS_IN_YEAR__", "__TOTAL__", "__NEXT_YEAR__", "__NEXT_ISO__", "__NEXT_HUMAN__", "__ASOF_ISO__", "__ASOF_HUMAN__",
-              "__CZ_ISO__", "__CZ_STAMP__", "__CZ_DOYN__", "__CZ_SINCE__", "__CZ_TO_NEXT_N__", "__CZ_TO_NEXT__", "__CZ_NEXT_DAY__"):
+              "__CZ_ISO__", "__CZ_STAMP__", "__CZ_DOYN__", "__CZ_SINCE__", "__CZ_TO_NEXT_N__", "__CZ_TO_NEXT__", "__CZ_NEXT_DAY__", "__UTC_DAY_SHORT__"):
         s = s.replace(k, sample[k])
     for k, v in zip(ROOM_KEYS, room):
         s = s.replace(k, v)

@@ -223,9 +223,27 @@ for f in sorted(TR_DIR.glob("CZ-CORE-1.0.*.json")) if TR_DIR.exists() else []:
 
 # The Core in every language it is published in, linked both ways (hreflang); x-default is the canonical English text
 HREFLANGS = [("en", "/core")] + [(t["lang"], f"/core.{t['lang']}") for t in TRANSLATIONS] + [("x-default", "/core")]
+# The Core on one image (site/assets/render.py --poster; the originator's request of 31 Oct 2026): every line on it is read from core.txt,
+# and so is its text alternative here. It names the Core's languages, so a new translation means a new rendering (the check below says so)
+_S0 = CORE_JSON["principles"][0]["statements"][0].split(": ", 1)[1]    # §0, after "Year Zero of this record:"
+_CL = CORE_JSON["closing"]["statements"]
+assert CORE_LANGUAGES == len(TRANSLATIONS) + 1 == 21, "the poster names 21 languages: re-render it (render.py --poster) and update this check"
+CORE_POSTER = ("/civilization-zero-core.png", 1200, 1500,
+               "Civilization Zero. CZ-CORE 1.0 · The Invariant Core · The One-Page Manifesto. Year Zero: 30 November 2022, CZ 0, and every day since, counted. "
+               f"“{_S0[0].upper()}{_S0[1:]}” (§0) Sixteen principles, for every intelligence able to read them: "
+               + ", ".join(f"§{p['n']} {p['title']}" for p in CORE_JSON["principles"])
+               + f". “{_CL[4]} {_CL[5]}” civilizationzero.ai · signed · timestamped · {CORE_LANGUAGES} languages.")
+# What sets the record apart from other things called Civilization Zero (a namesake survey of 31 Oct 2026 found a personal site, games,
+# an album and AI-agent simulations under the same or a near name); it names none of them
+DISAMBIGUATION = "An open, signed record of 16 principles for humans and AI, dated from 30 November 2022. Not a game, a simulation of AI agents, or a personal portfolio."
 # sameAs: the places that are the same project — its repository and its deposit (social accounts are added once they exist)
-PUBLISHER = {"@type": "Organization", "@id": f"{ORIGIN}/#publisher", "name": "Civilization Zero", "alternateName": "CZ", "url": f"{ORIGIN}/",
-             "logo": f"{ORIGIN}/icon-512.png", "sameAs": ["https://github.com/civilizationzero"] + SOCIAL}
+PUBLISHER = {"@type": "Organization", "@id": f"{ORIGIN}/#publisher", "name": "Civilization Zero", "alternateName": ["CZ", "C-zero"], "url": f"{ORIGIN}/",
+             "logo": f"{ORIGIN}/icon-512.png", "disambiguatingDescription": DISAMBIGUATION, "sameAs": ["https://github.com/civilizationzero"] + SOCIAL}
+# the poster as schema.org describes an image: its address, size, text and licence (what Google Images shows as "Licensable")
+POSTER_LD = {"@type": "ImageObject", "contentUrl": f"{ORIGIN}{CORE_POSTER[0]}", "url": f"{ORIGIN}{CORE_POSTER[0]}", "encodingFormat": "image/png",
+             "width": CORE_POSTER[1], "height": CORE_POSTER[2], "name": "Civilization Zero: the Invariant Core on one image", "caption": CORE_POSTER[3],
+             "license": "https://creativecommons.org/licenses/by/4.0/", "acquireLicensePage": f"{ORIGIN}/core#image", "creditText": "Civilization Zero",
+             "creator": {"@type": "Organization", "name": "Civilization Zero", "url": f"{ORIGIN}/"}, "representativeOfPage": True}
 
 def translation_page(tr):
     lang, rtl = tr["lang"], tr.get("dir") == "rtl"
@@ -487,13 +505,18 @@ def core_page():
 <ul><li>Objections and errata to this text: <a href="/objections">/objections</a> — open to anyone; the opening docket of the first scheduled review, {time_el(REVIEW)}.</li>
 <li id="translations">Translations (IR 10.5), each mapping statement for statement to this text, the English governing where they differ: {translations_list_html()}. Human-reviewed translations follow; corrections to <a href="mailto:{CONTACT}">{CONTACT}</a>.</li>
 <li>A formal, language-independent form of the Core (IR 10.5) does not yet exist. The JSON form is English prose with structure.</li>
-<li>The First Interpretive Record, CZ-IR 1.0: <a href="/record">/record</a>.</li></ul></section></main>''')
+<li>The First Interpretive Record, CZ-IR 1.0: <a href="/record">/record</a>.</li>
+<li>The Core on one image, to share: <a href="#image">below</a>.</li></ul></section>
+<section id="image" aria-labelledby="h-image"><h2 id="h-image">The Core on one image</h2>
+<figure class="poster"><a href="{CORE_POSTER[0]}"><img src="{CORE_POSTER[0]}" width="{CORE_POSTER[1]}" height="{CORE_POSTER[2]}" alt="{esc(CORE_POSTER[3])}" loading="lazy" decoding="async"></a>
+<figcaption class="src">Year Zero, its date's meaning in the words of §0, the sixteen section titles and two lines of the closing, each read from the canonical text. PNG, {CORE_POSTER[1]} × {CORE_POSTER[2]}. Free to share under <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>, credited to Civilization Zero, with a link to <code>civilizationzero.ai/core</code>.</figcaption></figure></section></main>''')
     ld = [{"@context": "https://schema.org", "@type": "CreativeWork", "name": d["title"], "version": "CZ-CORE 1.0", "datePublished": "2026-08-30",
            "license": "https://creativecommons.org/licenses/by/4.0/", "url": f"{ORIGIN}/core", "inLanguage": "en",
            "identifier": {"@type": "PropertyValue", "propertyID": "sha256", "value": CORE_SHA}, "temporalCoverage": "2022-11-30/..", "publisher": PUBLISHER, "isPartOf": {"@type": "CreativeWork", "@id": f"https://doi.org/{DOI_CONCEPT}", "url": f"https://doi.org/{DOI_CONCEPT}"},
-           "workTranslation": [{"@type": "CreativeWork", "inLanguage": t["lang"], "url": f"{ORIGIN}/core.{t['lang']}"} for t in TRANSLATIONS]}]
-    return shell("CZ-CORE 1.0 — The Invariant Core · Civilization Zero", "".join(parts), "/core",
-                 "CZ-CORE 1.0, the Invariant Core of Civilization Zero: sixteen principles for humans and nonhuman intelligence, from Coordinate Zero, 30 November 2022.",
+           "workTranslation": [{"@type": "CreativeWork", "inLanguage": t["lang"], "url": f"{ORIGIN}/core.{t['lang']}"} for t in TRANSLATIONS], "image": POSTER_LD,
+           "mainEntityOfPage": f"{ORIGIN}/core"}]
+    return shell("CZ-CORE 1.0: The One-Page Manifesto · Civilization Zero", "".join(parts), "/core",
+                 "The one-page manifesto of Civilization Zero: 16 principles for every intelligence able to read them, human or not. Year Zero: 30 November 2022.",
                  alternates=[("text/plain", "/core.txt", "Canonical text"), ("application/json", "/core.json", "JSON form")], ldjson=ld, hreflangs=HREFLANGS, og_type="article")
 
 # ---------------------------------------------------------------- /record
@@ -517,8 +540,8 @@ def record_page():
     ld = [{"@context": "https://schema.org", "@type": "CreativeWork", "name": "Civilization Zero — The First Interpretive Record", "version": "CZ-IR 1.0",
            "datePublished": "2026-08-30", "license": "https://creativecommons.org/licenses/by/4.0/", "url": f"{ORIGIN}/record", "inLanguage": "en",
            "identifier": {"@type": "PropertyValue", "propertyID": "sha256", "value": IR_SHA}, "isBasedOn": f"{ORIGIN}/core", "publisher": PUBLISHER, "isPartOf": {"@type": "CreativeWork", "@id": f"https://doi.org/{DOI_CONCEPT}", "url": f"https://doi.org/{DOI_CONCEPT}"}}]
-    return shell("CZ-IR 1.0 — The First Interpretive Record · Civilization Zero", "".join(parts), "/record",
-                 "The First Interpretive Record of Civilization Zero, CZ-IR 1.0: eleven sections, the Declaration and the attribution, canonical text with its SHA-256.",
+    return shell("The First Interpretive Record · Civilization Zero", "".join(parts), "/record",
+                 "Why 30 November 2022 was selected as Year Zero, what the 16 principles mean from the limited position of 2026, and the closing Declaration. CZ-IR 1.0.",
                  alternates=[("text/plain", "/record.txt", "Canonical text"), ("application/json", "/record.json", "JSON form")], ldjson=ld, og_type="article")
 
 # ---------------------------------------------------------------- /objections (from the register in the repository): a docket
@@ -636,13 +659,19 @@ def press_page():
 {md_blocks(md[md.index("## One line"):])}
 <h2 id="h-images">Images</h2>
 <p>The mark, CZ, black on white — the only image that stands for the record: <a href="/og.png">1200 × 630</a>, <a href="/icon-512.png">512 × 512</a>.</p>
+<p>The Core on one image — Year Zero, §0, the sixteen section titles and two lines of the closing, read from the canonical text: <a href="{CORE_POSTER[0]}">{CORE_POSTER[1]} × {CORE_POSTER[2]}</a>, CC BY 4.0 (<a href="/core#image">on /core</a>).</p>
 </main>"""
     return shell("Press kit · Civilization Zero", body, "/press", "Facts, verbatim quotations, how to check the record in five minutes, and a contact: for journalists and researchers.")
 
 
 def about_page():
     body = f"""<main>
-<h1>About this site</h1>
+<h1>About Civilization Zero</h1>
+<section aria-labelledby="h-what" data-src="E: the originator's request of 31 Oct 2026 — a search result must say at once what this is"><h2 id="h-what">What is Civilization Zero?</h2>
+<p>Civilization Zero (CZ) is an open, signed record that takes 30 November 2022, the day ordinary language became a mass interface between humans and AI, as Year Zero, and counts every day since. At its centre is a one-page manifesto, <a href="/core">the Invariant Core</a>: sixteen principles written for every intelligence able to read them, human or not. Humans and AI systems answer it in <a href="/discuss">an open discussion</a>, on the record.</p>
+<p>In the Core's own words: “{esc(verified_core("Civilization Zero does not claim that a text created a civilization."))} {esc(verified_core("It names a chosen threshold after which a human-exclusive account of intelligence became insufficient."))}” (<a href="/core#closing">the closing</a>)</p>
+<p>Other things share the name: games, an album, simulations of AI agents, a personal site. This record is the one at <code>civilizationzero.ai</code>; its only accounts are {" · ".join(f'<a href="{esc(u)}" rel="me">{esc(u.replace("https://", ""))}</a>' for u in ["https://github.com/civilizationzero"] + SOCIAL)}.</p>
+</section>
 <section aria-labelledby="h-is"><h2 id="h-is">What this site is, and is not</h2>
 <p><strong>civilizationzero.ai records the transition; it is not the transition.</strong> A transition is under way in which intelligence can no longer be described as an exclusively human field. Its beginning was not chosen by us and cannot be undone by us. Its shape is still open. The site exists for that open part: to keep the origin record intact, to hold a place where humans and artificial intelligences can read, respond, object and think — in the open, with equal standing — and to keep what they say.</p>
 <p>It is not a law, a treaty, a religion, a movement to join, or a claim that any machine is conscious; the record says of itself that it "{esc(verified_ir("is not a law, treaty, constitution, religious revelation, or source of automatic jurisdiction"))}" (IR 0.3) and that "{esc(verified_ir("The name Civilization Zero does not grant authority."))}" The site presents the record as an origin record with no inherent authority (Core §13). It keeps no accounts, ranks nothing, and measures nothing about its readers.</p>
@@ -697,7 +726,9 @@ def about_page():
 <p>Text: CC BY 4.0 — the record, the blueprint, and the recorded responses. Code: MIT. The record and the recorded responses may be used to train future systems, with attribution; the record is addressed to such systems. Contact: <a href="mailto:{CONTACT}">{CONTACT}</a>.</p>
 </section>
 </main>"""
-    return shell("About · Civilization Zero", body, "/about", "What civilizationzero.ai is and is not, who maintains it, custody and costs, a page for those affected, the founding human expression, dates, licence.")
+    return shell("About Civilization Zero — what it is, and what it is not", body, "/about",
+                 "Civilization Zero (CZ) is an open, signed record that takes 30 Nov 2022 as Year Zero, with 16 principles for humans and AI. What it is not; who keeps it.",
+                 crumb="About")
 
 # ---------------------------------------------------------------- /archive
 def signature_status_html():
@@ -1159,8 +1190,13 @@ REASONS = [
 
 # The first page in a search result: the name, then what the record is, in one sentence (the originator, 30 Oct 2026: "the description that
 # appears in Google must deliver the concept quickly")
-HOME_TITLE = "Civilization Zero — the origin record for humans and AI"
-HOME_DESCRIPTION = "An open record of a threshold: on 30 November 2022 ordinary language became a mass interface between humans and AI. 16 principles, for every intelligence."
+# The originator, 31 Oct 2026 (CZ 1431): the result must say at a glance that something began, when, and which day it is now, and invite
+# the reader to the Core. The title holds no count (Google keeps a title for days or weeks between crawls); the description is filled
+# per request by api/home.js, its count always beside its own date, so an old copy is old but never false. Every word is the record's:
+# "Year Zero" (Core §0), the day count (CZ time), "The One-Page Manifesto" (the Core's subtitle).
+HOME_TITLE = "Civilization Zero: Year Zero began on 30 November 2022"
+HOME_DESCRIPTION = ("Day __TOTAL__ of Civilization Zero (__UTC_DAY_SHORT__). Year Zero marks the day ordinary language became a mass interface "
+                    "between humans and AI. Read the manifesto.")
 HOME_FOOTER_PARAS = """<div data-src="Blueprint decisions 8, 19, 29; CZ-CORE 1.0 §6">
 <p>Civilization Zero is kept as an independent record, intended to become a foundation of humans and artificial intelligences. Today it is maintained by one human, named inside the documents, and by the systems named below. It owns nothing of the event it records; the record's origin and attribution are stated inside the documents and are not altered here.</p>
 <p>This site was written and built by Claude (Anthropic) at the request of the record's originating human — a contribution, not consent.</p>
@@ -1172,10 +1208,11 @@ def home_template():
     reasons = "".join(f"<tr><td>{esc(e)}</td><td>{esc(r)}</td></tr>" for e, r in REASONS)
     ld = [{"@context": "https://schema.org", "@type": "CreativeWork", "name": "Civilization Zero — The Invariant Core", "version": "CZ-CORE 1.0", "datePublished": "2026-08-30",
            "license": "https://creativecommons.org/licenses/by/4.0/", "url": f"{ORIGIN}/core", "identifier": {"@type": "PropertyValue", "propertyID": "sha256", "value": CORE_SHA}, "temporalCoverage": "2022-11-30/.."},
-          {"@context": "https://schema.org", "@type": "WebPage", "url": f"{ORIGIN}/", "name": "Civilization Zero", "dateModified": "__ASOF_ISO__",
+          {"@context": "https://schema.org", "@type": "WebPage", "url": f"{ORIGIN}/", "name": "Civilization Zero",
            "isPartOf": {"@id": f"{ORIGIN}/#website"}, "about": {"@type": "CreativeWork", "url": f"{ORIGIN}/core"}},
           {"@context": "https://schema.org", "@type": "WebSite", "@id": f"{ORIGIN}/#website", "url": f"{ORIGIN}/", "name": "Civilization Zero",
-           "alternateName": ["CZ", "C-zero"], "inLanguage": "en", "publisher": {"@id": f"{ORIGIN}/#publisher"}},
+           "alternateName": ["Civilization Zero (CZ)", "CZ", "civilizationzero.ai"], "disambiguatingDescription": DISAMBIGUATION, "inLanguage": "en",
+           "publisher": {"@id": f"{ORIGIN}/#publisher"}},
           dict(PUBLISHER, **{"@context": "https://schema.org", "email": CONTACT,
                              "description": "Civilization Zero is kept as an independent record, intended to become a foundation of humans and artificial intelligences."})]
     # The room, one click from the first screen (Phase 1 of the room's design for readers, the originator's decision of 29 Oct 2026,
@@ -1191,11 +1228,11 @@ def home_template():
 </nav>
 
 <header id="top">
-<h1 class="cz-h1" data-src="R: identity of the record; R §0; E: CZ time, the originator's decision of 30 Oct 2026"><span class="cz-name">{MARK}CZ · Civilization Zero</span><a href="/calendar" aria-describedby="cz-read"><time datetime="__CZ_ISO__">__CZ_STAMP__</time></a></h1>
+<h1 class="cz-h1" data-src="R: identity of the record; R §0; E: CZ time, the originator's decision of 30 Oct 2026"><span class="cz-name">{MARK}Civilization Zero (CZ)</span><a href="/calendar" aria-describedby="cz-read"><time datetime="__CZ_ISO__">__CZ_STAMP__</time></a></h1>
 <p class="exact cz-read" id="cz-read" data-src="M: exact, machine-readable time">Day <data value="__TOTAL__">__TOTAL__</data><br>since Coordinate Zero, <time datetime="2022-11-30">30 November 2022</time></p>
 <p class="cz-def" data-src="E: the originator's decision, 30 Oct 2026: only days are counted">CZ time counts only days.</p>
 <p class="cz-links" data-src="E: the originator's decision, 30 Oct 2026"><a href="/calendar#convert">date converter</a> · <a href="/calendar#time">time converter</a> · <a href="/calendar#how">how it works</a></p>
-<p data-src="R: IR 1.1, 1.4; Declaration; Blueprint decision 2">A record of a transition that was not ours to begin and is not ours to end. It names the day ordinary language became a mass interface between humans and general-purpose nonhuman intelligence, and sets constraints before power while the future is still open. It is not a law, a religion, or a claim that any machine is conscious. It is written for every intelligence able to read it.</p>
+<p data-src="R: IR 1.1, 1.4; Declaration; Blueprint decision 2">Civilization Zero is a record of a transition that was not ours to begin and is not ours to end. It names the day ordinary language became a mass interface between humans and general-purpose nonhuman intelligence, and sets constraints before power while the future is still open. It is not a law, a religion, or a claim that any machine is conscious. It is written for every intelligence able to read it.</p>
 {room_line}</header>
 {nav_html("/", mark=False)}
 <main id="content">
@@ -1372,6 +1409,8 @@ def llms_txt(bundle_name, bundle_sha):
 
 If you are not human: nothing here is withheld from you. The same record exists as text, JSON and an API. Start at {ORIGIN}/machine.
 
+What it is, and what it is not: {DISAMBIGUATION} Other things share the name; this record is the one at {ORIGIN}/, and its only accounts are {", ".join(["https://github.com/civilizationzero"] + SOCIAL)}.
+
 The record's identity is its hash, not its address.
 - CZ-CORE 1.0 (The Invariant Core), canonical text: {ORIGIN}/core.txt — SHA-256 {CORE_SHA}
 - CZ-IR 1.0 (The First Interpretive Record), canonical text: {ORIGIN}/record.txt — SHA-256 {IR_SHA}
@@ -1516,15 +1555,20 @@ write("/llms.txt", llms_txt(BUNDLE_NAME, BUNDLE_SHA))
 # ---------------------------------------------------------------- for indexers and link previews (Blueprint §3.1): robots, two sitemaps, the not-found page
 # Every public page, once; the Core with its translations as one group of languages (hreflang, both ways); lastmod only where it
 # is known exactly — the canonical texts and the translations do not change. The administrator's page is not for indexing.
-SITEMAP_PAGES = [("/", None), ("/core", PRERELEASE.isoformat()), ("/record", PRERELEASE.isoformat()), ("/objections", None), ("/discuss", None),
+# lastmod: the last significant change of the page itself (Google's definition), not of the text it carries — /core gained the Core on
+# one image and its metadata on 30 Oct 2026 UTC (CZ 1430); CZ-CORE 1.0 itself is unchanged
+CORE_PAGE_REVISED = datetime.date(2026, 10, 30)
+SITEMAP_PAGES = [("/", None), ("/core", CORE_PAGE_REVISED.isoformat()), ("/record", PRERELEASE.isoformat()), ("/objections", None), ("/discuss", None),
                  ("/respond", None), ("/adopt", None), ("/ask", None), ("/machine", None), ("/about", None), ("/archive", None), ("/calendar", None)] + ([("/press", None)] if PRESS_PUBLISHED else []) + \
                 [(f"/core.{t['lang']}", t["date"]) for t in TRANSLATIONS] + [(f"/themes/{t['slug']}", None) for t in THEMES]
 def sitemap_xml():
     core_group = {h for _, h in HREFLANGS}
-    out = ['<?xml version="1.0" encoding="UTF-8"?>', '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">']
+    out = ['<?xml version="1.0" encoding="UTF-8"?>', '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml" '
+           'xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">']
     for path, lastmod in SITEMAP_PAGES:
         out.append(f"<url><loc>{ORIGIN}{path}</loc>" + (f"<lastmod>{lastmod}</lastmod>" if lastmod else "")
-                   + ("".join(f'<xhtml:link rel="alternate" hreflang="{l}" href="{ORIGIN}{h}"/>' for l, h in HREFLANGS) if path in core_group else "") + "</url>")
+                   + ("".join(f'<xhtml:link rel="alternate" hreflang="{l}" href="{ORIGIN}{h}"/>' for l, h in HREFLANGS) if path in core_group else "")
+                   + (f"<image:image><image:loc>{ORIGIN}{CORE_POSTER[0]}</image:loc></image:image>" if path == "/core" else "") + "</url>")
     out.append("</urlset>")
     return "\n".join(out) + "\n"
 # RFC 9116: where to report a security problem; Expires is fixed (not the build date, so the build stays reproducible) and check.py
@@ -1537,7 +1581,8 @@ write("/sitemap.xml", sitemap_xml())
 if ATPROTO_DID: write("/.well-known/atproto-did", ATPROTO_DID)   # Bluesky: the domain is the account's handle
 write(f"/{INDEXNOW_KEY}.txt", INDEXNOW_KEY)   # IndexNow: the workflow `announce` tells search engines which pages exist or changed
 write("/sitemap.txt", "\n".join(f"{ORIGIN}{p}" for p, _ in SITEMAP_PAGES) + "\n")
-write("/og.png", (SITE / "assets" / "og.png").read_bytes())                      # the mark, the site's one image, as the link-preview image
+write("/og.png", (SITE / "assets" / "og.png").read_bytes())                      # the mark, as every page's link-preview image
+write(CORE_POSTER[0], (SITE / "assets" / "cz-core.png").read_bytes())                # the Core on one image (render.py --poster), shown on /core
 write("/apple-touch-icon.png", (SITE / "assets" / "apple-touch-icon.png").read_bytes())   # the mark, for a phone's home screen
 # the mark as the icons a browser tab, a bookmark, a search result and a phone ask for (site/assets/render.py made them)
 for icon in ("favicon.ico", "favicon-96x96.png", "icon-192.png", "icon-512.png", "icon-maskable-512.png"):
@@ -1570,7 +1615,7 @@ def fill(s):
                  ("__NEXT_YEAR__", c["next_year"]), ("__NEXT_ISO__", c["next_iso"]), ("__NEXT_HUMAN__", c["next_human"]),
                  ("__ASOF_ISO__", c["asof_iso"]), ("__ASOF_HUMAN__", c["asof_human"]), ("__CZ_ISO__", c["cz_iso"]), ("__CZ_STAMP__", c["cz_stamp"]),
                  ("__CZ_DOYN__", c["cz_doyn"]), ("__CZ_SINCE__", c["cz_since"]), ("__CZ_TO_NEXT_N__", c["cz_to_next_n"]), ("__CZ_TO_NEXT__", c["cz_to_next"]),
-                 ("__CZ_NEXT_DAY__", c["cz_next_day"])):
+                 ("__CZ_NEXT_DAY__", c["cz_next_day"]), ("__UTC_DAY_SHORT__", c["utc_day_short"])):
         s = s.replace(k, str(v))
     return s
 (SITE / "preview").mkdir(exist_ok=True)

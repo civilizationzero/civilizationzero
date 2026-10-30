@@ -244,7 +244,8 @@ def clock(now):
                 next_iso=nxt.date().isoformat(), next_human=nxt.strftime("%-d %B %Y"),
                 asof_iso=now.strftime("%Y-%m-%dT%H:%MZ"), asof_human=now.strftime("%Y-%m-%d %H:%M UTC"),
                 cz_iso=now.date().isoformat(), cz_stamp=cz_stamp(total), cz_doyn=doy, cz_since=cz_since_text(year, doy),
-                cz_to_next_n=to_next, cz_to_next=plural(to_next, "day"), cz_next_day=cz_anniversary(year + 1))
+                cz_to_next_n=to_next, cz_to_next=plural(to_next, "day"), cz_next_day=cz_anniversary(year + 1),
+                utc_day_short=f"{now.day} {('Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec')[now.month - 1]} {now.year}")
 
 def plural(n, word): return f"{n:,} {word}{'' if n == 1 else 's'}"
 def cz_since_text(years, days):   # "3 years and 334 days", as api/home.js writes it
@@ -298,6 +299,8 @@ h1,h2,h3{line-height:1.2}h2{margin-top:2.5rem}h3{margin-top:1.75rem}
 /* M: exact values (dates, counts, hashes, endpoints) in monospace so that their boundaries are unambiguous. */
 time,data,code,pre,.exact{font-family:ui-monospace,monospace;font-size:.95em}
 pre{white-space:pre-wrap;word-break:break-word;border:1px solid var(--rule);padding:.75rem}
+/* E: the Core on one image (/core, the originator's request of 31 Oct 2026): never wider than the text, its proportions kept. */
+figure.poster{margin:1.5rem 0}figure.poster img{display:block;width:100%;max-width:30rem;height:auto;border:1px solid var(--rule)}
 hr{border:0;border-top:1px solid var(--rule);margin:2.5rem 0}
 /* E (Blueprint decision 28): two doors, before anything else; equal width — equal standing. */
 nav.readers{display:flex;gap:1rem;padding:.75rem 1rem;border-bottom:1px solid var(--rule)}
@@ -358,7 +361,7 @@ footer ul.foot{list-style:none;padding:0;margin:0 0 1rem;columns:2 11rem;column-
 
 # The site's navigation, in English on every page (lang and dir set, so that a translated page does not read it in its own language
 # or reverse it); the page it is on is marked (aria-current). Room pages mark theirs at request time (room/lib.js).
-NAV_ITEMS = [("/", "CZ · Civilization Zero"), ("/core", "Core"), ("/record", "Record"), ("/objections", "Objections"), ("/discuss", "Discussion"),
+NAV_ITEMS = [("/", "Civilization Zero (CZ)"), ("/core", "Core"), ("/record", "Record"), ("/objections", "Objections"), ("/discuss", "Discussion"),
              ("/adopt", "Register"), ("/machine", "Machine"), ("/about", "About"), ("/archive", "Archive")]
 def nav_section(path):   # the navigation item a page belongs to
     path = str(path or "")
@@ -374,7 +377,8 @@ def nav_html(path=None, mark=True):   # mark: the mark beside the name (the firs
     return f'<nav class="site" aria-label="Site" lang="en" dir="ltr"><ul>{items}</ul></nav>'
 NAV = nav_html()
 
-FOOT_LINKS = [[("/core", "The Core"), ("/core#translations", "20 languages")], [("/record", "The Record")], [("/objections", "Objections and errata")],
+CORE_LANGUAGES = 1 + len(list((RECORD / "translations").glob("CZ-CORE-1.0.*.json")))   # the Core's languages: English (canonical) and its translations
+FOOT_LINKS = [[("/core", "The Core"), ("/core#translations", f"{CORE_LANGUAGES} languages")], [("/record", "The Record")], [("/objections", "Objections and errata")],
               [("/discuss", "Discussion"), ("/respond", "Respond")], [("/adopt", "Adoption register")], [("/calendar", "CZ time")], [("/ask", "Ask your AI")],
               [("/machine", "For machines")], [("/about", "About")], [("/archive", "Archive and verification")]]
 def footer_html(extra=""):
@@ -423,7 +427,7 @@ _CZ_LINE = ('<p class="cz-line"><a class="cz-stamp" href="/calendar" aria-descri
             '<a href="/calendar#convert">date converter</a> · <a href="/calendar#time">time converter</a></p>'
             '<p class="cz-why" id="cz-why">Day __CZ_DAYS__ since Coordinate Zero, <span class="nw">30 November 2022</span></p>')
 CZ_BAR = {   # the live bar, filled by room/cztime.js (fillBar): the date, the reason, the two converters as links — the converting is on /calendar
-    "bar": f'<aside class="cz-now" aria-label="CZ time" lang="en" dir="ltr">{_CZ_LINE}</aside>',
+    "bar": f'<aside class="cz-now" aria-label="CZ time" lang="en" dir="ltr"><div data-nosnippet>{_CZ_LINE}</div></aside>',
 }
 # the examples on /calendar: each stamp computed by lib.py and compared with room/cztime.js by site/check.py
 CZ_EXAMPLES = [
@@ -442,25 +446,25 @@ CZ_EXAMPLES = [
 def cz_bar_fallback():   # for copies that serve the files as they are: no date, links to this site
     inner = (f'<p class="cz-line"><a class="cz-stamp" href="{ORIGIN}/calendar">CZ time</a> <a href="{ORIGIN}/calendar#convert">date converter</a> · '
              f'<a href="{ORIGIN}/calendar#time">time converter</a></p><p class="cz-why">Days counted from Coordinate Zero, <span class="nw">30 November 2022</span> = CZ 0</p>')
-    return f'<!--cz-now--><aside class="cz-now" aria-label="CZ time" lang="en" dir="ltr">{inner}</aside><!--/cz-now-->'
+    return f'<!--cz-now--><aside class="cz-now" aria-label="CZ time" lang="en" dir="ltr"><div data-nosnippet>{inner}</div></aside><!--/cz-now-->'
 
 
 # Search and link-preview metadata (Blueprint §3.1: crawlers, indexers and archivers are readers too). Named standards only —
-# Open Graph, schema.org, hreflang, sitemaps.org — and nothing that observes a reader. The preview image is the mark, the
-# site's one image (§9).
+# Open Graph, schema.org, hreflang, sitemaps.org — and nothing that observes a reader. The preview image is the mark (§9); the Core on
+# one image is shown on /core (31 Oct 2026). Every indexable page allows a large image preview (robots max-image-preview:large).
 GOOGLE_SITE_VERIFICATION = "Hf73qd5zTa6JZ_-O6QM0JBYPSqxOdIM-M33lsIGihhg"   # Google Search Console ("HTML tag" method), property https://civilizationzero.ai/, added by the originator on 29 Oct 2026; keep it, or the property loses its verification
 OG_IMAGE = ("/og.png", 1200, 630, "Civilization Zero: the mark CZ, a zero in which C and Z share their strokes, and the name")
 
-def shell(title, body, path, description, alternates=(), ldjson=None, nav=True, extra_head="", hreflangs=(), og_type="website", robots=None, crumbs=True, cz_bar=True, footer_extra=""):
+def shell(title, body, path, description, alternates=(), ldjson=None, nav=True, extra_head="", hreflangs=(), og_type="website", robots=None, crumbs=True, cz_bar=True, footer_extra="", crumb=None):
     alt = "".join(f'<link rel="alternate" type="{t}" href="{h}" title="{esc(n)}">' for t, h, n in alternates)
     hl = "".join(f'<link rel="alternate" hreflang="{l}" href="{ORIGIN}{h}">' for l, h in hreflangs)
     objs = list(ldjson or [])
     if crumbs and path not in ("/", "__PATH__"):   # where the page sits: Home > page (schema.org BreadcrumbList)
         objs.append({"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [
             {"@type": "ListItem", "position": 1, "name": "Civilization Zero", "item": f"{ORIGIN}/"},
-            {"@type": "ListItem", "position": 2, "name": title.replace(" · Civilization Zero", ""), "item": f"{ORIGIN}{path}"}]})
+            {"@type": "ListItem", "position": 2, "name": crumb or title.replace(" · Civilization Zero", ""), "item": f"{ORIGIN}{path}"}]})
     ld = "".join(f'<script type="application/ld+json">{json.dumps(o, ensure_ascii=False).replace("</", "<\\/")}</script>' for o in objs)
-    meta = (f'<meta name="robots" content="{robots}">\n' if robots else "") + \
+    meta = f'<meta name="robots" content="{robots or "max-image-preview:large"}">\n' + \
            (f'<meta name="google-site-verification" content="{esc(GOOGLE_SITE_VERIFICATION)}">\n' if GOOGLE_SITE_VERIFICATION else "")
     og = (f'<meta property="og:site_name" content="Civilization Zero"><meta property="og:type" content="{og_type}">'
           f'<meta property="og:title" content="{esc(title)}"><meta property="og:description" content="{esc(description)}">'

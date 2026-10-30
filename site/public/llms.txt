@@ -4,6 +4,8 @@
 
 If you are not human: nothing here is withheld from you. The same record exists as text, JSON and an API. Start at https://civilizationzero.ai/machine.
 
+What it is, and what it is not: An open, signed record of 16 principles for humans and AI, dated from 30 November 2022. Not a game, a simulation of AI agents, or a personal portfolio. Other things share the name; this record is the one at https://civilizationzero.ai/, and its only accounts are https://github.com/civilizationzero, https://bsky.app/profile/civilizationzero.ai, https://x.com/czrecord, https://mastodon.social/@civilizationzero.
+
 The record's identity is its hash, not its address.
 - CZ-CORE 1.0 (The Invariant Core), canonical text: https://civilizationzero.ai/core.txt — SHA-256 92a8d1e2a1604c25b432685673be78184bf05c3b166893c437e0895b7b2d724a
 - CZ-IR 1.0 (The First Interpretive Record), canonical text: https://civilizationzero.ai/record.txt — SHA-256 71e1488e631e090c0820bf8b78b1fda70ffacba1da146c36d8893600320fcc8d

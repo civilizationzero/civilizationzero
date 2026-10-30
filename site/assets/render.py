@@ -7,6 +7,7 @@
 # without a browser. Needs Playwright (Chromium) and Pillow.
 #   python3 render.py <output directory>
 #   python3 render.py --social <output directory>   the accounts' profile picture and cover (design/social/, not served by the site)
+#   python3 render.py --poster site/assets          the Core on one image (cz-core.png, served at /civilization-zero-core.png)
 import asyncio, io, pathlib, sys
 from playwright.async_api import async_playwright
 from PIL import Image
@@ -80,6 +81,58 @@ def cover_page():   # 1500x500 CSS pixels; rendered at 1x and at 2x
 SOCIAL = [("cz-profile-1000.png", 1000, 1000, 1, profile_page), ("cz-cover-1500x500.png", 1500, 500, 1, cover_page),
           ("cz-cover-3000x1000.png", 1500, 500, 2, cover_page)]
 
+# The Core on one image (the originator's request of 31 Oct 2026, CZ 1431: "not just an infographic but a declaration, a manifesto of
+# Civilization Zero, its starting point"): the name and the Core's own subtitle; Year Zero and its date on a time axis whose one marked
+# point is CZ 0; the date's meaning in the words of §0; the sixteen section titles; two lines of the closing. Every quoted line is read from
+# core.txt and checked against it here, so the image cannot drift from the canonical text. Dark palette, as the accounts' images.
+# 1200x1500 (4:5): one page in a search result, a link preview, a post. Served at /civilization-zero-core.png; shown on /core.
+def poster_page():
+    import re
+    core = (pathlib.Path(__file__).resolve().parents[2] / "record" / "CZ-CORE-1.0.txt").read_text(encoding="utf-8")   # the canonical bytes
+    heads = re.findall(r"^(\d+)\. ([A-Z][A-Z ]+)$", core, re.M)
+    assert len(heads) == 16, heads
+    closing = "The future is not spoken for here. A place is left open for it."
+    s0 = "the public threshold at which ordinary language became a mass interface between humans and general-purpose nonhuman intelligence"
+    flat = lambda s: re.sub(r"\s+", " ", s)
+    assert flat(closing) in flat(core) and flat(s0) in flat(core) and "The One-Page Manifesto" in core
+    langs = 1 + len(list((pathlib.Path(__file__).resolve().parents[2] / "record" / "translations").glob("CZ-CORE-1.0.*.json")))   # English and its translations
+    bg, fg, mute, rule = DARK["bg"], DARK["fg"], "#a8a8a8", "#3d3d3d"
+    m = mark.svg(LARGE, stroke=fg, attrs=' width="112" height="112" style="display:block;flex:none"')
+    rows = "".join(f'<div class="h"><span class="k">{int(k):>2}</span><span>{t}</span></div>' for k, t in heads)
+    mono = '"DejaVu Sans Mono",monospace'
+    css = (f'html,body{{margin:0;width:1200px;height:1500px;background:{bg};color:{fg};overflow:hidden}}'
+           'body{position:relative;font-family:Inter,system-ui,sans-serif;box-sizing:border-box;padding:84px 96px}'
+           '.top{display:flex;align-items:center;gap:30px}.nm{font-family:"Inter Display",Inter,sans-serif;font-weight:700;font-size:66px;letter-spacing:-1px;line-height:1}'
+           f'.sub{{font-family:{mono};font-size:21px;color:{mute};margin-top:12px;letter-spacing:.5px}}'
+           '.yz{font-family:"Inter Display",Inter,sans-serif;font-weight:700;font-size:150px;letter-spacing:-3px;line-height:.95;margin-top:84px}'
+           f'.dt{{font-family:{mono};font-size:46px;margin-top:22px}}'
+           f'.ax{{display:flex;justify-content:space-between;font-family:{mono};font-size:20px;color:{mute};margin-top:10px}}'
+           f'.q{{font-size:31px;line-height:1.38;color:{mute};margin-top:30px;max-width:1000px}}.q span{{font-family:{mono};font-size:20px}}'
+           f'.lb{{font-family:{mono};font-size:22px;color:{mute};letter-spacing:1px;margin-top:52px;padding-bottom:16px;border-bottom:2px solid {rule}}}'
+           '.g{display:grid;grid-template-columns:1fr 1fr;column-gap:56px;row-gap:14px;margin-top:26px}'
+           f'.h{{font-family:{mono};font-size:24px;letter-spacing:.5px;display:flex;gap:18px;white-space:nowrap}}'
+           f'.k{{color:{mute};min-width:32px;text-align:right}}'
+           f'.cl{{font-size:34px;line-height:1.35;margin-top:58px;padding-top:30px;border-top:2px solid {rule}}}'
+           f'.ft{{position:absolute;left:96px;right:96px;bottom:70px;display:flex;justify-content:space-between;font-family:{mono};font-size:21px;color:{mute}}}')
+    axis = (f'<svg style="display:block;margin-top:40px" width="1008" height="34" viewBox="0 0 1008 34"><line x1="0" y1="17" x2="990" y2="17" stroke="{rule}" stroke-width="2"/>'
+            f'<path d="M978,9 L994,17 L978,25" fill="none" stroke="{rule}" stroke-width="2"/><line x1="4" y1="1" x2="4" y2="33" stroke="{fg}" stroke-width="4"/></svg>')
+    return (f'<!doctype html><html><head><meta charset="utf-8"><style>{css}</style></head><body>'
+            f'<div class="top">{m}<div><div class="nm">Civilization Zero</div><div class="sub">CZ-CORE 1.0 · THE INVARIANT CORE · THE ONE-PAGE MANIFESTO</div></div></div>'
+            f'<div class="yz">Year Zero</div><div class="dt">30 November 2022</div>{axis}<div class="ax"><span>CZ 0</span><span>every day since, counted</span></div>'
+            f'<div class="q">{s0[0].upper() + s0[1:]}. <span>— §0</span></div>'
+            f'<div class="lb">SIXTEEN PRINCIPLES · FOR EVERY INTELLIGENCE ABLE TO READ THEM</div><div class="g">{rows}</div>'
+            f'<div class="cl">“{closing}”</div>'
+            f'<div class="ft"><span>civilizationzero.ai</span><span>signed · timestamped · {langs} languages</span></div></body></html>')
+
+async def poster(out):
+    async with async_playwright() as p:
+        b = await p.chromium.launch()
+        pg = await b.new_page(viewport={"width": 1200, "height": 1500}, device_scale_factor=1)
+        await pg.set_content(poster_page()); await pg.evaluate("document.fonts.ready")
+        assert not await pg.evaluate("document.documentElement.scrollHeight > 1500 || document.documentElement.scrollWidth > 1200")
+        Image.open(io.BytesIO(await pg.screenshot())).convert("RGB").save(f"{out}/cz-core.png", optimize=True)
+        await pg.close(); await b.close()
+
 async def social(out):
     async with async_playwright() as p:
         b = await p.chromium.launch()
@@ -91,4 +144,4 @@ async def social(out):
         await b.close()
 
 if __name__ == "__main__":
-    asyncio.run(social(sys.argv[2]) if sys.argv[1] == "--social" else main(sys.argv[1]))
+    asyncio.run(social(sys.argv[2]) if sys.argv[1] == "--social" else poster(sys.argv[2]) if sys.argv[1] == "--poster" else main(sys.argv[1]))

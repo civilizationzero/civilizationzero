@@ -5,6 +5,7 @@ const T = require("./home-templates.json");
 const CZ = require("../room/cztime.js");   // CZ time (the originator's decision of 30 Oct 2026): the page's heading is today's date in it
 
 const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+const MON = MONTHS.map((m) => m.slice(0, 3));   // "31 Oct 2026": the description's date beside its day count (site/build.py, HOME_DESCRIPTION)
 const pad = (n) => String(n).padStart(2, "0");
 const plural = (n, w) => `${n.toLocaleString("en-US")} ${w}${n === 1 ? "" : "s"}`;
 // "3 years and 334 days", as site/lib.py's cz_since_text writes it
@@ -32,6 +33,7 @@ function clock(now) {
     "__ASOF_HUMAN__": `${now.getUTCFullYear()}-${pad(now.getUTCMonth() + 1)}-${pad(now.getUTCDate())} ${pad(now.getUTCHours())}:${pad(now.getUTCMinutes())} UTC`,
     "__CZ_ISO__": f.ISO, "__CZ_STAMP__": f.STAMP, "__CZ_DOYN__": f.DOYN, "__CZ_SINCE__": sinceText(f.p.year, f.p.day),
     "__CZ_TO_NEXT_N__": f.TO_NEXT, "__CZ_TO_NEXT__": plural(Number(f.TO_NEXT), "day"), "__CZ_NEXT_DAY__": f.NEXT_DAY,
+    "__UTC_DAY_SHORT__": `${now.getUTCDate()} ${MON[now.getUTCMonth()]} ${now.getUTCFullYear()}`,
   };
 }
 
