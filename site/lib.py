@@ -311,7 +311,7 @@ form.respond textarea{min-height:12rem}form.respond input[type=checkbox],form.re
 main,header,footer{overflow-wrap:break-word}th,td{overflow-wrap:break-word}@media(max-width:40em){td a,td code{overflow-wrap:anywhere}}
 /* H: WCAG 2.2 target size (2.5.8) and the platforms' touch guidance: every control at least 2.5rem tall. */
 button,select,input:not([type=checkbox]):not([type=radio]){min-height:2.5rem;box-sizing:border-box}
-/* E (the originator's decision of 30 Oct 2026): CZ time is the site's basis — today in CZ time at the top of every page, linked to how it works, and a converter under it. M: a plain form, no script. */
+/* E (the originator's decision of 30 Oct 2026): CZ time is the site's basis — today's date in CZ time at the top of every page, linked to how it works, and under it the reason and links to the two converters, which work on /calendar alone. M: plain links and forms, no script. */
 aside.cz-now{max-width:70ch;margin:0 auto;padding:.55rem 1rem .5rem;border-bottom:1px solid var(--rule);font-size:.9em}
 aside.cz-now p{margin:0}.cz-line a{padding:.2rem 0;display:inline-block}.cz-stamp{font-size:1.25em;margin-right:.5rem}.cz-why{color:var(--mute);font-size:.85em}
 a.cz-date{text-decoration-thickness:1px;text-decoration-color:var(--rule)}a.cz-date time,.cz-stamp time,h1.cz-h1 time{white-space:nowrap}ul.cz-today{list-style:none;padding:0;margin:.5rem 0}ul.cz-today li{margin:.15rem 0}
