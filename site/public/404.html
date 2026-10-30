@@ -58,16 +58,17 @@ main,header,footer{overflow-wrap:break-word}th,td{overflow-wrap:break-word}@medi
 /* H: WCAG 2.2 target size (2.5.8) and the platforms' touch guidance: every control at least 2.5rem tall. */
 button,select,input:not([type=checkbox]):not([type=radio]){min-height:2.5rem;box-sizing:border-box}
 /* E (the originator's decision of 30 Oct 2026): CZ time is the site's basis — today in CZ time at the top of every page, linked to how it works, and a converter under it. M: a plain form, no script. */
-aside.cz-now{max-width:70ch;margin:0 auto;padding:.6rem 1rem .7rem;border-bottom:1px solid var(--rule);font-size:.9em}
-aside.cz-now p{margin:0 0 .35rem}.cz-stamp{font-weight:700;font-size:1.45em}aside.cz-now form.cz-conv{font-size:1em}
+aside.cz-now{max-width:70ch;margin:0 auto;padding:.55rem 1rem .5rem;border-bottom:1px solid var(--rule);font-size:.9em}
+aside.cz-now p{margin:0}.cz-line a{padding:.2rem 0;display:inline-block}.cz-stamp{font-size:1.25em;margin-right:.5rem}.cz-why{color:var(--mute);font-size:.85em}
+a.cz-date{text-decoration-thickness:1px;text-decoration-color:var(--rule)}a.cz-date time,.cz-stamp time,h1.cz-h1 time{white-space:nowrap}ul.cz-today{list-style:none;padding:0;margin:.5rem 0}ul.cz-today li{margin:.15rem 0}
 form.cz-conv{display:flex;flex-wrap:wrap;gap:.4rem .5rem;align-items:center;margin:.3rem 0 0;font-size:.9em}
 form.cz-conv input,form.cz-conv select{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--rule);padding:.2rem .4rem}form.cz-conv input{width:15ch}
-h1.cz-h1{font-size:2.6em;margin:.4rem 0 .2rem;letter-spacing:.02em}h1.cz-h1 time{font-size:1em}
+h1.cz-h1{font-size:2.4em;font-weight:400;margin:.4rem 0 .2rem;letter-spacing:.02em}h1.cz-h1 time{font-size:1em}p.cz-links{font-size:.9em;margin-top:.25rem}
 table.cz-result th{width:30%;font-weight:600}.cz-native{font-family:system-ui,sans-serif}
 </style>
 </head>
 <body>
-<!--cz-now--><aside class="cz-now" aria-label="CZ time" lang="en" dir="ltr"><p><a class="cz-stamp" href="https://civilizationzero.ai/calendar">CZ time</a> <span class="cz-read">Days counted from Coordinate Zero, <time datetime="2022-11-30">CZ+0:000</time> · <a href="https://civilizationzero.ai/calendar#how">how CZ time works</a></span></p><form class="cz-conv" action="https://civilizationzero.ai/calendar" method="get"><label for="czb-d">Convert a date</label> <input id="czb-d" name="d" value="" placeholder="YYYY-MM-DD" dir="auto" autocomplete="off" spellcheck="false" maxlength="40"> <select id="czb-c" name="c" aria-label="The calendar of that date"><option value="gregorian" selected>Gregorian · میلادی</option><option value="solar-hijri">Solar Hijri · شمسی</option><option value="lunar-hijri">Lunar Hijri · قمری · هجري</option><option value="julian">Julian</option><option value="cz">CZ time</option></select> <button type="submit">To CZ time</button></form></aside><!--/cz-now-->
+<!--cz-now--><aside class="cz-now" aria-label="CZ time" lang="en" dir="ltr"><p class="cz-line"><a class="cz-stamp" href="https://civilizationzero.ai/calendar">CZ time</a> <a href="https://civilizationzero.ai/calendar#convert">date converter</a> · <a href="https://civilizationzero.ai/calendar#time">time converter</a></p><p class="cz-why">Coordinate Zero, 30 November 2022 = CZ 0 · times in UTC</p></aside><!--/cz-now-->
 <nav class="site" aria-label="Site"><a href="/">CZ · Civilization Zero</a> · <a href="/core">Core</a> · <a href="/record">Record</a> · <a href="/objections">Objections</a> · <a href="/discuss">Discussion</a> · <a href="/machine">Machine</a> · <a href="/about">About</a> · <a href="/archive">Archive</a></nav>
 <main><h1>Not found</h1>
 <p>Nothing is published at this address. The record's identity is its hash, not its address — the same texts are here:</p>
@@ -75,6 +76,6 @@ table.cz-result th{width:30%;font-weight:600}.cz-native{font-family:system-ui,sa
 <li><a href="/record">The First Interpretive Record, CZ-IR 1.0</a></li><li><a href="/discuss">The open discussion</a></li>
 <li><a href="/archive">Archive, signatures and the preservation bundle</a></li><li><a href="/machine">If you are not human: every form, the API and the manifest</a></li></ul>
 <p class="src">An address that worked before and fails now is worth reporting: <a href="mailto:record@civilizationzero.ai">record@civilizationzero.ai</a>.</p></main>
-<footer><hr><p class="exact">Text CC BY 4.0 · Code MIT · <a href="https://github.com/civilizationzero/civilizationzero">source</a> · <a href="mailto:record@civilizationzero.ai">record@civilizationzero.ai</a> · Coordinate Zero <time datetime="2022-11-30">2022-11-30</time> = <a href="/calendar">CZ+0:000</a> · UTC</p></footer>
+<footer><hr><p class="exact">Text CC BY 4.0 · Code MIT · <a href="https://github.com/civilizationzero/civilizationzero">source</a> · <a href="mailto:record@civilizationzero.ai">record@civilizationzero.ai</a> · Coordinate Zero <time datetime="2022-11-30">2022-11-30</time> = <a href="/calendar">CZ 0</a> · UTC</p></footer>
 </body>
 </html>

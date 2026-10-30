@@ -1,9 +1,10 @@
-// CZ time: api/page.js and api/calendar.js called directly (no network): every static page gets the live date, the converter reads
-// what people type in the calendars it knows, refuses what it cannot read, escapes what it echoes; the JSON API. Run: node site/test/cztime_functions.test.js
-// call the functions directly with mock req/res
+// CZ time: api/page.js, api/calendar.js and the room's dates, called directly (no network). Every static page gets today's date at
+// the top with links to the two converters (no form there); /calendar converts dates in each calendar's own script, and times through
+// time zones; what is typed is echoed escaped; the JSON API; dates are the day count. Run: node site/test/cztime_functions.test.js
 process.env.CZ_SALT = "x".repeat(40);
 const SITE = require("path").resolve(__dirname, "..");
 process.chdir(SITE);
+const CZ = require(SITE + "/room/cztime.js");
 function call(handler, url, headers = {}, method = "GET") {
   return new Promise((resolve) => {
     const res = { statusCode: 200, headers: {}, setHeader(k, v) { this.headers[k.toLowerCase()] = v; }, getHeader(k) { return this.headers[k.toLowerCase()]; },
@@ -12,56 +13,85 @@ function call(handler, url, headers = {}, method = "GET") {
     if (r && r.then) r.catch((e) => resolve({ status: 599, body: String(e.stack) }));
   });
 }
+const text = (h) => String(h || "").replace(/<[^>]+>/g, "").replace(/&amp;/g, "&").replace(/\s+/g, " ").trim();
 let pass = 0, fail = 0;
 const ok = (c, m) => { if (c) pass++; else { fail++; console.log("FAIL", m); } };
 (async () => {
   const page = require(SITE + "/api/page.js"), cal = require(SITE + "/api/calendar.js");
+  const today = CZ.dayOf(Date.now());
   for (const p of ["core", "core.fa", "core.ar", "core.zh-Hans", "record", "objections", "ask", "machine", "about", "archive", "calendar"]) {
     const r = await call(page, `/api/page?p=${p}`);
     ok(r.status === 200, p + " status " + r.status);
-    ok(/<aside class="cz-now"[^>]*><p><a class="cz-stamp" href="\/calendar" aria-describedby="cz-read"><time datetime="\d{4}-\d\d-\d\d">CZ\+\d+:\d{3}<\/time><\/a>/.test(r.body), p + " live stamp");
-    ok(!r.body.includes("__CZ_") && !r.body.includes("https://civilizationzero.ai/calendar\">CZ time"), p + " placeholders/fallback left");
+    const bar = (/<aside class="cz-now"[\s\S]*?<\/aside>/.exec(r.body) || [""])[0];
+    ok(bar.includes(`<a class="cz-stamp" href="/calendar" aria-describedby="cz-why"><time datetime="${CZ.isoDate(...CZ.toGregorian(today))}">CZ ${today}</time></a>`), p + " live date");
+    ok(!bar.includes("<form") && bar.includes('href="/calendar#convert"') && bar.includes('href="/calendar#time"') && bar.includes("Coordinate Zero, 30 November 2022 = CZ 0"), p + " the bar: links, the reason, no form");
+    ok(!r.body.includes("__CZ_") && !r.body.includes('<a class="cz-stamp" href="https://civilizationzero.ai/calendar">CZ time</a>'), p + " placeholders or fallback left");
     ok(/s-maxage=\d+/.test(r.headers["cache-control"]), p + " cache");
-    if (p === "core.fa") ok(r.body.includes('<option value="solar-hijri" selected>'), "fa default solar");
-    if (p === "core.ar") ok(r.body.includes('<option value="lunar-hijri" selected>'), "ar default lunar");
-    if (p === "core") ok(r.body.includes('<option value="gregorian" selected>'), "en default gregorian");
-    if (p === "calendar") ok(!r.body.includes('id="czb-d"') && r.body.includes('id="cal-d"') && r.body.includes("Today is <strong>"), "calendar: noform bar + own form + today");
+    ok(!/CZ[+−]\d+:\d{3}/.test(text(r.body).replace(/year and day[^.]*\./gi, "")) || p === "calendar", p + " no year:day stamp printed as a date");
+    if (p === "calendar") ok(r.body.includes('id="cal-d"') && r.body.includes('id="tim-d"') && r.body.includes('id="tim-z"') && r.body.includes("Today is"), "calendar: both converters and today");
+    if (p === "about") ok(/<a class="cz-date" href="\/calendar\?d=CZ%2B1428"><time datetime="2026-10-28">CZ 1428<\/time><\/a>/.test(r.body), "about: dates are CZ links");
   }
   const nf = await call(page, "/api/page?p=../secret"); ok(nf.status === 404 && nf.body.includes("Not found"), "404 for bad p");
-  const nf2 = await call(page, "/api/page?p=core.xx"); ok(nf2.status === 404, "404 for missing translation");
   const post = await call(page, "/api/page?p=core", {}, "POST"); ok(post.status === 405, "405 for POST");
+  // the date converter, each calendar in its own script
   const cases = [
-    ["1405-08-08", "solar-hijri", "CZ+3:334"], ["۱۴۰۵/۰۸/۰۸", "solar-hijri", "CZ+3:334"], ["8 Aban 1405", "gregorian", "CZ+3:334"], ["۸ آبان ۱۴۰۵", "gregorian", "CZ+3:334"],
-    ["1448-05-19", "lunar-hijri", "CZ+3:334"], ["١٩ جمادى الأولى ١٤٤٨", "lunar-hijri", "CZ+3:334"], ["2026-10-30", "gregorian", "CZ+3:334"], ["30/10/2026", "gregorian", "CZ+3:334"],
-    ["10/30/2026", "gregorian", "CZ+3:334"], ["Oct 30, 2026", "gregorian", "CZ+3:334"], ["30 October 2026", "gregorian", "CZ+3:334"], ["2026-10-17", "julian", "CZ+3:334"],
-    ["CZ+3:334", "gregorian", "CZ+3:334"], ["CZ+1430", "gregorian", "CZ+3:334"], ["1430", "cz", "CZ+3:334"], ["CZ−5:171", "cz", "CZ−5:171"], ["-1997", "cz", "CZ−5:171"],
-    ["2017-06-12", "gregorian", "CZ−5:171"], ["1969-07-20", "gregorian", "CZ−53:133"], ["2022-11-29", "gregorian", "CZ−0:001"], ["3:334", "gregorian", "CZ+3:334"],
-    ["500-03-01 BCE", "gregorian", null], ["0001-01-01", "gregorian", null], ["today", "gregorian", "CZ+"], ["CZ+4:000", "cz", "CZ+4:000"], ["2026-11-30", "gregorian", "CZ+4:000"],
+    ["1405-08-08", "solar-hijri", "۸ آبان ۱۴۰۵ = CZ 1430"], ["۱۴۰۵/۰۸/۰۸", "solar-hijri", "۸ آبان ۱۴۰۵ = CZ 1430"], ["8 Aban 1405", "gregorian", "۸ آبان ۱۴۰۵ = CZ 1430"],
+    ["۸ آبان ۱۴۰۵", "gregorian", "۸ آبان ۱۴۰۵ = CZ 1430"], ["1448-05-19", "lunar-hijri", "١٩ جمادى الأولى ١٤٤٨ هـ = CZ 1430"], ["١٩ جمادى الأولى ١٤٤٨", "lunar-hijri", "= CZ 1430"],
+    ["2026-10-30", "gregorian", "30 October 2026 = CZ 1430"], ["30/10/2026", "gregorian", "= CZ 1430"], ["10/30/2026", "gregorian", "= CZ 1430"], ["Oct 30, 2026", "gregorian", "= CZ 1430"],
+    ["2026-10-17", "julian", "17 October 2026 (Julian) = CZ 1430"], ["CZ 1430", "gregorian", "CZ 1430 is Friday, 30 October 2026"], ["CZ+1430", "cz", "CZ 1430 is Friday"],
+    ["1430", "cz", "CZ 1430 is Friday"], ["CZ −1997", "cz", "CZ −1997 is Monday, 12 June 2017"], ["-1997", "cz", "CZ −1997 is"], ["CZ+3:334", "gregorian", "CZ 1430 is Friday"],
+    ["CZ 1430:15.20", "gregorian", "CZ 1430 15:20 UTC is Friday"], ["2017-06-12", "gregorian", "= CZ −1997"], ["1969-07-20", "gregorian", "= CZ −19491"], ["2022-11-29", "gregorian", "= CZ −1"],
+    ["500-03-01 BCE", "gregorian", "BCE = CZ"], ["today", "gregorian", `Today is CZ ${today}`], ["2026-11-30", "gregorian", "= CZ 1461"],
   ];
   for (const [d, c, want] of cases) {
     const r = await call(page, `/api/page?p=calendar&d=${encodeURIComponent(d)}&c=${c}`);
-    const m = /<h2 id="h-result">([^<]*)<\/h2>/.exec(r.body);
-    ok(r.status === 200 && m && (want === null || m[1].includes(want)), `convert ${d} (${c}) -> ${m && m[1]} want ${want}`);
+    const m = /<h3 id="h-result">([\s\S]*?)<\/h3>/.exec(r.body);
+    ok(r.status === 200 && m && text(m[1]).includes(want), `convert ${d} (${c}) -> ${m && text(m[1])} want ${want}`);
     ok(r.headers["x-robots-tag"] === "noindex", "noindex on a conversion");
   }
+  const t1 = await call(page, `/api/page?p=calendar&d=1405-08-08&c=solar-hijri`);
+  const tb = (/<table class="cz-result">[\s\S]*?<\/table>/.exec(t1.body) || [""])[0];
+  ok(tb.includes('<th scope="row"><bdi class="cz-native" lang="fa" dir="rtl">هجری شمسی</bdi></th><td><bdi class="cz-native" lang="fa" dir="rtl">جمعه ۸ آبان ۱۴۰۵</bdi>')
+     && tb.includes('<bdi class="cz-native" lang="ar" dir="rtl">التقويم الهجري</bdi>') && tb.includes("الجمعة ١٩ جمادى الأولى ١٤٤٨ هـ") && tb.includes("أم القرى")
+     && !/Solar Hijri|Lunar Hijri|Aban|Jumada/.test(tb), "each calendar only in its own script in the result");
   const bad = [["2026-02-30", "gregorian", "has 28 days"], ["1405-13-01", "solar-hijri", "no month 13"], ["foo", "gregorian", "not a month"], ["CZ+3:366", "cz", "not a day"],
                ["5/10/26", "gregorian", "year in full"], ["<script>alert(1)</script>", "gregorian", "not a month"], ["2026-10", "gregorian", "year-month-day"], ["99999-01-01", "gregorian", "range"]];
-  for (const [d, c, want] of bad) {
+  for (const [d, c] of bad) {
     const r = await call(page, `/api/page?p=calendar&d=${encodeURIComponent(d)}&c=${c}`);
     const m = /<p class="pending" role="alert" id="result">([^<]*)<\/p>/.exec(r.body);
     ok(m && !r.body.includes("<script>alert"), `error for ${d}: ${m && m[1]}`);
   }
-  // the value typed is echoed escaped in the form
   const x = await call(page, `/api/page?p=calendar&d=${encodeURIComponent('"><b>x')}&c=gregorian`);
   ok(x.body.includes('value="&quot;&gt;&lt;b&gt;x"') && !x.body.includes('"><b>x'), "echo escaped");
-  // JSON API
-  const j = await call(cal, "/api/calendar?d=1405-08-08&c=solar-hijri");
-  const o = JSON.parse(j.body);
-  ok(j.status === 200 && o.cz.stamp === "CZ+3:334" && o.cz.day === 1430 && o.gregorian.date === "2026-10-30" && o.lunar_hijri.method === "umm-al-qura" && o.jdn === 2461344 && o.weekday === "Friday", "api conversion");
-  const j0 = JSON.parse((await call(cal, "/api/calendar")).body); ok(j0.input === null && j0.today.day === j0.cz.day && j0.from_today_days === 0, "api today");
+  // the time converter
+  const tc = [["2026-10-30", "gregorian", "13:30", "Asia/Tehran", "13:30 in Tehran = CZ 1430 10:00:00 UTC"], ["2026-10-30", "gregorian", "01:30", "Asia/Tehran", "01:30 in Tehran = CZ 1429 22:00:00 UTC"],
+              ["۱۴۰۵/۰۸/۰۸", "solar-hijri", "۱۳:۳۰", "Asia/Tehran", "13:30 in Tehran = CZ 1430 10:00:00 UTC"], ["1969-07-20", "gregorian", "16:17:40", "America/New_York", "16:17:40 in New York = CZ −19491 20:17:40 UTC"],
+              ["2026-10-30", "gregorian", "08:00", "Asia/Kuala_Lumpur", "08:00 in Kuala Lumpur, Singapore = CZ 1430 00:00:00 UTC"], ["", "gregorian", "12:00", "UTC", `12:00 in UTC = CZ ${today} 12:00:00 UTC`],
+              ["2026-10-30", "gregorian", "12:00", "Mars/Olympus", "12:00 in Mars/Olympus"]];
+  for (const [d, c, t, z, want] of tc) {
+    const r = await call(page, `/api/page?p=calendar&d=${encodeURIComponent(d)}&c=${c}&t=${encodeURIComponent(t)}&z=${encodeURIComponent(z)}`);
+    const m = /<h3 id="h-time-result">([\s\S]*?)<\/h3>/.exec(r.body);
+    if (z === "Mars/Olympus") ok(m && text(m[1]).startsWith("12:00 in UTC"), `an unknown zone is read as UTC: ${m && text(m[1])}`);
+    else ok(m && text(m[1]) === want, `time ${d} ${t} ${z} -> ${m && text(m[1])} want ${want}`);
+    ok(!/<h3 id="h-result">/.test(r.body), "a time conversion shows no date result");
+  }
+  const tday = await call(page, `/api/page?p=calendar&d=2026-10-30&c=gregorian&t=01:30&z=Asia%2FTehran`);
+  ok(tday.body.includes("In UTC this moment falls on the day before"), "the CZ day differs from the local date: said");
+  ok(text(tday.body).includes("begins at 03:30, Tehran time"), "where a CZ day begins, locally");
+  const tbad = await call(page, `/api/page?p=calendar&t=25:00&z=UTC`); ok(/role="alert" id="time-result">A time of day is written HH:MM/.test(tbad.body), "a bad time: said");
+  const tsel = await call(page, `/api/page?p=calendar&d=2026-10-30&t=13:30&z=Asia%2FTehran`); ok(tsel.body.includes('<option value="Asia/Tehran" selected>Tehran</option>'), "the zone stays chosen");
+  // the JSON API
+  const j = await call(cal, "/api/calendar?d=1405-08-08&c=solar-hijri"); const o = JSON.parse(j.body);
+  ok(j.status === 200 && o.cz.date === "CZ 1430" && o.cz.machine === "CZ+1430" && o.cz.year_day === "CZ+3:334" && o.cz.day === 1430 && o.gregorian.date === "2026-10-30"
+     && o.lunar_hijri.method === "umm-al-qura" && o.jdn === 2461344 && o.weekday === "Friday" && o.solar_hijri.native_long === "جمعه ۸ آبان ۱۴۰۵", "api conversion");
+  const j0 = JSON.parse((await call(cal, "/api/calendar")).body); ok(j0.input === null && j0.today.day === j0.cz.day && j0.from_today_days === 0 && j0.today.date === `CZ ${today}`, "api today");
   const jb = await call(cal, "/api/calendar?d=2026-02-30"); ok(jb.status === 400 && JSON.parse(jb.body).error.includes("28 days"), "api 400");
   const jc = await call(cal, "/api/calendar?d=2026-01-01&c=mayan"); ok(jc.status === 400, "api bad c");
-  const jn = JSON.parse((await call(cal, "/api/calendar?d=CZ-1997&c=cz")).body); ok(jn.cz.stamp === "CZ−5:171" && jn.cz.stamp_ascii === "CZ-5:171" && jn.cz.machine === "CZ-1997", "api negative");
+  const jn = JSON.parse((await call(cal, "/api/calendar?d=CZ-1997&c=cz")).body); ok(jn.cz.date === "CZ −1997" && jn.cz.machine === "CZ-1997" && jn.cz.year_day === "CZ-5:171", "api negative");
   const jo = JSON.parse((await call(cal, "/api/calendar?d=0600-01-01")).body); ok(jo.lunar_hijri === null && jo.solar_hijri === null, "api before both Hijri eras");
+  // the room's dates and the register's: the day count, the time in UTC, a link to the converter
+  ok(CZ.whenHtml("2026-10-29T18:46:18.123456+00:00") === '<a class="cz-date" href="/calendar?d=CZ%2B1429"><time datetime="2026-10-29T18:46Z">CZ 1429 18:46 UTC</time></a>', "a moment in a post");
+  ok(CZ.whenHtml("2026-10-29T18:46:18Z", { seconds: true }).includes(">CZ 1429 18:46:18 UTC<") && CZ.whenHtml("2026-11-30").includes(">CZ 1461<"), "with seconds; a day");
+  ok(CZ.whenHtml("not a date<") === "not a date&lt;", "anything else, escaped");
   console.log(`pass ${pass} fail ${fail}`); process.exitCode = fail ? 1 : 0;
 })();

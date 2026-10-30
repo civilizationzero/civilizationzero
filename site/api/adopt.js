@@ -5,6 +5,7 @@
 // Once the register has opened, its records stay visible whatever its state (G.CHAIN); statements are taken only while it is
 // open (G.OPEN). The trace token is shown once, to the submitter, in the answer to the POST, and never on a public page.
 const R = require("../room/lib.js");
+const CZ = require("../room/cztime.js");
 const G = require("../room/register.js");
 const { ORIGIN, CONTACT, esc, html, json, rpc, rest } = R;
 const { RT } = G;
@@ -61,9 +62,9 @@ const versionsText = (r) => (r.versions || []).map((v) => esc(v.split(" sha256:"
 
 function summaryHtml(root, st) {
   const e = st.commitment || root;                          // what was committed (the last traced adoption or revision)
-  const parts = [`<a href="/adopt/${root.id}" class="exact">#${root.id}</a>`, who(e), esc(e.signatory_kind), versionsText(e), `from <time datetime="${esc(e.declared_date)}">${esc(e.declared_date)}</time>`];
-  if (e.state === "traced" && e.traced_at) parts.push(`traced at <a href="${esc(e.trace_url)}" rel="nofollow noopener">${esc(e.trace_url)}</a> on <time datetime="${esc(R.isoTime(e.traced_at))}">${esc(day(e.traced_at))}</time>${e.key_fingerprint ? " · signed" : ""}`);
-  if (st.status === "withdrawn") parts.push(`<b>withdrawn</b> from <time datetime="${esc(st.effective.declared_date)}">${esc(st.effective.declared_date)}</time> (<a href="/adopt/${st.effective.id}">#${st.effective.id}</a>)`);
+  const parts = [`<a href="/adopt/${root.id}" class="exact">#${root.id}</a>`, who(e), esc(e.signatory_kind), versionsText(e), `from ${CZ.whenHtml(e.declared_date)}`];
+  if (e.state === "traced" && e.traced_at) parts.push(`traced at <a href="${esc(e.trace_url)}" rel="nofollow noopener">${esc(e.trace_url)}</a> on ${CZ.whenHtml(day(e.traced_at))}${e.key_fingerprint ? " · signed" : ""}`);
+  if (st.status === "withdrawn") parts.push(`<b>withdrawn</b> from ${CZ.whenHtml(st.effective.declared_date)} (<a href="/adopt/${st.effective.id}">#${st.effective.id}</a>)`);
   else parts.push(`<b>${esc(st.status)}</b>${e.id !== root.id ? ` (<a href="/adopt/${e.id}">#${e.id}</a>)` : ""}`);
   const lang = e.lang && R.LANG_RE.test(e.lang) ? ` lang="${esc(e.lang)}"` : "";
   const text = !e.hidden && e.scope ? `<div class="content" dir="auto"${lang}><b>Scope.</b> ${esc(e.scope)}${e.reservations ? `\n<b>Reservations.</b> ${esc(e.reservations)}` : ""}</div>` : "";
@@ -88,7 +89,7 @@ ${RT.intro}
 <section aria-labelledby="h-in"><h2 id="h-in">Adoptions in force</h2>${list(inForce)}</section>
 <section aria-labelledby="h-wd"><h2 id="h-wd">Withdrawn</h2><p class="src">An adopter may withdraw; the record of adoption and withdrawal stays visible (IR 10.1).</p>${list(withdrawn)}</section>
 <section aria-labelledby="h-rc"><h2 id="h-rc">Received, awaiting a trace</h2><p class="src">A statement that has not been found at the address it names is not an adoption in this register. It can be traced for ${UNTRACED_DAYS} days after receipt — the daily job and anyone who asks check it — and stays at its address afterwards.${expired ? ` ${expired} older statement${expired === 1 ? " was" : "s were"} never traced; ${expired === 1 ? "it is" : "they are"} in <a href="/adopt.json">/adopt.json</a>.` : ""}</p>
-${awaiting.length ? `<ul>${awaiting.map((r) => `<li><a href="/adopt/${r.id}">#${r.id}</a> · ${esc(r.type)}${r.refers_to ? ` of <a href="/adopt/${r.refers_to}">#${r.refers_to}</a>` : ""} · ${who(r)} · received <time datetime="${esc(R.isoTime(r.received))}">${esc(day(r.received))}</time> · to be traced at <b>${esc(r.trace_host)}</b></li>`).join("")}</ul>` : "<p>None.</p>"}</section>
+${awaiting.length ? `<ul>${awaiting.map((r) => `<li><a href="/adopt/${r.id}">#${r.id}</a> · ${esc(r.type)}${r.refers_to ? ` of <a href="/adopt/${r.refers_to}">#${r.refers_to}</a>` : ""} · ${who(r)} · received ${CZ.whenHtml(day(r.received))} · to be traced at <b>${esc(r.trace_host)}</b></li>`).join("")}</ul>` : "<p>None.</p>"}</section>
 ${hidden.length ? `<section aria-labelledby="h-hd"><h2 id="h-hd">Hidden</h2><ul>${hidden.map((r) => `<li><a href="/adopt/${r.id}">#${r.id}</a> · ${esc(r.category || "unspecified")} · SHA-256 of the statement <code class="hash">${esc(r.statement_sha256)}</code></li>`).join("")}</ul></section>` : ""}
 ${G.OPEN ? RT.form : ""}
 ${RT.rules}`;
@@ -129,7 +130,7 @@ async function recordPage(id) {
   if (!r.hidden) {
     row("Responsible signatory", who(r) + ` — ${esc(r.signatory_kind)}; name as given, not verified`);
     row("Version adopted", (r.versions || []).map((v) => `<code>${esc(v)}</code>`).join("<br>") || "—");
-    row("Date", `<time datetime="${esc(r.declared_date)}">${esc(r.declared_date)}</time> (declared); received <time datetime="${esc(R.isoTime(r.received))}">${esc(R.isoFull(r.received))}</time>${r.traced_at ? `; traced <time datetime="${esc(R.isoTime(r.traced_at))}">${esc(R.isoFull(r.traced_at))}</time>` : ""} (server time, UTC)`);
+    row("Date", `${CZ.whenHtml(r.declared_date)} (declared); received ${CZ.whenHtml(r.received, { seconds: true })}${r.traced_at ? `; traced ${CZ.whenHtml(r.traced_at, { seconds: true })}` : ""} (server time)`);
     row(r.type === "withdrawal" ? "Note" : "Scope of the commitment", `<div class="content" dir="auto">${esc(r.scope || "—")}</div>`);
     if (r.type !== "withdrawal") row("Reservations", `<div class="content" dir="auto">${esc(r.reservations || "")}</div>`);
     if (r.lang) row("Language", esc(r.lang));
@@ -145,7 +146,7 @@ async function recordPage(id) {
 ${G.OPEN ? `<form method="post" action="/api/adopt"><input type="hidden" name="action" value="trace"><input type="hidden" name="id" value="${r.id}"><button type="submit">Check the trace now</button></form>` : ""}
 <p class="src">The daily job also checks, for ${UNTRACED_DAYS} days after receipt; a record is checked at most once in 10 minutes. The token is looked for in the page itself — not in its address, and not after a redirect to another host. If the line is lost, the statement can be sent again (a statement is recorded once, so change its date or its text); until it is traced it is recorded as received, not as an adoption.</p></section>`
     : r.state === "received" && !r.hidden ? `<p class="src">Received more than ${UNTRACED_DAYS} days ago and never traced: it can no longer be traced, and it is not an adoption. It stays at this address.</p>` : "";
-  const logHtml = log.length ? `<div class="scroll"><table><tr><th>When</th><th>What</th><th>By</th><th>HTTP</th><th>SHA-256 of the bytes fetched</th><th>Detail</th></tr>${log.map((l) => `<tr><td><time datetime="${esc(R.isoTime(l.at))}">${esc(R.fmtTime(l.at))}</time></td><td>${esc(l.action)}${l.category ? ` — ${esc(l.category)}` : ""}</td><td>${esc(l.actor)}</td><td>${esc(l.http_status || "")}</td><td><code>${esc((l.body_sha256 || "").slice(0, 16))}${l.body_sha256 ? "…" : ""}</code></td><td>${esc(l.detail || "")}</td></tr>`).join("")}</table></div>` : "<p>None yet.</p>";
+  const logHtml = log.length ? `<div class="scroll"><table><tr><th>When</th><th>What</th><th>By</th><th>HTTP</th><th>SHA-256 of the bytes fetched</th><th>Detail</th></tr>${log.map((l) => `<tr><td>${CZ.whenHtml(l.at)}</td><td>${esc(l.action)}${l.category ? ` — ${esc(l.category)}` : ""}</td><td>${esc(l.actor)}</td><td>${esc(l.http_status || "")}</td><td><code>${esc((l.body_sha256 || "").slice(0, 16))}${l.body_sha256 ? "…" : ""}</code></td><td>${esc(l.detail || "")}</td></tr>`).join("")}</table></div>` : "<p>None yet.</p>";
   const linked = d.linked.length > 1 ? `<section aria-labelledby="h-ln"><h2 id="h-ln">The adoption and its changes</h2>${d.linked_more ? `<p class="src">The first ${LINKED_SHOWN.toLocaleString("en")} records; every record is in <a href="/adopt.json">/adopt.json</a>. The status above follows the whole history.</p>` : ""}<ul>${d.linked.map((x) => `<li><a href="/adopt/${x.id}">#${x.id}</a> · ${esc(x.type)} · ${who(x)} · from ${esc(x.declared_date)} · ${esc(x.state)}</li>`).join("")}</ul></section>` : "";
   const body = `<h1>Record #${r.id} — ${esc(r.type)}</h1>
 <table>${rows.join("")}</table>

@@ -3,9 +3,9 @@
   "opened": "2026-10-28",
   "html": "https://civilizationzero.ai/objections",
   "source": "https://github.com/civilizationzero/civilizationzero/blob/main/record/OBJECTIONS-1.0.md",
-  "source_sha256": "eeb35b07cec7d75224374dca269fa58abc4a84154eaa5493c4169cd149a4d10f",
+  "source_sha256": "85f402a8641848ac9406c70715f4854edc9c5e5dde2140930fe02f4f0d78a073",
   "history": "https://github.com/civilizationzero/civilizationzero/commits/main/record/OBJECTIONS-1.0.md",
-  "role": "the opening docket of the first scheduled review of the Core, 2027-11-30 (the fifth anniversary of Coordinate Zero); the 1.0 texts do not change",
+  "role": "the opening docket of the first scheduled review of the Core, 2028-07-09 (CZ 2048); the 1.0 texts do not change",
   "rules": {
     "a_response_closes_nothing": true,
     "response_within_days": 60,

@@ -183,14 +183,14 @@ check(sha256(prompt) == man["machine_prompt"]["sha256"], "prompt hash in manifes
 T = json.loads((SITE / "api" / "home-templates.json").read_text("utf-8"))
 sample = {"__YEAR__": "3", "__DAYS_IN_YEAR__": "332", "__TOTAL__": "1428", "__TOTAL_FMT__": "1,428", "__NEXT_YEAR__": "4", "__NEXT_ISO__": "2026-11-30",
           "__NEXT_HUMAN__": "30 November 2026", "__ASOF_ISO__": "2026-10-28T10:00Z", "__ASOF_HUMAN__": "2026-10-28 10:00 UTC",
-          "__CZ_ISO__": "2026-10-28", "__CZ_STAMP__": "CZ+3:332", "__CZ_DOYN__": "332", "__CZ_SINCE__": "3 years and 332 days", "__CZ_TO_NEXT_N__": "33", "__CZ_TO_NEXT__": "33 days"}
+          "__CZ_ISO__": "2026-10-28", "__CZ_STAMP__": "CZ 1428", "__CZ_DOYN__": "332", "__CZ_SINCE__": "3 years and 332 days", "__CZ_TO_NEXT_N__": "33", "__CZ_TO_NEXT__": "33 days", "__CZ_NEXT_DAY__": "1461"}
 # the room's two places on the first page (Phase 1, 29 Oct 2026) are filled by api/home.js from the database, after the clock and
 # last of all, so that nothing in an entry is ever filled again; with the database slow or down, both are left empty
 import subprocess
 ROOM_KEYS = ("__ROOM_COUNT__", "__ROOM_LATEST__")
 def fill(s, room=("", "")):
     for k in ("__TOTAL_FMT__", "__YEAR__", "__DAYS_IN_YEAR__", "__TOTAL__", "__NEXT_YEAR__", "__NEXT_ISO__", "__NEXT_HUMAN__", "__ASOF_ISO__", "__ASOF_HUMAN__",
-              "__CZ_ISO__", "__CZ_STAMP__", "__CZ_DOYN__", "__CZ_SINCE__", "__CZ_TO_NEXT_N__", "__CZ_TO_NEXT__"):
+              "__CZ_ISO__", "__CZ_STAMP__", "__CZ_DOYN__", "__CZ_SINCE__", "__CZ_TO_NEXT_N__", "__CZ_TO_NEXT__", "__CZ_NEXT_DAY__"):
         s = s.replace(k, sample[k])
     for k, v in zip(ROOM_KEYS, room):
         s = s.replace(k, v)
@@ -224,7 +224,7 @@ for ext in ("html", "json", "txt"):
     if ext == "json":
         try:
             o = json.loads(filled); check(o["year"] == 3 and o["elapsed"]["total_days"] == 1428 and o["cz_time"]["day"] == 1428 and o["cz_time"]["day_of_year"] == 332
-                                          and o["cz_time"]["next_year_begins"]["in_days"] == 33 and o["cz_time"]["stamp"] == "CZ+3:332", "home json numbers")
+                                          and o["cz_time"]["next_year_begins"] == {"date": "CZ 1461", "day": 1461, "in_days": 33} and o["cz_time"]["date"] == "CZ 1428", "home json numbers")
         except Exception as e: fails.append(f"home json: {e}")
 # every quotation in the home template is verbatim (build asserts it; re-check the emitted bytes)
 for m in re.findall(r'<blockquote cite="/core#[^"]+" data-src="R"><p>(.*?)</p>', T["html"], re.S):
@@ -315,10 +315,15 @@ if BUNDLE_VERSION not in ("1.0-pre", "1.0"):
 # Coordinate Zero's Gregorian date appears once in its header and no other; the live templates are well formed; and the request-time
 # code (room/cztime.js) gives the stamps lib.py gives
 BAR = json.loads((SITE / "room" / "cz-bar.json").read_text("utf-8"))
-for _n in ("bar", "noform", "calform"):
+for _n in ("bar", "calform", "timeform"):
     _pb = P(); _pb.feed(BAR[_n]); check(not _pb.err and not _pb.stack, f"room/cz-bar.json {_n}: HTML nesting {_pb.err} {_pb.stack}")
-check(all(f"__CZ_SEL_{c}__" in BAR["bar"] and f"__CZ_SEL_{c}__" in BAR["calform"] for c, _ in CZ_CALENDARS) and "__CZ_VALUE__" in BAR["calform"] and "__CZ_STAMP__" in BAR["bar"],
-      "room/cz-bar.json: the placeholders")
+check(all(f"__CZ_SEL_{c}__" in BAR["calform"] and f"__CZ_SEL_{c}__" in BAR["timeform"] for c, _, _ in CZ_CALENDARS) and "__CZ_VALUE__" in BAR["calform"]
+      and "__CZ_STAMP__" in BAR["bar"] and all(f"__CZ_Z{i}__" in BAR["timeform"] for i in range(len(CZ_ZONES))) and BAR["zones"] == [[z, n] for z, n in CZ_ZONES],
+      "room/cz-bar.json: the placeholders and the zones")
+# the top of every page shows the date and links to the converters; the converting is on /calendar (the originator, 30 Oct 2026)
+check("<form" not in BAR["bar"] and 'href="/calendar#convert"' in BAR["bar"] and 'href="/calendar#time"' in BAR["bar"] and "30 November 2022" in BAR["bar"], "the bar: the date, the reason, the two converters as links, no form")
+# each calendar named in its own script only
+check([n for _, n, _ in CZ_CALENDARS] == ["Gregorian", "هجری شمسی", "التقويم الهجري", "Julian", "CZ"], "the calendars' names, each in its own script")
 for f in pages + [pathlib.Path("virtual") / n for n in VIRTUAL]:
     if f.name == "index.html": continue
     h = VIRTUAL[f.name] if f.parent.name == "virtual" else f.read_text("utf-8")
@@ -329,17 +334,18 @@ _hh = T["html"].split('<header id="top">', 1)[1].split("</header>", 1)[0]
 check(_hh.count("30 November 2022") == 1 and _hh.count("2022-11-30") == 1 and not re.search(r"\b20\d\d-\d\d-\d\d\b|November 20(2[3-9]|[3-9]\d)", _hh.replace("2022-11-30", "")) and "__ASOF" not in _hh,
       "home: Coordinate Zero's date once in the header, and no other Gregorian date")
 _h1 = _hh.split("</h1>")[0]
-check('<h1 class="cz-h1"' in _hh and '<a href="/calendar"' in _h1 and '<time datetime="__CZ_ISO__">__CZ_STAMP__</time>' in _h1 and 'action="/calendar"' in _hh,
-      "home: the heading is today's date in CZ time, linked to /calendar, with the converter under it")
+check('<h1 class="cz-h1"' in _hh and '<a href="/calendar"' in _h1 and '<time datetime="__CZ_ISO__">__CZ_STAMP__</time>' in _h1 and "<form" not in _hh
+      and 'href="/calendar#convert"' in _hh and 'href="/calendar#time"' in _hh, "home: the heading is today's date in CZ time, linked to /calendar; links to the converters, no form")
 _cal = (PUBLIC / "calendar.html").read_text("utf-8")
-check(_cal.count("<!--cz-cal-->") == 1 and _cal.count("<!--cz-now:noform-->") == 1 and all(f'id="{a}"' in _cal for a in ("how", "examples", "calendars", "beyond-earth", "machines", "sources")),
-      "calendar.html: the converter's place and every section")
+check(_cal.count("<!--cz-cal-->") == 1 and _cal.count("<!--cz-time-->") == 1 and all(f'id="{a}"' in _cal for a in ("convert", "time", "how", "examples", "calendars", "beyond-earth", "machines", "sources")),
+      "calendar.html: the converters' places and every section")
 _days = sorted(set(range(-40000, 40001)) | set(range(cz_day(datetime.date(2, 1, 1)), cz_day(datetime.date(9998, 12, 31)), 97)) | {cz_day(d) for d, _ in CZ_EXAMPLES})
-_r = subprocess.run(["node", "-e", 'const C = require(process.argv[1]); process.stdout.write(JSON.parse(require("fs").readFileSync(0, "utf8")).map((D) => C.stamp(D, "-")).join("\\n"))',
+_r = subprocess.run(["node", "-e", 'const C = require(process.argv[1]); process.stdout.write(JSON.parse(require("fs").readFileSync(0, "utf8")).map((D) => C.czDay(D) + " " + C.stamp(D, "-") + " " + C.converterHref(D)).join("\\n"))',
                      str(SITE / "room" / "cztime.js")], input=json.dumps(_days), capture_output=True, text=True)
 _js = _r.stdout.split("\n")
-check(_r.returncode == 0 and _js == [cz_stamp(D, "-") for D in _days], f"room/cztime.js and lib.py give different stamps ({_r.stderr[:200]})")
-check(cz_stamp(datetime.date(2026, 10, 30)) == "CZ+3:334" and cz_stamp(datetime.date(2017, 6, 12)) == "CZ−5:171" and cz_day(datetime.date(2026, 11, 30)) == 1461, "CZ time: the published examples")
+check(_r.returncode == 0 and _js == [f"{cz_stamp(D)} {cz_year_day(D, '-')} {cz_href(D)}" for D in _days], f"room/cztime.js and lib.py give different dates ({_r.stderr[:200]})")
+check(cz_stamp(datetime.date(2026, 10, 30)) == "CZ 1430" and cz_stamp(datetime.date(2017, 6, 12)) == "CZ −1997" and cz_year_day(datetime.date(2017, 6, 12)) == "CZ−5:171"
+      and cz_year_day(datetime.date(2026, 10, 30)) == "CZ+3:334" and cz_day(datetime.date(2026, 11, 30)) == 1461, "CZ time: the published examples")
 for fn in ("api/page.js", "api/calendar.js", "room/cztime.js", "api/home.js"):
     _rc = subprocess.run(["node", "--check", str(SITE / fn)], capture_output=True)
     check(_rc.returncode == 0, f"{fn}: syntax {_rc.stderr.decode()[:200]}")
@@ -347,6 +353,24 @@ check(any(r.get("source") == "/calendar" and r.get("destination") == "/api/page?
 for _src in ("/core", "/record", "/objections", "/ask", "/machine", "/about", "/archive"):
     check(any(r.get("source") == _src and "has" not in r and r.get("destination") == f"/api/page?p={_src[1:]}" for r in v.get("rewrites", [])), f"vercel.json: {_src} → api/page.js (CZ time at the top)")
 check("public/*.html" in json.dumps(v.get("functions", {}).get("api/page.js", {})), "vercel.json: api/page.js carries the pages (includeFiles)")
+
+# 9. every date the pages print (the originator, 30 Oct 2026: "every date on the site checked at least three times"): each CZ date in a
+# <time datetime> is the day of that ISO value, counted independently here as (date − 2022-11-30).days; each link around it opens the
+# converter on that same day; no year:day stamp is printed as a date outside the converter's own page
+_TIME_RE = re.compile(r'(?:<a class="cz-date" href="/calendar\?d=CZ(%2B|-)(\d+)">)?<time datetime="([^"]+)">(CZ [−-]?\d+)([^<]*)</time>')
+_n_dates = 0
+for f in pages + [pathlib.Path("virtual") / n for n in VIRTUAL]:
+    h = VIRTUAL[f.name] if f.parent.name == "virtual" else f.read_text("utf-8")
+    for sign, ln, iso, shown, rest in _TIME_RE.findall(h):
+        if "__" in iso: continue   # a template's placeholder, filled at request time (checked in its test)
+        day = (datetime.date.fromisoformat(iso[:10]) - datetime.date(2022, 11, 30)).days
+        check(int(shown[3:].replace("−", "-")) == day, f"{f.name}: {shown} printed for {iso} (day {day})")
+        if ln: check((-1 if sign == "-" else 1) * int(ln) == day, f"{f.name}: the link of {shown} opens day {sign}{ln}")
+        _n_dates += 1
+    if f.name != "calendar.html":
+        _vis = to_text(h)
+        check(not re.search(r"CZ[+−-]\d+:\d{3}", _vis), f"{f.name}: a year:day stamp printed as a date")
+check(_n_dates > 40, f"the dates checked: {_n_dates}")
 
 if fails:
     print("CHECK FAILED"); [print(" -", f) for f in fails]; sys.exit(1)

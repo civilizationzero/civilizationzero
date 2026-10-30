@@ -20,54 +20,88 @@ function read(name) {
   return html;
 }
 
-const esc = (s) => String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+const esc = CZ.escHtml;
 const plural = (n, w) => `${CZ.fmtInt(n)} ${w}${Math.abs(n) === 1 ? "" : "s"}`;
 function since(p) {   // "3 years and 334 days after Coordinate Zero"
   if (p.sign > 0 && p.year === 0 && p.day === 0) return "Coordinate Zero itself";
   const amount = p.year && p.day ? `${plural(p.year, "year")} and ${plural(p.day, "day")}` : p.year ? plural(p.year, "year") : plural(p.day, "day");
   return `${amount} ${p.sign < 0 ? "before" : "after"} Coordinate Zero`;
 }
-const num = (n) => (n < 0 ? `\u2212${-n}` : String(n));   // a day number as printed: no separators, a true minus
 const fromToday = (n) => (n === 0 ? "today" : n > 0 ? `in ${plural(n, "day")}` : `${plural(-n, "day")} ago`);
+const num = (n) => (n < 0 ? `−${-n}` : String(n));   // a day number as printed: no separators, a true minus
+// each calendar in its own script (the originator's decision of 30 Oct 2026): Persian for the Solar Hijri, Arabic for the Lunar Hijri
 const fa = (x) => `<bdi class="cz-native" lang="fa" dir="rtl">${esc(x)}</bdi>`;
 const ar = (x) => `<bdi class="cz-native" lang="ar" dir="rtl">${esc(x)}</bdi>`;
+const NAME = { "solar-hijri": fa("هجری شمسی"), "lunar-hijri": ar("التقويم الهجري") };
+const nativeOf = (r) => (r.calendar === "solar-hijri" ? fa(r.native) : r.calendar === "lunar-hijri" ? ar(r.native) : esc(r.native));
+const lunarCell = (lh) => `<bdi class="cz-native" lang="ar" dir="rtl">${esc(lh.native_long)} <span class="src">(${lh.method === "umm-al-qura" ? "أم القرى" : "الحساب الجدولي، تقريبي"})</span></bdi>`;
+const czLink = (D, text) => `<a class="cz-date" href="${CZ.converterHref(D)}">${esc(text)}</a>`;
 
-function result(r, today) {
+function rows(list) { return `<table class="cz-result">${list.map(([k, v]) => `<tr><th scope="row">${k}</th><td>${v}</td></tr>`).join("")}</table>`; }
+function dateResult(r, today) {
   const x = CZ.describe(r.day), p = CZ.parts(r.day), g = x.gregorian, sh = x.solar_hijri, lh = x.lunar_hijri;
-  const rows = [
-    ["CZ time", `<strong>${esc(x.cz.stamp)}</strong> — ${esc(since(p))} · day <data value="${r.day}">${esc(CZ.fmtInt(r.day))}</data> · <code>${esc(x.cz.machine)}</code>`],
-    ["Weekday", esc(x.weekday)],
-    ["Gregorian", g.year >= 1 && g.year <= 9999 ? `<time datetime="${g.date}">${esc(g.text)}</time>` : esc(g.text)],
-    ["Solar Hijri", sh ? `${esc(sh.text)} · ${fa(sh.native)}` : "— <span class=\"src\">(outside the years converted here, 1 to 3177 SH)</span>"],
-    ["Lunar Hijri", lh ? `${esc(lh.text)} · ${ar(lh.native)} <span class="src">(${lh.method === "umm-al-qura" ? "Umm al-Qura" : "tabular calendar, an approximation"})</span>`
-      : "— <span class=\"src\">(before the Hijri era)</span>"],
-    ["Julian", esc(x.julian.text)],
+  const head = r.today ? `Today is ${esc(x.cz.date)}` : r.calendar === "cz" ? `${esc(r.native)} is ${esc(`${x.weekday}, ${g.text}`)}` : `${nativeOf(r)} = ${esc(x.cz.date)}`;
+  const data = `/api/calendar?d=${encodeURIComponent(x.cz.machine)}&c=cz`;
+  return `<section id="result" aria-labelledby="h-result"><h3 id="h-result">${head}</h3>
+${rows([
+    ["CZ", `<strong><data value="${r.day}">${esc(x.cz.date)}</data></strong> — ${esc(since(p))}${p.sign > 0 ? ` · Year ${p.year}, day ${p.day}` : ""} · machine form <code>${esc(x.cz.machine)}</code>`],
+    ["Gregorian", g.year >= 1 && g.year <= 9999 ? `<time datetime="${g.date}">${esc(`${x.weekday}, ${g.text}`)}</time>` : esc(`${x.weekday}, ${g.text}`)],
+    [NAME["solar-hijri"], sh ? fa(sh.native_long) : "—"],
+    [NAME["lunar-hijri"], lh ? lunarCell(lh) : "—"],
+    ["Julian", esc(`${x.weekday}, ${x.julian.text}`)],
     ["Day numbers", `Julian Day Number ${num(x.jdn)} · Modified Julian Date ${num(x.mjd)} · Unix day ${num(x.unix_day)}`],
     ["From today", esc(fromToday(r.day - today))],
-  ];
-  const data = `/api/calendar?d=${encodeURIComponent(x.cz.machine)}&c=cz`;
-  const head = r.today ? `Today is ${x.cz.stamp}` : r.read === x.cz.stamp ? `${x.cz.stamp} is ${x.weekday}, ${g.text}` : `${r.read} is ${x.cz.stamp}`;
-  return `<section id="result" aria-labelledby="h-result"><h2 id="h-result">${esc(head)}</h2>
-<table class="cz-result">${rows.map(([k, v]) => `<tr><th scope="row">${k}</th><td>${v}</td></tr>`).join("")}</table>
+  ])}
 <p class="src">This day as data: <a href="${esc(data)}">${esc(data)}</a></p></section>`;
 }
 
+// the date converter (#convert): today in each calendar, one to a line, the form, and the conversion
 function calendarBlock(q, ms) {
   const T = CZ.barTemplates(), today = CZ.dayOf(ms), t = CZ.describe(today);
-  const d = String(q.get("d") ?? "").slice(0, 80), c = q.get("c") || "gregorian";
-  const cal = CZ.CALENDARS.includes(c) ? c : "gregorian";
-  const line = `<p class="cz-today">Today is <strong><time datetime="${t.gregorian.date}">${esc(t.cz.stamp)}</time></strong>: ${esc(t.weekday)}, ${esc(t.gregorian.text)} · `
-    + `${esc(t.solar_hijri.text)} (${fa(t.solar_hijri.native)}) · ${esc(t.lunar_hijri.text)} (${ar(t.lunar_hijri.native)}).</p>`;
-  const form = typeof T.calform === "string" ? CZ.fillTemplate(T.calform, CZ.fields(ms), cal, esc(d)) : "";
+  const d = String(q.get("d") ?? "").slice(0, 80), c = q.get("c") || "gregorian", cal = CZ.CALENDARS.includes(c) ? c : "gregorian";
+  const timeAsked = String(q.get("t") ?? "").trim() !== "";
+  const line = `<p class="cz-today-head">Today is ${czLink(today, t.cz.date)}</p><ul class="cz-today"><li><time datetime="${t.gregorian.date}">${esc(`${t.weekday}, ${t.gregorian.text}`)}</time></li>`
+    + `<li>${fa(t.solar_hijri.native_long)}</li><li>${lunarCell(t.lunar_hijri)}</li></ul>`;
+  const form = typeof T.calform === "string" ? CZ.fillTemplate(T.calform, CZ.fields(ms), cal, timeAsked ? "" : esc(d)) : "";
   let out = "";
-  if (d.trim()) {
+  if (d.trim() && !timeAsked) {
     const r = CZ.parse(d, cal, ms);
-    out = r.ok ? result(r, today) : `<p class="pending" role="alert" id="result">${esc(r.error)}</p>`;
+    out = r.ok ? dateResult(r, today) : `<p class="pending" role="alert" id="result">${esc(r.error)}</p>`;
   }
   return `${line}\n${form}\n${out}`;
 }
 
+// the time converter (#time): a local date and time in a time zone, to CZ time (a CZ day is a UTC day)
+function timeBlock(q, ms) {
+  const T = CZ.barTemplates(), zones = Array.isArray(T.zones) ? T.zones : [["UTC", "UTC"]];
+  const d = String(q.get("d") ?? "").slice(0, 80), c = q.get("c") || "gregorian", cal = CZ.CALENDARS.includes(c) ? c : "gregorian";
+  const tq = String(q.get("t") ?? "").slice(0, 12), zq = String(q.get("z") ?? "UTC");
+  const zi = Math.max(0, zones.findIndex(([z]) => z === zq));
+  const zone = CZ.validZone(zq) ? zq : "UTC", zoneName = (zones.find(([z]) => z === zone) || [zone, zone])[1];
+  const extra = { TVALUE: tq.trim() ? esc(d) : "", TTIME: esc(tq) };
+  zones.forEach((_, i) => { extra[`Z${i}`] = i === zi ? " selected" : ""; });
+  const form = typeof T.timeform === "string" ? CZ.fillTemplate(T.timeform, CZ.fields(ms), cal, "", extra) : "";
+  if (!tq.trim()) return form;
+  const time = CZ.parseTime(tq);
+  if (!time) return `${form}\n<p class="pending" role="alert" id="time-result">A time of day is written HH:MM in 24 hours, for example 13:30.</p>`;
+  const r = d.trim() ? CZ.parse(d, cal, ms) : { ok: true, day: CZ.dayOf(ms), calendar: cal, native: "today", today: true };
+  if (!r.ok) return `${form}\n<p class="pending" role="alert" id="time-result">${esc(r.error)}</p>`;
+  const v = CZ.convertTime(r.day, time, zone);
+  if (!v.ok) return `${form}\n<p class="pending" role="alert" id="time-result">${esc(v.error)}</p>`;
+  const x = CZ.describe(r.day), stampUTC = `${CZ.czDay(v.day)} ${v.utc} UTC`, start = CZ.dayStartLocal(v.day, zone);
+  const localDate = r.calendar === "solar-hijri" ? fa(x.solar_hijri ? x.solar_hijri.native_long : r.native) : r.calendar === "lunar-hijri" && x.lunar_hijri ? lunarCell(x.lunar_hijri)
+    : esc(`${x.weekday}, ${r.calendar === "julian" ? `${x.julian.text} (Julian)` : x.gregorian.text}`);
+  const differs = v.day !== r.day ? `<p class="src">In UTC this moment falls on ${v.day < r.day ? "the day before" : "the next day"}: the CZ day is ${czLink(v.day, CZ.czDay(v.day))}.</p>` : "";
+  return `${form}\n<section id="time-result" aria-labelledby="h-time-result"><h3 id="h-time-result">${esc(v.local.time)} in ${esc(zoneName)} = ${esc(stampUTC)}</h3>
+${rows([
+    ["CZ", `<strong>${czLink(v.day, stampUTC)}</strong>`],
+    [`In ${esc(zoneName)}`, `${localDate} · ${esc(v.local.time)} <span class="src">(${esc(CZ.offsetText(v.offset))})</span>`],
+    ["The CZ day there", `begins at ${esc(start.time)}${start.before ? " the evening before" : ""}, ${esc(zoneName)} time (${esc(CZ.offsetText(start.offset))}): 00:00 UTC`],
+  ])}${differs}</section>`;
+}
+
 const CAL_RE = /<!--cz-cal-->[\s\S]*?<!--\/cz-cal-->/;
+const TIME_RE = /<!--cz-time-->[\s\S]*?<!--\/cz-time-->/;
 module.exports = (req, res) => {
   if (!["GET", "HEAD"].includes(req.method)) {
     res.statusCode = 405; res.setHeader("Allow", "GET, HEAD"); res.setHeader("Content-Type", "text/plain; charset=utf-8");
@@ -79,8 +113,11 @@ module.exports = (req, res) => {
   if (html === null) { status = 404; html = read("404") || "<!doctype html><title>Not found</title><p>Nothing is published at this address.</p>\n"; }
   const now = Date.now();
   let out = CZ.fillBar(html, now);
-  const query = p === "calendar" && (url.searchParams.has("d") || url.searchParams.has("c"));
-  if (p === "calendar" && status === 200) out = out.replace(CAL_RE, () => `<!--cz-cal-->${calendarBlock(url.searchParams, now)}<!--/cz-cal-->`);
+  const query = p === "calendar" && ["d", "c", "t", "z"].some((k) => url.searchParams.has(k));
+  if (p === "calendar" && status === 200) {
+    out = out.replace(CAL_RE, () => `<!--cz-cal-->${calendarBlock(url.searchParams, now)}<!--/cz-cal-->`)
+             .replace(TIME_RE, () => `<!--cz-time-->${timeBlock(url.searchParams, now)}<!--/cz-time-->`);
+  }
   res.statusCode = status;
   res.setHeader("Content-Type", "text/html; charset=utf-8");
   res.setHeader("Cache-Control", `public, max-age=0, s-maxage=${CZ.secondsToNextDay(now)}`);
@@ -89,3 +126,4 @@ module.exports = (req, res) => {
   res.end(req.method === "HEAD" ? "" : out);
 };
 module.exports.calendarBlock = calendarBlock;
+module.exports.timeBlock = timeBlock;

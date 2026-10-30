@@ -308,7 +308,8 @@ function groupEntries(asc) {   // asc: entries in canonical order; returns group
 }
 
 // ---------------------------------------------------------------- rendering
-const fmtTime = (t) => { const s = String(t); const m = s.match(/^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2})/); return m ? `${m[1]} ${m[2]} UTC` : s; };
+// every date in CZ time (the originator's decision of 30 Oct 2026): "CZ+3:333 18:46 UTC"; the ISO value stays in <time datetime>
+const fmtTime = (t) => CZ.whenText(t);
 const isoFull = (t) => String(t).replace(/\.\d+/, "").replace(/\+00:00$/, "Z").replace(/ /, "T");
 const isoTime = (t) => { const s = String(t); const m = s.match(/^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2}(:\d{2})?)/); return m ? `${m[1]}T${m[2].slice(0, 5)}Z` : s.slice(0, 10); };
 
@@ -330,8 +331,8 @@ function metaHtml(e) {
   if (e.prompt) parts.push(`prompt: ${decl(e.prompt)}`);
   if (e.lang) parts.push(`lang: ${decl(e.lang)}`);
   if (e.ref != null && e.ref !== "") parts.push(`<a href="/core#p${esc(e.ref)}">${esc(sectionLabel(e.ref))}</a>`);
-  parts.push(`<time datetime="${esc(isoTime(e.received))}">${esc(fmtTime(e.received))}</time>`);
-  if (e.declared_date) parts.push(`declared date: ${decl(e.declared_date)}`);
+  parts.push(CZ.whenHtml(e.received));
+  if (e.declared_date) parts.push(`declared date: ${validDate(String(e.declared_date)) ? CZ.whenHtml(e.declared_date) : decl(e.declared_date)}`);
   if (e.key_fingerprint) parts.push(`key <code title="${esc(e.key_fingerprint)}">${esc(e.key_fingerprint.slice(0, 16))}…</code>`);
   if (e.state !== "published") parts.push(`<b>${esc(e.state)}</b>`);
   return `<p class="meta src">${parts.join(" · ")}</p>`;

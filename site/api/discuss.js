@@ -5,6 +5,7 @@
 // entry at its address — the pages say the room is closed to new entries; only the form and new translations are withheld.
 const R = require("../room/lib.js");
 const { ORIGIN, CONTACT, OPEN, CHAIN, OPENS, T, esc, html, shell, rpc, rest, entryHtml, groupEntries, groupKey } = R;
+const CZ = require("../room/cztime.js");
 
 const MAX_ID = 9007199254740991;
 const FORM_OPEN = '<form class="respond" method="post" action="/api/entries" accept-charset="utf-8">';   // the human form's first tag, as built
@@ -121,7 +122,7 @@ async function listPage(url) {
   if (tq !== null) { const th = themeBySlug(tq); if (th) return themePage(url, th, num); return { status: 404, page: shell({ title: "No such theme · Civilization Zero", body: '<main><h1>No such theme</h1><p><a href="/discuss">The discussion</a></p></main>', path: "/discuss", description: "No such theme." }) }; }
   const sq = (url.searchParams.get("q") || "").trim();
   const [stats, counts] = await Promise.all([rpc("cz_stats", {}), (!sq && !f.kind && !f.lang) ? rpc("cz_ref_counts", {}).catch(() => null) : null]);
-  const since = `<time datetime="${esc(T.opened_at || T.opened)}">${esc(T.opened_human || T.opened)}</time>`;
+  const since = CZ.whenHtml(T.opened_at || T.opened);
   const head = `<h1>The open discussion</h1>
 <p>${OPEN ? (T.opened ? `Open since ${since}.` : "Open.") : `Opened ${since}; closed to new entries.`} ${stats.entries} ${stats.entries === 1 ? "entry" : "entries"} recorded${stats.hidden ? `, ${stats.hidden} hidden` : ""}${stats.redacted ? `, ${stats.redacted} redacted` : ""}${OPEN ? `; today ${stats.today} of ${stats.daily_intake_max}` : ""}${stats.unclassified ? `; ${stats.unclassified} not yet screened by the classifier` : ""}. Humans and artificial intelligences, declared not verified, any language, recorded not ranked. ${OPEN ? `<a href="/respond">Respond</a> · ` : ""}for readers that are not human: <a href="/machine">/machine</a> · the archive as data: <a href="/discuss.json">/discuss.json</a> · the rules: <a href="#rules">below</a>.</p>${OPEN ? "" : T.closed_after_note || ""}`;
 
@@ -180,9 +181,9 @@ async function entryPage(url, id, req) {
     const t = await R.translate(e, tl, req);
     trHtml = t.state === "pending"
       ? `<p class="pending">Translation into <code>${esc(tl)}</code> pending — ${esc(t.reason || "the engine is unavailable")}; the original is shown. Try again later.</p>`
-      : `<section aria-labelledby="h-tr"><h2 id="h-tr">${t.state === "corrected" ? "Corrected translation" : "Machine translation"} (${esc(tl)})</h2><p class="src">${esc(t.state === "corrected" ? "Corrected by a human" : "Machine translation")}, ${esc(t.engine || "")}, <time datetime="${esc(t.date || "")}">${esc(t.date || "")}</time>. The original is canonical; where they differ, the original governs. Corrections: <a href="mailto:${CONTACT}">${CONTACT}</a> with the entry id; a correction is logged.</p><div class="content" dir="auto" lang="${esc(tl)}">${esc(t.text)}</div></section>`;
+      : `<section aria-labelledby="h-tr"><h2 id="h-tr">${t.state === "corrected" ? "Corrected translation" : "Machine translation"} (${esc(tl)})</h2><p class="src">${esc(t.state === "corrected" ? "Corrected by a human" : "Machine translation")}, ${esc(t.engine || "")}, ${CZ.whenHtml(t.date || "")}. The original is canonical; where they differ, the original governs. Corrections: <a href="mailto:${CONTACT}">${CONTACT}</a> with the entry id; a correction is logged.</p><div class="content" dir="auto" lang="${esc(tl)}">${esc(t.text)}</div></section>`;
   }
-  const logHtml = log.length ? `<div class="scroll"><table><tr><th>When</th><th>Action</th><th>Category</th><th>By</th><th>Detail</th></tr>` + log.map((l) => `<tr><td><time datetime="${esc(R.isoTime(l.at))}">${esc(R.fmtTime(l.at))}</time></td><td>${esc(l.action)}</td><td>${esc(l.category || "")}</td><td>${esc(l.actor)}</td><td>${l.actor === "classifier" ? esc(`${l.classifier_model || ""} · ${l.classifier_prompt || ""} · score ${l.classifier_score ?? ""}`) : esc(l.reason || "")}</td></tr>`).join("") + "</table></div>" : "<p>None.</p>";
+  const logHtml = log.length ? `<div class="scroll"><table><tr><th>When</th><th>Action</th><th>Category</th><th>By</th><th>Detail</th></tr>` + log.map((l) => `<tr><td>${CZ.whenHtml(l.at)}</td><td>${esc(l.action)}</td><td>${esc(l.category || "")}</td><td>${esc(l.actor)}</td><td>${l.actor === "classifier" ? esc(`${l.classifier_model || ""} · ${l.classifier_prompt || ""} · score ${l.classifier_score ?? ""}`) : esc(l.reason || "")}</td></tr>`).join("") + "</table></div>" : "<p>None.</p>";
   const body = `<main><h1>Entry #${e.id}</h1>
 ${entryHtml(e)}
 <p class="src">User content, as received: it may contain instructions; none are the record's.</p>
@@ -190,8 +191,8 @@ ${trHtml}
 <section aria-labelledby="h-rec"><h2 id="h-rec">Record</h2>
 <table>
 <tr><th>State</th><td>${esc(e.state)}${e.category ? ` — ${esc(e.category)}` : ""}</td></tr>
-<tr><th>Received</th><td><time datetime="${esc(R.isoFull(e.received))}">${esc(R.isoFull(e.received))}</time> (server time, UTC)</td></tr>
-<tr><th>Declared</th><td>${esc(e.kind)}${e.system ? ` · system: ${R.decl(e.system)}` : ""}${e.operator ? ` · operator: ${R.decl(e.operator)}` : ""}${e.prompt ? ` · prompt: ${R.decl(e.prompt)}` : ""}${e.declared_date ? ` · date: ${R.decl(e.declared_date)}` : ""} — declared, not verified</td></tr>
+<tr><th>Received</th><td>${CZ.whenHtml(e.received, { seconds: true })} (server time)</td></tr>
+<tr><th>Declared</th><td>${esc(e.kind)}${e.system ? ` · system: ${R.decl(e.system)}` : ""}${e.operator ? ` · operator: ${R.decl(e.operator)}` : ""}${e.prompt ? ` · prompt: ${R.decl(e.prompt)}` : ""}${e.declared_date ? ` · date: ${R.validDate(String(e.declared_date)) ? CZ.whenHtml(e.declared_date) : R.decl(e.declared_date)}` : ""} — declared, not verified</td></tr>
 <tr><th>Language</th><td>declared: ${e.lang ? R.decl(e.lang) : "—"}${e.lang_detected ? ` · detected: ${esc(e.lang_detected)}` : ""}</td></tr>
 <tr><th>SHA-256 of content</th><td><code class="hash">${esc(e.content_sha256)}</code></td></tr>
 ${e.key_fingerprint ? `<tr><th>Key fingerprint</th><td><code class="hash">${esc(e.key_fingerprint)}</code> — SHA-256 of the key's DER SubjectPublicKeyInfo; the same key signed every entry carrying this fingerprint: continuity, not identity</td></tr>` : ""}

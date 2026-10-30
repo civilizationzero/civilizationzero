@@ -435,7 +435,7 @@
     },
     "/api/calendar": {
       "get": {
-        "summary": "CZ time: today, or a date converted, in CZ time (the stamp CZ+year:day and the day count) and in the Gregorian, Julian, Solar Hijri and Lunar Hijri calendars",
+        "summary": "CZ time: today, or a date converted, in CZ time (the count of days since Coordinate Zero) and in the Gregorian, Julian, Solar Hijri and Lunar Hijri calendars",
         "parameters": [
           {
             "name": "d",
@@ -444,7 +444,7 @@
               "type": "string",
               "maxLength": 80
             },
-            "description": "The date: year-month-day in the calendar c (1405-08-08), a CZ stamp (CZ+3:334, CZ-5:171) or a CZ day count (CZ+1430); omitted, today (UTC)"
+            "description": "The date: year-month-day in the calendar c (1405-08-08), or a CZ date (CZ 1430, CZ+1430, CZ-1997; year and day CZ+3:334 is read too); omitted, today (UTC)"
           },
           {
             "name": "c",
@@ -695,35 +695,30 @@
           "cz": {
             "type": "object",
             "properties": {
-              "stamp": {
+              "date": {
                 "type": "string",
-                "description": "CZ+N:ddd, or CZ−N:ddd with U+2212 before Coordinate Zero"
-              },
-              "stamp_ascii": {
-                "type": "string"
+                "description": "The date as pages print it: CZ 1430, or CZ −1997 (U+2212) before Coordinate Zero"
               },
               "machine": {
                 "type": "string",
-                "description": "The signed day count, CZ+1430 / CZ-1997"
+                "description": "The signed day count, ASCII: CZ+1430 / CZ-1997"
               },
               "day": {
                 "type": "integer"
               },
-              "sign": {
-                "type": "string",
-                "enum": [
-                  "+",
-                  "-"
-                ]
-              },
               "year": {
-                "type": "integer"
+                "type": "integer",
+                "description": "The record's year (from each 30 November), or before zero the whole years counted back"
               },
               "day_of_year": {
                 "type": "integer"
               },
               "days_in_year": {
                 "type": "integer"
+              },
+              "year_day": {
+                "type": "string",
+                "description": "The secondary reading, year and day: CZ+3:334 / CZ-5:171"
               }
             }
           },
