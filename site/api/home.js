@@ -2,9 +2,13 @@
 // reader at every moment, with no script on the reader's side (Blueprint 1.3.1 §5.1). Everything else on
 // the page is static and comes from site/build.py via home-templates.json.
 const T = require("./home-templates.json");
+const CZ = require("../room/cztime.js");   // CZ time (the originator's decision of 30 Oct 2026): the page's heading is today's date in it
 
 const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 const pad = (n) => String(n).padStart(2, "0");
+const plural = (n, w) => `${n.toLocaleString("en-US")} ${w}${n === 1 ? "" : "s"}`;
+// "3 years and 334 days", as site/lib.py's cz_since_text writes it
+const sinceText = (y, d) => (y && d ? `${plural(y, "year")} and ${plural(d, "day")}` : y ? plural(y, "year") : plural(d, "day"));
 
 function clock(now) {
   const t = now.getTime();
@@ -15,6 +19,7 @@ function clock(now) {
   const next = new Date(Date.UTC(2022 + year + 1, 10, 30));
   const days = (a) => Math.floor((t - a) / 86400000);
   const total = days(z);
+  const f = CZ.fields(t);
   return {
     "__TOTAL_FMT__": total.toLocaleString("en-US"),
     "__YEAR__": String(year),
@@ -25,6 +30,8 @@ function clock(now) {
     "__NEXT_HUMAN__": `${next.getUTCDate()} ${MONTHS[next.getUTCMonth()]} ${next.getUTCFullYear()}`,
     "__ASOF_ISO__": `${now.getUTCFullYear()}-${pad(now.getUTCMonth() + 1)}-${pad(now.getUTCDate())}T${pad(now.getUTCHours())}:${pad(now.getUTCMinutes())}Z`,
     "__ASOF_HUMAN__": `${now.getUTCFullYear()}-${pad(now.getUTCMonth() + 1)}-${pad(now.getUTCDate())} ${pad(now.getUTCHours())}:${pad(now.getUTCMinutes())} UTC`,
+    "__CZ_ISO__": f.ISO, "__CZ_STAMP__": f.STAMP, "__CZ_DOYN__": f.DOYN, "__CZ_SINCE__": sinceText(f.p.year, f.p.day),
+    "__CZ_TO_NEXT_N__": f.TO_NEXT, "__CZ_TO_NEXT__": plural(Number(f.TO_NEXT), "day"),
   };
 }
 
@@ -72,7 +79,8 @@ module.exports = async (req, res) => {
   const types = { html: "text/html; charset=utf-8", json: "application/json; charset=utf-8", txt: "text/plain; charset=utf-8" };
   res.statusCode = 200;
   res.setHeader("Content-Type", types[f] || types.html);
-  res.setHeader("Cache-Control", "public, max-age=0, s-maxage=300, stale-while-revalidate=60");
+  // at most five minutes, and never past 00:00 UTC, when the date in the heading turns
+  res.setHeader("Cache-Control", `public, max-age=0, s-maxage=${Math.min(300, CZ.secondsToNextDay(now.getTime()))}`);
   res.setHeader("Vary", "Accept");
   res.setHeader("Link", '</index.json>; rel="alternate"; type="application/json", </index.txt>; rel="alternate"; type="text/plain", </api/openapi.json>; rel="service-desc"; type="application/vnd.oai.openapi+json"');
   res.setHeader("X-Content-Type-Options", "nosniff");

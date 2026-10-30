@@ -41,7 +41,7 @@ class P(HTMLParser):
         else: self.err.append((t, self.stack[-3:]))
 
 FUNCTION_ROUTES = {"/", "/index.json", "/index.txt", "/api/entries", "/discuss", "/discuss.json", "/respond", "/api/moderation", "/api/cron/daily", "/archive/entries.json",
-                   "/adopt", "/adopt.json", "/api/adopt", "/archive/register.json"}
+                   "/adopt", "/adopt.json", "/api/adopt", "/archive/register.json", "/api/calendar", "/calendar.json"}
 def resolves(path):
     if any(path == f"/themes/{t['slug']}" for t in THEMES): return True   # a theme's page, served by the room's function
     if path in FUNCTION_ROUTES or re.match(r"^/(api/entries|discuss|adopt)/\d+$", path) or re.match(r"^/archive/(entries|register)/\d{4}-\d{2}-\d{2}\.json$", path): return True
@@ -182,13 +182,15 @@ check(sha256(prompt) == man["machine_prompt"]["sha256"], "prompt hash in manifes
 # 4. the home templates: filling them must give valid output
 T = json.loads((SITE / "api" / "home-templates.json").read_text("utf-8"))
 sample = {"__YEAR__": "3", "__DAYS_IN_YEAR__": "332", "__TOTAL__": "1428", "__TOTAL_FMT__": "1,428", "__NEXT_YEAR__": "4", "__NEXT_ISO__": "2026-11-30",
-          "__NEXT_HUMAN__": "30 November 2026", "__ASOF_ISO__": "2026-10-28T10:00Z", "__ASOF_HUMAN__": "2026-10-28 10:00 UTC"}
+          "__NEXT_HUMAN__": "30 November 2026", "__ASOF_ISO__": "2026-10-28T10:00Z", "__ASOF_HUMAN__": "2026-10-28 10:00 UTC",
+          "__CZ_ISO__": "2026-10-28", "__CZ_STAMP__": "CZ+3:332", "__CZ_DOYN__": "332", "__CZ_SINCE__": "3 years and 332 days", "__CZ_TO_NEXT_N__": "33", "__CZ_TO_NEXT__": "33 days"}
 # the room's two places on the first page (Phase 1, 29 Oct 2026) are filled by api/home.js from the database, after the clock and
 # last of all, so that nothing in an entry is ever filled again; with the database slow or down, both are left empty
 import subprocess
 ROOM_KEYS = ("__ROOM_COUNT__", "__ROOM_LATEST__")
 def fill(s, room=("", "")):
-    for k in ("__TOTAL_FMT__", "__YEAR__", "__DAYS_IN_YEAR__", "__TOTAL__", "__NEXT_YEAR__", "__NEXT_ISO__", "__NEXT_HUMAN__", "__ASOF_ISO__", "__ASOF_HUMAN__"):
+    for k in ("__TOTAL_FMT__", "__YEAR__", "__DAYS_IN_YEAR__", "__TOTAL__", "__NEXT_YEAR__", "__NEXT_ISO__", "__NEXT_HUMAN__", "__ASOF_ISO__", "__ASOF_HUMAN__",
+              "__CZ_ISO__", "__CZ_STAMP__", "__CZ_DOYN__", "__CZ_SINCE__", "__CZ_TO_NEXT_N__", "__CZ_TO_NEXT__"):
         s = s.replace(k, sample[k])
     for k, v in zip(ROOM_KEYS, room):
         s = s.replace(k, v)
@@ -221,7 +223,8 @@ for ext in ("html", "json", "txt"):
     check("__" not in re.sub(r"https?://\S+", "", filled), f"home template {ext}: placeholder left")
     if ext == "json":
         try:
-            o = json.loads(filled); check(o["year"] == 3 and o["elapsed"]["total_days"] == 1428, "home json numbers")
+            o = json.loads(filled); check(o["year"] == 3 and o["elapsed"]["total_days"] == 1428 and o["cz_time"]["day"] == 1428 and o["cz_time"]["day_of_year"] == 332
+                                          and o["cz_time"]["next_year_begins"]["in_days"] == 33 and o["cz_time"]["stamp"] == "CZ+3:332", "home json numbers")
         except Exception as e: fails.append(f"home json: {e}")
 # every quotation in the home template is verbatim (build asserts it; re-check the emitted bytes)
 for m in re.findall(r'<blockquote cite="/core#[^"]+" data-src="R"><p>(.*?)</p>', T["html"], re.S):
@@ -306,6 +309,44 @@ if BUNDLE_VERSION not in ("1.0-pre", "1.0"):
     with tarfile.open(b) as tar: check("verify/verify.py" in tar.getnames() and tar.extractfile("verify/verify.py").read() == VERIFY.read_bytes(), "bundle: verify/verify.py missing or different")
     r = subprocess.run([sys.executable, str(VERIFY), "--quiet", str(b)], capture_output=True, text=True)
     check(r.returncode == 0, f"verify.py on the bundle: {r.stdout[-600:]}")
+
+# 8. CZ time (the originator's decision of 30 Oct 2026): every page but the first carries the bar (the build's fallback, replaced at
+# request time) before the navigation; the first page's heading is today's date, linked to /calendar, with the converter under it, and
+# Coordinate Zero's Gregorian date appears once in its header and no other; the live templates are well formed; and the request-time
+# code (room/cztime.js) gives the stamps lib.py gives
+BAR = json.loads((SITE / "room" / "cz-bar.json").read_text("utf-8"))
+for _n in ("bar", "noform", "calform"):
+    _pb = P(); _pb.feed(BAR[_n]); check(not _pb.err and not _pb.stack, f"room/cz-bar.json {_n}: HTML nesting {_pb.err} {_pb.stack}")
+check(all(f"__CZ_SEL_{c}__" in BAR["bar"] and f"__CZ_SEL_{c}__" in BAR["calform"] for c, _ in CZ_CALENDARS) and "__CZ_VALUE__" in BAR["calform"] and "__CZ_STAMP__" in BAR["bar"],
+      "room/cz-bar.json: the placeholders")
+for f in pages + [pathlib.Path("virtual") / n for n in VIRTUAL]:
+    if f.name == "index.html": continue
+    h = VIRTUAL[f.name] if f.parent.name == "virtual" else f.read_text("utf-8")
+    _b = h.split("<body>", 1)[1].lstrip()
+    check(_b.startswith("<!--cz-now") and _b.count("<!--cz-now") == 1 and "<!--/cz-now-->" in _b and _b.index("<!--/cz-now-->") < _b.index('<nav class="site"'),
+          f"{f.name}: CZ time at the top, before the navigation")
+_hh = T["html"].split('<header id="top">', 1)[1].split("</header>", 1)[0]
+check(_hh.count("30 November 2022") == 1 and _hh.count("2022-11-30") == 1 and not re.search(r"\b20\d\d-\d\d-\d\d\b|November 20(2[3-9]|[3-9]\d)", _hh.replace("2022-11-30", "")) and "__ASOF" not in _hh,
+      "home: Coordinate Zero's date once in the header, and no other Gregorian date")
+_h1 = _hh.split("</h1>")[0]
+check('<h1 class="cz-h1"' in _hh and '<a href="/calendar"' in _h1 and '<time datetime="__CZ_ISO__">__CZ_STAMP__</time>' in _h1 and 'action="/calendar"' in _hh,
+      "home: the heading is today's date in CZ time, linked to /calendar, with the converter under it")
+_cal = (PUBLIC / "calendar.html").read_text("utf-8")
+check(_cal.count("<!--cz-cal-->") == 1 and _cal.count("<!--cz-now:noform-->") == 1 and all(f'id="{a}"' in _cal for a in ("how", "examples", "calendars", "beyond-earth", "machines", "sources")),
+      "calendar.html: the converter's place and every section")
+_days = sorted(set(range(-40000, 40001)) | set(range(cz_day(datetime.date(2, 1, 1)), cz_day(datetime.date(9998, 12, 31)), 97)) | {cz_day(d) for d, _ in CZ_EXAMPLES})
+_r = subprocess.run(["node", "-e", 'const C = require(process.argv[1]); process.stdout.write(JSON.parse(require("fs").readFileSync(0, "utf8")).map((D) => C.stamp(D, "-")).join("\\n"))',
+                     str(SITE / "room" / "cztime.js")], input=json.dumps(_days), capture_output=True, text=True)
+_js = _r.stdout.split("\n")
+check(_r.returncode == 0 and _js == [cz_stamp(D, "-") for D in _days], f"room/cztime.js and lib.py give different stamps ({_r.stderr[:200]})")
+check(cz_stamp(datetime.date(2026, 10, 30)) == "CZ+3:334" and cz_stamp(datetime.date(2017, 6, 12)) == "CZ−5:171" and cz_day(datetime.date(2026, 11, 30)) == 1461, "CZ time: the published examples")
+for fn in ("api/page.js", "api/calendar.js", "room/cztime.js", "api/home.js"):
+    _rc = subprocess.run(["node", "--check", str(SITE / fn)], capture_output=True)
+    check(_rc.returncode == 0, f"{fn}: syntax {_rc.stderr.decode()[:200]}")
+check(any(r.get("source") == "/calendar" and r.get("destination") == "/api/page?p=calendar" for r in v.get("rewrites", [])), "vercel.json: /calendar → api/page.js")
+for _src in ("/core", "/record", "/objections", "/ask", "/machine", "/about", "/archive"):
+    check(any(r.get("source") == _src and "has" not in r and r.get("destination") == f"/api/page?p={_src[1:]}" for r in v.get("rewrites", [])), f"vercel.json: {_src} → api/page.js (CZ time at the top)")
+check("public/*.html" in json.dumps(v.get("functions", {}).get("api/page.js", {})), "vercel.json: api/page.js carries the pages (includeFiles)")
 
 if fails:
     print("CHECK FAILED"); [print(" -", f) for f in fails]; sys.exit(1)

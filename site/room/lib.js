@@ -7,6 +7,7 @@
 //      CZ_ROOM_OPEN=1 (preview deployments only: behaves as open for testing; production opens by the build constant).
 const crypto = require("node:crypto");
 const T = require("../api/discuss-templates.json");
+const CZ = require("./cztime.js");
 
 // The public site. On a preview (the test base, with its own database) the addresses in responses name the preview,
 // where those entries exist (round 3, R3-1); production and everything built stay on the public address.
@@ -97,8 +98,10 @@ function html(res, status, page, headers = {}) {
   // its real Origin (under no-referrer a browser sends "Origin: null", which the register must refuse as it refuses other sites)
   res.setHeader("Referrer-Policy", "same-origin");
   res.setHeader("Content-Security-Policy", CSP);
-  for (const [k, v] of Object.entries(headers)) res.setHeader(k, v);
-  res.end(page);
+  // today's date in CZ time at the top of the page (the originator's decision of 30 Oct 2026), and a cache that ends at 00:00 UTC
+  const now = Date.now();
+  for (const [k, v] of Object.entries(headers)) res.setHeader(k, k.toLowerCase() === "cache-control" ? CZ.capCache(v, now) : v);
+  res.end(CZ.fillBar(page, now));
 }
 
 // The page shell comes from the build (same stylesheet, nav and footer as every static page). One pass over the template: every

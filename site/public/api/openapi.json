@@ -433,6 +433,53 @@
         }
       }
     },
+    "/api/calendar": {
+      "get": {
+        "summary": "CZ time: today, or a date converted, in CZ time (the stamp CZ+year:day and the day count) and in the Gregorian, Julian, Solar Hijri and Lunar Hijri calendars",
+        "parameters": [
+          {
+            "name": "d",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "maxLength": 80
+            },
+            "description": "The date: year-month-day in the calendar c (1405-08-08), a CZ stamp (CZ+3:334, CZ-5:171) or a CZ day count (CZ+1430); omitted, today (UTC)"
+          },
+          {
+            "name": "c",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "gregorian",
+                "solar-hijri",
+                "lunar-hijri",
+                "julian",
+                "cz"
+              ],
+              "default": "gregorian"
+            },
+            "description": "The calendar of d"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The day in every calendar",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CZDay"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Not a date this converter reads; error says why"
+          }
+        }
+      }
+    },
     "/api/moderation": {
       "get": {
         "summary": "The public moderation log (flags and decisions with model, prompt version, score, content hash), the keep decisions after flags, and the hidden/redacted list by month and language",
@@ -640,6 +687,92 @@
           "kind",
           "content_sha256"
         ]
+      },
+      "CZDay": {
+        "type": "object",
+        "description": "One day. CZ day 0 is 30 November 2022, the day that began at 00:00 UTC; day = JDN - 2459914.",
+        "properties": {
+          "cz": {
+            "type": "object",
+            "properties": {
+              "stamp": {
+                "type": "string",
+                "description": "CZ+N:ddd, or CZ−N:ddd with U+2212 before Coordinate Zero"
+              },
+              "stamp_ascii": {
+                "type": "string"
+              },
+              "machine": {
+                "type": "string",
+                "description": "The signed day count, CZ+1430 / CZ-1997"
+              },
+              "day": {
+                "type": "integer"
+              },
+              "sign": {
+                "type": "string",
+                "enum": [
+                  "+",
+                  "-"
+                ]
+              },
+              "year": {
+                "type": "integer"
+              },
+              "day_of_year": {
+                "type": "integer"
+              },
+              "days_in_year": {
+                "type": "integer"
+              }
+            }
+          },
+          "weekday": {
+            "type": "string"
+          },
+          "iso_weekday": {
+            "type": "integer"
+          },
+          "gregorian": {
+            "type": "object",
+            "description": "Proleptic before 1582; astronomical years (0 = 1 BCE)"
+          },
+          "julian": {
+            "type": "object"
+          },
+          "solar_hijri": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "description": "Years 1 to 3177 SH, else null"
+          },
+          "lunar_hijri": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "description": "Umm al-Qura 1343–1500 AH, tabular outside (method); null before 1 AH"
+          },
+          "jdn": {
+            "type": "integer"
+          },
+          "mjd": {
+            "type": "integer"
+          },
+          "unix_day": {
+            "type": "integer"
+          },
+          "rata_die": {
+            "type": "integer"
+          },
+          "begins_utc": {
+            "type": "string"
+          },
+          "from_today_days": {
+            "type": "integer"
+          }
+        }
       },
       "Submission": {
         "type": "object",

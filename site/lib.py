@@ -15,9 +15,33 @@ PRERELEASE = datetime.date(2026, 10, 28)   # first publication on this site (rea
 LAUNCH = datetime.date(2026, 11, 30)       # public launch; first day of Year 4; the foundation's anniversary
 REVIEW = datetime.date(2027, 11, 30)       # first scheduled review of the Core: Coordinate Zero's fifth anniversary, Year 5 begins
                                            # (the originator's decision of 29 Oct 2026; it replaced 30 Nov 2031, the launch's fifth)
+CZ_TIME_DECIDED = datetime.date(2026, 10, 30)   # CZ time became the basis of the site's dates (the originator's decision; CZ+3:334)
 CHARTER_DRAFT = datetime.date(2026, 11, 30)   # the review committee's charter, in draft for public comment
 CHARTER_FINAL = datetime.date(2027, 3, 31)    # ... and in final form
-def time_el(d): return f'<time datetime="{d.isoformat()}">{d.day} {d.strftime("%B %Y")}</time>'   # a date as the pages print it
+# CZ time (design/CZ-TIME.md; the originator's decision of 30 Oct 2026): the site's dates are counted from Coordinate Zero. CZ day 0 is
+# 30 November 2022, the day that began at 00:00 UTC; D = the date's Rata Die − 738,489. The stamp CZ+N:ddd reads like an age: N whole
+# years (each from one 30 November to the next) and ddd days after Coordinate Zero; before it, CZ−N:ddd is the mirror. The request-time
+# twin is room/cztime.js; site/check.py compares the two over every day of 1 to 9999.
+CZ_RD0 = 738489
+def cz_day(d): return d.toordinal() - CZ_RD0
+def cz_anniversary(n): return datetime.date(2022 + n, 11, 30).toordinal() - CZ_RD0   # the day CZ year n begins (n < 0: before CZ)
+def cz_parts(D):
+    """(sign, years, days): sign +1 from Coordinate Zero on, −1 before it."""
+    if D >= 0:
+        n = int(D // 365.2425)
+        while cz_anniversary(n) > D: n -= 1
+        while cz_anniversary(n + 1) <= D: n += 1
+        return 1, n, D - cz_anniversary(n)
+    n = max(0, int(-D // 365.2425))
+    while cz_anniversary(-n - 1) >= D: n += 1
+    while n > 0 and cz_anniversary(-n) < D: n -= 1
+    return -1, n, cz_anniversary(-n) - D
+def cz_stamp(d, minus="−"):
+    s, n, k = cz_parts(d if isinstance(d, int) else cz_day(d))
+    return f"CZ{minus if s < 0 else '+'}{n}:{k:03d}"
+def gregorian_text(d): return f"{d.day} {d.strftime('%B')} {d.year}"
+def time_el(d):   # a date as the pages print it: CZ time first, the Gregorian date beside it
+    return f'<time datetime="{d.isoformat()}">{cz_stamp(d)}</time> ({gregorian_text(d)})'
 BLUEPRINT = "1.3.1"
 PROMPT_VERSION = "cz-machine-1.0"
 ROOM_OPEN = True                           # flipped on the day the room's rules (§7) were verified; the functions read it from api/discuss-templates.json
@@ -194,9 +218,19 @@ def clock(now):
     anniv = datetime.datetime(2022 + year, 11, 30, tzinfo=datetime.timezone.utc)
     z = datetime.datetime(2022, 11, 30, tzinfo=datetime.timezone.utc)
     nxt = datetime.datetime(2022 + year + 1, 11, 30, tzinfo=datetime.timezone.utc)
-    return dict(year=year, days_in_year=(now - anniv).days, total=(now - z).days, next_year=year + 1,
+    total = (now - z).days
+    _, _, doy = cz_parts(total)
+    to_next = cz_anniversary(year + 1) - total
+    return dict(year=year, days_in_year=(now - anniv).days, total=total, next_year=year + 1,
                 next_iso=nxt.date().isoformat(), next_human=nxt.strftime("%-d %B %Y"),
-                asof_iso=now.strftime("%Y-%m-%dT%H:%MZ"), asof_human=now.strftime("%Y-%m-%d %H:%M UTC"))
+                asof_iso=now.strftime("%Y-%m-%dT%H:%MZ"), asof_human=now.strftime("%Y-%m-%d %H:%M UTC"),
+                cz_iso=now.date().isoformat(), cz_stamp=cz_stamp(total), cz_doyn=doy, cz_since=cz_since_text(year, doy),
+                cz_to_next_n=to_next, cz_to_next=plural(to_next, "day"))
+
+def plural(n, word): return f"{n:,} {word}{'' if n == 1 else 's'}"
+def cz_since_text(years, days):   # "3 years and 334 days", as api/home.js writes it
+    if years and days: return f"{plural(years, 'year')} and {plural(days, 'day')}"
+    return plural(years, "year") if years else plural(days, "day")
 
 
 # ---------------------------------------------------------------- the shell
@@ -258,6 +292,13 @@ form.respond textarea{min-height:12rem}form.respond input[type=checkbox],form.re
 main,header,footer{overflow-wrap:break-word}th,td{overflow-wrap:break-word}@media(max-width:40em){td a,td code{overflow-wrap:anywhere}}
 /* H: WCAG 2.2 target size (2.5.8) and the platforms' touch guidance: every control at least 2.5rem tall. */
 button,select,input:not([type=checkbox]):not([type=radio]){min-height:2.5rem;box-sizing:border-box}
+/* E (the originator's decision of 30 Oct 2026): CZ time is the site's basis — today in CZ time at the top of every page, linked to how it works, and a converter under it. M: a plain form, no script. */
+aside.cz-now{max-width:70ch;margin:0 auto;padding:.6rem 1rem .7rem;border-bottom:1px solid var(--rule);font-size:.9em}
+aside.cz-now p{margin:0 0 .35rem}.cz-stamp{font-weight:700;font-size:1.45em}aside.cz-now form.cz-conv{font-size:1em}
+form.cz-conv{display:flex;flex-wrap:wrap;gap:.4rem .5rem;align-items:center;margin:.3rem 0 0;font-size:.9em}
+form.cz-conv input,form.cz-conv select{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--rule);padding:.2rem .4rem}form.cz-conv input{width:15ch}
+h1.cz-h1{font-size:2.6em;margin:.4rem 0 .2rem;letter-spacing:.02em}h1.cz-h1 time{font-size:1em}
+table.cz-result th{width:30%;font-weight:600}.cz-native{font-family:system-ui,sans-serif}
 """
 
 NAV = ('<nav class="site" aria-label="Site"><a href="/">CZ · Civilization Zero</a> · <a href="/core">Core</a> · '
@@ -265,7 +306,46 @@ NAV = ('<nav class="site" aria-label="Site"><a href="/">CZ · Civilization Zero<
        '<a href="/machine">Machine</a> · <a href="/about">About</a> · <a href="/archive">Archive</a></nav>')
 
 FOOTER = (f'<footer><hr><p class="exact">Text CC BY 4.0 · Code MIT · <a href="{REPO}">source</a> · '
-          f'<a href="mailto:{CONTACT}">{CONTACT}</a> · Coordinate Zero <time datetime="2022-11-30">2022-11-30</time> · UTC</p></footer>')
+          f'<a href="mailto:{CONTACT}">{CONTACT}</a> · Coordinate Zero <time datetime="2022-11-30">2022-11-30</time> = <a href="/calendar">CZ+0:000</a> · UTC</p></footer>')
+
+# ---------------------------------------------------------------- CZ time at the top of every page (the originator's decision of 30 Oct 2026)
+# Every page but the first carries the bar between <!--cz-now--> and <!--/cz-now-->: the build writes a fallback there (for copies of the
+# site that serve these files as they are: no date, links to this site), and the functions (api/page.js and the room's) put the live bar
+# in its place at request time from room/cz-bar.json, filled by room/cztime.js. On the first page the date is the page's heading.
+CZ_CALENDARS = [("gregorian", "Gregorian · میلادی"), ("solar-hijri", "Solar Hijri · شمسی"), ("lunar-hijri", "Lunar Hijri · قمری · هجري"),
+                ("julian", "Julian"), ("cz", "CZ time")]
+def cz_form(prefix, selected="gregorian", value="", origin="", label="Convert a date", button="To CZ time"):
+    """The converter: a GET form to /calendar. selected=None leaves __CZ_SEL_<calendar>__ placeholders for room/cztime.js to fill;
+    value=None leaves __CZ_VALUE__."""
+    opts = "".join(f'<option value="{c}"{(f"__CZ_SEL_{c}__" if selected is None else " selected" if c == selected else "")}>{esc(n)}</option>' for c, n in CZ_CALENDARS)
+    v = "__CZ_VALUE__" if value is None else esc(value)
+    return (f'<form class="cz-conv" action="{origin}/calendar" method="get"><label for="{prefix}-d">{label}</label> '
+            f'<input id="{prefix}-d" name="d" value="{v}" placeholder="YYYY-MM-DD" dir="auto" autocomplete="off" spellcheck="false" maxlength="40"> '
+            f'<select id="{prefix}-c" name="c" aria-label="The calendar of that date">{opts}</select> <button type="submit">{button}</button></form>')
+_CZ_LINE = ('<p><a class="cz-stamp" href="/calendar" aria-describedby="cz-read"><time datetime="__CZ_ISO__">__CZ_STAMP__</time></a> '
+            '<span class="cz-read" id="cz-read">Year __CZ_YEAR__, day __CZ_DOYN__ · __CZ_DAYS_FMT__ days since Coordinate Zero · <a href="/calendar#how">how CZ time works</a></span></p>')
+CZ_BAR = {   # the live bar, filled by room/cztime.js (fillBar); "noform" is the calendar page's own, whose form is the page
+    "bar": f'<aside class="cz-now" aria-label="CZ time" lang="en" dir="ltr">{_CZ_LINE}{cz_form("czb", selected=None)}</aside>',
+    "noform": f'<aside class="cz-now" aria-label="CZ time" lang="en" dir="ltr">{_CZ_LINE}</aside>',
+}
+# the examples on /calendar: each stamp computed by lib.py and compared with room/cztime.js by site/check.py
+CZ_EXAMPLES = [
+    (datetime.date(1969, 7, 20), "Apollo 11 lands on the Moon"),
+    (datetime.date(2017, 6, 12), "“Attention Is All You Need”, the paper that introduced the Transformer, is posted to arXiv"),
+    (datetime.date(2022, 11, 29), "the day before Coordinate Zero"),
+    (COORDINATE, "Coordinate Zero (Core §0)"),
+    (PRERELEASE, "this site is published; the open discussion opens"),
+    (CZ_TIME_DECIDED, "CZ time becomes the basis of this site's dates"),
+    (LAUNCH, "public launch; Year 4 begins"),
+    (REVIEW, "the first scheduled review of the Core; Year 5 begins"),
+    (datetime.date(3022, 11, 30), "a thousand years after Coordinate Zero"),
+    (datetime.date(1022, 11, 30), "a thousand years before it (Gregorian; 24 November 1022 in the Julian calendar)"),
+]
+def cz_bar_fallback(variant="bar", selected="gregorian"):
+    line = (f'<p><a class="cz-stamp" href="{ORIGIN}/calendar">CZ time</a> <span class="cz-read">Days counted from Coordinate Zero, '
+            f'<time datetime="2022-11-30">CZ+0:000</time> · <a href="{ORIGIN}/calendar#how">how CZ time works</a></span></p>')
+    inner = line + ("" if variant == "noform" else cz_form("czb", selected=selected, origin=ORIGIN))
+    return f'<!--cz-now{"" if variant == "bar" else ":" + variant}--><aside class="cz-now" aria-label="CZ time" lang="en" dir="ltr">{inner}</aside><!--/cz-now-->'
 
 
 # Search and link-preview metadata (Blueprint §3.1: crawlers, indexers and archivers are readers too). Named standards only —
@@ -274,7 +354,7 @@ FOOTER = (f'<footer><hr><p class="exact">Text CC BY 4.0 · Code MIT · <a href="
 GOOGLE_SITE_VERIFICATION = "Hf73qd5zTa6JZ_-O6QM0JBYPSqxOdIM-M33lsIGihhg"   # Google Search Console ("HTML tag" method), property https://civilizationzero.ai/, added by the originator on 29 Oct 2026; keep it, or the property loses its verification
 OG_IMAGE = ("/og.png", 1200, 630, "CZ, the mark of Civilization Zero: a Z inside a ring left open")
 
-def shell(title, body, path, description, alternates=(), ldjson=None, nav=True, extra_head="", hreflangs=(), og_type="website", robots=None, crumbs=True):
+def shell(title, body, path, description, alternates=(), ldjson=None, nav=True, extra_head="", hreflangs=(), og_type="website", robots=None, crumbs=True, cz_bar="bar", cz_select="gregorian"):
     alt = "".join(f'<link rel="alternate" type="{t}" href="{h}" title="{esc(n)}">' for t, h, n in alternates)
     hl = "".join(f'<link rel="alternate" hreflang="{l}" href="{ORIGIN}{h}">' for l, h in hreflangs)
     objs = list(ldjson or [])
@@ -304,7 +384,7 @@ def shell(title, body, path, description, alternates=(), ldjson=None, nav=True, 
 {"".join(f'<link rel="me" href="{esc(u)}">' for u in SOCIAL)}{f'<meta name="fediverse:creator" content="{esc(FEDIVERSE_CREATOR)}">' if FEDIVERSE_CREATOR else ""}<style>{CSS}</style>
 {ld}{extra_head}</head>
 <body>
-{NAV if nav else ""}
+{cz_bar_fallback(cz_bar, cz_select) + chr(10) if nav and cz_bar else ""}{NAV if nav else ""}
 {body}
 {FOOTER}
 </body>
@@ -320,12 +400,12 @@ class _Text(HTMLParser):
     def __init__(self):
         super().__init__(); self.out = []; self.skip = 0; self.cell = False
     def handle_starttag(self, t, a):
-        if t in ("style", "script", "title", "svg", "head"): self.skip += 1
+        if t in ("style", "script", "title", "svg", "head", "form"): self.skip += 1   # a form (the converter) is no text
         if t == "br": self.out.append("\n")
         if t in self.BLOCK: self.out.append("\n")
         if t in ("td", "th"): self.cell = True
     def handle_endtag(self, t):
-        if t in ("style", "script", "title", "svg", "head"): self.skip -= 1
+        if t in ("style", "script", "title", "svg", "head", "form"): self.skip -= 1
         if t in self.BLOCK: self.out.append("\n")
         if t in ("td", "th"): self.out.append("  ")
     def handle_data(self, d):

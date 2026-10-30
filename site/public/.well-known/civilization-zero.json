@@ -464,7 +464,17 @@
       "json": "https://civilizationzero.ai/index.json",
       "txt": "https://civilizationzero.ai/index.txt"
     },
-    "negotiation": "Accept: application/json | text/plain on /, /core, /record"
+    "negotiation": "Accept: application/json | text/plain on /, /core, /record; Accept: application/json on /calendar"
+  },
+  "cz_time": {
+    "decided": "2026-10-30",
+    "epoch": "2022-11-30T00:00:00Z",
+    "day": "a UTC day; CZ day D = JDN - 2459914 = MJD - 59913 = floor(unix / 86400) - 19326",
+    "stamp": "CZ+N:ddd: N whole years (each from one 30 November to the next) and ddd days after Coordinate Zero; CZ-N:ddd: N whole years and ddd days before it, counted back from the Nth 30 November before it",
+    "machine": "the signed day count: CZ+1430, CZ-1997",
+    "page": "https://civilizationzero.ai/calendar",
+    "api": "https://civilizationzero.ai/api/calendar",
+    "spec": "https://github.com/civilizationzero/civilizationzero/blob/main/design/CZ-TIME.md"
   },
   "licence": {
     "text": "CC-BY-4.0",

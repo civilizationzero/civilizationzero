@@ -24,7 +24,7 @@
       "permanent": true
     },
     {
-      "source": "/:page(core|record|objections|ask|machine|about|archive).html",
+      "source": "/:page(core|record|objections|ask|machine|about|archive|calendar).html",
       "destination": "/:page",
       "permanent": true
     },
@@ -139,6 +139,17 @@
       "destination": "/api/adopt?id=:id"
     },
     {
+      "source": "/calendar",
+      "has": [
+        {
+          "type": "header",
+          "key": "accept",
+          "value": "^(?!.*text/html(?!\\s*;\\s*q\\s*=\\s*0(?:\\.0{0,3})?\\s*(?:,|$)))(?!.*application/json\\s*;\\s*q\\s*=\\s*0(?:\\.0{0,3})?\\s*(?:,|$)).*application/json.*"
+        }
+      ],
+      "destination": "/api/calendar"
+    },
+    {
       "source": "/",
       "destination": "/api/home?f=html"
     },
@@ -152,19 +163,19 @@
     },
     {
       "source": "/core",
-      "destination": "/core.html"
+      "destination": "/api/page?p=core"
     },
     {
       "source": "/core.:lang([a-z]{2,3}|[a-z]{2,3}-[A-Za-z0-9]+)",
-      "destination": "/core.:lang.html"
+      "destination": "/api/page?p=core.:lang"
     },
     {
       "source": "/record",
-      "destination": "/record.html"
+      "destination": "/api/page?p=record"
     },
     {
       "source": "/objections",
-      "destination": "/objections.html"
+      "destination": "/api/page?p=objections"
     },
     {
       "source": "/discuss",
@@ -180,19 +191,27 @@
     },
     {
       "source": "/ask",
-      "destination": "/ask.html"
+      "destination": "/api/page?p=ask"
     },
     {
       "source": "/machine",
-      "destination": "/machine.html"
+      "destination": "/api/page?p=machine"
     },
     {
       "source": "/about",
-      "destination": "/about.html"
+      "destination": "/api/page?p=about"
     },
     {
       "source": "/archive",
-      "destination": "/archive.html"
+      "destination": "/api/page?p=archive"
+    },
+    {
+      "source": "/calendar",
+      "destination": "/api/page?p=calendar"
+    },
+    {
+      "source": "/calendar.json",
+      "destination": "/api/calendar"
     },
     {
       "source": "/adopt",
@@ -315,6 +334,28 @@
         {
           "key": "Link",
           "value": "</discuss.json>; rel=\"alternate\"; type=\"application/json\""
+        }
+      ]
+    },
+    {
+      "source": "/calendar",
+      "headers": [
+        {
+          "key": "Vary",
+          "value": "Accept"
+        },
+        {
+          "key": "Link",
+          "value": "</calendar.json>; rel=\"alternate\"; type=\"application/json\", </api/openapi.json>; rel=\"service-desc\"; type=\"application/vnd.oai.openapi+json\""
+        }
+      ]
+    },
+    {
+      "source": "/calendar.json",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
         }
       ]
     },
@@ -678,6 +719,13 @@
     },
     "api/admin.js": {
       "maxDuration": 30
+    },
+    "api/page.js": {
+      "maxDuration": 10,
+      "includeFiles": "public/*.html"
+    },
+    "api/calendar.js": {
+      "maxDuration": 10
     }
   }
 }

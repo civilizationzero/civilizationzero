@@ -3,6 +3,7 @@ Allow: /
 Disallow: /*?translate=
 Disallow: /discuss?
 Disallow: /discuss/*?
+Disallow: /calendar?
 Disallow: /admin
 Sitemap: https://civilizationzero.ai/sitemap.xml
 Sitemap: https://civilizationzero.ai/sitemap.txt

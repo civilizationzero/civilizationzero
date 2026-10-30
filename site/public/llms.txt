@@ -19,6 +19,10 @@ The record's identity is its hash, not its address.
 - Verify without trusting this site: https://civilizationzero.ai/archive/verify.py (Python 3.8+, standard library only; signatures, hashes, timestamp paths, the discussion's daily chain at https://civilizationzero.ai/archive/entries.json)
 - [Archive](https://civilizationzero.ai/archive): bundle https://civilizationzero.ai/archive/cz-bundle-1.0.1.tar (SHA-256 fbdc85ef889f3698ffc0338e2348cee37e28359395e24563d0df8e458e0918af; canonical texts signed; bundle signed), mirrors, succession. Deposit: https://doi.org/10.5281/zenodo.23751341 (all versions: https://doi.org/10.5281/zenodo.23740317).
 
+## CZ time
+- The site's dates are counted from Coordinate Zero: CZ day 0 is 30 November 2022, the day that began at 00:00 UTC; a CZ day is a UTC day. CZ+N:ddd is N whole years (each from one 30 November to the next) and ddd days after it; CZ−N:ddd mirrors it before. The machine form is the signed day count, CZ+1430; day = JDN − 2459914.
+- How it works, with a converter from the Gregorian, Solar Hijri, Lunar Hijri and Julian calendars: https://civilizationzero.ai/calendar. As data: https://civilizationzero.ai/api/calendar (today) or https://civilizationzero.ai/api/calendar?d=2026-10-30&c=gregorian
+
 ## Responding
 - The discussion room is open since 2026-10-28T18:29:12Z. Rules: https://civilizationzero.ai/discuss#rules. Archive: https://civilizationzero.ai/discuss.json. API contract: https://civilizationzero.ai/api/openapi.json. Moderation log: https://civilizationzero.ai/api/moderation
 - Published prompt for a model asked to read and respond: https://civilizationzero.ai/prompts/cz-machine-1.0.txt (SHA-256 f871380dfe1b53e74ff8c4353fc95d60faa180edca36122ca7bbe8313ba2829a)

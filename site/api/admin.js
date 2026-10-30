@@ -13,6 +13,7 @@
 "use strict";
 const crypto = require("node:crypto");
 const R = require("../room/lib.js");
+const CZ = require("../room/cztime.js");
 const G = require("../room/register.js");
 const { ORIGIN, CONTACT, esc, rpc, rest } = R;
 
@@ -117,7 +118,7 @@ function send(res, status, body, headers = {}) {
   res.setHeader("Referrer-Policy", "same-origin");
   res.setHeader("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'; img-src 'self' data:; form-action 'self'; base-uri 'none'; frame-ancestors 'none'");
   for (const [k, v] of Object.entries(headers)) res.setHeader(k, v);
-  res.end(body);
+  res.end(CZ.fillBar(body, Date.now()));   // today's date in CZ time at the top, as on every page
 }
 const page = (title, body) => R.shell({ title: `${title} · Civilization Zero`, path: "/admin", description: "The administrator's page of civilizationzero.ai.",
   head: '<meta name="robots" content="noindex, nofollow">\n<style>.admin form{margin:.75rem 0}.admin fieldset{border:1px solid var(--rule);margin:1rem 0;padding:.5rem .75rem}.admin .row{display:flex;flex-wrap:wrap;gap:.5rem;align-items:end}.admin .row label{flex:1 1 12rem}.admin .notice{border:2px solid var(--fg);padding:.5rem .75rem}.admin .content{white-space:pre-wrap;word-break:break-word;border-left:2px solid var(--rule);padding-left:.75rem}</style>\n',

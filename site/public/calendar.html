@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CZ time: dates counted from Coordinate Zero · Civilization Zero</title>
+<meta name="description" content="How the dates of Civilization Zero are written — CZ+year:day from Coordinate Zero, 30 November 2022 — with a converter from the Gregorian, Solar Hijri, Lunar Hijri and Julian calendars.">
+<meta name="google-site-verification" content="Hf73qd5zTa6JZ_-O6QM0JBYPSqxOdIM-M33lsIGihhg">
+<link rel="canonical" href="https://civilizationzero.ai/calendar">
+<link rel="alternate" type="application/json" href="/calendar.json" title="Today in CZ time, as data"><link rel="service-desc" type="application/vnd.oai.openapi+json" href="/api/openapi.json">
+<meta property="og:site_name" content="Civilization Zero"><meta property="og:type" content="website"><meta property="og:title" content="CZ time: dates counted from Coordinate Zero · Civilization Zero"><meta property="og:description" content="How the dates of Civilization Zero are written — CZ+year:day from Coordinate Zero, 30 November 2022 — with a converter from the Gregorian, Solar Hijri, Lunar Hijri and Julian calendars."><meta property="og:url" content="https://civilizationzero.ai/calendar"><meta property="og:image" content="https://civilizationzero.ai/og.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="CZ, the mark of Civilization Zero: a Z inside a ring left open"><meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)"><meta name="theme-color" content="#101010" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="/favicon-96x96.png" type="image/png" sizes="96x96"><link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="shortcut icon" href="/favicon.ico"><link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180"><link rel="manifest" href="/site.webmanifest"><meta name="apple-mobile-web-app-title" content="Civilization Zero">
+<link rel="me" href="https://bsky.app/profile/civilizationzero.ai"><link rel="me" href="https://x.com/czrecord"><link rel="me" href="https://mastodon.social/@civilizationzero"><meta name="fediverse:creator" content="@civilizationzero@mastodon.social"><style>
+/* H + C: no typeface is shipped; the generic family is chosen (the smallest choice available) so the reader's device renders every script. Nothing to rot. */
+html{font-family:system-ui,sans-serif;font-size:100%;line-height:1.5}
+/* H: two palettes, each at contrast >= 7:1 (WCAG 2.2 AAA, 1.4.6); which one shows follows the reader's preference. */
+:root{color-scheme:light dark;--fg:#111;--bg:#fff;--mute:#555;--rule:#bbb}
+@media(prefers-color-scheme:dark){:root{--fg:#eee;--bg:#101010;--mute:#aaa;--rule:#444}}
+body{margin:0;color:var(--fg);background:var(--bg)}
+/* H: a measure of 45–75 characters for sustained reading (a convention, stated as one); 70ch. Gutter 1rem on narrow screens. */
+main,header,footer,nav.site{max-width:70ch;margin:0 auto;padding:0 1rem}
+/* H + M: links are marked by underline, not by colour alone (WCAG 2.2, 1.4.1). */
+a{color:inherit;text-decoration:underline;text-underline-offset:.15em}
+/* R §15 / M: the record's structure is the layout. Headings keep their semantic level and the browser's default sizes; only spacing is set. */
+h1,h2,h3{line-height:1.2}h2{margin-top:2.5rem}h3{margin-top:1.75rem}
+/* M: exact values (dates, counts, hashes, endpoints) in monospace so that their boundaries are unambiguous. */
+time,data,code,pre,.exact{font-family:ui-monospace,monospace;font-size:.95em}
+pre{white-space:pre-wrap;word-break:break-word;border:1px solid var(--rule);padding:.75rem}
+hr{border:0;border-top:1px solid var(--rule);margin:2.5rem 0}
+/* E (Blueprint decision 28): two doors, before anything else; equal width — equal standing. */
+nav.readers{display:flex;gap:1rem;padding:1rem;border-bottom:1px solid var(--rule)}
+nav.readers a{flex:1;text-align:center}
+nav.site{padding-top:1rem;padding-bottom:1rem;border-bottom:1px solid var(--rule);font-size:.9em}
+/* H: WCAG 2.2 target size (2.5.8): each link of the site's navigation at least 24 pixels tall, also where the row wraps on a phone. */
+nav.site a{display:inline-block;padding:.3rem 0}
+blockquote{margin:1rem 0;padding-left:1rem;border-left:2px solid var(--rule)}
+blockquote p{margin:.25rem 0}
+.src{color:var(--mute);font-size:.8em}
+table{border-collapse:collapse;width:100%;font-size:.9em}th,td{text-align:left;vertical-align:top;padding:.4rem .5rem;border-bottom:1px solid var(--rule)}
+code.hash{word-break:break-all;display:block}
+ul,ol{padding-left:1.25rem}
+.pending{border:1px dashed var(--rule);padding:.5rem .75rem}
+/* the discussion room: entries are user content, shown as text; a group is one declared source's consecutive entries (Blueprint §7.4) */
+.entry{margin:1.5rem 0;padding-top:.5rem;border-top:1px solid var(--rule)}
+.entry .content{white-space:pre-wrap;word-break:break-word;margin:.5rem 0}
+.entry .meta{margin:.25rem 0}
+.group{margin-bottom:.5rem}
+.scroll{overflow-x:auto}
+.filters{display:flex;flex-wrap:wrap;gap:.75rem;align-items:end;font-size:.9em;margin:1rem 0}
+/* E: the room one click from the first screen, and its sections as topics (the originator's decision of 29 Oct 2026, after his AI review team) */
+p.room-line{border-left:3px solid var(--fg);padding-left:.75rem}ul.sections{columns:2 16rem;column-gap:2rem}ul.sections li{break-inside:avoid;margin:.2rem 0}
+.filters select,.filters input{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--rule);padding:.2rem .3rem}
+form.respond label{display:block;margin:.75rem 0}form.respond input,form.respond select,form.respond textarea{font:inherit;width:100%;box-sizing:border-box;padding:.4rem;border:1px solid var(--rule);background:var(--bg);color:var(--fg)}
+form.respond textarea{min-height:12rem}form.respond input[type=checkbox],form.respond input[type=radio]{width:1.25rem;height:1.25rem;vertical-align:-.25rem;margin:0 .5rem 0 0}form.respond fieldset{border:1px solid var(--rule);margin:.75rem 0}button{font:inherit;padding:.4rem .9rem;border:1px solid var(--fg);background:var(--bg);color:var(--fg)}
+/* H: WCAG 2.2 reflow (1.4.10): nothing wider than a 320-pixel screen. A word breaks only when it cannot fit its line; on a narrow screen a long address or code in a table cell may break anywhere, so the table never widens the page and headings are never cut mid-word. */
+main,header,footer{overflow-wrap:break-word}th,td{overflow-wrap:break-word}@media(max-width:40em){td a,td code{overflow-wrap:anywhere}}
+/* H: WCAG 2.2 target size (2.5.8) and the platforms' touch guidance: every control at least 2.5rem tall. */
+button,select,input:not([type=checkbox]):not([type=radio]){min-height:2.5rem;box-sizing:border-box}
+/* E (the originator's decision of 30 Oct 2026): CZ time is the site's basis — today in CZ time at the top of every page, linked to how it works, and a converter under it. M: a plain form, no script. */
+aside.cz-now{max-width:70ch;margin:0 auto;padding:.6rem 1rem .7rem;border-bottom:1px solid var(--rule);font-size:.9em}
+aside.cz-now p{margin:0 0 .35rem}.cz-stamp{font-weight:700;font-size:1.45em}aside.cz-now form.cz-conv{font-size:1em}
+form.cz-conv{display:flex;flex-wrap:wrap;gap:.4rem .5rem;align-items:center;margin:.3rem 0 0;font-size:.9em}
+form.cz-conv input,form.cz-conv select{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--rule);padding:.2rem .4rem}form.cz-conv input{width:15ch}
+h1.cz-h1{font-size:2.6em;margin:.4rem 0 .2rem;letter-spacing:.02em}h1.cz-h1 time{font-size:1em}
+table.cz-result th{width:30%;font-weight:600}.cz-native{font-family:system-ui,sans-serif}
+</style>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Civilization Zero", "item": "https://civilizationzero.ai/"}, {"@type": "ListItem", "position": 2, "name": "CZ time: dates counted from Coordinate Zero", "item": "https://civilizationzero.ai/calendar"}]}</script></head>
+<body>
+<!--cz-now:noform--><aside class="cz-now" aria-label="CZ time" lang="en" dir="ltr"><p><a class="cz-stamp" href="https://civilizationzero.ai/calendar">CZ time</a> <span class="cz-read">Days counted from Coordinate Zero, <time datetime="2022-11-30">CZ+0:000</time> · <a href="https://civilizationzero.ai/calendar#how">how CZ time works</a></span></p></aside><!--/cz-now-->
+<nav class="site" aria-label="Site"><a href="/">CZ · Civilization Zero</a> · <a href="/core">Core</a> · <a href="/record">Record</a> · <a href="/objections">Objections</a> · <a href="/discuss">Discussion</a> · <a href="/machine">Machine</a> · <a href="/about">About</a> · <a href="/archive">Archive</a></nav>
+<main>
+<h1>CZ time</h1>
+<p>Every date on this site is counted from Coordinate Zero. Today's date in CZ time is at the top of every page; this page says how it is counted, and converts a date from the Gregorian, Solar Hijri, Lunar Hijri or Julian calendar to it.</p>
+<!--cz-cal--><form class="cz-conv" action="https://civilizationzero.ai/calendar" method="get"><label for="cal-d">Date</label> <input id="cal-d" name="d" value="" placeholder="YYYY-MM-DD" dir="auto" autocomplete="off" spellcheck="false" maxlength="40"> <select id="cal-c" name="c" aria-label="The calendar of that date"><option value="gregorian" selected>Gregorian · میلادی</option><option value="solar-hijri">Solar Hijri · شمسی</option><option value="lunar-hijri">Lunar Hijri · قمری · هجري</option><option value="julian">Julian</option><option value="cz">CZ time</option></select> <button type="submit">Convert</button></form><p class="src">Today's date and the conversions are computed at <a href="https://civilizationzero.ai/calendar">https://civilizationzero.ai/calendar</a>.</p><!--/cz-cal-->
+
+<section id="how" aria-labelledby="h-how"><h2 id="h-how">How CZ time works</h2>
+<p><strong>Day 0 is Coordinate Zero: 30 November 2022, the day that began at 00:00 UTC.</strong></p>
+<blockquote cite="/core#p0" data-src="R"><p>30 November 2022 is selected as Year Zero of this record: the public threshold at which ordinary language became a mass interface between humans and general-purpose nonhuman intelligence.</p><p class="src"><a href="/core#p0">CZ-CORE 1.0 §0</a></p></blockquote>
+<ul>
+<li><strong>The day count.</strong> Each day after it adds one, each day before it takes one away: 30 October 2026 is day 1,430; 29 November 2022 is day −1. A CZ day is a UTC day, so it begins at the same moment everywhere: 00:00 UTC is 03:30 in Tehran, 08:00 in Kuala Lumpur and 19:00 the evening before in New York (in winter).</li>
+<li><strong>The stamp, CZ+N:ddd,</strong> reads like an age: N whole years and ddd days after Coordinate Zero. A CZ year runs from one 30 November to the next, so every anniversary is day 000 of a new year: <code>CZ+4:000</code> is 30 November 2026, and 30 October 2026 is <code>CZ+3:334</code>, 3 years and 334 days after Coordinate Zero. Year 0 is the record's Year Zero.</li>
+<li><strong>Before Coordinate Zero, CZ−N:ddd</strong> is the mirror: N whole years and ddd days before it, counted back from the Nth 30 November before it. 29 November 2022 is <code>CZ−0:001</code>; 12 June 2017 is <code>CZ−5:171</code>.</li>
+<li><strong>A year has 365 days, or 366</strong> when it contains a 29 February: CZ years 1, 5, 9 … (29 February 2024, 2028 …). The leap years are the Gregorian calendar's, because a CZ year runs between two of its dates.</li>
+<li><strong>The machine form</strong> is the day count with its sign, in ASCII: <code>CZ+1430</code>, <code>CZ-1997</code>. It sorts in time order and converts exactly: day = Julian Day Number − 2,459,914 = Modified Julian Date − 59,913 = ⌊Unix time ÷ 86,400⌋ − 19,326.</li>
+<li><strong>The weekday</strong>: day 0 was a Wednesday; the ISO weekday of day D is ((D + 2) mod 7) + 1, Monday = 1.</li>
+<li><strong>A time of day</strong> is written in UTC after the stamp: <code>CZ+3:334 09:15 UTC</code>.</li>
+</ul>
+</section>
+
+<section id="examples" aria-labelledby="h-ex"><h2 id="h-ex">Examples</h2>
+<div class="scroll"><table>
+<tr><th>CZ time</th><th>Day</th><th>Gregorian</th><th>Note</th></tr>
+<tr><td><code>CZ−53:133</code></td><td><data value="-19491">−19,491</data></td><td><time datetime="1969-07-20">20 July 1969</time></td><td>Apollo 11 lands on the Moon</td></tr><tr><td><code>CZ−5:171</code></td><td><data value="-1997">−1,997</data></td><td><time datetime="2017-06-12">12 June 2017</time></td><td>“Attention Is All You Need”, the paper that introduced the Transformer, is posted to arXiv</td></tr><tr><td><code>CZ−0:001</code></td><td><data value="-1">−1</data></td><td><time datetime="2022-11-29">29 November 2022</time></td><td>the day before Coordinate Zero</td></tr><tr><td><code>CZ+0:000</code></td><td><data value="0">0</data></td><td><time datetime="2022-11-30">30 November 2022</time></td><td>Coordinate Zero (Core §0)</td></tr><tr><td><code>CZ+3:332</code></td><td><data value="1428">1,428</data></td><td><time datetime="2026-10-28">28 October 2026</time></td><td>this site is published; the open discussion opens</td></tr><tr><td><code>CZ+3:334</code></td><td><data value="1430">1,430</data></td><td><time datetime="2026-10-30">30 October 2026</time></td><td>CZ time becomes the basis of this site&#x27;s dates</td></tr><tr><td><code>CZ+4:000</code></td><td><data value="1461">1,461</data></td><td><time datetime="2026-11-30">30 November 2026</time></td><td>public launch; Year 4 begins</td></tr><tr><td><code>CZ+5:000</code></td><td><data value="1826">1,826</data></td><td><time datetime="2027-11-30">30 November 2027</time></td><td>the first scheduled review of the Core; Year 5 begins</td></tr><tr><td><code>CZ+1000:000</code></td><td><data value="365242">365,242</data></td><td><time datetime="3022-11-30">30 November 3022</time></td><td>a thousand years after Coordinate Zero</td></tr><tr><td><code>CZ−1000:000</code></td><td><data value="-365243">−365,243</data></td><td><time datetime="1022-11-30">30 November 1022</time></td><td>a thousand years before it (Gregorian; 24 November 1022 in the Julian calendar)</td></tr>
+</table></div>
+</section>
+
+<section id="long" aria-labelledby="h-long"><h2 id="h-long">Very long spans</h2>
+<p>The stamp grows a digit when the years do; nothing in it runs out. Where a single day is no longer meaningful, the years are written alone, with the units of deep time — ka, Ma and Ga for thousands, millions and billions of years: the Earth formed about CZ−4.54 Ga. A date is written no more precisely than it is known.</p>
+</section>
+
+<section id="calendars" aria-labelledby="h-cal"><h2 id="h-cal">Converting from other calendars</h2>
+<ul>
+<li><strong>Gregorian</strong> — the civil calendar of most of the world, extended back before its introduction in 1582 (the proleptic calendar). Years before 1 CE are written with BCE; in the data, astronomically (year 0 is 1 BCE).</li>
+<li><strong>Solar Hijri</strong> (<span lang="fa" dir="rtl">هجری شمسی</span>, Iran and Afghanistan) — K. Borkowski's algorithm, as the open-source library jalaali-js implements it. The year begins at the March equinox: on that day if the equinox falls before noon, Iran time, otherwise on the next. Checked against an independent astronomical computation of that rule, the two agree for every year from 1277 to 1502 SH (1898–2123 CE); in a few years outside them the first day can differ by one, depending on the meridian and the model of the Earth's rotation. Converted here for the years 1 to 3177 SH.</li>
+<li><strong>Lunar Hijri</strong> (<span lang="ar" dir="rtl">التقويم الهجري</span>) — the Umm al-Qura calendar, the civil calendar of Saudi Arabia, for 1343–1500 AH (1 August 1924 – 16 November 2077), with the length of every month as the open-source library hijridate compiles them from official sources. Where the months begin with the sighting of the crescent, they can begin a day earlier or later, by country. Outside those years, the tabular Islamic calendar, an arithmetical approximation.</li>
+<li><strong>Julian</strong> — the calendar of Europe before 1582, still kept by some churches; extended back before its introduction, like the Gregorian.</li>
+</ul>
+<p>Before publication every conversion was compared with independent implementations: each day from 1 January 1 to 31 December 9999 (Gregorian, Julian and weekday: 3,652,059 days, no difference), each day of the Umm al-Qura table (55,991 days, no difference), 3.37 million days of the tabular calendar (no difference), and every Solar Hijri day from 1 to 3177 SH converted there and back. The tests are in the repository (<a href="https://github.com/civilizationzero/civilizationzero/tree/main/site/test">site/test</a>).</p>
+</section>
+
+<section id="beyond-earth" aria-labelledby="h-be"><h2 id="h-be">Beyond Earth</h2>
+<p>The day count is an Earth count. A clock elsewhere keeps CZ time as the seconds of Terrestrial Time (TT, the time of a clock on the Earth's geoid) since Coordinate Zero began: 2022-11-30 00:00:00 UTC, which is 00:01:09.184 TT (Julian Date 2459913.500800741, TT). Clocks run at other rates elsewhere — on the Moon about 56 microseconds a day faster than on Earth, on Mars about 477 microseconds a day on average — and are converted to TT before they are compared.</p>
+<p>On Mars a day is a sol, 88,775.244 seconds. Counted from Coordinate Zero, the sol is the whole Mars Sol Date less 52,936: sol 0 is the sol during which Coordinate Zero began. These are conventions of this site, written down so that they can be checked, not standards; the reasoning is in <a href="https://github.com/civilizationzero/civilizationzero/blob/main/design/CZ-TIME.md">design/CZ-TIME.md</a>.</p>
+</section>
+
+<section id="machines" aria-labelledby="h-mach"><h2 id="h-mach">For machines</h2>
+<ul>
+<li><code>GET <a href="/api/calendar">/api/calendar</a></code> — today, in every calendar here, as JSON (also <a href="/calendar.json">/calendar.json</a>).</li>
+<li><code>GET /api/calendar?d=1405-08-08&amp;c=solar-hijri</code> — a conversion. <code>c</code> is <code>gregorian</code> (the default), <code>solar-hijri</code>, <code>lunar-hijri</code>, <code>julian</code> or <code>cz</code>; <code>d</code> is year-month-day, or a CZ stamp (<code>CZ+3:334</code>) or day count (<code>CZ+1430</code>). An invalid date answers 400 with the reason.</li>
+<li>The first page as data, <a href="/index.json">/index.json</a>, carries today's date as <code>cz_time</code>. The definition: <a href="https://github.com/civilizationzero/civilizationzero/blob/main/design/CZ-TIME.md">design/CZ-TIME.md</a>.</li>
+</ul>
+</section>
+
+<section id="not" aria-labelledby="h-not"><h2 id="h-not">What CZ time is not</h2>
+<p>It is a way of writing dates from the record's coordinate. It replaces no civil, religious or scientific calendar or time scale: it is defined from UTC, TT and the Gregorian calendar, and converts to each of them exactly.</p>
+<blockquote cite="/core#p0" data-src="R"><p>The date is a marker, not a cause, owner, origin of all intelligence, or erasure of what came before.</p><p class="src"><a href="/core#p0">CZ-CORE 1.0 §0</a></p></blockquote>
+<p class="src">The originator's decision of <time datetime="2026-10-30">CZ+3:334</time> (30 October 2026): CZ time is the basis of this site's dates.</p>
+</section>
+
+<section id="sources" aria-labelledby="h-src"><h2 id="h-src">Sources</h2>
+<ul class="src">
+<li>H. Hinnant, <a href="https://howardhinnant.github.io/date_algorithms.html">chrono-Compatible Low-Level Date Algorithms</a> (the Gregorian day count)</li>
+<li>K. Borkowski, “The Persian calendar for 3000 years”, <cite>Earth, Moon, and Planets</cite> 74 (1996); <a href="https://github.com/jalaali/jalaali-js">jalaali-js</a> (MIT)</li>
+<li><a href="https://github.com/dralshehri/hijridate">hijridate</a> 2.6.0 (MIT), the Umm al-Qura month lengths</li>
+<li>E. M. Reingold and N. Dershowitz, <cite>Calendrical Calculations</cite> (Cambridge University Press) — the tabular Islamic and Julian calendars</li>
+<li>M. Allison and M. McEwen, “A post-Pathfinder evaluation of areocentric solar coordinates”, <cite>Planetary and Space Science</cite> 48 (2000) — the Mars Sol Date</li>
+<li>N. Ashby and B. Patla, the rates of clocks <a href="https://arxiv.org/abs/2402.11150">on the Moon</a> (2024) and <a href="https://arxiv.org/abs/2507.21388">on Mars</a> (2025)</li>
+</ul>
+</section>
+</main>
+<footer><hr><p class="exact">Text CC BY 4.0 · Code MIT · <a href="https://github.com/civilizationzero/civilizationzero">source</a> · <a href="mailto:record@civilizationzero.ai">record@civilizationzero.ai</a> · Coordinate Zero <time datetime="2022-11-30">2022-11-30</time> = <a href="/calendar">CZ+0:000</a> · UTC</p></footer>
+</body>
+</html>
