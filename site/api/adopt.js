@@ -32,7 +32,9 @@ const foreignOrigin = (req) => { const o = req.headers.origin; if (!o) return fa
 // the register's own shell: same stylesheet, nav and footer as every page, with /adopt.json as its alternate (an equivalent of the page)
 const page = (title, body, path, description, alt, head) => {
   const shellFor = alt ? RT.shell.replace('href="/adopt.json" title="The register as data"', () => `href="${esc(alt)}" title="This record as data"`) : RT.shell;
-  return R.fill(shellFor, { TITLE: esc(`${title} · Civilization Zero`), DESC: esc(description), PATH: esc(path), HEAD: head || "", BODY: `<main>${body}</main>` });
+  // the main landmark is the skip link's target; the navigation marks the register (as R.shell does for the room's pages)
+  return R.fill(shellFor, { TITLE: esc(`${title} · Civilization Zero`), DESC: esc(description), PATH: esc(path), HEAD: head || "", BODY: `<main id="content">${body}</main>` })
+    .replace('<li><a href="/adopt">', () => '<li><a href="/adopt" aria-current="page">');
 };
 const stateLine = () => (G.OPEN ? `<p><strong>Open.</strong> ${RT.open_note}</p>`
   : G.CHAIN ? `<p class="pending"><strong>Closed.</strong> ${RT.closed_after_note}</p>` : `<p class="pending"><strong>Not open yet.</strong> ${RT.closed_note}</p>`);
