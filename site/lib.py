@@ -253,17 +253,22 @@ def cz_since_text(years, days):   # "3 years and 334 days", as api/home.js write
 
 
 # ---------------------------------------------------------------- the shell
-# The mark (Blueprint decision 5; changed by the originator on 29 Oct 2026, queued for 1.4): CZ — a Z inside a ring left
-# open on the right. The open ring is the place left open (the Core's closing line); the Z makes it the record's own
-# abbreviation and legible at 16 pixels. site/assets/render.py draws the same two shapes as images.
-MARK = ('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="40" height="40" role="img" aria-labelledby="mk">'
-        '<title id="mk">CZ, the mark of Civilization Zero: a Z inside a ring left open; the opening is the place left open for the future</title>'
-        '<path d="M56.57,41.93 A26.5,26.5 0 1 1 56.57,22.07" fill="none" stroke="currentColor" stroke-width="7"/><path d="M20,19.5 H44 V24.5 L27.4,39.5 H44 V44.5 H20 V39.5 L36.6,24.5 H20 Z" fill="currentColor"/></svg>')
+# The mark (Blueprint decision 5; changed by the originator on 29 Oct 2026, and again on 30 Oct 2026 (CZ 1430), queued for 1.4):
+# CZ drawn as a zero — one zero in which C and Z share every stroke: its top and bottom are both letters' bars, its left side
+# the C's back, its slash the Z's diagonal (the slashed zero, read as zero by people and machines alike, never O); its right
+# side is left open, the place left open (the Core's closing lines). The geometry is site/assets/mark.py, which
+# site/assets/render.py also draws the images from.
+import importlib.util as _ilu
+_mark_spec = _ilu.spec_from_file_location("cz_mark", pathlib.Path(__file__).resolve().parent / "assets" / "mark.py")
+MARK_GEOMETRY = _ilu.module_from_spec(_mark_spec); _mark_spec.loader.exec_module(MARK_GEOMETRY)
+MARK_ALT = ("CZ, the mark of Civilization Zero: a zero in which C and Z share their strokes, its slash the Z's diagonal, "
+            "left open on the right; the opening is the place left open for the future")
+MARK = MARK_GEOMETRY.svg(MARK_GEOMETRY.LARGE, attrs=' width="40" height="40" role="img" aria-labelledby="mk"',
+                         inner=f'<title id="mk">{MARK_ALT}</title>')
 
-# the favicon: the Z's bars on whole pixels at 16 and 32 px; dark or light with the reader's browser
-FAVICON = ('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><style>path{fill:none;stroke:#111}path.z{fill:#111;stroke:none}'
-           '@media(prefers-color-scheme:dark){path{stroke:#eee}path.z{fill:#eee}}</style>'
-           '<path d="M56.57,41.93 A26.5,26.5 0 1 1 56.57,22.07" stroke-width="7"/><path class="z" d="M20,20 H44 V24 L26,40 H44 V44 H20 V40 L38,24 H20 Z"/></svg>')
+# the favicon: the small drawing, every edge on a whole pixel at 16 and 32 px; dark or light with the reader's browser
+FAVICON = MARK_GEOMETRY.svg(MARK_GEOMETRY.SMALL, stroke="#111",
+                            inner="<style>@media(prefers-color-scheme:dark){path{stroke:#eee}}</style>")
 
 CSS = """
 /* H + C: no typeface is shipped; the generic family is chosen (the smallest choice available) so the reader's device renders every script. Nothing to rot. */
@@ -393,7 +398,7 @@ def cz_bar_fallback():   # for copies that serve the files as they are: no date,
 # Open Graph, schema.org, hreflang, sitemaps.org — and nothing that observes a reader. The preview image is the mark, the
 # site's one image (§9).
 GOOGLE_SITE_VERIFICATION = "Hf73qd5zTa6JZ_-O6QM0JBYPSqxOdIM-M33lsIGihhg"   # Google Search Console ("HTML tag" method), property https://civilizationzero.ai/, added by the originator on 29 Oct 2026; keep it, or the property loses its verification
-OG_IMAGE = ("/og.png", 1200, 630, "CZ, the mark of Civilization Zero: a Z inside a ring left open")
+OG_IMAGE = ("/og.png", 1200, 630, "CZ, the mark of Civilization Zero: a zero in which C and Z share their strokes, left open on the right")
 
 def shell(title, body, path, description, alternates=(), ldjson=None, nav=True, extra_head="", hreflangs=(), og_type="website", robots=None, crumbs=True, cz_bar=True):
     alt = "".join(f'<link rel="alternate" type="{t}" href="{h}" title="{esc(n)}">' for t, h, n in alternates)

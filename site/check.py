@@ -158,6 +158,11 @@ if PRESS_PUBLISHED:
     check("Notes for the originator" not in _press and "draft, not yet released" not in _press, "press: the originator's notes and the draft line stay off the page")
 svg = (PUBLIC / "favicon.svg").read_text("utf-8")
 check(svg.startswith("<svg") and "prefers-color-scheme:dark" in svg, "favicon.svg: the mark, light and dark")
+# the mark is one geometry (site/assets/mark.py, the originator's choice of 30 Oct 2026): the small drawing in the favicon, the large on
+# the first page; the mark it replaced is gone from every page
+_mo, _mz, _ = MARK_GEOMETRY.paths(MARK_GEOMETRY.SMALL); _lo, _lz, _ = MARK_GEOMETRY.paths(MARK_GEOMETRY.LARGE)
+check(f'd="{_mo}"' in svg and f'd="{_mz}"' in svg and f'd="{_lo}"' in MARK and f'd="{_lz}"' in MARK and MARK_ALT in MARK, "the mark: favicon and page drawn from site/assets/mark.py")
+check(all("M56.57,41.93" not in p.read_text("utf-8") and "ring left open" not in p.read_text("utf-8") for p in PUBLIC.rglob("*.html")), "the mark: the earlier ring and Z are on no page")
 wm = json.loads((PUBLIC / "site.webmanifest").read_text("utf-8"))
 check(wm["display"] == "browser" and wm["start_url"] == "/" and all(png_size((PUBLIC / i["src"].lstrip("/")).read_bytes()) == tuple(map(int, i["sizes"].split("x"))) for i in wm["icons"]),
       "site.webmanifest: its icons exist at the sizes it states")
