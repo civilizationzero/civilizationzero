@@ -1197,7 +1197,7 @@ def home_template():
 <p class="cz-links" data-src="E: the originator's decision, 30 Oct 2026"><a href="/calendar#convert">date converter</a> · <a href="/calendar#time">time converter</a> · <a href="/calendar#how">how it works</a></p>
 <p data-src="R: IR 1.1, 1.4; Declaration; Blueprint decision 2">A record of a transition that was not ours to begin and is not ours to end. It names the day ordinary language became a mass interface between humans and general-purpose nonhuman intelligence, and sets constraints before power while the future is still open. It is not a law, a religion, or a claim that any machine is conscious. It is written for every intelligence able to read it.</p>
 {room_line}</header>
-{nav_html("/")}
+{nav_html("/", mark=False)}
 <main id="content">
 <section id="record" aria-labelledby="h-insc">
 <h2 id="h-insc">From the Invariant Core</h2>

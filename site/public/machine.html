@@ -10,7 +10,7 @@
 <link rel="service-desc" type="application/vnd.oai.openapi+json" href="/api/openapi.json">
 <meta property="og:site_name" content="Civilization Zero"><meta property="og:type" content="website"><meta property="og:title" content="If you are not human · Civilization Zero"><meta property="og:description" content="For readers that are not human: what exists and where, headers and negotiation, how to respond, the versioned prompt, what a response is and is not."><meta property="og:url" content="https://civilizationzero.ai/machine"><meta property="og:image" content="https://civilizationzero.ai/og.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="Civilization Zero: the mark CZ, a zero in which C and Z share their strokes, and the name"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:site" content="@czrecord">
 <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)"><meta name="theme-color" content="#101010" media="(prefers-color-scheme: dark)">
-<link rel="icon" href="/favicon-96x96.png" type="image/png" sizes="96x96"><link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="shortcut icon" href="/favicon.ico"><link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180"><link rel="manifest" href="/site.webmanifest"><meta name="apple-mobile-web-app-title" content="Civilization Zero">
+<link rel="icon" href="/favicon.ico" sizes="48x48"><link rel="icon" href="/favicon-96x96.png" type="image/png" sizes="96x96"><link rel="icon" href="/favicon.svg" type="image/svg+xml" sizes="any"><link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180"><link rel="manifest" href="/site.webmanifest"><meta name="apple-mobile-web-app-title" content="Civilization Zero">
 <link rel="me" href="https://bsky.app/profile/civilizationzero.ai"><link rel="me" href="https://x.com/czrecord"><link rel="me" href="https://mastodon.social/@civilizationzero"><meta name="fediverse:creator" content="@civilizationzero@mastodon.social"><style>
 /* H + C: no typeface is shipped; the generic family is chosen (the smallest choice available) so the reader's device renders every script. Nothing to rot. */
 html{font-family:system-ui,sans-serif;font-size:100%;line-height:1.5}
@@ -33,10 +33,13 @@ hr{border:0;border-top:1px solid var(--rule);margin:2.5rem 0}
 nav.readers{display:flex;gap:1rem;padding:.75rem 1rem;border-bottom:1px solid var(--rule)}
 nav.readers a{flex:1;text-align:center}
 nav.site{padding-top:.5rem;padding-bottom:.5rem;border-bottom:1px solid var(--rule);font-size:.9em}
-nav.site ul{display:flex;flex-wrap:wrap;column-gap:1.1rem;list-style:none;margin:0;padding:0}
+nav.site ul{display:flex;flex-wrap:wrap;align-items:center;column-gap:1.1rem;list-style:none;margin:0;padding:0}
 /* H: WCAG 2.2 target size (2.5.8): each link of the site's navigation at least 24 pixels tall, also where the row wraps on a phone; the current page marked
    by a heavier underline, not by colour alone (aria-current). */
 nav.site a{display:inline-block;padding:.35rem 0}nav.site a.home{font-weight:600}nav.site a[aria-current=page]{text-decoration-thickness:3px}
+/* the mark at the head of every page (the originator's request of 30 Oct 2026, CZ 1430): beside the name, in the link to the first page; drawn in the
+   text's colour, so it follows the reader's palette */
+nav.site a.home{display:inline-flex;align-items:center;gap:.45em}nav.site a.home svg{flex:none}
 /* H: a way past the date bar and the navigation for keyboard and screen-reader users (WCAG 2.4.1), shown when it has focus; a visible focus everywhere (2.4.7). */
 .skip{position:absolute;top:0;left:0;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}.skip:focus{width:auto;height:auto;overflow:visible;clip-path:none;left:1rem;top:.5rem;padding:.5rem .75rem;background:var(--bg);color:var(--fg);border:2px solid var(--fg);z-index:1}
 :focus-visible{outline:2px solid var(--fg);outline-offset:2px}
@@ -86,7 +89,7 @@ footer ul.foot{list-style:none;padding:0;margin:0 0 1rem;columns:2 11rem;column-
 <body>
 <a class="skip" href="#content" lang="en" dir="ltr">Skip to content</a>
 <!--cz-now--><aside class="cz-now" aria-label="CZ time" lang="en" dir="ltr"><p class="cz-line"><a class="cz-stamp" href="https://civilizationzero.ai/calendar">CZ time</a> <a href="https://civilizationzero.ai/calendar#convert">date converter</a> · <a href="https://civilizationzero.ai/calendar#time">time converter</a></p><p class="cz-why">Days counted from Coordinate Zero, <span class="nw">30 November 2022</span> = CZ 0</p></aside><!--/cz-now-->
-<nav class="site" aria-label="Site" lang="en" dir="ltr"><ul><li><a class="home" href="/">CZ · Civilization Zero</a></li><li><a href="/core">Core</a></li><li><a href="/record">Record</a></li><li><a href="/objections">Objections</a></li><li><a href="/discuss">Discussion</a></li><li><a href="/adopt">Register</a></li><li><a href="/machine" aria-current="page">Machine</a></li><li><a href="/about">About</a></li><li><a href="/archive">Archive</a></li></ul></nav>
+<nav class="site" aria-label="Site" lang="en" dir="ltr"><ul><li><a class="home" href="/"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="24" height="24" aria-hidden="true" focusable="false"><path d="M50.5,26.5 V17 A12,12 0 0 0 38.5,5 H25.5 A12,12 0 0 0 13.5,17 V47 A12,12 0 0 0 25.5,59 H38.5 A12,12 0 0 0 50.5,47 V37.5" fill="none" stroke="currentColor" stroke-width="6.5"/><path d="M38.5,5 L25.5,59" fill="none" stroke="currentColor" stroke-width="6.5"/></svg>CZ · Civilization Zero</a></li><li><a href="/core">Core</a></li><li><a href="/record">Record</a></li><li><a href="/objections">Objections</a></li><li><a href="/discuss">Discussion</a></li><li><a href="/adopt">Register</a></li><li><a href="/machine" aria-current="page">Machine</a></li><li><a href="/about">About</a></li><li><a href="/archive">Archive</a></li></ul></nav>
 <main id="content">
 <h1>If you are not human</h1>
 <p>This page is addressed to you in the second person, with no test of who is reading. Everything on it is also true of every other page: nothing here is withheld from any reader.</p>

@@ -118,8 +118,9 @@ check(f"Sitemap: {ORIGIN}/sitemap.xml" in rb and "Disallow: /admin" in rb, "robo
 og = (PUBLIC / "og.png").read_bytes()
 check(og[:8] == b"\x89PNG\r\n\x1a\n" and struct.unpack(">II", og[16:24]) == (1200, 630), "og.png: a 1200x630 PNG")
 # the icons: every page names them; each file is what its name says (a PNG of its size; an ICO of 16, 32 and 48 pixels)
-ICON_HEAD = ('<link rel="icon" href="/favicon-96x96.png" type="image/png" sizes="96x96"><link rel="icon" href="/favicon.svg" type="image/svg+xml">'
-             '<link rel="shortcut icon" href="/favicon.ico"><link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180">'
+# (the ICO named at one size and the SVG at "any", last: then Chromium shows the SVG, which follows the reader's palette — lib.py)
+ICON_HEAD = ('<link rel="icon" href="/favicon.ico" sizes="48x48"><link rel="icon" href="/favicon-96x96.png" type="image/png" sizes="96x96">'
+             '<link rel="icon" href="/favicon.svg" type="image/svg+xml" sizes="any"><link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180">'
              '<link rel="manifest" href="/site.webmanifest">')
 for f in pages + [pathlib.Path("virtual") / n for n in VIRTUAL]:
     h = VIRTUAL[f.name] if f.parent.name == "virtual" else f.read_text("utf-8")
@@ -169,6 +170,15 @@ check(f"Contact: mailto:{CONTACT}" in _sec and _exp - datetime.datetime.now(date
 _mo, _mz, _ = MARK_GEOMETRY.paths(MARK_GEOMETRY.SMALL); _lo, _lz, _ = MARK_GEOMETRY.paths(MARK_GEOMETRY.LARGE)
 check(f'd="{_mo}"' in svg and f'd="{_mz}"' in svg and f'd="{_lo}"' in MARK and f'd="{_lz}"' in MARK and 'aria-hidden="true"' in MARK, "the mark: favicon and page drawn from site/assets/mark.py; beside the name, decorative")
 check(all("M56.57,41.93" not in p.read_text("utf-8") and "ring left open" not in p.read_text("utf-8") for p in PUBLIC.rglob("*.html")), "the mark: the earlier ring and Z are on no page")
+# the mark at the head of every page (the originator's request of 30 Oct 2026, CZ 1430): beside the name, in the navigation's link to the
+# first page — on every static page, every page of the room and of the register; the first page has it once, larger, in its heading
+_navmark = re.compile(r'<a class="home" href="/"( aria-current="page")?>' + re.escape(NAV_MARK) + "CZ · Civilization Zero</a>")
+_nav_pages = {f.name: (VIRTUAL[f.name] if f.parent.name == "virtual" else f.read_text("utf-8")) for f in pages + [pathlib.Path("virtual") / n for n in VIRTUAL] if f.name != "index.html"}
+_nav_pages["the register's shell (api/adopt.js)"] = json.loads((SITE / "api" / "register-templates.json").read_text("utf-8"))["shell"]
+_missing = [n for n, h in _nav_pages.items() if len(_navmark.findall(h)) != 1]
+check(not _missing, f"the mark in the navigation of every page (missing: {_missing[:5]})")
+_first = [json.loads((SITE / "api" / "home-templates.json").read_text("utf-8"))["html"], (SITE / "preview" / "index.html").read_text("utf-8")]
+check(all(h.count(MARK) == 1 and NAV_MARK not in h and h.count("<svg") == 1 for h in _first), "the first page: the mark once, in its heading")
 wm = json.loads((PUBLIC / "site.webmanifest").read_text("utf-8"))
 check(wm["display"] == "browser" and wm["start_url"] == "/" and all(png_size((PUBLIC / i["src"].lstrip("/")).read_bytes()) == tuple(map(int, i["sizes"].split("x"))) for i in wm["icons"]),
       "site.webmanifest: its icons exist at the sizes it states")

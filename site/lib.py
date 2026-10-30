@@ -264,10 +264,22 @@ MARK_GEOMETRY = _ilu.module_from_spec(_mark_spec); _mark_spec.loader.exec_module
 MARK_ALT = ("CZ, the mark of Civilization Zero: a zero in which C and Z share their strokes, its slash the Z's diagonal, "
             "left open on the right; the opening is the place left open for the future")
 MARK = MARK_GEOMETRY.svg(MARK_GEOMETRY.LARGE, attrs=' width="36" height="36" aria-hidden="true" focusable="false"')
+# the mark at the head of every page (the originator's request of 30 Oct 2026, CZ 1430, "the logo on every page"): in the navigation's link to
+# the first page, beside the name; decorative there too (the link's name is the text beside it)
+NAV_MARK = MARK_GEOMETRY.svg(MARK_GEOMETRY.LARGE, attrs=' width="24" height="24" aria-hidden="true" focusable="false"')
 
 # the favicon: the small drawing, every edge on a whole pixel at 16 and 32 px; dark or light with the reader's browser
 FAVICON = MARK_GEOMETRY.svg(MARK_GEOMETRY.SMALL, stroke="#111",
                             inner="<style>@media(prefers-color-scheme:dark){path{stroke:#eee}}</style>")
+# The icons every page names. Order and sizes decide what a browser shows: Chromium takes an icon without sizes (the ICO, as it was
+# named until 30 Oct 2026) over the SVG, so its tab showed the ICO's white square even in a dark window. With the ICO named at 48x48
+# and the SVG at "any", last, Chromium 153 fetched only the SVG (tested 30 Oct 2026, CZ 1430: 1x, 2x and 3x, light and dark), which
+# follows the reader's palette. Search engines read the ICO (48) or the PNG (96): Google Search asks for a square larger than 48
+# pixels at a stable address (so no version in it), and SVG is not among its formats. The raster files are black on white, visible on
+# a light page and on a dark one.
+ICON_LINKS = ('<link rel="icon" href="/favicon.ico" sizes="48x48"><link rel="icon" href="/favicon-96x96.png" type="image/png" sizes="96x96">'
+              '<link rel="icon" href="/favicon.svg" type="image/svg+xml" sizes="any"><link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180">'
+              '<link rel="manifest" href="/site.webmanifest">')
 
 CSS = """
 /* H + C: no typeface is shipped; the generic family is chosen (the smallest choice available) so the reader's device renders every script. Nothing to rot. */
@@ -291,10 +303,13 @@ hr{border:0;border-top:1px solid var(--rule);margin:2.5rem 0}
 nav.readers{display:flex;gap:1rem;padding:.75rem 1rem;border-bottom:1px solid var(--rule)}
 nav.readers a{flex:1;text-align:center}
 nav.site{padding-top:.5rem;padding-bottom:.5rem;border-bottom:1px solid var(--rule);font-size:.9em}
-nav.site ul{display:flex;flex-wrap:wrap;column-gap:1.1rem;list-style:none;margin:0;padding:0}
+nav.site ul{display:flex;flex-wrap:wrap;align-items:center;column-gap:1.1rem;list-style:none;margin:0;padding:0}
 /* H: WCAG 2.2 target size (2.5.8): each link of the site's navigation at least 24 pixels tall, also where the row wraps on a phone; the current page marked
    by a heavier underline, not by colour alone (aria-current). */
 nav.site a{display:inline-block;padding:.35rem 0}nav.site a.home{font-weight:600}nav.site a[aria-current=page]{text-decoration-thickness:3px}
+/* the mark at the head of every page (the originator's request of 30 Oct 2026, CZ 1430): beside the name, in the link to the first page; drawn in the
+   text's colour, so it follows the reader's palette */
+nav.site a.home{display:inline-flex;align-items:center;gap:.45em}nav.site a.home svg{flex:none}
 /* H: a way past the date bar and the navigation for keyboard and screen-reader users (WCAG 2.4.1), shown when it has focus; a visible focus everywhere (2.4.7). */
 .skip{position:absolute;top:0;left:0;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}.skip:focus{width:auto;height:auto;overflow:visible;clip-path:none;left:1rem;top:.5rem;padding:.5rem .75rem;background:var(--bg);color:var(--fg);border:2px solid var(--fg);z-index:1}
 :focus-visible{outline:2px solid var(--fg);outline-offset:2px}
@@ -351,9 +366,10 @@ def nav_section(path):   # the navigation item a page belongs to
     if path.startswith(("/discuss", "/respond", "/themes")): return "/discuss"
     if path.startswith("/adopt"): return "/adopt"
     return path if any(h == path for h, _ in NAV_ITEMS) else None
-def nav_html(path=None):
+def nav_html(path=None, mark=True):   # mark: the mark beside the name (the first page has it, larger, in its heading)
     cur = nav_section(path) if path is not None else None
-    items = "".join(f'<li><a{" class=" + chr(34) + "home" + chr(34) if h == "/" else ""} href="{h}"{" aria-current=" + chr(34) + "page" + chr(34) if h == cur else ""}>{esc(t)}</a></li>'
+    items = "".join(f'<li><a{" class=" + chr(34) + "home" + chr(34) if h == "/" else ""} href="{h}"{" aria-current=" + chr(34) + "page" + chr(34) if h == cur else ""}>'
+                    f'{NAV_MARK if h == "/" and mark else ""}{esc(t)}</a></li>'
                     for h, t in NAV_ITEMS)
     return f'<nav class="site" aria-label="Site" lang="en" dir="ltr"><ul>{items}</ul></nav>'
 NAV = nav_html()
@@ -461,7 +477,7 @@ def shell(title, body, path, description, alternates=(), ldjson=None, nav=True, 
 {meta}<link rel="canonical" href="{ORIGIN}{path}">
 {alt}{hl}<link rel="service-desc" type="application/vnd.oai.openapi+json" href="/api/openapi.json">
 {og}<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)"><meta name="theme-color" content="#101010" media="(prefers-color-scheme: dark)">
-<link rel="icon" href="/favicon-96x96.png" type="image/png" sizes="96x96"><link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="shortcut icon" href="/favicon.ico"><link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180"><link rel="manifest" href="/site.webmanifest"><meta name="apple-mobile-web-app-title" content="Civilization Zero">
+{ICON_LINKS}<meta name="apple-mobile-web-app-title" content="Civilization Zero">
 {"".join(f'<link rel="me" href="{esc(u)}">' for u in SOCIAL)}{f'<meta name="fediverse:creator" content="{esc(FEDIVERSE_CREATOR)}">' if FEDIVERSE_CREATOR else ""}<style>{CSS}</style>
 {ld}{extra_head}</head>
 <body>
