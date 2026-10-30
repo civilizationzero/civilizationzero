@@ -39,7 +39,7 @@ const stateLine = () => (G.OPEN ? `<p><strong>Open.</strong> ${RT.open_note}</p>
 const traceLine = (id, token) => `civilizationzero.ai/adopt/${id} trace:${token}`;
 
 function formError(res, status, title, detail, headers = {}) {
-  const body = `<h1>${esc(title)}</h1><p>${esc(detail)}</p><p><a href="/adopt#form">Back to the form</a> · <a href="/adopt">The register</a> · the rules: <a href="/adopt#rules">/adopt#rules</a></p>`;
+  const body = `<h1>${esc(title)}</h1><p>${esc(detail)}</p><p>Your text is still in the form: go back with your browser's Back button. · <a href="/adopt#form">A new, empty form</a> · <a href="/adopt">The register</a> · the rules: <a href="/adopt#rules">/adopt#rules</a></p>`;
   return html(res, status, page(title, body, "/adopt", title), { ...NO_STORE, ...headers });
 }
 
@@ -278,6 +278,9 @@ module.exports = async (req, res) => {
       if (!G.CHAIN) return json(res, 200, { state: "closed", records: [], adoptions: [], rules: `${ORIGIN}/adopt`, opens: RT.closed_plain }, CACHE);
       const af = url.searchParams.get("after");
       if (af !== null && !/^\d{1,12}$/.test(af)) return json(res, 400, { error: "after" });
+      // the whole register is read for this answer: an unknown parameter is refused, so that it cannot be used to pass the cache
+      const extra = [...url.searchParams.keys()].find((k) => !["page", "after"].includes(k));
+      if (extra !== undefined) return json(res, 400, { error: "unknown parameter", parameter: extra.slice(0, 40), allowed: ["after"] });
       return await streamAll(res, af === null ? null : Number(af));
     }
     // GET /api/adopt?id= (with &log_after=N: the record's log, oldest first, 500 rows a page)

@@ -19,8 +19,18 @@ def page(w, h, side, share, drawing):
             f'body{{display:flex;align-items:center;justify-content:center}}</style></head><body>{inner}</body></html>')
 
 LARGE, SMALL = mark.LARGE, mark.SMALL
+def og_page():
+    # the link-preview image: the mark and the name, and what the record is in one line — a link shared anywhere says what it leads to
+    inner = mark.svg(LARGE, stroke="#111", attrs=' width="300" height="300" style="display:block;flex:none"')
+    return ('<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;width:1200px;height:630px;background:#fff;color:#111}'
+            'body{display:flex;align-items:center;justify-content:center;gap:56px;font-family:system-ui,sans-serif}'
+            '.t{max-width:640px}.n{font-size:76px;font-weight:700;letter-spacing:-.5px;line-height:1.05}.d{font-size:34px;line-height:1.3;margin-top:22px}'
+            '.c{font-size:28px;color:#555;margin-top:18px;font-family:ui-monospace,monospace}</style></head><body>'
+            f'{inner}<div class="t"><div class="n">Civilization Zero</div><div class="d">The origin record for humans and AI</div>'
+            '<div class="c">Coordinate Zero · 30 November 2022</div></div></body></html>')
+
 IMAGES = [  # name, width, height, side, share of the side the 64-unit box covers, drawing
-    ("og.png", 1200, 630, 400, 1.0, LARGE),                # the link-preview image (1200x630)
+    ("og.png", 1200, 630, 400, 1.0, "OG"),                 # the link-preview image (1200x630): the mark, the name, one line
     ("apple-touch-icon.png", 180, 180, 180, 0.72, LARGE),  # a phone's home screen (iOS rounds the corners itself)
     ("favicon-16", 16, 16, 16, 1.0, SMALL), ("favicon-32", 32, 32, 32, 1.0, SMALL), ("favicon-48", 48, 48, 48, 1.0, SMALL),
     ("favicon-96x96.png", 96, 96, 96, 1.0, SMALL),         # a search engine's result list asks for a multiple of 48 pixels
@@ -34,7 +44,7 @@ async def main(out):
         b = await p.chromium.launch()
         for name, w, h, side, share, drawing in IMAGES:
             pg = await b.new_page(viewport={"width": w, "height": h}, device_scale_factor=1)
-            await pg.set_content(page(w, h, side, share, drawing))
+            await pg.set_content(og_page() if drawing == "OG" else page(w, h, side, share, drawing))
             shots[name] = await pg.screenshot(omit_background=False)
             await pg.close()
         await b.close()

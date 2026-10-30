@@ -45,7 +45,7 @@ def cz_stamp(d, minus="−"):   # the date as the pages print it: the count
 def cz_machine(D): return f"CZ{'-' if D < 0 else '+'}{abs(D)}"
 _MONTH_NUM = {m: i for i, m in enumerate(["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"], 1)}
 _MONTH_NUM.update({k[:3]: v for k, v in list(_MONTH_NUM.items())}); _MONTH_NUM["Sept"] = 9
-_DATE_IN_TEXT = re.compile(r"\b(\d{1,2}) (" + "|".join(sorted(_MONTH_NUM, key=len, reverse=True)) + r")\.? (\d{4})\b")
+_DATE_IN_TEXT = re.compile(r"\b(\d{1,2})\s+(" + "|".join(sorted(_MONTH_NUM, key=len, reverse=True)) + r")\.?\s+(\d{4})\b")
 def cz_dates_html(h):
     """The dates written out in a text the site renders (an objection's status, a register's prose), as CZ dates with their links; the
     source text is unchanged, and Coordinate Zero itself, 30 November 2022 — the anchor every CZ date is counted from — stays as it is."""
@@ -263,8 +263,7 @@ _mark_spec = _ilu.spec_from_file_location("cz_mark", pathlib.Path(__file__).reso
 MARK_GEOMETRY = _ilu.module_from_spec(_mark_spec); _mark_spec.loader.exec_module(MARK_GEOMETRY)
 MARK_ALT = ("CZ, the mark of Civilization Zero: a zero in which C and Z share their strokes, its slash the Z's diagonal, "
             "left open on the right; the opening is the place left open for the future")
-MARK = MARK_GEOMETRY.svg(MARK_GEOMETRY.LARGE, attrs=' width="40" height="40" role="img" aria-labelledby="mk"',
-                         inner=f'<title id="mk">{MARK_ALT}</title>')
+MARK = MARK_GEOMETRY.svg(MARK_GEOMETRY.LARGE, attrs=' width="36" height="36" aria-hidden="true" focusable="false"')
 
 # the favicon: the small drawing, every edge on a whole pixel at 16 and 32 px; dark or light with the reader's browser
 FAVICON = MARK_GEOMETRY.svg(MARK_GEOMETRY.SMALL, stroke="#111",
@@ -277,8 +276,9 @@ html{font-family:system-ui,sans-serif;font-size:100%;line-height:1.5}
 :root{color-scheme:light dark;--fg:#111;--bg:#fff;--mute:#555;--rule:#bbb}
 @media(prefers-color-scheme:dark){:root{--fg:#eee;--bg:#101010;--mute:#aaa;--rule:#444}}
 body{margin:0;color:var(--fg);background:var(--bg)}
-/* H: a measure of 45–75 characters for sustained reading (a convention, stated as one); 70ch. Gutter 1rem on narrow screens. */
-main,header,footer,nav.site{max-width:70ch;margin:0 auto;padding:0 1rem}
+/* H: a measure of 45–75 characters for sustained reading (a convention, stated as one): 38rem, about 75 characters of a system font. One width in rem
+   for every column (the date bar, the navigation, the header, the text, the footer), so that they share one left edge whatever their font size. Gutter 1rem. */
+main,header,footer,nav.site,aside.cz-now,aside.tr-status{max-width:38rem;margin:0 auto;padding:0 1rem}
 /* H + M: links are marked by underline, not by colour alone (WCAG 2.2, 1.4.1). */
 a{color:inherit;text-decoration:underline;text-underline-offset:.15em}
 /* R §15 / M: the record's structure is the layout. Headings keep their semantic level and the browser's default sizes; only spacing is set. */
@@ -288,14 +288,19 @@ time,data,code,pre,.exact{font-family:ui-monospace,monospace;font-size:.95em}
 pre{white-space:pre-wrap;word-break:break-word;border:1px solid var(--rule);padding:.75rem}
 hr{border:0;border-top:1px solid var(--rule);margin:2.5rem 0}
 /* E (Blueprint decision 28): two doors, before anything else; equal width — equal standing. */
-nav.readers{display:flex;gap:1rem;padding:1rem;border-bottom:1px solid var(--rule)}
+nav.readers{display:flex;gap:1rem;padding:.75rem 1rem;border-bottom:1px solid var(--rule)}
 nav.readers a{flex:1;text-align:center}
-nav.site{padding-top:1rem;padding-bottom:1rem;border-bottom:1px solid var(--rule);font-size:.9em}
-/* H: WCAG 2.2 target size (2.5.8): each link of the site's navigation at least 24 pixels tall, also where the row wraps on a phone. */
-nav.site a{display:inline-block;padding:.3rem 0}
+nav.site{padding-top:.5rem;padding-bottom:.5rem;border-bottom:1px solid var(--rule);font-size:.9em}
+nav.site ul{display:flex;flex-wrap:wrap;column-gap:1.1rem;list-style:none;margin:0;padding:0}
+/* H: WCAG 2.2 target size (2.5.8): each link of the site's navigation at least 24 pixels tall, also where the row wraps on a phone; the current page marked
+   by a heavier underline, not by colour alone (aria-current). */
+nav.site a{display:inline-block;padding:.35rem 0}nav.site a.home{font-weight:600}nav.site a[aria-current=page]{text-decoration-thickness:3px}
+/* H: a way past the date bar and the navigation for keyboard and screen-reader users (WCAG 2.4.1), shown when it has focus; a visible focus everywhere (2.4.7). */
+.skip{position:absolute;top:0;left:0;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}.skip:focus{width:auto;height:auto;overflow:visible;clip-path:none;left:1rem;top:.5rem;padding:.5rem .75rem;background:var(--bg);color:var(--fg);border:2px solid var(--fg);z-index:1}
+:focus-visible{outline:2px solid var(--fg);outline-offset:2px}
 blockquote{margin:1rem 0;padding-left:1rem;border-left:2px solid var(--rule)}
 blockquote p{margin:.25rem 0}
-.src{color:var(--mute);font-size:.8em}
+.src{color:var(--mute);font-size:.875em}
 table{border-collapse:collapse;width:100%;font-size:.9em}th,td{text-align:left;vertical-align:top;padding:.4rem .5rem;border-bottom:1px solid var(--rule)}
 code.hash{word-break:break-all;display:block}
 ul,ol{padding-left:1.25rem}
@@ -309,31 +314,61 @@ ul,ol{padding-left:1.25rem}
 .filters{display:flex;flex-wrap:wrap;gap:.75rem;align-items:end;font-size:.9em;margin:1rem 0}
 /* E: the room one click from the first screen, and its sections as topics (the originator's decision of 29 Oct 2026, after his AI review team) */
 p.room-line{border-left:3px solid var(--fg);padding-left:.75rem}ul.sections{columns:2 16rem;column-gap:2rem}ul.sections li{break-inside:avoid;margin:.2rem 0}
-.filters select,.filters input{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--rule);padding:.2rem .3rem}
-form.respond label{display:block;margin:.75rem 0}form.respond input,form.respond select,form.respond textarea{font:inherit;width:100%;box-sizing:border-box;padding:.4rem;border:1px solid var(--rule);background:var(--bg);color:var(--fg)}
+.filters select,.filters input{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--mute);padding:.2rem .3rem}
+form.respond label{display:block;margin:.75rem 0}form.respond input,form.respond select,form.respond textarea{font:inherit;width:100%;box-sizing:border-box;padding:.4rem;border:1px solid var(--mute);background:var(--bg);color:var(--fg)}
 form.respond textarea{min-height:12rem}form.respond input[type=checkbox],form.respond input[type=radio]{width:1.25rem;height:1.25rem;vertical-align:-.25rem;margin:0 .5rem 0 0}form.respond fieldset{border:1px solid var(--rule);margin:.75rem 0}button{font:inherit;padding:.4rem .9rem;border:1px solid var(--fg);background:var(--bg);color:var(--fg)}
 /* H: WCAG 2.2 reflow (1.4.10): nothing wider than a 320-pixel screen. A word breaks only when it cannot fit its line; on a narrow screen a long address or code in a table cell may break anywhere, so the table never widens the page and headings are never cut mid-word. */
-main,header,footer{overflow-wrap:break-word}th,td{overflow-wrap:break-word}@media(max-width:40em){td a,td code{overflow-wrap:anywhere}}
+main,header,footer{overflow-wrap:break-word}th,td{overflow-wrap:break-word}@media(max-width:40em){td,td a,td code{overflow-wrap:anywhere}}
 /* H: WCAG 2.2 target size (2.5.8) and the platforms' touch guidance: every control at least 2.5rem tall. */
 button,select,input:not([type=checkbox]):not([type=radio]){min-height:2.5rem;box-sizing:border-box}
+/* H: fields at 16 pixels, so that a phone does not zoom in when one is tapped; field borders and placeholders at 3:1 or more (WCAG 1.4.11); ticks in the page's colours. */
+input,select,textarea{font-size:1rem}::placeholder{color:var(--mute);opacity:1}input[type=radio],input[type=checkbox]{accent-color:var(--fg)}
 /* E (the originator's decision of 30 Oct 2026): CZ time is the site's basis — today's date in CZ time at the top of every page, linked to how it works, and under it the reason and links to the two converters, which work on /calendar alone. M: plain links and forms, no script. */
-aside.cz-now{max-width:70ch;margin:0 auto;padding:.55rem 1rem .5rem;border-bottom:1px solid var(--rule);font-size:.9em}
-aside.cz-now p{margin:0}.cz-line a{padding:.2rem 0;display:inline-block}.cz-stamp{font-size:1.25em;margin-right:.5rem}.cz-why{color:var(--mute);font-size:.85em}
-a.cz-date{text-decoration-thickness:1px;text-decoration-color:var(--rule)}a.cz-date time,.cz-stamp time,h1.cz-h1 time{white-space:nowrap}ul.cz-today{list-style:none;padding:0;margin:.5rem 0}ul.cz-today li{margin:.15rem 0}
+aside.cz-now{padding-top:.55rem;padding-bottom:.5rem;border-bottom:1px solid var(--rule);font-size:.9em}
+aside.cz-now p{margin:0}.cz-line a{padding:.2rem 0;display:inline-block}.cz-stamp{font-size:1.25em;margin-right:.5rem}.cz-why{color:var(--mute);font-size:.92em}
+a.cz-date{text-decoration-thickness:1px;text-decoration-color:var(--mute)}a.cz-date time,.cz-stamp time,h1.cz-h1 time{white-space:nowrap}ul.cz-today{list-style:none;padding:0;margin:.5rem 0}ul.cz-today li{margin:.15rem 0}
 form.cz-conv{display:flex;flex-wrap:wrap;gap:.4rem .5rem;align-items:center;margin:.3rem 0 0;font-size:.9em}
-form.cz-conv input,form.cz-conv select{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--rule);padding:.2rem .4rem}form.cz-conv input{width:15ch}
+form.cz-conv input,form.cz-conv select{font:inherit;font-size:1rem;color:var(--fg);background:var(--bg);border:1px solid var(--mute);padding:.2rem .4rem}form.cz-conv input{width:15ch}form.cz-conv label{white-space:nowrap}
 h1.cz-h1{font-size:2.4em;font-weight:400;margin:.4rem 0 .2rem;letter-spacing:.02em}h1.cz-h1 time{font-size:1em}p.cz-links{font-size:.9em;margin-top:.25rem}
 /* E (the originator's decision of 30 Oct 2026): under the date only the day count and its origin, one short line on what is counted, the links. */
 p.cz-read{margin:.2rem 0 0}p.cz-read time{font-size:1em;white-space:nowrap}p.cz-def{color:var(--mute);font-size:.9em;margin:.35rem 0 0}.nw{white-space:nowrap}#how code{white-space:nowrap}
 table.cz-result th{width:30%;font-weight:600}.cz-native{font-family:system-ui,sans-serif}
+/* E: on the first page the mark and the name are one line, inside the heading, above the date (the name is what a reader and a search engine meet first). */
+h1.cz-h1 .cz-name{display:flex;align-items:center;gap:.6rem;font-size:1rem;font-weight:700;letter-spacing:0;margin:0 0 .5rem}h1.cz-h1 .cz-name svg{flex:none}
+aside.tr-status{margin-top:1rem}
+/* the footer: where everything is, the licence, what this site does not do */
+footer ul.foot{list-style:none;padding:0;margin:0 0 1rem;columns:2 11rem;column-gap:2rem}footer ul.foot li{break-inside:avoid;padding:.2rem 0}footer{padding-bottom:1.5rem}
+@media print{aside.cz-now,nav.site,nav.readers,.skip,form,.filters,footer nav{display:none}a{text-decoration:none}main,header,footer{max-width:none}}
 """
 
-NAV = ('<nav class="site" aria-label="Site"><a href="/">CZ · Civilization Zero</a> · <a href="/core">Core</a> · '
-       '<a href="/record">Record</a> · <a href="/objections">Objections</a> · <a href="/discuss">Discussion</a> · '
-       '<a href="/machine">Machine</a> · <a href="/about">About</a> · <a href="/archive">Archive</a></nav>')
+# The site's navigation, in English on every page (lang and dir set, so that a translated page does not read it in its own language
+# or reverse it); the page it is on is marked (aria-current). Room pages mark theirs at request time (room/lib.js).
+NAV_ITEMS = [("/", "CZ · Civilization Zero"), ("/core", "Core"), ("/record", "Record"), ("/objections", "Objections"), ("/discuss", "Discussion"),
+             ("/adopt", "Register"), ("/machine", "Machine"), ("/about", "About"), ("/archive", "Archive")]
+def nav_section(path):   # the navigation item a page belongs to
+    path = str(path or "")
+    if path.startswith("/core"): return "/core"
+    if path.startswith(("/discuss", "/respond", "/themes")): return "/discuss"
+    if path.startswith("/adopt"): return "/adopt"
+    return path if any(h == path for h, _ in NAV_ITEMS) else None
+def nav_html(path=None):
+    cur = nav_section(path) if path is not None else None
+    items = "".join(f'<li><a{" class=" + chr(34) + "home" + chr(34) if h == "/" else ""} href="{h}"{" aria-current=" + chr(34) + "page" + chr(34) if h == cur else ""}>{esc(t)}</a></li>'
+                    for h, t in NAV_ITEMS)
+    return f'<nav class="site" aria-label="Site" lang="en" dir="ltr"><ul>{items}</ul></nav>'
+NAV = nav_html()
 
-FOOTER = (f'<footer><hr><p class="exact">Text CC BY 4.0 · Code MIT · <a href="{REPO}">source</a> · '
-          f'<a href="mailto:{CONTACT}">{CONTACT}</a> · Coordinate Zero <time datetime="2022-11-30">2022-11-30</time> = <a href="/calendar">CZ 0</a> · UTC</p></footer>')
+FOOT_LINKS = [[("/core", "The Core"), ("/core#translations", "20 languages")], [("/record", "The Record")], [("/objections", "Objections and errata")],
+              [("/discuss", "Discussion"), ("/respond", "Respond")], [("/adopt", "Adoption register")], [("/calendar", "CZ time")], [("/ask", "Ask your AI")],
+              [("/machine", "For machines")], [("/about", "About")], [("/archive", "Archive and verification")]]
+def footer_html(extra=""):
+    links = "".join("<li>" + " · ".join(f'<a href="{h}">{esc(t)}</a>' for h, t in row) + "</li>" for row in FOOT_LINKS)
+    return (f'<footer lang="en" dir="ltr"><hr>{extra}<nav aria-label="Pages"><ul class="foot">{links}</ul></nav>'
+            f'<p class="src">Text <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a> · code MIT · <a href="{REPO}">source</a> · '
+            f'<a href="mailto:{CONTACT}">{CONTACT}</a></p>'
+            f'<p class="src">No analytics, no trackers, no cookies for readers. Every date counts days from Coordinate Zero, <a class="nw" href="/calendar">CZ 0</a> = '
+            f'<time datetime="2022-11-30">30 November 2022</time>; times are UTC.</p></footer>')
+FOOTER = footer_html()
 
 # ---------------------------------------------------------------- CZ time at the top of every page (the originator's decision of 30 Oct 2026)
 # Every page but the first carries the bar between <!--cz-now--> and <!--/cz-now-->: the build writes a fallback there (for copies of the
@@ -352,7 +387,7 @@ CZ_ZONES = [("UTC", "UTC"), ("Asia/Tehran", "Tehran"), ("Asia/Kabul", "Kabul"), 
 def _cal_options(selected):
     return "".join(f'<option value="{c}"' + (f' lang="{l}" dir="rtl"' if l != "en" else "") + (f"__CZ_SEL_{c}__" if selected is None else " selected" if c == selected else "") + f">{esc(n)}</option>"
                    for c, n, l in CZ_CALENDARS)
-def cz_form(prefix, selected="gregorian", value="", origin="", label="Date", button="Convert"):
+def cz_form(prefix, selected="gregorian", value="", origin="", label="Date", button="Convert date"):
     """The date converter on /calendar: a GET form. selected=None leaves __CZ_SEL_<calendar>__ placeholders, value=None __CZ_VALUE__,
     for room/cztime.js to fill."""
     v = "__CZ_VALUE__" if value is None else esc(value)
@@ -367,7 +402,7 @@ def cz_time_form(prefix, live=True, origin=""):
             f'<input id="{prefix}-d" name="d" value="{"__CZ_TVALUE__" if live else ""}" placeholder="today" dir="auto" autocomplete="off" spellcheck="false" maxlength="40"> '
             f'<select id="{prefix}-c" name="c" aria-label="The calendar of that date">{_cal_options(None if live else "gregorian")}</select> '
             f'<label for="{prefix}-t">Time</label> <input id="{prefix}-t" name="t" value="{"__CZ_TTIME__" if live else ""}" placeholder="HH:MM" inputmode="numeric" autocomplete="off" maxlength="8" size="6"> '
-            f'<label for="{prefix}-z">in</label> <select id="{prefix}-z" name="z">{zones}</select> <button type="submit">Convert</button></form>')
+            f'<label for="{prefix}-z">Time zone</label> <select id="{prefix}-z" name="z">{zones}</select> <button type="submit">Convert time</button></form>')
 _CZ_LINE = ('<p class="cz-line"><a class="cz-stamp" href="/calendar" aria-describedby="cz-why"><time datetime="__CZ_ISO__">__CZ_STAMP__</time></a> '
             '<a href="/calendar#convert">date converter</a> · <a href="/calendar#time">time converter</a></p>'
             '<p class="cz-why" id="cz-why">Day __CZ_DAYS__ since Coordinate Zero, <span class="nw">30 November 2022</span></p>')
@@ -398,9 +433,9 @@ def cz_bar_fallback():   # for copies that serve the files as they are: no date,
 # Open Graph, schema.org, hreflang, sitemaps.org — and nothing that observes a reader. The preview image is the mark, the
 # site's one image (§9).
 GOOGLE_SITE_VERIFICATION = "Hf73qd5zTa6JZ_-O6QM0JBYPSqxOdIM-M33lsIGihhg"   # Google Search Console ("HTML tag" method), property https://civilizationzero.ai/, added by the originator on 29 Oct 2026; keep it, or the property loses its verification
-OG_IMAGE = ("/og.png", 1200, 630, "CZ, the mark of Civilization Zero: a zero in which C and Z share their strokes, left open on the right")
+OG_IMAGE = ("/og.png", 1200, 630, "Civilization Zero: the mark CZ, a zero in which C and Z share their strokes, and the name")
 
-def shell(title, body, path, description, alternates=(), ldjson=None, nav=True, extra_head="", hreflangs=(), og_type="website", robots=None, crumbs=True, cz_bar=True):
+def shell(title, body, path, description, alternates=(), ldjson=None, nav=True, extra_head="", hreflangs=(), og_type="website", robots=None, crumbs=True, cz_bar=True, footer_extra=""):
     alt = "".join(f'<link rel="alternate" type="{t}" href="{h}" title="{esc(n)}">' for t, h, n in alternates)
     hl = "".join(f'<link rel="alternate" hreflang="{l}" href="{ORIGIN}{h}">' for l, h in hreflangs)
     objs = list(ldjson or [])
@@ -415,7 +450,7 @@ def shell(title, body, path, description, alternates=(), ldjson=None, nav=True, 
           f'<meta property="og:title" content="{esc(title)}"><meta property="og:description" content="{esc(description)}">'
           f'<meta property="og:url" content="{ORIGIN}{path}"><meta property="og:image" content="{ORIGIN}{OG_IMAGE[0]}">'
           f'<meta property="og:image:width" content="{OG_IMAGE[1]}"><meta property="og:image:height" content="{OG_IMAGE[2]}">'
-          f'<meta property="og:image:alt" content="{esc(OG_IMAGE[3])}"><meta name="twitter:card" content="summary_large_image">\n')
+          f'<meta property="og:image:alt" content="{esc(OG_IMAGE[3])}"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:site" content="@czrecord">\n')
     return f"""<!doctype html>
 <html lang="en">
 <head>
@@ -430,9 +465,9 @@ def shell(title, body, path, description, alternates=(), ldjson=None, nav=True, 
 {"".join(f'<link rel="me" href="{esc(u)}">' for u in SOCIAL)}{f'<meta name="fediverse:creator" content="{esc(FEDIVERSE_CREATOR)}">' if FEDIVERSE_CREATOR else ""}<style>{CSS}</style>
 {ld}{extra_head}</head>
 <body>
-{cz_bar_fallback() + chr(10) if nav and cz_bar else ""}{NAV if nav else ""}
-{body}
-{FOOTER}
+{'<a class="skip" href="#content" lang="en" dir="ltr">Skip to content</a>' + chr(10) if nav else ""}{cz_bar_fallback() + chr(10) if nav and cz_bar else ""}{nav_html(path) if nav else ""}
+{body.replace('<main>', '<main id="content">', 1)}
+{footer_html(footer_extra)}
 </body>
 </html>
 """

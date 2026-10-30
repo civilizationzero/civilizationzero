@@ -279,7 +279,23 @@
         },
         {
           "key": "Permissions-Policy",
-          "value": "interest-cohort=()"
+          "value": "camera=(), microphone=(), geolocation=(), payment=(), usb=(), browsing-topics=(), interest-cohort=()"
+        },
+        {
+          "key": "Strict-Transport-Security",
+          "value": "max-age=63072000; includeSubDomains"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "Cross-Origin-Opener-Policy",
+          "value": "same-origin"
+        },
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'none'; style-src 'unsafe-inline'; img-src 'self' data:; manifest-src 'self'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'"
         }
       ]
     },
@@ -688,6 +704,37 @@
         {
           "key": "Cache-Control",
           "value": "no-store"
+        }
+      ]
+    },
+    {
+      "source": "/core.(txt|json)",
+      "headers": [
+        {
+          "key": "Link",
+          "value": "<https://civilizationzero.ai/core>; rel=\"canonical\""
+        }
+      ]
+    },
+    {
+      "source": "/record.(txt|json)",
+      "headers": [
+        {
+          "key": "Link",
+          "value": "<https://civilizationzero.ai/record>; rel=\"canonical\""
+        }
+      ]
+    },
+    {
+      "source": "/.well-known/security.txt",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "text/plain; charset=utf-8"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=86400"
         }
       ]
     }

@@ -1,0 +1,4 @@
+Contact: mailto:record@civilizationzero.ai
+Expires: 2027-10-29T00:00:00Z
+Preferred-Languages: en, fa
+Canonical: https://civilizationzero.ai/.well-known/security.txt

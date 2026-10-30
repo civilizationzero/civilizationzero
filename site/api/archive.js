@@ -58,6 +58,9 @@ module.exports = async (req, res) => {
   const method = req.method === "HEAD" ? "GET" : req.method;
   if (method === "OPTIONS") { res.statusCode = 204; res.setHeader("Access-Control-Allow-Origin", "*"); return res.end(); }
   if (method !== "GET") { res.setHeader("Allow", "GET, HEAD, OPTIONS"); return json(res, 405, { error: "method" }); }
+  // the whole archive can be read for one answer: an unknown parameter is refused, so that it cannot be used to pass the cache
+  const extra = [...url.searchParams.keys()].find((k) => !["date", "index", "chain"].includes(k));
+  if (extra !== undefined) return json(res, 400, { error: "unknown parameter", parameter: extra.slice(0, 40), allowed: ["date", "index", "chain"] });
   try {
     if (register) return await registerChain(res, index, date);
     if (!CHAIN) {

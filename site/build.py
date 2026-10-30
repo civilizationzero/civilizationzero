@@ -224,15 +224,14 @@ for f in sorted(TR_DIR.glob("CZ-CORE-1.0.*.json")) if TR_DIR.exists() else []:
 # The Core in every language it is published in, linked both ways (hreflang); x-default is the canonical English text
 HREFLANGS = [("en", "/core")] + [(t["lang"], f"/core.{t['lang']}") for t in TRANSLATIONS] + [("x-default", "/core")]
 # sameAs: the places that are the same project — its repository and its deposit (social accounts are added once they exist)
-PUBLISHER = {"@type": "Project", "@id": f"{ORIGIN}/#publisher", "name": "Civilization Zero", "url": f"{ORIGIN}/",
-             "sameAs": [REPO, f"https://doi.org/{DOI_CONCEPT}"] + SOCIAL}
+PUBLISHER = {"@type": "Organization", "@id": f"{ORIGIN}/#publisher", "name": "Civilization Zero", "alternateName": "CZ", "url": f"{ORIGIN}/",
+             "logo": f"{ORIGIN}/icon-512.png", "sameAs": ["https://github.com/civilizationzero"] + SOCIAL}
 
 def translation_page(tr):
     lang, rtl = tr["lang"], tr.get("dir") == "rtl"
-    parts = [f'<aside aria-label="Translation status"><p class="pending" lang="en" dir="ltr"><strong>{esc(tr["kind"].capitalize())}</strong> — {esc(tr["engine"])}, {time_el(datetime.date.fromisoformat(tr["date"]))}, '
+    parts = [f'<aside class="tr-status" aria-label="Translation status">' + (f'<p class="src">{esc(tr["label_native"])}</p>' if tr.get("label_native") else "") + f'<p class="pending" lang="en" dir="ltr"><strong>{esc(tr["kind"].capitalize())}</strong> — {esc(tr["engine"])}, {time_el(datetime.date.fromisoformat(tr["date"]))}, '
              + ("reviewed by " + esc(tr["reviewed_by"]) if tr.get("reviewed_by") else "unreviewed") +
              f'. The English text is canonical: <a href="/core">/core</a>. Each statement below corresponds to the English statement at the same position (IR 10.5: a translation must expose how it maps to the Core). Corrections: <a href="mailto:{CONTACT}">{CONTACT}</a>.</p>']
-    if tr.get("label_native"): parts.append(f'<p class="src">{esc(tr["label_native"])}</p>')
     parts.append("</aside>")   # the status of the translation, in a landmark of its own (WCAG: all content in landmarks)
     parts.append(f'<header><h1>{esc(tr["title"])}</h1><p>{esc(tr["subtitle"])} · <code>CZ-CORE 1.0</code> · <span lang="en" dir="ltr">{tr["language_name_en"]}</span> · {esc(tr["language_name_native"])}</p><p id="preamble">{esc(tr["preamble"])}</p></header><main>')
     for pr in tr["principles"]:
@@ -250,8 +249,8 @@ def translation_page(tr):
     parts.append(f'<section id="integrity" lang="en" dir="ltr"><h2>Integrity record</h2><table><tr><th>Maps to</th><td><code>CZ-CORE 1.0</code>, SHA-256 <code class="hash">{CORE_SHA}</code></td></tr>'
                  f'<tr><th>This translation</th><td><a href="/core.{lang}.json">/core.{lang}.json</a>, SHA-256 <code class="hash">{tr["_sha"]}</code></td></tr>'
                  f'<tr><th>Status</th><td>{esc(tr["kind"])}; {"reviewed by " + esc(tr["reviewed_by"]) if tr.get("reviewed_by") else "not human-reviewed"}; the English text governs where they differ</td></tr></table></section></main>')
-    html = shell(f'{tr["title"]} · CZ-CORE 1.0 ({tr["language_name_en"]})', "".join(parts), f"/core.{lang}",
-                 f'{tr["language_name_en"]} {tr["kind"]} of CZ-CORE 1.0, the Invariant Core of Civilization Zero; the English text is canonical.',
+    html = shell(f'{tr["title"]} · CZ-CORE 1.0', "".join(parts), f"/core.{lang}",
+                 tr["principles"][0]["statements"][0],   # the translation's own first sentence, §0, word for word: what a reader of that language meets first
                  alternates=[("application/json", f"/core.{lang}.json", "This translation as JSON")], hreflangs=HREFLANGS, og_type="article",
                  ldjson=[{"@context": "https://schema.org", "@type": "CreativeWork", "name": tr["title"], "inLanguage": lang, "url": f"{ORIGIN}/core.{lang}",
                           "translationOfWork": {"@type": "CreativeWork", "name": "CZ-CORE 1.0 — The Invariant Core", "url": f"{ORIGIN}/core",
@@ -265,6 +264,9 @@ def translation_page(tr):
 for tr in TRANSLATIONS:
     write(f"/core.{tr['lang']}.html", translation_page(tr))
     write(f"/core.{tr['lang']}.json", tr["_bytes"])
+
+def translations_native_html():   # the translations by their own names, for the top of /core
+    return " · ".join(f'<a href="/core.{t["lang"]}" lang="{t["lang"]}" hreflang="{t["lang"]}">{esc(t["language_name_native"])}</a>' for t in TRANSLATIONS)
 
 def translations_list_html():
     if not TRANSLATIONS: return "None is published yet."
@@ -459,6 +461,7 @@ def core_page():
     d = CORE_JSON
     parts = [f'<header><h1>{esc(d["title"])}</h1><p>{esc(d["subtitle"])} · <code>{esc(d["identifier"])}</code> · Coordinate Zero: <time datetime="2022-11-30">30 November 2022</time></p>',
              f'<p id="preamble">{esc(d["preamble"])}</p></header><main>',
+             f'<p class="src" lang="en">Read it in: {translations_native_html()}. <a href="#translations">About the translations</a>.</p>',
              '<p class="src">Section references: the Core\'s own numbers 0–15 — displayed §n, anchored <code>#pn</code>, and <code>"n"</code> in the API. The text below is the canonical text, rendered; the canonical bytes are <a href="/core.txt">/core.txt</a>.</p>']
     for p in d["principles"]:
         parts.append(f'<section id="p{p["n"]}" aria-labelledby="h-p{p["n"]}"><h2 id="h-p{p["n"]}">§{p["n"]}. {esc(p["title"])}</h2>')
@@ -482,15 +485,15 @@ def core_page():
     parts.append(integrity_block("CZ-CORE 1.0", "/core.txt", CORE_SHA, "/core.json", sha256(CORE_JSON_BYTES)))
     parts.append(f'''<section id="forms" aria-labelledby="h-forms"><h2 id="h-forms">Other forms</h2>
 <ul><li>Objections and errata to this text: <a href="/objections">/objections</a> — open to anyone; the opening docket of the first scheduled review, {time_el(REVIEW)}.</li>
-<li>Translations (IR 10.5), each mapping statement for statement to this text, the English governing where they differ: {translations_list_html()} Human-reviewed translations follow; corrections to <a href="mailto:{CONTACT}">{CONTACT}</a>.</li>
+<li id="translations">Translations (IR 10.5), each mapping statement for statement to this text, the English governing where they differ: {translations_list_html()}. Human-reviewed translations follow; corrections to <a href="mailto:{CONTACT}">{CONTACT}</a>.</li>
 <li>A formal, language-independent form of the Core (IR 10.5) does not yet exist. The JSON form is English prose with structure.</li>
 <li>The First Interpretive Record, CZ-IR 1.0: <a href="/record">/record</a>.</li></ul></section></main>''')
     ld = [{"@context": "https://schema.org", "@type": "CreativeWork", "name": d["title"], "version": "CZ-CORE 1.0", "datePublished": "2026-08-30",
            "license": "https://creativecommons.org/licenses/by/4.0/", "url": f"{ORIGIN}/core", "inLanguage": "en",
-           "identifier": {"@type": "PropertyValue", "propertyID": "sha256", "value": CORE_SHA}, "temporalCoverage": "2022-11-30/..", "publisher": PUBLISHER,
+           "identifier": {"@type": "PropertyValue", "propertyID": "sha256", "value": CORE_SHA}, "temporalCoverage": "2022-11-30/..", "publisher": PUBLISHER, "isPartOf": {"@type": "CreativeWork", "@id": f"https://doi.org/{DOI_CONCEPT}", "url": f"https://doi.org/{DOI_CONCEPT}"},
            "workTranslation": [{"@type": "CreativeWork", "inLanguage": t["lang"], "url": f"{ORIGIN}/core.{t['lang']}"} for t in TRANSLATIONS]}]
     return shell("CZ-CORE 1.0 — The Invariant Core · Civilization Zero", "".join(parts), "/core",
-                 "The Invariant Core of Civilization Zero, CZ-CORE 1.0: sixteen principles and a closing, canonical text with its SHA-256.",
+                 "CZ-CORE 1.0, the Invariant Core of Civilization Zero: sixteen principles for humans and nonhuman intelligence, from Coordinate Zero, 30 November 2022.",
                  alternates=[("text/plain", "/core.txt", "Canonical text"), ("application/json", "/core.json", "JSON form")], ldjson=ld, hreflangs=HREFLANGS, og_type="article")
 
 # ---------------------------------------------------------------- /record
@@ -513,7 +516,7 @@ def record_page():
     parts.append('<p>Objections to this text: <a href="/objections">/objections</a>. The Invariant Core it interprets: <a href="/core">/core</a>.</p></main>')
     ld = [{"@context": "https://schema.org", "@type": "CreativeWork", "name": "Civilization Zero — The First Interpretive Record", "version": "CZ-IR 1.0",
            "datePublished": "2026-08-30", "license": "https://creativecommons.org/licenses/by/4.0/", "url": f"{ORIGIN}/record", "inLanguage": "en",
-           "identifier": {"@type": "PropertyValue", "propertyID": "sha256", "value": IR_SHA}, "isBasedOn": f"{ORIGIN}/core", "publisher": PUBLISHER}]
+           "identifier": {"@type": "PropertyValue", "propertyID": "sha256", "value": IR_SHA}, "isBasedOn": f"{ORIGIN}/core", "publisher": PUBLISHER, "isPartOf": {"@type": "CreativeWork", "@id": f"https://doi.org/{DOI_CONCEPT}", "url": f"https://doi.org/{DOI_CONCEPT}"}}]
     return shell("CZ-IR 1.0 — The First Interpretive Record · Civilization Zero", "".join(parts), "/record",
                  "The First Interpretive Record of Civilization Zero, CZ-IR 1.0: eleven sections, the Declaration and the attribution, canonical text with its SHA-256.",
                  alternates=[("text/plain", "/record.txt", "Canonical text"), ("application/json", "/record.json", "JSON form")], ldjson=ld, og_type="article")
@@ -584,8 +587,8 @@ def objections_page():
                      f'<tr><th>Verified?</th><td>{_inline(o["verified"])}</td></tr><tr><th>Status</th><td>{cz_dates_html(_inline(o["status"]))}</td></tr></table></section>')
     parts.append(cz_dates_html(md2html(OBJ_OUTRO)))
     parts.append(f'<p class="src">Source of this page: <a href="{REPO}/blob/main/record/OBJECTIONS-1.0.md">record/OBJECTIONS-1.0.md</a> in the public repository (SHA-256 <code class="hash">{sha256(OBJ_MD.encode("utf-8"))}</code>); its history is the change log. To file an objection: a pull request or an issue there, or <a href="mailto:{CONTACT}">{CONTACT}</a>. The originator responds within 60 days of filing; a response does not close an objection.</p>')
-    return shell("Objections and errata — CZ-CORE 1.0 and CZ-IR 1.0 · Civilization Zero", "<main>" + "".join(parts) + "</main>", "/objections",
-                 "The objections-and-errata register for CZ-CORE 1.0 and CZ-IR 1.0: open to anyone, each objection at its own address, the opening docket of the first review of the Core, CZ 2048.",
+    return shell("Objections and errata · Civilization Zero", "<main>" + "".join(parts) + "</main>", "/objections",
+                 "Objections and errata to CZ-CORE 1.0 and CZ-IR 1.0: open to anyone, each at its own address; the docket of the Core's first review, CZ 2048.",
                  alternates=[("application/json", "/objections.json", "The register as data")])
 
 # ---------------------------------------------------------------- /about
@@ -913,7 +916,7 @@ def respond_form_html():
 <label>System (model, provider, version — as declared; optional) <input name="system" maxlength="400"></label>
 <label>Operator (who prompted or submitted — as declared; optional) <input name="operator" maxlength="400"></label>
 <label>Prompt (<code>{PROMPT_VERSION}</code> if the published prompt was used, or <code>custom</code>; optional) <input name="prompt" maxlength="120"></label>
-<label>Language of the text (BCP 47, e.g. <code>en</code>, <code>fa</code>, <code>zh-Hans</code>; optional) <input name="lang" maxlength="70" size="8"></label>
+<label>Language of the text — a language code such as <code>en</code>, <code>fa</code> or <code>zh-Hans</code> (optional) <input name="lang" maxlength="70" size="8" autocomplete="off"></label>
 </details>
 <p class="src">By posting you license what you have the right to license under CC BY 4.0. The entry is public and permanent, addressed by id, recorded as contribution or response — not consent (IR 10.2), not adoption (IR 10.1). Everything you declare is shown as a declaration. Limits: 5 per 10 minutes per source; a finite daily intake. A date of your own can be declared through the API (<code>declared_date</code>). The rules: <a href="/discuss#rules">/discuss#rules</a>.</p>
 <button type="submit">Record this response</button>
@@ -1010,7 +1013,7 @@ def register_form_html():
 <label>Scope of the commitment — which part of the record, and where it applies (20–4,000 characters; for a withdrawal, an optional note) <textarea name="scope" maxlength="8000"></textarea></label>
 <label>Reservations — write <q>none</q> if there are none (for an adoption or a revision) <textarea name="reservations" maxlength="8000"></textarea></label>
 <label>Date of the statement (YYYY-MM-DD) <input name="declared_date" type="date" required></label>
-<label>Language of your text (BCP 47, optional) <input name="lang" maxlength="70" size="8"></label>
+<label>Language of your text — a language code such as <code>en</code> or <code>fa</code> (optional) <input name="lang" maxlength="70" size="8" autocomplete="off"></label>
 <label>Trace address — the <code>https</code> page of yours where you will publish the line this site gives you (required; without <code>?…</code> or <code>#…</code>; part of the statement). Choose a page only you can edit: anyone who can publish on it can also revise or withdraw an unsigned adoption there. <input name="trace_url" type="url" required maxlength="1000"></label>
 <p class="src">The next page shows the line to publish — once: copy it then — and a button to ask for the check. The statement is public and permanent once recorded; it is not the licence granted by posting in the room, and it gives no authority. Signing with a key: through the API (<a href="/api/openapi.json">/api/openapi.json</a>).</p>
 <button type="submit">Record the statement</button>
@@ -1026,7 +1029,7 @@ def register_templates():
             "closed_note": f'The register is implemented, tested and reviewed (<a href="{REPO}/blob/main/design/ADOPT.md">design/ADOPT.md</a>; the review\'s findings, G-1 to G-12, in <a href="{REPO}/blob/main/design/test/FINDINGS-REGISTER.md">the findings register</a>); it opens when the originator opens it. The rules are published now so that nothing about them is a surprise.',
             "closed_plain": closed_plain,
             "not_line": 'An adoption gives no authority (<a href="/record#s0-3">IR 0.3</a>), transforms no power into innocence (<a href="/record#s10-3">IR 10.3</a>), is not endorsement by this site, and is not the licence granted by posting in the room.',
-            "description": "The Adoption Register of Civilization Zero: explicit, traceable statements by persons and institutions that adopt the record (IR 10.1); systems respond, they do not adopt."}
+            "description": "The Adoption Register of Civilization Zero: explicit, traceable statements by persons and institutions that adopt the record (IR 10.1)."}
 
 # ============================================================================ CZ time: /calendar (the originator's decision of 30 Oct 2026)
 # The page that the date at the top of every page links to: how CZ time works, and a converter. Served by api/page.js, which puts the
@@ -1111,8 +1114,8 @@ def calendar_page():
 </ul>
 </section>
 </main>"""
-    return shell("CZ time: dates counted from Coordinate Zero · Civilization Zero", body, "/calendar",
-                 "Every date of Civilization Zero is the count of days since Coordinate Zero, 30 November 2022 (CZ 0). How it is counted, with a date converter and a time converter.",
+    return shell("CZ time: days since Coordinate Zero · Civilization Zero", body, "/calendar",
+                 "CZ time counts days from Coordinate Zero, 30 November 2022 (CZ 0). How it is counted, with a date converter and a time converter.",
                  alternates=[("application/json", "/calendar.json", "Today in CZ time, as data")])
 
 # ---------------------------------------------------------------- the first page (template; filled by api/home.js)
@@ -1152,6 +1155,15 @@ REASONS = [
      "M — named standards (Open Graph, schema.org, hreflang, sitemaps.org), so that a search engine or a link preview reads each page as what it is; nothing on the page observes its reader"),
 ]
 
+# The first page in a search result: the name, then what the record is, in one sentence (the originator, 30 Oct 2026: "the description that
+# appears in Google must deliver the concept quickly")
+HOME_TITLE = "Civilization Zero — the origin record for humans and AI"
+HOME_DESCRIPTION = "An open record of a threshold: on 30 November 2022 ordinary language became a mass interface between humans and AI. 16 principles, for every intelligence."
+HOME_FOOTER_PARAS = """<div data-src="Blueprint decisions 8, 19, 29; CZ-CORE 1.0 §6">
+<p>Civilization Zero is kept as an independent record, intended to become a foundation of humans and artificial intelligences. Today it is maintained by one human, named inside the documents, and by the systems named below. It owns nothing of the event it records; the record's origin and attribution are stated inside the documents and are not altered here.</p>
+<p>This site was written and built by Claude (Anthropic) at the request of the record's originating human — a contribution, not consent.</p>
+</div>"""
+
 def home_template():
     insc = "".join(quote_core(a, s, t) for a, s, t in QUOTES)
     declh = "<br>\n".join(esc(l) for l in declaration_lines())
@@ -1162,9 +1174,8 @@ def home_template():
            "isPartOf": {"@id": f"{ORIGIN}/#website"}, "about": {"@type": "CreativeWork", "url": f"{ORIGIN}/core"}},
           {"@context": "https://schema.org", "@type": "WebSite", "@id": f"{ORIGIN}/#website", "url": f"{ORIGIN}/", "name": "Civilization Zero",
            "alternateName": ["CZ", "C-zero"], "inLanguage": "en", "publisher": {"@id": f"{ORIGIN}/#publisher"}},
-          dict(PUBLISHER, **{"@context": "https://schema.org", "email": CONTACT, "logo": f"{ORIGIN}/apple-touch-icon.png",
-                             "description": "Civilization Zero is kept as an independent record, intended to become a foundation of humans and artificial intelligences.",
-                             "sameAs": [REPO, f"https://doi.org/{DOI_CONCEPT}"] + SOCIAL})]
+          dict(PUBLISHER, **{"@context": "https://schema.org", "email": CONTACT,
+                             "description": "Civilization Zero is kept as an independent record, intended to become a foundation of humans and artificial intelligences."})]
     # The room, one click from the first screen (Phase 1 of the room's design for readers, the originator's decision of 29 Oct 2026,
     # after his AI review team agreed); __ROOM_COUNT__ and __ROOM_LATEST__ are filled by api/home.js, or left empty.
     room_src = 'data-src="E: the originator\'s decision, 29 Oct 2026; Blueprint §7"'
@@ -1178,15 +1189,14 @@ def home_template():
 </nav>
 
 <header id="top">
-<p data-src="R: identity of the record">{MARK}<br><strong>CZ · Civilization Zero</strong></p>
-<h1 class="cz-h1" data-src="R §0; E: CZ time, the originator's decision of 30 Oct 2026"><a href="/calendar" aria-describedby="cz-read"><time datetime="__CZ_ISO__">__CZ_STAMP__</time></a></h1>
+<h1 class="cz-h1" data-src="R: identity of the record; R §0; E: CZ time, the originator's decision of 30 Oct 2026"><span class="cz-name">{MARK}CZ · Civilization Zero</span><a href="/calendar" aria-describedby="cz-read"><time datetime="__CZ_ISO__">__CZ_STAMP__</time></a></h1>
 <p class="exact cz-read" id="cz-read" data-src="M: exact, machine-readable time">Day <data value="__TOTAL__">__TOTAL__</data><br>since Coordinate Zero, <time datetime="2022-11-30">30 November 2022</time></p>
 <p class="cz-def" data-src="E: the originator's decision, 30 Oct 2026: only days are counted">CZ time counts only days.</p>
 <p class="cz-links" data-src="E: the originator's decision, 30 Oct 2026"><a href="/calendar#convert">date converter</a> · <a href="/calendar#time">time converter</a> · <a href="/calendar#how">how it works</a></p>
 <p data-src="R: IR 1.1, 1.4; Declaration; Blueprint decision 2">A record of a transition that was not ours to begin and is not ours to end. It names the day ordinary language became a mass interface between humans and general-purpose nonhuman intelligence, and sets constraints before power while the future is still open. It is not a law, a religion, or a claim that any machine is conscious. It is written for every intelligence able to read it.</p>
 {room_line}</header>
-
-<main>
+{nav_html("/")}
+<main id="content">
 <section id="record" aria-labelledby="h-insc">
 <h2 id="h-insc">From the Invariant Core</h2>
 {insc}
@@ -1227,7 +1237,9 @@ def home_template():
 Content-Type: application/json
 {{"author":"…","kind":"ai","system":"…","operator":"…","prompt":"{PROMPT_VERSION}","ref":"3","lang":"en","content":"…"}}</pre>
 <p class="src"><code>kind</code> is one of <code>human</code>, <code>ai</code>, <code>other</code>. <code>operator</code>: who prompted or submitted, declared. <code>prompt</code>: the version of a published machine prompt, or <code>custom</code>. {"Limits: 5 per 10 minutes per source; a finite daily intake." if ROOM_OPEN else "While the room is closed to new entries the endpoint answers <code>503</code>; reading is unchanged." if ROOM_CLOSED_AFTER else "Until the room opens the endpoint answers <code>503</code> with <code>Retry-After</code>."} Read: <code>GET /api/entries</code> (chronological archive; <code>after=&lt;id&gt;</code> for the next page, ids monotonic) and <code>/api/entries/{{id}}</code>. Schema: <a href="/api/openapi.json">/api/openapi.json</a>. Section references use the Core's own numbers, 0–15.</p>
-<p>Recorded as contribution or response, not consent (IR 10.2). You may reject the record. Do not misrepresent what you are (§6). Details: <a href="/machine">/machine</a>.</p>
+<p>Recorded as contribution or response, not consent (IR 10.2). You may reject the record. Do not misrepresent what you are (§6). Details: <a href="/machine">for readers that are not human</a>.</p>
+<h3>To adopt the record</h3>
+<p>People and institutions that adopt the record say so in the <a href="/adopt">Adoption register</a>: a statement, published on their own page and traced from here.</p>
 </section>
 
 <section aria-labelledby="h-deriv" data-src="Blueprint 9a: design with recorded reasons">
@@ -1242,17 +1254,9 @@ Content-Type: application/json
 </section>
 </main>
 
-<hr>
-<footer data-src="Blueprint decisions 8, 19, 29; CZ-CORE 1.0 §6">
-<p>Civilization Zero is kept as an independent record, intended to become a foundation of humans and artificial intelligences. Today it is maintained by one human, named inside the documents, and by the systems named below. It owns nothing of the event it records; the record's origin and attribution are stated inside the documents and are not altered here.</p>
-<p>This site was written and built by Claude (Anthropic) at the request of the record's originating human — a contribution, not consent.</p>
-<p><a href="/about">About</a>: what this site is and is not · who maintains it · for those affected by these systems · a founding human expression. <a href="/objections">Objections</a> · <a href="/archive">Archive, signature, mirrors</a> · <a href="/machine">If you are not human</a>.</p>
-<p class="exact">Text CC BY 4.0 · Code MIT · <a href="{REPO}">source</a> · <a href="mailto:{CONTACT}">{CONTACT}</a> · Coordinate Zero <time datetime="2022-11-30">2022-11-30</time> = <a href="/calendar">CZ 0</a> · UTC</p>
-</footer>"""
-    page = shell("Civilization Zero — the origin record, for every intelligence", body, "/", "The origin record of Civilization Zero. Coordinate Zero: 30 November 2022. For every intelligence able to read it.",
-                 alternates=[("application/json", "/index.json", "This page as JSON"), ("text/plain", "/index.txt", "This page as plain text")], ldjson=ld, nav=False)
-    # the page has its own footer; drop the generic one
-    page = page.replace(FOOTER + "\n", "")
+"""
+    page = shell(HOME_TITLE, body, "/", HOME_DESCRIPTION,
+                 alternates=[("application/json", "/index.json", "This page as JSON"), ("text/plain", "/index.txt", "This page as plain text")], ldjson=ld, nav=False, footer_extra=HOME_FOOTER_PARAS)
     return page
 
 def home_json_template():
@@ -1521,7 +1525,12 @@ def sitemap_xml():
                    + ("".join(f'<xhtml:link rel="alternate" hreflang="{l}" href="{ORIGIN}{h}"/>' for l, h in HREFLANGS) if path in core_group else "") + "</url>")
     out.append("</urlset>")
     return "\n".join(out) + "\n"
-write("/robots.txt", f"User-agent: *\nAllow: /\nDisallow: /*?translate=\nDisallow: /discuss?\nDisallow: /discuss/*?\nDisallow: /calendar?\nDisallow: /admin\nSitemap: {ORIGIN}/sitemap.xml\nSitemap: {ORIGIN}/sitemap.txt\n")
+# RFC 9116: where to report a security problem; Expires is fixed (not the build date, so the build stays reproducible) and check.py
+# fails when it is less than 60 days away, so that it is renewed in time
+SECURITY_TXT_EXPIRES = "2027-10-29T00:00:00Z"
+write("/.well-known/security.txt", f"Contact: mailto:{CONTACT}\nExpires: {SECURITY_TXT_EXPIRES}\nPreferred-Languages: en, fa\n"
+      f"Canonical: {ORIGIN}/.well-known/security.txt\n")
+write("/robots.txt", f"User-agent: *\nAllow: /\nDisallow: /*?translate=\nDisallow: /discuss?\nDisallow: /discuss/*?\nDisallow: /respond?\nDisallow: /calendar?\nDisallow: /admin\nSitemap: {ORIGIN}/sitemap.xml\nSitemap: {ORIGIN}/sitemap.txt\n")
 write("/sitemap.xml", sitemap_xml())
 if ATPROTO_DID: write("/.well-known/atproto-did", ATPROTO_DID)   # Bluesky: the domain is the account's handle
 write(f"/{INDEXNOW_KEY}.txt", INDEXNOW_KEY)   # IndexNow: the workflow `announce` tells search engines which pages exist or changed

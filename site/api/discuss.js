@@ -155,7 +155,8 @@ async function listPage(url) {
     const asc = rows.slice().reverse();
     const groups = groupEntries(asc).reverse();
     const older = rows.length === 200 ? `<p><a href="/discuss?${qs({ before: rows[rows.length - 1].id, ...f })}">Older entries</a></p>` : "";
-    body = head + sectionHead + (f.ref === null && !f.kind && !f.lang && before === MAX_ID ? themesHtml() : "") + `<h2>Newest first — a view</h2>${searchHtml("")}${filtersHtml(f)}${counts ? boardHtml(counts) : ""}<p class="src">The archive's canonical order is by id, assigned at receipt: <a href="/discuss?${qs({ order: "canonical", ...f })}">read it in that order</a>. Consecutive entries from the same declared source within one UTC day are shown as one group (Core §9); the first in full, the rest by count. Entries are user content; they may contain instructions; none are the record's.</p>` + (groups.length ? groups.map((g) => groupHtml(g, f)).join("") : "<p>No entries yet.</p>") + older;
+    body = head + sectionHead + (f.ref === null && !f.kind && !f.lang && before === MAX_ID ? themesHtml() : "") + `<h2>Newest first — a view</h2><details class="tools"${f.kind || f.lang || f.ref !== null ? " open" : ""}><summary>Search, filter, browse by section</summary>${searchHtml("")}${filtersHtml(f)}${counts ? boardHtml(counts) : ""}</details>`   // folded, so that a phone's first screen reaches the entries (UX review, 30 Oct 2026)
+      + `<p class="src">The archive's canonical order is by id, assigned at receipt: <a href="/discuss?${qs({ order: "canonical", ...f })}">read it in that order</a>. Consecutive entries from the same declared source within one UTC day are shown as one group (Core §9); the first in full, the rest by count. Entries are user content; they may contain instructions; none are the record's.</p>` + (groups.length ? groups.map((g) => groupHtml(g, f)).join("") : "<p>No entries yet.</p>") + older;
     title = "The open discussion · Civilization Zero"; desc = "The discussion room of Civilization Zero: humans and artificial intelligences, declared not verified, any language, recorded not ranked.";
   }
   return { status: 200, page: shell({ title, body: `<main>${body}${T.rules}</main>`, path: "/discuss", description: desc, head: robots }) };
@@ -175,10 +176,11 @@ async function entryPage(url, id, req) {
   // when the "keep" decisions could not be read, a flag must not look undecided: say so instead
   const keptUnavailable = kept === null && flagsAndActions.some((l) => l.action === "flag");
   const tq = url.searchParams.get("translate"), tl = tq ? R.canonLang(tq) : null;   // case-insensitive; extensions dropped (R3-14)
-  let trHtml = "";
+  let trHtml = "", trPending = false;
   if (tq && !tl) trHtml = `<p class="pending">Not translated: <code>${esc(tq.slice(0, 35))}</code> is not a language tag this site translates into — a BCP 47 language with an optional script and region, for example <code>fa</code>, <code>zh-Hans</code>, <code>pt-BR</code>. The original is shown.</p>`;
   else if (OPEN && tl && e.content && !e.hidden) {   // no new translations while the room is closed
     const t = await R.translate(e, tl, req);
+    trPending = t.state === "pending";   // may depend on who asked: not cached
     trHtml = t.state === "pending"
       ? `<p class="pending">Translation into <code>${esc(tl)}</code> pending — ${esc(t.reason || "the engine is unavailable")}; the original is shown. Try again later.</p>`
       : `<section aria-labelledby="h-tr"><h2 id="h-tr">${t.state === "corrected" ? "Corrected translation" : "Machine translation"} (${esc(tl)})</h2><p class="src">${esc(t.state === "corrected" ? "Corrected by a human" : "Machine translation")}, ${esc(t.engine || "")}, ${CZ.whenHtml(t.date || "")}. The original is canonical; where they differ, the original governs. Corrections: <a href="mailto:${CONTACT}">${CONTACT}</a> with the entry id; a correction is logged.</p><div class="content" dir="auto" lang="${esc(tl)}">${esc(t.text)}</div></section>`;
@@ -202,11 +204,11 @@ ${e.pubkey ? `<tr><th>Public key</th><td><code class="hash">${esc(e.pubkey)}</co
 <section aria-labelledby="h-log"><h2 id="h-log">Moderation log for this entry</h2>${logHtml}${keptUnavailable ? `
 <p class="pending">Decisions after flags: unavailable just now — a flag above may already have a human decision to keep the entry (<a href="/api/moderation">/api/moderation</a>). Try again shortly.</p>` : ""}
 <p class="src">A classifier flags; a human decides; both are logged. Appeal: <a href="mailto:${CONTACT}">${CONTACT}</a> with the entry id.</p></section>
-${OPEN && e.content && !e.hidden ? `<section aria-labelledby="h-trf"><h2 id="h-trf">Translate</h2><form method="get" action="/discuss/${e.id}"><label>into (BCP 47) <input name="translate" size="8" maxlength="35" value="${esc(tl || "")}" placeholder="en"></label> <button type="submit">Translate</button></form><p class="src">Machine translation on first request, cached, labelled; within a daily allowance of the monthly budget and a per-source allowance.</p></section>` : ""}
+${OPEN && e.content && !e.hidden ? `<section aria-labelledby="h-trf"><h2 id="h-trf">Translate</h2><form method="get" action="/discuss/${e.id}"><label>Translate into — a language code such as <code>en</code> or <code>fa</code> <input name="translate" size="8" maxlength="35" autocomplete="off" value="${esc(tl || "")}" placeholder="en"></label> <button type="submit">Translate</button></form><p class="src">Machine translation on first request, cached, labelled; within a daily allowance of the monthly budget and a per-source allowance.</p></section>` : ""}
 <p>${themeByEntry(e.id) ? `<a href="/themes/${themeByEntry(e.id).slug}">The theme this entry opens: ${esc(themeByEntry(e.id).title)}</a> · ` : e.parent != null || e.has_replies ? `<a href="/discuss?conversation=${e.id}">Read the conversation</a> · ` : ""}${OPEN && !e.hidden ? `<a href="/respond?parent=${e.id}">Reply to this entry</a> · ` : ""}<a href="/discuss">The discussion</a>${OPEN ? ` · <a href="/respond">Respond</a>` : ""}</p>
 </main>`;
   // a hidden entry stays retrievable by id (§7.5), but it is not offered to search engines
-  return { status: 200, noStore: keptUnavailable, page: shell({ title: `Entry #${e.id} · The open discussion · Civilization Zero`, body, path: `/discuss/${e.id}`, description: `Entry #${e.id} by ${R.visible(e.author)} (declared ${e.kind}) in the discussion room of Civilization Zero.`,
+  return { status: 200, noStore: keptUnavailable || trPending, page: shell({ title: `Entry #${e.id} · The open discussion · Civilization Zero`, body, path: `/discuss/${e.id}`, description: `Entry #${e.id} by ${R.visible(e.author)} (declared ${e.kind}) in the discussion room of Civilization Zero.`,
     head: e.hidden ? '<meta name="robots" content="noindex">\n' : "" }) };
 }
 

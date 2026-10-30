@@ -1,5 +1,7 @@
 name: build-time verification
 on: [push, pull_request]
+permissions:
+  contents: read   # reads the repository only; writes nothing
 jobs:
   check:
     runs-on: ubuntu-24.04

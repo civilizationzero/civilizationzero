@@ -82,9 +82,13 @@ module.exports = async (req, res) => {
   // at most five minutes, and never past 00:00 UTC, when the date in the heading turns
   res.setHeader("Cache-Control", `public, max-age=0, s-maxage=${Math.min(300, CZ.secondsToNextDay(now.getTime()))}`);
   res.setHeader("Vary", "Accept");
-  res.setHeader("Link", '</index.json>; rel="alternate"; type="application/json", </index.txt>; rel="alternate"; type="text/plain", </api/openapi.json>; rel="service-desc"; type="application/vnd.oai.openapi+json"');
+  const link = '</index.json>; rel="alternate"; type="application/json", </index.txt>; rel="alternate"; type="text/plain", </api/openapi.json>; rel="service-desc"; type="application/vnd.oai.openapi+json"';
+  const isHtml = (T[f] ? f : "html") === "html";
+  res.setHeader("Link", isHtml ? link : `<https://civilizationzero.ai/>; rel="canonical", ${link}`);   // the JSON and text forms name the page as canonical
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("Access-Control-Allow-Origin", "*");
+  // the page: nothing loads from elsewhere, no script, no framing (as every page)
+  if (isHtml) res.setHeader("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'; img-src 'self' data:; manifest-src 'self'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'");
   res.end(fill(T[f] || T.html, c));
 };
 

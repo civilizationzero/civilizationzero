@@ -64,7 +64,7 @@ function reservedField(fields, fingerprint) {
   return null;
 }
 const reservedDetail = (field) => `${field}: "The originator" and "Civilization Zero", and names made to look like them, are reserved: an entry that uses them must be signed with the originator's key (fingerprint ${ORIGINATOR.fingerprint.slice(0, 16)}…, ${ORIGIN}/about#originator-key). Choose another name, or say who you are in your text.`;
-const CSP = "default-src 'none'; style-src 'unsafe-inline'; img-src 'self' data:; form-action 'self'; base-uri 'none'; frame-ancestors 'none'";
+const CSP = "default-src 'none'; style-src 'unsafe-inline'; img-src 'self' data:; manifest-src 'self'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'";
 if (OPEN && (!process.env.CZ_SALT || process.env.CZ_SALT.length < 32)) throw new Error("CZ_SALT missing: source hashes must be salted (Blueprint §7.3)");
 
 // A declared field (author, system, operator, prompt, language, declared date; a register's signatory, institution, capacity) is
@@ -108,8 +108,13 @@ function html(res, status, page, headers = {}) {
 // placeholder is replaced wherever it occurs (the title, description and address appear in the link-preview metadata too), by a
 // function, so that "$&", "$`" and the like in user content are never interpreted (R-2), and nothing inserted is scanned again.
 const fill = (s, v) => s.replace(/__(TITLE|DESC|PATH|HEAD|BODY)__/g, (m, k) => (Object.prototype.hasOwnProperty.call(v, k) ? v[k] : ""));
+// The navigation marks the page it is on (as site/lib.py does for the static pages), and the main landmark is the skip link's target.
+const navSection = (p) => (/^\/(discuss|respond|themes)/.test(p) ? "/discuss" : /^\/adopt/.test(p) ? "/adopt" : null);
 function shell({ title, body, path, description, head }) {
-  return fill(T.shell, { TITLE: esc(title), DESC: esc(description), PATH: esc(path), HEAD: head || "", BODY: body });
+  let page = fill(T.shell, { TITLE: esc(title), DESC: esc(description), PATH: esc(path), HEAD: head || "", BODY: String(body).replace("<main>", '<main id="content">') });
+  const cur = navSection(String(path || ""));
+  if (cur) page = page.replace(`<li><a href="${cur}">`, () => `<li><a href="${cur}" aria-current="page">`);
+  return page;
 }
 
 // ---------------------------------------------------------------- database

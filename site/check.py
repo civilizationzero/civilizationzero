@@ -50,7 +50,7 @@ def resolves(path):
 
 pages = sorted(PUBLIC.glob("*.html")) + [SITE / "preview" / "index.html"]
 DT = json.loads((SITE / "api" / "discuss-templates.json").read_text("utf-8"))
-def dshell(title, body, path): return DT["shell"].replace("__TITLE__", title).replace("__DESC__", "d").replace("__PATH__", path).replace("__HEAD__", "").replace("__BODY__", body)
+def dshell(title, body, path): return DT["shell"].replace("__TITLE__", title).replace("__DESC__", "d").replace("__PATH__", path).replace("__HEAD__", "").replace("__BODY__", body.replace("<main>", '<main id="content">', 1))   # as room/lib.js's shell
 VIRTUAL = {"discuss.html": dshell("The open discussion", DT["closed"], "/discuss"),
            "discuss-open.html": dshell("The open discussion", "<main><h1>The open discussion</h1><p>x</p>" + DT["rules"] + "</main>", "/discuss"),
            "respond.html": dshell("Respond", DT["respond_closed"], "/respond"), "respond-open.html": dshell("Respond", DT["respond_open"], "/respond")}
@@ -80,6 +80,8 @@ for f in pages + [pathlib.Path("virtual") / n for n in VIRTUAL]:
 for f, p in parsed.items():
     for href in p.hrefs:
         if href.startswith(("http", "mailto:")): continue
+        if href.startswith("#"):   # a fragment of this page (the skip link's #content, for one): it must be on this page
+            check(href[1:] in p.ids, f"{f.name}: missing anchor {href}"); continue
         path, _, frag = href.partition("#")
         path = path.partition("?")[0]   # a query names a view of a page the function serves (/discuss?ref=6), not another page
         if path == "" : path = "/" if f.name == "index.html" else "/" + f.stem
@@ -158,10 +160,14 @@ if PRESS_PUBLISHED:
     check("Notes for the originator" not in _press and "draft, not yet released" not in _press, "press: the originator's notes and the draft line stay off the page")
 svg = (PUBLIC / "favicon.svg").read_text("utf-8")
 check(svg.startswith("<svg") and "prefers-color-scheme:dark" in svg, "favicon.svg: the mark, light and dark")
+# security.txt (RFC 9116): present, a contact, and an expiry at least 60 days away
+_sec = (PUBLIC / ".well-known" / "security.txt").read_text("utf-8")
+_exp = datetime.datetime.fromisoformat(re.search(r"^Expires: (\S+)$", _sec, re.M).group(1).replace("Z", "+00:00"))
+check(f"Contact: mailto:{CONTACT}" in _sec and _exp - datetime.datetime.now(datetime.timezone.utc) > datetime.timedelta(days=60), "security.txt: a contact and an expiry more than 60 days away")
 # the mark is one geometry (site/assets/mark.py, the originator's choice of 30 Oct 2026): the small drawing in the favicon, the large on
 # the first page; the mark it replaced is gone from every page
 _mo, _mz, _ = MARK_GEOMETRY.paths(MARK_GEOMETRY.SMALL); _lo, _lz, _ = MARK_GEOMETRY.paths(MARK_GEOMETRY.LARGE)
-check(f'd="{_mo}"' in svg and f'd="{_mz}"' in svg and f'd="{_lo}"' in MARK and f'd="{_lz}"' in MARK and MARK_ALT in MARK, "the mark: favicon and page drawn from site/assets/mark.py")
+check(f'd="{_mo}"' in svg and f'd="{_mz}"' in svg and f'd="{_lo}"' in MARK and f'd="{_lz}"' in MARK and 'aria-hidden="true"' in MARK, "the mark: favicon and page drawn from site/assets/mark.py; beside the name, decorative")
 check(all("M56.57,41.93" not in p.read_text("utf-8") and "ring left open" not in p.read_text("utf-8") for p in PUBLIC.rglob("*.html")), "the mark: the earlier ring and Z are on no page")
 wm = json.loads((PUBLIC / "site.webmanifest").read_text("utf-8"))
 check(wm["display"] == "browser" and wm["start_url"] == "/" and all(png_size((PUBLIC / i["src"].lstrip("/")).read_bytes()) == tuple(map(int, i["sizes"].split("x"))) for i in wm["icons"]),
@@ -336,6 +342,7 @@ for f in pages + [pathlib.Path("virtual") / n for n in VIRTUAL]:
     if f.name == "index.html": continue
     h = VIRTUAL[f.name] if f.parent.name == "virtual" else f.read_text("utf-8")
     _b = h.split("<body>", 1)[1].lstrip()
+    _b = _b.removeprefix('<a class="skip" href="#content" lang="en" dir="ltr">Skip to content</a>').lstrip()   # the skip link comes first (WCAG 2.4.1)
     check(_b.startswith("<!--cz-now") and _b.count("<!--cz-now") == 1 and "<!--/cz-now-->" in _b and _b.index("<!--/cz-now-->") < _b.index('<nav class="site"'),
           f"{f.name}: CZ time at the top, before the navigation")
 _hh = T["html"].split('<header id="top">', 1)[1].split("</header>", 1)[0]

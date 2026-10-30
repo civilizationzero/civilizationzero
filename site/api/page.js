@@ -7,6 +7,20 @@
 const fs = require("node:fs");
 const path = require("node:path");
 const CZ = require("../room/cztime.js");
+const crypto = require("node:crypto");
+// The same policy as the room's pages: nothing loads from elsewhere, no page can frame these, forms post here only. The one inline script
+// on the site (/ask: a copy button) is allowed by its own hash, computed here from the file served, so that it cannot drift.
+const CSP = "default-src 'none'; style-src 'unsafe-inline'; img-src 'self' data:; manifest-src 'self'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'";
+const scriptHashes = (html) => [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map((m) => `'sha256-${crypto.createHash("sha256").update(m[1], "utf8").digest("base64")}'`);
+const cspFor = (html) => { const h = scriptHashes(html); return h.length ? `${CSP}; script-src ${h.join(" ")}` : CSP; };
+// the page's title says what was converted, or what was wrong, so that a tab and a screen reader say it too
+const plainText = (h) => h.replace(/<[^>]+>/g, "").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#x27;/g, "'").replace(/\s+/g, " ").trim();
+function resultTitle(html) {
+  const err = /<p class="pending" role="alert" id="(?:result|time-result)">([\s\S]*?)<\/p>/.exec(html);
+  if (err) return `Error: ${plainText(err[1]).slice(0, 90)} · CZ time`;
+  const t = /<h3 id="h-time-result">([\s\S]*?)<\/h3>/.exec(html) || /<h3 id="h-result">([\s\S]*?)<\/h3>/.exec(html);
+  return t ? `${plainText(t[1]).slice(0, 90)} · CZ time` : null;
+}
 
 const PAGES = /^(core(\.[a-z]{2,3}(-[A-Za-z0-9]{1,8})?)?|record|objections|ask|machine|about|archive|calendar)$/;
 const files = new Map();
@@ -118,8 +132,10 @@ module.exports = (req, res) => {
     out = out.replace(CAL_RE, () => `<!--cz-cal-->${calendarBlock(url.searchParams, now)}<!--/cz-cal-->`)
              .replace(TIME_RE, () => `<!--cz-time-->${timeBlock(url.searchParams, now)}<!--/cz-time-->`);
   }
+  if (query && status === 200) { const t = resultTitle(out); if (t) out = out.replace(/<title>[^<]*<\/title>/, () => `<title>${CZ.escHtml(t)}</title>`); }
   res.statusCode = status;
   res.setHeader("Content-Type", "text/html; charset=utf-8");
+  res.setHeader("Content-Security-Policy", cspFor(out));
   res.setHeader("Cache-Control", `public, max-age=0, s-maxage=${CZ.secondsToNextDay(now)}`);
   if (query || status === 404) res.setHeader("X-Robots-Tag", "noindex");   // a conversion is a view, not a page to index
   res.setHeader("X-Content-Type-Options", "nosniff");
