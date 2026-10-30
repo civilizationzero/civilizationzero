@@ -1,4 +1,4 @@
-// CZ time: dates counted from Coordinate Zero (design/CZ-TIME.md; the originator's decision of 30 October 2026, CZ+3:334).
+// CZ time: dates counted from Coordinate Zero (design/CZ-TIME.md; the originator's decision of 30 October 2026, CZ 1430).
 //
 // CZ day 0 is 30 November 2022, the day that began at 00:00 UTC (CZ-CORE 1.0 §0). A CZ day is a UTC day. The day count D is
 // exact and needs no calendar:  D = JDN − 2,459,914 = MJD − 59,913 = ⌊Unix seconds / 86,400⌋ − 19,326 = Rata Die − 738,489.
@@ -303,7 +303,7 @@ function parse(input, calendar, todayMs) {
     y = nums[yi].v; d = nums[1 - yi].v;
     if (yi === 0 && neg) y = -y;
   } else {
-    if (nums.length !== 3) return { ok: false, error: "Write the date as year-month-day, for example 2026-10-30, or choose CZ time for CZ+3:334." };
+    if (nums.length !== 3) return { ok: false, error: "Write the date as year-month-day, for example 2026-10-30, or choose CZ for a CZ date such as CZ 1430." };
     if (nums[0].long || nums[0].v > 31) { [y, mo, d] = [nums[0].v, nums[1].v, nums[2].v]; if (neg) y = -y; }
     else if (nums[2].long || nums[2].v > 31) {
       [d, mo, y] = [nums[0].v, nums[1].v, nums[2].v];

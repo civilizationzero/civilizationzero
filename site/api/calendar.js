@@ -1,6 +1,6 @@
 // CZ time as data: GET /api/calendar (also /calendar.json, and /calendar asked for as JSON) — today, or the date given — in CZ time
-// and in every calendar the converter knows (room/cztime.js). ?d= a date as typed (year-month-day, a CZ stamp CZ+3:334, or a day
-// count CZ+1430); ?c= its calendar: gregorian (the default), solar-hijri, lunar-hijri, julian, cz. An invalid date answers 400 with
+// and in every calendar the converter knows (room/cztime.js). ?d= a date as typed (year-month-day, or a CZ date CZ 1430 / CZ+1430;
+// year and day CZ+3:334 is read too); ?c= its calendar: gregorian (the default), solar-hijri, lunar-hijri, julian, cz. An invalid date answers 400 with
 // the reason. Cached until the next 00:00 UTC, since every answer says how far the day is from today.
 const CZ = require("../room/cztime.js");
 const ORIGIN = "https://civilizationzero.ai";
