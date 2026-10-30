@@ -318,6 +318,8 @@ a.cz-date{text-decoration-thickness:1px;text-decoration-color:var(--rule)}a.cz-d
 form.cz-conv{display:flex;flex-wrap:wrap;gap:.4rem .5rem;align-items:center;margin:.3rem 0 0;font-size:.9em}
 form.cz-conv input,form.cz-conv select{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--rule);padding:.2rem .4rem}form.cz-conv input{width:15ch}
 h1.cz-h1{font-size:2.4em;font-weight:400;margin:.4rem 0 .2rem;letter-spacing:.02em}h1.cz-h1 time{font-size:1em}p.cz-links{font-size:.9em;margin-top:.25rem}
+/* E (the originator's decision of 30 Oct 2026): under the date only the day count and its origin, one short line on what is counted, the links. */
+p.cz-read{margin:.2rem 0 0}p.cz-read time{font-size:1em;white-space:nowrap}p.cz-def{color:var(--mute);font-size:.9em;margin:.35rem 0 0}.nw{white-space:nowrap}#how code{white-space:nowrap}
 table.cz-result th{width:30%;font-weight:600}.cz-native{font-family:system-ui,sans-serif}
 """
 
@@ -363,7 +365,7 @@ def cz_time_form(prefix, live=True, origin=""):
             f'<label for="{prefix}-z">in</label> <select id="{prefix}-z" name="z">{zones}</select> <button type="submit">Convert</button></form>')
 _CZ_LINE = ('<p class="cz-line"><a class="cz-stamp" href="/calendar" aria-describedby="cz-why"><time datetime="__CZ_ISO__">__CZ_STAMP__</time></a> '
             '<a href="/calendar#convert">date converter</a> · <a href="/calendar#time">time converter</a></p>'
-            '<p class="cz-why" id="cz-why">Coordinate Zero, 30 November 2022 = CZ 0 · Year __CZ_YEAR__, day __CZ_DOYN__ · times in UTC</p>')
+            '<p class="cz-why" id="cz-why">Day __CZ_DAYS__ since Coordinate Zero, <span class="nw">30 November 2022</span></p>')
 CZ_BAR = {   # the live bar, filled by room/cztime.js (fillBar): the date, the reason, the two converters as links — the converting is on /calendar
     "bar": f'<aside class="cz-now" aria-label="CZ time" lang="en" dir="ltr">{_CZ_LINE}</aside>',
 }
@@ -375,15 +377,15 @@ CZ_EXAMPLES = [
     (COORDINATE, "Coordinate Zero (Core §0)"),
     (PRERELEASE, "this site is published; the open discussion opens"),
     (CZ_TIME_DECIDED, "CZ time becomes the basis of this site's dates"),
-    (LAUNCH, "public launch; Year 4 begins"),
-    (datetime.date(2027, 11, 30), "Year 5 begins"),
+    (LAUNCH, "public launch, on the fourth anniversary of Coordinate Zero"),
+    (datetime.date(2027, 11, 30), "the fifth anniversary of Coordinate Zero"),
     (REVIEW, "the first scheduled review of the Core: 2048 = 2¹¹, in binary a one and eleven zeros"),
     (datetime.date(3022, 11, 30), "a thousand years after Coordinate Zero"),
     (datetime.date(1022, 11, 30), "a thousand years before it (Gregorian; 24 November 1022 in the Julian calendar)"),
 ]
 def cz_bar_fallback():   # for copies that serve the files as they are: no date, links to this site
     inner = (f'<p class="cz-line"><a class="cz-stamp" href="{ORIGIN}/calendar">CZ time</a> <a href="{ORIGIN}/calendar#convert">date converter</a> · '
-             f'<a href="{ORIGIN}/calendar#time">time converter</a></p><p class="cz-why">Coordinate Zero, 30 November 2022 = CZ 0 · times in UTC</p>')
+             f'<a href="{ORIGIN}/calendar#time">time converter</a></p><p class="cz-why">Days counted from Coordinate Zero, <span class="nw">30 November 2022</span> = CZ 0</p>')
     return f'<!--cz-now--><aside class="cz-now" aria-label="CZ time" lang="en" dir="ltr">{inner}</aside><!--/cz-now-->'
 
 

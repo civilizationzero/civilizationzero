@@ -30,23 +30,24 @@ time converter. This file is the definition; `site/room/cztime.js` (at request t
   minutes, as everywhere; a space separates the day from the time.)
 - **The machine form** is the same count, signed, in ASCII, without a space: `CZ+1430`, `CZ-1997`. It sorts in time order. Beside a date
   in a page, the ISO value stays in `<time datetime>`; the data forms (JSON, the API, the archive's files) keep ISO 8601.
-- **Years of the record** begin on each 30 November, counted from Year 0, the record's Year Zero: Year N begins on 30 November of
-  2022 + N (Year 4 on CZ 1461, Year 5 on CZ 1826). A day can be read as year and day — CZ 1430 is Year 3, day 334 (written `3:334`, or
-  `CZ+3:334`; before zero `CZ−5:171`, five whole years and 171 days before Coordinate Zero, counted back from the fifth 30 November before
-  it) — but that is a secondary reading, never the date. The reading was the site's first notation for a few hours on 30 October 2026;
-  the converter still reads it.
+- **Only days are counted** (the originator's decision of 30 October 2026, after the first two releases): a CZ date has no months and
+  no years, and the pages say so in one line under the date ("CZ time counts only days."). The anniversaries of Coordinate Zero still fall
+  on each 30 November (the fourth, the public launch, on CZ 1461; the fifth on CZ 1826). For machines, the API still gives the year of the
+  record and the day within it (`cz.year`, `cz.day_of_year`, `cz.year_day`: CZ 1430 is year 3, day 334, `CZ+3:334`; before zero `CZ−5:171`,
+  counted back from the fifth 30 November before it), a secondary reading the pages do not print; it was the site's first notation for a
+  few hours on 30 October 2026, and the converter still reads it.
 
-| CZ | Year and day | Gregorian |
-|---|---|---|
-| CZ −19491 | −53:133 | 20 July 1969 |
-| CZ −1997 | −5:171 | 12 June 2017 |
-| CZ −1 | −0:001 | 29 November 2022 |
-| CZ 0 | 0:000 | 30 November 2022 |
-| CZ 1430 | 3:334 | 30 October 2026 |
-| CZ 1461 | 4:000 | 30 November 2026 |
-| CZ 2048 | 5:222 | 9 July 2028 — the first scheduled review of the Core |
-| CZ 365242 | 1000:000 | 30 November 3022 |
-| CZ −365243 | −1000:000 | 30 November 1022 |
+| CZ | Gregorian |
+|---|---|
+| CZ −19491 | 20 July 1969 |
+| CZ −1997 | 12 June 2017 |
+| CZ −1 | 29 November 2022 |
+| CZ 0 | 30 November 2022 |
+| CZ 1430 | 30 October 2026 |
+| CZ 1461 | 30 November 2026 — the public launch, on the fourth anniversary |
+| CZ 2048 | 9 July 2028 — the first scheduled review of the Core |
+| CZ 365242 | 30 November 3022 |
+| CZ −365243 | 30 November 1022 |
 
 ## 3. Every date on the site
 
@@ -57,8 +58,12 @@ time converter. This file is the definition; `site/room/cztime.js` (at request t
   where CZ time is explained (the first page's header, the line under the date on every other page, the footer); the converter's page,
   which shows the other calendars on purpose; data forms (ISO 8601); citations' years.
 - The objections register's source text (`record/OBJECTIONS-1.0.md`) is unchanged; its page shows its dates in CZ time.
-- Under the date at the top of every page: the reason ("Coordinate Zero, 30 November 2022 = CZ 0") and two links — the date converter and
-  the time converter. The converting happens on `/calendar`, never in the page: the site stays a record, not a converter.
+- **At the top of every page** but the first: the date (`CZ 1430`, a link to /calendar) and two links, the date converter and the time
+  converter; under them one line, "Day 1430 since Coordinate Zero, 30 November 2022". **The first page's header**: the date as its heading,
+  then "Day 1430 / since Coordinate Zero, 30 November 2022", "CZ time counts only days.", and the links (date converter, time converter, how
+  it works). Coordinate Zero's Gregorian date appears there once. No years are described in either (the originator's decision of 30 October
+  2026). The converting happens on `/calendar`, never in the page: the site stays a record, not a converter; its result gives the count of
+  days from Coordinate Zero ("1430 days after Coordinate Zero"), not years.
 
 ## 4. Converting from other calendars
 

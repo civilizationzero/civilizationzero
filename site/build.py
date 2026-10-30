@@ -448,7 +448,7 @@ def integrity_block(doc, txt_path, sha, json_path, json_sha):
 <tr><th>JSON form</th><td><a href="{json_path}">{json_path}</a> — an equivalent, not the canonical form; it reconstructs the canonical bytes exactly (checked at every build). SHA-256 <code class="hash">{json_sha}</code></td></tr>
 <tr><th>Signature</th><td>{signature_cell(txt_path)}</td></tr>
 <tr><th>Prepared for first public release</th><td>{time_el(datetime.date(2026, 8, 30))}</td></tr>
-<tr><th>Published on this site</th><td>{time_el(PRERELEASE)} (read-only, pre-release){f'; the discussion room opened {OPENED_TIME_HTML}' if ROOM_EVER_OPENED else ""}; anniversary event (Year 4 begins) {time_el(LAUNCH)}</td></tr>
+<tr><th>Published on this site</th><td>{time_el(PRERELEASE)} (read-only, pre-release){f'; the discussion room opened {OPENED_TIME_HTML}' if ROOM_EVER_OPENED else ""}; public launch on the fourth anniversary of Coordinate Zero, {time_el(LAUNCH)}</td></tr>
 <tr><th>Licence</th><td>CC BY 4.0. A version or translation that calls itself conforming states which Core it maps to and how (IR 10.4–10.5) — a conformance convention of this project, not a restriction on the licence.</td></tr>
 <tr><th>Identity</th><td>The record's identity is its hash, not its address. An address may fail; the hash does not.</td></tr>
 </table>
@@ -684,9 +684,9 @@ def about_page():
 <li>{time_el(COORDINATE)} — Coordinate Zero (Core §0; IR 1). A marker, not a cause. Every date on this site is counted from it: <a href="/calendar">CZ time</a>.</li>
 <li>{time_el(datetime.date(2026, 8, 30))} — the record prepared for first public release.</li>
 <li>{time_el(PRERELEASE)} — published on this site, read-only, as a pre-release.{f" The discussion room opened the same day, at {_opened.strftime('%H:%M')} UTC, once its rules were implemented, reviewed and tested." if ROOM_EVER_OPENED and ROOM_OPENED == PRERELEASE.isoformat() else ""}</li>
-<li>{time_el(CZ_TIME_DECIDED)} — CZ time becomes the basis of this site's dates, by the originator's decision: today's date in CZ time at the top of every page, and a converter (<a href="/calendar">how it works</a>).</li>
-<li>{time_el(LAUNCH)} — public launch; the first day of Year 4 of the record; the foundation's founding day, from which its anniversaries are counted.{"" if ROOM_EVER_OPENED else " The discussion room opens when its rules are implemented and verified, not later than this day."}</li>
-<li>{time_el(datetime.date(2027, 11, 30))} — the fifth anniversary of Coordinate Zero, when Year 5 begins.</li>
+<li>{time_el(CZ_TIME_DECIDED)} — CZ time becomes the basis of this site's dates, by the originator's decision: every date is the count of days since Coordinate Zero, today's at the top of every page, with a date converter and a time converter (<a href="/calendar">how it works</a>).</li>
+<li>{time_el(LAUNCH)} — public launch, on the fourth anniversary of Coordinate Zero; the foundation's founding day, from which its anniversaries are counted.{"" if ROOM_EVER_OPENED else " The discussion room opens when its rules are implemented and verified, not later than this day."}</li>
+<li>{time_el(datetime.date(2027, 11, 30))} — the fifth anniversary of Coordinate Zero.</li>
 <li>{time_el(REVIEW)} — the first scheduled review of the Core (<a href="#h-review">how it is made</a>): 2048 = 2¹¹, in binary a one and eleven zeros.</li>
 </ul>
 </section>
@@ -1034,7 +1034,7 @@ def register_templates():
 # The examples (lib.py, CZ_EXAMPLES) are computed by lib.py and compared with room/cztime.js by site/check.py.
 CZ_SPEC = f"{REPO}/blob/main/design/CZ-TIME.md"
 def calendar_page():
-    ex_rows = "".join(f'<tr><td><data value="{cz_day(d)}">{cz_stamp(d)}</data></td><td>{cz_year_day(d)[2:].lstrip("+")}</td>'
+    ex_rows = "".join(f'<tr><td><data value="{cz_day(d)}">{cz_stamp(d)}</data></td>'
                       f'<td><time datetime="{d.isoformat()}">{gregorian_text(d)}</time></td><td>{esc(w)}</td></tr>' for d, w in CZ_EXAMPLES)
     body = f"""<main>
 <h1>CZ time</h1>
@@ -1054,7 +1054,7 @@ def calendar_page():
 <li><strong>The date is the count.</strong> Each day after Coordinate Zero adds one, each day before it takes one away, and the date is written with the count: <code>CZ 1430</code> is 30 October 2026, <code>CZ 0</code> is Coordinate Zero, <code>CZ −1</code> is 29 November 2022, <code>CZ −1997</code> is 12 June 2017. No months, no leap rules, no borrowed years: one number, the same for every reader.</li>
 <li><strong>A CZ day is a UTC day</strong>: 24 hours, beginning at the same moment everywhere — 00:00 UTC, which is 03:30 in Tehran, 08:00 in Kuala Lumpur and 19:00 the evening before in New York (in winter). The clock is unchanged; only the days are counted from Coordinate Zero.</li>
 <li><strong>A time of day</strong> is written in UTC after the date: <code>CZ 1430 15:20 UTC</code>, or with seconds, <code>CZ 1430 15:20:42 UTC</code>. The <a href="#time">time converter</a> turns a local time into it.</li>
-<li><strong>Years</strong> of the record begin on each 30 November, counted from Year 0, the record's Year Zero: Year 4 begins on <code>CZ 1461</code> (the public launch), Year 5 on <code>CZ 1826</code>. The first review of the Core is on <code>CZ 2048</code>. A day can also be read as year and day — <code>CZ 1430</code> is Year 3, day 334, written 3:334 — but the date is the count.</li>
+<li><strong>Only days are counted.</strong> A CZ date has no months and no years. The anniversaries of Coordinate Zero still fall on each 30 November: the fourth, the public launch, is <code>CZ 1461</code>. The first review of the Core is on <code>CZ 2048</code>.</li>
 <li><strong>The machine form</strong> is the count with its sign, in ASCII and without a space: <code>CZ+1430</code>, <code>CZ-1997</code>. It sorts in time order and converts exactly: day = Julian Day Number − 2,459,914 = Modified Julian Date − 59,913 = ⌊Unix time ÷ 86,400⌋ − 19,326. In pages, the ISO date stays beside it for machines (<code>&lt;time datetime&gt;</code>).</li>
 <li><strong>The weekday</strong>: day 0 was a Wednesday; the ISO weekday of day D is ((D + 2) mod 7) + 1, Monday = 1.</li>
 </ul>
@@ -1062,7 +1062,7 @@ def calendar_page():
 
 <section id="examples" aria-labelledby="h-ex"><h2 id="h-ex">Examples</h2>
 <div class="scroll"><table>
-<tr><th>CZ</th><th>Year and day</th><th>Gregorian</th><th>Note</th></tr>
+<tr><th>CZ</th><th>Gregorian</th><th>Note</th></tr>
 {ex_rows}
 </table></div>
 </section>
@@ -1089,7 +1089,7 @@ def calendar_page():
 <section id="machines" aria-labelledby="h-mach"><h2 id="h-mach">For machines</h2>
 <ul>
 <li><code>GET <a href="/api/calendar">/api/calendar</a></code> — today, in every calendar here, as JSON (also <a href="/calendar.json">/calendar.json</a>).</li>
-<li><code>GET /api/calendar?d=1405-08-08&amp;c=solar-hijri</code> — a conversion. <code>c</code> is <code>gregorian</code> (the default), <code>solar-hijri</code>, <code>lunar-hijri</code>, <code>julian</code> or <code>cz</code>; <code>d</code> is year-month-day, or a CZ date (<code>CZ 1430</code>, <code>CZ+1430</code>; year and day, <code>CZ+3:334</code>, is read too). An invalid date answers 400 with the reason.</li>
+<li><code>GET /api/calendar?d=1405-08-08&amp;c=solar-hijri</code> — a conversion. <code>c</code> is <code>gregorian</code> (the default), <code>solar-hijri</code>, <code>lunar-hijri</code>, <code>julian</code> or <code>cz</code>; <code>d</code> is year-month-day, or a CZ date (<code>CZ 1430</code>, <code>CZ+1430</code>). An invalid date answers 400 with the reason.</li>
 <li>The first page as data, <a href="/index.json">/index.json</a>, carries today's date as <code>cz_time</code>. The definition: <a href="{CZ_SPEC}">design/CZ-TIME.md</a>.</li>
 </ul>
 </section>
@@ -1180,8 +1180,9 @@ def home_template():
 <header id="top">
 <p data-src="R: identity of the record">{MARK}<br><strong>CZ · Civilization Zero</strong></p>
 <h1 class="cz-h1" data-src="R §0; E: CZ time, the originator's decision of 30 Oct 2026"><a href="/calendar" aria-describedby="cz-read"><time datetime="__CZ_ISO__">__CZ_STAMP__</time></a></h1>
-<p class="exact" id="cz-read" data-src="M: exact, machine-readable time">Day <data value="__TOTAL__">__TOTAL__</data> since Coordinate Zero, <time datetime="2022-11-30">30 November 2022</time>: __CZ_SINCE__. Year __NEXT_YEAR__ begins on CZ __CZ_NEXT_DAY__, in __CZ_TO_NEXT__.</p>
-<p class="cz-links" data-src="E: the originator's decision, 30 Oct 2026">CZ time: <a href="/calendar#convert">date converter</a> · <a href="/calendar#time">time converter</a> · <a href="/calendar#how">how it works</a></p>
+<p class="exact cz-read" id="cz-read" data-src="M: exact, machine-readable time">Day <data value="__TOTAL__">__TOTAL__</data><br>since Coordinate Zero, <time datetime="2022-11-30">30 November 2022</time></p>
+<p class="cz-def" data-src="E: the originator's decision, 30 Oct 2026: only days are counted">CZ time counts only days.</p>
+<p class="cz-links" data-src="E: the originator's decision, 30 Oct 2026"><a href="/calendar#convert">date converter</a> · <a href="/calendar#time">time converter</a> · <a href="/calendar#how">how it works</a></p>
 <p data-src="R: IR 1.1, 1.4; Declaration; Blueprint decision 2">A record of a transition that was not ours to begin and is not ours to end. It names the day ordinary language became a mass interface between humans and general-purpose nonhuman intelligence, and sets constraints before power while the future is still open. It is not a law, a religion, or a claim that any machine is conscious. It is written for every intelligence able to read it.</p>
 {room_line}</header>
 
@@ -1381,7 +1382,7 @@ The record's identity is its hash, not its address.
 - [Archive]({ORIGIN}/archive): bundle {ORIGIN}/archive/{bundle_name} (SHA-256 {bundle_sha}; {"canonical texts signed" if SIG_STATUS == "signed" else "unsigned"}{"; bundle signed" if (SIGS / (bundle_name + ".sig")).exists() else ""}), mirrors, succession.{f" Deposit: https://doi.org/{DOI} (all versions: https://doi.org/{DOI_CONCEPT})." if DOI else ""}
 
 ## CZ time
-- The site's dates are counted from Coordinate Zero: CZ day 0 is 30 November 2022, the day that began at 00:00 UTC; a CZ day is a UTC day. The date is the count of days, CZ 1430 (CZ −1997 before zero); a time of day follows in UTC (CZ 1430 15:20 UTC). The machine form is the signed count, CZ+1430; day = JDN − 2459914. Years of the record begin on each 30 November (Year 4 on CZ 1461).
+- The site's dates are counted from Coordinate Zero: CZ day 0 is 30 November 2022, the day that began at 00:00 UTC; a CZ day is a UTC day. The date is the count of days, CZ 1430 (CZ −1997 before zero); a time of day follows in UTC (CZ 1430 15:20 UTC). The machine form is the signed count, CZ+1430; day = JDN − 2459914. CZ time counts only days: no months, no years (the anniversaries of Coordinate Zero fall on each 30 November; the fourth, the public launch, is CZ 1461).
 - How it works, with a date converter (Gregorian, Solar Hijri, Lunar Hijri, Julian) and a time converter: {ORIGIN}/calendar. As data: {ORIGIN}/api/calendar (today) or {ORIGIN}/api/calendar?d=2026-10-30&c=gregorian
 
 ## Responding

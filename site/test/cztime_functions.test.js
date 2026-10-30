@@ -24,7 +24,8 @@ const ok = (c, m) => { if (c) pass++; else { fail++; console.log("FAIL", m); } }
     ok(r.status === 200, p + " status " + r.status);
     const bar = (/<aside class="cz-now"[\s\S]*?<\/aside>/.exec(r.body) || [""])[0];
     ok(bar.includes(`<a class="cz-stamp" href="/calendar" aria-describedby="cz-why"><time datetime="${CZ.isoDate(...CZ.toGregorian(today))}">CZ ${today}</time></a>`), p + " live date");
-    ok(!bar.includes("<form") && bar.includes('href="/calendar#convert"') && bar.includes('href="/calendar#time"') && bar.includes("Coordinate Zero, 30 November 2022 = CZ 0"), p + " the bar: links, the reason, no form");
+    ok(!bar.includes("<form") && bar.includes('href="/calendar#convert"') && bar.includes('href="/calendar#time"')
+       && bar.includes(`<p class="cz-why" id="cz-why">Day ${today} since Coordinate Zero, <span class="nw">30 November 2022</span></p>`) && !/\b[Yy]ears?\b|UTC/.test(text(bar)), p + " the bar: links, the reason (the day count only), no form");
     ok(!r.body.includes("__CZ_") && !r.body.includes('<a class="cz-stamp" href="https://civilizationzero.ai/calendar">CZ time</a>'), p + " placeholders or fallback left");
     ok(/s-maxage=\d+/.test(r.headers["cache-control"]), p + " cache");
     ok(!/CZ[+−]\d+:\d{3}/.test(text(r.body).replace(/year and day[^.]*\./gi, "")) || p === "calendar", p + " no year:day stamp printed as a date");
@@ -54,6 +55,12 @@ const ok = (c, m) => { if (c) pass++; else { fail++; console.log("FAIL", m); } }
   ok(tb.includes('<th scope="row"><bdi class="cz-native" lang="fa" dir="rtl">هجری شمسی</bdi></th><td><bdi class="cz-native" lang="fa" dir="rtl">جمعه ۸ آبان ۱۴۰۵</bdi>')
      && tb.includes('<bdi class="cz-native" lang="ar" dir="rtl">التقويم الهجري</bdi>') && tb.includes("الجمعة ١٩ جمادى الأولى ١٤٤٨ هـ") && tb.includes("أم القرى")
      && !/Solar Hijri|Lunar Hijri|Aban|Jumada/.test(tb), "each calendar only in its own script in the result");
+  // only days are counted: the CZ row gives the count of days, no years
+  const czRow = (b) => text((/<tr><th scope="row">CZ<\/th><td>([\s\S]*?)<\/td><\/tr>/.exec(b) || ["", ""])[1]);
+  ok(czRow(tb) === "CZ 1430 — 1430 days after Coordinate Zero · machine form CZ+1430", "result CZ row, days only: " + czRow(tb));
+  const tn = (await call(page, `/api/page?p=calendar&d=2017-06-12&c=gregorian`)).body, t0 = (await call(page, `/api/page?p=calendar&d=CZ%200&c=cz`)).body, t1d = (await call(page, `/api/page?p=calendar&d=2022-12-01&c=gregorian`)).body;
+  ok(czRow(tn) === "CZ −1997 — 1997 days before Coordinate Zero · machine form CZ-1997" && czRow(t0) === "CZ 0 — Coordinate Zero itself · machine form CZ+0"
+     && czRow(t1d) === "CZ 1 — 1 day after Coordinate Zero · machine form CZ+1", "result CZ row before, at and just after zero: " + [czRow(tn), czRow(t0), czRow(t1d)].join(" | "));
   const bad = [["2026-02-30", "gregorian", "has 28 days"], ["1405-13-01", "solar-hijri", "no month 13"], ["foo", "gregorian", "not a month"], ["CZ+3:366", "cz", "not a day"],
                ["5/10/26", "gregorian", "year in full"], ["<script>alert(1)</script>", "gregorian", "not a month"], ["2026-10", "gregorian", "year-month-day"], ["99999-01-01", "gregorian", "range"]];
   for (const [d, c] of bad) {

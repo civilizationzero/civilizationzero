@@ -22,10 +22,10 @@ function read(name) {
 
 const esc = CZ.escHtml;
 const plural = (n, w) => `${CZ.fmtInt(n)} ${w}${Math.abs(n) === 1 ? "" : "s"}`;
-function since(p) {   // "3 years and 334 days after Coordinate Zero"
-  if (p.sign > 0 && p.year === 0 && p.day === 0) return "Coordinate Zero itself";
-  const amount = p.year && p.day ? `${plural(p.year, "year")} and ${plural(p.day, "day")}` : p.year ? plural(p.year, "year") : plural(p.day, "day");
-  return `${amount} ${p.sign < 0 ? "before" : "after"} Coordinate Zero`;
+function since(D) {   // "1430 days after Coordinate Zero": CZ time counts only days (the originator's decision of 30 Oct 2026)
+  if (D === 0) return "Coordinate Zero itself";
+  const n = Math.abs(D);
+  return `${n} day${n === 1 ? "" : "s"} ${D < 0 ? "before" : "after"} Coordinate Zero`;
 }
 const fromToday = (n) => (n === 0 ? "today" : n > 0 ? `in ${plural(n, "day")}` : `${plural(-n, "day")} ago`);
 const num = (n) => (n < 0 ? `−${-n}` : String(n));   // a day number as printed: no separators, a true minus
@@ -39,12 +39,12 @@ const czLink = (D, text) => `<a class="cz-date" href="${CZ.converterHref(D)}">${
 
 function rows(list) { return `<table class="cz-result">${list.map(([k, v]) => `<tr><th scope="row">${k}</th><td>${v}</td></tr>`).join("")}</table>`; }
 function dateResult(r, today) {
-  const x = CZ.describe(r.day), p = CZ.parts(r.day), g = x.gregorian, sh = x.solar_hijri, lh = x.lunar_hijri;
+  const x = CZ.describe(r.day), g = x.gregorian, sh = x.solar_hijri, lh = x.lunar_hijri;
   const head = r.today ? `Today is ${esc(x.cz.date)}` : r.calendar === "cz" ? `${esc(r.native)} is ${esc(`${x.weekday}, ${g.text}`)}` : `${nativeOf(r)} = ${esc(x.cz.date)}`;
   const data = `/api/calendar?d=${encodeURIComponent(x.cz.machine)}&c=cz`;
   return `<section id="result" aria-labelledby="h-result"><h3 id="h-result">${head}</h3>
 ${rows([
-    ["CZ", `<strong><data value="${r.day}">${esc(x.cz.date)}</data></strong> — ${esc(since(p))}${p.sign > 0 ? ` · Year ${p.year}, day ${p.day}` : ""} · machine form <code>${esc(x.cz.machine)}</code>`],
+    ["CZ", `<strong><data value="${r.day}">${esc(x.cz.date)}</data></strong> — ${esc(since(r.day))} · machine form <code>${esc(x.cz.machine)}</code>`],
     ["Gregorian", g.year >= 1 && g.year <= 9999 ? `<time datetime="${g.date}">${esc(`${x.weekday}, ${g.text}`)}</time>` : esc(`${x.weekday}, ${g.text}`)],
     [NAME["solar-hijri"], sh ? fa(sh.native_long) : "—"],
     [NAME["lunar-hijri"], lh ? lunarCell(lh) : "—"],

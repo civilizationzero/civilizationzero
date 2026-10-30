@@ -322,6 +322,9 @@ check(all(f"__CZ_SEL_{c}__" in BAR["calform"] and f"__CZ_SEL_{c}__" in BAR["time
       "room/cz-bar.json: the placeholders and the zones")
 # the top of every page shows the date and links to the converters; the converting is on /calendar (the originator, 30 Oct 2026)
 check("<form" not in BAR["bar"] and 'href="/calendar#convert"' in BAR["bar"] and 'href="/calendar#time"' in BAR["bar"] and "30 November 2022" in BAR["bar"], "the bar: the date, the reason, the two converters as links, no form")
+# only days are counted (the originator, 30 Oct 2026): under the date, the day count and its origin; no years, in the bar or the first page's header
+check("Day __CZ_DAYS__ since Coordinate Zero," in BAR["bar"] and not re.search(r"\b[Yy]ears?\b|__CZ_(YEAR|DOYN|DOY|YEARDAY)__", BAR["bar"]),
+      "the bar: 'Day N since Coordinate Zero', no years")
 # each calendar named in its own script only
 check([n for _, n, _ in CZ_CALENDARS] == ["Gregorian", "هجری شمسی", "التقويم الهجري", "Julian", "CZ"], "the calendars' names, each in its own script")
 for f in pages + [pathlib.Path("virtual") / n for n in VIRTUAL]:
@@ -336,6 +339,10 @@ check(_hh.count("30 November 2022") == 1 and _hh.count("2022-11-30") == 1 and no
 _h1 = _hh.split("</h1>")[0]
 check('<h1 class="cz-h1"' in _hh and '<a href="/calendar"' in _h1 and '<time datetime="__CZ_ISO__">__CZ_STAMP__</time>' in _h1 and "<form" not in _hh
       and 'href="/calendar#convert"' in _hh and 'href="/calendar#time"' in _hh, "home: the heading is today's date in CZ time, linked to /calendar; links to the converters, no form")
+check('Day <data value="__TOTAL__">__TOTAL__</data><br>since Coordinate Zero, <time datetime="2022-11-30">30 November 2022</time></p>' in _hh
+      and '<p class="cz-def"' in _hh and "CZ time counts only days." in _hh
+      and not re.search(r"\b[Yy]ears?\b|__CZ_(SINCE|TO_NEXT|TO_NEXT_N|NEXT_DAY|DOYN)__|__NEXT_YEAR__", _hh.replace("Year Zero", "")),
+      "home: under the date only 'Day N / since Coordinate Zero, 30 November 2022' and 'CZ time counts only days.' — no years")
 _cal = (PUBLIC / "calendar.html").read_text("utf-8")
 check(_cal.count("<!--cz-cal-->") == 1 and _cal.count("<!--cz-time-->") == 1 and all(f'id="{a}"' in _cal for a in ("convert", "time", "how", "examples", "calendars", "beyond-earth", "machines", "sources")),
       "calendar.html: the converters' places and every section")
