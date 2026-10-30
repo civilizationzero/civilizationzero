@@ -25,7 +25,8 @@ time converter. This file is the definition; `site/room/cztime.js` (at request t
 - **The date is the count**: `CZ 1430` (30 October 2026); `CZ 0` is Coordinate Zero; `CZ −1` is 29 November 2022; `CZ −1997` is 12 June
   2017. No months, no leap rules, no borrowed years: one number, the same for every reader. Display uses U+2212 (−) for the minus sign and
   no thousands separators (`CZ 365242`); anything typed or parsed accepts the hyphen-minus, U+2212 and the dashes, and Persian and Arabic
-  digits.
+  digits; a date also as eight digits without separators (20261030, ISO 8601's basic form; 30102026 when only that reading is a
+  date), and a time as 13:30, 13.30, 13h30, 1330 or 1:30 pm (also ب.ظ and م).
 - **A time of day** follows the date, in UTC: `CZ 1430 15:20 UTC`; with seconds, `CZ 1430 15:20:42 UTC`. (The colon is kept for hours and
   minutes, as everywhere; a space separates the day from the time.)
 - **The machine form** is the same count, signed, in ASCII, without a space: `CZ+1430`, `CZ-1997`. It sorts in time order. Beside a date

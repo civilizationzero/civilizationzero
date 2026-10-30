@@ -43,6 +43,9 @@ const ok = (c, m) => { if (c) pass++; else { fail++; console.log("FAIL", m); } }
     ["1430", "cz", "CZ 1430 is Friday"], ["CZ −1997", "cz", "CZ −1997 is Monday, 12 June 2017"], ["-1997", "cz", "CZ −1997 is"], ["CZ+3:334", "gregorian", "CZ 1430 is Friday"],
     ["CZ 1430:15.20", "gregorian", "CZ 1430 15:20 UTC is Friday"], ["2017-06-12", "gregorian", "= CZ −1997"], ["1969-07-20", "gregorian", "= CZ −19491"], ["2022-11-29", "gregorian", "= CZ −1"],
     ["500-03-01 BCE", "gregorian", "BCE = CZ"], ["today", "gregorian", `Today is CZ ${today}`], ["2026-11-30", "gregorian", "= CZ 1461"],
+    // eight digits, as a phone's number pad makes people type them (the originator's report of 30 Oct 2026: 19790306 was refused)
+    ["19790306", "gregorian", "6 March 1979 = CZ −15975"], ["06031979", "gregorian", "6 March 1979 = CZ −15975"], ["13571215", "solar-hijri", "۱۵ اسفند ۱۳۵۷ = CZ −15975"],
+    ["۱۳۵۷۱۲۱۵", "solar-hijri", "۱۵ اسفند ۱۳۵۷ = CZ −15975"], ["20261030", "gregorian", "30 October 2026 = CZ 1430"], ["1979/03/06", "gregorian", "= CZ −15975"],
   ];
   for (const [d, c, want] of cases) {
     const r = await call(page, `/api/page?p=calendar&d=${encodeURIComponent(d)}&c=${c}`);
@@ -74,7 +77,9 @@ const ok = (c, m) => { if (c) pass++; else { fail++; console.log("FAIL", m); } }
   const tc = [["2026-10-30", "gregorian", "13:30", "Asia/Tehran", "13:30 in Tehran = CZ 1430 10:00:00 UTC"], ["2026-10-30", "gregorian", "01:30", "Asia/Tehran", "01:30 in Tehran = CZ 1429 22:00:00 UTC"],
               ["۱۴۰۵/۰۸/۰۸", "solar-hijri", "۱۳:۳۰", "Asia/Tehran", "13:30 in Tehran = CZ 1430 10:00:00 UTC"], ["1969-07-20", "gregorian", "16:17:40", "America/New_York", "16:17:40 in New York = CZ −19491 20:17:40 UTC"],
               ["2026-10-30", "gregorian", "08:00", "Asia/Kuala_Lumpur", "08:00 in Kuala Lumpur, Singapore = CZ 1430 00:00:00 UTC"], ["", "gregorian", "12:00", "UTC", `12:00 in UTC = CZ ${today} 12:00:00 UTC`],
-              ["2026-10-30", "gregorian", "12:00", "Mars/Olympus", "12:00 in Mars/Olympus"]];
+              ["2026-10-30", "gregorian", "12:00", "Mars/Olympus", "12:00 in Mars/Olympus"],
+              ["2026-10-30", "gregorian", "1330", "Asia/Tehran", "13:30 in Tehran = CZ 1430 10:00:00 UTC"], ["2026-10-30", "gregorian", "1:30 pm", "Asia/Tehran", "13:30 in Tehran = CZ 1430 10:00:00 UTC"],
+              ["19790306", "gregorian", "08:00", "Asia/Tehran", "08:00 in Tehran = CZ −15975 04:30:00 UTC"]];
   for (const [d, c, t, z, want] of tc) {
     const r = await call(page, `/api/page?p=calendar&d=${encodeURIComponent(d)}&c=${c}&t=${encodeURIComponent(t)}&z=${encodeURIComponent(z)}`);
     const m = /<h3 id="h-time-result">([\s\S]*?)<\/h3>/.exec(r.body);

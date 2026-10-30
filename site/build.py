@@ -1044,10 +1044,12 @@ def calendar_page():
 <p>Every date on this site is counted from Coordinate Zero. Today's date in CZ time is at the top of every page; this page says how it is counted, and converts dates and times to it.</p>
 <section id="convert" aria-labelledby="h-convert"><h2 id="h-convert">Date converter</h2>
 <!--cz-cal-->{cz_form("cal", origin=ORIGIN)}<p class="src">Today's date and the conversions are computed at <a href="{ORIGIN}/calendar">{ORIGIN}/calendar</a>.</p><!--/cz-cal-->
+<p class="src">A date can be written 2026-10-30, 2026/10/30, 20261030, 30/10/2026 or 30 October 2026; in Persian or Arabic digits and month names too.</p>
 </section>
 <section id="time" aria-labelledby="h-time"><h2 id="h-time">Time converter</h2>
 <p>A CZ day is a UTC day: 24 hours, from 00:00 to 24:00 UTC. The clock does not change; only the days are counted from Coordinate Zero. A local time is converted by its offset from UTC: 13:30 in Tehran on 30 October 2026 is <code>CZ 1430 10:00 UTC</code>.</p>
 <!--cz-time-->{cz_time_form("tim", live=False, origin=ORIGIN)}<!--/cz-time-->
+<p class="src">A time can be written 13:30, 13.30, 1330 or 1:30 pm; with seconds, 13:30:15. An empty date is today.</p>
 </section>
 
 <section id="how" aria-labelledby="h-how"><h2 id="h-how">How CZ time works</h2>

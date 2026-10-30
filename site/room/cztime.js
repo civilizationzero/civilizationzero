@@ -290,7 +290,7 @@ function parse(input, calendar, todayMs) {
   const bce = ERA_BCE.test(s);
   const t = s.replace(ERA_BCE, " ").replace(ERA_OTHER, " ");
   const neg = /^\s*-\s*\d/.test(t);
-  const nums = (t.match(/\d+/g) || []).map((x) => ({ v: Number(x), long: x.length >= 3 }));
+  const nums = (t.match(/\d+/g) || []).map((x) => ({ v: Number(x), long: x.length >= 3, raw: x }));
   const words = t.replace(/\d+/g, " ").replace(/[-/.,:;()\s]+/g, " ").trim();
   let y, mo, d;
   if (words) {
@@ -303,8 +303,16 @@ function parse(input, calendar, todayMs) {
     y = nums[yi].v; d = nums[1 - yi].v;
     if (yi === 0 && neg) y = -y;
   } else {
-    if (nums.length !== 3) return { ok: false, error: "Write the date as year-month-day, for example 2026-10-30, or choose CZ for a CZ date such as CZ 1430." };
-    if (nums[0].long || nums[0].v > 31) { [y, mo, d] = [nums[0].v, nums[1].v, nums[2].v]; if (neg) y = -y; }
+    if (nums.length === 1 && nums[0].raw.length === 8) {
+      // eight digits without separators, as phones' number pads make people type: year first (19790306, ISO 8601's basic form),
+      // or day first (06031979) when that is the only reading that is a date
+      const r = nums[0].raw, yf = [Number(r.slice(0, 4)), Number(r.slice(4, 6)), Number(r.slice(6))], df = [Number(r.slice(4)), Number(r.slice(2, 4)), Number(r.slice(0, 2))];
+      const fits = ([, mm, dd]) => mm >= 1 && mm <= 12 && dd >= 1 && dd <= 31;
+      if (fits(yf)) [y, mo, d] = yf; else if (fits(df)) [y, mo, d] = df;
+      else return { ok: false, error: `${r} is not a date: write it year-month-day, for example 2026-10-30 or 20261030.` };
+      if (neg) y = -y;
+    } else if (nums.length !== 3) return { ok: false, error: "Write the date as year-month-day — 2026-10-30, 2026/10/30 or 20261030 — or choose CZ for a CZ date such as CZ 1430." };
+    else if (nums[0].long || nums[0].v > 31) { [y, mo, d] = [nums[0].v, nums[1].v, nums[2].v]; if (neg) y = -y; }
     else if (nums[2].long || nums[2].v > 31) {
       [d, mo, y] = [nums[0].v, nums[1].v, nums[2].v];
       if (mo > 12 && d <= 12) [d, mo] = [mo, d];   // 10/30/2026: month first
@@ -408,10 +416,15 @@ function localToUTC(zone, y, m, d, hh, mi, ss) {   // the moment a local wall ti
   if (off2 !== off) { ms = wall - off2 * 60000; off = off2; }
   return { ms, offset: off };
 }
-function parseTime(s) {   // "13:30", "13:30:15", "۱۳:۳۰" → [h, m, s] or null
-  const m = /^(\d{1,2})(?:[:.٫](\d{2}))?(?:[:.٫](\d{2}))?$/.exec(normalizeInput(s));
+// "13:30", "13:30:15", "13.30", "13h30", "13 30", "1330", "930", "۱۳:۳۰", "1:30 pm", "۱:۳۰ ب.ظ", "١:٣٠ م" → [h, m, s] or null
+const AM = /\s*(?:a\.?\s?m\.?|ق\.?\s?ظ\.?|صباحاً|صباحا|ص)$/i, PM = /\s*(?:p\.?\s?m\.?|ب\.?\s?ظ\.?|مساءً|مساء|م)$/i;
+function parseTime(s) {
+  let x = normalizeInput(s).replace(/\s+/g, " ").trim(), half = null;
+  if (AM.test(x)) { half = "am"; x = x.replace(AM, ""); } else if (PM.test(x)) { half = "pm"; x = x.replace(PM, ""); }
+  const m = /^(\d{1,2})(?:\s*[:.٫h ]\s*(\d{2}))?(?:\s*[:.٫ ]\s*(\d{2}))?$/i.exec(x) || /^(\d{1,2})(\d{2})(\d{2})?$/.exec(x);   // or digits only: 1330, 930
   if (!m) return null;
   const t = [Number(m[1]), Number(m[2] || 0), Number(m[3] || 0)];
+  if (half) { if (t[0] < 1 || t[0] > 12) return null; t[0] = (t[0] % 12) + (half === "pm" ? 12 : 0); }
   return t[0] <= 23 && t[1] <= 59 && t[2] <= 59 ? t : null;
 }
 const offsetText = (min) => `UTC${min < 0 ? "−" : "+"}${pad(Math.floor(Math.abs(min) / 60), 2)}:${pad(Math.abs(min) % 60, 2)}`;

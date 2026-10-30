@@ -401,7 +401,7 @@ def cz_time_form(prefix, live=True, origin=""):
     return (f'<form class="cz-conv" action="{origin}/calendar#time" method="get"><label for="{prefix}-d">Date</label> '
             f'<input id="{prefix}-d" name="d" value="{"__CZ_TVALUE__" if live else ""}" placeholder="today" dir="auto" autocomplete="off" spellcheck="false" maxlength="40"> '
             f'<select id="{prefix}-c" name="c" aria-label="The calendar of that date">{_cal_options(None if live else "gregorian")}</select> '
-            f'<label for="{prefix}-t">Time</label> <input id="{prefix}-t" name="t" value="{"__CZ_TTIME__" if live else ""}" placeholder="HH:MM" inputmode="numeric" autocomplete="off" maxlength="8" size="6"> '
+            f'<label for="{prefix}-t">Time</label> <input id="{prefix}-t" name="t" value="{"__CZ_TTIME__" if live else ""}" placeholder="13:30" inputmode="decimal" autocomplete="off" maxlength="12" size="7"> '
             f'<label for="{prefix}-z">Time zone</label> <select id="{prefix}-z" name="z">{zones}</select> <button type="submit">Convert time</button></form>')
 _CZ_LINE = ('<p class="cz-line"><a class="cz-stamp" href="/calendar" aria-describedby="cz-why"><time datetime="__CZ_ISO__">__CZ_STAMP__</time></a> '
             '<a href="/calendar#convert">date converter</a> · <a href="/calendar#time">time converter</a></p>'
