@@ -1112,7 +1112,7 @@ def calendar_page():
 </section>
 </main>"""
     return shell("CZ time: dates counted from Coordinate Zero · Civilization Zero", body, "/calendar",
-                 "How the dates of Civilization Zero are written — CZ+year:day from Coordinate Zero, 30 November 2022 — with a converter from the Gregorian, Solar Hijri, Lunar Hijri and Julian calendars.",
+                 "Every date of Civilization Zero is the count of days since Coordinate Zero, 30 November 2022 (CZ 0). How it is counted, with a date converter and a time converter.",
                  alternates=[("application/json", "/calendar.json", "Today in CZ time, as data")])
 
 # ---------------------------------------------------------------- the first page (template; filled by api/home.js)

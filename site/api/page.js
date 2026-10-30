@@ -1,5 +1,5 @@
 // The site's static pages (site/public/*.html, written by site/build.py), served with today's date in CZ time at the top: the
-// originator's decision of 30 October 2026 (CZ+3:334) made CZ time the basis of the site's dates, on every page. The files are
+// originator's decision of 30 October 2026 (CZ 1430) made CZ time the basis of the site's dates, on every page. The files are
 // bundled with this function (vercel.json, includeFiles) and read once per instance; the build leaves a fallback where the date
 // goes (<!--cz-now--> … <!--/cz-now-->), which room/cztime.js replaces. The CDN keeps each page until the next 00:00 UTC, when
 // the date turns. /calendar also gets, in its place (<!--cz-cal--> … <!--/cz-cal-->), today in every calendar, the converter
