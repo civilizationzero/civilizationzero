@@ -30,8 +30,8 @@ module.exports = (req, res) => {
     input: d === null || !d.trim() ? null : { d, c: c ?? "gregorian", read_as: r.read },
     ...CZ.describe(r.day),
     from_today_days: r.day - today,
-    today: { stamp: CZ.stamp(today), day: today },
-    definition: "CZ day 0 is 30 November 2022, the day that began at 00:00 UTC; a CZ day is a UTC day. CZ+N:ddd is N whole years (each from one 30 November to the next) and ddd days after Coordinate Zero; CZ-N:ddd is N whole years and ddd days before it, counted back from the Nth 30 November before it. The machine form is the signed day count: day = JDN - 2459914.",
+    today: { date: CZ.czDay(today), day: today },
+    definition: "CZ day 0 is 30 November 2022, the day that began at 00:00 UTC; a CZ day is a UTC day. The date is the count of days since then: CZ 1430 (CZ -1997 before it); a time of day follows in UTC. The machine form is the signed count, CZ+1430; day = JDN - 2459914. Years of the record begin on each 30 November; year and day (year_day) is a secondary reading.",
     how: `${ORIGIN}/calendar#how`, spec: SPEC,
     notes: { solar_hijri: "K. Borkowski's algorithm (as jalaali-js), years 1 to 3177 SH", lunar_hijri: "Umm al-Qura for 1343-1500 AH (hijridate 2.6.0); the tabular Islamic calendar outside it, an approximation; observed months can differ by a day" },
   }, ms);

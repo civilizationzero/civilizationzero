@@ -415,7 +415,7 @@
     "html": "https://civilizationzero.ai/objections",
     "json": "https://civilizationzero.ai/objections.json",
     "source": "https://github.com/civilizationzero/civilizationzero/blob/main/record/OBJECTIONS-1.0.md",
-    "role": "opening docket of the first scheduled review, 2027-11-30",
+    "role": "opening docket of the first scheduled review, 2028-07-09",
     "response_within_days": 60,
     "total": 18,
     "counts": {
@@ -470,8 +470,9 @@
     "decided": "2026-10-30",
     "epoch": "2022-11-30T00:00:00Z",
     "day": "a UTC day; CZ day D = JDN - 2459914 = MJD - 59913 = floor(unix / 86400) - 19326",
-    "stamp": "CZ+N:ddd: N whole years (each from one 30 November to the next) and ddd days after Coordinate Zero; CZ-N:ddd: N whole years and ddd days before it, counted back from the Nth 30 November before it",
-    "machine": "the signed day count: CZ+1430, CZ-1997",
+    "date": "the count of days: CZ 1430 (CZ -1997 before zero), as pages print it; times of day in UTC after it (CZ 1430 15:20 UTC)",
+    "machine": "the signed count, ASCII, no space: CZ+1430, CZ-1997",
+    "years": "Year N of the record begins on 30 November of 2022 + N (Year 4 on CZ 1461); year and day (3:334) is a secondary reading",
     "page": "https://civilizationzero.ai/calendar",
     "api": "https://civilizationzero.ai/api/calendar",
     "spec": "https://github.com/civilizationzero/civilizationzero/blob/main/design/CZ-TIME.md"

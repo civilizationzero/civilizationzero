@@ -2,10 +2,10 @@
 //
 // CZ day 0 is 30 November 2022, the day that began at 00:00 UTC (CZ-CORE 1.0 §0). A CZ day is a UTC day. The day count D is
 // exact and needs no calendar:  D = JDN − 2,459,914 = MJD − 59,913 = ⌊Unix seconds / 86,400⌋ − 19,326 = Rata Die − 738,489.
-// The stamp CZ+N:ddd reads like an age: N whole years and ddd days after Coordinate Zero, each year running from one 30 November
-// to the next (CZ+4:000 is 30 November 2026). Before Coordinate Zero, CZ−N:ddd is its mirror: N whole years and ddd days before it,
-// counted back from the Nth 30 November before it (CZ−0:001 is 29 November 2022; CZ−5:171 is 12 June 2017). The machine form is
-// the signed day count in ASCII: CZ+1430, CZ-1997.
+// The date is the count itself, written "CZ 1430" (CZ −1997 before Coordinate Zero): the originator's decision of 30 October 2026,
+// after first choosing year and day. Times of day are UTC, after the date: "CZ 1430 15:20 UTC". The machine form is the same count,
+// signed, in ASCII and without a space: CZ+1430, CZ-1997. Years of the record still begin on each 30 November (Year 4 on CZ 1461);
+// "year and day" (Year 3, day 334; written 3:334, or CZ+3:334 / CZ−5:171 before zero) is a secondary reading, never the date.
 //
 // The other calendars are here to convert to and from CZ time: Gregorian (proleptic before 1582; astronomical years, 0 = 1 BCE),
 // Julian (proleptic), Solar Hijri (K. Borkowski's algorithm as jalaali-js implements it, years −61 to 3177), Lunar Hijri (Umm
@@ -166,7 +166,8 @@ function parts(D) {   // { sign: +1 | -1, year, day, days_in_year }
 }
 const pad = (n, w) => String(n).padStart(w, "0");
 // the stamp; the minus sign is U+2212 for reading, or "-" (ASCII) where it is to be typed or parsed by machines
-const stamp = (D, minus = "−") => { const p = parts(D); return `CZ${p.sign < 0 ? minus : "+"}${p.year}:${pad(p.day, 3)}`; };
+const stamp = (D, minus = "−") => { const p = parts(D); return `CZ${p.sign < 0 ? minus : "+"}${p.year}:${pad(p.day, 3)}`; };   // year and day
+const czDay = (D, minus = "−") => `CZ ${D < 0 ? minus : ""}${Math.abs(D)}`;   // the date as the pages print it: CZ 1430, CZ −1997
 const machine = (D) => `CZ${D < 0 ? "-" : "+"}${Math.abs(D)}`;
 function fromStamp(sign, N, ddd) {   // the CZ day, or null when ddd is not a day of that year
   if (!Number.isInteger(N) || !Number.isInteger(ddd) || N < 0 || ddd < 0 || N > 9999) return null;
@@ -185,6 +186,8 @@ const SOLAR = ["Farvardin", "Ordibehesht", "Khordad", "Tir", "Mordad", "Shahriva
 const SOLAR_FA = ["فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور", "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند"];
 const LUNAR = ["Muharram", "Safar", "Rabi al-Awwal", "Rabi al-Thani", "Jumada al-Ula", "Jumada al-Akhirah", "Rajab", "Shaban", "Ramadan", "Shawwal", "Dhu al-Qadah", "Dhu al-Hijjah"];
 const LUNAR_AR = ["محرم", "صفر", "ربيع الأول", "ربيع الآخر", "جمادى الأولى", "جمادى الآخرة", "رجب", "شعبان", "رمضان", "شوال", "ذو القعدة", "ذو الحجة"];
+const WEEKDAYS_FA = ["دوشنبه", "سه\u200cشنبه", "چهارشنبه", "پنج\u200cشنبه", "جمعه", "شنبه", "یکشنبه"];
+const WEEKDAYS_AR = ["الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت", "الأحد"];
 const FA_DIGITS = "۰۱۲۳۴۵۶۷۸۹", AR_DIGITS = "٠١٢٣٤٥٦٧٨٩";
 const digitsIn = (n, set) => String(n).replace(/[0-9]/g, (c) => set[c]);
 const yearText = (y) => (y > 0 ? String(y) : `${1 - y} BCE`);   // astronomical year 0 is 1 BCE
@@ -198,14 +201,16 @@ function describe(D) {
   const [gy, gm, gd] = toGregorian(D), [jy, jm, jd] = toJulian(D);
   const sh = toSolarHijri(D), lh = D >= ISLAMIC_EPOCH ? toLunarHijri(D) : null;
   return {
-    cz: { stamp: stamp(D), stamp_ascii: stamp(D, "-"), machine: machine(D), day: D, sign: p.sign < 0 ? "-" : "+", year: p.year, day_of_year: p.day, days_in_year: p.days_in_year },
+    cz: { date: czDay(D), machine: machine(D), day: D, year: p.year, day_of_year: p.day, days_in_year: p.days_in_year, year_day: stamp(D, "-") },
     weekday: WEEKDAYS[w - 1], iso_weekday: w,
     gregorian: { date: isoDate(gy, gm, gd), year: gy, month: gm, day: gd, text: `${gd} ${MONTHS[gm - 1]} ${yearText(gy)}`, leap_year: gregorianLeap(gy) },
     julian: { date: isoDate(jy, jm, jd), year: jy, month: jm, day: jd, text: `${jd} ${MONTHS[jm - 1]} ${yearText(jy)}`, leap_year: julianLeap(jy) },
     solar_hijri: sh && sh[0] >= 1 ? { year: sh[0], month: sh[1], day: sh[2], month_name: SOLAR[sh[1] - 1], text: `${sh[2]} ${SOLAR[sh[1] - 1]} ${sh[0]} SH`,
-      native: `${digitsIn(sh[2], FA_DIGITS)} ${SOLAR_FA[sh[1] - 1]} ${digitsIn(sh[0], FA_DIGITS)}`, leap_year: solarHijriLeap(sh[0]) } : null,
+      native: `${digitsIn(sh[2], FA_DIGITS)} ${SOLAR_FA[sh[1] - 1]} ${digitsIn(sh[0], FA_DIGITS)}`,
+      native_long: `${WEEKDAYS_FA[w - 1]} ${digitsIn(sh[2], FA_DIGITS)} ${SOLAR_FA[sh[1] - 1]} ${digitsIn(sh[0], FA_DIGITS)}`, leap_year: solarHijriLeap(sh[0]) } : null,
     lunar_hijri: lh && lh[0] >= 1 ? { year: lh[0], month: lh[1], day: lh[2], month_name: LUNAR[lh[1] - 1], text: `${lh[2]} ${LUNAR[lh[1] - 1]} ${lh[0]} AH`,
-      native: `${digitsIn(lh[2], AR_DIGITS)} ${LUNAR_AR[lh[1] - 1]} ${digitsIn(lh[0], AR_DIGITS)} هـ`, method: lh[3] } : null,
+      native: `${digitsIn(lh[2], AR_DIGITS)} ${LUNAR_AR[lh[1] - 1]} ${digitsIn(lh[0], AR_DIGITS)} هـ`,
+      native_long: `${WEEKDAYS_AR[w - 1]} ${digitsIn(lh[2], AR_DIGITS)} ${LUNAR_AR[lh[1] - 1]} ${digitsIn(lh[0], AR_DIGITS)} هـ`, method: lh[3] } : null,
     jdn: D + JDN0, mjd: D + MJD0, unix_day: D + UNIX0, rata_die: D + RD0,
     begins_utc: `${isoDate(gy, gm, gd)}T00:00:00Z`,
   };
@@ -261,22 +266,26 @@ function parse(input, calendar, todayMs) {
   const s = normalizeInput(input);
   if (!s || /^(today|now|امروز|اليوم)$/i.test(s)) {
     const D = dayOf(todayMs);
-    return { ok: true, day: D, calendar: cal, read: "today", today: true };
+    return { ok: true, day: D, calendar: cal, read: "today", native: "today", today: true };
   }
   // CZ time: CZ+3:334, −5:171, 3:334 (year and day); CZ+1430, CZ-1997 (the day count); with or without "CZ"
   let m = /^(?:cz\s*)?([+-])?\s*(\d{1,5})\s*:\s*(\d{1,3})$/i.exec(s);
   if (m) {
     const D = fromStamp(m[1] === "-" ? -1 : 1, Number(m[2]), Number(m[3]));
     if (D === null) return { ok: false, error: `${s} is not a day: a CZ year has 365 or 366 days, numbered 000 to 364 or 365.` };
-    return { ok: true, day: D, calendar: "cz", read: stamp(D) };
+    return { ok: true, day: D, calendar: "cz", read: `${czDay(D)} (year and day ${stamp(D)})`, native: czDay(D) };
   }
-  m = /^cz\s*([+-])?\s*(\d{1,7})$/i.exec(s) || (cal === "cz" ? /^([+-])?\s*(\d{1,7})$/.exec(s) : null);
+  // the date, the day count: CZ 1430, CZ+1430, CZ −1997, "day 1430", or the bare number with CZ chosen; a time of day after it
+  // (CZ 1430 15:20, CZ 1430:15.20, with or without UTC) is read and kept with the day
+  m = /^(?:cz\s*|(?:cz\s*)?day\s*)([+-])?\s*(\d{1,7})(?:(?:\s+|\s*[:T]\s*)(\d{1,2})[:.٫](\d{2})(?:[:.٫](\d{2}))?)?\s*(?:utc|z)?$/i.exec(s)
+    || (cal === "cz" ? /^([+-])?\s*(\d{1,7})$/.exec(s) : null);
   if (m) {
     const D = (m[1] === "-" ? -1 : 1) * Number(m[2]);
     if (Math.abs(D) > MAX_DAYS) return { ok: false, error: "Out of range: this converter covers about 10,000 years on either side of Coordinate Zero." };
-    return { ok: true, day: D, calendar: "cz", read: `day ${fmtInt(D)} (${machine(D)})` };
+    const time = m[3] !== undefined && Number(m[3]) <= 23 && Number(m[4]) <= 59 && Number(m[5] || 0) <= 59 ? ` ${pad(Number(m[3]), 2)}:${m[4]}${m[5] ? `:${m[5]}` : ""} UTC` : "";
+    return { ok: true, day: D, calendar: "cz", read: czDay(D) + time, native: czDay(D) + time, time: time.trim() || null };
   }
-  if (cal === "cz") return { ok: false, error: "A CZ date is written CZ+3:334 (year and day) or as a day count, CZ+1430. To convert from another calendar, choose it." };
+  if (cal === "cz") return { ok: false, error: "A CZ date is the day count: CZ 1430 (or CZ −1997 before Coordinate Zero). To convert from another calendar, choose it." };
   // a date: three numbers, or two and a month's name
   const bce = ERA_BCE.test(s);
   const t = s.replace(ERA_BCE, " ").replace(ERA_OTHER, " ");
@@ -317,7 +326,10 @@ function parse(input, calendar, todayMs) {
   if (d < 1 || d > len) return { ok: false, error: `${CAL_NAME[cal]} month ${mo} of ${yearText(y)} has ${len} days.` };
   if (Math.abs(D) > MAX_DAYS) return { ok: false, error: "Out of range: this converter covers about 10,000 years on either side of Coordinate Zero." };
   const name = cal === "solar-hijri" ? `${d} ${SOLAR[mo - 1]} ${y} SH` : cal === "lunar-hijri" ? `${d} ${LUNAR[mo - 1]} ${y} AH` : `${d} ${MONTHS[mo - 1]} ${yearText(y)}`;
-  return { ok: true, day: D, calendar: cal, read: `${name} (${CAL_NAME[cal]}${cal === "lunar-hijri" ? (inUAQ(y) ? ", Umm al-Qura" : ", tabular") : ""})` };
+  // in the calendar's own script: Solar Hijri in Persian, Lunar Hijri in Arabic, Gregorian and Julian in Latin letters (30 Oct 2026)
+  const native = cal === "solar-hijri" ? `${digitsIn(d, FA_DIGITS)} ${SOLAR_FA[mo - 1]} ${digitsIn(y, FA_DIGITS)}`
+    : cal === "lunar-hijri" ? `${digitsIn(d, AR_DIGITS)} ${LUNAR_AR[mo - 1]} ${digitsIn(y, AR_DIGITS)} هـ` : `${d} ${MONTHS[mo - 1]} ${yearText(y)}${cal === "julian" ? " (Julian)" : ""}`;
+  return { ok: true, day: D, calendar: cal, read: `${name} (${CAL_NAME[cal]}${cal === "lunar-hijri" ? (inUAQ(y) ? ", Umm al-Qura" : ", tabular") : ""})`, native };
 }
 
 // ---------------------------------------------------------------- the time bar and the first page's line, filled at request time
@@ -326,12 +338,13 @@ function parse(input, calendar, todayMs) {
 const SELECT_FOR_LANG = { fa: "solar-hijri", ar: "lunar-hijri" };
 function fields(ms) {   // today, as the pages print it
   const D = dayOf(ms), p = parts(D), [gy, gm, gd] = toGregorian(D), next = anniversary(p.year + 1);
-  return { ISO: isoDate(gy, gm, gd), STAMP: stamp(D), YEAR: String(p.year), DOY: pad(p.day, 3), DOYN: String(p.day), DAYS: String(D), DAYS_FMT: fmtInt(D),
-           NEXT_YEAR: String(p.year + 1), TO_NEXT: String(next - D), D, p };
+  return { ISO: isoDate(gy, gm, gd), STAMP: czDay(D), YEARDAY: stamp(D), YEAR: String(p.year), DOY: pad(p.day, 3), DOYN: String(p.day), DAYS: String(D), DAYS_FMT: fmtInt(D),
+           NEXT_YEAR: String(p.year + 1), NEXT_DAY: String(next), TO_NEXT: String(next - D), D, p };
 }
 // one pass over a template: __CZ_<FIELD>__ from fields(), __CZ_SEL_<calendar>__ as " selected" for the chosen calendar, __CZ_VALUE__
-const fillTemplate = (tpl, f, sel, value = "") => tpl.replace(/__CZ_(SEL_[a-z-]+|[A-Z_]+)__/g, (m0, k) =>
-  k.startsWith("SEL_") ? (k.slice(4) === sel ? " selected" : "") : k === "VALUE" ? value : Object.prototype.hasOwnProperty.call(f, k) && typeof f[k] === "string" ? f[k] : m0);
+const fillTemplate = (tpl, f, sel, value = "", extra = {}) => tpl.replace(/__CZ_(SEL_[a-z-]+|[A-Z0-9_]+)__/g, (m0, k) =>
+  k.startsWith("SEL_") ? (k.slice(4) === sel ? " selected" : "") : k === "VALUE" ? value
+    : Object.prototype.hasOwnProperty.call(extra, k) ? extra[k] : Object.prototype.hasOwnProperty.call(f, k) && typeof f[k] === "string" ? f[k] : m0);
 const BAR_RE = /<!--cz-now(?::(\w+))?-->[\s\S]*?<!--\/cz-now-->/;
 let BAR = null;
 function barTemplates() { if (!BAR) { try { BAR = require("./cz-bar.json"); } catch { BAR = {}; } } return BAR; }
@@ -341,6 +354,80 @@ function fillBar(html, ms) {
   const lang = (/<html lang="([a-zA-Z-]+)"/.exec(html) || [])[1] || "en";
   const sel = SELECT_FOR_LANG[lang.split("-")[0].toLowerCase()] || "gregorian";
   return html.replace(BAR_RE, (all, variant) => (typeof T[variant || "bar"] === "string" ? fillTemplate(T[variant || "bar"], f, sel) : all));
+}
+
+// ---------------------------------------------------------------- every date on the site (the originator's decision of 30 Oct 2026)
+// A day or a moment as the pages print it: the CZ stamp, and for a moment its time of day in UTC (a CZ day is a UTC day: 24 hours,
+// 00:00 to 24:00 UTC); a link to the converter for that day; the ISO value stays in the datetime attribute, for machines.
+function whenParts(v) {
+  const s = String(v ?? "").trim();
+  const m = /^(-?\d{4,6})-(\d{2})-(\d{2})$/.exec(s);
+  if (m) return { D: fromGregorian(Number(m[1]), Number(m[2]), Number(m[3])), time: null, iso: s };
+  const t = Date.parse(s.replace(" ", "T").replace(/(\.\d{3})\d+/, "$1").replace(/([+-]\d{2})$/, "$1:00"));
+  if (!Number.isFinite(t)) return null;
+  const d = new Date(t);
+  return { D: dayOf(t), time: [d.getUTCHours(), d.getUTCMinutes(), d.getUTCSeconds()], iso: d.toISOString().replace(/\.\d{3}Z$/, "Z") };
+}
+function whenText(v, { seconds = false } = {}) {
+  const w = whenParts(v);
+  if (!w) return String(v ?? "");
+  return czDay(w.D) + (w.time ? ` ${pad(w.time[0], 2)}:${pad(w.time[1], 2)}${seconds ? `:${pad(w.time[2], 2)}` : ""} UTC` : "");
+}
+const escHtml = (x) => String(x ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+const converterHref = (D) => `/calendar?d=${encodeURIComponent(machine(D))}`;
+function whenHtml(v, { seconds = false, link = true } = {}) {
+  const w = whenParts(v);
+  if (!w) return escHtml(v);
+  const attr = w.time ? (seconds ? w.iso : `${w.iso.slice(0, 16)}Z`) : w.iso;
+  const el = `<time datetime="${escHtml(attr)}">${escHtml(whenText(v, { seconds }))}</time>`;
+  return link ? `<a class="cz-date" href="${converterHref(w.D)}">${el}</a>` : el;
+}
+
+// ---------------------------------------------------------------- the time converter: a local time anywhere ↔ CZ time
+// The time zones come from the build (room/cz-bar.json, "zones"); any IANA zone is accepted. The offset at a moment is read from the
+// runtime's time zone database (Intl), so summer time and the zones' history are counted.
+const utcMs = (y, m, d, hh = 0, mi = 0, ss = 0) => { const t = new Date(0); t.setUTCFullYear(y, m - 1, d); t.setUTCHours(hh, mi, ss, 0); return t.getTime(); };
+const ZONE_FMT = new Map();
+function validZone(z) {
+  if (typeof z !== "string" || !/^[A-Za-z_]+(\/[A-Za-z0-9_+-]+){0,2}$|^UTC$/.test(z)) return false;
+  try { new Intl.DateTimeFormat("en-US", { timeZone: z }); return true; } catch { return false; }
+}
+function zoneOffsetMin(zone, ms) {   // minutes east of UTC at that moment
+  let f = ZONE_FMT.get(zone);
+  if (!f) { f = new Intl.DateTimeFormat("en-US", { timeZone: zone, hourCycle: "h23", era: "short", year: "numeric", month: "numeric", day: "numeric", hour: "numeric", minute: "numeric", second: "numeric" }); ZONE_FMT.set(zone, f); }
+  const p = {};
+  for (const x of f.formatToParts(new Date(ms))) p[x.type] = x.value;
+  let y = Number(p.year);
+  if (/^B/i.test(p.era || "")) y = 1 - y;
+  return Math.round((utcMs(y, Number(p.month), Number(p.day), Number(p.hour) % 24, Number(p.minute), Number(p.second)) - Math.floor(ms / 1000) * 1000) / 60000);
+}
+function localToUTC(zone, y, m, d, hh, mi, ss) {   // the moment a local wall time names (in a gap or an overlap of summer time, the first offset)
+  const wall = utcMs(y, m, d, hh, mi, ss);
+  let off = zoneOffsetMin(zone, wall), ms = wall - off * 60000;
+  const off2 = zoneOffsetMin(zone, ms);
+  if (off2 !== off) { ms = wall - off2 * 60000; off = off2; }
+  return { ms, offset: off };
+}
+function parseTime(s) {   // "13:30", "13:30:15", "۱۳:۳۰" → [h, m, s] or null
+  const m = /^(\d{1,2})(?:[:.٫](\d{2}))?(?:[:.٫](\d{2}))?$/.exec(normalizeInput(s));
+  if (!m) return null;
+  const t = [Number(m[1]), Number(m[2] || 0), Number(m[3] || 0)];
+  return t[0] <= 23 && t[1] <= 59 && t[2] <= 59 ? t : null;
+}
+const offsetText = (min) => `UTC${min < 0 ? "−" : "+"}${pad(Math.floor(Math.abs(min) / 60), 2)}:${pad(Math.abs(min) % 60, 2)}`;
+// { ok, utc_ms, offset, day, utc: "hh:mm:ss", local: { y, m, d, time } } or { ok: false, error }
+function convertTime(dayD, t, zone) {
+  const g = toGregorian(dayD);
+  if (g[0] < 1 || g[0] > 9999) return { ok: false, error: "Times are converted here for the years 1 to 9999." };
+  const r = localToUTC(zone, g[0], g[1], g[2], t[0], t[1], t[2]);
+  const u = new Date(r.ms);
+  return { ok: true, utc_ms: r.ms, offset: r.offset, day: dayOf(r.ms), utc: `${pad(u.getUTCHours(), 2)}:${pad(u.getUTCMinutes(), 2)}:${pad(u.getUTCSeconds(), 2)}`,
+           local: { day: dayD, time: `${pad(t[0], 2)}:${pad(t[1], 2)}${t[2] ? `:${pad(t[2], 2)}` : ""}` } };
+}
+// the local time at which a CZ day begins in a zone (its 00:00 UTC), e.g. "03:30" in Tehran, "19:00 the day before" in New York
+function dayStartLocal(D, zone) {
+  const ms = (D + UNIX0) * DAY_MS, off = zoneOffsetMin(zone, ms), local = new Date(ms + off * 60000);
+  return { time: `${pad(local.getUTCHours(), 2)}:${pad(local.getUTCMinutes(), 2)}`, offset: off, before: off < 0 };
 }
 
 // a Cache-Control whose s-maxage (with stale-while-revalidate) would reach past 00:00 UTC is cut to end there, when the date turns
@@ -356,6 +443,7 @@ module.exports = {
   fromGregorian, toGregorian, gregorianLeap, gregorianMonthDays, fromJulian, toJulian, julianLeap, julianMonthDays,
   jalCal, fromSolarHijri, toSolarHijri, solarHijriLeap, solarHijriMonthDays,
   fromLunarHijri, toLunarHijri, lunarHijriMonthDays, tabularFrom, tabularTo, UAQ_START, UAQ_Y0, UAQ_Y1,
-  anniversary, parts, stamp, machine, fromStamp, dayOf, secondsToNextDay, isoWeekday, isoDate, fmtInt, describe, parse, normalizeInput,
-  fields, fillTemplate, fillBar, barTemplates, capCache, MONTHS, SOLAR, SOLAR_FA, LUNAR, LUNAR_AR, WEEKDAYS,
+  anniversary, parts, stamp, czDay, machine, fromStamp, dayOf, secondsToNextDay, isoWeekday, isoDate, fmtInt, describe, parse, normalizeInput,
+  fields, fillTemplate, fillBar, barTemplates, capCache, whenParts, whenText, whenHtml, converterHref, escHtml,
+  utcMs, validZone, zoneOffsetMin, localToUTC, parseTime, offsetText, convertTime, dayStartLocal, WEEKDAYS_FA, WEEKDAYS_AR, FA_DIGITS, AR_DIGITS, digitsIn, MONTHS, SOLAR, SOLAR_FA, LUNAR, LUNAR_AR, WEEKDAYS,
 };

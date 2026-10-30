@@ -13,15 +13,15 @@ CONTACT = "record@civilizationzero.ai"
 COORDINATE = datetime.date(2022, 11, 30)
 PRERELEASE = datetime.date(2026, 10, 28)   # first publication on this site (read-only, pre-release)
 LAUNCH = datetime.date(2026, 11, 30)       # public launch; first day of Year 4; the foundation's anniversary
-REVIEW = datetime.date(2027, 11, 30)       # first scheduled review of the Core: Coordinate Zero's fifth anniversary, Year 5 begins
+REVIEW = datetime.date(2028, 7, 9)         # first scheduled review of the Core: CZ 2048 (2048 = 2^11; in binary a one and eleven zeros)
                                            # (the originator's decision of 29 Oct 2026; it replaced 30 Nov 2031, the launch's fifth)
-CZ_TIME_DECIDED = datetime.date(2026, 10, 30)   # CZ time became the basis of the site's dates (the originator's decision; CZ+3:334)
+CZ_TIME_DECIDED = datetime.date(2026, 10, 30)   # CZ time became the basis of the site's dates (the originator's decisions; CZ 1430)
 CHARTER_DRAFT = datetime.date(2026, 11, 30)   # the review committee's charter, in draft for public comment
 CHARTER_FINAL = datetime.date(2027, 3, 31)    # ... and in final form
-# CZ time (design/CZ-TIME.md; the originator's decision of 30 Oct 2026): the site's dates are counted from Coordinate Zero. CZ day 0 is
-# 30 November 2022, the day that began at 00:00 UTC; D = the date's Rata Die − 738,489. The stamp CZ+N:ddd reads like an age: N whole
-# years (each from one 30 November to the next) and ddd days after Coordinate Zero; before it, CZ−N:ddd is the mirror. The request-time
-# twin is room/cztime.js; site/check.py compares the two over every day of 1 to 9999.
+# CZ time (design/CZ-TIME.md; the originator's decisions of 30 Oct 2026): the site's dates are counted from Coordinate Zero. CZ day 0 is
+# 30 November 2022, the day that began at 00:00 UTC; D = the date's Rata Die − 738,489. The date is the count: "CZ 1430", "CZ −1997";
+# times of day in UTC after it. Year and day (CZ+N:ddd: N whole years from one 30 November to the next, and ddd days; CZ−N:ddd its
+# mirror before zero) is a secondary reading. The request-time twin is room/cztime.js; site/check.py compares the two.
 CZ_RD0 = 738489
 def cz_day(d): return d.toordinal() - CZ_RD0
 def cz_anniversary(n): return datetime.date(2022 + n, 11, 30).toordinal() - CZ_RD0   # the day CZ year n begins (n < 0: before CZ)
@@ -36,12 +36,31 @@ def cz_parts(D):
     while cz_anniversary(-n - 1) >= D: n += 1
     while n > 0 and cz_anniversary(-n) < D: n -= 1
     return -1, n, cz_anniversary(-n) - D
-def cz_stamp(d, minus="−"):
+def cz_year_day(d, minus="−"):   # the secondary reading: year and day
     s, n, k = cz_parts(d if isinstance(d, int) else cz_day(d))
     return f"CZ{minus if s < 0 else '+'}{n}:{k:03d}"
+def cz_stamp(d, minus="−"):   # the date as the pages print it: the count
+    D = d if isinstance(d, int) else cz_day(d)
+    return f"CZ {minus if D < 0 else ''}{abs(D)}"
+def cz_machine(D): return f"CZ{'-' if D < 0 else '+'}{abs(D)}"
+_MONTH_NUM = {m: i for i, m in enumerate(["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"], 1)}
+_MONTH_NUM.update({k[:3]: v for k, v in list(_MONTH_NUM.items())}); _MONTH_NUM["Sept"] = 9
+_DATE_IN_TEXT = re.compile(r"\b(\d{1,2}) (" + "|".join(sorted(_MONTH_NUM, key=len, reverse=True)) + r")\.? (\d{4})\b")
+def cz_dates_html(h):
+    """The dates written out in a text the site renders (an objection's status, a register's prose), as CZ dates with their links; the
+    source text is unchanged, and Coordinate Zero itself, 30 November 2022 — the anchor every CZ date is counted from — stays as it is."""
+    def sub(m):
+        d = datetime.date(int(m.group(3)), _MONTH_NUM[m.group(2)], int(m.group(1)))
+        return m.group(0) if d == COORDINATE else time_el(d)
+    return _DATE_IN_TEXT.sub(sub, h)
 def gregorian_text(d): return f"{d.day} {d.strftime('%B')} {d.year}"
-def time_el(d):   # a date as the pages print it: CZ time first, the Gregorian date beside it
-    return f'<time datetime="{d.isoformat()}">{cz_stamp(d)}</time> ({gregorian_text(d)})'
+def cz_href(D): return "/calendar?d=" + cz_machine(D).replace("+", "%2B")
+def time_el(d):   # a date as the pages print it (the originator's decision of 30 Oct 2026): CZ time only; the link converts it
+    return f'<a class="cz-date" href="{cz_href(cz_day(d))}"><time datetime="{d.isoformat()}">{cz_stamp(d)}</time></a>'
+def moment_el(dt, seconds=False):   # a moment: the CZ day and its time in UTC (a CZ day is a UTC day, 24 hours)
+    t = dt.strftime("%H:%M:%S" if seconds else "%H:%M")
+    iso = dt.strftime("%Y-%m-%dT%H:%M:%SZ" if seconds else "%Y-%m-%dT%H:%MZ")
+    return f'<a class="cz-date" href="{cz_href(cz_day(dt.date()))}"><time datetime="{iso}">{cz_stamp(dt.date())} {t} UTC</time></a>'
 BLUEPRINT = "1.3.1"
 PROMPT_VERSION = "cz-machine-1.0"
 ROOM_OPEN = True                           # flipped on the day the room's rules (§7) were verified; the functions read it from api/discuss-templates.json
@@ -225,7 +244,7 @@ def clock(now):
                 next_iso=nxt.date().isoformat(), next_human=nxt.strftime("%-d %B %Y"),
                 asof_iso=now.strftime("%Y-%m-%dT%H:%MZ"), asof_human=now.strftime("%Y-%m-%d %H:%M UTC"),
                 cz_iso=now.date().isoformat(), cz_stamp=cz_stamp(total), cz_doyn=doy, cz_since=cz_since_text(year, doy),
-                cz_to_next_n=to_next, cz_to_next=plural(to_next, "day"))
+                cz_to_next_n=to_next, cz_to_next=plural(to_next, "day"), cz_next_day=cz_anniversary(year + 1))
 
 def plural(n, word): return f"{n:,} {word}{'' if n == 1 else 's'}"
 def cz_since_text(years, days):   # "3 years and 334 days", as api/home.js writes it
@@ -293,11 +312,12 @@ main,header,footer{overflow-wrap:break-word}th,td{overflow-wrap:break-word}@medi
 /* H: WCAG 2.2 target size (2.5.8) and the platforms' touch guidance: every control at least 2.5rem tall. */
 button,select,input:not([type=checkbox]):not([type=radio]){min-height:2.5rem;box-sizing:border-box}
 /* E (the originator's decision of 30 Oct 2026): CZ time is the site's basis — today in CZ time at the top of every page, linked to how it works, and a converter under it. M: a plain form, no script. */
-aside.cz-now{max-width:70ch;margin:0 auto;padding:.6rem 1rem .7rem;border-bottom:1px solid var(--rule);font-size:.9em}
-aside.cz-now p{margin:0 0 .35rem}.cz-stamp{font-weight:700;font-size:1.45em}aside.cz-now form.cz-conv{font-size:1em}
+aside.cz-now{max-width:70ch;margin:0 auto;padding:.55rem 1rem .5rem;border-bottom:1px solid var(--rule);font-size:.9em}
+aside.cz-now p{margin:0}.cz-line a{padding:.2rem 0;display:inline-block}.cz-stamp{font-size:1.25em;margin-right:.5rem}.cz-why{color:var(--mute);font-size:.85em}
+a.cz-date{text-decoration-thickness:1px;text-decoration-color:var(--rule)}a.cz-date time,.cz-stamp time,h1.cz-h1 time{white-space:nowrap}ul.cz-today{list-style:none;padding:0;margin:.5rem 0}ul.cz-today li{margin:.15rem 0}
 form.cz-conv{display:flex;flex-wrap:wrap;gap:.4rem .5rem;align-items:center;margin:.3rem 0 0;font-size:.9em}
 form.cz-conv input,form.cz-conv select{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--rule);padding:.2rem .4rem}form.cz-conv input{width:15ch}
-h1.cz-h1{font-size:2.6em;margin:.4rem 0 .2rem;letter-spacing:.02em}h1.cz-h1 time{font-size:1em}
+h1.cz-h1{font-size:2.4em;font-weight:400;margin:.4rem 0 .2rem;letter-spacing:.02em}h1.cz-h1 time{font-size:1em}p.cz-links{font-size:.9em;margin-top:.25rem}
 table.cz-result th{width:30%;font-weight:600}.cz-native{font-family:system-ui,sans-serif}
 """
 
@@ -306,27 +326,46 @@ NAV = ('<nav class="site" aria-label="Site"><a href="/">CZ · Civilization Zero<
        '<a href="/machine">Machine</a> · <a href="/about">About</a> · <a href="/archive">Archive</a></nav>')
 
 FOOTER = (f'<footer><hr><p class="exact">Text CC BY 4.0 · Code MIT · <a href="{REPO}">source</a> · '
-          f'<a href="mailto:{CONTACT}">{CONTACT}</a> · Coordinate Zero <time datetime="2022-11-30">2022-11-30</time> = <a href="/calendar">CZ+0:000</a> · UTC</p></footer>')
+          f'<a href="mailto:{CONTACT}">{CONTACT}</a> · Coordinate Zero <time datetime="2022-11-30">2022-11-30</time> = <a href="/calendar">CZ 0</a> · UTC</p></footer>')
 
 # ---------------------------------------------------------------- CZ time at the top of every page (the originator's decision of 30 Oct 2026)
 # Every page but the first carries the bar between <!--cz-now--> and <!--/cz-now-->: the build writes a fallback there (for copies of the
 # site that serve these files as they are: no date, links to this site), and the functions (api/page.js and the room's) put the live bar
 # in its place at request time from room/cz-bar.json, filled by room/cztime.js. On the first page the date is the page's heading.
-CZ_CALENDARS = [("gregorian", "Gregorian · میلادی"), ("solar-hijri", "Solar Hijri · شمسی"), ("lunar-hijri", "Lunar Hijri · قمری · هجري"),
-                ("julian", "Julian"), ("cz", "CZ time")]
-def cz_form(prefix, selected="gregorian", value="", origin="", label="Convert a date", button="To CZ time"):
-    """The converter: a GET form to /calendar. selected=None leaves __CZ_SEL_<calendar>__ placeholders for room/cztime.js to fill;
-    value=None leaves __CZ_VALUE__."""
-    opts = "".join(f'<option value="{c}"{(f"__CZ_SEL_{c}__" if selected is None else " selected" if c == selected else "")}>{esc(n)}</option>' for c, n in CZ_CALENDARS)
+# each calendar named in its own script only (the originator's decision of 30 Oct 2026): Persian for the Solar Hijri, Arabic for the Lunar
+CZ_CALENDARS = [("gregorian", "Gregorian", "en"), ("solar-hijri", "هجری شمسی", "fa"), ("lunar-hijri", "التقويم الهجري", "ar"),
+                ("julian", "Julian", "en"), ("cz", "CZ", "en")]
+CZ_ZONES = [("UTC", "UTC"), ("Asia/Tehran", "Tehran"), ("Asia/Kabul", "Kabul"), ("Asia/Dubai", "Dubai"), ("Asia/Riyadh", "Riyadh, Mecca"),
+            ("Asia/Baghdad", "Baghdad"), ("Europe/Istanbul", "Istanbul"), ("Africa/Cairo", "Cairo"), ("Africa/Lagos", "Lagos"), ("Africa/Nairobi", "Nairobi"),
+            ("Europe/Moscow", "Moscow"), ("Europe/Berlin", "Berlin, Paris, Rome"), ("Europe/London", "London"), ("America/New_York", "New York"),
+            ("America/Chicago", "Chicago"), ("America/Los_Angeles", "Los Angeles"), ("America/Mexico_City", "Mexico City"), ("America/Sao_Paulo", "São Paulo"),
+            ("Asia/Karachi", "Karachi"), ("Asia/Kolkata", "Delhi, Mumbai"), ("Asia/Dhaka", "Dhaka"), ("Asia/Jakarta", "Jakarta"),
+            ("Asia/Kuala_Lumpur", "Kuala Lumpur, Singapore"), ("Asia/Shanghai", "Beijing, Shanghai"), ("Asia/Tokyo", "Tokyo"), ("Asia/Seoul", "Seoul"),
+            ("Australia/Sydney", "Sydney"), ("Pacific/Auckland", "Auckland")]
+def _cal_options(selected):
+    return "".join(f'<option value="{c}"' + (f' lang="{l}" dir="rtl"' if l != "en" else "") + (f"__CZ_SEL_{c}__" if selected is None else " selected" if c == selected else "") + f">{esc(n)}</option>"
+                   for c, n, l in CZ_CALENDARS)
+def cz_form(prefix, selected="gregorian", value="", origin="", label="Date", button="Convert"):
+    """The date converter on /calendar: a GET form. selected=None leaves __CZ_SEL_<calendar>__ placeholders, value=None __CZ_VALUE__,
+    for room/cztime.js to fill."""
     v = "__CZ_VALUE__" if value is None else esc(value)
-    return (f'<form class="cz-conv" action="{origin}/calendar" method="get"><label for="{prefix}-d">{label}</label> '
+    return (f'<form class="cz-conv" action="{origin}/calendar#convert" method="get"><label for="{prefix}-d">{label}</label> '
             f'<input id="{prefix}-d" name="d" value="{v}" placeholder="YYYY-MM-DD" dir="auto" autocomplete="off" spellcheck="false" maxlength="40"> '
-            f'<select id="{prefix}-c" name="c" aria-label="The calendar of that date">{opts}</select> <button type="submit">{button}</button></form>')
-_CZ_LINE = ('<p><a class="cz-stamp" href="/calendar" aria-describedby="cz-read"><time datetime="__CZ_ISO__">__CZ_STAMP__</time></a> '
-            '<span class="cz-read" id="cz-read">Year __CZ_YEAR__, day __CZ_DOYN__ · __CZ_DAYS_FMT__ days since Coordinate Zero · <a href="/calendar#how">how CZ time works</a></span></p>')
-CZ_BAR = {   # the live bar, filled by room/cztime.js (fillBar); "noform" is the calendar page's own, whose form is the page
-    "bar": f'<aside class="cz-now" aria-label="CZ time" lang="en" dir="ltr">{_CZ_LINE}{cz_form("czb", selected=None)}</aside>',
-    "noform": f'<aside class="cz-now" aria-label="CZ time" lang="en" dir="ltr">{_CZ_LINE}</aside>',
+            f'<select id="{prefix}-c" name="c" aria-label="The calendar of that date">{_cal_options(selected)}</select> <button type="submit">{button}</button></form>')
+def cz_time_form(prefix, live=True, origin=""):
+    """The time converter on /calendar: a local date and time in a time zone, to CZ time. live=True leaves placeholders (__CZ_TVALUE__,
+    __CZ_TTIME__, __CZ_TSEL_<calendar>__ via __CZ_SEL_…, __CZ_Z<n>__) for room/cztime.js to fill."""
+    zones = "".join(f'<option value="{z}"' + (f"__CZ_Z{i}__" if live else (" selected" if i == 0 else "")) + f">{esc(n)}</option>" for i, (z, n) in enumerate(CZ_ZONES))
+    return (f'<form class="cz-conv" action="{origin}/calendar#time" method="get"><label for="{prefix}-d">Date</label> '
+            f'<input id="{prefix}-d" name="d" value="{"__CZ_TVALUE__" if live else ""}" placeholder="today" dir="auto" autocomplete="off" spellcheck="false" maxlength="40"> '
+            f'<select id="{prefix}-c" name="c" aria-label="The calendar of that date">{_cal_options(None if live else "gregorian")}</select> '
+            f'<label for="{prefix}-t">Time</label> <input id="{prefix}-t" name="t" value="{"__CZ_TTIME__" if live else ""}" placeholder="HH:MM" inputmode="numeric" autocomplete="off" maxlength="8" size="6"> '
+            f'<label for="{prefix}-z">in</label> <select id="{prefix}-z" name="z">{zones}</select> <button type="submit">Convert</button></form>')
+_CZ_LINE = ('<p class="cz-line"><a class="cz-stamp" href="/calendar" aria-describedby="cz-why"><time datetime="__CZ_ISO__">__CZ_STAMP__</time></a> '
+            '<a href="/calendar#convert">date converter</a> · <a href="/calendar#time">time converter</a></p>'
+            '<p class="cz-why" id="cz-why">Coordinate Zero, 30 November 2022 = CZ 0 · Year __CZ_YEAR__, day __CZ_DOYN__ · times in UTC</p>')
+CZ_BAR = {   # the live bar, filled by room/cztime.js (fillBar): the date, the reason, the two converters as links — the converting is on /calendar
+    "bar": f'<aside class="cz-now" aria-label="CZ time" lang="en" dir="ltr">{_CZ_LINE}</aside>',
 }
 # the examples on /calendar: each stamp computed by lib.py and compared with room/cztime.js by site/check.py
 CZ_EXAMPLES = [
@@ -337,15 +376,15 @@ CZ_EXAMPLES = [
     (PRERELEASE, "this site is published; the open discussion opens"),
     (CZ_TIME_DECIDED, "CZ time becomes the basis of this site's dates"),
     (LAUNCH, "public launch; Year 4 begins"),
-    (REVIEW, "the first scheduled review of the Core; Year 5 begins"),
+    (datetime.date(2027, 11, 30), "Year 5 begins"),
+    (REVIEW, "the first scheduled review of the Core: 2048 = 2¹¹, in binary a one and eleven zeros"),
     (datetime.date(3022, 11, 30), "a thousand years after Coordinate Zero"),
     (datetime.date(1022, 11, 30), "a thousand years before it (Gregorian; 24 November 1022 in the Julian calendar)"),
 ]
-def cz_bar_fallback(variant="bar", selected="gregorian"):
-    line = (f'<p><a class="cz-stamp" href="{ORIGIN}/calendar">CZ time</a> <span class="cz-read">Days counted from Coordinate Zero, '
-            f'<time datetime="2022-11-30">CZ+0:000</time> · <a href="{ORIGIN}/calendar#how">how CZ time works</a></span></p>')
-    inner = line + ("" if variant == "noform" else cz_form("czb", selected=selected, origin=ORIGIN))
-    return f'<!--cz-now{"" if variant == "bar" else ":" + variant}--><aside class="cz-now" aria-label="CZ time" lang="en" dir="ltr">{inner}</aside><!--/cz-now-->'
+def cz_bar_fallback():   # for copies that serve the files as they are: no date, links to this site
+    inner = (f'<p class="cz-line"><a class="cz-stamp" href="{ORIGIN}/calendar">CZ time</a> <a href="{ORIGIN}/calendar#convert">date converter</a> · '
+             f'<a href="{ORIGIN}/calendar#time">time converter</a></p><p class="cz-why">Coordinate Zero, 30 November 2022 = CZ 0 · times in UTC</p>')
+    return f'<!--cz-now--><aside class="cz-now" aria-label="CZ time" lang="en" dir="ltr">{inner}</aside><!--/cz-now-->'
 
 
 # Search and link-preview metadata (Blueprint §3.1: crawlers, indexers and archivers are readers too). Named standards only —
@@ -354,7 +393,7 @@ def cz_bar_fallback(variant="bar", selected="gregorian"):
 GOOGLE_SITE_VERIFICATION = "Hf73qd5zTa6JZ_-O6QM0JBYPSqxOdIM-M33lsIGihhg"   # Google Search Console ("HTML tag" method), property https://civilizationzero.ai/, added by the originator on 29 Oct 2026; keep it, or the property loses its verification
 OG_IMAGE = ("/og.png", 1200, 630, "CZ, the mark of Civilization Zero: a Z inside a ring left open")
 
-def shell(title, body, path, description, alternates=(), ldjson=None, nav=True, extra_head="", hreflangs=(), og_type="website", robots=None, crumbs=True, cz_bar="bar", cz_select="gregorian"):
+def shell(title, body, path, description, alternates=(), ldjson=None, nav=True, extra_head="", hreflangs=(), og_type="website", robots=None, crumbs=True, cz_bar=True):
     alt = "".join(f'<link rel="alternate" type="{t}" href="{h}" title="{esc(n)}">' for t, h, n in alternates)
     hl = "".join(f'<link rel="alternate" hreflang="{l}" href="{ORIGIN}{h}">' for l, h in hreflangs)
     objs = list(ldjson or [])
@@ -384,7 +423,7 @@ def shell(title, body, path, description, alternates=(), ldjson=None, nav=True, 
 {"".join(f'<link rel="me" href="{esc(u)}">' for u in SOCIAL)}{f'<meta name="fediverse:creator" content="{esc(FEDIVERSE_CREATOR)}">' if FEDIVERSE_CREATOR else ""}<style>{CSS}</style>
 {ld}{extra_head}</head>
 <body>
-{cz_bar_fallback(cz_bar, cz_select) + chr(10) if nav and cz_bar else ""}{NAV if nav else ""}
+{cz_bar_fallback() + chr(10) if nav and cz_bar else ""}{NAV if nav else ""}
 {body}
 {FOOTER}
 </body>
