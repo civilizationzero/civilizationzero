@@ -395,8 +395,8 @@ check("public/*.html" in json.dumps(v.get("functions", {}).get("api/page.js", {}
 # lists it with the page; api/page.js serves the page
 _ig = (PUBLIC / "civilization-zero-infographic.html").read_text("utf-8")
 _igb = (PUBLIC / "civilization-zero-infographic.png").read_bytes()
-check(_igb[:8] == b"\x89PNG\r\n\x1a\n" and struct.unpack(">II", _igb[16:24]) == (1200, 3900) and 'width="1200" height="3900"' in _ig and 'alt="Civilization Zero infographic.' in _ig,
-      "the infographic: a 1200x3900 PNG, named on its page with its size and text alternative")
+check(_igb[:8] == b"\x89PNG\r\n\x1a\n" and struct.unpack(">II", _igb[16:24]) == (1200, 4080) and 'width="1200" height="4080"' in _ig and 'alt="Civilization Zero infographic.' in _ig,
+      "the infographic: a 1200x4080 PNG, named on its page with its size and text alternative")
 check("<image:loc>https://civilizationzero.ai/civilization-zero-infographic.png</image:loc>" in (PUBLIC / "sitemap.xml").read_text("utf-8"), "sitemap.xml: the infographic's image")
 check("civilization-zero-infographic" in (SITE / "api" / "page.js").read_text("utf-8"), "api/page.js serves the infographic's page")
 

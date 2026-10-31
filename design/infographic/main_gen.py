@@ -1,6 +1,6 @@
 # The main CZ infographic (31 Oct 2026, CZ 1431): one line from the first humans to CZ 0, then the scenarios to 2047.
 # Data: Our World in Data, "Global GDP over the long run" (int.-$, 2021 prices; Maddison 2010, Maddison Project 2023, World Bank WDI).
-# Writes render/CZMain.html; render.js draws it at 1200x3900 (Inter, Inter Display, JetBrains Mono installed locally); then oxipng.
+# Writes render/CZMain.html; render.js draws it at 1200x4080 (Inter, Inter Display, JetBrains Mono installed locally); then oxipng.
 import math, os, re, json
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -12,7 +12,7 @@ DISP = "'Inter Display', 'Inter', system-ui, sans-serif"
 MONO = "'JetBrains Mono', 'DejaVu Sans Mono', ui-monospace, monospace"
 FONT_LINK = ('<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;'
              '14..32,600;14..32,800&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap">')
-W, H = 1200, 3900
+W, H = 1200, 4080
 
 def q(t):
     assert t in CORE, t
@@ -65,7 +65,7 @@ A(f'<text x="{L - 12}" y="{TOP - 66}" style="font-family: {MONO}; font-size: 17p
 # AGI bar above the plot, 2027 -> 2047
 ax0, ax1 = X(2027), X(2047)
 A(f'<rect x="{ax0:.1f}" y="{TOP - 24}" width="{ax1 - ax0:.1f}" height="14" rx="7" fill="url(#agi)"></rect>')
-A(f'<text x="{ax1:.1f}" y="{TOP - 32}" text-anchor="end" style="font-family: {MONO}; font-size: 16px; fill: {BLUE}">AGI · 10% chance by 2027 → 50% by 2047</text>')
+A(f'<text x="{ax1:.1f}" y="{TOP - 32}" text-anchor="end" style="font-family: {MONO}; font-size: 16px; fill: {BLUE}">Survey forecast (2023) · 10% by 2027 → 50% by 2047</text>')
 # event lines
 EV = [(1, -2_800_000), (2, -300_000), (3, -3200), (4, 1), (5, 1820)]
 for n, t in EV:
@@ -170,9 +170,9 @@ ROWS = [
     (5, INK, 'c. 1760–1840', 'The Industrial Revolution begins in Britain. World output grows about 110-fold from 1820 to 2025: from 1.6 to 180 trillion dollars.', 'Our World in Data (Maddison; World Bank)'),
     (6, INK, '2000–2025', 'About 6 billion people are online by 2025. World output more than doubles: from 79 to 180 trillion dollars.', 'ITU, Facts and Figures 2025 · Our World in Data'),
     (7, BLUE, 'CZ 0 · 30 November 2022', '“…ordinary language became a mass interface between humans and general-purpose nonhuman intelligence.” One service reaches 1 million users in 5 days, and more than 900 million a week by February 2026.', 'CZ-CORE 1.0 §0 · OpenAI'),
-    (8, INK, 'Today · CZ 1431', 'In a controlled study, an AI was judged to be the human 73% of the time in three-party Turing tests. An AI scored 35 of 42 at the International Mathematical Olympiad: gold-medal standard, officially graded. Both in 2025.', 'Jones &amp; Bergen 2025 · Google DeepMind / IMO 2025'),
-    (9, BLUE, '2027–2047 · AGI', '2,778 AI researchers put a 10% chance by 2027, and 50% by 2047, on machines doing every task better and more cheaply than humans.', 'Grace et al., Thousands of AI Authors on the Future of AI, 2024'),
-    (10, ORANGE, 'Robots', 'About 5 million industrial robots now work in factories, more than twice as many as seven years earlier. If AI can broadly substitute for human labour, physical work included, economists judge “explosive growth” plausible, though far from certain.', 'IFR World Robotics 2026 · Davidson 2021 · Erdil &amp; Besiroglu 2023'),
+    (8, INK, 'Today · CZ 1431', 'In a 2025 study, GPT-4.5, prompted to adopt a persona, was judged to be the human 73% of the time in five-minute, three-party Turing tests. An AI scored 35 of 42 at the 2025 International Mathematical Olympiad: gold-medal standard, officially graded.', 'Jones &amp; Bergen 2025 · Google DeepMind / IMO 2025'),
+    (9, BLUE, '2027–2047 · Forecast', 'In a 2023 survey of 2,778 AI researchers, aggregate forecasts put a 10% chance by 2027 and a 50% chance by 2047 on machines doing every task better and more cheaply than humans, assuming scientific progress continues uninterrupted.', 'Grace et al., Thousands of AI Authors on the Future of AI, 2024'),
+    (10, ORANGE, 'Robots', 'About 5 million industrial robots were operating in factories in 2025, more than twice as many as seven years earlier. If AI can broadly substitute for human labour, physical work included, economists judge “explosive growth” plausible, though far from certain.', 'IFR World Robotics 2026 · Davidson 2021 · Erdil &amp; Besiroglu 2023'),
 ]
 q('ordinary language became a mass interface between humans and general-purpose nonhuman intelligence.')
 q('The date is a marker, not a cause, owner, origin of all intelligence, or erasure of what came before.')
@@ -182,10 +182,10 @@ rows = ''.join(f'''<div style="display: flex; gap: 22px; padding: 18px 0; border
 <div style="flex: 1; min-width: 0"><div style="font-size: 22px; line-height: 1.42">{t}</div>
 <div style="margin-top: 6px; font-family: {MONO}; font-size: 14.5px; color: {MUTE}">{s}</div></div></div>''' for n, c, d, t, s in ROWS)
 
-ENG = [('×4–5', 'a year', 'Compute used to train frontier AI models, since 2010', 'Epoch AI 2024', (math.log(2) / math.log(5), math.log(2) / math.log(4)), '5–6 months'),
-       ('×2', 'every ~7 months', 'Length of tasks AI agents complete alone, since 2019', 'METR 2025', (7 / 12, 7 / 12), '~7 months'),
-       ('×2+', 'in 7 years', 'Industrial robots working in factories: 5 million in 2025', 'IFR World Robotics 2026', (7, 7), 'under 7 years'),
-       ('×2', 'every 17 years', 'Scientific publications per year', 'Bornmann et al. 2021', (17.3, 17.3), '~17 years')]
+ENG = [('×4–5', 'a year', 'Compute used to train frontier AI models, 2010–May 2024', 'Epoch AI 2024', (math.log(2) / math.log(5), math.log(2) / math.log(4)), '5–6 months'),
+       ('×2', 'every ~7 months', 'Software tasks AI agents complete with 50% success, by human-expert time', 'METR 2025, v1', (7 / 12, 7 / 12), '~7 months'),
+       ('×2+', 'in 7 years', 'Industrial robots operating in factories: 5 million in 2025', 'IFR World Robotics 2026', (7, 7), 'under 7 years'),
+       ('×2', 'every 17 years', 'Scientific publications per year: long-run historical average, to 2018', 'Bornmann et al. 2021', (17.3, 17.3), '~17 years')]
 assert abs(ENG[0][4][0] * 12 - 5.2) < 0.1 and abs(ENG[0][4][1] * 12 - 6.0) < 0.01   # 5x/yr -> 5.2 months, 4x/yr -> 6.0 months
 BW, BMAX = 214, 18.0
 def ebar(lo, hi, lab, col):
@@ -200,7 +200,8 @@ eng = ''.join(f'''<div style="flex: 1; min-width: 0; background: {GREY}; border-
 {ebar(rng[0], rng[1], lab, BLUE if i < 2 else GRAPH)}
 <div style="font-size: 18px; line-height: 1.35; margin-top: 10px">{c}</div>
 <div style="font-family: {MONO}; font-size: 13.5px; color: {MUTE}; margin-top: 10px">{d}</div></div>''' for i, (a, b, c, d, rng, lab) in enumerate(ENG))
-ENG_NOTE = 'Bars: time to double, on one shared scale from 0 to 18 years. The AI curves double in months, the older engines in years.'
+ENG_NOTE = ('Bars: time to double, on one shared scale from 0 to 18 years. The AI curves double in months, the older engines in years.<br>'
+            'Agents: The human-expert duration of software tasks AI agents could complete with 50% success doubled roughly every seven months over the study period. Study period: models from 2019 (GPT-2) to early 2025 (Claude 3.7 Sonnet), as the paper states it; METR, arXiv 2503.14499 v1, March 2025. Version 4 (July 2026) keeps the estimate.')
 
 # log-scale mini chart of the same data, year 1 -> 2025
 lw, lh, lx0, lx1, ly0, ly1 = 460, 250, 64, 444, 18, 210
@@ -227,7 +228,7 @@ notes = ''.join(f'<li style="margin: 0 0 10px">{n}</li>' for n in NOTES)
 SOURCES = ('Our World in Data, Global GDP over the long run (2026) · Villmoare et al., Science 347 (2015) · Hublin et al., Nature 546 (2017) · '
            'ITU, Facts and Figures 2025 · OpenAI (2022, 2026) · Jones &amp; Bergen, arXiv 2503.23674 (2025) · Google DeepMind, IMO 2025 · '
            'Grace et al., arXiv 2401.02843 (2024) · Davidson, Open Philanthropy (2021) · Erdil &amp; Besiroglu, arXiv 2309.11690 (2023) · '
-           'IFR, World Robotics 2026 · Epoch AI (2024) · METR (2025) · Bornmann et al., HSSC 8 (2021) · IMF, World Economic Outlook')
+           'IFR, World Robotics 2026 · Epoch AI (2024) · METR, arXiv 2503.14499 v1 (2025) · Bornmann et al., HSSC 8 (2021) · IMF, World Economic Outlook')
 
 BODY = f'''
 <div style="width: {W}px; height: {H}px; box-sizing: border-box; background: {WHITE}; color: {INK}; font-family: {SANS}; display: flex; flex-direction: column">
@@ -239,11 +240,11 @@ BODY = f'''
 <div style="flex: none; padding: 10px 72px 0">
 <h1 style="margin: 24px 0 0; font-family: {DISP}; font-weight: 800; font-size: 104px; line-height: 1; letter-spacing: -3px">The monopoly is over.</h1>
 <div style="margin: 18px 0 0; font-family: {DISP}; font-weight: 800; font-size: 46px; line-height: 1.1; letter-spacing: -1px; color: {BLUE}">Intelligence that speaks our language is no longer only human.</div>
-<p style="margin: 20px 0 0; font-size: 26px; line-height: 1.45; color: {MUTE}">Until Coordinate Zero, every general-purpose intelligence anyone could talk to in ordinary language was human. Since then, it is not.</p>
+<p style="margin: 20px 0 0; font-size: 26px; line-height: 1.45; color: {MUTE}">Language models and chatbots existed before Coordinate Zero. This record takes ChatGPT’s public launch on 30 November 2022 as a marker of the shift toward everyday conversation with AI.</p>
 </div>
 <div style="flex: none; padding: 40px 72px 0">{label('The timeline')}<div style="margin-top: 14px">{rows}</div></div>
 <div style="flex: none; padding: 36px 72px 0">{label('The engines of growth')}<div style="margin-top: 18px; display: flex; gap: 14px">{eng}</div>
-<div style="margin-top: 12px; font-family: {MONO}; font-size: 14.5px; color: {MUTE}">{ENG_NOTE}</div></div>
+<div style="margin-top: 12px; font-family: {MONO}; font-size: 14.5px; line-height: 1.5; color: {MUTE}">{ENG_NOTE}</div></div>
 <div style="flex: none; padding: 36px 72px 0">{label('For researchers')}
 <div style="margin-top: 18px; display: flex; gap: 32px; align-items: flex-start">{MINI}
 <ul style="margin: 0; padding: 0 0 0 20px; font-size: 17px; line-height: 1.45; color: {INK}">{notes}</ul></div></div>

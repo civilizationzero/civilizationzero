@@ -102,6 +102,12 @@ const ok = (c, m) => { if (c) pass++; else { fail++; console.log("FAIL", m); } }
     const v = CZ.convertTime(CZ.fromGregorian(y, mo, d), [h, mi, 0], z), back = new Date(v.utc_ms + v.offset * 60000);
     ok(v.ok && 1 + (v.also ? v.also.length : 0) === n && back.getUTCHours() === h && back.getUTCMinutes() === mi, `round trip ${z} ${y}-${mo}-${d} ${h}:${mi}`);
   }
+  // leap days and day crossings through the converter (regression)
+  for (const [d, t, z, want] of [["2024-02-29", "12:00", "Europe/Berlin", "12:00 in Berlin, Paris, Rome = CZ 456 11:00:00 UTC"], ["2028-02-29", "23:30", "America/New_York", "23:30 in New York = CZ 1918 04:30:00 UTC"],
+                                  ["2025-03-01", "00:15", "Asia/Tehran", "00:15 in Tehran = CZ 821 20:45:00 UTC"]]) {
+    const r = await call(page, `/api/page?p=calendar&d=${d}&c=gregorian&t=${encodeURIComponent(t)}&z=${encodeURIComponent(z)}`), m = /<h3 id="h-time-result">([\s\S]*?)<\/h3>/.exec(r.body);
+    ok(m && text(m[1]) === want, `leap/crossing ${d} ${t} ${z} -> ${m && text(m[1])} want ${want}`);
+  }
   const tsel = await call(page, `/api/page?p=calendar&d=2026-10-30&t=13:30&z=Asia%2FTehran`); ok(tsel.body.includes('<option value="Asia/Tehran" selected>Tehran</option>'), "the zone stays chosen");
   // the JSON API
   const j = await call(cal, "/api/calendar?d=1405-08-08&c=solar-hijri"); const o = JSON.parse(j.body);

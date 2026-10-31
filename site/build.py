@@ -920,7 +920,7 @@ INFOGRAPHIC_DATA = json.loads((SITE / "assets" / "infographic-data.json").read_t
 _GDP = {p["year"]: p["gdp"] for p in INFOGRAPHIC_DATA["points"]}
 assert len(_GDP) == 51 and round(_GDP[2025] / _GDP[1820]) == 110 and round(_GDP[2025] / _GDP[2000], 2) == 2.29, "the growth factors printed on the infographic"
 INFOGRAPHIC_AS_OF = datetime.date(2026, 10, 31)   # "Data as of CZ 1431", printed on the image
-INFOGRAPHIC = ("/civilization-zero-infographic.png", 1200, 3900,
+INFOGRAPHIC = ("/civilization-zero-infographic.png", 1200, 4080,
                "Civilization Zero infographic. A line chart of world output from the first humans, 2.8 million years ago, to Coordinate Zero, "
                "30 November 2022 (CZ 0), and scenarios to 2047: 110 times larger since 1820, 2.29 times since 2000. Headline: The monopoly is over. "
                "Intelligence that speaks our language is no longer only human. Ten numbered events, four engines of growth, notes for researchers and sources.")
@@ -941,7 +941,7 @@ _SRC = {   # the sources the image names, with the address of each
     "erdil": ("Erdil &amp; Besiroglu, Explosive growth from AI automation, arXiv 2309.11690 (2023)", "https://arxiv.org/abs/2309.11690"),
     "ifr": ("IFR, World Robotics 2026: Five Million Robots now Operate in Factories Globally", "https://ifr.org/ifr-press-releases/news/five-million-robots-now-operate-in-factories-globally"),
     "epoch": ("Epoch AI, Training compute of frontier AI models grows by 4–5x per year (2024)", "https://epoch.ai/blog/training-compute-of-frontier-ai-models-grows-by-4-5x-per-year"),
-    "metr": ("METR, Measuring AI Ability to Complete Long Tasks, arXiv 2503.14499 (2025)", "https://arxiv.org/abs/2503.14499"),
+    "metr": ("METR (Kwa et al.), Measuring AI Ability to Complete Long Tasks, arXiv 2503.14499 v1 (18 March 2025)", "https://arxiv.org/abs/2503.14499v1"),
     "bornmann": ("Bornmann, Haunschild &amp; Mutz, Humanities and Social Sciences Communications 8 (2021)", "https://doi.org/10.1057/s41599-021-00903-w"),
 }
 def _src(*keys): return " · ".join(f'<a href="{_SRC[k][1]}">{_SRC[k][0]}</a>' for k in keys)
@@ -953,15 +953,15 @@ INFOGRAPHIC_ROWS = [   # the ten numbered events, as the image prints them
     ("c. 1760–1840", "The Industrial Revolution begins in Britain. World output grows about 110-fold from 1820 to 2025: from 1.6 to 180 trillion dollars.", _src("owid")),
     ("2000–2025", "About 6 billion people are online by 2025. World output more than doubles: from 79 to 180 trillion dollars.", _src("itu", "owid")),
     ("CZ 0 · 30 November 2022", f"“…{esc(verified_core('ordinary language became a mass interface between humans and general-purpose nonhuman intelligence.'))}” (Core §0) One service reaches 1 million users in 5 days, and more than 900 million a week by February 2026.", '<a href="/core#p0">CZ-CORE 1.0 §0</a> · OpenAI'),
-    (f"As of {time_el(INFOGRAPHIC_AS_OF)}", "In a controlled study, an AI was judged to be the human 73% of the time in three-party Turing tests. An AI scored 35 of 42 at the International Mathematical Olympiad: gold-medal standard, officially graded. Both in 2025.", _src("jones", "imo")),
-    ("2027–2047 · AGI", "2,778 AI researchers put a 10% chance by 2027, and 50% by 2047, on machines doing every task better and more cheaply than humans.", _src("grace")),
-    ("Robots", "About 5 million industrial robots now work in factories, more than twice as many as seven years earlier. If AI can broadly substitute for human labour, physical work included, economists judge “explosive growth” plausible, though far from certain.", _src("ifr", "davidson", "erdil")),
+    (f"As of {time_el(INFOGRAPHIC_AS_OF)}", "In a 2025 study, GPT-4.5, prompted to adopt a persona, was judged to be the human 73% of the time in five-minute, three-party Turing tests. An AI scored 35 of 42 at the 2025 International Mathematical Olympiad: gold-medal standard, officially graded.", _src("jones", "imo")),
+    ("2027–2047 · Forecast", "In a 2023 survey of 2,778 AI researchers, aggregate forecasts put a 10% chance by 2027 and a 50% chance by 2047 on machines doing every task better and more cheaply than humans, assuming scientific progress continues uninterrupted. A forecast, not a measured probability, and not a forecast that every occupation will be automated.", _src("grace")),
+    ("Robots", "About 5 million industrial robots were operating in factories in 2025, more than twice as many as seven years earlier. If AI can broadly substitute for human labour, physical work included, economists judge “explosive growth” plausible, though far from certain.", _src("ifr", "davidson", "erdil")),
 ]
 INFOGRAPHIC_ENGINES = [
-    ("×4–5 a year", "Compute used to train frontier AI models, since 2010: doubles in 5–6 months.", _src("epoch")),
-    ("×2 every ~7 months", "Length of tasks AI agents complete alone, since 2019.", _src("metr")),
-    ("×2 in 7 years", "Industrial robots working in factories: 5 million in 2025, more than double: doubles in under 7 years.", _src("ifr")),
-    ("×2 every 17 years", "Scientific publications per year.", _src("bornmann")),
+    ("×4–5 a year", "Compute used to train frontier AI models grew 4–5 times a year from 2010 to May 2024: it doubled every 5–6 months.", _src("epoch")),
+    ("×2 every ~7 months", "The human-expert duration of software tasks AI agents could complete with 50% success doubled roughly every seven months over the study period. Study period: models from 2019 (GPT-2) to early 2025 (Claude 3.7 Sonnet), as the paper states it; METR, arXiv 2503.14499 v1, March 2025. Version 4 (July 2026) keeps the estimate.", _src("metr")),
+    ("×2 in 7 years", "Industrial robots operating in factories: 5 million in 2025, more than double the number seven years earlier: they doubled in under 7 years.", _src("ifr")),
+    ("×2 every 17 years", "Scientific publications per year: a historical long-run average, from the 17th century to 2018 (Bornmann et al. find different rates in different periods), not a current growth rate.", _src("bornmann")),
 ]
 def infographic_page():
     _s0 = verified_core("The date is a marker, not a cause, owner, origin of all intelligence, or erasure of what came before.")
@@ -971,14 +971,14 @@ def infographic_page():
     body = f"""<main>
 <h1>Civilization Zero infographic: from the first humans to CZ 0</h1>
 <p>Civilization Zero (CZ) counts its days from Coordinate Zero, <span class="nw">30 November 2022</span>: Year Zero, the day ordinary language became a mass interface between humans and AI. This infographic puts that day on one line with the whole human story, from the first fossils of our genus to today, and then on to 2047, where the line becomes scenarios.</p>
-<p><strong>The monopoly is over.</strong> Intelligence that speaks our language is no longer only human. Until Coordinate Zero, every general-purpose intelligence anyone could talk to in ordinary language was human. Since then, it is not.</p>
+<p><strong>The monopoly is over.</strong> Intelligence that speaks our language is no longer only human. Language models and chatbots existed before Coordinate Zero. This record takes ChatGPT’s public launch on 30 November 2022 as a marker of the shift toward everyday conversation with AI.</p>
 <p class="src">The small print is easier to read at full size: <a href="{INFOGRAPHIC[0]}">open the image at full size</a> ({INFOGRAPHIC[1]} × {INFOGRAPHIC[2]} pixels). Everything in it is also written out as text below: <a href="#h-chart">the chart</a>, <a href="#h-timeline">the timeline</a>, <a href="#h-sources">the sources</a>, and the data as JSON: <a href="{INFOGRAPHIC_PATH}-data.json">{INFOGRAPHIC_PATH}-data.json</a>.</p>
 <figure class="infographic"><a href="{INFOGRAPHIC[0]}"><img src="{INFOGRAPHIC[0]}" width="{INFOGRAPHIC[1]}" height="{INFOGRAPHIC[2]}" alt="{esc(INFOGRAPHIC[3])}" decoding="async" fetchpriority="high"></a>
 <figcaption class="src" id="licence">PNG, {INFOGRAPHIC[1]} × {INFOGRAPHIC[2]}; data as of {time_el(INFOGRAPHIC_AS_OF)}. Free to share under <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>, credited to Civilization Zero, with a link to <code>civilizationzero.ai{INFOGRAPHIC_PATH}</code>.</figcaption></figure>
 <section aria-labelledby="h-chart"><h2 id="h-chart">The chart</h2>
 <p>The line is world output: gross domestic product at purchasing-power parity, in trillions of international dollars at 2021 prices, as compiled by Our World in Data from the Maddison Database 2010, the Maddison Project Database 2023 and the World Bank. Real world output is about 110 times larger in 2025 than in 1820, and 2.29 times larger than in 2000.</p>
 <p>The time axis is broken into six segments, each drawn at its own scale, so that 2.8 million years and the last 25 fit on one line. There are no measurements before year 1: that stretch is missing, not zero. The line is grey until CZ 0 and blue after it. The colour marks the era, not a change in the data: “{esc(_s0)}” (<a href="/core#p0">Core §0</a>)</p>
-<p>After 2025 the dashed lines are scenarios, not data and not forecasts: about today’s 3% a year (IMF), held constant, and 30% a year, the rate Davidson (2021) defines as “explosive growth”, if AI and robots automate most work. The band above the chart is a survey of AI researchers: a 10% chance by 2027 and 50% by 2047 that machines do every task better and more cheaply than humans.</p>
+<p>After 2025 the dashed lines are scenarios, not data and not forecasts: about today’s 3% a year (IMF), held constant, and 30% a year, the rate Davidson (2021) defines as “explosive growth”, if AI and robots automate most work. The band above the chart is a forecast, not data and not a measured probability. In a 2023 survey of 2,778 AI researchers, aggregate forecasts put a 10% chance by 2027 and a 50% chance by 2047 on machines doing every task better and more cheaply than humans, assuming scientific progress continues uninterrupted.</p>
 </section>
 <section aria-labelledby="h-timeline"><h2 id="h-timeline">The timeline</h2>
 <ol>{rows}</ol>

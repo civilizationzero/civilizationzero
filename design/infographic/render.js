@@ -1,6 +1,6 @@
 const { chromium } = require('playwright'); const path = require('path');
 (async () => {
-  const b = await chromium.launch(); const p = await b.newPage({ viewport: { width: 1200, height: 3900 }, deviceScaleFactor: 1 });
+  const b = await chromium.launch(); const p = await b.newPage({ viewport: { width: 1200, height: 4080 }, deviceScaleFactor: 1 });
   await p.goto('file://' + path.join(__dirname, 'render', 'CZMain.html')); await p.evaluate(() => document.fonts.ready);
   const m = await p.evaluate(() => { const r = document.body.firstElementChild; const spacer = [...r.children].find(e => e.style.flex === '1 1 0%' || e.style.flex === '1');
     const last = r.lastElementChild.getBoundingClientRect(); return { sh: r.scrollHeight, ch: r.clientHeight, spacer: spacer ? Math.round(spacer.getBoundingClientRect().height) : null, footerBottom: Math.round(last.bottom),
