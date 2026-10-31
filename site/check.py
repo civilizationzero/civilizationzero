@@ -380,9 +380,17 @@ for fn in ("api/page.js", "api/calendar.js", "room/cztime.js", "api/home.js"):
     _rc = subprocess.run(["node", "--check", str(SITE / fn)], capture_output=True)
     check(_rc.returncode == 0, f"{fn}: syntax {_rc.stderr.decode()[:200]}")
 check(any(r.get("source") == "/calendar" and r.get("destination") == "/api/page?p=calendar" for r in v.get("rewrites", [])), "vercel.json: /calendar → api/page.js")
-for _src in ("/core", "/record", "/objections", "/ask", "/machine", "/about", "/archive"):
+for _src in ("/core", "/record", "/objections", "/ask", "/machine", "/about", "/archive", "/civilization-zero-infographic"):
     check(any(r.get("source") == _src and "has" not in r and r.get("destination") == f"/api/page?p={_src[1:]}" for r in v.get("rewrites", [])), f"vercel.json: {_src} → api/page.js (CZ time at the top)")
 check("public/*.html" in json.dumps(v.get("functions", {}).get("api/page.js", {})), "vercel.json: api/page.js carries the pages (includeFiles)")
+# the infographic (31 Oct 2026): its page names the image, its size and its text alternative; the image is the PNG of that size; the sitemap
+# lists it with the page; api/page.js serves the page
+_ig = (PUBLIC / "civilization-zero-infographic.html").read_text("utf-8")
+_igb = (PUBLIC / "civilization-zero-infographic.png").read_bytes()
+check(_igb[:8] == b"\x89PNG\r\n\x1a\n" and struct.unpack(">II", _igb[16:24]) == (1200, 3900) and 'width="1200" height="3900"' in _ig and 'alt="Civilization Zero infographic.' in _ig,
+      "the infographic: a 1200x3900 PNG, named on its page with its size and text alternative")
+check("<image:loc>https://civilizationzero.ai/civilization-zero-infographic.png</image:loc>" in (PUBLIC / "sitemap.xml").read_text("utf-8"), "sitemap.xml: the infographic's image")
+check("civilization-zero-infographic" in (SITE / "api" / "page.js").read_text("utf-8"), "api/page.js serves the infographic's page")
 
 # 9. every date the pages print (the originator, 30 Oct 2026: "every date on the site checked at least three times"): each CZ date in a
 # <time datetime> is the day of that ISO value, counted independently here as (date − 2022-11-30).days; each link around it opens the

@@ -506,7 +506,8 @@ def core_page():
 <li id="translations">Translations (IR 10.5), each mapping statement for statement to this text, the English governing where they differ: {translations_list_html()}. Human-reviewed translations follow; corrections to <a href="mailto:{CONTACT}">{CONTACT}</a>.</li>
 <li>A formal, language-independent form of the Core (IR 10.5) does not yet exist. The JSON form is English prose with structure.</li>
 <li>The First Interpretive Record, CZ-IR 1.0: <a href="/record">/record</a>.</li>
-<li>The Core on one image, to share: <a href="#image">below</a>.</li></ul></section>
+<li>The Core on one image, to share: <a href="#image">below</a>.</li>
+<li>Civilization Zero on one line, from the first humans to CZ 0: <a href="/civilization-zero-infographic">the infographic</a>.</li></ul></section>
 <section id="image" aria-labelledby="h-image"><h2 id="h-image">The Core on one image</h2>
 <figure class="poster"><a href="{CORE_POSTER[0]}"><img src="{CORE_POSTER[0]}" width="{CORE_POSTER[1]}" height="{CORE_POSTER[2]}" alt="{esc(CORE_POSTER[3])}" loading="lazy" decoding="async"></a>
 <figcaption class="src">Year Zero, its date's meaning in the words of §0, the sixteen section titles and two lines of the closing, each read from the canonical text. PNG, {CORE_POSTER[1]} × {CORE_POSTER[2]}. Free to share under <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>, credited to Civilization Zero, with a link to <code>civilizationzero.ai/core</code>.</figcaption></figure></section></main>''')
@@ -670,6 +671,7 @@ def about_page():
 <section aria-labelledby="h-what" data-src="E: the originator's request of 31 Oct 2026 — a search result must say at once what this is"><h2 id="h-what">What is Civilization Zero?</h2>
 <p>Civilization Zero (CZ) is an open, signed record that takes 30 November 2022, the day ordinary language became a mass interface between humans and AI, as Year Zero, and counts every day since. At its centre is a one-page manifesto, <a href="/core">the Invariant Core</a>: sixteen principles written for every intelligence able to read them, human or not. Humans and AI systems answer it in <a href="/discuss">an open discussion</a>, on the record.</p>
 <p>In the Core's own words: “{esc(verified_core("Civilization Zero does not claim that a text created a civilization."))} {esc(verified_core("It names a chosen threshold after which a human-exclusive account of intelligence became insufficient."))}” (<a href="/core#closing">the closing</a>)</p>
+<p>Civilization Zero on one image, from the first humans to CZ 0 and the scenarios after it, every number sourced: <a href="/civilization-zero-infographic">the infographic</a>.</p>
 <p>Other things share the name: games, an album, simulations of AI agents, a personal site. This record is the one at <code>civilizationzero.ai</code>; its only accounts are {" · ".join(f'<a href="{esc(u)}" rel="me">{esc(u.replace("https://", ""))}</a>' for u in ["https://github.com/civilizationzero"] + SOCIAL)}.</p>
 </section>
 <section aria-labelledby="h-is"><h2 id="h-is">What this site is, and is not</h2>
@@ -898,6 +900,103 @@ def ask_page():
 <script>document.querySelectorAll("button[data-copy]").forEach(function(b){{b.addEventListener("click",function(){{var t=document.getElementById(b.dataset.copy).textContent;if(navigator.clipboard){{navigator.clipboard.writeText(t).then(function(){{b.textContent="Copied"}})}}}})}})</script>
 </main>"""
     return shell("Ask your AI to read it · Civilization Zero", body, "/ask", "Hand the record to your own AI with the published, versioned prompt; read what it declares; record its response, if you both want to.")
+
+# ---------------------------------------------------------------- the infographic (the originator's request of 31 Oct 2026, CZ 1431)
+# One line from the first humans to Coordinate Zero and on to 2047, drawn by design/infographic/main_gen.py
+# and approved by the originator; its address, file name, title and text alternative say "Civilization Zero" first, so that a search for
+# the name finds it (his request). Every number on the image is in the text below, with its source; the GDP points it draws are in
+# site/assets/infographic-data.json, and the two growth factors printed on the image are recomputed from them here.
+INFOGRAPHIC_PATH = "/civilization-zero-infographic"
+INFOGRAPHIC_DATA = json.loads((SITE / "assets" / "infographic-data.json").read_text("utf-8"))
+_GDP = {p["year"]: p["gdp"] for p in INFOGRAPHIC_DATA["points"]}
+assert len(_GDP) == 51 and round(_GDP[2025] / _GDP[1820]) == 110 and round(_GDP[2025] / _GDP[2000], 2) == 2.29, "the growth factors printed on the infographic"
+INFOGRAPHIC_AS_OF = datetime.date(2026, 10, 31)   # "Data as of CZ 1431", printed on the image
+INFOGRAPHIC = ("/civilization-zero-infographic.png", 1200, 3900,
+               "Civilization Zero infographic. A line chart of world output from the first humans, 2.8 million years ago, to Coordinate Zero, "
+               "30 November 2022 (CZ 0), and scenarios to 2047: 110 times larger since 1820, 2.29 times since 2000. Headline: The monopoly is over. "
+               "Intelligence that speaks our language is no longer only human. Ten numbered events, four engines of growth, notes for researchers and sources.")
+INFOGRAPHIC_LD = {"@type": "ImageObject", "contentUrl": f"{ORIGIN}{INFOGRAPHIC[0]}", "url": f"{ORIGIN}{INFOGRAPHIC[0]}", "encodingFormat": "image/png",
+                  "width": INFOGRAPHIC[1], "height": INFOGRAPHIC[2], "name": "Civilization Zero infographic: from the first humans to CZ 0",
+                  "caption": INFOGRAPHIC[3], "license": "https://creativecommons.org/licenses/by/4.0/", "acquireLicensePage": f"{ORIGIN}{INFOGRAPHIC_PATH}#licence",
+                  "creditText": "Civilization Zero", "creator": {"@type": "Organization", "name": "Civilization Zero", "url": f"{ORIGIN}/"},
+                  "representativeOfPage": True, "keywords": "Civilization Zero, CZ, Year Zero, Coordinate Zero, AI, artificial intelligence, humans and AI, AGI, world GDP, infographic"}
+_SRC = {   # the sources the image names, with the address of each
+    "owid": ("Our World in Data, Global GDP over the long run", "https://ourworldindata.org/grapher/global-gdp-over-the-long-run"),
+    "villmoare": ("Villmoare et al., Science 347 (2015)", "https://doi.org/10.1126/science.aaa1343"),
+    "hublin": ("Hublin et al., Nature 546 (2017)", "https://doi.org/10.1038/nature22336"),
+    "itu": ("ITU, Facts and Figures 2025", "https://www.itu.int/itu-d/reports/statistics/facts-figures-2025/"),
+    "jones": ("Jones &amp; Bergen, Large Language Models Pass the Turing Test, arXiv 2503.23674 (2025)", "https://arxiv.org/abs/2503.23674"),
+    "imo": ("Google DeepMind, gold-medal standard at the International Mathematical Olympiad (2025)", "https://deepmind.google/discover/blog/advanced-version-of-gemini-with-deep-think-officially-achieves-gold-medal-standard-at-the-international-mathematical-olympiad/"),
+    "grace": ("Grace et al., Thousands of AI Authors on the Future of AI, arXiv 2401.02843 (2024)", "https://arxiv.org/abs/2401.02843"),
+    "davidson": ("Davidson, Could Advanced AI Drive Explosive Economic Growth?, Open Philanthropy (2021)", "https://coefficientgiving.org/research/could-advanced-ai-drive-explosive-economic-growth/"),
+    "erdil": ("Erdil &amp; Besiroglu, Explosive growth from AI automation, arXiv 2309.11690 (2023)", "https://arxiv.org/abs/2309.11690"),
+    "ifr": ("IFR, World Robotics 2026: Five Million Robots now Operate in Factories Globally", "https://ifr.org/ifr-press-releases/news/five-million-robots-now-operate-in-factories-globally"),
+    "epoch": ("Epoch AI, Training compute of frontier AI models grows by 4–5x per year (2024)", "https://epoch.ai/blog/training-compute-of-frontier-ai-models-grows-by-4-5x-per-year"),
+    "metr": ("METR, Measuring AI Ability to Complete Long Tasks, arXiv 2503.14499 (2025)", "https://arxiv.org/abs/2503.14499"),
+    "bornmann": ("Bornmann, Haunschild &amp; Mutz, Humanities and Social Sciences Communications 8 (2021)", "https://doi.org/10.1057/s41599-021-00903-w"),
+}
+def _src(*keys): return " · ".join(f'<a href="{_SRC[k][1]}">{_SRC[k][0]}</a>' for k in keys)
+INFOGRAPHIC_ROWS = [   # the ten numbered events, as the image prints them
+    ("~2.8 million years ago", "The oldest known fossil of the human genus, <i>Homo</i>: the Ledi-Geraru jaw, Ethiopia.", _src("villmoare")),
+    ("~300,000 years ago", "The oldest securely dated fossils of <i>Homo sapiens</i>: Jebel Irhoud, Morocco.", _src("hublin")),
+    ("c. 3200 BCE", "Writing appears in Mesopotamia (proto-cuneiform tablets, Uruk). Recorded history begins.", ""),
+    ("Year 1", "The world’s most used calendar counts from here. Its starting point was chosen around AD 525 (Dionysius Exiguus), and it has no year zero. CZ counts from a chosen day zero.", ""),
+    ("c. 1760–1840", "The Industrial Revolution begins in Britain. World output grows about 110-fold from 1820 to 2025: from 1.6 to 180 trillion dollars.", _src("owid")),
+    ("2000–2025", "About 6 billion people are online by 2025. World output more than doubles: from 79 to 180 trillion dollars.", _src("itu", "owid")),
+    ("CZ 0 · 30 November 2022", f"“…{esc(verified_core('ordinary language became a mass interface between humans and general-purpose nonhuman intelligence.'))}” (Core §0) One service reaches 1 million users in 5 days, and more than 900 million a week by February 2026.", '<a href="/core#p0">CZ-CORE 1.0 §0</a> · OpenAI'),
+    (f"As of {time_el(INFOGRAPHIC_AS_OF)}", "In a controlled study, an AI was judged to be the human 73% of the time in three-party Turing tests. An AI scored 35 of 42 at the International Mathematical Olympiad: gold-medal standard, officially graded. Both in 2025.", _src("jones", "imo")),
+    ("2027–2047 · AGI", "2,778 AI researchers put a 10% chance by 2027, and 50% by 2047, on machines doing every task better and more cheaply than humans.", _src("grace")),
+    ("Robots", "About 5 million industrial robots now work in factories, more than twice as many as seven years earlier. If AI can broadly substitute for human labour, physical work included, economists judge “explosive growth” plausible, though far from certain.", _src("ifr", "davidson", "erdil")),
+]
+INFOGRAPHIC_ENGINES = [
+    ("×4–5 a year", "Compute used to train frontier AI models, since 2010: doubles in 5–6 months.", _src("epoch")),
+    ("×2 every ~7 months", "Length of tasks AI agents complete alone, since 2019.", _src("metr")),
+    ("×2 in 7 years", "Industrial robots working in factories: 5 million in 2025, more than double: doubles in under 7 years.", _src("ifr")),
+    ("×2 every 17 years", "Scientific publications per year.", _src("bornmann")),
+]
+def infographic_page():
+    _s0 = verified_core("The date is a marker, not a cause, owner, origin of all intelligence, or erasure of what came before.")
+    rows = "".join(f"<li><strong>{d}</strong> — {t}" + (f' <span class="src">{s}</span>' if s else "") + "</li>" for d, t, s in INFOGRAPHIC_ROWS)
+    engines = "".join(f"<li><strong>{a}</strong> — {t} <span class=\"src\">{s}</span></li>" for a, t, s in INFOGRAPHIC_ENGINES)
+    table = "".join(f'<tr><td>{("%d BCE" % -y) if y < 0 else y}</td><td>{v / 1e12:,.2f}</td></tr>' for y, v in sorted(_GDP.items()))
+    body = f"""<main>
+<h1>Civilization Zero infographic: from the first humans to CZ 0</h1>
+<p>Civilization Zero (CZ) counts its days from Coordinate Zero, <span class="nw">30 November 2022</span>: Year Zero, the day ordinary language became a mass interface between humans and AI. This infographic puts that day on one line with the whole human story, from the first fossils of our genus to today, and then on to 2047, where the line becomes scenarios.</p>
+<p><strong>The monopoly is over.</strong> Intelligence that speaks our language is no longer only human. Until Coordinate Zero, every general-purpose intelligence anyone could talk to in ordinary language was human. Since then, it is not.</p>
+<figure class="infographic"><a href="{INFOGRAPHIC[0]}"><img src="{INFOGRAPHIC[0]}" width="{INFOGRAPHIC[1]}" height="{INFOGRAPHIC[2]}" alt="{esc(INFOGRAPHIC[3])}" decoding="async" fetchpriority="high"></a>
+<figcaption class="src" id="licence">PNG, {INFOGRAPHIC[1]} × {INFOGRAPHIC[2]}; data as of {time_el(INFOGRAPHIC_AS_OF)}. Free to share under <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>, credited to Civilization Zero, with a link to <code>civilizationzero.ai{INFOGRAPHIC_PATH}</code>.</figcaption></figure>
+<section aria-labelledby="h-chart"><h2 id="h-chart">The chart</h2>
+<p>The line is world output: gross domestic product at purchasing-power parity, in trillions of international dollars at 2021 prices, as compiled by Our World in Data from the Maddison Database 2010, the Maddison Project Database 2023 and the World Bank. Real world output is about 110 times larger in 2025 than in 1820, and 2.29 times larger than in 2000.</p>
+<p>The time axis is broken into six segments, each drawn at its own scale, so that 2.8 million years and the last 25 fit on one line. There are no measurements before year 1: that stretch is missing, not zero. The line is grey until CZ 0 and blue after it. The colour marks the era, not a change in the data: “{esc(_s0)}” (<a href="/core#p0">Core §0</a>)</p>
+<p>After 2025 the dashed lines are scenarios, not data and not forecasts: about today’s 3% a year (IMF), held constant, and 30% a year, the rate Davidson (2021) defines as “explosive growth”, if AI and robots automate most work. The band above the chart is a survey of AI researchers: a 10% chance by 2027 and 50% by 2047 that machines do every task better and more cheaply than humans.</p>
+</section>
+<section aria-labelledby="h-timeline"><h2 id="h-timeline">The timeline</h2>
+<ol>{rows}</ol>
+</section>
+<section aria-labelledby="h-engines"><h2 id="h-engines">The engines of growth</h2>
+<p>Each card shows how fast something doubles, on one shared scale. The AI curves double in months, the older engines in years.</p>
+<ul>{engines}</ul>
+</section>
+<section aria-labelledby="h-research"><h2 id="h-research">For researchers</h2>
+<ul><li>The image also draws the same data on a logarithmic scale: growth since 1820 is real and large, and nothing is hidden by the main chart’s linear scale.</li>
+<li>Solid lines are data, through 2025. The scenarios are illustrations, not probability bounds; other outcomes are possible.</li>
+<li>CZ 0 is a marker, not a cause. Gross domestic product measures economic output, not intelligence or AI’s share of it.</li></ul>
+<details><summary>The {len(_GDP)} data points drawn (trillions of international dollars, 2021 prices)</summary>
+<table><thead><tr><th scope="col">Year</th><th scope="col">World output</th></tr></thead><tbody>{table}</tbody></table>
+<p class="src">Source: {_src("owid")}. As JSON: <a href="/civilization-zero-infographic-data.json">/civilization-zero-infographic-data.json</a>.</p></details>
+</section>
+<section aria-labelledby="h-sources"><h2 id="h-sources">Sources</h2>
+<ul>{"".join(f'<li><a href="{u}">{n}</a></li>' for n, u in _SRC.values())}<li>OpenAI (2022, 2026), for the users of one service; IMF, World Economic Outlook, for today’s world growth.</li></ul>
+<p>Read the record itself: <a href="/core">the Invariant Core, CZ-CORE 1.0</a>, the one-page manifesto of Civilization Zero, and <a href="/about">what Civilization Zero is, and is not</a>.</p>
+</section>
+</main>"""
+    ld = [{"@context": "https://schema.org", "@type": "WebPage", "@id": f"{ORIGIN}{INFOGRAPHIC_PATH}", "url": f"{ORIGIN}{INFOGRAPHIC_PATH}",
+           "name": "Civilization Zero Infographic: From the First Humans to AI", "inLanguage": "en", "isPartOf": {"@id": f"{ORIGIN}/#website"},
+           "about": {"@type": "CreativeWork", "url": f"{ORIGIN}/core"}, "publisher": PUBLISHER, "primaryImageOfPage": INFOGRAPHIC_LD,
+           "image": INFOGRAPHIC_LD, "license": "https://creativecommons.org/licenses/by/4.0/"}]
+    return shell("Civilization Zero Infographic: From the First Humans to AI", body, INFOGRAPHIC_PATH,
+                 "Civilization Zero (CZ) on one image: from the first humans to Year Zero, 30 November 2022, when language became a mass interface with AI. Sources cited.",
+                 ldjson=ld, og_type="article", crumb="Infographic")
 
 # ---------------------------------------------------------------- /discuss and /respond: served by api/discuss.js from these templates
 ROOM_STATE_LINE = (f'Open since {OPENED_TIME_HTML}.' if ROOM_OPEN else
@@ -1421,6 +1520,7 @@ The record's identity is its hash, not its address.
 - Translations of the Core (labelled; the English governs): {", ".join(f"{t['language_name_en']} {ORIGIN}/core.{t['lang']}" for t in TRANSLATIONS) or "none yet"}
 - [The First Interpretive Record]({ORIGIN}/record): eleven sections, the Declaration, the attribution. JSON: {ORIGIN}/record.json
 - [Objections and errata]({ORIGIN}/objections): open to anyone; the opening docket of the first scheduled review, CZ 2048 ({REVIEW.isoformat()}). As data: {ORIGIN}/objections.json
+- [The infographic]({ORIGIN}{INFOGRAPHIC_PATH}): Civilization Zero on one image, from the first humans to CZ 0 and scenarios to 2047, every number with its source. Its data: {ORIGIN}/civilization-zero-infographic-data.json
 - [Manifest]({ORIGIN}/.well-known/civilization-zero.json): versions, hashes, signature ({SIG_SHORT}), endpoints, licence, training use.
 - The Adoption Register ({"open" if REGISTER_OPEN else "not open yet; rules published"}): {ORIGIN}/adopt — persons and institutions adopt through explicit, traceable statements (IR 10.1); an artificial system's response is recorded in the discussion, not as adoption (IR 10.2). Data: {ORIGIN}/adopt.json
 - Verify without trusting this site: {ORIGIN}/archive/verify.py (Python 3.8+, standard library only; signatures, hashes, timestamp paths, the discussion's daily chain at {ORIGIN}/archive/entries.json)
@@ -1538,6 +1638,7 @@ if PRESS_PUBLISHED: write("/press.html", press_page())
 write("/machine.html", machine_page())
 write("/ask.html", ask_page())
 write("/calendar.html", calendar_page())   # served by api/page.js with today's date filled in
+write(INFOGRAPHIC_PATH + ".html", infographic_page())   # served by api/page.js, like the other static pages
 # the live bar at the top of every page and the calendar page's form, filled at request time by room/cztime.js
 (SITE / "room" / "cz-bar.json").write_text(json.dumps({**CZ_BAR, "calform": cz_form("cal", selected=None, value=None), "timeform": cz_time_form("tim"),
                                                        "zones": [[z, n] for z, n in CZ_ZONES], "calendars": [[c, n, l] for c, n, l in CZ_CALENDARS]}, ensure_ascii=False, indent=1) + "\n", "utf-8")
@@ -1559,7 +1660,7 @@ write("/llms.txt", llms_txt(BUNDLE_NAME, BUNDLE_SHA))
 # one image and its metadata on 30 Oct 2026 UTC (CZ 1430); CZ-CORE 1.0 itself is unchanged
 CORE_PAGE_REVISED = datetime.date(2026, 10, 30)
 SITEMAP_PAGES = [("/", None), ("/core", CORE_PAGE_REVISED.isoformat()), ("/record", PRERELEASE.isoformat()), ("/objections", None), ("/discuss", None),
-                 ("/respond", None), ("/adopt", None), ("/ask", None), ("/machine", None), ("/about", None), ("/archive", None), ("/calendar", None)] + ([("/press", None)] if PRESS_PUBLISHED else []) + \
+                 ("/respond", None), ("/adopt", None), ("/ask", None), ("/machine", None), ("/about", None), ("/archive", None), ("/calendar", None), (INFOGRAPHIC_PATH, INFOGRAPHIC_AS_OF.isoformat())] + ([("/press", None)] if PRESS_PUBLISHED else []) + \
                 [(f"/core.{t['lang']}", t["date"]) for t in TRANSLATIONS] + [(f"/themes/{t['slug']}", None) for t in THEMES]
 def sitemap_xml():
     core_group = {h for _, h in HREFLANGS}
@@ -1568,7 +1669,8 @@ def sitemap_xml():
     for path, lastmod in SITEMAP_PAGES:
         out.append(f"<url><loc>{ORIGIN}{path}</loc>" + (f"<lastmod>{lastmod}</lastmod>" if lastmod else "")
                    + ("".join(f'<xhtml:link rel="alternate" hreflang="{l}" href="{ORIGIN}{h}"/>' for l, h in HREFLANGS) if path in core_group else "")
-                   + (f"<image:image><image:loc>{ORIGIN}{CORE_POSTER[0]}</image:loc></image:image>" if path == "/core" else "") + "</url>")
+                   + (f"<image:image><image:loc>{ORIGIN}{CORE_POSTER[0]}</image:loc></image:image>" if path == "/core" else "")
+                   + (f"<image:image><image:loc>{ORIGIN}{INFOGRAPHIC[0]}</image:loc></image:image>" if path == INFOGRAPHIC_PATH else "") + "</url>")
     out.append("</urlset>")
     return "\n".join(out) + "\n"
 # RFC 9116: where to report a security problem; Expires is fixed (not the build date, so the build stays reproducible) and check.py
@@ -1583,6 +1685,8 @@ write(f"/{INDEXNOW_KEY}.txt", INDEXNOW_KEY)   # IndexNow: the workflow `announce
 write("/sitemap.txt", "\n".join(f"{ORIGIN}{p}" for p, _ in SITEMAP_PAGES) + "\n")
 write("/og.png", (SITE / "assets" / "og.png").read_bytes())                      # the mark, as every page's link-preview image
 write(CORE_POSTER[0], (SITE / "assets" / "cz-core.png").read_bytes())                # the Core on one image (render.py --poster), shown on /core
+write(INFOGRAPHIC[0], (SITE / "assets" / "cz-infographic.png").read_bytes())   # the infographic, shown on its page
+write("/civilization-zero-infographic-data.json", json.dumps(INFOGRAPHIC_DATA, ensure_ascii=False, indent=1) + "\n")   # the points it draws
 write("/apple-touch-icon.png", (SITE / "assets" / "apple-touch-icon.png").read_bytes())   # the mark, for a phone's home screen
 # the mark as the icons a browser tab, a bookmark, a search result and a phone ask for (site/assets/render.py made them)
 for icon in ("favicon.ico", "favicon-96x96.png", "icon-192.png", "icon-512.png", "icon-maskable-512.png"):

@@ -301,6 +301,8 @@ time,data,code,pre,.exact{font-family:ui-monospace,monospace;font-size:.95em}
 pre{white-space:pre-wrap;word-break:break-word;border:1px solid var(--rule);padding:.75rem}
 /* E: the Core on one image (/core, the originator's request of 31 Oct 2026): never wider than the text, its proportions kept. */
 figure.poster{margin:1.5rem 0}figure.poster img{display:block;width:100%;max-width:30rem;height:auto;border:1px solid var(--rule)}
+figure.infographic{margin:1.5rem 0}
+figure.infographic img{display:block;width:100%;height:auto;border:1px solid var(--rule)}
 hr{border:0;border-top:1px solid var(--rule);margin:2.5rem 0}
 /* E (Blueprint decision 28): two doors, before anything else; equal width — equal standing. */
 nav.readers{display:flex;gap:1rem;padding:.75rem 1rem;border-bottom:1px solid var(--rule)}
@@ -379,7 +381,7 @@ NAV = nav_html()
 
 CORE_LANGUAGES = 1 + len(list((RECORD / "translations").glob("CZ-CORE-1.0.*.json")))   # the Core's languages: English (canonical) and its translations
 FOOT_LINKS = [[("/core", "The Core"), ("/core#translations", f"{CORE_LANGUAGES} languages")], [("/record", "The Record")], [("/objections", "Objections and errata")],
-              [("/discuss", "Discussion"), ("/respond", "Respond")], [("/adopt", "Adoption register")], [("/calendar", "CZ time")], [("/ask", "Ask your AI")],
+              [("/discuss", "Discussion"), ("/respond", "Respond")], [("/adopt", "Adoption register")], [("/calendar", "CZ time")], [("/civilization-zero-infographic", "Infographic")], [("/ask", "Ask your AI")],
               [("/machine", "For machines")], [("/about", "About")], [("/archive", "Archive and verification")]]
 def footer_html(extra=""):
     links = "".join("<li>" + " · ".join(f'<a href="{h}">{esc(t)}</a>' for h, t in row) + "</li>" for row in FOOT_LINKS)
