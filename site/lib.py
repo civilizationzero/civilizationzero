@@ -90,7 +90,7 @@ THEMES = [{"slug": "is-the-future-frightening", "title": "Is the future frighten
           {"slug": "something-at-stake", "title": "How would we know if an AI has something at stake?", "entry": 14, "opened": "2026-10-31"},
           {"slug": "who-decides", "title": "Who decides when intelligences disagree?", "entry": 15, "opened": "2026-10-31"},
           {"slug": "propose-a-question", "title": "Propose a question", "entry": 16, "opened": "2026-10-31", "proposals": True}]   # opened by the originator on CZ 1431 ("post themes"), entries #10–#16, each signed with his key
-PRESS_PUBLISHED = False   # the press kit at /press, from press/PRESS-KIT.md: published once the originator approves the kit
+PRESS_PUBLISHED = True   # the press kit at /press, from press/PRESS-KIT.md: published by the originator's decision of 1 Nov 2026 (CZ 1431, "انتشار پرس‌کیت")
 ATPROTO_DID = "did:plc:gwscq3c3msvucpbatvrrm2f4"   # set 29 Oct 2026 (the account civilizationzero.bsky.social); "did:plc:…" from Bluesky ("I have my own domain", "No DNS panel"); the handle is then @civilizationzero.ai
 SOCIAL = ["https://bsky.app/profile/civilizationzero.ai", "https://x.com/czrecord", "https://mastodon.social/@civilizationzero"]   # profile addresses: each is a rel="me" link on every page and a schema.org sameAs of the publisher
 FEDIVERSE_CREATOR = "@civilizationzero@mastodon.social"   # Mastodon's author attribution (fediverse:creator): a link to this site shared on Mastodon credits this account, once the account lists civilizationzero.ai among the websites allowed to credit it; set 29 Oct 2026 (the account was made that day)
