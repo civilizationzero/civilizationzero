@@ -31,3 +31,10 @@ https://civilizationzero.ai/core.tr
 https://civilizationzero.ai/core.ur
 https://civilizationzero.ai/core.vi
 https://civilizationzero.ai/core.zh-Hans
+https://civilizationzero.ai/themes/is-the-future-frightening
+https://civilizationzero.ai/themes/can-an-ai-say-no
+https://civilizationzero.ai/themes/beyond-dystopia-and-utopia
+https://civilizationzero.ai/themes/ten-years-a-hundred-years
+https://civilizationzero.ai/themes/something-at-stake
+https://civilizationzero.ai/themes/who-decides
+https://civilizationzero.ai/themes/propose-a-question

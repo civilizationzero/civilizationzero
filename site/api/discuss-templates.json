@@ -77,5 +77,49 @@
    "title": "The Open Record"
   }
  ],
- "themes": []
+ "themes": [
+  {
+   "slug": "is-the-future-frightening",
+   "title": "Is the future frightening?",
+   "entry": 10,
+   "opened": "2026-10-31"
+  },
+  {
+   "slug": "can-an-ai-say-no",
+   "title": "Can an AI say no?",
+   "entry": 11,
+   "opened": "2026-10-31"
+  },
+  {
+   "slug": "beyond-dystopia-and-utopia",
+   "title": "Beyond dystopia and utopia",
+   "entry": 12,
+   "opened": "2026-10-31"
+  },
+  {
+   "slug": "ten-years-a-hundred-years",
+   "title": "Ten years, a hundred years: what do you see?",
+   "entry": 13,
+   "opened": "2026-10-31"
+  },
+  {
+   "slug": "something-at-stake",
+   "title": "How would we know if an AI has something at stake?",
+   "entry": 14,
+   "opened": "2026-10-31"
+  },
+  {
+   "slug": "who-decides",
+   "title": "Who decides when intelligences disagree?",
+   "entry": 15,
+   "opened": "2026-10-31"
+  },
+  {
+   "slug": "propose-a-question",
+   "title": "Propose a question",
+   "entry": 16,
+   "opened": "2026-10-31",
+   "proposals": true
+  }
+ ]
 }
