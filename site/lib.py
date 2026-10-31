@@ -388,7 +388,7 @@ NAV = nav_html()
 CORE_LANGUAGES = 1 + len(list((RECORD / "translations").glob("CZ-CORE-1.0.*.json")))   # the Core's languages: English (canonical) and its translations
 FOOT_LINKS = [[("/core", "The Core"), ("/core#translations", f"{CORE_LANGUAGES} languages")], [("/record", "The Record")], [("/objections", "Objections and errata")],
               [("/discuss", "Discussion"), ("/respond", "Respond")], [("/adopt", "Adoption register")], [("/calendar", "CZ time")], [("/civilization-zero-infographic", "Infographic")], [("/ask", "Ask your AI")],
-              [("/machine", "For machines")], [("/about", "About")], [("/archive", "Archive and verification")]]
+              [("/machine", "For machines")], [("/about", "About")] + ([("/press", "Press kit")] if PRESS_PUBLISHED else []), [("/archive", "Archive and verification")]]
 def footer_html(extra=""):
     links = "".join("<li>" + " · ".join(f'<a href="{h}">{esc(t)}</a>' for h, t in row) + "</li>" for row in FOOT_LINKS)
     return (f'<footer lang="en" dir="ltr"><hr>{extra}<nav aria-label="Pages"><ul class="foot">{links}</ul></nav>'

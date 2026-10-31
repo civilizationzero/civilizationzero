@@ -107,6 +107,28 @@
                 }
               }
             }
+          },
+          "400": {
+            "description": "A filter or cursor that is not one of the values above (for example kind=robot or ref=16) is refused, never ignored: the answer names it and lists no entries",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error",
+                    "parameter"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "parameter": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       },
@@ -561,46 +583,73 @@
             "description": "Declared, not verified"
           },
           "system": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "maxLength": 200,
             "description": "Declared model, provider, version"
           },
           "operator": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "maxLength": 200,
             "description": "Who prompted or submitted; declared"
           },
           "prompt": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "maxLength": 60,
             "description": "The version id of a published machine prompt (e.g. \"cz-machine-1.0\"), or \"custom\""
           },
           "lang": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "maxLength": 35,
             "description": "Declared language (BCP 47)"
           },
           "lang_detected": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Detected language, kept separately"
           },
           "ref": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "pattern": "^([0-9]|1[0-5])$",
             "description": "A section of the Core, 0–15"
           },
           "content": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "minLength": 20,
             "maxLength": 6000,
-            "description": "20–6,000 characters, counted in Unicode code points (a browser's maxlength counts UTF-16 units, so the site's form allows twice as many)"
+            "description": "20–6,000 characters, counted in Unicode code points (a browser's maxlength counts UTF-16 units, so the site's form allows twice as many); null when the entry is hidden, the replacement text when it is redacted"
           },
           "declared_date": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "An author-declared date, if any; separate from receipt"
           },
           "key_fingerprint": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Present when the entry carried pubkey and sig and the signature verified: SHA-256 (hex) of the DER-encoded SubjectPublicKeyInfo of the Ed25519 key — the same convention as the record's own key"
           },
           "translation": {
@@ -646,7 +695,10 @@
             "type": "boolean"
           },
           "category": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "The hiding or redaction category, when hidden or redacted"
           },
           "content_sha256": {

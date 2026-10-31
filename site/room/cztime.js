@@ -409,12 +409,16 @@ function zoneOffsetMin(zone, ms) {   // minutes east of UTC at that moment
   if (/^B/i.test(p.era || "")) y = 1 - y;
   return Math.round((utcMs(y, Number(p.month), Number(p.day), Number(p.hour) % 24, Number(p.minute), Number(p.second)) - Math.floor(ms / 1000) * 1000) / 60000);
 }
-function localToUTC(zone, y, m, d, hh, mi, ss) {   // the moment a local wall time names (in a gap or an overlap of summer time, the first offset)
-  const wall = utcMs(y, m, d, hh, mi, ss);
-  let off = zoneOffsetMin(zone, wall), ms = wall - off * 60000;
-  const off2 = zoneOffsetMin(zone, ms);
-  if (off2 !== off) { ms = wall - off2 * 60000; off = off2; }
-  return { ms, offset: off };
+function localToUTC(zone, y, m, d, hh, mi, ss) {   // the moments a local wall time names: { ms, offset } for the earlier one, with
+  // all: every moment it names (two in an overlap when clocks go back, none in a gap when they go forward), and in a gap
+  // gap: [offset before, offset after]; ms is then null. Each candidate is checked round trip: it must read back as that wall time.
+  const wall = utcMs(y, m, d, hh, mi, ss), H = 14 * 3600000;
+  const before = zoneOffsetMin(zone, wall - H), after = zoneOffsetMin(zone, wall + H);
+  const offs = [...new Set([before, zoneOffsetMin(zone, wall), after])];
+  const all = offs.map((o) => ({ ms: wall - o * 60000, offset: o })).filter((c) => zoneOffsetMin(zone, c.ms) === c.offset)
+    .sort((a, b) => a.ms - b.ms).filter((c, i, a) => i === 0 || c.ms !== a[i - 1].ms);
+  if (!all.length) return { ms: null, offset: null, all, gap: [before, after] };
+  return { ms: all[0].ms, offset: all[0].offset, all };
 }
 // "13:30", "13:30:15", "13.30", "13h30", "13 30", "1330", "930", "۱۳:۳۰", "1:30 pm", "۱:۳۰ ب.ظ", "١:٣٠ م" → [h, m, s] or null
 const AM = /\s*(?:a\.?\s?m\.?|ق\.?\s?ظ\.?|صباحاً|صباحا|ص)$/i, PM = /\s*(?:p\.?\s?m\.?|ب\.?\s?ظ\.?|مساءً|مساء|م)$/i;
@@ -432,10 +436,12 @@ const offsetText = (min) => `UTC${min < 0 ? "−" : "+"}${pad(Math.floor(Math.ab
 function convertTime(dayD, t, zone) {
   const g = toGregorian(dayD);
   if (g[0] < 1 || g[0] > 9999) return { ok: false, error: "Times are converted here for the years 1 to 9999." };
-  const r = localToUTC(zone, g[0], g[1], g[2], t[0], t[1], t[2]);
-  const u = new Date(r.ms);
-  return { ok: true, utc_ms: r.ms, offset: r.offset, day: dayOf(r.ms), utc: `${pad(u.getUTCHours(), 2)}:${pad(u.getUTCMinutes(), 2)}:${pad(u.getUTCSeconds(), 2)}`,
-           local: { day: dayD, time: `${pad(t[0], 2)}:${pad(t[1], 2)}${t[2] ? `:${pad(t[2], 2)}` : ""}` } };
+  const r = localToUTC(zone, g[0], g[1], g[2], t[0], t[1], t[2]), time = `${pad(t[0], 2)}:${pad(t[1], 2)}${t[2] ? `:${pad(t[2], 2)}` : ""}`;
+  if (r.ms === null) return { ok: false, gap: r.gap, error: `${time} did not happen on that day in this time zone: the clocks were moved forward, from ${offsetText(r.gap[0])} to ${offsetText(r.gap[1])}, and skipped it.` };
+  const hms = (ms) => { const u = new Date(ms); return `${pad(u.getUTCHours(), 2)}:${pad(u.getUTCMinutes(), 2)}:${pad(u.getUTCSeconds(), 2)}`; };
+  const out = { ok: true, utc_ms: r.ms, offset: r.offset, day: dayOf(r.ms), utc: hms(r.ms), local: { day: dayD, time } };
+  if (r.all.length > 1) out.also = r.all.slice(1).map((c) => ({ utc_ms: c.ms, offset: c.offset, day: dayOf(c.ms), utc: hms(c.ms) }));   // clocks went back: the same wall time came twice
+  return out;
 }
 // the local time at which a CZ day begins in a zone (its 00:00 UTC), e.g. "03:30" in Tehran, "19:00 the day before" in New York
 function dayStartLocal(D, zone) {

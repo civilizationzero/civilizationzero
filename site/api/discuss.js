@@ -109,7 +109,8 @@ ${list || "<p>No answers yet.</p>"}${older}
 function groupHtml(g, f) {
   const first = g.entries[0], rest = g.entries.length - 1;
   let out = entryHtml(first);
-  if (rest > 0) out += `<p class="src">${rest} further ${rest === 1 ? "entry" : "entries"} from the same declared source on this day — <a href="/discuss?${qs({ from: first.id, to: g.entries[g.entries.length - 1].id, ...f })}" rel="nofollow">show all</a></p>`;
+  // each folded entry keeps a plain link to its own page, so that every entry can be reached without a query (audit CZ21)
+  if (rest > 0) out += `<p class="src">${rest} further ${rest === 1 ? "entry" : "entries"} from the same declared source on this day (${g.entries.slice(1).map((e) => `<a href="/discuss/${e.id}">#${e.id}</a>`).join(", ")}) — <a href="/discuss?${qs({ from: first.id, to: g.entries[g.entries.length - 1].id, ...f })}" rel="nofollow">show all</a></p>`;
   return `<div class="group">${out}</div>`;
 }
 
@@ -242,6 +243,17 @@ module.exports = async (req, res) => {
     if (!OPEN && !CHAIN) {   // before the room first opened
       if (id !== null) return html(res, 404, shell({ title: "No entries yet · Civilization Zero", body: `<main><h1>No entries yet</h1><p>The room is closed until its rules are implemented and verified, not later than ${esc(OPENS)}. <a href="/discuss">The rules</a>.</p></main>`, path: "/discuss", description: "The room is closed." }), cache);
       return html(res, 200, shell({ title: "The open discussion · Civilization Zero", body: T.closed, path: "/discuss", description: "The discussion room of Civilization Zero: closed until its rules are implemented and verified; the rules, published in advance." }), cache);
+    }
+    if (page === "sitemap") {   // /sitemap-discussion.xml: every entry's page that is not hidden, read live (audit CZ21)
+      const urls = [];
+      for (let after = null; ;) {
+        const rows = await rpc("cz_list", { p_after: after, p_before: null, p_limit: 200, p_kind: null, p_ref: null, p_lang: null, p_include_hidden: false });
+        for (const e of rows) if (!e.hidden) urls.push(`<url><loc>${ORIGIN}/discuss/${e.id}</loc><lastmod>${String(e.received).slice(0, 10)}</lastmod></url>`);
+        if (rows.length < 200 || urls.length >= 45000) break;
+        after = rows[rows.length - 1].id;
+      }
+      res.statusCode = 200; res.setHeader("Content-Type", "application/xml; charset=utf-8"); res.setHeader("Cache-Control", "public, max-age=0, s-maxage=600, stale-while-revalidate=600");
+      return res.end(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.join("\n")}\n</urlset>\n`);
     }
     const r = id !== null ? await entryPage(url, id, req) : await listPage(url);
     return html(res, r.status, r.page, r.noStore ? { "Cache-Control": "no-store", Vary: "Accept" } : cache);   // a page missing part of its record is not cached

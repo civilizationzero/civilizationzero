@@ -91,6 +91,17 @@ const ok = (c, m) => { if (c) pass++; else { fail++; console.log("FAIL", m); } }
   ok(tday.body.includes("In UTC this moment falls on the day before"), "the CZ day differs from the local date: said");
   ok(text(tday.body).includes("begins at 03:30, Tehran time"), "where a CZ day begins, locally");
   const tbad = await call(page, `/api/page?p=calendar&t=25:00&z=UTC`); ok(/role="alert" id="time-result">A time of day is written HH:MM/.test(tbad.body), "a bad time: said");
+  // summer time: a wall time that did not exist is refused; one that came twice gives both moments (audit CZ01)
+  const tgap = await call(page, `/api/page?p=calendar&d=2026-03-08&t=02:30&z=America%2FNew_York`);
+  ok(/role="alert" id="time-result">02:30 did not happen on that day in this time zone: the clocks were moved forward, from UTC−05:00 to UTC−04:00/.test(tgap.body) && !/h-time-result/.test(tgap.body), "a time in the spring gap: refused");
+  const tfold = await call(page, `/api/page?p=calendar&d=2026-11-01&t=01:30&z=America%2FNew_York`), mf = /<h3 id="h-time-result">([\s\S]*?)<\/h3>/.exec(tfold.body);
+  ok(mf && text(mf[1]) === "01:30 in New York = CZ 1432 05:30:00 UTC" && text(tfold.body).includes("01:30 came twice that day in New York, because the clocks were moved back: the first time (UTC−04:00) is shown above; the second, at UTC−05:00, is CZ 1432 06:30:00 UTC."), "a time in the autumn overlap: both moments");
+  for (const [y, mo, d, h, mi, z] of [[2026, 3, 29, 2, 30, "Europe/Berlin"], [2026, 3, 8, 2, 0, "America/New_York"], [2011, 12, 30, 12, 0, "Pacific/Apia"]])
+    ok(CZ.convertTime(CZ.fromGregorian(y, mo, d), [h, mi, 0], z).ok === false, `gap ${z} ${y}-${mo}-${d} ${h}:${mi}`);
+  for (const [y, mo, d, h, mi, z, n] of [[2026, 10, 25, 2, 30, "Europe/Berlin", 2], [2026, 3, 8, 3, 0, "America/New_York", 1], [2026, 3, 8, 1, 59, "America/New_York", 1], [2026, 11, 1, 2, 0, "America/New_York", 1], [2026, 3, 21, 0, 0, "Asia/Tehran", 1]]) {
+    const v = CZ.convertTime(CZ.fromGregorian(y, mo, d), [h, mi, 0], z), back = new Date(v.utc_ms + v.offset * 60000);
+    ok(v.ok && 1 + (v.also ? v.also.length : 0) === n && back.getUTCHours() === h && back.getUTCMinutes() === mi, `round trip ${z} ${y}-${mo}-${d} ${h}:${mi}`);
+  }
   const tsel = await call(page, `/api/page?p=calendar&d=2026-10-30&t=13:30&z=Asia%2FTehran`); ok(tsel.body.includes('<option value="Asia/Tehran" selected>Tehran</option>'), "the zone stays chosen");
   // the JSON API
   const j = await call(cal, "/api/calendar?d=1405-08-08&c=solar-hijri"); const o = JSON.parse(j.body);

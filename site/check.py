@@ -40,7 +40,7 @@ class P(HTMLParser):
         if self.stack and self.stack[-1] == t: self.stack.pop()
         else: self.err.append((t, self.stack[-3:]))
 
-FUNCTION_ROUTES = {"/", "/index.json", "/index.txt", "/api/entries", "/discuss", "/discuss.json", "/respond", "/api/moderation", "/api/cron/daily", "/archive/entries.json",
+FUNCTION_ROUTES = {"/", "/sitemap-discussion.xml", "/index.json", "/index.txt", "/api/entries", "/discuss", "/discuss.json", "/respond", "/api/moderation", "/api/cron/daily", "/archive/entries.json",
                    "/adopt", "/adopt.json", "/api/adopt", "/archive/register.json", "/api/calendar", "/calendar.json"}
 def resolves(path):
     if any(path == f"/themes/{t['slug']}" for t in THEMES): return True   # a theme's page, served by the room's function
@@ -114,7 +114,7 @@ check(len(locs) == len(set(locs)) and canonicals - {f"{ORIGIN}/discuss", f"{ORIG
       f"sitemap.xml: pages missing {sorted(canonicals - set(locs))}")
 check((PUBLIC / "sitemap.txt").read_text("utf-8").split() == locs, "sitemap.txt and sitemap.xml differ")
 rb = (PUBLIC / "robots.txt").read_text("utf-8")
-check(f"Sitemap: {ORIGIN}/sitemap.xml" in rb and "Disallow: /admin" in rb, "robots.txt: sitemap and the administrator's page")
+check(f"Sitemap: {ORIGIN}/sitemap.xml" in rb and f"Sitemap: {ORIGIN}/sitemap-discussion.xml" in rb and "Disallow: /admin" in rb, "robots.txt: sitemap and the administrator's page")
 og = (PUBLIC / "og.png").read_bytes()
 check(og[:8] == b"\x89PNG\r\n\x1a\n" and struct.unpack(">II", og[16:24]) == (1200, 630), "og.png: a 1200x630 PNG")
 # the icons: every page names them; each file is what its name says (a PNG of its size; an ICO of 16, 32 and 48 pixels)
@@ -195,6 +195,14 @@ check(oj["total"] == len(oj["objections"]) == sum(oj["counts"].values()) and all
 check(man["signature"]["status"] in ("pending", "key published; signatures pending", "signed") and man["discussion"]["state"] == ("open" if ROOM_OPEN else "closed"), "manifest states")
 oa = json.loads((PUBLIC / "api/openapi.json").read_text("utf-8"))
 check("/api/entries" in oa["paths"] and "429" in oa["paths"]["/api/entries"]["post"]["responses"], "openapi contract")
+# the archived entries, as read back, fit the published Entry schema field by field (types, nulls included: audit CZ02)
+_JT = {"string": str, "integer": int, "boolean": bool, "object": dict, "null": type(None)}
+_ep = oa["components"]["schemas"]["Entry"]["properties"]
+for _f in sorted((pathlib.Path(__file__).resolve().parent.parent / "archive/discussion").glob("*.json")):
+    for _e in json.loads(_f.read_text("utf-8")).get("entries", []):
+        _bad = [k for k, v in _e.items() if k in _ep and not any(isinstance(v, _JT[t]) and not (t == "integer" and isinstance(v, bool)) for t in ([_ep[k]["type"]] if isinstance(_ep[k]["type"], str) else _ep[k]["type"]))]
+        check(not _bad, f"openapi Entry schema vs {_f.name} #{_e.get('id')}: {_bad}")
+check(set(oa["paths"]["/api/entries"]["get"]["responses"]) >= {"200", "400"}, "openapi: invalid filters answer 400")
 check(not (PUBLIC / "discuss.json").exists() and not (PUBLIC / "discuss.html").exists() and not (PUBLIC / "respond.html").exists(), "discuss/respond must be served by the function, not static files")
 llms = (PUBLIC / "llms.txt").read_text("utf-8")
 check(CORE_SHA in llms and IR_SHA in llms, "llms.txt hashes")

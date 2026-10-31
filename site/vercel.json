@@ -257,6 +257,10 @@
       "destination": "/api/archive"
     },
     {
+      "source": "/sitemap-discussion.xml",
+      "destination": "/api/discuss?page=sitemap"
+    },
+    {
       "source": "/archive/entries.json",
       "destination": "/api/archive?index=1"
     },

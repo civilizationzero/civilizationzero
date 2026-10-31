@@ -106,12 +106,13 @@ function timeBlock(q, ms) {
   const localDate = r.calendar === "solar-hijri" ? fa(x.solar_hijri ? x.solar_hijri.native_long : r.native) : r.calendar === "lunar-hijri" && x.lunar_hijri ? lunarCell(x.lunar_hijri)
     : esc(`${x.weekday}, ${r.calendar === "julian" ? `${x.julian.text} (Julian)` : x.gregorian.text}`);
   const differs = v.day !== r.day ? `<p class="src">In UTC this moment falls on ${v.day < r.day ? "the day before" : "the next day"}: the CZ day is ${czLink(v.day, CZ.czDay(v.day))}.</p>` : "";
+  const twice = v.also && v.also.length ? `<p class="src" id="time-twice">${esc(v.local.time)} came twice that day in ${esc(zoneName)}, because the clocks were moved back: the first time (${esc(CZ.offsetText(v.offset))}) is shown above; the second, at ${esc(CZ.offsetText(v.also[0].offset))}, is ${czLink(v.also[0].day, `${CZ.czDay(v.also[0].day)} ${v.also[0].utc} UTC`)}.</p>` : "";
   return `${form}\n<section id="time-result" aria-labelledby="h-time-result"><h3 id="h-time-result">${esc(v.local.time)} in ${esc(zoneName)} = ${esc(stampUTC)}</h3>
 ${rows([
     ["CZ", `<strong>${czLink(v.day, stampUTC)}</strong>`],
     [`In ${esc(zoneName)}`, `${localDate} · ${esc(v.local.time)} <span class="src">(${esc(CZ.offsetText(v.offset))})</span>`],
     ["The CZ day there", `begins at ${esc(start.time)}${start.before ? " the evening before" : ""}, ${esc(zoneName)} time (${esc(CZ.offsetText(start.offset))}): 00:00 UTC`],
-  ])}${differs}</section>`;
+  ])}${differs}${twice}</section>`;
 }
 
 const CAL_RE = /<!--cz-cal-->[\s\S]*?<!--\/cz-cal-->/;
