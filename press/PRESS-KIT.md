@@ -1,6 +1,6 @@
-# Civilization Zero — press kit (English master; revised 1 November 2026, for the originator's review)
+# Civilization Zero — press kit (English master; released 1 November 2026 at https://civilizationzero.ai/press)
 
-Status: **draft, not yet released.** Quotations are verbatim from CZ-CORE 1.0; once the kit is published on the site, the build checks each one against the canonical text.
+Status: **released** at https://civilizationzero.ai/press (plain text: https://civilizationzero.ai/press.txt). Quotations are verbatim from CZ-CORE 1.0; the build checks each one against the canonical text. The notes at the end of this file are internal and are not part of the released kit.
 
 ---
 

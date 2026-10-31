@@ -384,7 +384,7 @@
       ]
     },
     {
-      "source": "/(core|record|llms|robots|sitemap).txt",
+      "source": "/(core|record|llms|robots|sitemap|press).txt",
       "headers": [
         {
           "key": "Content-Type",

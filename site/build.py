@@ -652,11 +652,13 @@ def md_blocks(md):
     flush()
     return "\n".join(out)
 
+PRESS_MD = (ROOT / "press" / "PRESS-KIT.md").read_text("utf-8").split("\n### Notes for the originator")[0].rstrip().rstrip("-").rstrip()
+PRESS_TXT = ("Civilization Zero — press kit\nhttps://civilizationzero.ai/press · record@civilizationzero.ai\n\n" + PRESS_MD[PRESS_MD.index("## One line"):] + "\n")
 def press_page():
-    md = (ROOT / "press" / "PRESS-KIT.md").read_text("utf-8").split("\n### Notes for the originator")[0].rstrip().rstrip("-").rstrip()
+    md = PRESS_MD
     body = f"""<main>
 <h1>Press kit</h1>
-<p class="src">For journalists and researchers. Every quotation below is verbatim from CZ-CORE 1.0 or CZ-IR 1.0, and the build checks it. The same kit as text: <a href="{REPO}/blob/main/press/PRESS-KIT.md">press/PRESS-KIT.md</a>. Contact: <a href="mailto:{CONTACT}">{CONTACT}</a>.</p>
+<p class="src">For journalists and researchers. Every quotation below is verbatim from CZ-CORE 1.0 or CZ-IR 1.0, and the build checks it. The same kit as text: <a href="/press.txt">/press.txt</a>. Contact: <a href="mailto:{CONTACT}">{CONTACT}</a>.</p>
 {md_blocks(md[md.index("## One line"):])}
 <h2 id="h-images">Images</h2>
 <p>The mark, CZ, black on white — the only image that stands for the record: <a href="/og.png">1200 × 630</a>, <a href="/icon-512.png">512 × 512</a>.</p>
@@ -1635,6 +1637,7 @@ write("/objections.html", objections_page())
 write("/objections.json", json.dumps(objections_json(), ensure_ascii=False, indent=2) + "\n")
 write("/about.html", about_page())
 if PRESS_PUBLISHED: write("/press.html", press_page())
+if PRESS_PUBLISHED: write("/press.txt", PRESS_TXT)   # the released kit as plain text: no internal notes, no draft line
 write("/machine.html", machine_page())
 write("/ask.html", ask_page())
 write("/calendar.html", calendar_page())   # served by api/page.js with today's date filled in
