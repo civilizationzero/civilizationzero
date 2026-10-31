@@ -662,7 +662,7 @@ def press_page():
 <p>The mark, CZ, black on white — the only image that stands for the record: <a href="/og.png">1200 × 630</a>, <a href="/icon-512.png">512 × 512</a>.</p>
 <p>The Core on one image — Year Zero, §0, the sixteen section titles and two lines of the closing, read from the canonical text: <a href="{CORE_POSTER[0]}">{CORE_POSTER[1]} × {CORE_POSTER[2]}</a>, CC BY 4.0 (<a href="/core#image">on /core</a>).</p>
 </main>"""
-    return shell("Press kit · Civilization Zero", body, "/press", "Facts, verbatim quotations, how to check the record in five minutes, and a contact: for journalists and researchers.")
+    return shell("Press kit · Civilization Zero", body, "/press", "Facts, verbatim quotations, how to check the record, and a contact: for journalists and researchers.")
 
 
 def about_page():
