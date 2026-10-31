@@ -96,6 +96,7 @@ const ok = (c, m) => { if (c) pass++; else { fail++; console.log("FAIL", m); } }
   ok(/role="alert" id="time-result">02:30 did not happen on that day in this time zone: the clocks were moved forward, from UTC−05:00 to UTC−04:00/.test(tgap.body) && !/h-time-result/.test(tgap.body), "a time in the spring gap: refused");
   const tfold = await call(page, `/api/page?p=calendar&d=2026-11-01&t=01:30&z=America%2FNew_York`), mf = /<h3 id="h-time-result">([\s\S]*?)<\/h3>/.exec(tfold.body);
   ok(mf && text(mf[1]) === "01:30 in New York = CZ 1432 05:30:00 UTC" && text(tfold.body).includes("01:30 came twice that day in New York, because the clocks were moved back: the first time (UTC−04:00) is shown above; the second, at UTC−05:00, is CZ 1432 06:30:00 UTC."), "a time in the autumn overlap: both moments");
+  ok(text(tfold.body).includes("01:30 again CZ 1432 06:30:00 UTC (UTC−05:00, after the clocks went back)"), "the second moment has its own row, with its offset");
   for (const [y, mo, d, h, mi, z] of [[2026, 3, 29, 2, 30, "Europe/Berlin"], [2026, 3, 8, 2, 0, "America/New_York"], [2011, 12, 30, 12, 0, "Pacific/Apia"]])
     ok(CZ.convertTime(CZ.fromGregorian(y, mo, d), [h, mi, 0], z).ok === false, `gap ${z} ${y}-${mo}-${d} ${h}:${mi}`);
   for (const [y, mo, d, h, mi, z, n] of [[2026, 10, 25, 2, 30, "Europe/Berlin", 2], [2026, 3, 8, 3, 0, "America/New_York", 1], [2026, 3, 8, 1, 59, "America/New_York", 1], [2026, 11, 1, 2, 0, "America/New_York", 1], [2026, 3, 21, 0, 0, "Asia/Tehran", 1]]) {

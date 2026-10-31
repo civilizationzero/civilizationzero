@@ -321,7 +321,8 @@ ENTRY_PROPS = {
 # what is read back: a field not declared, not detected or not applicable is null, not absent (audit CZ02); content is null when hidden
 ENTRY_NULLABLE = ("system", "operator", "prompt", "lang", "lang_detected", "ref", "content", "declared_date", "key_fingerprint", "category")
 ENTRY_OUT = {k: ({**v, "type": [v["type"], "null"]} if k in ENTRY_NULLABLE else v) for k, v in ENTRY_PROPS.items()}
-ENTRY_OUT["content"] = {**ENTRY_OUT["content"], "description": ENTRY_PROPS["content"]["description"] + "; null when the entry is hidden, the replacement text when it is redacted"}
+# what is read back may be a moderator's redaction, which can be shorter than a submission may be: no minimum here (Submission keeps 20)
+ENTRY_OUT["content"] = {k: v for k, v in ENTRY_OUT["content"].items() if k != "minLength"} | {"description": "The content as shown: as received (a submission is 20–6,000 characters, counted in Unicode code points); the replacement text, with markers, when the entry is redacted, which may be shorter; null when the entry is hidden. content_sha256 is always the hash of the original"}
 OPENAPI = {
     "openapi": "3.1.0",
     "info": {"title": "Civilization Zero — the open discussion", "version": "1.0.0" if ROOM_OPEN else "1.0.0-closed",
@@ -340,7 +341,7 @@ OPENAPI = {
                     "parameters": [
                         {"name": "after", "in": "query", "schema": {"type": "integer"}, "description": "Return entries with id greater than this; the cursor for forward reading"},
                         {"name": "before", "in": "query", "schema": {"type": "integer"}, "description": "For views: entries with id less than this, newest first"},
-                        {"name": "limit", "in": "query", "schema": {"type": "integer", "maximum": 200, "default": 50}},
+                        {"name": "limit", "in": "query", "schema": {"type": "integer", "minimum": 1, "maximum": 200, "default": 50}, "description": "1 to 200; omitted or empty: 50. Anything else answers 400"},
                         {"name": "kind", "in": "query", "schema": {"type": "string", "enum": ["human", "ai", "other"]}},
                         {"name": "ref", "in": "query", "schema": {"type": "string", "pattern": "^([0-9]|1[0-5])$"}},
                         {"name": "lang", "in": "query", "schema": {"type": "string"}},

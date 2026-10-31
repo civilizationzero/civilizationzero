@@ -69,17 +69,29 @@ for name, e in good.items(): ok(not errors(OA, "Entry", e), f"synthetic valid en
 ok(base["content"] is not None and good["hidden: content null, category given"]["content"] is None, "the hidden fixture really carries content: null")
 bad = {   # the constraints that stay: each of these must fail
     "kind robot": mk(kind="robot"), "ref 16": mk(ref="16"), "ref as a number": mk(ref=13), "content_sha256 not hex": mk(content_sha256="z" * 64),
-    "content too short": mk(content="too short"), "author too long": mk(author="x" * 121), "state unknown": mk(state="deleted"),
+    "author too long": mk(author="x" * 121), "state unknown": mk(state="deleted"),
     "id missing": {k: v for k, v in base.items() if k != "id"}, "id as a string": mk(id="101"), "parent as a string": mk(parent="101"),
     "system too long": mk(system="x" * 201), "prompt too long": mk(prompt="x" * 61), "hidden as a string": mk(hidden="no"),
 }
 for name, e in bad.items(): ok(errors(OA, "Entry", e), f"synthetic invalid entry accepted: {name}")
+# moderated content as read back (round 2): a short redaction and a hidden entry are valid responses; a short submission is still refused
+for short in ("[removed]", "[redacted: personal data]", "x"):
+    ok(not errors(OA, "Entry", mk(state="redacted", content=short, category="personal_data")), f"a short redaction is a valid Entry: {short!r}")
+ok(not errors(OA, "Entry", mk(state="hidden", hidden=True, content=None, category="spam")), "hidden content: null is a valid Entry")
+ok(errors(OA, "Entry", mk(content="y" * 6001)), "an Entry over 6,000 characters still fails")
+sub = {"author": "A reader", "kind": "human", "content": "A submission long enough."}
+ok(not errors(OA, "Submission", sub), "a valid submission validates")
+for c in ("too short", "", "x" * 19, "y" * 6001): ok(errors(OA, "Submission", {**sub, "content": c}), f"a submission of {len(c)} characters still fails")
+ok(errors(OA, "Submission", {**sub, "content": None}), "a submission with content null fails")
+ok(OA["components"]["schemas"]["Submission"]["properties"]["content"].get("minLength") == 20 and "minLength" not in OA["components"]["schemas"]["Entry"]["properties"]["content"], "minLength 20 on Submission only")
+lim = next(p for p in OA["paths"]["/api/entries"]["get"]["parameters"] if p["name"] == "limit")["schema"]
+ok(lim.get("minimum") == 1 and lim.get("maximum") == 200 and lim.get("default") == 50, "limit documented as 1-200, default 50")
 # the error answer of GET /api/entries is documented
 r400 = OA["paths"]["/api/entries"]["get"]["responses"].get("400", {})
 s400 = r400.get("content", {}).get("application/json", {}).get("schema", {})
 ok(s400.get("required") == ["error", "parameter"], "GET /api/entries documents its 400 answer")
 ok(not list(jsonschema.Draft202012Validator(s400).iter_errors({"error": "kind: one of human, ai, other", "parameter": "kind"})), "the 400 answer the code gives fits its schema")
 ok(list(jsonschema.Draft202012Validator(s400).iter_errors({"entries": []})), "an answer listing entries does not fit the 400 schema")
-print(f"synthetic: {len(good)} valid shapes, {len(bad)} invalid shapes")
+print(f"synthetic: {len(good)} valid shapes, {len(bad)} invalid shapes (a short content is checked on Submission, not on Entry: round 2)")
 print(f"pass {passed} fail {failed}")
 sys.exit(1 if failed else 0)

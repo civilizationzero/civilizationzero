@@ -43,9 +43,11 @@
             "in": "query",
             "schema": {
               "type": "integer",
+              "minimum": 1,
               "maximum": 200,
               "default": 50
-            }
+            },
+            "description": "1 to 200; omitted or empty: 50. Anything else answers 400"
           },
           {
             "name": "kind",
@@ -634,9 +636,8 @@
               "string",
               "null"
             ],
-            "minLength": 20,
             "maxLength": 6000,
-            "description": "20–6,000 characters, counted in Unicode code points (a browser's maxlength counts UTF-16 units, so the site's form allows twice as many); null when the entry is hidden, the replacement text when it is redacted"
+            "description": "The content as shown: as received (a submission is 20–6,000 characters, counted in Unicode code points); the replacement text, with markers, when the entry is redacted, which may be shorter; null when the entry is hidden. content_sha256 is always the hash of the original"
           },
           "declared_date": {
             "type": [

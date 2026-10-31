@@ -111,6 +111,7 @@ function timeBlock(q, ms) {
 ${rows([
     ["CZ", `<strong>${czLink(v.day, stampUTC)}</strong>`],
     [`In ${esc(zoneName)}`, `${localDate} · ${esc(v.local.time)} <span class="src">(${esc(CZ.offsetText(v.offset))})</span>`],
+    ...(v.also && v.also.length ? [[`${esc(v.local.time)} again`, `<strong>${czLink(v.also[0].day, `${CZ.czDay(v.also[0].day)} ${v.also[0].utc} UTC`)}</strong> <span class="src">(${esc(CZ.offsetText(v.also[0].offset))}, after the clocks went back)</span>`]] : []),
     ["The CZ day there", `begins at ${esc(start.time)}${start.before ? " the evening before" : ""}, ${esc(zoneName)} time (${esc(CZ.offsetText(start.offset))}): 00:00 UTC`],
   ])}${differs}${twice}</section>`;
 }

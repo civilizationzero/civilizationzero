@@ -65,9 +65,9 @@ module.exports = async (req, res) => {
       const q = (k) => url.searchParams.get(k);
       const num = (k) => (q(k) && /^\d{1,12}$/.test(q(k)) ? Number(q(k)) : null);
       // a filter that is given must be valid: an invalid one is refused, never silently dropped (which would return everything)
-      const bad = [["after", /^\d{1,12}$/], ["before", /^\d{1,12}$/], ["limit", /^\d{1,12}$/], ["kind", /^(human|ai|other)$/], ["ref", /^([0-9]|1[0-5])$/], ["include_hidden", /^(true|false)$/]]
+      const bad = [["after", /^\d{1,12}$/], ["before", /^\d{1,12}$/], ["limit", /^(?:[1-9]\d?|1\d\d|200)$/], ["kind", /^(human|ai|other)$/], ["ref", /^([0-9]|1[0-5])$/], ["include_hidden", /^(true|false)$/]]
         .find(([k, re]) => q(k) && !re.test(q(k))) || (q("lang") && !R.canonLang(q("lang")) ? ["lang"] : null);   // given empty: as if not given
-      if (bad) return json(res, 400, { error: { after: "after: an entry id (a whole number)", before: "before: an entry id (a whole number)", limit: "limit: a whole number, at most 200", kind: "kind: one of human, ai, other", ref: "ref: a section of the Core, 0 to 15",
+      if (bad) return json(res, 400, { error: { after: "after: an entry id (a whole number)", before: "before: an entry id (a whole number)", limit: "limit: a whole number from 1 to 200", kind: "kind: one of human, ai, other", ref: "ref: a section of the Core, 0 to 15",
         include_hidden: "include_hidden: true or false", lang: "lang: a BCP 47 language tag, for example fa or zh-Hans" }[bad[0]], parameter: bad[0] }, { "Cache-Control": "public, max-age=0, s-maxage=300" });
       const kind = q("kind") || null, ref = q("ref") || null, lang = q("lang") ? R.canonLang(q("lang")) : null;
       const rows = await rpc("cz_list", { p_after: num("after"), p_before: num("before"), p_limit: num("limit") ?? 50, p_kind: kind, p_ref: ref, p_lang: lang, p_include_hidden: q("include_hidden") === "true" });
