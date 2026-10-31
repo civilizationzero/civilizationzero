@@ -24,7 +24,7 @@
       "permanent": true
     },
     {
-      "source": "/:page(core|record|objections|ask|machine|about|archive|calendar|civilization-zero-infographic).html",
+      "source": "/:page(core|record|objections|ask|machine|about|archive|calendar|civilization-zero-infographic|press).html",
       "destination": "/:page",
       "permanent": true
     },
@@ -212,6 +212,10 @@
     {
       "source": "/civilization-zero-infographic",
       "destination": "/api/page?p=civilization-zero-infographic"
+    },
+    {
+      "source": "/press",
+      "destination": "/api/page?p=press"
     },
     {
       "source": "/calendar.json",

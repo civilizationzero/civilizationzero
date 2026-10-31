@@ -380,7 +380,7 @@ for fn in ("api/page.js", "api/calendar.js", "room/cztime.js", "api/home.js"):
     _rc = subprocess.run(["node", "--check", str(SITE / fn)], capture_output=True)
     check(_rc.returncode == 0, f"{fn}: syntax {_rc.stderr.decode()[:200]}")
 check(any(r.get("source") == "/calendar" and r.get("destination") == "/api/page?p=calendar" for r in v.get("rewrites", [])), "vercel.json: /calendar → api/page.js")
-for _src in ("/core", "/record", "/objections", "/ask", "/machine", "/about", "/archive", "/civilization-zero-infographic"):
+for _src in ("/core", "/record", "/objections", "/ask", "/machine", "/about", "/archive", "/civilization-zero-infographic") + (("/press",) if PRESS_PUBLISHED else ()):
     check(any(r.get("source") == _src and "has" not in r and r.get("destination") == f"/api/page?p={_src[1:]}" for r in v.get("rewrites", [])), f"vercel.json: {_src} → api/page.js (CZ time at the top)")
 check("public/*.html" in json.dumps(v.get("functions", {}).get("api/page.js", {})), "vercel.json: api/page.js carries the pages (includeFiles)")
 # the infographic (31 Oct 2026): its page names the image, its size and its text alternative; the image is the PNG of that size; the sitemap

@@ -22,7 +22,7 @@ function resultTitle(html) {
   return t ? `${plainText(t[1]).slice(0, 90)} · CZ time` : null;
 }
 
-const PAGES = /^(core(\.[a-z]{2,3}(-[A-Za-z0-9]{1,8})?)?|record|objections|ask|machine|about|archive|calendar|civilization-zero-infographic)$/;
+const PAGES = /^(core(\.[a-z]{2,3}(-[A-Za-z0-9]{1,8})?)?|record|objections|ask|machine|about|archive|calendar|civilization-zero-infographic|press)$/;
 const files = new Map();
 function read(name) {
   if (files.has(name)) return files.get(name);
