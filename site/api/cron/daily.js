@@ -85,6 +85,8 @@ module.exports = async (req, res) => {
     } catch (e) { R.log("retry", e); }
   }
   out.classifier_retried = retried;
+  // 5. the visit counts (schema v9): each finished day keeps its number of distinct visitors; that day's hashes and salt are deleted
+  try { out.visits = await rpc("cz_visits_close", { p_token: R.TOKEN }); } catch (e) { R.log("visits close", e); out.visits = { error: String(e.message).slice(0, 200) }; }
   if (failed) {
     const notFinished = /not finished/.test(String(failed.message));
     return json(res, notFinished ? 400 : 500, { ...out, done: false, error: notFinished ? "the day is not finished (UTC)" : "server" }, { "Cache-Control": "no-store" });

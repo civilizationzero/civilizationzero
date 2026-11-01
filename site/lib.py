@@ -309,6 +309,7 @@ pre{white-space:pre-wrap;word-break:break-word;border:1px solid var(--rule);padd
 figure.poster{margin:1.5rem 0}figure.poster img{display:block;width:100%;max-width:30rem;height:auto;border:1px solid var(--rule)}
 figure.infographic{margin:1.5rem 0}
 figure.infographic img{display:block;width:100%;height:auto;border:1px solid var(--rule)}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
 hr{border:0;border-top:1px solid var(--rule);margin:2.5rem 0}
 /* E (Blueprint decision 28): two doors, before anything else; equal width — equal standing. */
 nav.readers{display:flex;gap:1rem;padding:.75rem 1rem;border-bottom:1px solid var(--rule)}
@@ -388,13 +389,13 @@ NAV = nav_html()
 CORE_LANGUAGES = 1 + len(list((RECORD / "translations").glob("CZ-CORE-1.0.*.json")))   # the Core's languages: English (canonical) and its translations
 FOOT_LINKS = [[("/core", "The Core"), ("/core#translations", f"{CORE_LANGUAGES} languages")], [("/record", "The Record")], [("/objections", "Objections and errata")],
               [("/discuss", "Discussion"), ("/respond", "Respond")], [("/adopt", "Adoption register")], [("/calendar", "CZ time")], [("/civilization-zero-infographic", "Infographic")], [("/ask", "Ask your AI")],
-              [("/machine", "For machines")], [("/about", "About")] + ([("/press", "Press kit")] if PRESS_PUBLISHED else []), [("/archive", "Archive and verification")]]
+              [("/machine", "For machines")], [("/about", "About")] + ([("/press", "Press kit")] if PRESS_PUBLISHED else []), [("/stats", "Visits")], [("/archive", "Archive and verification")]]
 def footer_html(extra=""):
     links = "".join("<li>" + " · ".join(f'<a href="{h}">{esc(t)}</a>' for h, t in row) + "</li>" for row in FOOT_LINKS)
     return (f'<footer lang="en" dir="ltr"><hr>{extra}<nav aria-label="Pages"><ul class="foot">{links}</ul></nav>'
             f'<p class="src">Text <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a> · code MIT · <a href="{REPO}">source</a> · '
             f'<a href="mailto:{CONTACT}">{CONTACT}</a></p>'
-            f'<p class="src">No analytics, no trackers, no cookies for readers. Every date counts days from Coordinate Zero, <a class="nw" href="/calendar">CZ 0</a> = '
+            f'<p class="src">No trackers, no cookies, no scripts that observe readers; the server counts visits per day without identifiers, and <a href="/stats">the counts are public</a>. Every date counts days from Coordinate Zero, <a class="nw" href="/calendar">CZ 0</a> = '
             f'<time datetime="2022-11-30">30 November 2022</time>; times are UTC.</p></footer>')
 FOOTER = footer_html()
 

@@ -40,7 +40,7 @@ class P(HTMLParser):
         if self.stack and self.stack[-1] == t: self.stack.pop()
         else: self.err.append((t, self.stack[-3:]))
 
-FUNCTION_ROUTES = {"/", "/sitemap-discussion.xml", "/index.json", "/index.txt", "/api/entries", "/discuss", "/discuss.json", "/respond", "/api/moderation", "/api/cron/daily", "/archive/entries.json",
+FUNCTION_ROUTES = {"/", "/sitemap-discussion.xml", "/stats", "/stats.json", "/index.json", "/index.txt", "/api/entries", "/discuss", "/discuss.json", "/respond", "/api/moderation", "/api/cron/daily", "/archive/entries.json",
                    "/adopt", "/adopt.json", "/api/adopt", "/archive/register.json", "/api/calendar", "/calendar.json"}
 def resolves(path):
     if any(path == f"/themes/{t['slug']}" for t in THEMES): return True   # a theme's page, served by the room's function
