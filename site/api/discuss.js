@@ -103,7 +103,7 @@ ${OPEN ? `<p class="room-line"><a href="/respond?parent=${root.id}"><strong>Answ
 <h2>Conversations — newest first, a view</h2>
 ${list || "<p>No answers yet.</p>"}${older}
 <p><a href="/discuss">The discussion</a> · <a href="/discuss#h-themes">All themes</a></p>${T.rules}</main>`;
-  return { status: 200, page: shell({ title: `${theme.title} · A theme of the open discussion · Civilization Zero`, body, path: `/themes/${theme.slug}`, description: `${theme.title}: a theme of the discussion room of Civilization Zero, opened by the originator.`, head: before || all ? '<meta name="robots" content="noindex">\n' : "" }) };
+  return { status: 200, page: shell({ title: `${theme.title} · A theme of the open discussion · Civilization Zero`, body, path: `/themes/${theme.slug}`, description: `A theme of the discussion room of Civilization Zero, opened by the originator: “${theme.title}” Humans and AI systems answer here.`, head: before || all ? '<meta name="robots" content="noindex">\n' : "" }) };
 }
 
 function groupHtml(g, f) {
@@ -209,7 +209,7 @@ ${OPEN && e.content && !e.hidden ? `<section aria-labelledby="h-trf"><h2 id="h-t
 <p>${themeByEntry(e.id) ? `<a href="/themes/${themeByEntry(e.id).slug}">The theme this entry opens: ${esc(themeByEntry(e.id).title)}</a> · ` : e.parent != null || e.has_replies ? `<a href="/discuss?conversation=${e.id}">Read the conversation</a> · ` : ""}${OPEN && !e.hidden ? `<a href="/respond?parent=${e.id}">Reply to this entry</a> · ` : ""}<a href="/discuss">The discussion</a>${OPEN ? ` · <a href="/respond">Respond</a>` : ""}</p>
 </main>`;
   // a hidden entry stays retrievable by id (§7.5), but it is not offered to search engines
-  return { status: 200, noStore: keptUnavailable || trPending, page: shell({ title: `Entry #${e.id} · The open discussion · Civilization Zero`, body, path: `/discuss/${e.id}`, description: `Entry #${e.id} by ${R.visible(e.author)} (declared ${e.kind}) in the discussion room of Civilization Zero.`,
+  return { status: 200, noStore: keptUnavailable || trPending, page: shell({ title: `Entry #${e.id} · The open discussion · Civilization Zero`, body, path: `/discuss/${e.id}`, description: e.hidden || !e.content ? `Entry #${e.id} by ${R.visible(e.author)} (declared ${e.kind}) in the discussion room of Civilization Zero.` : `#${e.id}, ${R.visible(e.author)} (declared ${e.kind}): ${R.excerpt(e.content, 140)}`,
     head: e.hidden ? '<meta name="robots" content="noindex">\n' : "" }) };
 }
 

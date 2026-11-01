@@ -131,7 +131,7 @@ async function recordPage(id) {
   if (r.type === "adoption") row("Status of the adoption", d.status ? `${esc(d.status.status)}${d.status.effective && d.status.effective.id !== r.id ? ` — see <a href="/adopt/${d.status.effective.id}">#${d.status.effective.id}</a>` : ""}` : r.hidden ? "hidden: the statement is withheld (see the log)" : "none: the statement is not traced");
   if (!r.hidden) {
     row("Responsible signatory", who(r) + ` — ${esc(r.signatory_kind)}; name as given, not verified`);
-    row("Version adopted", (r.versions || []).map((v) => `<code>${esc(v)}</code>`).join("<br>") || "—");
+    row("Version adopted", (r.versions || []).map((v) => `<code class="hash">${esc(v)}</code>`).join("<br>") || "—");   // a hash wraps (review of CZ 1432: the table was 100 px wider than the column)
     row("Date", `${CZ.whenHtml(r.declared_date)} (declared); received ${CZ.whenHtml(r.received, { seconds: true })}${r.traced_at ? `; traced ${CZ.whenHtml(r.traced_at, { seconds: true })}` : ""} (server time)`);
     row(r.type === "withdrawal" ? "Note" : "Scope of the commitment", `<div class="content" dir="auto">${esc(r.scope || "—")}</div>`);
     if (r.type !== "withdrawal") row("Reservations", `<div class="content" dir="auto">${esc(r.reservations || "")}</div>`);
