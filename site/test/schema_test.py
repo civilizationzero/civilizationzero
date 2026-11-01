@@ -46,10 +46,11 @@ print(f"live snapshot: {len(snap['entries'])} entries; old contract {n_old} erro
 # 2. the repository's archived days
 days = sorted((REPO / "archive/discussion").glob("*.json"))
 rep = [e for f in days for e in json.loads(f.read_text("utf-8")).get("entries", [])]
-n_old_rep = sum(len(errors(old, "Entry", e)) for e in rep)
-ok(n_old_rep == 38, f"old contract on the repository days: {n_old_rep} errors (38 expected)")
+first3 = [e for f in days if f.stem <= "2026-10-30" for e in json.loads(f.read_text("utf-8")).get("entries", [])]   # the days counted in round 1
+n_old_rep = sum(len(errors(old, "Entry", e)) for e in first3)
+ok(n_old_rep == 38, f"old contract on the repository days 2026-10-28..30: {n_old_rep} errors (38 expected)")
 for e in rep: ok(not errors(OA, "Entry", e), f"current contract, repository entry #{e['id']}")
-print(f"repository days {[f.stem for f in days]}: {len(rep)} entries; old contract {n_old_rep} errors; current 0 expected")
+print(f"repository days {[f.stem for f in days]}: {len(rep)} entries, all checked against the current contract; old contract on the first three days: {n_old_rep} errors")
 
 # 3. synthetic entries, shaped as the database returns them (room/schema.sql: content is null when hidden, the redacted text when redacted)
 base = {"id": 101, "state": "published", "received": "2026-10-30T10:00:00+00:00", "author": "A reader", "kind": "human", "system": None,
