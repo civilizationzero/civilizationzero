@@ -21,14 +21,19 @@ def page(w, h, side, share, drawing):
             f'body{{display:flex;align-items:center;justify-content:center}}</style></head><body>{inner}</body></html>')
 
 LARGE, SMALL = mark.LARGE, mark.SMALL
+# the line under the name, on the link-preview image and the accounts' cover: the name and this line read as the first sentence of the
+# project's introduction (the originator's decision of 1 Nov 2026, CZ 1432; site/lib.py ONE_LINE), which replaces "The origin record
+# for humans and AI"; on the cover, in two lines
+INTRO_LINE = "names the beginning of a civilization in which humans may no longer be at the centre."
+INTRO_COVER = ("names the beginning of a civilization in which", "humans may no longer be at the centre.")
 def og_page():
     # the link-preview image: the mark and the name, and what the record is in one line — a link shared anywhere says what it leads to
     inner = mark.svg(LARGE, stroke="#111", attrs=' width="300" height="300" style="display:block;flex:none"')
     return ('<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;width:1200px;height:630px;background:#fff;color:#111}'
             'body{display:flex;align-items:center;justify-content:center;gap:56px;font-family:system-ui,sans-serif}'
-            '.t{max-width:640px}.n{font-size:76px;font-weight:700;letter-spacing:-.5px;line-height:1.05}.d{font-size:34px;line-height:1.3;margin-top:22px}'
+            '.t{max-width:640px}.n{font-size:76px;font-weight:700;letter-spacing:-.5px;line-height:1.05}.d{font-size:34px;line-height:1.3;margin-top:22px;text-wrap:balance}'
             '.c{font-size:28px;color:#555;margin-top:18px;font-family:ui-monospace,monospace}</style></head><body>'
-            f'{inner}<div class="t"><div class="n">Civilization Zero</div><div class="d">The origin record for humans and AI</div>'
+            f'{inner}<div class="t"><div class="n">Civilization Zero</div><div class="d">{INTRO_LINE}</div>'
             '<div class="c">Coordinate Zero · 30 November 2022</div></div></body></html>')
 
 IMAGES = [  # name, width, height, side, share of the side the 64-unit box covers, drawing
@@ -69,14 +74,14 @@ def cover_page():   # 1500x500 CSS pixels; rendered at 1x and at 2x
     bg, fg, mute, rule = DARK["bg"], DARK["fg"], DARK["mute"], DARK["rule"]
     css = (f'html,body{{margin:0;width:1500px;height:500px;background:{bg};color:{fg};overflow:hidden}}body{{position:relative;font-family:Inter,system-ui,sans-serif}}'
            '.row{position:absolute;left:0;right:0;text-align:center;line-height:1;white-space:nowrap}'
-           '.n{font-family:"Inter Display",Inter,system-ui,sans-serif;font-weight:700;font-size:96px;letter-spacing:-1.5px}.d{font-size:42px}'
+           '.n{font-family:"Inter Display",Inter,system-ui,sans-serif;font-weight:700;font-size:96px;letter-spacing:-1.5px}.d{font-size:31px;color:#d8d8d8}'
            f'.c{{font-family:"DejaVu Sans Mono",monospace;font-size:30px;color:{mute}}}'
            f'.u{{position:absolute;right:44px;bottom:38px;font-family:"DejaVu Sans Mono",monospace;font-size:26px;color:{mute};line-height:1}}')
     axis = (f'<svg style="position:absolute;left:0;top:248px" width="1500" height="40" viewBox="0 0 1500 40">'
             f'<line x1="0" y1="20" x2="1452" y2="20" stroke="{rule}" stroke-width="2"/><path d="M1440,12 L1456,20 L1440,28" fill="none" stroke="{rule}" stroke-width="2"/>'
             f'<line x1="750" y1="2" x2="750" y2="38" stroke="{fg}" stroke-width="3"/></svg>')
     return (f'<!doctype html><html><head><meta charset="utf-8"><style>{css}</style></head><body>'
-            '<div class="row n" style="top:70px">Civilization Zero</div><div class="row d" style="top:190px">The origin record for humans and AI</div>'
+            '<div class="row n" style="top:44px">Civilization Zero</div>' + ''.join(f'<div class="row d" style="top:{t}px">{l}</div>' for t, l in zip((164, 202), INTRO_COVER)) +
             f'{axis}<div class="row c" style="top:304px">Coordinate Zero · 30 November 2022</div><div class="u">civilizationzero.ai</div></body></html>')
 SOCIAL = [("cz-profile-1000.png", 1000, 1000, 1, profile_page), ("cz-cover-1500x500.png", 1500, 500, 1, cover_page),
           ("cz-cover-3000x1000.png", 1500, 500, 2, cover_page)]

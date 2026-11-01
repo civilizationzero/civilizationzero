@@ -676,7 +676,7 @@ def press_page():
 <p class="src">For journalists and researchers. Every quotation below attributed to CZ-CORE 1.0 or CZ-IR 1.0 is verbatim, and the build checks it. The same kit as text: <a href="/press.txt">/press.txt</a>. Contact: <a href="mailto:{CONTACT}">{CONTACT}</a>.</p>
 {md_blocks(md[md.index("## One line"):])}
 <h2 id="h-images">Images</h2>
-<p>The mark, CZ, black on white — the only image that stands for the record: <a href="/og.png">1200 × 630</a>, <a href="/icon-512.png">512 × 512</a>.</p>
+<p>The mark, CZ, black on white — the only image that stands for the record: with the name and the introduction's first sentence, <a href="/og.png">1200 × 630</a>; alone, <a href="/icon-512.png">512 × 512</a>.</p>
 <p>The Core on one image — Year Zero, §0, the sixteen section titles and two lines of the closing, read from the canonical text: <a href="{CORE_POSTER[0]}">{CORE_POSTER[1]} × {CORE_POSTER[2]}</a>, CC BY 4.0 (<a href="/core#image">on /core</a>).</p>
 </main>"""
     return shell("Press kit · Civilization Zero", body, "/press", "Facts, verbatim quotations, how to check the record, and a contact: for journalists and researchers.")

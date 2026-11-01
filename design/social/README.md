@@ -12,7 +12,7 @@ These files are not served by the site.
 | `cz-cover-1500x500.png` | 1500 × 500 | Header on X and Mastodon (both show 1500 × 500) |
 | `cz-cover-3000x1000.png` | 3000 × 1000 | Banner on Bluesky (3:1, at most 1,000,000 bytes) |
 
-The cover: the name, "The origin record for humans and AI", a time axis whose one marked point is Coordinate Zero, "Coordinate Zero ·
+The cover: the name and, under it in two lines, "names the beginning of a civilization in which humans may no longer be at the centre." (the project's introduction, the originator's decision of 1 Nov 2026, CZ 1432; until then "The origin record for humans and AI"), a time axis whose one marked point is Coordinate Zero, "Coordinate Zero ·
 30 November 2022", and the address. Its lower left is left empty: each of these sites lays the profile picture over it.
 
 Made with `python3 site/assets/render.py --social design/social` (Playwright with Chromium, Pillow; the fonts Inter, Inter Display
