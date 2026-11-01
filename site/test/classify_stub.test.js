@@ -32,5 +32,27 @@ async function run(answers) {
   ok(r.store[0].p_state === "done" && /declined to classify/.test(r.store[0].p_engine) && JSON.stringify(r.asked) === "[200]", "a refusal: screened, named");
   r = await run([{ text: "", stop: "end_turn" }, { text: '{"category":"none","score":0,"lang":"fa"}', stop: "end_turn" }]);
   ok(JSON.stringify(r.asked) === "[200,800]" && r.store[0].p_state === "done", "empty, then whole");
+  // translate(): an entry redacted or hidden while its translation was being made keeps the cost, not the text (review of CZ 1432)
+  async function tr(after) {
+    const calls = [];
+    global.fetch = async (url, opt) => {
+      const body = opt && opt.body ? JSON.parse(opt.body) : {};
+      if (String(url).includes("anthropic")) return { ok: true, json: async () => ({ model: "m", stop_reason: "end_turn", content: [{ type: "text", text: "<translation>ترجمه</translation>" }], usage: { input_tokens: 100, output_tokens: 100 } }) };
+      const name = (/rpc\/(\w+)/.exec(url) || [])[1]; calls.push({ name, body });
+      const res = name === "cz_budget_status" ? { month: "2026-11", cap_cents: 3000, spent_cents: 0, today_cents: 0, days_remaining: 29, source_chars_per_day: 20000 }
+        : name === "cz_translation_get" ? [] : name === "cz_source_chars" ? 10 : name === "cz_entry3" ? (after ? [after] : []) : null;
+      return { ok: true, status: 200, text: async () => JSON.stringify(res) };
+    };
+    const quiet = console.error; console.error = () => {};
+    const out = await R.translate({ id: 7, content: "The original text, with something private in it.", hidden: false }, "fa", { headers: { "x-real-ip": "203.0.113.1" } });
+    console.error = quiet;
+    return { out, store: calls.filter((c) => c.name === "cz_translation_store").map((c) => c.body) };
+  }
+  let t = await tr({ id: 7, content: "The original text, with something private in it.", hidden: false });
+  ok(t.out.state === "done" && t.store.length === 1 && t.store[0].p_state === "done" && t.store[0].p_text === "ترجمه", "unchanged entry: the translation is stored");
+  t = await tr({ id: 7, content: "The original text, with [removed: private data] in it.", hidden: false, state: "redacted" });
+  ok(t.out.state === "pending" && t.store.length === 1 && t.store[0].p_text === null && t.store[0].p_state === "pending" && t.store[0].p_cost_cents > 0, "redacted meanwhile: discarded, cost kept");
+  t = await tr({ id: 7, content: null, hidden: true, state: "hidden" });
+  ok(t.out.state === "pending" && t.store[0].p_text === null, "hidden meanwhile: discarded");
   console.log(`pass ${pass} fail ${fail}`); process.exit(fail ? 1 : 0);
 })();

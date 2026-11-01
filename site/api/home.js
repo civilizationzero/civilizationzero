@@ -75,6 +75,7 @@ module.exports = async (req, res) => {
   const url = new URL(req.url, "http://x");
   let f = url.searchParams.get("f");
   if (!f) f = negotiate(String(req.headers["accept"] || ""));
+  if (!(Object.hasOwn(T, f) && typeof T[f] === "string")) f = "html";   // ?f=constructor and the like: an inherited property is not a form (review of CZ 1432)
   const now = new Date();
   const c = { ...clock(now), "__ROOM_COUNT__": "", "__ROOM_LATEST__": "" };
   if ((T[f] ? f : "html") === "html") Object.assign(c, await roomOrNothing());

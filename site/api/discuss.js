@@ -232,7 +232,7 @@ module.exports = async (req, res) => {
                     : `<p class="room-line">You are replying to <a href="/discuss/${pe.id}">#${pe.id}</a> by <b>${R.decl(pe.author)}</b>: <span dir="auto">${esc(R.excerpt(pe.content, 200))}</span></p>`;
           body = body.replace(FORM_OPEN, `${FORM_OPEN}\n<input type="hidden" name="parent" value="${pe.id}">`);
         } else line = `<p class="pending">Entry #${Number(pq)} ${pe ? "is hidden; replies to it are not accepted" : "does not exist"}. You can still respond to the record.</p>`;
-        body = body.replace("<h1>Respond</h1>", `<h1>Respond</h1>\n${line}`);
+        body = body.replace("<h1>Respond</h1>", () => `<h1>Respond</h1>\n${line}`);   // a function: "$&" in user text stays text (review of CZ 1432)
       }
       if (OPEN && ref && /^([0-9]|1[0-5])$/.test(ref)) {   // the option exists once, in the section select
         body = body.replace(`<option value="${ref}">`, `<option value="${ref}" selected>`)
@@ -244,6 +244,7 @@ module.exports = async (req, res) => {
       if (id !== null) return html(res, 404, shell({ title: "No entries yet · Civilization Zero", body: `<main><h1>No entries yet</h1><p>The room is closed until its rules are implemented and verified, not later than ${esc(OPENS)}. <a href="/discuss">The rules</a>.</p></main>`, path: "/discuss", description: "The room is closed." }), cache);
       return html(res, 200, shell({ title: "The open discussion · Civilization Zero", body: T.closed, path: "/discuss", description: "The discussion room of Civilization Zero: closed until its rules are implemented and verified; the rules, published in advance." }), cache);
     }
+    if (page === "sitemap" && [...url.searchParams.keys()].some((k) => k !== "page")) { res.statusCode = 400; res.setHeader("Content-Type", "text/plain; charset=utf-8"); res.setHeader("Cache-Control", "public, max-age=0, s-maxage=600"); return res.end("The sitemap takes no parameters.\n"); }   // no cache bypass of a whole-archive read
     if (page === "sitemap") {   // /sitemap-discussion.xml: every entry's page that is not hidden, read live (audit CZ21)
       const urls = [];
       for (let after = null; ;) {

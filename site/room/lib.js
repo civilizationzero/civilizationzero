@@ -54,7 +54,17 @@ const ORIGINATOR = require("./originator.json");
 const LOOKALIKE = { "а": "a", "е": "e", "о": "o", "р": "p", "с": "c", "у": "y", "х": "x", "і": "i", "ї": "i", "ј": "j", "ԁ": "d", "ɡ": "g", "ӏ": "l", "һ": "h", "ѕ": "s",
   "ԛ": "q", "ԝ": "w", "ο": "o", "α": "a", "ε": "e", "ι": "i", "ν": "v", "τ": "t", "ρ": "p", "κ": "k", "η": "n", "ζ": "z", "ı": "i", "ℓ": "l", "0": "o", "1": "i", "3": "e",
   "4": "a", "5": "s", "7": "t", "8": "b", "@": "a", "$": "s", "!": "i", "|": "l" };
-const nameKey = (s) => [...String(s || "").normalize("NFKD").replace(/\p{M}+/gu, "").toLowerCase()].map((c) => LOOKALIKE[c] || c).join("").replace(/[^\p{L}\p{N}]+/gu, "");
+// capitals whose small letter looks like another Latin letter (Greek Ν is N, its ν is v), read before lowercasing; then more
+// look-alikes found in review (CZ 1432): Cyrillic т, Armenian, Cherokee, small capitals, and other scripts' o, c, i, l, n
+const LOOKALIKE_CAPS = { "Ν": "n", "Η": "h", "Ρ": "p", "Τ": "t", "Χ": "x", "Β": "b", "Μ": "m", "Κ": "k", "Ζ": "z", "Ι": "i", "Ο": "o", "Α": "a", "Ε": "e", "Υ": "y",
+  "Т": "t", "Н": "h", "М": "m", "В": "b", "К": "k" };
+Object.assign(LOOKALIKE, { "т": "t", "м": "m", "н": "h", "в": "b", "к": "k", "ԍ": "g", "ԃ": "d", "ɑ": "a", "օ": "o", "ս": "u", "ո": "n", "ց": "g", "զ": "q", "հ": "h",
+  "ᴏ": "o", "ᴄ": "c", "ɪ": "i", "ʟ": "l", "ɴ": "n", "ᴀ": "a", "ᴛ": "t", "ʀ": "r", "ᴢ": "z", "ᴇ": "e", "ᴠ": "v", "ɢ": "g", "Ꮯ": "c", "Ꭵ": "i", "Ꮓ": "z", "Ꭱ": "r",
+  "Ꮪ": "s", "Ꭺ": "a", "Ꭼ": "e", "Ꭲ": "t", "Ꮮ": "l", "Ꮐ": "g", "Ꮩ": "v", "Ꮃ": "w", "ꮓ": "z", "ꮯ": "c", "ꭵ": "i", "ꮃ": "w", "ꮪ": "s", "ꭱ": "r", "ꭺ": "a",
+  "ꭼ": "e", "ꭲ": "t", "ꮮ": "l", "ꮐ": "g", "ꮩ": "v", "ɩ": "i", "ǀ": "l", "ߋ": "o", "ዐ": "o", "ơ": "o", "ꓳ": "o", "ꓚ": "c", "ꓲ": "i", "ꓠ": "n", "ꓮ": "a", "ꓔ": "t",
+  "ꓣ": "r", "ꓜ": "z", "ꓰ": "e", "ꓡ": "l", "ꓖ": "g", "ꓦ": "v", "ꓢ": "s", "ο": "o", "σ": "o", "ϲ": "c", "ℴ": "o" });
+const nameKey = (s) => [...[...String(s || "").normalize("NFKD").replace(/\p{M}+/gu, "")].map((c) => LOOKALIKE_CAPS[c] || c).join("").toLowerCase()]
+  .map((c) => LOOKALIKE[c] || c).join("").replace(/[^\p{L}\p{N}]+/gu, "");
 const RESERVED_KEYS = ["originator", "civilizationzero"];
 const reservedName = (s) => { const k = nameKey(s); return RESERVED_KEYS.some((r) => k.includes(r)); };
 // the first declared field that uses a reserved name without the originator's key, or null
@@ -313,6 +323,13 @@ async function translate(entry, lang, req) {
     const m = raw.match(/<translation>([\s\S]*?)<\/translation>/);
     const text = m ? m[1].trim() : "";
     if (!text) throw new Error("no translation in the reply: " + raw.slice(0, 100));
+    // the model took seconds: if the entry was hidden or redacted meanwhile, this translation is of a text no longer shown — keep
+    // its cost, not its text (a redaction withdraws translations that exist; this one did not exist yet; review of CZ 1432)
+    const now = await rpc("cz_entry3", { p_id: entry.id }), cur = now && now[0];
+    if (!cur || cur.hidden || cur.content !== entry.content) {
+      await record(entry.id, lang, null, "discarded: the entry changed while it was being translated", "pending", cents);
+      return { state: "pending", text: null, reason: "the entry changed while it was being translated" };
+    }
     await record(entry.id, lang, text, model, "done", cents);
     return { state: "done", text, engine: model, date: new Date().toISOString().slice(0, 10) };
   } catch (e) { log("translate", entry.id, lang, e); return { state: "pending", text: null, reason: "the engine is unavailable" }; }
