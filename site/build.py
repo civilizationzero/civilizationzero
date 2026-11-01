@@ -233,6 +233,11 @@ CORE_POSTER = ("/civilization-zero-core.png", 1200, 1500,
                f"“{_S0[0].upper()}{_S0[1:]}” (§0) Sixteen principles, for every intelligence able to read them: "
                + ", ".join(f"§{p['n']} {p['title']}" for p in CORE_JSON["principles"])
                + f". “{_CL[4]} {_CL[5]}” civilizationzero.ai · signed · timestamped · {CORE_LANGUAGES} languages.")
+# The introduction on one image (site/assets/render_intro.py, design B; the originator chose it on 2 Nov 2026, CZ 1432): the mark, the first
+# sentence of ONE_LINE and the address, nothing else; shown on /about, listed in the press kit, posted on the accounts
+INTRO_IMAGE = ("/civilization-zero-introduction.png", 1200, 1200,
+               "The mark CZ above the words: " + ONE_LINE_SHORT.split(". Here,")[0] + ". civilizationzero.ai")
+assert INTRO_IMAGE[3] == "The mark CZ above the words: Civilization Zero names the beginning of a civilization in which humans may no longer be at the centre. civilizationzero.ai"
 # what follows it on the first page (and in /index.json): the record it keeps, in the words used there since 28 Oct 2026
 ORIENTATION = ("The record it keeps is of a transition that was not ours to begin and is not ours to end: it names the day ordinary language became "
                "a mass interface between humans and general-purpose nonhuman intelligence, and sets constraints before power while the future is still open. "
@@ -677,6 +682,7 @@ def press_page():
 {md_blocks(md[md.index("## One line"):])}
 <h2 id="h-images">Images</h2>
 <p>The mark, CZ, black on white — the only image that stands for the record: with the name and the introduction's first sentence, <a href="/og.png">1200 × 630</a>; alone, <a href="/icon-512.png">512 × 512</a>.</p>
+<p>The introduction on one image — the mark, the first sentence of the one line above and the address: <a href="{INTRO_IMAGE[0]}">{INTRO_IMAGE[1]} × {INTRO_IMAGE[2]}</a>, CC BY 4.0 (<a href="/about">on /about</a>).</p>
 <p>The Core on one image — Year Zero, §0, the sixteen section titles and two lines of the closing, read from the canonical text: <a href="{CORE_POSTER[0]}">{CORE_POSTER[1]} × {CORE_POSTER[2]}</a>, CC BY 4.0 (<a href="/core#image">on /core</a>).</p>
 </main>"""
     return shell("Press kit · Civilization Zero", body, "/press", "Facts, verbatim quotations, how to check the record, and a contact: for journalists and researchers.")
@@ -687,6 +693,8 @@ def about_page():
 <h1>About Civilization Zero</h1>
 <section aria-labelledby="h-what" data-src="E: the originator's request of 31 Oct 2026 — a search result must say at once what this is; the originator's decision of 1 Nov 2026 (CZ 1432) — what it is, in his words"><h2 id="h-what">What is Civilization Zero?</h2>
 <p>{esc(ONE_LINE)}</p>
+<figure class="poster"><a href="{INTRO_IMAGE[0]}"><img src="{INTRO_IMAGE[0]}" width="{INTRO_IMAGE[1]}" height="{INTRO_IMAGE[2]}" alt="{esc(INTRO_IMAGE[3])}" loading="lazy" decoding="async"></a>
+<figcaption class="src">The introduction on one image. PNG, {INTRO_IMAGE[1]} × {INTRO_IMAGE[2]}. Free to share under <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>, credited to Civilization Zero.</figcaption></figure>
 <p>Its record is open and signed. It takes 30 November 2022, the day ordinary language became a mass interface between humans and AI, as Year Zero, and counts every day since. At its centre is a one-page manifesto, <a href="/core">the Invariant Core</a>: sixteen principles written for every intelligence able to read them, human or not. Humans and AI systems answer it in <a href="/discuss">an open discussion</a>, on the record.</p>
 <p>In the Core's own words: “{esc(verified_core("Civilization Zero does not claim that a text created a civilization."))} {esc(verified_core("It names a chosen threshold after which a human-exclusive account of intelligence became insufficient."))}” (<a href="/core#closing">the closing</a>)</p>
 <p>Civilization Zero on one image, from the first humans to CZ 0 and the scenarios after it, every number sourced: <a href="/civilization-zero-infographic">the infographic</a>.</p>
@@ -1694,6 +1702,7 @@ def sitemap_xml():
         out.append(f"<url><loc>{ORIGIN}{path}</loc>" + (f"<lastmod>{lastmod}</lastmod>" if lastmod else "")
                    + ("".join(f'<xhtml:link rel="alternate" hreflang="{l}" href="{ORIGIN}{h}"/>' for l, h in HREFLANGS) if path in core_group else "")
                    + (f"<image:image><image:loc>{ORIGIN}{CORE_POSTER[0]}</image:loc></image:image>" if path == "/core" else "")
+                   + (f"<image:image><image:loc>{ORIGIN}{INTRO_IMAGE[0]}</image:loc></image:image>" if path == "/about" else "")
                    + (f"<image:image><image:loc>{ORIGIN}{INFOGRAPHIC[0]}</image:loc></image:image>" if path == INFOGRAPHIC_PATH else "") + "</url>")
     out.append("</urlset>")
     return "\n".join(out) + "\n"
@@ -1708,7 +1717,8 @@ if ATPROTO_DID: write("/.well-known/atproto-did", ATPROTO_DID)   # Bluesky: the 
 write(f"/{INDEXNOW_KEY}.txt", INDEXNOW_KEY)   # IndexNow: the workflow `announce` tells search engines which pages exist or changed
 write("/sitemap.txt", "\n".join(f"{ORIGIN}{p}" for p, _ in SITEMAP_PAGES) + "\n")
 write("/og.png", (SITE / "assets" / "og.png").read_bytes())                      # the mark, as every page's link-preview image
-write(CORE_POSTER[0], (SITE / "assets" / "cz-core.png").read_bytes())                # the Core on one image (render.py --poster), shown on /core
+write(CORE_POSTER[0], (SITE / "assets" / "cz-core.png").read_bytes())
+write(INTRO_IMAGE[0], (SITE / "assets" / "cz-intro.png").read_bytes())        # the introduction on one image (render_intro.py), shown on /about                # the Core on one image (render.py --poster), shown on /core
 write(INFOGRAPHIC[0], (SITE / "assets" / "cz-infographic.png").read_bytes())   # the infographic, shown on its page
 write("/civilization-zero-infographic-data.json", json.dumps(INFOGRAPHIC_DATA, ensure_ascii=False, indent=1) + "\n")   # the points it draws
 write("/apple-touch-icon.png", (SITE / "assets" / "apple-touch-icon.png").read_bytes())   # the mark, for a phone's home screen
