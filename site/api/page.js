@@ -128,6 +128,7 @@ module.exports = (req, res) => {
   let status = 200, html = PAGES.test(p) ? read(p) : null;
   if (html === null) { status = 404; html = read("404") || "<!doctype html><title>Not found</title><p>Nothing is published at this address.</p>\n"; }
   const now = Date.now();
+  const csp = cspFor(html);   // from the file as built, before anything from the request is put in (review of CZ 1432)
   let out = CZ.fillBar(html, now);
   const query = p === "calendar" && ["d", "c", "t", "z"].some((k) => url.searchParams.has(k));
   if (p === "calendar" && status === 200) {
@@ -137,7 +138,7 @@ module.exports = (req, res) => {
   if (query && status === 200) { const t = resultTitle(out); if (t) out = out.replace(/<title>[^<]*<\/title>/, () => `<title>${CZ.escHtml(t)}</title>`); }
   res.statusCode = status;
   res.setHeader("Content-Type", "text/html; charset=utf-8");
-  res.setHeader("Content-Security-Policy", cspFor(out));
+  res.setHeader("Content-Security-Policy", csp);
   res.setHeader("Cache-Control", `public, max-age=0, s-maxage=${CZ.secondsToNextDay(now)}`);
   if (query || status === 404) res.setHeader("X-Robots-Tag", "noindex");   // a conversion is a view, not a page to index
   res.setHeader("X-Content-Type-Options", "nosniff");
