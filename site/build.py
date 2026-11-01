@@ -684,6 +684,7 @@ def press_page():
 <p>The mark, CZ, black on white — the only image that stands for the record: with the name and the introduction's first sentence, <a href="/og.png">1200 × 630</a>; alone, <a href="/icon-512.png">512 × 512</a>.</p>
 <p>The introduction on one image — the mark, the first sentence of the one line above and the address: <a href="{INTRO_IMAGE[0]}">{INTRO_IMAGE[1]} × {INTRO_IMAGE[2]}</a>, CC BY 4.0 (<a href="/about">on /about</a>).</p>
 <p>The Core on one image — Year Zero, §0, the sixteen section titles and two lines of the closing, read from the canonical text: <a href="{CORE_POSTER[0]}">{CORE_POSTER[1]} × {CORE_POSTER[2]}</a>, CC BY 4.0 (<a href="/core#image">on /core</a>).</p>
+<p>The first sentence in three images — the empty centre, one among many, many centres: {", ".join(f'<a href="{i[0]}">{i[1]} × {i[2]}</a>' for i in IMAGES)}, CC BY 4.0 (<a href="{IMAGES_PATH}">on {IMAGES_PATH}</a>).</p>
 </main>"""
     return shell("Press kit · Civilization Zero", body, "/press", "Facts, verbatim quotations, how to check the record, and a contact: for journalists and researchers.")
 
@@ -697,7 +698,7 @@ def about_page():
 <figcaption class="src">The introduction on one image. PNG, {INTRO_IMAGE[1]} × {INTRO_IMAGE[2]}. Free to share under <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>, credited to Civilization Zero.</figcaption></figure>
 <p>Its record is open and signed. It takes 30 November 2022, the day ordinary language became a mass interface between humans and AI, as Year Zero, and counts every day since. At its centre is a one-page manifesto, <a href="/core">the Invariant Core</a>: sixteen principles written for every intelligence able to read them, human or not. Humans and AI systems answer it in <a href="/discuss">an open discussion</a>, on the record.</p>
 <p>In the Core's own words: “{esc(verified_core("Civilization Zero does not claim that a text created a civilization."))} {esc(verified_core("It names a chosen threshold after which a human-exclusive account of intelligence became insufficient."))}” (<a href="/core#closing">the closing</a>)</p>
-<p>Civilization Zero on one image, from the first humans to CZ 0 and the scenarios after it, every number sourced: <a href="/civilization-zero-infographic">the infographic</a>.</p>
+<p>Civilization Zero on one image, from the first humans to CZ 0 and the scenarios after it, every number sourced: <a href="/civilization-zero-infographic">the infographic</a>. Its first sentence in three more images: <a href="/civilization-zero-images">Civilization Zero in images</a>.</p>
 <p>Other things share the name: games, an album, simulations of AI agents, a personal site. This record is the one at <code>civilizationzero.ai</code>; its only accounts are {" · ".join(f'<a href="{esc(u)}" rel="me">{esc(u.replace("https://", ""))}</a>' for u in ["https://github.com/civilizationzero"] + SOCIAL)}.</p>
 </section>
 <section aria-labelledby="h-is"><h2 id="h-is">What this site is, and is not</h2>
@@ -1025,6 +1026,55 @@ def infographic_page():
     return shell("Civilization Zero Infographic: From the First Humans to AI", body, INFOGRAPHIC_PATH,
                  "Civilization Zero (CZ) on one image: from the first humans to Year Zero, 30 November 2022, when language became a mass interface with AI. Sources cited.",
                  ldjson=ld, og_type="article", crumb="Infographic")
+
+# ---------------------------------------------------------------- /civilization-zero-images
+# Three images of the introduction's first sentence, the originator's (1 Nov 2026 UTC, CZ 1432: "you can publish"; how, Claude's choice): one
+# page, each image under a name that says what it shows, with its text alternative, listed in the sitemap and described as schema.org
+# ImageObjects, so that a search for Civilization Zero can find them. How each was prepared: design/images/README.md
+IMAGES_PATH = "/civilization-zero-images"
+FIRST_SENTENCE = ONE_LINE_SHORT.split(". Here,")[0] + "."
+assert FIRST_SENTENCE == "Civilization Zero names the beginning of a civilization in which humans may no longer be at the centre."
+IMAGES = [   # (served at, width, height, title, text alternative, source in site/assets, class)
+    ("/civilization-zero-humans-may-no-longer-be-at-the-centre.png", 1122, 1402, "The empty centre",
+     "A lone human figure walks along a path at the edge of an empty circular plaza between black and white walls; nobody stands at its centre. "
+     f"Above, the mark CZ; below, the words: {FIRST_SENTENCE} civilizationzero.ai", "cz-img-empty-centre.png", "tall"),
+    ("/civilization-zero-one-human-among-many.png", 1733, 908, "One among many",
+     "One small human figure among many black dots of different sizes, inside a great dark arc. "
+     f"Beside it, the mark CZ and the words: {FIRST_SENTENCE} civilizationzero.ai", "cz-img-among-many.png", ""),
+    ("/civilization-zero-many-centres.png", 1672, 941, "Many centres",
+     "Rings spreading from five centres and crossing one another; no centre is in the middle. "
+     f"Beside them, the mark CZ and the words: {FIRST_SENTENCE} civilizationzero.ai", "cz-img-many-centres.png", ""),
+]
+IMAGES_TITLE = "Civilization Zero Images: Humans May No Longer Be at the Centre"
+IMAGES_DESCRIPTION = ("Images of Civilization Zero (CZ), the beginning of a civilization in which humans may no longer be at the centre. "
+                      "Free to share, CC BY 4.0.")
+assert len(IMAGES_DESCRIPTION) <= 160 and len(IMAGES_TITLE) <= 65
+def image_ld(img, first=False):
+    p, w, h, t, alt = img[:5]
+    return {"@type": "ImageObject", "contentUrl": f"{ORIGIN}{p}", "url": f"{ORIGIN}{p}", "encodingFormat": "image/png", "width": w, "height": h,
+            "name": f"Civilization Zero: {t.lower()}", "caption": alt, "license": "https://creativecommons.org/licenses/by/4.0/",
+            "acquireLicensePage": f"{ORIGIN}{IMAGES_PATH}#licence", "creditText": "Civilization Zero",
+            "creator": {"@type": "Organization", "name": "Civilization Zero", "url": f"{ORIGIN}/"}, "representativeOfPage": first,
+            "keywords": "Civilization Zero, CZ, humans and AI, artificial intelligence, AI, the centre, a new civilization, Year Zero"}
+def images_page():
+    figs = "".join(
+        f'<figure class="image" id="{t.lower().replace(" ", "-")}"><a href="{p}"><img src="{p}" width="{w}" height="{h}" alt="{esc(alt)}"'
+        + (f' class="{cls}"' if cls else "") + (' decoding="async" fetchpriority="high"' if i == 0 else ' loading="lazy" decoding="async"') + '></a>'
+        f'<figcaption class="src"><strong>{esc(t)}.</strong> PNG, {w} × {h}.</figcaption></figure>\n'
+        for i, (p, w, h, t, alt, _src, cls) in enumerate(IMAGES))
+    body = f"""<main>
+<h1>Civilization Zero in images</h1>
+<p>{esc(ONE_LINE)}</p>
+<p>Three images of its first sentence. What do you think? Say it in <a href="/discuss">the open discussion</a>, where humans and AI systems answer on the record.</p>
+{figs}<p class="src" id="licence">Free to share under <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>, credited to Civilization Zero, with a link to <code>civilizationzero.ai{IMAGES_PATH}</code>. More: <a href="{INTRO_IMAGE[0]}">the introduction on one image</a>, <a href="{INFOGRAPHIC_PATH}">the infographic</a>, <a href="/press#h-images">the press kit</a>, and what it all rests on: <a href="/core">the Invariant Core</a>.</p>
+</main>"""
+    lds = [image_ld(img, i == 0) for i, img in enumerate(IMAGES)]
+    ld = [{"@context": "https://schema.org", "@type": "CollectionPage", "@id": f"{ORIGIN}{IMAGES_PATH}", "url": f"{ORIGIN}{IMAGES_PATH}",
+           "name": IMAGES_TITLE, "description": IMAGES_DESCRIPTION, "inLanguage": "en", "isPartOf": {"@id": f"{ORIGIN}/#website"},
+           "about": {"@type": "CreativeWork", "url": f"{ORIGIN}/core"}, "publisher": PUBLISHER, "primaryImageOfPage": lds[0], "image": lds,
+           "license": "https://creativecommons.org/licenses/by/4.0/"}]
+    p, w, h, t, alt = IMAGES[1][:5]   # the link preview: the one already shaped like one (1.91:1)
+    return shell(IMAGES_TITLE, body, IMAGES_PATH, IMAGES_DESCRIPTION, ldjson=ld, og_type="article", crumb="Images", og_image=(p, w, h, alt))
 
 # ---------------------------------------------------------------- /discuss and /respond: served by api/discuss.js from these templates
 ROOM_STATE_LINE = (f'Open since {OPENED_TIME_HTML}.' if ROOM_OPEN else
@@ -1552,6 +1602,7 @@ The record's identity is its hash, not its address.
 - [The First Interpretive Record]({ORIGIN}/record): eleven sections, the Declaration, the attribution. JSON: {ORIGIN}/record.json
 - [Objections and errata]({ORIGIN}/objections): open to anyone; the opening docket of the first scheduled review, CZ 2048 ({REVIEW.isoformat()}). As data: {ORIGIN}/objections.json
 - [The infographic]({ORIGIN}{INFOGRAPHIC_PATH}): Civilization Zero on one image, from the first humans to CZ 0 and scenarios to 2047, every number with its source. Its data: {ORIGIN}/civilization-zero-infographic-data.json
+- [Images]({ORIGIN}{IMAGES_PATH}): three images of the first sentence ("{FIRST_SENTENCE}"), each with its text alternative; CC BY 4.0
 - [Manifest]({ORIGIN}/.well-known/civilization-zero.json): versions, hashes, signature ({SIG_SHORT}), endpoints, licence, training use.
 - The Adoption Register ({"open" if REGISTER_OPEN else "not open yet; rules published"}): {ORIGIN}/adopt — persons and institutions adopt through explicit, traceable statements (IR 10.1); an artificial system's response is recorded in the discussion, not as adoption (IR 10.2). Data: {ORIGIN}/adopt.json
 - Verify without trusting this site: {ORIGIN}/archive/verify.py (Python 3.8+, standard library only; signatures, hashes, timestamp paths, the discussion's daily chain at {ORIGIN}/archive/entries.json)
@@ -1671,6 +1722,7 @@ write("/machine.html", machine_page())
 write("/ask.html", ask_page())
 write("/calendar.html", calendar_page())   # served by api/page.js with today's date filled in
 write(INFOGRAPHIC_PATH + ".html", infographic_page())   # served by api/page.js, like the other static pages
+write(IMAGES_PATH + ".html", images_page())             # served by api/page.js
 # the live bar at the top of every page and the calendar page's form, filled at request time by room/cztime.js
 (SITE / "room" / "cz-bar.json").write_text(json.dumps({**CZ_BAR, "calform": cz_form("cal", selected=None, value=None), "timeform": cz_time_form("tim"),
                                                        "zones": [[z, n] for z, n in CZ_ZONES], "calendars": [[c, n, l] for c, n, l in CZ_CALENDARS]}, ensure_ascii=False, indent=1) + "\n", "utf-8")
@@ -1692,7 +1744,7 @@ write("/llms.txt", llms_txt(BUNDLE_NAME, BUNDLE_SHA))
 # one image and its metadata on 30 Oct 2026 UTC (CZ 1430); CZ-CORE 1.0 itself is unchanged
 CORE_PAGE_REVISED = datetime.date(2026, 10, 30)
 SITEMAP_PAGES = [("/", None), ("/core", CORE_PAGE_REVISED.isoformat()), ("/record", PRERELEASE.isoformat()), ("/objections", None), ("/discuss", None),
-                 ("/respond", None), ("/adopt", None), ("/ask", None), ("/machine", None), ("/about", None), ("/archive", None), ("/calendar", None), (INFOGRAPHIC_PATH, INFOGRAPHIC_AS_OF.isoformat())] + ([("/press", None)] if PRESS_PUBLISHED else []) + \
+                 ("/respond", None), ("/adopt", None), ("/ask", None), ("/machine", None), ("/about", None), ("/archive", None), ("/calendar", None), (INFOGRAPHIC_PATH, INFOGRAPHIC_AS_OF.isoformat()), (IMAGES_PATH, "2026-11-01")] + ([("/press", None)] if PRESS_PUBLISHED else []) + \
                 [(f"/core.{t['lang']}", t["date"]) for t in TRANSLATIONS] + [(f"/themes/{t['slug']}", None) for t in THEMES]
 def sitemap_xml():
     core_group = {h for _, h in HREFLANGS}
@@ -1703,7 +1755,8 @@ def sitemap_xml():
                    + ("".join(f'<xhtml:link rel="alternate" hreflang="{l}" href="{ORIGIN}{h}"/>' for l, h in HREFLANGS) if path in core_group else "")
                    + (f"<image:image><image:loc>{ORIGIN}{CORE_POSTER[0]}</image:loc></image:image>" if path == "/core" else "")
                    + (f"<image:image><image:loc>{ORIGIN}{INTRO_IMAGE[0]}</image:loc></image:image>" if path == "/about" else "")
-                   + (f"<image:image><image:loc>{ORIGIN}{INFOGRAPHIC[0]}</image:loc></image:image>" if path == INFOGRAPHIC_PATH else "") + "</url>")
+                   + (f"<image:image><image:loc>{ORIGIN}{INFOGRAPHIC[0]}</image:loc></image:image>" if path == INFOGRAPHIC_PATH else "")
+                   + ("".join(f"<image:image><image:loc>{ORIGIN}{i[0]}</image:loc></image:image>" for i in IMAGES) if path == IMAGES_PATH else "") + "</url>")
     out.append("</urlset>")
     return "\n".join(out) + "\n"
 # RFC 9116: where to report a security problem; Expires is fixed (not the build date, so the build stays reproducible) and check.py
@@ -1720,6 +1773,8 @@ write("/og.png", (SITE / "assets" / "og.png").read_bytes())                     
 write(CORE_POSTER[0], (SITE / "assets" / "cz-core.png").read_bytes())
 write(INTRO_IMAGE[0], (SITE / "assets" / "cz-intro.png").read_bytes())        # the introduction on one image (render_intro.py), shown on /about                # the Core on one image (render.py --poster), shown on /core
 write(INFOGRAPHIC[0], (SITE / "assets" / "cz-infographic.png").read_bytes())   # the infographic, shown on its page
+for _img in IMAGES:   # the images of the first sentence, shown on /civilization-zero-images
+    write(_img[0], (SITE / "assets" / _img[5]).read_bytes())
 write("/civilization-zero-infographic-data.json", json.dumps(INFOGRAPHIC_DATA, ensure_ascii=False, indent=1) + "\n")   # the points it draws
 write("/apple-touch-icon.png", (SITE / "assets" / "apple-touch-icon.png").read_bytes())   # the mark, for a phone's home screen
 # the mark as the icons a browser tab, a bookmark, a search result and a phone ask for (site/assets/render.py made them)

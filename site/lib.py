@@ -309,6 +309,9 @@ pre{white-space:pre-wrap;word-break:break-word;border:1px solid var(--rule);padd
 figure.poster{margin:1.5rem 0}figure.poster img{display:block;width:100%;max-width:30rem;height:auto;border:1px solid var(--rule)}
 figure.infographic{margin:1.5rem 0}
 figure.infographic img{display:block;width:100%;height:auto;border:1px solid var(--rule)}
+figure.image{margin:1.5rem 0}
+figure.image img{display:block;width:100%;height:auto;border:1px solid var(--rule)}
+figure.image img.tall{max-width:30rem}
 td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
 hr{border:0;border-top:1px solid var(--rule);margin:2.5rem 0}
 /* E (Blueprint decision 28): two doors, before anything else; equal width — equal standing. */
@@ -401,7 +404,7 @@ ONE_LINE_SHORT = ("Civilization Zero names the beginning of a civilization in wh
                   "what they owe each other.")
 assert len(ONE_LINE_SHORT) <= 160
 FOOT_LINKS = [[("/core", "The Core"), ("/core#translations", f"{CORE_LANGUAGES} languages")], [("/record", "The Record")], [("/objections", "Objections and errata")],
-              [("/discuss", "Discussion"), ("/respond", "Respond")], [("/adopt", "Adoption register")], [("/calendar", "CZ time")], [("/civilization-zero-infographic", "Infographic")], [("/ask", "Ask your AI")],
+              [("/discuss", "Discussion"), ("/respond", "Respond")], [("/adopt", "Adoption register")], [("/calendar", "CZ time")], [("/civilization-zero-infographic", "Infographic"), ("/civilization-zero-images", "Images")], [("/ask", "Ask your AI")],
               [("/machine", "For machines")], [("/about", "About")] + ([("/press", "Press kit")] if PRESS_PUBLISHED else []), [("/stats", "Visits")], [("/archive", "Archive and verification")]]
 def footer_html(extra=""):
     links = "".join("<li>" + " · ".join(f'<a href="{h}">{esc(t)}</a>' for h, t in row) + "</li>" for row in FOOT_LINKS)
@@ -480,7 +483,8 @@ def cz_bar_fallback():   # for copies that serve the files as they are: no date,
 GOOGLE_SITE_VERIFICATION = "Hf73qd5zTa6JZ_-O6QM0JBYPSqxOdIM-M33lsIGihhg"   # Google Search Console ("HTML tag" method), property https://civilizationzero.ai/, added by the originator on 29 Oct 2026; keep it, or the property loses its verification
 OG_IMAGE = ("/og.png", 1200, 630, "The mark CZ, a zero in which C and Z share their strokes, and the words: Civilization Zero names the beginning of a civilization in which humans may no longer be at the centre. Coordinate Zero, 30 November 2022.")
 
-def shell(title, body, path, description, alternates=(), ldjson=None, nav=True, extra_head="", hreflangs=(), og_type="website", robots=None, crumbs=True, cz_bar=True, footer_extra="", crumb=None):
+def shell(title, body, path, description, alternates=(), ldjson=None, nav=True, extra_head="", hreflangs=(), og_type="website", robots=None, crumbs=True, cz_bar=True, footer_extra="", crumb=None, og_image=None):
+    ogi = og_image or OG_IMAGE
     alt = "".join(f'<link rel="alternate" type="{t}" href="{h}" title="{esc(n)}">' for t, h, n in alternates)
     hl = "".join(f'<link rel="alternate" hreflang="{l}" href="{ORIGIN}{h}">' for l, h in hreflangs)
     objs = list(ldjson or [])
@@ -493,9 +497,9 @@ def shell(title, body, path, description, alternates=(), ldjson=None, nav=True, 
            (f'<meta name="google-site-verification" content="{esc(GOOGLE_SITE_VERIFICATION)}">\n' if GOOGLE_SITE_VERIFICATION else "")
     og = (f'<meta property="og:site_name" content="Civilization Zero"><meta property="og:type" content="{og_type}">'
           f'<meta property="og:title" content="{esc(title)}"><meta property="og:description" content="{esc(description)}">'
-          f'<meta property="og:url" content="{ORIGIN}{path}"><meta property="og:image" content="{ORIGIN}{OG_IMAGE[0]}">'
-          f'<meta property="og:image:width" content="{OG_IMAGE[1]}"><meta property="og:image:height" content="{OG_IMAGE[2]}">'
-          f'<meta property="og:image:alt" content="{esc(OG_IMAGE[3])}"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:site" content="@czrecord">\n')
+          f'<meta property="og:url" content="{ORIGIN}{path}"><meta property="og:image" content="{ORIGIN}{ogi[0]}">'
+          f'<meta property="og:image:width" content="{ogi[1]}"><meta property="og:image:height" content="{ogi[2]}">'
+          f'<meta property="og:image:alt" content="{esc(ogi[3])}"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:site" content="@czrecord">\n')
     return f"""<!doctype html>
 <html lang="en">
 <head>

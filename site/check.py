@@ -104,7 +104,8 @@ for f in pages + [pathlib.Path("virtual") / n for n in VIRTUAL]:
     canon = re.search(r'<link rel="canonical" href="([^"]+)">', h)
     check(canon and f'<meta property="og:url" content="{canon.group(1)}">' in h, f"{f.name}: og:url is not the canonical address")
     if canon: canonicals.add(canon.group(1))
-    check(f'<meta property="og:image" content="{ORIGIN}/og.png">' in h and '<meta name="twitter:card" content="summary_large_image">' in h, f"{f.name}: link-preview metadata")
+    _og = "/civilization-zero-one-human-among-many.png" if f.name == "civilization-zero-images.html" else "/og.png"   # the images' page previews with one of its images
+    check(f'<meta property="og:image" content="{ORIGIN}{_og}">' in h and '<meta name="twitter:card" content="summary_large_image">' in h, f"{f.name}: link-preview metadata")
     check(h.count("<title>") == 1 and "__TITLE__" not in h.split("<body>")[0], f"{f.name}: one title")
     if f in core_cluster: check(cluster_links <= set(re.findall(r'<link rel="alternate" hreflang="[^"]+" href="[^"]+">', h)), f"{f.name}: hreflang group incomplete")
 sm = ET.fromstring((PUBLIC / "sitemap.xml").read_bytes())
@@ -388,7 +389,7 @@ for fn in ("api/page.js", "api/calendar.js", "room/cztime.js", "api/home.js"):
     _rc = subprocess.run(["node", "--check", str(SITE / fn)], capture_output=True)
     check(_rc.returncode == 0, f"{fn}: syntax {_rc.stderr.decode()[:200]}")
 check(any(r.get("source") == "/calendar" and r.get("destination") == "/api/page?p=calendar" for r in v.get("rewrites", [])), "vercel.json: /calendar → api/page.js")
-for _src in ("/core", "/record", "/objections", "/ask", "/machine", "/about", "/archive", "/civilization-zero-infographic") + (("/press",) if PRESS_PUBLISHED else ()):
+for _src in ("/core", "/record", "/objections", "/ask", "/machine", "/about", "/archive", "/civilization-zero-infographic", "/civilization-zero-images") + (("/press",) if PRESS_PUBLISHED else ()):
     check(any(r.get("source") == _src and "has" not in r and r.get("destination") == f"/api/page?p={_src[1:]}" for r in v.get("rewrites", [])), f"vercel.json: {_src} → api/page.js (CZ time at the top)")
 check("public/*.html" in json.dumps(v.get("functions", {}).get("api/page.js", {})), "vercel.json: api/page.js carries the pages (includeFiles)")
 # the infographic (31 Oct 2026): its page names the image, its size and its text alternative; the image is the PNG of that size; the sitemap
@@ -399,6 +400,19 @@ check(_igb[:8] == b"\x89PNG\r\n\x1a\n" and struct.unpack(">II", _igb[16:24]) == 
       "the infographic: a 1200x4080 PNG, named on its page with its size and text alternative")
 check("<image:loc>https://civilizationzero.ai/civilization-zero-infographic.png</image:loc>" in (PUBLIC / "sitemap.xml").read_text("utf-8"), "sitemap.xml: the infographic's image")
 check("civilization-zero-infographic" in (SITE / "api" / "page.js").read_text("utf-8"), "api/page.js serves the infographic's page")
+# the images of the first sentence (CZ 1432): each a greyscale PNG of the size its page names, with its text alternative carrying the
+# sentence word for word; all three in the sitemap with their page; the page served by api/page.js and its preview image one of them
+_im = (PUBLIC / "civilization-zero-images.html").read_text("utf-8")
+_sm = (PUBLIC / "sitemap.xml").read_text("utf-8")
+for _n, _w, _h in (("civilization-zero-humans-may-no-longer-be-at-the-centre", 1122, 1402), ("civilization-zero-one-human-among-many", 1733, 908), ("civilization-zero-many-centres", 1672, 941)):
+    _b = (PUBLIC / f"{_n}.png").read_bytes()
+    check(_b[:8] == b"\x89PNG\r\n\x1a\n" and struct.unpack(">II", _b[16:24]) == (_w, _h) and _b[25] == 0
+          and f'<img src="/{_n}.png" width="{_w}" height="{_h}" alt="' in _im and f"<image:loc>https://civilizationzero.ai/{_n}.png</image:loc>" in _sm,
+          f"/{_n}.png: a {_w}x{_h} greyscale PNG, on its page with its size and text alternative, in the sitemap")
+check(_im.count("Civilization Zero names the beginning of a civilization in which humans may no longer be at the centre. civilizationzero.ai") >= 6
+      and '<meta property="og:image" content="https://civilizationzero.ai/civilization-zero-one-human-among-many.png">' in _im,
+      "/civilization-zero-images: every text alternative carries the sentence; its link preview is one of its images")
+check("civilization-zero-images" in (SITE / "api" / "page.js").read_text("utf-8"), "api/page.js serves the images' page")
 
 # 9. every date the pages print (the originator, 30 Oct 2026: "every date on the site checked at least three times"): each CZ date in a
 # <time datetime> is the day of that ISO value, counted independently here as (date − 2022-11-30).days; each link around it opens the

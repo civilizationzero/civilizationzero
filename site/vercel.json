@@ -25,7 +25,7 @@
       "permanent": true
     },
     {
-      "source": "/:page(core|record|objections|ask|machine|about|archive|calendar|civilization-zero-infographic|press).html",
+      "source": "/:page(core|record|objections|ask|machine|about|archive|calendar|civilization-zero-infographic|civilization-zero-images|press).html",
       "destination": "/:page",
       "permanent": true
     },
@@ -213,6 +213,10 @@
     {
       "source": "/civilization-zero-infographic",
       "destination": "/api/page?p=civilization-zero-infographic"
+    },
+    {
+      "source": "/civilization-zero-images",
+      "destination": "/api/page?p=civilization-zero-images"
     },
     {
       "source": "/press",
@@ -667,7 +671,7 @@
       ]
     },
     {
-      "source": "/(og.png|civilization-zero-core.png|civilization-zero-infographic.png|apple-touch-icon.png|favicon.ico|favicon.svg|favicon-96x96.png|icon-192.png|icon-512.png|icon-maskable-512.png|site.webmanifest)",
+      "source": "/(og.png|civilization-zero-core.png|civilization-zero-infographic.png|civilization-zero-introduction.png|civilization-zero-humans-may-no-longer-be-at-the-centre.png|civilization-zero-one-human-among-many.png|civilization-zero-many-centres.png|apple-touch-icon.png|favicon.ico|favicon.svg|favicon-96x96.png|icon-192.png|icon-512.png|icon-maskable-512.png|site.webmanifest)",
       "headers": [
         {
           "key": "Cache-Control",
