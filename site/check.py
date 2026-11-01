@@ -404,12 +404,14 @@ check("civilization-zero-infographic" in (SITE / "api" / "page.js").read_text("u
 # sentence word for word; all three in the sitemap with their page; the page served by api/page.js and its preview image one of them
 _im = (PUBLIC / "civilization-zero-images.html").read_text("utf-8")
 _sm = (PUBLIC / "sitemap.xml").read_text("utf-8")
-for _n, _w, _h in (("civilization-zero-humans-may-no-longer-be-at-the-centre", 1122, 1402), ("civilization-zero-one-human-among-many", 1733, 908), ("civilization-zero-many-centres", 1672, 941)):
+for _n, _w, _h in (("civilization-zero-humans-may-no-longer-be-at-the-centre", 1122, 1402), ("civilization-zero-one-human-among-many", 1733, 908), ("civilization-zero-many-centres", 1672, 941),
+                   ("civilization-zero-the-measure", 1080, 1080), ("civilization-zero-the-empty-pedestal", 1080, 1080), ("civilization-zero-the-orbit", 1080, 1080),
+                   ("civilization-zero-the-centre-left-open", 1080, 1080), ("civilization-zero-no-centre-in-the-middle", 1080, 1080), ("civilization-zero-one-then-many", 1080, 1080)):
     _b = (PUBLIC / f"{_n}.png").read_bytes()
     check(_b[:8] == b"\x89PNG\r\n\x1a\n" and struct.unpack(">II", _b[16:24]) == (_w, _h) and _b[25] == 0
           and f'<img src="/{_n}.png" width="{_w}" height="{_h}" alt="' in _im and f"<image:loc>https://civilizationzero.ai/{_n}.png</image:loc>" in _sm,
           f"/{_n}.png: a {_w}x{_h} greyscale PNG, on its page with its size and text alternative, in the sitemap")
-check(_im.count("Civilization Zero names the beginning of a civilization in which humans may no longer be at the centre. civilizationzero.ai") >= 6
+check(_im.count("Civilization Zero names the beginning of a civilization in which humans may no longer be at the centre. civilizationzero.ai") >= 18
       and '<meta property="og:image" content="https://civilizationzero.ai/civilization-zero-one-human-among-many.png">' in _im,
       "/civilization-zero-images: every text alternative carries the sentence; its link preview is one of its images")
 check("civilization-zero-images" in (SITE / "api" / "page.js").read_text("utf-8"), "api/page.js serves the images' page")

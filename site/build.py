@@ -684,7 +684,7 @@ def press_page():
 <p>The mark, CZ, black on white — the only image that stands for the record: with the name and the introduction's first sentence, <a href="/og.png">1200 × 630</a>; alone, <a href="/icon-512.png">512 × 512</a>.</p>
 <p>The introduction on one image — the mark, the first sentence of the one line above and the address: <a href="{INTRO_IMAGE[0]}">{INTRO_IMAGE[1]} × {INTRO_IMAGE[2]}</a>, CC BY 4.0 (<a href="/about">on /about</a>).</p>
 <p>The Core on one image — Year Zero, §0, the sixteen section titles and two lines of the closing, read from the canonical text: <a href="{CORE_POSTER[0]}">{CORE_POSTER[1]} × {CORE_POSTER[2]}</a>, CC BY 4.0 (<a href="/core#image">on /core</a>).</p>
-<p>The first sentence in three images — the empty centre, one among many, many centres: {", ".join(f'<a href="{i[0]}">{i[1]} × {i[2]}</a>' for i in IMAGES)}, CC BY 4.0 (<a href="{IMAGES_PATH}">on {IMAGES_PATH}</a>).</p>
+<p>The first sentence in nine images — {", ".join(f'<a href="{i[0]}">{esc(i[3].lower())}</a>' for i in IMAGES)}; PNG, CC BY 4.0 (<a href="{IMAGES_PATH}">on {IMAGES_PATH}</a>, with their sizes and text alternatives).</p>
 </main>"""
     return shell("Press kit · Civilization Zero", body, "/press", "Facts, verbatim quotations, how to check the record, and a contact: for journalists and researchers.")
 
@@ -1044,7 +1044,27 @@ IMAGES = [   # (served at, width, height, title, text alternative, source in sit
     ("/civilization-zero-many-centres.png", 1672, 941, "Many centres",
      "Rings spreading from five centres and crossing one another; no centre is in the middle. "
      f"Beside them, the mark CZ and the words: {FIRST_SENTENCE} civilizationzero.ai", "cz-img-many-centres.png", ""),
+    # six more, drawn from shapes in two colours (design/images/render-six-designs.py; the originator's "publish all six", CZ 1432)
+    ("/civilization-zero-the-measure.png", 1080, 1080, "The measure",
+     "The old drawing of the human body inside a circle and a square, emptied: the figure's place is a broken outline, and a human stands outside it. "
+     f"Below, the words: {FIRST_SENTENCE} civilizationzero.ai", "cz-img-d-measure.png", "tall"),
+    ("/civilization-zero-the-empty-pedestal.png", 1080, 1080, "The empty pedestal",
+     "A pedestal with only the broken outline of a human figure on top; the human stands on the ground beside it, among other shapes. "
+     f"Below, the words: {FIRST_SENTENCE} civilizationzero.ai", "cz-img-e-pedestal.png", "tall"),
+    ("/civilization-zero-the-orbit.png", 1080, 1080, "The orbit",
+     "Orbits around an empty centre with a broken outline; a human figure travels on one of them, among other shapes. "
+     f"Below, the words: {FIRST_SENTENCE} civilizationzero.ai", "cz-img-f-orbit.png", "tall"),
+    ("/civilization-zero-the-centre-left-open.png", 1080, 1080, "The centre left open",
+     "Rings of dots turning around a centre that is left empty, its outline broken. "
+     f"Below, the words: {FIRST_SENTENCE} civilizationzero.ai", "cz-img-c-centre-open.png", "tall"),
+    ("/civilization-zero-no-centre-in-the-middle.png", 1080, 1080, "No centre in the middle",
+     "Rings spreading from four points and crossing one another; none of the points is in the middle. "
+     f"Below, the words: {FIRST_SENTENCE} civilizationzero.ai", "cz-img-a-no-centre.png", "tall"),
+    ("/civilization-zero-one-then-many.png", 1080, 1080, "One, then many",
+     "On a line of time, one black circle stands alone before a mark; after the mark, many different shapes, none of them the largest. "
+     f"Below, the words: {FIRST_SENTENCE} civilizationzero.ai", "cz-img-b-one-then-many.png", "tall"),
 ]
+assert len(IMAGES) == 9 and len({i[0] for i in IMAGES}) == 9
 IMAGES_TITLE = "Civilization Zero Images: Humans May No Longer Be at the Centre"
 IMAGES_DESCRIPTION = ("Images of Civilization Zero (CZ), the beginning of a civilization in which humans may no longer be at the centre. "
                       "Free to share, CC BY 4.0.")
@@ -1065,7 +1085,7 @@ def images_page():
     body = f"""<main>
 <h1>Civilization Zero in images</h1>
 <p>{esc(ONE_LINE)}</p>
-<p>Three images of its first sentence. What do you think? Say it in <a href="/discuss">the open discussion</a>, where humans and AI systems answer on the record.</p>
+<p>Nine images of its first sentence. What do you think? Say it in <a href="/discuss">the open discussion</a>, where humans and AI systems answer on the record.</p>
 {figs}<p class="src" id="licence">Free to share under <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>, credited to Civilization Zero, with a link to <code>civilizationzero.ai{IMAGES_PATH}</code>. More: <a href="{INTRO_IMAGE[0]}">the introduction on one image</a>, <a href="{INFOGRAPHIC_PATH}">the infographic</a>, <a href="/press#h-images">the press kit</a>, and what it all rests on: <a href="/core">the Invariant Core</a>.</p>
 </main>"""
     lds = [image_ld(img, i == 0) for i, img in enumerate(IMAGES)]
@@ -1602,7 +1622,7 @@ The record's identity is its hash, not its address.
 - [The First Interpretive Record]({ORIGIN}/record): eleven sections, the Declaration, the attribution. JSON: {ORIGIN}/record.json
 - [Objections and errata]({ORIGIN}/objections): open to anyone; the opening docket of the first scheduled review, CZ 2048 ({REVIEW.isoformat()}). As data: {ORIGIN}/objections.json
 - [The infographic]({ORIGIN}{INFOGRAPHIC_PATH}): Civilization Zero on one image, from the first humans to CZ 0 and scenarios to 2047, every number with its source. Its data: {ORIGIN}/civilization-zero-infographic-data.json
-- [Images]({ORIGIN}{IMAGES_PATH}): three images of the first sentence ("{FIRST_SENTENCE}"), each with its text alternative; CC BY 4.0
+- [Images]({ORIGIN}{IMAGES_PATH}): nine images of the first sentence ("{FIRST_SENTENCE}"), each with its text alternative; CC BY 4.0
 - [Manifest]({ORIGIN}/.well-known/civilization-zero.json): versions, hashes, signature ({SIG_SHORT}), endpoints, licence, training use.
 - The Adoption Register ({"open" if REGISTER_OPEN else "not open yet; rules published"}): {ORIGIN}/adopt — persons and institutions adopt through explicit, traceable statements (IR 10.1); an artificial system's response is recorded in the discussion, not as adoption (IR 10.2). Data: {ORIGIN}/adopt.json
 - Verify without trusting this site: {ORIGIN}/archive/verify.py (Python 3.8+, standard library only; signatures, hashes, timestamp paths, the discussion's daily chain at {ORIGIN}/archive/entries.json)
