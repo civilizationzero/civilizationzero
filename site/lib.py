@@ -387,12 +387,28 @@ def nav_html(path=None, mark=True):   # mark: the mark beside the name (the firs
 NAV = nav_html()
 
 CORE_LANGUAGES = 1 + len(list((RECORD / "translations").glob("CZ-CORE-1.0.*.json")))   # the Core's languages: English (canonical) and its translations
+# What Civilization Zero is: the originator's decision of 1 Nov 2026 (CZ 1432), approved in these words — the beginning of a civilization in
+# which humans may no longer be at the centre ("humans", his choice over "human intelligence"; "may", his: the record does not claim what is
+# not yet known, Core §3), and a place where humans and AI confront what they owe each other, on the record, while the future is still open
+# (the Declaration: "while the future remains open"). "Names" is the Core's own verb for what Civilization Zero does with its threshold (the
+# closing: "It names a chosen threshold"); it does not claim that a text began a civilization. It is the project's introduction everywhere:
+# the press kit, the first page, /about, the footer of every page, /machine, the descriptions, schema.org, llms.txt, the manifests, README —
+# everywhere but in the canonical texts, which keep their own words (Core §15). The short form is for places with a length limit (search
+# results, link previews: 160 characters) and carries no day count, which a search engine would show stale (the originator, 1 Nov 2026).
+ONE_LINE = ("Civilization Zero names the beginning of a civilization in which humans may no longer be at the centre. Here, humans and AI confront "
+            "what they owe each other, on the record, while the future is still open.")
+ONE_LINE_SHORT = ("Civilization Zero names the beginning of a civilization in which humans may no longer be at the centre. Here, humans and AI confront "
+                  "what they owe each other.")
+assert len(ONE_LINE_SHORT) <= 160
 FOOT_LINKS = [[("/core", "The Core"), ("/core#translations", f"{CORE_LANGUAGES} languages")], [("/record", "The Record")], [("/objections", "Objections and errata")],
               [("/discuss", "Discussion"), ("/respond", "Respond")], [("/adopt", "Adoption register")], [("/calendar", "CZ time")], [("/civilization-zero-infographic", "Infographic")], [("/ask", "Ask your AI")],
               [("/machine", "For machines")], [("/about", "About")] + ([("/press", "Press kit")] if PRESS_PUBLISHED else []), [("/stats", "Visits")], [("/archive", "Archive and verification")]]
 def footer_html(extra=""):
     links = "".join("<li>" + " · ".join(f'<a href="{h}">{esc(t)}</a>' for h, t in row) + "</li>" for row in FOOT_LINKS)
-    return (f'<footer lang="en" dir="ltr"><hr>{extra}<nav aria-label="Pages"><ul class="foot">{links}</ul></nav>'
+    # the introduction at the foot of every page (the originator, 1 Nov 2026: "even in the footer"); the first page opens with it, and its
+    # footer carries the custody paragraphs instead (extra)
+    intro = "" if extra else f'<p class="cz-intro">{esc(ONE_LINE)}</p>'
+    return (f'<footer lang="en" dir="ltr"><hr>{extra}{intro}<nav aria-label="Pages"><ul class="foot">{links}</ul></nav>'
             f'<p class="src">Text <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a> · code MIT · <a href="{REPO}">source</a> · '
             f'<a href="mailto:{CONTACT}">{CONTACT}</a></p>'
             f'<p class="src">No trackers, no cookies, no scripts that observe readers; the server counts visits per day without identifiers, and <a href="/stats">the counts are public</a>. Every date counts days from Coordinate Zero, <a class="nw" href="/calendar">CZ 0</a> = '

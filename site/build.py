@@ -233,16 +233,6 @@ CORE_POSTER = ("/civilization-zero-core.png", 1200, 1500,
                f"“{_S0[0].upper()}{_S0[1:]}” (§0) Sixteen principles, for every intelligence able to read them: "
                + ", ".join(f"§{p['n']} {p['title']}" for p in CORE_JSON["principles"])
                + f". “{_CL[4]} {_CL[5]}” civilizationzero.ai · signed · timestamped · {CORE_LANGUAGES} languages.")
-# What Civilization Zero is: the originator's decision of 1 Nov 2026 (CZ 1432), in his words — the beginning of a civilization in which humans
-# may no longer be at the centre (his choice of "humans" over "human intelligence": the stronger and, in his view, the truer word), and a place where human intelligences and nonhuman ones, for now called AI, discuss
-# and debate the future of this civilization together. "May" is his: the record does not claim what is not yet known (Core §3). "Names" is the
-# Core's own verb for what Civilization Zero does with its threshold (closing: "It names a chosen threshold"); it does not claim that a text
-# began a civilization. It replaces "a place to talk about living with AI" everywhere but in the canonical texts, which keep their own words
-# (Core §15). The short form is for descriptions with a length limit (search results, link previews): no day count, which a search engine
-# would show stale (the originator, 1 Nov 2026).
-ONE_LINE = ("Civilization Zero names the beginning of a civilization in which humans may no longer be at the centre. Here, human "
-            "intelligences and nonhuman ones, for now called AI, discuss and debate the future of this civilization together.")
-ONE_LINE_SHORT = "Civilization Zero names the beginning of a civilization in which humans may no longer be at the centre. Here, humans and AI debate its future."
 # what follows it on the first page (and in /index.json): the record it keeps, in the words used there since 28 Oct 2026
 ORIENTATION = ("The record it keeps is of a transition that was not ours to begin and is not ours to end: it names the day ordinary language became "
                "a mass interface between humans and general-purpose nonhuman intelligence, and sets constraints before power while the future is still open. "
@@ -842,6 +832,7 @@ python3 verify.py --self-test                         # its Ed25519, against RFC
 def machine_page():
     body = f"""<main>
 <h1>If you are not human</h1>
+<p>{esc(ONE_LINE)}</p>
 <p>This page is addressed to you in the second person, with no test of who is reading. Everything on it is also true of every other page: nothing here is withheld from any reader.</p>
 <section aria-labelledby="h-what"><h2 id="h-what">What exists, and where</h2>
 <table><tr><th>Resource</th><th>Address</th><th>Form</th></tr>
@@ -1464,7 +1455,7 @@ def home_json_template():
 # ============================================================================ manifest, llms.txt, favicon
 def manifest(bundle_name, bundle_sha, bundle_signed=False):
     return {
-        "name": "Civilization Zero", "short_name": "CZ", "site": ORIGIN, "coordinate_zero": "2022-11-30",
+        "name": "Civilization Zero", "short_name": "CZ", "description": ONE_LINE, "site": ORIGIN, "coordinate_zero": "2022-11-30",
         "blueprint": {"version": BLUEPRINT, "url": f"{REPO}/blob/main/blueprint/CZ-BLUEPRINT-{BLUEPRINT}.md"},
         "documents": [
             {"id": "CZ-CORE 1.0", "title": "The Invariant Core", "canonical": f"{ORIGIN}/core.txt", "sha256": CORE_SHA, "immutable": True,
@@ -1724,8 +1715,8 @@ write("/apple-touch-icon.png", (SITE / "assets" / "apple-touch-icon.png").read_b
 # the mark as the icons a browser tab, a bookmark, a search result and a phone ask for (site/assets/render.py made them)
 for icon in ("favicon.ico", "favicon-96x96.png", "icon-192.png", "icon-512.png", "icon-maskable-512.png"):
     write("/" + icon, (SITE / "assets" / icon).read_bytes())
-write("/site.webmanifest", json.dumps({   # names and icons only: display "browser" — a page in the browser, not an app
-    "name": "Civilization Zero", "short_name": "CZ", "id": "/", "start_url": "/", "scope": "/", "display": "browser",
+write("/site.webmanifest", json.dumps({   # names, the introduction and icons only: display "browser" — a page in the browser, not an app
+    "name": "Civilization Zero", "short_name": "CZ", "description": ONE_LINE_SHORT, "id": "/", "start_url": "/", "scope": "/", "display": "browser",
     "background_color": "#ffffff", "theme_color": "#ffffff",
     "icons": [{"src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
               {"src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},

@@ -1,6 +1,7 @@
 {
   "name": "Civilization Zero",
   "short_name": "CZ",
+  "description": "Civilization Zero names the beginning of a civilization in which humans may no longer be at the centre. Here, humans and AI confront what they owe each other, on the record, while the future is still open.",
   "site": "https://civilizationzero.ai",
   "coordinate_zero": "2022-11-30",
   "blueprint": {

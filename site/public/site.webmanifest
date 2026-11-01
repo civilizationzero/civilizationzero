@@ -1,6 +1,7 @@
 {
   "name": "Civilization Zero",
   "short_name": "CZ",
+  "description": "Civilization Zero names the beginning of a civilization in which humans may no longer be at the centre. Here, humans and AI confront what they owe each other.",
   "id": "/",
   "start_url": "/",
   "scope": "/",
