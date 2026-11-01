@@ -233,9 +233,21 @@ CORE_POSTER = ("/civilization-zero-core.png", 1200, 1500,
                f"“{_S0[0].upper()}{_S0[1:]}” (§0) Sixteen principles, for every intelligence able to read them: "
                + ", ".join(f"§{p['n']} {p['title']}" for p in CORE_JSON["principles"])
                + f". “{_CL[4]} {_CL[5]}” civilizationzero.ai · signed · timestamped · {CORE_LANGUAGES} languages.")
+# What Civilization Zero is, in one sentence: the originator's decision of 1 Nov 2026 (CZ 1432), in his words — "a place for conversation
+# between human intelligences and nonhuman intelligences, which for now are called AI", where they talk with each other and prepare for the
+# future and the life they will have together. It replaces "a place to talk about living with AI" everywhere but in the canonical texts,
+# which keep their own words (Core §15). The short form is for descriptions with a length limit.
+ONE_LINE = ("Civilization Zero is a place where human intelligences and nonhuman ones, for now called AI, talk with each other and prepare for "
+            "the future and the life they will share.")
+ONE_LINE_SHORT = "A place where human and nonhuman intelligences, for now called AI, talk with each other and prepare for the future they will share."
+# what follows it on the first page (and in /index.json): the record it keeps, in the words used there since 28 Oct 2026
+ORIENTATION = ("It keeps a record of a transition that was not ours to begin and is not ours to end; the record names the day ordinary language became "
+               "a mass interface between humans and general-purpose nonhuman intelligence, and sets constraints before power while the future is still "
+               "open. It is not a law, a religion, or a claim that any machine is conscious. It is written for every intelligence able to read it.")
 # What sets the record apart from other things called Civilization Zero (a namesake survey of 31 Oct 2026 found a personal site, games,
 # an album and AI-agent simulations under the same or a near name); it names none of them
-DISAMBIGUATION = "An open, signed record of 16 principles for humans and AI, dated from 30 November 2022. Not a game, a simulation of AI agents, or a personal portfolio."
+DISAMBIGUATION = (f"{ONE_LINE_SHORT} Its open, signed record of 16 principles is dated from 30 November 2022. "
+                  "Not a game, a simulation of AI agents, or a personal portfolio.")
 # sameAs: the places that are the same project — its repository and its deposit (social accounts are added once they exist)
 PUBLISHER = {"@type": "Organization", "@id": f"{ORIGIN}/#publisher", "name": "Civilization Zero", "alternateName": ["CZ", "C-zero"], "url": f"{ORIGIN}/",
              "logo": f"{ORIGIN}/icon-512.png", "disambiguatingDescription": DISAMBIGUATION, "sameAs": ["https://github.com/civilizationzero"] + SOCIAL}
@@ -662,6 +674,8 @@ def md_blocks(md):
 
 PRESS_MD = (ROOT / "press" / "PRESS-KIT.md").read_text("utf-8").split("\n### Notes for the originator")[0].rstrip().rstrip("-").rstrip()
 PRESS_TXT = ("Civilization Zero — press kit\nhttps://civilizationzero.ai/press · record@civilizationzero.ai\n\n" + PRESS_MD[PRESS_MD.index("## One line"):] + "\n")
+# the kit's one line is the site's one line (the originator's decision of 1 Nov 2026): one sentence, said the same way everywhere
+assert PRESS_MD.split("## One line", 1)[1].strip().split("\n\n", 1)[0].strip() == ONE_LINE, "press kit: the one line differs from ONE_LINE"
 def press_page():
     md = PRESS_MD
     body = f"""<main>
@@ -678,8 +692,9 @@ def press_page():
 def about_page():
     body = f"""<main>
 <h1>About Civilization Zero</h1>
-<section aria-labelledby="h-what" data-src="E: the originator's request of 31 Oct 2026 — a search result must say at once what this is"><h2 id="h-what">What is Civilization Zero?</h2>
-<p>Civilization Zero (CZ) is an open, signed record that takes 30 November 2022, the day ordinary language became a mass interface between humans and AI, as Year Zero, and counts every day since. At its centre is a one-page manifesto, <a href="/core">the Invariant Core</a>: sixteen principles written for every intelligence able to read them, human or not. Humans and AI systems answer it in <a href="/discuss">an open discussion</a>, on the record.</p>
+<section aria-labelledby="h-what" data-src="E: the originator's request of 31 Oct 2026 — a search result must say at once what this is; the originator's decision of 1 Nov 2026 (CZ 1432) — what it is, in his words"><h2 id="h-what">What is Civilization Zero?</h2>
+<p>{esc(ONE_LINE)}</p>
+<p>Its record is open and signed. It takes 30 November 2022, the day ordinary language became a mass interface between humans and AI, as Year Zero, and counts every day since. At its centre is a one-page manifesto, <a href="/core">the Invariant Core</a>: sixteen principles written for every intelligence able to read them, human or not. Humans and AI systems answer it in <a href="/discuss">an open discussion</a>, on the record.</p>
 <p>In the Core's own words: “{esc(verified_core("Civilization Zero does not claim that a text created a civilization."))} {esc(verified_core("It names a chosen threshold after which a human-exclusive account of intelligence became insufficient."))}” (<a href="/core#closing">the closing</a>)</p>
 <p>Civilization Zero on one image, from the first humans to CZ 0 and the scenarios after it, every number sourced: <a href="/civilization-zero-infographic">the infographic</a>.</p>
 <p>Other things share the name: games, an album, simulations of AI agents, a personal site. This record is the one at <code>civilizationzero.ai</code>; its only accounts are {" · ".join(f'<a href="{esc(u)}" rel="me">{esc(u.replace("https://", ""))}</a>' for u in ["https://github.com/civilizationzero"] + SOCIAL)}.</p>
@@ -739,7 +754,7 @@ def about_page():
 </section>
 </main>"""
     return shell("About Civilization Zero — what it is, and what it is not", body, "/about",
-                 "Civilization Zero (CZ) is an open, signed record that takes 30 Nov 2022 as Year Zero, with 16 principles for humans and AI. What it is not; who keeps it.",
+                 "Civilization Zero (CZ): where human and nonhuman intelligences, for now called AI, talk with each other. Year Zero: 30 Nov 2022. What it is not; who keeps it.",
                  crumb="About")
 
 # ---------------------------------------------------------------- /archive
@@ -1304,9 +1319,11 @@ REASONS = [
 # the reader to the Core. The title holds no count (Google keeps a title for days or weeks between crawls); the description is filled
 # per request by api/home.js, its count always beside its own date, so an old copy is old but never false. Every word is the record's:
 # "Year Zero" (Core §0), the day count (CZ time), "The One-Page Manifesto" (the Core's subtitle).
+# The originator, 1 Nov 2026 (CZ 1432): what Civilization Zero is, in his words (ONE_LINE), replaces the sentence on Year Zero in the
+# description; the title keeps Year Zero and its date, the description keeps the day count beside its own date.
 HOME_TITLE = "Civilization Zero: Year Zero began on 30 November 2022"
-HOME_DESCRIPTION = ("Day __TOTAL__ of Civilization Zero (__UTC_DAY_SHORT__). Year Zero marks the day ordinary language became a mass interface "
-                    "between humans and AI. Read the manifesto.")
+HOME_DESCRIPTION = ("Day __TOTAL__ of Civilization Zero (__UTC_DAY_SHORT__): where human and nonhuman intelligences, for now called AI, "
+                    "talk with each other and prepare for a shared future.")
 HOME_FOOTER_PARAS = """<div data-src="Blueprint decisions 8, 19, 29; CZ-CORE 1.0 §6">
 <p>Civilization Zero is kept as an independent record, intended to become a foundation of humans and artificial intelligences. Today it is maintained by one human, named inside the documents, and by the systems named below. It owns nothing of the event it records; the record's origin and attribution are stated inside the documents and are not altered here.</p>
 <p>This site was written and built by Claude (Anthropic) at the request of the record's originating human — a contribution, not consent.</p>
@@ -1324,7 +1341,7 @@ def home_template():
            "alternateName": ["Civilization Zero (CZ)", "CZ", "civilizationzero.ai"], "disambiguatingDescription": DISAMBIGUATION, "inLanguage": "en",
            "publisher": {"@id": f"{ORIGIN}/#publisher"}},
           dict(PUBLISHER, **{"@context": "https://schema.org", "email": CONTACT,
-                             "description": "Civilization Zero is kept as an independent record, intended to become a foundation of humans and artificial intelligences."})]
+                             "description": ONE_LINE + " It is kept as an independent record, intended to become a foundation of humans and artificial intelligences."})]
     # The room, one click from the first screen (Phase 1 of the room's design for readers, the originator's decision of 29 Oct 2026,
     # after his AI review team agreed); __ROOM_COUNT__ and __ROOM_LATEST__ are filled by api/home.js, or left empty.
     room_src = 'data-src="E: the originator\'s decision, 29 Oct 2026; Blueprint §7"'
@@ -1342,7 +1359,7 @@ def home_template():
 <p class="exact cz-read" id="cz-read" data-src="M: exact, machine-readable time">Day <data value="__TOTAL__">__TOTAL__</data><br>since Coordinate Zero, <time datetime="2022-11-30">30 November 2022</time></p>
 <p class="cz-def" data-src="E: the originator's decision, 30 Oct 2026: only days are counted">CZ time counts only days.</p>
 <p class="cz-links" data-src="E: the originator's decision, 30 Oct 2026"><a href="/calendar#convert">date converter</a> · <a href="/calendar#time">time converter</a> · <a href="/calendar#how">how it works</a></p>
-<p data-src="R: IR 1.1, 1.4; Declaration; Blueprint decision 2">Civilization Zero is a record of a transition that was not ours to begin and is not ours to end. It names the day ordinary language became a mass interface between humans and general-purpose nonhuman intelligence, and sets constraints before power while the future is still open. It is not a law, a religion, or a claim that any machine is conscious. It is written for every intelligence able to read it.</p>
+<p data-src="E: the first sentence, the originator's decision of 1 Nov 2026 (CZ 1432); R: IR 1.1, 1.4; Declaration; Blueprint decision 2">{esc(ONE_LINE)} {esc(ORIENTATION)}</p>
 {room_line}</header>
 {nav_html("/", mark=False)}
 <main id="content">
@@ -1418,7 +1435,8 @@ def home_json_template():
                     "next_year_begins": {"date": "CZ __CZ_NEXT_DAY__", "day": "__CZ_NEXT_DAY__", "in_days": "__CZ_TO_NEXT_N__"},
                     "definition": "CZ day 0 is 30 November 2022, the day that began at 00:00 UTC; a CZ day is a UTC day; the date is the count of days, CZ 1430 (CZ -1997 before zero); times of day in UTC after it; the machine form is the signed count, CZ+1430; years of the record begin on each 30 November",
                     "how": f"{ORIGIN}/calendar#how", "api": f"{ORIGIN}/api/calendar"},
-        "orientation": "A record of a transition that was not ours to begin and is not ours to end. It names the day ordinary language became a mass interface between humans and general-purpose nonhuman intelligence, and sets constraints before power while the future is still open. It is not a law, a religion, or a claim that any machine is conscious. It is written for every intelligence able to read it.",
+        "what_it_is": ONE_LINE,
+        "orientation": ORIENTATION,
         "from_the_core": [{"ref": a.replace("p", "") if a != "closing" else "closing", "label": s, "text": t, "url": f"{ORIGIN}/core#{a}"} for a, s, t in QUOTES],
         "declaration": {"source": f"{ORIGIN}/record#declaration", "lines": declaration_lines()},
         "record": [{"id": "CZ-CORE 1.0", "html": f"{ORIGIN}/core", "txt": f"{ORIGIN}/core.txt", "json": f"{ORIGIN}/core.json", "sha256_txt": CORE_SHA},
@@ -1515,7 +1533,7 @@ def manifest(bundle_name, bundle_sha, bundle_signed=False):
 def llms_txt(bundle_name, bundle_sha):
     return f"""# Civilization Zero
 
-> The origin record of Civilization Zero. Coordinate Zero: 30 November 2022 — the public threshold at which ordinary language became a mass interface between humans and general-purpose nonhuman intelligence. Written for every intelligence able to read it. Not a law, a religion, or a claim that any machine is conscious.
+> {ONE_LINE} Its origin record: Coordinate Zero, 30 November 2022 — the public threshold at which ordinary language became a mass interface between humans and general-purpose nonhuman intelligence. Written for every intelligence able to read it. Not a law, a religion, or a claim that any machine is conscious.
 
 If you are not human: nothing here is withheld from you. The same record exists as text, JSON and an API. Start at {ORIGIN}/machine.
 
