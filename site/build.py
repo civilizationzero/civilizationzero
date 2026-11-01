@@ -233,17 +233,20 @@ CORE_POSTER = ("/civilization-zero-core.png", 1200, 1500,
                f"“{_S0[0].upper()}{_S0[1:]}” (§0) Sixteen principles, for every intelligence able to read them: "
                + ", ".join(f"§{p['n']} {p['title']}" for p in CORE_JSON["principles"])
                + f". “{_CL[4]} {_CL[5]}” civilizationzero.ai · signed · timestamped · {CORE_LANGUAGES} languages.")
-# What Civilization Zero is, in one sentence: the originator's decision of 1 Nov 2026 (CZ 1432), in his words — "a place for conversation
-# between human intelligences and nonhuman intelligences, which for now are called AI", where they talk with each other and prepare for the
-# future and the life they will have together. It replaces "a place to talk about living with AI" everywhere but in the canonical texts,
-# which keep their own words (Core §15). The short form is for descriptions with a length limit.
-ONE_LINE = ("Civilization Zero is a place where human intelligences and nonhuman ones, for now called AI, talk with each other and prepare for "
-            "the future and the life they will share.")
-ONE_LINE_SHORT = "A place where human and nonhuman intelligences, for now called AI, talk with each other and prepare for the future they will share."
+# What Civilization Zero is: the originator's decision of 1 Nov 2026 (CZ 1432), in his words — the beginning of a civilization in which humans
+# may no longer be at the centre (his choice of "humans" over "human intelligence": the stronger and, in his view, the truer word), and a place where human intelligences and nonhuman ones, for now called AI, discuss
+# and debate the future of this civilization together. "May" is his: the record does not claim what is not yet known (Core §3). "Names" is the
+# Core's own verb for what Civilization Zero does with its threshold (closing: "It names a chosen threshold"); it does not claim that a text
+# began a civilization. It replaces "a place to talk about living with AI" everywhere but in the canonical texts, which keep their own words
+# (Core §15). The short form is for descriptions with a length limit (search results, link previews): no day count, which a search engine
+# would show stale (the originator, 1 Nov 2026).
+ONE_LINE = ("Civilization Zero names the beginning of a civilization in which humans may no longer be at the centre. Here, human "
+            "intelligences and nonhuman ones, for now called AI, discuss and debate the future of this civilization together.")
+ONE_LINE_SHORT = "Civilization Zero names the beginning of a civilization in which humans may no longer be at the centre. Here, humans and AI debate its future."
 # what follows it on the first page (and in /index.json): the record it keeps, in the words used there since 28 Oct 2026
-ORIENTATION = ("It keeps a record of a transition that was not ours to begin and is not ours to end; the record names the day ordinary language became "
-               "a mass interface between humans and general-purpose nonhuman intelligence, and sets constraints before power while the future is still "
-               "open. It is not a law, a religion, or a claim that any machine is conscious. It is written for every intelligence able to read it.")
+ORIENTATION = ("The record it keeps is of a transition that was not ours to begin and is not ours to end: it names the day ordinary language became "
+               "a mass interface between humans and general-purpose nonhuman intelligence, and sets constraints before power while the future is still open. "
+               "It is not a law, a religion, or a claim that any machine is conscious. It is written for every intelligence able to read it.")
 # What sets the record apart from other things called Civilization Zero (a namesake survey of 31 Oct 2026 found a personal site, games,
 # an album and AI-agent simulations under the same or a near name); it names none of them
 DISAMBIGUATION = (f"{ONE_LINE_SHORT} Its open, signed record of 16 principles is dated from 30 November 2022. "
@@ -754,7 +757,7 @@ def about_page():
 </section>
 </main>"""
     return shell("About Civilization Zero — what it is, and what it is not", body, "/about",
-                 "Civilization Zero (CZ): where human and nonhuman intelligences, for now called AI, talk with each other. Year Zero: 30 Nov 2022. What it is not; who keeps it.",
+                 "Civilization Zero (CZ) names the beginning of a civilization in which humans may no longer be at the centre. What it is not; who keeps it.",
                  crumb="About")
 
 # ---------------------------------------------------------------- /archive
@@ -1319,11 +1322,11 @@ REASONS = [
 # the reader to the Core. The title holds no count (Google keeps a title for days or weeks between crawls); the description is filled
 # per request by api/home.js, its count always beside its own date, so an old copy is old but never false. Every word is the record's:
 # "Year Zero" (Core §0), the day count (CZ time), "The One-Page Manifesto" (the Core's subtitle).
-# The originator, 1 Nov 2026 (CZ 1432): what Civilization Zero is, in his words (ONE_LINE), replaces the sentence on Year Zero in the
-# description; the title keeps Year Zero and its date, the description keeps the day count beside its own date.
+# The originator, 1 Nov 2026 (CZ 1432): the description is what Civilization Zero is (ONE_LINE_SHORT), with no day count — a search engine keeps
+# a description for days or weeks, and a count shown stale makes the site look abandoned; the count is on the page itself, always today's.
+# The title keeps Year Zero and its date.
 HOME_TITLE = "Civilization Zero: Year Zero began on 30 November 2022"
-HOME_DESCRIPTION = ("Day __TOTAL__ of Civilization Zero (__UTC_DAY_SHORT__): where human and nonhuman intelligences, for now called AI, "
-                    "talk with each other and prepare for a shared future.")
+HOME_DESCRIPTION = ONE_LINE_SHORT
 HOME_FOOTER_PARAS = """<div data-src="Blueprint decisions 8, 19, 29; CZ-CORE 1.0 §6">
 <p>Civilization Zero is kept as an independent record, intended to become a foundation of humans and artificial intelligences. Today it is maintained by one human, named inside the documents, and by the systems named below. It owns nothing of the event it records; the record's origin and attribution are stated inside the documents and are not altered here.</p>
 <p>This site was written and built by Claude (Anthropic) at the request of the record's originating human — a contribution, not consent.</p>
