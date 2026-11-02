@@ -155,10 +155,11 @@ function deployBlock(v, sha) {
     : `<p id="deployed" class="pending">This copy of the page cannot say which deployment serves it.</p>`;
   if (!v) return `${here}\n<p class="pending">The latest daily check could not be read from the repository just now: <a href="${REPO}/tree/main/archive/live-check">the results</a>.</p>`;
   const against = typeof v.commit === "string" && /^[0-9a-f]{7,40}$/.test(v.commit)
-    ? (commit && commit.startsWith(v.commit) ? ", against this deployment" : `, against commit <a href="${REPO}/commit/${esc(v.commit)}"><code>${esc(v.commit.slice(0, 7))}</code></a>${commit ? ", an earlier deployment; this one is checked at the next run" : ""}`) : "";
+    ? (commit && commit.startsWith(v.commit) ? ", against this deployment" : `, against the deployment of commit <a href="${REPO}/commit/${esc(v.commit)}"><code>${esc(v.commit.slice(0, 7))}</code></a>, which served the site then${commit ? "; this page is served by another" : ""}`) : "";
   const failed = Array.isArray(v.failed) && v.failed.length ? ` Failed: ${v.failed.slice(0, 12).map((f) => esc(String(f).slice(0, 160))).join("; ")}.` : "";
-  const run = typeof v.run === "string" && v.run.startsWith(`${REPO}/actions/runs/`) ? `<a href="${esc(v.run)}">The run</a> · ` : "";
-  return `${here}\n<p${v.passed === v.total ? "" : ' class="pending"'}>The latest daily check, ${CZ.whenHtml(v.checked_at)}: ${v.passed} of ${v.total} checks passed${against}.${failed} ${run}<a href="${REPO}/blob/main/archive/live-check/latest.json">the result as data</a>.</p>`;
+  const run = typeof v.run === "string" && v.run.startsWith(`${REPO}/actions/runs/`) ? `<a href="${esc(v.run)}">The run</a> · <a href="${REPO}/blob/main/archive/live-check/latest.json">the result as data</a>`
+    : `<a href="${REPO}/blob/main/archive/live-check/latest.json">The result as data</a>`;
+  return `${here}\n<p${v.passed === v.total ? "" : ' class="pending"'}>The latest daily check, ${CZ.whenHtml(v.checked_at)}: ${v.passed} of ${v.total} checks passed${against}.${failed} ${run}.</p>`;
 }
 const CAL_RE = /<!--cz-cal-->[\s\S]*?<!--\/cz-cal-->/;
 const TIME_RE = /<!--cz-time-->[\s\S]*?<!--\/cz-time-->/;
@@ -187,7 +188,9 @@ module.exports = async (req, res) => {
   // the page as Markdown (/core.md, or Accept: text/markdown; vercel.json): its <main> converted, with a front matter (room/md.js)
   if (url.searchParams.get("f") === "md") {
     const pth = p === "" ? "/" : `/${p}`;
-    return MD.sendMarkdown(res, status, req.method === "HEAD" ? "" : MD.htmlToMarkdown(out, { path: pth }), pth, "https://civilizationzero.ai", { "Cache-Control": `public, max-age=0, s-maxage=${ttl}` });
+    // the Core and the record name the DOI to cite them by in this form too (CZ 1433, item 5): this Link replaces sendMarkdown's, so it repeats the canonical
+    const link = ["core", "record"].includes(p) && status === 200 ? { Link: `<https://civilizationzero.ai${pth}>; rel="canonical", ${CITE_AS}` } : {};
+    return MD.sendMarkdown(res, status, req.method === "HEAD" ? "" : MD.htmlToMarkdown(out, { path: pth }), pth, "https://civilizationzero.ai", { "Cache-Control": `public, max-age=0, s-maxage=${ttl}`, ...link });
   }
   out = fillWeight(out);   // the line at the foot: this page's weight as it is sent (room/weight.js)
   res.statusCode = status;

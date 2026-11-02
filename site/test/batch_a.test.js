@@ -35,6 +35,11 @@ const pub = (f) => fs.readFileSync(`${SITE}/public/${f}`, "utf8");
     ok(r.headers.link === `</${p}.md>; rel="alternate"; type="text/markdown"`, `${p}: Link names its Markdown`);
   }
   ok(!(await call(page, "/api/page?p=nothing")).headers.link, "a 404 has no Link");
+  for (const p of ["core", "record"]) {
+    const m = await call(page, `/api/page?p=${p}&f=md`);
+    ok(m.headers.link === `<https://civilizationzero.ai/${p}>; rel="canonical", <https://doi.org/10.5281/zenodo.23740317>; rel="cite-as"` && /^text\/markdown/.test(m.headers["content-type"]), `${p}.md: canonical and cite-as`);
+  }
+  ok((await call(page, "/api/page?p=about&f=md")).headers.link === '<https://civilizationzero.ai/about>; rel="canonical"', "about.md: canonical only");
   ok(/rel="cite-as"/.test(vLink("/core")) && /rel="cite-as"/.test(vLink("/core.(txt|json)")) && /rel="cite-as"/.test(vLink("/record.(txt|json)")), "vercel.json: cite-as on the texts in every form");
 
   // 4. the colophon: the deployment and the latest check
@@ -48,7 +53,9 @@ const pub = (f) => fs.readFileSync(`${SITE}/public/${f}`, "utf8");
   gh = { ...gh, passed: 39, failed: ["one <b>thing</b>", "another"] };
   // the result read ten minutes ago stays (one read per instance per ten minutes): call the block directly for the other cases
   let b = page.deployBlock(gh, "b".repeat(40));
-  ok(b.includes("39 of 41 checks passed, against commit") && b.includes("an earlier deployment") && b.includes("Failed: one &lt;b&gt;thing&lt;/b&gt;; another.") && b.includes('<p class="pending">The latest'), "colophon: a failure, an earlier deployment, escaped");
+  ok(b.includes("39 of 41 checks passed, against the deployment of commit") && b.includes("which served the site then; this page is served by another.") && !/next run/.test(b) && b.includes("Failed: one &lt;b&gt;thing&lt;/b&gt;; another.") && b.includes('<p class="pending">The latest'), "colophon: a failure, another deployment, no forecast, escaped");
+  b = page.deployBlock({ ...gh, run: null }, "b".repeat(40));
+  ok(/another\. <a href="[^"]+latest\.json">The result as data<\/a>\.<\/p>$/.test(b), "colophon: without a run link, the sentence still begins with a capital");
   b = page.deployBlock(null, undefined);
   ok(b.includes("cannot say which deployment") && b.includes("could not be read from the repository just now") && !b.includes("data-commit"), "colophon: nothing known, said so");
   b = page.deployBlock({ ...gh, run: "https://evil.example/x" }, "b".repeat(40));
@@ -80,16 +87,17 @@ const pub = (f) => fs.readFileSync(`${SITE}/public/${f}`, "utf8");
   const csl = JSON.parse(pub("cite/civilization-zero.csl.json"));
   ok(csl.length === 3 && csl[2].DOI && csl.every((c) => c.author[0].literal === "Civilization Zero"), "5: CSL-JSON");
   ok(/^TY {2}- GEN$/m.test(pub("cite/civilization-zero.ris")) && (pub("cite/civilization-zero.ris").match(/^ER {2}- $/gm) || []).length === 3, "5: RIS");
-  ok((pub("cite/civilization-zero.bib").match(/^@misc\{/gm) || []).length === 3 && !pub("cite/civilization-zero.bib").includes("—"), "5: BibTeX, ASCII dashes");
+  ok((pub("cite/civilization-zero.bib").match(/^@misc\{/gm) || []).length === 3 && !pub("cite/civilization-zero.bib").includes("—") && (pub("cite/civilization-zero.bib").match(/^ {2}title = \{\{Civilization Zero --- [^\n]+\}\},$/gm) || []).length === 3, "5: BibTeX, ASCII dashes, titles kept as written");
 
   // 6. digests: the files' own, and never where the bytes could be compressed or cut
   const crypto = require("crypto");
   for (const f of ["core.txt", "record.txt"]) {
     const d = `sha-256=:${crypto.createHash("sha256").update(fs.readFileSync(`${SITE}/public/${f}`)).digest("base64")}:`;
     const rules = vj.headers.filter((h) => h.source === `/${f}` && h.missing);
-    ok(rules.length === 2 && rules.every((h) => h.headers[0].value === d), `6: ${f} digests`);
+    ok(rules.length === 1 && rules[0].headers.length === 1 && rules[0].headers[0].key === "Repr-Digest" && rules[0].headers[0].value === d, `6: ${f}: Repr-Digest only, the file's`);
+    ok(!JSON.stringify(vj).includes("Content-Digest"), "6: no Content-Digest anywhere (false on HEAD)");
     const re = new RegExp(rules[0].missing[0].value);
-    ok(["gzip, deflate, br", "br", "gzip", "*", "zstd, br"].every((v) => re.test(v)) && !["identity", ""].some((v) => re.test(v)), `6: ${f}: the compression condition`);
+    ok(["gzip, deflate, br", "br", "gzip", "GZIP", "Br", "*", "zstd, br", "deflate"].every((v) => re.test(v)) && !["identity", ""].some((v) => re.test(v)), `6: ${f}: the compression condition, in any case`);
   }
 
   console.log(`pass ${pass} fail ${fail}`); process.exitCode = fail ? 1 : 0;

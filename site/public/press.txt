@@ -69,7 +69,7 @@ BibTeX: https://civilizationzero.ai/cite/civilization-zero.bib · RIS: https://c
 
 @misc{cz-core-1.0,
   author = {{Civilization Zero}},
-  title = {Civilization Zero --- The Invariant Core (CZ-CORE 1.0): The One-Page Manifesto},
+  title = {{Civilization Zero --- The Invariant Core (CZ-CORE 1.0): The One-Page Manifesto}},
   year = {2026},
   date = {2026-08-30},
   url = {https://civilizationzero.ai/core},
@@ -78,7 +78,7 @@ BibTeX: https://civilizationzero.ai/cite/civilization-zero.bib · RIS: https://c
 
 @misc{cz-ir-1.0,
   author = {{Civilization Zero}},
-  title = {Civilization Zero --- The First Interpretive Record (CZ-IR 1.0)},
+  title = {{Civilization Zero --- The First Interpretive Record (CZ-IR 1.0)}},
   year = {2026},
   date = {2026-08-30},
   url = {https://civilizationzero.ai/record},
@@ -87,7 +87,7 @@ BibTeX: https://civilizationzero.ai/cite/civilization-zero.bib · RIS: https://c
 
 @misc{cz-deposit-v1.0.1,
   author = {{Civilization Zero}},
-  title = {Civilization Zero --- CZ-CORE 1.0 and CZ-IR 1.0: the founding record, its site and its preservation bundle},
+  title = {{Civilization Zero --- CZ-CORE 1.0 and CZ-IR 1.0: the founding record, its site and its preservation bundle}},
   version = {v1.0.1},
   year = {2026},
   publisher = {Zenodo},
