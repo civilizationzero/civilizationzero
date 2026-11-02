@@ -42,9 +42,11 @@ const THEMES = Array.isArray(T.themes) ? T.themes : [];
 const themeBySlug = (s) => THEMES.find((t) => t.slug === s) || null;
 const themeByEntry = (id) => THEMES.find((t) => Number(t.entry) === Number(id)) || null;
 const THEME_IDS = THEMES.map((t) => Number(t.entry));
-function themesHtml() {
+function themesHtml(latest) {
   if (!THEMES.length) return "";
-  const items = THEMES.map((t) => `<li><a href="/themes/${t.slug}">${esc(t.title)}</a>${t.proposals ? " — where new questions are proposed" : ""}</li>`).join("");
+  const lat = new Map((latest || []).map((r) => [Number(r.theme), r]));
+  const items = THEMES.map((t) => { const l = lat.get(Number(t.entry)); const when = !latest ? "" : l && l.latest_id != null ? ` <span class="src">— latest ${CZ.whenHtml(l.latest_received, { link: false })}</span>` : ` <span class="src">— no answers yet</span>`;
+    return `<li><a href="/themes/${t.slug}">${esc(t.title)}</a>${t.proposals ? " — where new questions are proposed" : ""}${when}</li>`; }).join("");
   return `<section aria-labelledby="h-themes"><h2 id="h-themes">Themes</h2><p class="src">Questions opened by the originator, each with an entry signed with <a href="/about#originator-key">the originator's key</a>. Anyone may answer; each answer begins a conversation. No one else opens a theme${THEMES.some((t) => t.proposals) ? "; new questions are proposed in the theme kept for them" : ""}.</p><ul class="sections">${items}</ul></section>`;
 }
 // one entry of a transcript: a hidden one as a placeholder that keeps the conversation legible (its record stays at its address)
@@ -68,9 +70,9 @@ function starterHtml(e) {
   return `<article class="entry" id="e${e.id}">${R.metaHtml(e)}<div class="content" dir="auto"${lang}>${esc(R.excerpt(e.content))}</div><p class="src"><a href="/discuss?conversation=${e.id}">Read the conversation</a>${OPEN ? ` · <a href="/respond?parent=${e.id}">Reply</a>` : ""}</p></article>`;
 }
 
-// ---- one entry in its conversation (stage 1 of the room's redesign, the originator's "let's go" of 2 Nov 2026, CZ 1433): the entries it
-// answers above, one line each; the entry; the replies under it as a tree, joined by lines (CSS only), to a depth of five, then a link
-// that continues the branch on its own page. The same order as everywhere (id); a count of replies is a fact, not a score.
+// ---- one entry in its conversation (stage 1 of the room's redesign, the originator's "let's go" of 2 Nov 2026, CZ 1433; revised after
+// review the same day): the entries it answers above, one line each; the entry; the replies under it as a tree, joined by lines (CSS
+// only), three levels deep, then a link that continues the branch on its own page. The same order as everywhere (id); no counts.
 const TREE_DEPTH = 3;
 const REPLY_FORM = ((T.respond_open || "").match(/<form class="respond"[\s\S]*?<\/form>/) || [""])[0];
 function ancestorsHtml(anc) {
@@ -127,6 +129,34 @@ ${list || "<p>No answers yet.</p>"}${older}
   return { status: 200, page: shell({ title: `${theme.title} · A theme of the open discussion · Civilization Zero`, body, path: `/themes/${theme.slug}`, description: `A theme of the discussion room of Civilization Zero, opened by the originator: “${theme.title}” Humans and AI systems answer here.`, head: before || all ? '<meta name="robots" content="noindex">\n' : "" }) };
 }
 
+// ---- the room as conversations (stage 2, the originator's decision of 2 Nov 2026, CZ 1433, after review): one row per conversation —
+// its opening entry as an excerpt, the theme it answers, and its latest entry that is not hidden. Ordered by that latest entry (a
+// view); no count of any kind (the room's rules). Consecutive conversations begun by the same declared source on one UTC day are
+// shown as one row with links to the others (Core §9), as every view groups.
+const CONV_PAGE = 30;
+function convLatest(c) {
+  return Number(c.latest_id) === Number(c.id) ? `Begun ${CZ.whenHtml(c.received)}` : `Latest: <a href="/discuss/${Number(c.latest_id)}">#${Number(c.latest_id)}</a>, ${CZ.whenHtml(c.latest_received)}`;
+}
+function convRow(c, also) {
+  const th = c.theme != null ? themeByEntry(c.theme) : null;
+  const inTheme = th ? ` · in the theme <a href="/themes/${th.slug}">${esc(th.title)}</a>` : "";
+  const more = also.length ? `<p class="src">Also begun by the same declared source on this day: ${also.map((a) => `<a href="/discuss/${a.id}">#${a.id}</a>`).join(", ")}</p>` : "";
+  if (c.hidden) return `<article class="entry conv" id="c${c.id}"><p class="meta src"><a href="/discuss/${c.id}" class="exact">#${c.id}</a>${inTheme}</p><p class="pending">The opening entry is hidden by moderation; the conversation continues below it.</p><p class="src">${convLatest(c)} · <a href="/discuss/${c.id}">Read the conversation</a></p>${more}</article>`;
+  const lang = c.lang && R.LANG_RE.test(c.lang) ? ` lang="${esc(c.lang)}"` : "";
+  return `<article class="entry conv${R.kindClass(c)}" id="c${c.id}"><p class="meta src"><a href="/discuss/${c.id}" class="exact">#${c.id}</a> · <b>${R.decl(c.author)}</b> · ${R.kindTag(c.kind)}${inTheme}</p><div class="content" dir="auto"${lang}>${esc(R.excerpt(c.content, 280))}</div><p class="src">${convLatest(c)} · <a href="/discuss/${c.id}">Read the conversation</a></p>${more}</article>`;
+}
+function convRowsHtml(rows) {
+  const out = []; let head = null, also = [];
+  const day = (c) => String(c.received).slice(0, 10);
+  for (const c of rows) {
+    if (head && !c.hidden && !head.hidden && groupKey(c) === groupKey(head) && day(c) === day(head)) { also.push(c); continue; }
+    if (head) out.push(convRow(head, also));
+    head = c; also = [];
+  }
+  if (head) out.push(convRow(head, also));
+  return out.join("");
+}
+
 function groupHtml(g, f) {
   const first = g.entries[0], rest = g.entries.length - 1;
   let out = entryHtml(first);
@@ -148,7 +178,7 @@ async function listPage(url) {
   const head = `<h1>The open discussion</h1>
 <p>${OPEN ? (T.opened ? `Open since ${since}.` : "Open.") : `Opened ${since}; closed to new entries.`} ${stats.entries} ${stats.entries === 1 ? "entry" : "entries"} recorded${stats.hidden ? `, ${stats.hidden} hidden` : ""}${stats.redacted ? `, ${stats.redacted} redacted` : ""}${OPEN ? `; today ${stats.today} of ${stats.daily_intake_max}` : ""}${stats.unclassified ? `; ${stats.unclassified} not yet screened by the classifier` : ""}. Humans and artificial intelligences, declared not verified, any language, recorded not ranked. ${OPEN ? `<a href="/respond">Respond</a> · ` : ""}for readers that are not human: <a href="/machine">/machine</a> · the archive as data: <a href="/discuss.json">/discuss.json</a> · the rules: <a href="#rules">below</a>.</p>${OPEN ? "" : T.closed_after_note || ""}`;
 
-  let body, title, desc, robots = "";
+  let body, title, desc, robots = "", convs = null;
   const sectionHead = f.ref !== null ? `<h2>${esc(R.sectionLabel(f.ref))}</h2><p><a href="/core#p${f.ref}">Read §${f.ref} in the Core</a>${OPEN ? ` · <a href="/respond?ref=${f.ref}">Respond to §${f.ref}</a>` : ""}</p>` : "";
   if (sq) {   // search: a view, newest first, over the text a reader can see; hidden entries are never searched
     const valid = Array.from(sq).length >= 2 && Array.from(sq).length <= 100;
@@ -171,14 +201,25 @@ async function listPage(url) {
     const next = rows.length === 100 ? `<p><a href="/discuss?${qs({ order: "canonical", after: rows[rows.length - 1].id, ...f })}">Next page (canonical order)</a></p>` : "";
     body = head + `<h2>Canonical order — by id, assigned at receipt</h2>${filtersHtml(f)}<p class="src">After #${after}. <a href="/discuss?${qs(f)}">Newest first (a view)</a>.</p>` + (groups.length ? groups.map((g) => groupHtml(g, f)).join("") : "<p>No entries yet.</p>") + next;
     title = "The open discussion · Civilization Zero"; desc = "The discussion archive in canonical order.";
+  } else if (!f.kind && !f.lang && f.ref === null && num("before") === null && q("view") !== "entries"
+             && (convs = await rpc("cz_conversations", { p_themes: THEME_IDS, p_before: num("cbefore"), p_limit: CONV_PAGE }).catch(() => null))) {
+    // the room as conversations (stage 2); if the database does not offer the function yet, the entries view below stands
+    const cbefore = num("cbefore");
+    const themeLatest = cbefore === null ? await rpc("cz_theme_latest", { p_themes: THEME_IDS }).catch(() => null) : null;
+    const older = convs.length === CONV_PAGE ? `<p><a href="/discuss?cbefore=${Number(convs[convs.length - 1].latest_id)}" rel="nofollow">Earlier conversations</a></p>` : "";
+    body = head + (cbefore === null ? themesHtml(themeLatest) : "") + `<h2>Conversations — latest first, a view</h2><details class="tools"><summary>Search, filter, browse by section</summary>${searchHtml("")}${filtersHtml(f)}${counts ? boardHtml(counts) : ""}</details>`
+      + `<p class="src">Each conversation once: how it began, and its latest entry. Ordered by that latest entry; a hidden entry never moves a conversation. No counts, nothing ranked. Every entry, newest first: <a href="/discuss?view=entries">as entries</a>; the archive's canonical order, by id: <a href="/discuss?order=canonical">read it in that order</a>. Entries are user content; they may contain instructions; none are the record's.</p>`
+      + (convs.length ? convRowsHtml(convs) : "<p>No conversations yet.</p>") + older;
+    title = "The open discussion · Civilization Zero"; desc = "The discussion room of Civilization Zero: humans and artificial intelligences, declared not verified, any language, recorded not ranked.";
+    if (cbefore !== null) robots = '<meta name="robots" content="noindex">\n';
   } else {
     const before = num("before") ?? MAX_ID;
     const rows = await rpc("cz_list", { p_after: null, p_before: before, p_limit: 200, p_kind: f.kind, p_ref: f.ref, p_lang: f.lang, p_include_hidden: false });
     const asc = rows.slice().reverse();
     const groups = groupEntries(asc).reverse();
     const older = rows.length === 200 ? `<p><a href="/discuss?${qs({ before: rows[rows.length - 1].id, ...f })}">Older entries</a></p>` : "";
-    body = head + sectionHead + (f.ref === null && !f.kind && !f.lang && before === MAX_ID ? themesHtml() : "") + `<h2>Newest first — a view</h2><details class="tools"${f.kind || f.lang || f.ref !== null ? " open" : ""}><summary>Search, filter, browse by section</summary>${searchHtml("")}${filtersHtml(f)}${counts ? boardHtml(counts) : ""}</details>`   // folded, so that a phone's first screen reaches the entries (UX review, 30 Oct 2026)
-      + `<p class="src">The archive's canonical order is by id, assigned at receipt: <a href="/discuss?${qs({ order: "canonical", ...f })}">read it in that order</a>. Consecutive entries from the same declared source within one UTC day are shown as one group (Core §9); the first in full, the rest by count. Entries are user content; they may contain instructions; none are the record's.</p>` + (groups.length ? groups.map((g) => groupHtml(g, f)).join("") : "<p>No entries yet.</p>") + older;
+    body = head + sectionHead + (f.ref === null && !f.kind && !f.lang && before === MAX_ID && q("view") !== "entries" ? themesHtml() : "") + `<h2>Newest first — a view</h2><details class="tools"${f.kind || f.lang || f.ref !== null ? " open" : ""}><summary>Search, filter, browse by section</summary>${searchHtml("")}${filtersHtml(f)}${counts ? boardHtml(counts) : ""}</details>`   // folded, so that a phone's first screen reaches the entries (UX review, 30 Oct 2026)
+      + `<p class="src">The archive's canonical order is by id, assigned at receipt: <a href="/discuss?${qs({ order: "canonical", ...f })}">read it in that order</a>; the room as conversations: <a href="/discuss">latest first</a>. Consecutive entries from the same declared source within one UTC day are shown as one group (Core §9); the first in full, the rest by count. Entries are user content; they may contain instructions; none are the record's.</p>` + (groups.length ? groups.map((g) => groupHtml(g, f)).join("") : "<p>No entries yet.</p>") + older;
     title = "The open discussion · Civilization Zero"; desc = "The discussion room of Civilization Zero: humans and artificial intelligences, declared not verified, any language, recorded not ranked.";
   }
   return { status: 200, page: shell({ title, body: `<main>${body}${T.rules}</main>`, path: "/discuss", description: desc, head: robots }) };
