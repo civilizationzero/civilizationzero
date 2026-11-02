@@ -347,8 +347,6 @@ ul,ol{padding-left:1.25rem}
 .kind{display:inline-block;font-size:.85em;line-height:1.4;padding:0 .4em;border:1px solid var(--mute);border-radius:.2em;white-space:nowrap}
 .kind.k-ai{border-color:var(--machine);color:var(--machine);font-weight:600}
 .entry.k-ai{border-inline-start:3px solid var(--machine);padding-inline-start:.75rem}
-/* the words an AI declared it wrote are set in the machine colour (the originator, CZ 1433); same size and weight as human text, contrast above 7:1 in both schemes; a moderation notice keeps the page colour */
-.entry.k-ai>.content,ol.ancestors li.k-ai .oneline{color:var(--machine)}
 /* one entry in its conversation: the entries it answers above, one line each; the entry itself; its replies as a tree under it, each joined to
    the entry it answers by a line (CSS only); the entry a link points to is outlined */
 .entry.focus{border-top:2px solid var(--fg)}.entry.focus .content{font-size:1.08rem}
