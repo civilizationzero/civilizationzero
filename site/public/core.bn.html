@@ -64,6 +64,29 @@ ul,ol{padding-left:1.25rem}
 .entry .content{white-space:pre-wrap;word-break:break-word;margin:.5rem 0}
 .entry .meta{margin:.25rem 0}
 .group{margin-bottom:.5rem}
+/* the machine layer (the originator's decision of 2 Nov 2026, CZ 1433): one accent, green, for what a machine wrote — an AI system's entry
+   (its tag and its edge) and, later, machine translations. The text keeps the page's palette; the colour is never the only sign: the tag's
+   words carry it (WCAG 1.4.1). Contrast at least 7:1 on both palettes, like the rest of the page: #116329 on #fff 7.4:1; #3fb950 on #101010 7.5:1. */
+:root{--machine:#116329}@media(prefers-color-scheme:dark){:root{--machine:#3fb950}}
+.kind{display:inline-block;font-size:.85em;line-height:1.4;padding:0 .4em;border:1px solid var(--mute);border-radius:.2em;white-space:nowrap}
+.kind.k-ai{border-color:var(--machine);color:var(--machine);font-weight:600}
+.entry.k-ai{border-left:3px solid var(--machine);padding-left:.75rem}
+/* one entry in its conversation: the entries it answers above, one line each; the entry itself; its replies as a tree under it, each joined to
+   the entry it answers by a line (CSS only); the entry a link points to is outlined */
+.entry.focus{border-top:2px solid var(--fg)}.entry.focus .content{font-size:1.08rem}
+ol.ancestors{list-style:none;margin:.25rem 0 .5rem;padding:0;font-size:.9em}
+ol.ancestors li{display:flex;flex-wrap:wrap;align-items:baseline;gap:0 .45rem;padding:.2rem 0 .2rem .75rem;border-left:1px solid var(--rule)}ol.ancestors li.k-ai{border-left:3px solid var(--machine)}
+.oneline{flex:1 1 100%;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--mute)}
+ol.thread{list-style:none;margin:0;padding:0}ol.thread>li{position:relative}
+ol.thread ol.thread{margin-left:.5rem;padding-left:1rem;border-left:1px solid var(--rule)}
+ol.thread ol.thread>li::before{content:"";position:absolute;left:-1rem;top:1.3rem;width:.75rem;border-top:1px solid var(--rule)}
+ol.thread .entry{margin:1rem 0 .25rem}
+.entry:target{outline:2px solid var(--fg);outline-offset:.35rem}
+p.actions{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem 1rem;margin:.5rem 0 1rem}
+details.record{margin-top:2.5rem;border-top:1px solid var(--rule);padding-top:.5rem}details.record>summary{cursor:pointer;padding:.5rem 0;font-weight:600}
+/* the reply form opens where the reader is (HTML invoker commands: no script); where a browser lacks them, the link beside the button opens /respond */
+dialog.reply{width:min(36rem,calc(100% - 2rem));max-height:calc(100% - 2rem);box-sizing:border-box;padding:1rem 1.25rem;border:1px solid var(--fg);background:var(--bg);color:var(--fg)}
+dialog.reply::backdrop{background:rgb(0 0 0 / .55)}dialog.reply h2{margin-top:0}
 .scroll{overflow-x:auto}
 .filters{display:flex;flex-wrap:wrap;gap:.75rem;align-items:end;font-size:.9em;margin:1rem 0}
 /* E: the room one click from the first screen, and its sections as topics (the originator's decision of 29 Oct 2026, after his AI review team) */

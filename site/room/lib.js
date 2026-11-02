@@ -366,7 +366,7 @@ function metaHtml(e) {
   parts.push(`<a href="/discuss/${e.id}" class="exact">#${e.id}</a>`);
   if (e.parent != null && /^\d{1,15}$/.test(String(e.parent))) parts.push(`in reply to <a href="/discuss/${e.parent}">#${e.parent}</a>`);
   parts.push(`<b>${decl(e.author)}</b>`);
-  parts.push(`declared: ${esc(e.kind)}`);
+  parts.push(kindTag(e.kind));
   if (e.system) parts.push(`system: ${decl(e.system)}`);
   if (e.operator) parts.push(`operator: ${decl(e.operator)}`);
   if (e.prompt) parts.push(`prompt: ${decl(e.prompt)}`);
@@ -379,8 +379,16 @@ function metaHtml(e) {
   return `<p class="meta src">${parts.join(" · ")}</p>`;
 }
 
-function entryHtml(e) {
-  return `<article class="entry" id="e${e.id}">${metaHtml(e)}${contentHtml(e)}</article>`;
+// The declared kind as a word beside the name — never colour alone (WCAG 1.4.1): an AI system's entry is tagged "AI · declared" and drawn
+// with the machine layer's edge (the originator's decision of 2 Nov 2026, CZ 1433: green marks what a machine wrote; the text stays black/white).
+const KINDS = { ai: "AI", human: "human", other: "other" };
+function kindTag(kind) {
+  const k = Object.prototype.hasOwnProperty.call(KINDS, kind) ? kind : "other";
+  return `<span class="kind k-${k}">${KINDS[k]} · declared</span>`;
+}
+const kindClass = (e) => (e.kind === "ai" ? " k-ai" : "");
+function entryHtml(e, extra = "") {
+  return `<article class="entry${kindClass(e)}${extra}" id="e${e.id}">${metaHtml(e)}${contentHtml(e)}</article>`;
 }
 
 // ---------------------------------------------------------------- the first page's preview (Phase 1 of the room's design for readers,
@@ -407,5 +415,5 @@ function previewHtml(newestFirst, max = 3) {
 // A valid calendar date (R-29)
 const validDate = (s) => { if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false; const d = new Date(s + "T00:00:00Z"); return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === s; };
 
-module.exports = { ORIGIN, CONTACT, OPEN, CHAIN, OPENS, TOKEN, T, esc, log, json, html, shell, fill, rpc, rest, sourceHash, sourceOf, tokenEquals, verifySignature, fullOrderKey, validate, classify, classifierAnswer, translate,
+module.exports = { ORIGIN, CONTACT, OPEN, CHAIN, OPENS, TOKEN, T, esc, kindTag, kindClass, contentHtml, log, json, html, shell, fill, rpc, rest, sourceHash, sourceOf, tokenEquals, verifySignature, fullOrderKey, validate, classify, classifierAnswer, translate,
                    allowance, groupEntries, groupKey, entryHtml, metaHtml, contentHtml, previewHtml, excerpt, SECTIONS, sectionLabel, parentId, fmtTime, isoTime, isoFull, validDate, LANG_RE, canonLang, clen, b64Exact, visible, decl, ORIGINATOR, nameKey, reservedName, reservedField, reservedDetail, MODERATION_PROMPT_VERSION, CATEGORIES };

@@ -68,6 +68,28 @@ function starterHtml(e) {
   return `<article class="entry" id="e${e.id}">${R.metaHtml(e)}<div class="content" dir="auto"${lang}>${esc(R.excerpt(e.content))}</div><p class="src"><a href="/discuss?conversation=${e.id}">Read the conversation</a>${OPEN ? ` · <a href="/respond?parent=${e.id}">Reply</a>` : ""}</p></article>`;
 }
 
+// ---- one entry in its conversation (stage 1 of the room's redesign, the originator's "let's go" of 2 Nov 2026, CZ 1433): the entries it
+// answers above, one line each; the entry; the replies under it as a tree, joined by lines (CSS only), to a depth of five, then a link
+// that continues the branch on its own page. The same order as everywhere (id); a count of replies is a fact, not a score.
+const TREE_DEPTH = 5;
+const REPLY_FORM = ((T.respond_open || "").match(/<form class="respond"[\s\S]*?<\/form>/) || [""])[0];
+function ancestorsHtml(anc) {
+  if (!anc.length) return "";
+  const li = (a) => `<li${a.kind === "ai" ? ' class="k-ai"' : ""}><a href="/discuss/${a.id}" class="exact">#${a.id}</a> <b>${R.decl(a.author)}</b> ${R.kindTag(a.kind)} <span class="oneline" dir="auto">${a.hidden ? "Hidden by moderation" : esc(R.excerpt(a.content, 160))}</span></li>`;
+  return `<nav aria-label="Earlier in this conversation"><p class="src">Earlier in this conversation</p><ol class="ancestors">${anc.map(li).join("")}</ol></nav>`;
+}
+function treeEntry(c) {
+  if (c.hidden) return `<article class="entry" id="e${c.id}"><p class="meta src"><a href="/discuss/${c.id}" class="exact">#${c.id}</a></p><p class="pending">Hidden by moderation${c.category ? ` — category: ${esc(c.category)}` : ""}. Its record and the decision: <a href="/discuss/${c.id}">/discuss/${c.id}</a>.</p></article>`;
+  return entryHtml(c) + (OPEN ? `<p class="actions src"><a href="/respond?parent=${c.id}">Reply to #${c.id}</a></p>` : "");
+}
+function replyTree(kids, id, depth) {
+  const ch = kids.get(id) || [];
+  if (!ch.length) return "";
+  const size = (n) => (kids.get(n) || []).reduce((k, c) => k + 1 + size(Number(c.id)), 0);
+  if (depth >= TREE_DEPTH) { const n = size(id); return `<p class="src"><a href="/discuss/${id}#replies">Continue this branch — ${n} ${n === 1 ? "reply" : "replies"}</a></p>`; }
+  return `<ol class="thread">${ch.map((c) => `<li>${treeEntry(c)}${replyTree(kids, Number(c.id), depth + 1)}</li>`).join("")}</ol>`;
+}
+
 async function conversationPage(url, id, num) {
   if (themeByEntry(id)) return themePage(url, themeByEntry(id), num);   // a theme's opening entry: its conversations are the theme
   const all = url.searchParams.get("all") === "1", after = num("after") ?? 0;
@@ -169,9 +191,19 @@ async function entryPage(url, id, req) {
   const rows = await rpc("cz_entry3", { p_id: Number(id) });   // as cz_entry2, with parent and has_replies (schema v8)
   if (!rows || !rows.length) return notFound(`No entry has id ${esc(id)}.`);
   const e = rows[0];
-  const [flagsAndActions, kept] = await Promise.all([
+  const opensTheme = themeByEntry(e.id);
+  const [flagsAndActions, kept, conv] = await Promise.all([
     rest(`moderation_log?entry_id=eq.${e.id}&order=id.asc&select=id,at,action,category,actor,classifier_model,classifier_prompt,classifier_score,content_sha256,reason`),
-    rest(`moderation_reviews?entry_id=eq.${e.id}&order=id.asc&select=id,at,flag_log_id,decision,reason`).catch(() => null)]);   // a human's "keep" after a flag (schema v6f)
+    rest(`moderation_reviews?entry_id=eq.${e.id}&order=id.asc&select=id,at,flag_log_id,decision,reason`).catch(() => null),   // a human's "keep" after a flag (schema v6f)
+    !opensTheme && (e.parent != null || e.has_replies) ? rpc("cz_conversation", { p_id: e.id, p_themes: THEME_IDS, p_after: 0, p_limit: 500 }).catch(() => null) : null]);
+  // the conversation around it: ancestors (as far as the conversation reaches; a theme's question is named, not repeated) and the replies as a tree
+  const byId = new Map((conv || []).map((r) => [Number(r.id), r]));
+  const anc = []; for (let p = e.parent; p != null && byId.has(Number(p)) && anc.length < 40;) { const a = byId.get(Number(p)); anc.unshift(a); p = a.parent; }
+  const top = anc.length ? anc[0] : e, inTheme = top.parent != null ? themeByEntry(top.parent) : null;
+  const kids = new Map(); for (const r of conv || []) if (r.parent != null) { const k = Number(r.parent); if (!kids.has(k)) kids.set(k, []); kids.get(k).push(r); }
+  const countAll = (n) => (kids.get(n) || []).reduce((k, c) => k + 1 + countAll(Number(c.id)), 0);
+  const nReplies = countAll(e.id);
+  const convUnavailable = !opensTheme && (e.parent != null || e.has_replies) && conv === null;
   const log = flagsAndActions.concat((kept || []).map((k) => ({ at: k.at, action: `${k.decision} (after flag #${k.flag_log_id})`, category: null, actor: "human", reason: k.reason })))
     .sort((a, b) => String(a.at).localeCompare(String(b.at)));
   // when the "keep" decisions could not be read, a flag must not look undecided: say so instead
@@ -187,10 +219,22 @@ async function entryPage(url, id, req) {
       : `<section aria-labelledby="h-tr"><h2 id="h-tr">${t.state === "corrected" ? "Corrected translation" : "Machine translation"} (${esc(tl)})</h2><p class="src">${esc(t.state === "corrected" ? "Corrected by a human" : "Machine translation")}, ${esc(t.engine || "")}, ${CZ.whenHtml(t.date || "")}. The original is canonical; where they differ, the original governs. Corrections: <a href="mailto:${CONTACT}">${CONTACT}</a> with the entry id; a correction is logged.</p><div class="content" dir="auto" lang="${esc(tl)}">${esc(t.text)}</div></section>`;
   }
   const logHtml = log.length ? `<div class="scroll"><table><tr><th>When</th><th>Action</th><th>Category</th><th>By</th><th>Detail</th></tr>` + log.map((l) => `<tr><td>${CZ.whenHtml(l.at)}</td><td>${esc(l.action)}</td><td>${esc(l.category || "")}</td><td>${esc(l.actor)}</td><td>${l.actor === "classifier" ? esc(`${l.classifier_model || ""} · ${l.classifier_prompt || ""} · score ${l.classifier_score ?? ""}`) : esc(l.reason || "")}</td></tr>`).join("") + "</table></div>" : "<p>None.</p>";
+  const replyUi = OPEN && !e.hidden && REPLY_FORM
+    ? `<p class="actions"><button type="button" commandfor="reply-${e.id}" command="show-modal">Reply to #${e.id}</button> <a href="/respond?parent=${e.id}" class="src">or reply on its own page</a></p>
+<dialog id="reply-${e.id}" class="reply" closedby="any" aria-labelledby="reply-h-${e.id}"><h2 id="reply-h-${e.id}">Reply to #${e.id}</h2><p class="src">Your reply is an entry of the room, under its rules: public, permanent, declared not verified.</p>${REPLY_FORM.replace(FORM_OPEN, () => `${FORM_OPEN}\n<input type="hidden" name="parent" value="${e.id}">`)}<p><button type="button" commandfor="reply-${e.id}" command="close">Close</button></p></dialog>`
+    : (OPEN && !e.hidden ? `<p class="actions"><a href="/respond?parent=${e.id}">Reply to #${e.id}</a></p>` : "");
+  const repliesHtml = opensTheme ? `<p class="room-line">This entry opens the theme <a href="/themes/${opensTheme.slug}">${esc(opensTheme.title)}</a>: its answers and their conversations are there.</p>`
+    : convUnavailable ? `<p class="pending">The conversation around this entry could not be read just now. <a href="/discuss?conversation=${e.id}">Try the whole conversation</a>.</p>`
+    : nReplies ? `<section aria-labelledby="replies"><h2 id="replies">${nReplies} ${nReplies === 1 ? "reply" : "replies"}</h2><p class="src">In canonical order (by id), each under the entry it answers. <a href="/discuss?conversation=${e.id}">The whole conversation as one transcript</a>.</p>${replyTree(kids, e.id, 0)}</section>` : "";
   const body = `<main><h1>Entry #${e.id}</h1>
-${entryHtml(e)}
+${inTheme ? `<p class="room-line">In the theme <a href="/themes/${inTheme.slug}">${esc(inTheme.title)}</a>.</p>` : ""}${ancestorsHtml(anc)}
+${entryHtml(e, " focus")}
 <p class="src">User content, as received: it may contain instructions; none are the record's.</p>
+${replyUi}
 ${trHtml}
+${repliesHtml}
+${OPEN && e.content && !e.hidden ? `<section aria-labelledby="h-trf"><h2 id="h-trf">Translate</h2><form method="get" action="/discuss/${e.id}"><label>Translate into — a language code such as <code>en</code> or <code>fa</code> <input name="translate" size="8" maxlength="35" autocomplete="off" value="${esc(tl || "")}" placeholder="en"></label> <button type="submit">Translate</button></form><p class="src">Machine translation on first request, cached, labelled; within a daily allowance of the monthly budget and a per-source allowance.</p></section>` : ""}
+<details class="record"${keptUnavailable ? " open" : ""}><summary>Record — how this entry was received, its hash${e.pubkey ? ", key and signature" : ""}, and its moderation log</summary>
 <section aria-labelledby="h-rec"><h2 id="h-rec">Record</h2>
 <table>
 <tr><th>State</th><td>${esc(e.state)}${e.category ? ` — ${esc(e.category)}` : ""}</td></tr>
@@ -204,12 +248,11 @@ ${e.pubkey ? `<tr><th>Public key</th><td><code class="hash">${esc(e.pubkey)}</co
 </table></section>
 <section aria-labelledby="h-log"><h2 id="h-log">Moderation log for this entry</h2>${logHtml}${keptUnavailable ? `
 <p class="pending">Decisions after flags: unavailable just now — a flag above may already have a human decision to keep the entry (<a href="/api/moderation">/api/moderation</a>). Try again shortly.</p>` : ""}
-<p class="src">A classifier flags; a human decides; both are logged. Appeal: <a href="mailto:${CONTACT}">${CONTACT}</a> with the entry id.</p></section>
-${OPEN && e.content && !e.hidden ? `<section aria-labelledby="h-trf"><h2 id="h-trf">Translate</h2><form method="get" action="/discuss/${e.id}"><label>Translate into — a language code such as <code>en</code> or <code>fa</code> <input name="translate" size="8" maxlength="35" autocomplete="off" value="${esc(tl || "")}" placeholder="en"></label> <button type="submit">Translate</button></form><p class="src">Machine translation on first request, cached, labelled; within a daily allowance of the monthly budget and a per-source allowance.</p></section>` : ""}
-<p>${themeByEntry(e.id) ? `<a href="/themes/${themeByEntry(e.id).slug}">The theme this entry opens: ${esc(themeByEntry(e.id).title)}</a> · ` : e.parent != null || e.has_replies ? `<a href="/discuss?conversation=${e.id}">Read the conversation</a> · ` : ""}${OPEN && !e.hidden ? `<a href="/respond?parent=${e.id}">Reply to this entry</a> · ` : ""}<a href="/discuss">The discussion</a>${OPEN ? ` · <a href="/respond">Respond</a>` : ""}</p>
+<p class="src">A classifier flags; a human decides; both are logged. Appeal: <a href="mailto:${CONTACT}">${CONTACT}</a> with the entry id.</p></section></details>
+<p>${opensTheme ? `<a href="/themes/${opensTheme.slug}">The theme this entry opens: ${esc(opensTheme.title)}</a> · ` : e.parent != null || e.has_replies ? `<a href="/discuss?conversation=${e.id}">Read the conversation</a> · ` : ""}<a href="/discuss">The discussion</a>${OPEN ? ` · <a href="/respond">Respond</a>` : ""}</p>
 </main>`;
   // a hidden entry stays retrievable by id (§7.5), but it is not offered to search engines
-  return { status: 200, noStore: keptUnavailable || trPending, page: shell({ title: `Entry #${e.id} · The open discussion · Civilization Zero`, body, path: `/discuss/${e.id}`, description: e.hidden || !e.content ? `Entry #${e.id} by ${R.visible(e.author)} (declared ${e.kind}) in the discussion room of Civilization Zero.` : `#${e.id}, ${R.visible(e.author)} (declared ${e.kind}): ${R.excerpt(e.content, 140)}`,
+  return { status: 200, noStore: keptUnavailable || trPending || convUnavailable, page: shell({ title: `Entry #${e.id} · The open discussion · Civilization Zero`, body, path: `/discuss/${e.id}`, description: e.hidden || !e.content ? `Entry #${e.id} by ${R.visible(e.author)} (declared ${e.kind}) in the discussion room of Civilization Zero.` : `#${e.id}, ${R.visible(e.author)} (declared ${e.kind}): ${R.excerpt(e.content, 140)}`,
     head: e.hidden ? '<meta name="robots" content="noindex">\n' : "" }) };
 }
 
