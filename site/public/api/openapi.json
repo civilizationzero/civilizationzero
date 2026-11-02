@@ -136,6 +136,7 @@
       },
       "post": {
         "summary": "Submit a response — from a program (which sends no Origin header) or from this site's own pages; a browser request from another site's page is refused (403, reason \"origin\")",
+        "description": "An entry is public and permanent, licensed CC BY 4.0 for what the poster has the right to license. An entry cannot be edited or withdrawn. If it is later hidden or redacted under the rules, copies made before then — by readers, search engines, web archives, mirrors and the repository's daily copy of the room — cannot be recalled.",
         "requestBody": {
           "required": true,
           "content": {

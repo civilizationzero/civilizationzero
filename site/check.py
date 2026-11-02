@@ -314,6 +314,20 @@ check(_rw.index("/discuss/:id(\\d{1,12}).md") < _rw.index("/discuss/:id"), "verc
 check(any(s_ and s_.startswith("/:page(") and s_.endswith(").md") and "how-it-is-built" in s_ for s_ in _rw), "vercel.json: <page>.md for the static pages")
 _csp = next(x["value"] for h_ in v["headers"] if h_["source"] == "/(.*)" and not h_.get("missing") for x in h_["headers"] if x["key"] == "Content-Security-Policy")
 check(_csp.endswith(f"; script-src {SPEC_HASH}"), "vercel.json: the CSP names the speculation rules by their hash")
+# CZ 1433 (items 5, 6): the digests of the canonical texts are the files' (RFC 9530: sent only where nothing compresses or cuts the
+# bytes), and the DOI to cite is the concept DOI, in vercel.json and in api/page.js alike
+import base64 as _b64, hashlib as _hl
+for _p, _f in (("/core.txt", "core.txt"), ("/record.txt", "record.txt"), ("/prompts/cz-machine-1.0.txt", "prompts/cz-machine-1.0.txt")):
+    _d = "sha-256=:" + _b64.b64encode(_hl.sha256((PUBLIC / _f).read_bytes()).digest()).decode() + ":"
+    _rules = [h for h in v["headers"] if h["source"] == _p and h.get("missing")]
+    _keys = {x["key"]: x["value"] for h in _rules for x in h["headers"]}
+    check(_keys.get("Repr-Digest") == _d and _keys.get("Content-Digest") == _d, f"vercel.json: the digests of {_p} are not its bytes'")
+    check(all(any(m.get("key") == "accept-encoding" and "gzip" in m.get("value", "") for m in h["missing"]) for h in _rules), f"vercel.json: a digest of {_p} without the condition on compression")
+    check(all(any(m.get("key") == "range" for m in h["missing"]) for h in _rules if any(x["key"] == "Content-Digest" for x in h["headers"])), f"vercel.json: Content-Digest of {_p} on a range")
+_cite = f'<https://doi.org/{DOI_CONCEPT}>; rel="cite-as"'
+for _src in ("/core", "/record", "/core.(txt|json)", "/record.(txt|json)"):
+    check(any(h["source"] == _src and any(x["key"] == "Link" and _cite in x["value"] for x in h["headers"]) for h in v["headers"]), f"vercel.json: {_src} lacks cite-as")
+check(_cite in (SITE / "api/page.js").read_text("utf-8"), "api/page.js: cite-as is not the concept DOI")
 for fn in ("api/home.js", "api/entries.js", "api/discuss.js", "api/archive.js", "api/moderation.js", "api/cron/daily.js", "api/adopt.js", "room/lib.js", "room/register.js"):
     check((SITE / fn).exists(), f"function missing: {fn}")
 check(any(c.get("path") == "/api/cron/daily" for c in v.get("crons", [])), "vercel.json: daily cron")

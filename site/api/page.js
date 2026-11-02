@@ -119,9 +119,50 @@ ${rows([
   ])}${differs}${twice}</section>`;
 }
 
+// The Link header of a page as HTML (CZ 1433, item 6): its Markdown first, then what vercel.json says for that address — a function's
+// header replaces the one vercel.json gives, so those are repeated here (test/batch_a.test.js holds the two together). The JSON and text
+// forms of /core and /record are files, and keep vercel.json's.
+const CITE_AS = '<https://doi.org/10.5281/zenodo.23740317>; rel="cite-as"';
+const SERVICE = '</api/openapi.json>; rel="service-desc"; type="application/vnd.oai.openapi+json"';
+const LINKS = {
+  core: `</core.txt>; rel="alternate"; type="text/plain", </core.json>; rel="alternate"; type="application/json", ${SERVICE}, ${CITE_AS}`,
+  record: `</record.txt>; rel="alternate"; type="text/plain", </record.json>; rel="alternate"; type="application/json", ${SERVICE}, ${CITE_AS}`,
+  calendar: `</calendar.json>; rel="alternate"; type="application/json", ${SERVICE}`,
+};
+const linkFor = (p) => [`<${MD.mdPath(p === "" ? "/" : `/${p}`)}>; rel="alternate"; type="text/markdown"`].concat(LINKS[p] ? [LINKS[p]] : []).join(", ");
+// /how-it-is-built says which deployment serves it — the commit Vercel built it from — and what the latest daily check of the live site
+// found (site/verify/live-check.mjs, run by the workflow verify-live, its result committed to archive/live-check/latest.json). The
+// server reads that file from the repository when it makes the page, at most once in ten minutes per instance; the reader's browser
+// loads nothing from there. If it cannot be read, the page says so. (The originator's decision of CZ 1433, item 4.)
+const REPO = "https://github.com/civilizationzero/civilizationzero";
+const LATEST = "https://raw.githubusercontent.com/civilizationzero/civilizationzero/main/archive/live-check/latest.json";
+const DEPLOY_RE = /<!--cz-deploy-->[\s\S]*?<!--\/cz-deploy-->/;
+let latest = { at: 0, v: null };
+async function latestCheck(now) {
+  if (now - latest.at < 600000) return latest.v;   // one read in ten minutes, whatever it found
+  try {
+    const r = await fetch(LATEST, { headers: { "user-agent": "cz-site/1.0 (+https://civilizationzero.ai/how-it-is-built)" }, signal: AbortSignal.timeout(2000) });
+    if (!r.ok) throw new Error(`status ${r.status}`);
+    const v = await r.json();
+    if (!v || typeof v.checked_at !== "string" || !Number.isInteger(v.passed) || !Number.isInteger(v.total)) throw new Error("not a result");
+    latest = { at: now, v };
+  } catch { latest = { at: now, v: latest.v && Date.parse(latest.v.checked_at) > now - 86400000 ? latest.v : null }; }   // a result under a day old stays, with its date
+  return latest.v;
+}
+function deployBlock(v, sha) {
+  const commit = /^[0-9a-f]{40}$/.test(sha || "") ? sha : null;
+  const here = commit ? `<p id="deployed" data-commit="${commit}">This page is served by the deployment built from commit <a href="${REPO}/commit/${commit}"><code>${commit.slice(0, 7)}</code></a> of the repository.</p>`
+    : `<p id="deployed" class="pending">This copy of the page cannot say which deployment serves it.</p>`;
+  if (!v) return `${here}\n<p class="pending">The latest daily check could not be read from the repository just now: <a href="${REPO}/tree/main/archive/live-check">the results</a>.</p>`;
+  const against = typeof v.commit === "string" && /^[0-9a-f]{7,40}$/.test(v.commit)
+    ? (commit && commit.startsWith(v.commit) ? ", against this deployment" : `, against commit <a href="${REPO}/commit/${esc(v.commit)}"><code>${esc(v.commit.slice(0, 7))}</code></a>${commit ? ", an earlier deployment; this one is checked at the next run" : ""}`) : "";
+  const failed = Array.isArray(v.failed) && v.failed.length ? ` Failed: ${v.failed.slice(0, 12).map((f) => esc(String(f).slice(0, 160))).join("; ")}.` : "";
+  const run = typeof v.run === "string" && v.run.startsWith(`${REPO}/actions/runs/`) ? `<a href="${esc(v.run)}">The run</a> · ` : "";
+  return `${here}\n<p${v.passed === v.total ? "" : ' class="pending"'}>The latest daily check, ${CZ.whenHtml(v.checked_at)}: ${v.passed} of ${v.total} checks passed${against}.${failed} ${run}<a href="${REPO}/blob/main/archive/live-check/latest.json">the result as data</a>.</p>`;
+}
 const CAL_RE = /<!--cz-cal-->[\s\S]*?<!--\/cz-cal-->/;
 const TIME_RE = /<!--cz-time-->[\s\S]*?<!--\/cz-time-->/;
-module.exports = (req, res) => {
+module.exports = async (req, res) => {
   if (!["GET", "HEAD"].includes(req.method)) {
     res.statusCode = 405; res.setHeader("Allow", "GET, HEAD"); res.setHeader("Content-Type", "text/plain; charset=utf-8");
     return res.end("Method not allowed\n");
@@ -139,19 +180,26 @@ module.exports = (req, res) => {
              .replace(TIME_RE, () => `<!--cz-time-->${timeBlock(url.searchParams, now)}<!--/cz-time-->`);
   }
   if (query && status === 200) { const t = resultTitle(out); if (t) out = out.replace(/<title>[^<]*<\/title>/, () => `<title>${CZ.escHtml(t)}</title>`); }
+  const colophon = p === "how-it-is-built" && status === 200;
+  if (colophon) { const v = await latestCheck(now); out = out.replace(DEPLOY_RE, () => `<!--cz-deploy-->${deployBlock(v, process.env.VERCEL_GIT_COMMIT_SHA)}<!--/cz-deploy-->`); }
+  // the colophon at most an hour in the cache, so that a new day's check shows the same morning; every other page until 00:00 UTC
+  const ttl = colophon ? Math.min(3600, CZ.secondsToNextDay(now)) : CZ.secondsToNextDay(now);
   // the page as Markdown (/core.md, or Accept: text/markdown; vercel.json): its <main> converted, with a front matter (room/md.js)
   if (url.searchParams.get("f") === "md") {
     const pth = p === "" ? "/" : `/${p}`;
-    return MD.sendMarkdown(res, status, req.method === "HEAD" ? "" : MD.htmlToMarkdown(out, { path: pth }), pth, "https://civilizationzero.ai", { "Cache-Control": `public, max-age=0, s-maxage=${CZ.secondsToNextDay(now)}` });
+    return MD.sendMarkdown(res, status, req.method === "HEAD" ? "" : MD.htmlToMarkdown(out, { path: pth }), pth, "https://civilizationzero.ai", { "Cache-Control": `public, max-age=0, s-maxage=${ttl}` });
   }
   out = fillWeight(out);   // the line at the foot: this page's weight as it is sent (room/weight.js)
   res.statusCode = status;
   res.setHeader("Content-Type", "text/html; charset=utf-8");
   res.setHeader("Content-Security-Policy", csp);
-  res.setHeader("Cache-Control", `public, max-age=0, s-maxage=${CZ.secondsToNextDay(now)}`);
+  res.setHeader("Cache-Control", `public, max-age=0, s-maxage=${ttl}`);
   if (query || status === 404) res.setHeader("X-Robots-Tag", "noindex");   // a conversion is a view, not a page to index
+  if (status === 200) res.setHeader("Link", linkFor(p));
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.end(req.method === "HEAD" ? "" : out);
 };
 module.exports.calendarBlock = calendarBlock;
 module.exports.timeBlock = timeBlock;
+module.exports.linkFor = linkFor;
+module.exports.deployBlock = deployBlock;

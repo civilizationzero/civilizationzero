@@ -104,7 +104,9 @@ function json(res, status, body, headers = {}) {
 
 function html(res, status, page, headers = {}) {
   // the page's own Markdown address (a view's, with its query, when the handler set one; otherwise from its canonical address)
-  page = String(page).replace(/__MDPATH__/g, () => res.czMdHref || require("./md.js").mdPath(((/<link rel="canonical" href="https?:\/\/[^/"]+(\/[^"]*)">/.exec(page) || [])[1]) || "/"));
+  const canon = ((/<link rel="canonical" href="https?:\/\/[^/"]+(\/[^"]*)">/.exec(String(page)) || [])[1]) || "/";
+  const mdHref = res.czMdHref || require("./md.js").mdPath(canon);
+  page = String(page).replace(/__MDPATH__/g, () => mdHref);
   // the page as Markdown when it was asked for (a handler sets res.czMarkdown from ?f=md: /discuss.md, /discuss/7.md, Accept: text/markdown)
   if (res.czMarkdown) {
     const MDm = require("./md.js"), now = Date.now();
@@ -120,6 +122,15 @@ function html(res, status, page, headers = {}) {
   // its real Origin (under no-referrer a browser sends "Origin: null", which the register must refuse as it refuses other sites)
   res.setHeader("Referrer-Policy", "same-origin");
   res.setHeader("Content-Security-Policy", CSP);
+  // the page's other forms and relations as a Link header, as the page names them in its head (CZ 1433, item 6): its Markdown; the room's
+  // and the register's data; and what a handler adds (an entry: its data and the entry it answers, rel="up"). This replaces the Link
+  // vercel.json gives /discuss and /adopt (a function's header wins), so those are said here too.
+  if (status === 200) {
+    const links = [`<${mdHref}>; rel="alternate"; type="text/markdown"`];
+    if (canon === "/discuss") links.push('</discuss.json>; rel="alternate"; type="application/json"');
+    if (canon === "/adopt") links.push('</adopt.json>; rel="alternate"; type="application/json"');
+    res.setHeader("Link", links.concat(res.czLinks || []).join(", "));
+  }
   // today's date in CZ time at the top of the page (the originator's decision of 30 Oct 2026), and a cache that ends at 00:00 UTC
   const now = Date.now();
   for (const [k, v] of Object.entries(headers)) res.setHeader(k, k.toLowerCase() === "cache-control" ? CZ.capCache(v, now) : v);

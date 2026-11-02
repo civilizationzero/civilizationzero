@@ -115,6 +115,7 @@ srv.listen(0, "127.0.0.1", async () => {
     TABLE = [entry(1), entry(2), entry(3, { parent: 1 }), entry(4, { parent: 2, hidden: true }), entry(5, { author: "Theme", parent: null }), entry(6, { parent: 5 }), entry(7, { parent: 6, hidden: true })];
     r = await call(discuss, "/api/discuss");
     const order = [...r.body.matchAll(/<article class="entry conv[^"]*" id="c(\d+)"/g)].map((m) => +m[1]);
+    ok(r.headers.link === '</discuss.md>; rel="alternate"; type="text/markdown", </discuss.json>; rel="alternate"; type="application/json"', "the room's Link: its Markdown and its data (CZ 1433)");
     ok(r.status === 200 && order.join(",") === "5,1,2", `conversations, latest first (#5 by #6, #1 by #3, #2 alone: its reply #4 is hidden; #7 hidden) (got ${order.join(",")})`);
     ok(r.body.includes('Latest: <a href="/discuss/3">#3</a>') && !/\b\d+ (replies|reply|voices)\b/.test(r.body), "the latest entry is named; no count of replies or voices");
     ok(r.body.includes('href="/discuss?view=entries"') && r.body.includes('href="/discuss?order=canonical"'), "the entries view and the canonical order stay one link away");
@@ -165,6 +166,7 @@ srv.listen(0, "127.0.0.1", async () => {
     ok(r.body.includes("“An earlier entry with \\*marks\\*, long enough.”"), "an excerpt of someone's words is quoted, its marks escaped");
     ok(!/<[a-z]+[ >]/i.test(r.body.replace(/```[\s\S]*?```/g, "")), "no HTML tags outside the fenced user content");
     r = await call(discuss, "/api/discuss?id=3");
+    ok(r.headers.link === '</discuss/3.md>; rel="alternate"; type="text/markdown", </api/entries/3>; rel="alternate"; type="application/json", </discuss/1>; rel="up"', "an entry's Link: its Markdown, its data, the entry it answers (CZ 1433)");
     ok(/<!--cz-weight-->This page: [\d.]+ kB · no JavaScript that runs · no cookies<!--\/cz-weight-->/.test(r.body), "the weight line filled for this page");
     ok(/script-src 'sha256-[A-Za-z0-9+/=]+'/.test(r.headers["content-security-policy"] || "") && r.body.includes('<script type="speculationrules">'), "the CSP names the speculation rules by hash");
     { const m = /<script type="speculationrules">([\s\S]*?)<\/script>/.exec(r.body); const hsh = require("node:crypto").createHash("sha256").update(m[1], "utf8").digest("base64");

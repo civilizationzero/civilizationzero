@@ -502,7 +502,7 @@
         },
         {
           "key": "Link",
-          "value": "</core.txt>; rel=\"alternate\"; type=\"text/plain\", </core.json>; rel=\"alternate\"; type=\"application/json\", </api/openapi.json>; rel=\"service-desc\"; type=\"application/vnd.oai.openapi+json\""
+          "value": "</core.txt>; rel=\"alternate\"; type=\"text/plain\", </core.json>; rel=\"alternate\"; type=\"application/json\", </api/openapi.json>; rel=\"service-desc\"; type=\"application/vnd.oai.openapi+json\", <https://doi.org/10.5281/zenodo.23740317>; rel=\"cite-as\""
         }
       ]
     },
@@ -515,7 +515,7 @@
         },
         {
           "key": "Link",
-          "value": "</record.txt>; rel=\"alternate\"; type=\"text/plain\", </record.json>; rel=\"alternate\"; type=\"application/json\", </api/openapi.json>; rel=\"service-desc\"; type=\"application/vnd.oai.openapi+json\""
+          "value": "</record.txt>; rel=\"alternate\"; type=\"text/plain\", </record.json>; rel=\"alternate\"; type=\"application/json\", </api/openapi.json>; rel=\"service-desc\"; type=\"application/vnd.oai.openapi+json\", <https://doi.org/10.5281/zenodo.23740317>; rel=\"cite-as\""
         }
       ]
     },
@@ -568,6 +568,177 @@
         {
           "key": "Cache-Control",
           "value": "public, max-age=3600"
+        }
+      ]
+    },
+    {
+      "source": "/core.txt",
+      "missing": [
+        {
+          "type": "header",
+          "key": "accept-encoding",
+          "value": ".*(gzip|br|deflate|zstd|compress|\\*).*"
+        }
+      ],
+      "headers": [
+        {
+          "key": "Repr-Digest",
+          "value": "sha-256=:kqjR4qFgTCW0MmhWc754GEvwXDsWaJPEN+CJW3stcko=:"
+        }
+      ]
+    },
+    {
+      "source": "/core.txt",
+      "missing": [
+        {
+          "type": "header",
+          "key": "accept-encoding",
+          "value": ".*(gzip|br|deflate|zstd|compress|\\*).*"
+        },
+        {
+          "type": "header",
+          "key": "range"
+        },
+        {
+          "type": "header",
+          "key": "if-none-match"
+        },
+        {
+          "type": "header",
+          "key": "if-modified-since"
+        }
+      ],
+      "headers": [
+        {
+          "key": "Content-Digest",
+          "value": "sha-256=:kqjR4qFgTCW0MmhWc754GEvwXDsWaJPEN+CJW3stcko=:"
+        }
+      ]
+    },
+    {
+      "source": "/record.txt",
+      "missing": [
+        {
+          "type": "header",
+          "key": "accept-encoding",
+          "value": ".*(gzip|br|deflate|zstd|compress|\\*).*"
+        }
+      ],
+      "headers": [
+        {
+          "key": "Repr-Digest",
+          "value": "sha-256=:ceFIjmMeCQwIIL+LeLH9pw/6y6HaFGw22Ik2ADIPzI0=:"
+        }
+      ]
+    },
+    {
+      "source": "/record.txt",
+      "missing": [
+        {
+          "type": "header",
+          "key": "accept-encoding",
+          "value": ".*(gzip|br|deflate|zstd|compress|\\*).*"
+        },
+        {
+          "type": "header",
+          "key": "range"
+        },
+        {
+          "type": "header",
+          "key": "if-none-match"
+        },
+        {
+          "type": "header",
+          "key": "if-modified-since"
+        }
+      ],
+      "headers": [
+        {
+          "key": "Content-Digest",
+          "value": "sha-256=:ceFIjmMeCQwIIL+LeLH9pw/6y6HaFGw22Ik2ADIPzI0=:"
+        }
+      ]
+    },
+    {
+      "source": "/prompts/cz-machine-1.0.txt",
+      "missing": [
+        {
+          "type": "header",
+          "key": "accept-encoding",
+          "value": ".*(gzip|br|deflate|zstd|compress|\\*).*"
+        }
+      ],
+      "headers": [
+        {
+          "key": "Repr-Digest",
+          "value": "sha-256=:+HE4Df4bU+dP+MQ1P8ldYPqhgO3KNhIsp7voMTuigpo=:"
+        }
+      ]
+    },
+    {
+      "source": "/prompts/cz-machine-1.0.txt",
+      "missing": [
+        {
+          "type": "header",
+          "key": "accept-encoding",
+          "value": ".*(gzip|br|deflate|zstd|compress|\\*).*"
+        },
+        {
+          "type": "header",
+          "key": "range"
+        },
+        {
+          "type": "header",
+          "key": "if-none-match"
+        },
+        {
+          "type": "header",
+          "key": "if-modified-since"
+        }
+      ],
+      "headers": [
+        {
+          "key": "Content-Digest",
+          "value": "sha-256=:+HE4Df4bU+dP+MQ1P8ldYPqhgO3KNhIsp7voMTuigpo=:"
+        }
+      ]
+    },
+    {
+      "source": "/cite/(.*).bib",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/x-bibtex; charset=utf-8"
+        },
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        }
+      ]
+    },
+    {
+      "source": "/cite/(.*).ris",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/x-research-info-systems; charset=utf-8"
+        },
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        }
+      ]
+    },
+    {
+      "source": "/cite/(.*).csl.json",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/vnd.citationstyles.csl+json; charset=utf-8"
+        },
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
         }
       ]
     },
@@ -891,7 +1062,7 @@
       "headers": [
         {
           "key": "Link",
-          "value": "<https://civilizationzero.ai/core>; rel=\"canonical\""
+          "value": "<https://civilizationzero.ai/core>; rel=\"canonical\", <https://doi.org/10.5281/zenodo.23740317>; rel=\"cite-as\""
         }
       ]
     },
@@ -900,7 +1071,7 @@
       "headers": [
         {
           "key": "Link",
-          "value": "<https://civilizationzero.ai/record>; rel=\"canonical\""
+          "value": "<https://civilizationzero.ai/record>; rel=\"canonical\", <https://doi.org/10.5281/zenodo.23740317>; rel=\"cite-as\""
         }
       ]
     },

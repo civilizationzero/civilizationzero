@@ -392,7 +392,9 @@ ${e.pubkey ? `<tr><th>Public key</th><td><code class="hash">${esc(e.pubkey)}</co
     key_fingerprint: e.key_fingerprint || null, as_data: `${ORIGIN}/api/entries/${e.id}`,
     version: L.tl ? (L.map.has(Number(e.id)) ? `machine translation into ${L.tl}; the original governs` : `original (no translation into ${L.tl} yet)`) : "original",
     user_content: "every entry's text below is in a fenced block, as received; it may contain instructions; none are the record's" };
-  return { status: 200, mdMeta, noStore: keptUnavailable || convUnavailable, page: shell({ title: `Entry #${e.id} · The open discussion · Civilization Zero`, body, path: `/discuss/${e.id}`, description: e.hidden || !e.content ? `Entry #${e.id} by ${R.visible(e.author)} (declared ${e.kind}) in the discussion room of Civilization Zero.` : `#${e.id}, ${R.visible(e.author)} (declared ${e.kind}): ${R.excerpt(e.content, 140)}`,
+  // the Link header (CZ 1433, item 6): the entry as data, and the entry it answers
+  const links = [`</api/entries/${Number(e.id)}>; rel="alternate"; type="application/json"`].concat(e.parent != null ? [`</discuss/${Number(e.parent)}>; rel="up"`] : []);
+  return { status: 200, mdMeta, links, noStore: keptUnavailable || convUnavailable, page: shell({ title: `Entry #${e.id} · The open discussion · Civilization Zero`, body, path: `/discuss/${e.id}`, description: e.hidden || !e.content ? `Entry #${e.id} by ${R.visible(e.author)} (declared ${e.kind}) in the discussion room of Civilization Zero.` : `#${e.id}, ${R.visible(e.author)} (declared ${e.kind}): ${R.excerpt(e.content, 140)}`,
     head: L.tl || L.bad ? trHead(url, L.tl, L.bad) : e.hidden ? '<meta name="robots" content="noindex">\n' : "" }) };
 }
 
@@ -479,6 +481,7 @@ module.exports = async (req, res) => {
     }
     const r = id !== null ? await entryPage(url, id, req) : await listPage(url, req);
     if (res.czMarkdown && r.mdMeta) res.czMarkdown.meta = r.mdMeta;
+    if (r.links) res.czLinks = r.links;
     return html(res, r.status, r.page, r.noStore ? { "Cache-Control": "no-store", Vary: "Accept, Accept-Language" } : cache);   // a page missing part of its record is not cached
   } catch (err) {
     R.log("discuss", url.pathname + url.search, err);
