@@ -14,7 +14,7 @@ const srv = http.createServer((q, s) => {
       if (a.p_before != null) rows = rows.filter((e) => e.id < a.p_before).sort((x, y) => y.id - x.id);
       else rows = rows.filter((e) => a.p_after == null || e.id > a.p_after).sort((x, y) => x.id - y.id);
       out = rows.slice(0, Math.min(a.p_limit ?? 50, 200));
-    } else if (name === "cz_entry3") out = TABLE.filter((e) => e.id === a.p_id).map((e) => ({ ...e, has_replies: TABLE.some((c) => c.parent === e.id) }));
+    } else if (name === "cz_entry3" || name === "cz_entry4") out = TABLE.filter((e) => e.id === a.p_id).map((e) => ({ ...e, has_replies: TABLE.some((c) => c.parent === e.id) }));
     else if (name === "cz_conversations" || name === "cz_theme_latest") {   // as the SQL of v10 does
       const themes = a.p_themes || [], byId = new Map(TABLE.map((e) => [e.id, e]));
       const rootOf = (e) => { while (e && e.parent != null && !themes.includes(e.parent)) e = byId.get(e.parent); return e; };
@@ -206,6 +206,14 @@ srv.listen(0, "127.0.0.1", async () => {
     // the sitemap refuses a query string (no cache bypass of a whole-archive read)
     CALLS = []; r = await call(discuss, "/api/discuss?page=sitemap&x=1");
     ok(r.status === 400 && CALLS.length === 0, `sitemap with a parameter: 400, no database call (got ${r.status})`);
+    // v12 (CZ 1433): an entry's receipt hash and the way it arrived, on its record and in its Markdown; an older entry has neither
+    TABLE = [entry(1), entry(2, { receipt_sha256: "e".repeat(64), via: "form" })];
+    r = await call(discuss, "/api/discuss?id=2");
+    ok(r.body.includes(`<tr><th>Receipt</th><td><code class="hash">${"e".repeat(64)}</code>`) && r.body.includes("by the site's form (recorded by the server)"), "an entry's record: its receipt's hash and the way it arrived");
+    r = await call(discuss, "/api/discuss?id=1");
+    ok(!r.body.includes("<th>Receipt</th>") && !r.body.includes("recorded by the server)"), "an older entry: no receipt row, no way in");
+    r = await call(discuss, "/api/discuss?id=2&f=md");
+    ok(r.body.includes(`\nreceipt_sha256: "${"e".repeat(64)}"\n`) && r.body.includes('\nvia: "form"\n'), "the entry's Markdown front matter carries both");
   } catch (e) { fail++; console.log("FAIL exception", e.stack); }
   console.error = quiet;
   console.log(`pass ${pass} fail ${fail}`); srv.close(); process.exit(fail ? 1 : 0);
