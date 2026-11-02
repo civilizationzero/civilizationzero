@@ -112,6 +112,17 @@ srv.listen(0, "127.0.0.1", async () => {
     ok(r.body.includes('href="/discuss?view=entries"') && r.body.includes('href="/discuss?order=canonical"'), "the entries view and the canonical order stay one link away");
     r = await call(discuss, "/api/discuss?cbefore=3");
     ok(r.status === 200 && /id="c2"/.test(r.body) && !/id="c1"/.test(r.body) && r.body.includes('name="robots" content="noindex"'), "conversation pages continue below a latest id, not indexed");
+    // ---------- stage 3 (CZ 1433): new after a mark (#10–#16 open themes in the build) — counted from the data (hidden entries left out), canonical order, no memory but the address
+    TABLE = [entry(1), entry(2), entry(3, { parent: 1 }), entry(4, { parent: 2, hidden: true }), entry(9, { parent: 1 }), entry(17)];
+    r = await call(discuss, "/api/discuss?since=2");
+    const sinceIds = [...((/<ol class="since">([\s\S]*?)<\/ol>/.exec(r.body) || ["", ""])[1]).matchAll(/href="\/discuss\/(\d+)" class="exact"/g)].map((m) => +m[1]);
+    ok(r.status === 200 && r.body.includes("3 entries after #2, in canonical order") && sinceIds.join(",") === "3,9,17", `since=2: #3, #9, #17, not the hidden #4 (got ${sinceIds.join(",")})`);
+    ok(r.body.includes('href="/discuss?since=17" rel="nofollow"') && r.body.includes('name="robots" content="noindex"'), "a new mark at the latest entry; the view is not indexed");
+    ok((r.body.match(/class="new">new after #2</g) || []).length === 2, "the two conversations with entries after #2 are marked (#1 by #9, #17 itself)");
+    r = await call(discuss, "/api/discuss?since=17");
+    ok(r.body.includes("No entries after #17 yet.") && !r.body.includes('class="new"'), "nothing after the latest: said so, nothing marked");
+    r = await call(discuss, "/api/discuss");
+    ok(r.body.includes('bookmark <a href="/discuss?since=17" rel="nofollow">'), "the room offers a mark at its latest entry");
     // the sitemap refuses a query string (no cache bypass of a whole-archive read)
     CALLS = []; r = await call(discuss, "/api/discuss?page=sitemap&x=1");
     ok(r.status === 400 && CALLS.length === 0, `sitemap with a parameter: 400, no database call (got ${r.status})`);

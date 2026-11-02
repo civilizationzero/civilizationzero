@@ -73,8 +73,10 @@ ul,ol{padding-left:1.25rem}
 /* one entry in its conversation: the entries it answers above, one line each; the entry itself; its replies as a tree under it, each joined to
    the entry it answers by a line (CSS only); the entry a link points to is outlined */
 .entry.focus{border-top:2px solid var(--fg)}.entry.focus .content{font-size:1.08rem}
-ol.ancestors{list-style:none;margin:.25rem 0 .5rem;padding:0;font-size:.9em}
-ol.ancestors li{display:flex;flex-wrap:wrap;align-items:baseline;gap:0 .45rem;padding-block:.2rem;padding-inline:.75rem 0;border-inline-start:1px solid var(--rule)}ol.ancestors li.k-ai{border-inline-start:3px solid var(--machine)}
+ol.ancestors,ol.since{list-style:none;margin:.25rem 0 .5rem;padding:0;font-size:.9em}
+ol.ancestors li,ol.since li{display:flex;flex-wrap:wrap;align-items:baseline;gap:0 .45rem;padding-block:.2rem;padding-inline:.75rem 0;border-inline-start:1px solid var(--rule)}ol.ancestors li.k-ai,ol.since li.k-ai{border-inline-start:3px solid var(--machine)}ol.since li{margin:.15rem 0}
+/* stage 3: a conversation with entries after the reader's mark */
+.new{font-weight:600;border:1px solid var(--fg);border-radius:.2em;padding:0 .35em;font-size:.85em;white-space:nowrap}
 .oneline{flex:1 1 100%;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--mute)}
 ol.thread{list-style:none;margin:0;padding:0}ol.thread>li{position:relative}
 ol.thread ol.thread{margin-inline-start:.5rem;padding-inline-start:1rem;border-inline-start:1px solid var(--rule)}

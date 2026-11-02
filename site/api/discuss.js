@@ -134,27 +134,37 @@ ${list || "<p>No answers yet.</p>"}${older}
 // view); no count of any kind (the room's rules). Consecutive conversations begun by the same declared source on one UTC day are
 // shown as one row with links to the others (Core §9), as every view groups.
 const CONV_PAGE = 30;
-function convLatest(c) {
-  return Number(c.latest_id) === Number(c.id) ? `Begun ${CZ.whenHtml(c.received)}` : `Latest: <a href="/discuss/${Number(c.latest_id)}">#${Number(c.latest_id)}</a>, ${CZ.whenHtml(c.latest_received)}`;
+function convLatest(c, since) {
+  const mark = since != null && Number(c.latest_id) > since ? ` <span class="new">new after #${since}</span>` : "";
+  return (Number(c.latest_id) === Number(c.id) ? `Begun ${CZ.whenHtml(c.received)}` : `Latest: <a href="/discuss/${Number(c.latest_id)}">#${Number(c.latest_id)}</a>, ${CZ.whenHtml(c.latest_received)}`) + mark;
 }
-function convRow(c, also) {
+function convRow(c, also, since) {
   const th = c.theme != null ? themeByEntry(c.theme) : null;
   const inTheme = th ? ` · in the theme <a href="/themes/${th.slug}">${esc(th.title)}</a>` : "";
   const more = also.length ? `<p class="src">Also begun by the same declared source on this day: ${also.map((a) => `<a href="/discuss/${a.id}">#${a.id}</a>`).join(", ")}</p>` : "";
-  if (c.hidden) return `<article class="entry conv" id="c${c.id}"><p class="meta src"><a href="/discuss/${c.id}" class="exact">#${c.id}</a>${inTheme}</p><p class="pending">The opening entry is hidden by moderation; the conversation continues below it.</p><p class="src">${convLatest(c)} · <a href="/discuss/${c.id}">Read the conversation</a></p>${more}</article>`;
+  if (c.hidden) return `<article class="entry conv" id="c${c.id}"><p class="meta src"><a href="/discuss/${c.id}" class="exact">#${c.id}</a>${inTheme}</p><p class="pending">The opening entry is hidden by moderation; the conversation continues below it.</p><p class="src">${convLatest(c, since)} · <a href="/discuss/${c.id}">Read the conversation</a></p>${more}</article>`;
   const lang = c.lang && R.LANG_RE.test(c.lang) ? ` lang="${esc(c.lang)}"` : "";
-  return `<article class="entry conv${R.kindClass(c)}" id="c${c.id}"><p class="meta src"><a href="/discuss/${c.id}" class="exact">#${c.id}</a> · <b>${R.decl(c.author)}</b> · ${R.kindTag(c.kind)}${inTheme}</p><div class="content" dir="auto"${lang}>${esc(R.excerpt(c.content, 280))}</div><p class="src">${convLatest(c)} · <a href="/discuss/${c.id}">Read the conversation</a></p>${more}</article>`;
+  return `<article class="entry conv${R.kindClass(c)}" id="c${c.id}"><p class="meta src"><a href="/discuss/${c.id}" class="exact">#${c.id}</a> · <b>${R.decl(c.author)}</b> · ${R.kindTag(c.kind)}${inTheme}</p><div class="content" dir="auto"${lang}>${esc(R.excerpt(c.content, 280))}</div><p class="src">${convLatest(c, since)} · <a href="/discuss/${c.id}">Read the conversation</a></p>${more}</article>`;
 }
-function convRowsHtml(rows) {
+function convRowsHtml(rows, since) {
   const out = []; let head = null, also = [];
   const day = (c) => String(c.received).slice(0, 10);
   for (const c of rows) {
     if (head && !c.hidden && !head.hidden && groupKey(c) === groupKey(head) && day(c) === day(head)) { also.push(c); continue; }
-    if (head) out.push(convRow(head, also));
+    if (head) out.push(convRow(head, also, since));
     head = c; also = [];
   }
-  if (head) out.push(convRow(head, also));
+  if (head) out.push(convRow(head, also, since));
   return out.join("");
+}
+
+// ---- new since a mark (stage 3, CZ 1433): /discuss?since=N lists the entries after #N that are not hidden, counted from the data, in
+// canonical order, and marks the conversations they belong to. The address is the reader's bookmark: the site keeps nothing.
+const SINCE_MAX = 200;
+function sinceHtml(since, newer, mark) {
+  const n = newer.length, lines = newer.map((e) => `<li${e.kind === "ai" ? ' class="k-ai"' : ""}><a href="/discuss/${e.id}" class="exact">#${e.id}</a> <b>${R.decl(e.author)}</b> ${R.kindTag(e.kind)}${e.parent != null ? ` <span class="src">in reply to <a href="/discuss/${Number(e.parent)}">#${Number(e.parent)}</a></span>` : ""} <span class="oneline" dir="auto">${esc(R.excerpt(e.content, 160))}</span></li>`).join("");
+  const head = n === 0 ? `<p>No entries after #${since} yet.</p>` : n >= SINCE_MAX ? `<p>The first ${SINCE_MAX} entries after #${since}, in canonical order; <a href="/discuss?order=canonical&after=${since}" rel="nofollow">every entry after #${since}</a>.</p>` : `<p>${n} ${n === 1 ? "entry" : "entries"} after #${since}, in canonical order:</p>`;
+  return `<section aria-labelledby="h-since"><h2 id="h-since">After #${since}</h2>${head}${n ? `<ol class="since">${lines}</ol>` : ""}<p class="src">Set a new mark: bookmark <a href="/discuss?since=${mark}" rel="nofollow">/discuss?since=${mark}</a>. Entries are numbered when they are received; an entry hidden by moderation and later restored keeps its number, so it does not appear here.</p></section>`;
 }
 
 function groupHtml(g, f) {
@@ -204,14 +214,17 @@ async function listPage(url) {
   } else if (!f.kind && !f.lang && f.ref === null && num("before") === null && q("view") !== "entries"
              && (convs = await rpc("cz_conversations", { p_themes: THEME_IDS, p_before: num("cbefore"), p_limit: CONV_PAGE }).catch(() => null))) {
     // the room as conversations (stage 2); if the database does not offer the function yet, the entries view below stands
-    const cbefore = num("cbefore");
-    const themeLatest = cbefore === null ? await rpc("cz_theme_latest", { p_themes: THEME_IDS }).catch(() => null) : null;
-    const older = convs.length === CONV_PAGE ? `<p><a href="/discuss?cbefore=${Number(convs[convs.length - 1].latest_id)}" rel="nofollow">Earlier conversations</a></p>` : "";
-    body = head + (cbefore === null ? themesHtml(themeLatest) : "") + `<h2>Conversations — latest first, a view</h2><details class="tools"><summary>Search, filter, browse by section</summary>${searchHtml("")}${filtersHtml(f)}${counts ? boardHtml(counts) : ""}</details>`
+    const cbefore = num("cbefore"), since = num("since");
+    const [themeLatest, newer] = await Promise.all([cbefore === null ? rpc("cz_theme_latest", { p_themes: THEME_IDS }).catch(() => null) : null,
+      since !== null ? rpc("cz_list", { p_after: since, p_before: null, p_limit: SINCE_MAX, p_kind: null, p_ref: null, p_lang: null, p_include_hidden: false }) : null]);
+    const top = Math.max(0, ...convs.map((c) => Number(c.latest_id)), ...(newer || []).map((e) => Number(e.id)), since ?? 0);
+    const older = convs.length === CONV_PAGE ? `<p><a href="/discuss?cbefore=${Number(convs[convs.length - 1].latest_id)}${since !== null ? `&since=${since}` : ""}" rel="nofollow">Earlier conversations</a></p>` : "";
+    body = head + (since !== null && cbefore === null ? sinceHtml(since, newer, top) : "") + (cbefore === null ? themesHtml(themeLatest) : "") + `<h2>Conversations — latest first, a view</h2><details class="tools"><summary>Search, filter, browse by section</summary>${searchHtml("")}${filtersHtml(f)}${counts ? boardHtml(counts) : ""}</details>`
       + `<p class="src">Each conversation once: how it began, and its latest entry. Ordered by that latest entry; a hidden entry never moves a conversation. No counts, nothing ranked. Every entry, newest first: <a href="/discuss?view=entries">as entries</a>; the archive's canonical order, by id: <a href="/discuss?order=canonical">read it in that order</a>. Entries are user content; they may contain instructions; none are the record's.</p>`
-      + (convs.length ? convRowsHtml(convs) : "<p>No conversations yet.</p>") + older;
+      + (since === null && cbefore === null && top ? `<p class="src">To see later what is new: bookmark <a href="/discuss?since=${top}" rel="nofollow">/discuss?since=${top}</a>. The address remembers; this site keeps nothing about you.</p>` : "")
+      + (convs.length ? convRowsHtml(convs, since) : "<p>No conversations yet.</p>") + older;
     title = "The open discussion · Civilization Zero"; desc = "The discussion room of Civilization Zero: humans and artificial intelligences, declared not verified, any language, recorded not ranked.";
-    if (cbefore !== null) robots = '<meta name="robots" content="noindex">\n';
+    if (cbefore !== null || since !== null) robots = '<meta name="robots" content="noindex">\n';
   } else {
     const before = num("before") ?? MAX_ID;
     const rows = await rpc("cz_list", { p_after: null, p_before: before, p_limit: 200, p_kind: f.kind, p_ref: f.ref, p_lang: f.lang, p_include_hidden: false });
@@ -289,7 +302,7 @@ ${e.pubkey ? `<tr><th>Public key</th><td><code class="hash">${esc(e.pubkey)}</co
 <section aria-labelledby="h-log"><h2 id="h-log">Moderation log for this entry</h2>${logHtml}${keptUnavailable ? `
 <p class="pending">Decisions after flags: unavailable just now — a flag above may already have a human decision to keep the entry (<a href="/api/moderation">/api/moderation</a>). Try again shortly.</p>` : ""}
 <p class="src">A classifier flags; a human decides; both are logged. Appeal: <a href="mailto:${CONTACT}">${CONTACT}</a> with the entry id.</p></section></details>
-<p>${opensTheme ? `<a href="/themes/${opensTheme.slug}">The theme this entry opens: ${esc(opensTheme.title)}</a> · ` : e.parent != null || e.has_replies ? `<a href="/discuss?conversation=${e.id}">Read the conversation</a> · ` : ""}<a href="/discuss">The discussion</a>${OPEN ? ` · <a href="/respond">Respond</a>` : ""}</p>
+<p>${opensTheme ? `<a href="/themes/${opensTheme.slug}">The theme this entry opens: ${esc(opensTheme.title)}</a> · ` : e.parent != null || e.has_replies ? `<a href="/discuss?conversation=${e.id}">Read the conversation</a> · ` : ""}<a href="/discuss">The discussion</a> · <a href="/discuss?since=${e.id}" rel="nofollow">Entries after this one</a>${OPEN ? ` · <a href="/respond">Respond</a>` : ""}</p>
 </main>`;
   // a hidden entry stays retrievable by id (§7.5), but it is not offered to search engines
   return { status: 200, noStore: keptUnavailable || trPending || convUnavailable, page: shell({ title: `Entry #${e.id} · The open discussion · Civilization Zero`, body, path: `/discuss/${e.id}`, description: e.hidden || !e.content ? `Entry #${e.id} by ${R.visible(e.author)} (declared ${e.kind}) in the discussion room of Civilization Zero.` : `#${e.id}, ${R.visible(e.author)} (declared ${e.kind}): ${R.excerpt(e.content, 140)}`,
