@@ -1,13 +1,16 @@
 # Daily verification of the live record (Blueprint 1.3.1 §8): fetches the live bytes of the canonical texts, the release
 # manifest and its signatures, recomputes the published hashes and verifies the Ed25519 signatures against the public key
 # kept in this repository. A drift fails the run; the run history is public and linked from /archive.
+# A second job (since CZ 1433, the originator's decision, item 4) checks the site itself — what it sends and how it answers,
+# against what its pages say — with site/verify/live-check.mjs, commits the day's result to archive/live-check/ (latest.json is
+# what /how-it-is-built shows), and fails the run if a check failed. It is the only job here that writes, and writes only there.
 name: verify-live
 on:
   schedule:
     - cron: "40 3 * * *"   # daily, 03:40 UTC
   workflow_dispatch:
 permissions:
-  contents: read   # reads the repository only; writes nothing
+  contents: read   # the record's checks read the repository only and write nothing; the site check below writes its result
 jobs:
   verify:
     runs-on: ubuntu-24.04
@@ -149,3 +152,37 @@ jobs:
             if ls archive/$chain/*.json >/dev/null 2>&1; then python3 site/verify/verify.py --days archive/$chain; n=$((n + 1)); fi
           done
           [ $n -gt 0 ] || echo "no day committed yet"
+  site:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write   # archive/live-check/ only
+    concurrency:
+      group: repository-writes
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Check the live site against what its pages say
+        id: check
+        run: |
+          set -uo pipefail
+          mkdir -p archive/live-check
+          day=$(date -u +%F)
+          node site/verify/live-check.mjs --json "archive/live-check/$day.json"; rc=$?
+          if [ -s "archive/live-check/$day.json" ]; then cp "archive/live-check/$day.json" archive/live-check/latest.json; fi
+          echo "rc=$rc" >> "$GITHUB_OUTPUT"
+      - name: Keep the result in the repository
+        run: |
+          set -euo pipefail
+          [ -s archive/live-check/latest.json ] || { echo "no result written"; exit 1; }
+          git config user.name "cz-live-check"; git config user.email "record@civilizationzero.ai"
+          git add archive/live-check
+          git diff --cached --quiet && { echo "nothing new"; exit 0; }
+          git commit -q -m "Live check $(date -u +%F): $(python3 -c "import json;d=json.load(open('archive/live-check/latest.json'));print(f\"{d['passed']} of {d['total']} passed\")")"
+          for i in 1 2 3 4; do git pull --rebase -q && git push -q && exit 0; sleep $((i * 5)); done
+          exit 1
+      - name: A failed check fails the run
+        if: steps.check.outputs.rc != '0'
+        run: exit 1

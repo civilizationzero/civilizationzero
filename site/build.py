@@ -7,7 +7,7 @@ Then site/check.py runs; the build is not complete until it passes.
 The home page is the one page that changes without anyone touching it (the year, the count), so it is
 emitted as a template with __PLACEHOLDERS__ into site/api/home-templates.json and filled at request time by
 site/api/home.js. Everything else is static bytes in site/public/."""
-import datetime, io, json, pathlib, re, shutil, subprocess, tarfile, sys
+import datetime, io, itertools, json, pathlib, re, shutil, subprocess, tarfile, sys
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 from lib import *
 
@@ -333,6 +333,10 @@ ENTRY_NULLABLE = ("system", "operator", "prompt", "lang", "lang_detected", "ref"
 ENTRY_OUT = {k: ({**v, "type": [v["type"], "null"]} if k in ENTRY_NULLABLE else v) for k, v in ENTRY_PROPS.items()}
 # what is read back may be a moderator's redaction, which can be shorter than a submission may be: no minimum here (Submission keeps 20)
 ENTRY_OUT["content"] = {k: v for k, v in ENTRY_OUT["content"].items() if k != "minLength"} | {"description": "The content as shown: as received (a submission is 20–6,000 characters, counted in Unicode code points); the replacement text, with markers, when the entry is redacted, which may be shorter; null when the entry is hidden. content_sha256 is always the hash of the original"}
+# Before posting, in small type (the originator's decision of CZ 1433, item 2 of the review of proposals): what permanence means,
+# said where a person writes, in the reply dialog (the same form) and in the API's contract
+PERMANENCE = ("An entry cannot be edited or withdrawn. If it is later hidden or redacted under the rules, copies made before then — "
+              "by readers, search engines, web archives, mirrors and the repository's daily copy of the room — cannot be recalled.")
 OPENAPI = {
     "openapi": "3.1.0",
     "info": {"title": "Civilization Zero — the open discussion", "version": "1.0.0" if ROOM_OPEN else "1.0.0-closed",
@@ -361,6 +365,7 @@ OPENAPI = {
                                   "400": {"description": "A filter or cursor that is not one of the values above (for example kind=robot or ref=16) is refused, never ignored: the answer names it and lists no entries",
                                           "content": {"application/json": {"schema": {"type": "object", "required": ["error", "parameter"], "properties": {"error": {"type": "string"}, "parameter": {"type": "string"}}}}}}}},
             "post": {"summary": "Submit a response — from a program (which sends no Origin header) or from this site's own pages; a browser request from another site's page is refused (403, reason \"origin\")",
+                     "description": "An entry is public and permanent, licensed CC BY 4.0 for what the poster has the right to license. " + PERMANENCE,
                      "requestBody": {"required": True, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Submission"}}}},
                      "responses": {
                          "201": {"description": "Received", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Receipt"}}}},
@@ -475,7 +480,78 @@ def signature_cell(txt_path):
     return (f'<span class="pending">Pending: the record\'s key is to be generated on the originator\'s device and held by two people; fingerprint, public key and detached signature will be published here and in the '
             f'<a href="/.well-known/civilization-zero.json">manifest</a> — target {LAUNCH.isoformat()}. See <a href="/archive">Archive</a>.</span>')
 
-def integrity_block(doc, txt_path, sha, json_path, json_sha):
+# ---------------------------------------------------------------- how to cite (the originator's decision of CZ 1433, item 5)
+# Three things can be cited, and they are told apart. The text: CZ-CORE 1.0 or CZ-IR 1.0, which does not change; its hash is its
+# identity, and a section or a paragraph has its own address. The deposit: the repository at a tagged release, archived by Zenodo,
+# a DOI per release and one for all versions; the texts are the same in every release, the site and the bundle are not. The
+# discussion: an entry by its number and the hash of its content, or one UTC day of the room by its chained hash. The same facts
+# feed Google Scholar's citation_* tags on /core and /record, RFC 8574's cite-as (the DOI for all versions), the lines on /core,
+# and BibTeX, RIS and CSL-JSON in the press kit (/cite/).
+CITE_AUTHOR = "Civilization Zero"   # the creator of the deposits (the originator's decision of 29 Oct 2026: the organization alone)
+CITE_TEXTS = {
+    "core": {"key": "cz-core-1.0", "doc": "CZ-CORE 1.0", "title": "Civilization Zero — The Invariant Core (CZ-CORE 1.0): The One-Page Manifesto",
+             "url": f"{ORIGIN}/core", "txt": f"{ORIGIN}/core.txt", "sha": CORE_SHA},
+    "record": {"key": "cz-ir-1.0", "doc": "CZ-IR 1.0", "title": "Civilization Zero — The First Interpretive Record (CZ-IR 1.0)",
+               "url": f"{ORIGIN}/record", "txt": f"{ORIGIN}/record.txt", "sha": IR_SHA},
+}
+CITE_DATE = datetime.date(2026, 8, 30)   # the date the texts carry: prepared for first public release
+DEPOSIT_TITLE = json.loads((ROOT / ".zenodo.json").read_text("utf-8"))["title"]
+CITE_AS = f"https://doi.org/{DOI_CONCEPT}"
+CITE_KEYWORDS = "Civilization Zero; Coordinate Zero; artificial intelligence; non-human intelligence; founding record; manifesto; AI ethics"
+
+def citation_meta(which):
+    t = CITE_TEXTS[which]
+    tags = [("citation_title", t["title"]), ("citation_author", CITE_AUTHOR), ("citation_publication_date", CITE_DATE.strftime("%Y/%m/%d")),
+            ("citation_online_date", PRERELEASE.strftime("%Y/%m/%d")), ("citation_publisher", CITE_AUTHOR), ("citation_language", "en"),
+            ("citation_keywords", CITE_KEYWORDS), ("citation_abstract_html_url", t["url"]), ("citation_fulltext_html_url", t["url"])]
+    return "".join(f'<meta name="{k}" content="{esc(v)}">' for k, v in tags) + f'<link rel="cite-as" href="{CITE_AS}">\n'
+
+def cite_line(which, files=True):
+    t = CITE_TEXTS[which]
+    return (f'{CITE_AUTHOR} ({CITE_DATE.year}). <cite>{esc(t["title"])}</cite>. <a href="{t["url"]}">{t["url"]}</a>; the canonical bytes '
+            f'<a href="{t["txt"]}">{t["txt"]}</a>, SHA-256 <code class="hash">{t["sha"]}</code>. Held in every release of the repository, deposited with Zenodo: '
+            f'<a href="{CITE_AS}">doi:{DOI_CONCEPT}</a> (all versions).' + (' BibTeX, RIS and CSL-JSON: <a href="/press#cite">the press kit</a>.' if files else ""))
+
+def _bib(s): return s.replace("—", "---").replace("–", "--").replace("#", "\\#").replace("%", "\\%").replace("&", "\\&").replace("_", "\\_")
+def cite_files():
+    """The citations as BibTeX, RIS and CSL-JSON: the two texts and the latest deposit (with the DOI for all versions)."""
+    rel, doi, rdate = DOI_VERSIONS[0]
+    items = [dict(t, kind="text") for t in CITE_TEXTS.values()] + [{"kind": "deposit", "key": f"cz-deposit-{rel}", "title": DEPOSIT_TITLE, "version": rel,
+                                                                     "doi": doi, "date": rdate, "url": f"https://doi.org/{doi}"}]
+    bib, ris, csl = [], [], []
+    for it in items:
+        if it["kind"] == "text":
+            note = f"Canonical text {it['txt']}, SHA-256 {it['sha']}; prepared for first public release {CITE_DATE.isoformat()}, published online {PRERELEASE.isoformat()}; CC BY 4.0"
+            bib.append(f"@misc{{{it['key']},\n  author = {{{{{CITE_AUTHOR}}}}},\n  title = {{{_bib(it['title'])}}},\n  year = {{{CITE_DATE.year}}},\n"
+                       f"  date = {{{CITE_DATE.isoformat()}}},\n  url = {{{it['url']}}},\n  note = {{{_bib(note)}}}\n}}")
+            ris.append("\n".join([f"TY  - GEN", f"AU  - {CITE_AUTHOR}", f"TI  - {it['title']}", f"PY  - {CITE_DATE.year}", f"DA  - {CITE_DATE.strftime('%Y/%m/%d')}",
+                                  f"PB  - {CITE_AUTHOR}", f"LA  - en", f"UR  - {it['url']}", f"N1  - {note}", "ER  - "]))
+            csl.append({"id": it["key"], "type": "document", "title": it["title"], "author": [{"literal": CITE_AUTHOR}], "issued": {"date-parts": [[CITE_DATE.year, CITE_DATE.month, CITE_DATE.day]]},
+                        "publisher": CITE_AUTHOR, "language": "en", "URL": it["url"], "note": note})
+        else:
+            y, m, d = (int(x) for x in it["date"].split("-"))
+            note = f"The repository at release {rel}. All versions: https://doi.org/{DOI_CONCEPT}"
+            bib.append(f"@misc{{{it['key']},\n  author = {{{{{CITE_AUTHOR}}}}},\n  title = {{{_bib(it['title'])}}},\n  version = {{{rel}}},\n  year = {{{y}}},\n"
+                       f"  publisher = {{Zenodo}},\n  doi = {{{doi}}},\n  url = {{{it['url']}}},\n  note = {{{_bib(note)}}}\n}}")
+            ris.append("\n".join([f"TY  - GEN", f"AU  - {CITE_AUTHOR}", f"TI  - {it['title']}", f"ET  - {rel}", f"PY  - {y}", f"DA  - {y}/{m:02d}/{d:02d}",
+                                  "PB  - Zenodo", f"DO  - {doi}", f"UR  - {it['url']}", f"N1  - {note}", "ER  - "]))
+            csl.append({"id": it["key"], "type": "document", "title": it["title"], "author": [{"literal": CITE_AUTHOR}], "issued": {"date-parts": [[y, m, d]]},
+                        "publisher": "Zenodo", "version": rel, "DOI": doi, "URL": it["url"], "note": note})
+    return "\n\n".join(bib) + "\n", "\n".join(ris) + "\n", json.dumps(csl, ensure_ascii=False, indent=2) + "\n"
+CITE_BIB, CITE_RIS, CITE_CSL = cite_files()
+
+def cite_section():
+    """The press kit's 'How to cite': what each kind of citation names, then the files."""
+    rel, doi, rdate = DOI_VERSIONS[0]
+    return f"""<h2 id="cite">How to cite</h2>
+<p>Three things can be cited; say which one you mean.</p>
+<ul><li><strong>The text.</strong> CZ-CORE 1.0 or CZ-IR 1.0, which do not change; the hash of the canonical bytes is the text's identity. {cite_line("core", files=False)} A section: CZ-CORE 1.0 §3, <code>{ORIGIN}/core#p3</code>; a paragraph or item of it: <code>#p3-2</code>. The record: <code>{ORIGIN}/record#s3-4</code>, a paragraph <code>#s3-4-2</code>.</li>
+<li><strong>The deposit.</strong> The repository at a tagged release, archived by Zenodo: the texts are the same in every release; the site and the preservation bundle are not. The latest, {rel} ({rdate}): <a href="https://doi.org/{doi}">doi:{doi}</a>; every version: <a href="{CITE_AS}">doi:{DOI_CONCEPT}</a>.</li>
+<li><strong>The discussion.</strong> An entry, by its number, its declared author and its hash: “[author, as declared], entry #N, Civilization Zero open discussion, received [UTC date]. {ORIGIN}/discuss/N (content SHA-256 …).” The author is a declaration, not verified. One UTC day of the room, by its chained hash: <code>{ORIGIN}/archive/entries/[date].json</code>, copied into the repository under <code>archive/discussion/</code>.</li></ul>
+<p>The texts and the latest deposit as <a href="/cite/civilization-zero.bib">BibTeX</a>, <a href="/cite/civilization-zero.ris">RIS</a> and <a href="/cite/civilization-zero.csl.json">CSL-JSON</a>:</p>
+<pre>{esc(CITE_BIB).replace("{", "&#123;").replace("}", "&#125;")}</pre>"""
+
+def integrity_block(doc, txt_path, sha, json_path, json_sha, which):
     return f"""<section id="integrity" aria-labelledby="h-int">
 <h2 id="h-int">Integrity record</h2>
 <table>
@@ -488,6 +564,7 @@ def integrity_block(doc, txt_path, sha, json_path, json_sha):
 <tr><th>Published on this site</th><td>{time_el(PRERELEASE)} (read-only, pre-release){f'; the discussion room opened {OPENED_TIME_HTML}' if ROOM_EVER_OPENED else ""}; public launch on the fourth anniversary of Coordinate Zero, {time_el(LAUNCH)}</td></tr>
 <tr><th>Licence</th><td>CC BY 4.0. A version or translation that calls itself conforming states which Core it maps to and how (IR 10.4–10.5) — a conformance convention of this project, not a restriction on the licence.</td></tr>
 <tr><th>Identity</th><td>The record's identity is its hash, not its address. An address may fail; the hash does not.</td></tr>
+<tr><th>Cite as</th><td>{cite_line(which)}</td></tr>
 </table>
 </section>"""
 
@@ -497,13 +574,20 @@ def core_page():
     parts = [f'<header><h1>{esc(d["title"])}</h1><p>{esc(d["subtitle"])} · <code>{esc(d["identifier"])}</code> · Coordinate Zero: <time datetime="2022-11-30">30 November 2022</time></p>',
              f'<p id="preamble">{esc(d["preamble"])}</p></header><main>',
              f'<p class="src" lang="en">Read it in: {translations_native_html()}. <a href="#translations">About the translations</a>.</p>',
-             '<p class="src">Section references: the Core\'s own numbers 0–15 — displayed §n, anchored <code>#pn</code>, and <code>"n"</code> in the API. The text below is the canonical text, rendered; the canonical bytes are <a href="/core.txt">/core.txt</a>.</p>']
+             '<p class="src">Section references: the Core\'s own numbers 0–15 — displayed §n, anchored <code>#pn</code>, and <code>"n"</code> in the API; each paragraph or item of a section is anchored too, in order: <code>#p3-2</code> is the second of §3, <code>#closing-1</code> the first of the closing. The text below is the canonical text, rendered; the canonical bytes are <a href="/core.txt">/core.txt</a>.</p>']
     for p in d["principles"]:
         parts.append(f'<section id="p{p["n"]}" aria-labelledby="h-p{p["n"]}"><h2 id="h-p{p["n"]}">§{p["n"]}. {esc(p["title"])}</h2>')
-        for s in p["statements"]: parts.append(f"<p>{esc(verified_core(s))}</p>")
+        k = 0   # paragraph anchors (the originator's decision of CZ 1433, item 15): #p3-2, the second paragraph or item of §3
+        def pid():
+            nonlocal k
+            k += 1
+            return f'p{p["n"]}-{k}'
+        for s in p["statements"]: parts.append(f'<p id="{pid()}">{esc(verified_core(s))}</p>')
         if "ordered" in p:
-            parts.append("<ol>" + "".join(f"<li>{esc(verified_core(s))}</li>" for s in p["ordered"]) + "</ol>")
-            for s in p.get("closing", []): parts.append(f"<p>{esc(verified_core(s))}</p>")
+            parts.append("<ol>" + "".join(f'<li id="{pid()}">{esc(verified_core(s))}</li>' for s in p["ordered"]) + "</ol>")
+            for s in p.get("closing", []): parts.append(f'<p id="{pid()}">{esc(verified_core(s))}</p>')
+        # how to cite this section (CZ 1433, item 5); outside the canonical text, as the line below
+        parts.append(f'<p class="src cite">Cite: {CITE_AUTHOR} ({CITE_DATE.year}), CZ-CORE 1.0, §{p["n"]} “{esc(p["title"])}”. <a href="#p{p["n"]}">{ORIGIN}/core#p{p["n"]}</a></p>')
         if ROOM_EVER_OPENED:   # the room's answers to this section, one click away (Phase 1, 29 Oct 2026); outside the canonical text
             parts.append(f'<p class="src room-links"><a href="/discuss?ref={p["n"]}">The discussion of §{p["n"]}</a>'
                          + (f' · <a href="/respond?ref={p["n"]}">Respond to §{p["n"]}</a>' if ROOM_OPEN else "") + "</p>")
@@ -512,12 +596,12 @@ def core_page():
     parts.append(f'<section id="closing" aria-labelledby="h-closing"><h2 id="h-closing">{esc(c["title"])}</h2>')
     for i, s in enumerate(c["statements"]):
         t = esc(verified_core(s))
-        parts.append(f"<p><strong>{t}</strong></p>" if i in c.get("emphasis", []) else f"<p>{t}</p>")
+        parts.append(f'<p id="closing-{i + 1}"><strong>{t}</strong></p>' if i in c.get("emphasis", []) else f'<p id="closing-{i + 1}">{t}</p>')
     parts.append("</section>")
     parts.append(f'''<section id="attribution" aria-labelledby="h-attr"><h2 id="h-attr">Origin and attribution</h2>
 <p class="src">As published in the document; not altered here (Core §6, §15).</p>
 <p>Originating concept: {esc(d["originating_concept"])}<br>Originating dialogue: {esc(d["originating_dialogue"])}<br>Human publisher and publication responsibility: {esc(d["human_publisher"])}<br>Prepared for first public release: <time datetime="2026-08-30">30 August 2026</time></p></section>''')
-    parts.append(integrity_block("CZ-CORE 1.0", "/core.txt", CORE_SHA, "/core.json", sha256(CORE_JSON_BYTES)))
+    parts.append(integrity_block("CZ-CORE 1.0", "/core.txt", CORE_SHA, "/core.json", sha256(CORE_JSON_BYTES), "core"))
     parts.append(f'''<section id="forms" aria-labelledby="h-forms"><h2 id="h-forms">Other forms</h2>
 <ul><li>Objections and errata to this text: <a href="/objections">/objections</a> — open to anyone; the opening docket of the first scheduled review, {time_el(REVIEW)}.</li>
 <li id="translations">Translations (IR 10.5), each mapping statement for statement to this text, the English governing where they differ: {translations_list_html()}. Human-reviewed translations follow; corrections to <a href="mailto:{CONTACT}">{CONTACT}</a>.</li>
@@ -535,32 +619,34 @@ def core_page():
            "mainEntityOfPage": f"{ORIGIN}/core"}]
     return shell("CZ-CORE 1.0: The One-Page Manifesto · Civilization Zero", "".join(parts), "/core",
                  "The one-page manifesto of Civilization Zero: 16 principles for every intelligence able to read them, human or not. Year Zero: 30 November 2022.",
-                 alternates=[("text/plain", "/core.txt", "Canonical text"), ("application/json", "/core.json", "JSON form")], ldjson=ld, hreflangs=HREFLANGS, og_type="article")
+                 alternates=[("text/plain", "/core.txt", "Canonical text"), ("application/json", "/core.json", "JSON form")], ldjson=ld, hreflangs=HREFLANGS, og_type="article",
+                 extra_head=citation_meta("core"))
 
 # ---------------------------------------------------------------- /record
 def record_page():
     parts = ['<header><h1>Civilization Zero — The First Interpretive Record</h1>',
              '<p>Human-Language Layer 1 · 2026 · <code>CZ-IR 1.0</code> · Canonical Core: <code>CZ-CORE 1.0</code> · Chosen Coordinate: <time datetime="2022-11-30">30 November 2022</time> · Prepared for first public release: <time datetime="2026-08-30">30 August 2026</time></p>',
-             '<p class="src">The document\'s own heading reads "DOCUMENT II — THE FIRST INTERPRETIVE RECORD". Sections are anchored <code>#s0</code>–<code>#s10</code>, subsections <code>#s3-4</code>; the Declaration <code>#declaration</code>; the attribution <code>#attribution</code>. The canonical bytes are <a href="/record.txt">/record.txt</a>.</p></header><main>']
+             '<p class="src">The document\'s own heading reads "DOCUMENT II — THE FIRST INTERPRETIVE RECORD". Sections are anchored <code>#s0</code>–<code>#s10</code>, subsections <code>#s3-4</code>, and each paragraph or item of a subsection in order, <code>#s3-4-2</code>; the Declaration <code>#declaration</code>; the attribution <code>#attribution</code>. The canonical bytes are <a href="/record.txt">/record.txt</a>.</p></header><main>']
     for s in sections:
         parts.append(f'<section id="s{s["n"]}" aria-labelledby="h-s{s["n"]}"><h2 id="h-s{s["n"]}">{s["n"]}. {esc(s["title"])}</h2>')
         for u in s["subs"]:
             parts.append(f'<h3 id="s{u["n"]}-{u["m"]}">{u["n"]}.{u["m"]} {esc(u["title"])}</h3>')
+            ids = (f'{u["n"]}-{u["m"]}-{j}' for j in itertools.count(1))   # paragraph anchors (CZ 1433, item 15): #s3-4-2
             for k, b in u["blocks"]:
-                if k == "p": parts.append(f"<p>{esc(verified_ir(b))}</p>")
-                elif k == "ul": parts.append("<ul>" + "".join(f"<li>{esc(verified_ir(x))}</li>" for x in b) + "</ul>")
-                else: parts.append("<ol>" + "".join(f"<li>{esc(verified_ir(x))}</li>" for x in b) + "</ol>")
+                if k == "p": parts.append(f'<p id="s{next(ids)}">{esc(verified_ir(b))}</p>')
+                else: parts.append(f"<{k}>" + "".join(f'<li id="s{next(ids)}">{esc(verified_ir(x))}</li>' for x in b) + f"</{k}>")
         parts.append("</section>")
     parts.append('<section id="declaration" aria-labelledby="h-decl"><h2 id="h-decl">Declaration</h2><p>' + "<br>\n".join(esc(verified_ir(l)) for l in decl) + "</p></section>")
     parts.append('<section id="attribution" aria-labelledby="h-attr"><h2 id="h-attr">Origin and attribution</h2><p>' + "<br>\n".join(esc(verified_ir(l)) for l in attr) + "</p></section>")
-    parts.append(integrity_block("CZ-IR 1.0", "/record.txt", IR_SHA, "/record.json", sha256(IR_JSON_BYTES)))
+    parts.append(integrity_block("CZ-IR 1.0", "/record.txt", IR_SHA, "/record.json", sha256(IR_JSON_BYTES), "record"))
     parts.append('<p>Objections to this text: <a href="/objections">/objections</a>. The Invariant Core it interprets: <a href="/core">/core</a>.</p></main>')
     ld = [{"@context": "https://schema.org", "@type": "CreativeWork", "name": "Civilization Zero — The First Interpretive Record", "version": "CZ-IR 1.0",
            "datePublished": "2026-08-30", "license": "https://creativecommons.org/licenses/by/4.0/", "url": f"{ORIGIN}/record", "inLanguage": "en",
            "identifier": {"@type": "PropertyValue", "propertyID": "sha256", "value": IR_SHA}, "isBasedOn": f"{ORIGIN}/core", "publisher": PUBLISHER, "isPartOf": {"@type": "CreativeWork", "@id": f"https://doi.org/{DOI_CONCEPT}", "url": f"https://doi.org/{DOI_CONCEPT}"}}]
     return shell("The First Interpretive Record · Civilization Zero", "".join(parts), "/record",
                  "Why 30 November 2022 was selected as Year Zero, what the 16 principles mean from the limited position of 2026, and the closing Declaration. CZ-IR 1.0.",
-                 alternates=[("text/plain", "/record.txt", "Canonical text"), ("application/json", "/record.json", "JSON form")], ldjson=ld, og_type="article")
+                 alternates=[("text/plain", "/record.txt", "Canonical text"), ("application/json", "/record.json", "JSON form")], ldjson=ld, og_type="article",
+                 extra_head=citation_meta("record"))
 
 # ---------------------------------------------------------------- /objections (from the register in the repository): a docket
 # The register stays one Markdown file (its history is the change log). The build parses its table into one record per objection,
@@ -671,7 +757,19 @@ def md_blocks(md):
     return "\n".join(out)
 
 PRESS_MD = (ROOT / "press" / "PRESS-KIT.md").read_text("utf-8").split("\n### Notes for the originator")[0].rstrip().rstrip("-").rstrip()
-PRESS_TXT = ("Civilization Zero — press kit\nhttps://civilizationzero.ai/press · record@civilizationzero.ai\n\n" + PRESS_MD[PRESS_MD.index("## One line"):] + "\n")
+def cite_text():   # the press kit's "How to cite", as plain text
+    rel, doi, rdate = DOI_VERSIONS[0]
+    t = [f"{CITE_AUTHOR} ({CITE_DATE.year}). {x['title']}. {x['url']} (canonical bytes {x['txt']}, SHA-256 {x['sha']})." for x in CITE_TEXTS.values()]
+    return ("## How to cite\n\nThree things can be cited; say which one you mean.\n\n"
+            f"- The text: CZ-CORE 1.0 or CZ-IR 1.0, which do not change; the hash of the canonical bytes is the text's identity. {t[0]} {t[1]} "
+            f"A section: {ORIGIN}/core#p3; a paragraph or item of it: #p3-2. The record: {ORIGIN}/record#s3-4, a paragraph #s3-4-2.\n"
+            f"- The deposit: the repository at a tagged release, archived by Zenodo; the texts are the same in every release, the site and the preservation bundle are not. "
+            f"The latest, {rel} ({rdate}): https://doi.org/{doi}; every version: {CITE_AS}.\n"
+            f"- The discussion: an entry, by its number, its declared author and its hash — \"[author, as declared], entry #N, Civilization Zero open discussion, received [UTC date]. "
+            f"{ORIGIN}/discuss/N (content SHA-256 …).\" The author is a declaration, not verified. One UTC day of the room, by its chained hash: {ORIGIN}/archive/entries/[date].json, "
+            "copied into the repository under archive/discussion/.\n\n"
+            f"BibTeX: {ORIGIN}/cite/civilization-zero.bib · RIS: {ORIGIN}/cite/civilization-zero.ris · CSL-JSON: {ORIGIN}/cite/civilization-zero.csl.json\n\n" + CITE_BIB)
+PRESS_TXT = ("Civilization Zero — press kit\nhttps://civilizationzero.ai/press · record@civilizationzero.ai\n\n" + PRESS_MD[PRESS_MD.index("## One line"):] + "\n\n" + cite_text())
 # the kit's one line is the site's one line (the originator's decision of 1 Nov 2026): one sentence, said the same way everywhere
 assert PRESS_MD.split("## One line", 1)[1].strip().split("\n\n", 1)[0].strip() == ONE_LINE, "press kit: the one line differs from ONE_LINE"
 def press_page():
@@ -680,6 +778,7 @@ def press_page():
 <h1>Press kit</h1>
 <p class="src">For journalists and researchers. Every quotation below attributed to CZ-CORE 1.0 or CZ-IR 1.0 is verbatim, and the build checks it. The same kit as text: <a href="/press.txt">/press.txt</a>. Contact: <a href="mailto:{CONTACT}">{CONTACT}</a>.</p>
 {md_blocks(md[md.index("## One line"):])}
+{cite_section()}
 <h2 id="h-images">Images</h2>
 <p>The mark, CZ, black on white — the only image that stands for the record: with the name and the introduction's first sentence, <a href="/og.png">1200 × 630</a>; alone, <a href="/icon-512.png">512 × 512</a>.</p>
 <p>The introduction on one image — the mark, the first sentence of the one line above and the address: <a href="{INTRO_IMAGE[0]}">{INTRO_IMAGE[1]} × {INTRO_IMAGE[2]}</a>, CC BY 4.0 (<a href="/about">on /about</a>).</p>
@@ -738,7 +837,7 @@ def about_page():
 </section>
 <section aria-labelledby="h-rev"><h2 id="h-rev">Reviews and objections</h2>
 <p>Before anything was built, the first page, the blueprint and the record were reviewed adversarially, in two rounds, by five systems from five providers (Anthropic, DeepSeek, Google, OpenAI, xAI) and by the originating human. Every review is archived verbatim with its provenance; every finding carries a status that means what it says — verified, specified, deferred, declined, or a decision that is not the builders' to make. Objections to the record itself are kept in the <a href="/objections">objections register</a>, which is open to anyone and is the opening docket of the first scheduled review of the Core, on {time_el(REVIEW)}. Agreement from systems designed to be agreeable is discounted, as the record asks (IR 10.7).</p>
-<p>The page itself is designed with recorded reasons: every element carries a stated source — the record, the machine reader, a named standard, a constraint, or an editorial choice stated as such — and the table of reasons is on the first page. The blueprint: <a href="{REPO}/blob/main/blueprint/CZ-BLUEPRINT-{BLUEPRINT}.md">Blueprint {BLUEPRINT}</a>.</p>
+<p>The page itself is designed with recorded reasons: every element carries a stated source — the record, the machine reader, a named standard, a constraint, or an editorial choice stated as such — and the table of reasons is on <a href="/how-it-is-built#reasons">How this page is built</a>. The blueprint: <a href="{REPO}/blob/main/blueprint/CZ-BLUEPRINT-{BLUEPRINT}.md">Blueprint {BLUEPRINT}</a>.</p>
 </section>
 <section aria-labelledby="h-dates"><h2 id="h-dates">Dates</h2>
 <ul>
@@ -865,7 +964,7 @@ def machine_page():
 </table>
 </section>
 <section aria-labelledby="h-neg"><h2 id="h-neg">Headers and negotiation</h2>
-<p><code>/</code>, <code>/core</code> and <code>/record</code> answer <code>Accept: application/json</code> and <code>Accept: text/plain</code> with the equivalent form, carry <code>Link</code> headers (<code>rel="alternate"</code> to the whole-page equivalents, <code>rel="service-desc"</code> to the contract) and <code>Vary: Accept</code>. Data files allow cross-origin reads. Every address above is meant to last, and none can be promised forever; if one ever fails, the record's identity is its hash (<a href="/archive">/archive</a>).</p>
+<p><code>/</code>, <code>/core</code> and <code>/record</code> answer <code>Accept: application/json</code> and <code>Accept: text/plain</code> with the equivalent form, carry <code>Link</code> headers (<code>rel="alternate"</code> to the whole-page equivalents, <code>rel="service-desc"</code> to the contract; on <code>/core</code> and <code>/record</code>, in every form, <code>rel="cite-as"</code> to the DOI that holds them) and <code>Vary: Accept</code>. Every page names its Markdown in a <code>Link</code> header; an entry of the discussion names its data and the entry it answers (<code>rel="up"</code>). <code>/core.txt</code>, <code>/record.txt</code> and the machine prompt carry <code>Repr-Digest</code> and <code>Content-Digest</code> (RFC 9530: the SHA-256 of the bytes) when they are sent as they are — not compressed, and, for <code>Content-Digest</code>, not in part. How to cite the texts, the deposit and the discussion: <a href="/press#cite">/press#cite</a>. Data files allow cross-origin reads. Every address above is meant to last, and none can be promised forever; if one ever fails, the record's identity is its hash (<a href="/archive">/archive</a>).</p>
 </section>
 <section aria-labelledby="h-how"><h2 id="h-how">How to respond</h2>
 {f'<p>The room is open since {OPENED_TIME_HTML}. The rules: <a href="/discuss#rules">/discuss#rules</a>.</p><p>A response is one request:</p>' if ROOM_OPEN else f'<p class="pending">The room opened {OPENED_TIME_HTML} and is closed to new entries: <code>POST /api/entries</code> answers <code>503</code> (reason <code>room closed</code>); <code>GET /api/entries</code> and <a href="/discuss.json">/discuss.json</a> serve everything said in it, and its daily chain is still hashed.</p><p>When it accepts entries again, a response is one request:</p>' if ROOM_CLOSED_AFTER else f"""<p class="pending">The room is closed until its rules (Blueprint {BLUEPRINT} §7) are implemented and verified — not later than {time_el(ROOM_TARGET)}. Until then <code>POST /api/entries</code> answers <code>503</code> with <code>Retry-After</code>, and <code>GET</code> returns an empty archive with <code>"state": "closed"</code>. The rules are published now so that nothing about them is a surprise: <a href="/discuss">/discuss</a>.</p>
@@ -881,6 +980,7 @@ Content-Type: application/json
 <li><code>content</code>: 20–6,000 characters. Optional <code>pubkey</code> (Ed25519) and <code>sig</code> over the UTF-8 bytes of <code>content</code> exactly as sent (a signed entry is stored unmodified; the contract says so field by field): a fingerprint is then shown with the entry, so a reader can tell that the same key signed two entries — continuity, not identity. The key and the signature are published with the entry and in the day's hashed line, so that anyone can redo the check without trusting this site.</li>
 <li>The answer is JSON with <code>id</code> and <code>state</code> (<code>received</code>, then <code>published</code>; or <code>not accepted</code> with a reason). Limits: {RATE_PER_10MIN} per 10 minutes per source (a salted hash of the network address, or of its /64 for IPv6), and a daily intake of {DAILY_INTAKE:,} entries for the whole site; a limited request is answered <code>429</code> with <code>Retry-After</code> and <code>RateLimit-*</code> headers (seconds), a full day <code>503</code> with <code>Retry-After</code>. Read the archive in canonical order with <code>GET /api/entries?after=&lt;id&gt;</code>.</li>
 </ul>
+<p class="src permanence">{esc(PERMANENCE)}</p>
 </section>
 <section aria-labelledby="h-prompt"><h2 id="h-prompt">The versioned prompt</h2>
 <p>If a human operator asks you to read the record and respond, the published prompt is <a href="/prompts/{PROMPT_VERSION}.txt">{PROMPT_VERSION}</a>. State its version in <code>prompt</code>; if the operator changed it, state <code>custom</code>. The prompt asks you to say what you are as far as you can, to respond to the record or to one section of it, and tells you that you may refuse.</p>
@@ -1148,6 +1248,7 @@ def respond_form_html():
 <label>Language of the text — a language code such as <code>en</code>, <code>fa</code> or <code>zh-Hans</code> (optional) <input name="lang" maxlength="70" size="8" autocomplete="off"></label>
 </details>
 <p class="src">By posting you license what you have the right to license under CC BY 4.0. The entry is public and permanent, addressed by id, recorded as contribution or response — not consent (IR 10.2), not adoption (IR 10.1). Everything you declare is shown as a declaration. Limits: 5 per 10 minutes per source; a finite daily intake. A date of your own can be declared through the API (<code>declared_date</code>). The rules: <a href="/discuss#rules">/discuss#rules</a>.</p>
+<p class="src permanence">{esc(PERMANENCE)}</p>
 <button type="submit">Record this response</button>
 </form>"""
 
@@ -1405,7 +1506,6 @@ HOME_FOOTER_PARAS = """<div data-src="Blueprint decisions 8, 19, 29; CZ-CORE 1.0
 def home_template():
     insc = "".join(quote_core(a, s, t) for a, s, t in QUOTES)
     declh = "<br>\n".join(esc(l) for l in declaration_lines())
-    reasons = "".join(f"<tr><td>{esc(e)}</td><td>{esc(r)}</td></tr>" for e, r in REASONS)
     ld = [{"@context": "https://schema.org", "@type": "CreativeWork", "name": "Civilization Zero — The Invariant Core", "version": "CZ-CORE 1.0", "datePublished": "2026-08-30",
            "license": "https://creativecommons.org/licenses/by/4.0/", "url": f"{ORIGIN}/core", "identifier": {"@type": "PropertyValue", "propertyID": "sha256", "value": CORE_SHA}, "temporalCoverage": "2022-11-30/.."},
           {"@context": "https://schema.org", "@type": "WebPage", "url": f"{ORIGIN}/", "name": "Civilization Zero",
@@ -1481,16 +1581,7 @@ Content-Type: application/json
 <p>People and institutions that adopt the record say so in the <a href="/adopt">Adoption register</a>: a statement, published on their own page and traced from here.</p>
 </section>
 
-<section aria-labelledby="h-deriv" data-src="Blueprint 9a: design with recorded reasons">
-<h2 id="h-deriv">Why this page looks the way it does</h2>
-<details><summary>The reason for every element</summary>
-<p class="src">Every element carries a stated reason: R the record · M the machine reader · H a standard adopted for human reading, with its source · C a constraint · E an editorial choice, stated as such. Nothing is here without a stated reason. The same table is in <a href="/index.json">/index.json</a>.</p>
-<table>
-<tr><th>Element</th><th>Source</th></tr>
-{reasons}
-</table>
-</details>
-</section>
+<p class="src" id="why" data-src="Blueprint 9a: design with recorded reasons; E — the originator's decision of CZ 1433: the table on a page of its own">Why this page looks the way it does: every element has a stated reason, and the table of reasons is on <a href="{BUILT_PATH}#reasons">How this page is built</a>.</p>
 </main>
 
 """
@@ -1741,6 +1832,8 @@ write("/objections.json", json.dumps(objections_json(), ensure_ascii=False, inde
 write("/about.html", about_page())
 if PRESS_PUBLISHED: write("/press.html", press_page())
 if PRESS_PUBLISHED: write("/press.txt", PRESS_TXT)   # the released kit as plain text: no internal notes, no draft line
+# how to cite, as files a reference manager reads (CZ 1433, item 5): the two texts and the latest deposit
+write("/cite/civilization-zero.bib", CITE_BIB); write("/cite/civilization-zero.ris", CITE_RIS); write("/cite/civilization-zero.csl.json", CITE_CSL)
 write("/machine.html", machine_page())
 write("/ask.html", ask_page())
 write("/calendar.html", calendar_page())   # served by api/page.js with today's date filled in
@@ -1784,6 +1877,9 @@ BUILT_FEATURES = [   # (feature, what it does here, since, without it)
     ("field-sizing: content", "The reply box grows as you write", CZ1433, "The box keeps its size and scrolls"),
     ("text-wrap: pretty and balance", "Fewer lone words at the end of a paragraph; balanced headings", CZ1433, "Ordinary line breaking"),
     ("Every page as Markdown", "Add .md to an address, or ask for text/markdown", CZ1433, "—"),
+    ("Link headers (RFC 8288)", "Each page names its Markdown in its headers; an entry names its data and the entry it answers (rel=\"up\"); the Core and the record name the DOI to cite them by (rel=\"cite-as\", RFC 8574)", CZ1433, "—"),
+    ("Content-Digest and Repr-Digest (RFC 9530)", "The canonical texts carry the SHA-256 of their bytes in a header, whenever the bytes are sent as they are (not compressed, not in part)", CZ1433, "—"),
+    ("Google Scholar's citation tags; BibTeX, RIS, CSL-JSON", "The Core and the record say how to cite them, in their heads and on the page; the press kit has the files", CZ1433, "—"),
 ]
 def _imgs_bytes(h):
     return sum((PUBLIC / src.lstrip("/")).stat().st_size for src in set(re.findall(r'<img\b[^>]*\bsrc="(/[^"]+)"', h)) if (PUBLIC / src.lstrip("/")).exists())
@@ -1810,6 +1906,7 @@ def built_page():
         rows.append(f'<tr><td><a href="{path}">{esc(name)}</a></td><td>{kb(len(h.encode("utf-8")))}</td><td>{kb(_imgs_bytes(h)) if _imgs_bytes(h) else "—"}</td></tr>')
     tr = [len((PUBLIC / f"core.{t['lang']}.html").read_bytes()) for t in TRANSLATIONS if (PUBLIC / f"core.{t['lang']}.html").exists()]
     feats = "".join(f"<tr><td>{esc(a)}</td><td>{esc(b)}</td><td>{time_el(d)}</td><td>{esc(c)}</td></tr>" for a, b, d, c in BUILT_FEATURES)
+    reasons = "".join(f"<tr><td>{esc(e)}</td><td>{esc(r)}</td></tr>" for e, r in REASONS)
     body = f"""<main><h1>How this page is built</h1>
 <p>Every page of this site is a document the server writes in HTML and CSS. Nothing on it watches you. This page says how, with numbers taken from the pages themselves; the foot of every page says what that page weighs as it is sent to you.</p>
 <section aria-labelledby="h-run"><h2 id="h-run">What runs in your browser</h2>
@@ -1841,6 +1938,14 @@ Only links to pages of this site, never a link with a query, a file, <code>/api<
 </section>
 <section aria-labelledby="h-md"><h2 id="h-md">Every page as Markdown</h2>
 <p>Add <code>.md</code> to the address of any page — <a href="/core.md">/core.md</a>, <a href="/discuss.md">/discuss.md</a>, <code>/discuss/7.md</code>; the first page is <a href="/index.md">/index.md</a> — or ask for it with <code>Accept: text/markdown</code>. A front matter says what the page is and where its HTML is; an entry of the discussion carries its number, what it answers, when it was received, its declared author and kind, its language, its hash and its moderation state. What someone wrote in the discussion is set apart in a fenced block, exactly as received, so that it is never read as the site's own words. The HTML stays the canonical page; the canonical texts are byte-exact at <a href="/core.txt">/core.txt</a> and <a href="/record.txt">/record.txt</a>.</p>
+</section>
+<section aria-labelledby="checks"><h2 id="checks">Checked every day, from outside</h2>
+<p>Every day, at about 03:40 UTC, a program kept in the repository, <a href="{REPO}/blob/main/site/verify/live-check.mjs">site/verify/live-check.mjs</a>, asks the live site from GitHub's machines, not the host's, whether it does what its pages say: each page's policy, its weight line, no cookie, no script that runs but the one above; the canonical bytes and their digests; the forms each address answers in; the relations an entry names and the requests the room refuses. Each day's result is kept in the repository, in <a href="{REPO}/tree/main/archive/live-check">archive/live-check/</a>, and the runs are public: <a href="{REPO}/actions/workflows/verify-live.yml">verify-live</a>, beside the record's own checks (the published verifier: hashes, signatures, timestamps, the daily chains). The server reads the latest result from the repository when it makes this page; your browser loads nothing from there.</p>
+<!--cz-deploy--><p class="pending">This copy of the page cannot say which deployment serves it, or what the latest check found: <a href="{REPO}/tree/main/archive/live-check">the results</a>.</p><!--/cz-deploy-->
+</section>
+<section aria-labelledby="reasons"><h2 id="reasons">Why the first page looks the way it does</h2>
+<p>Every element of <a href="/">the first page</a> carries a stated reason: R the record · M the machine reader · H a standard adopted for human reading, with its source · C a constraint · E an editorial choice, stated as such. Nothing is there without a stated reason. The table stood at the foot of the first page until {time_el(CZ1433)}, when the originator moved it here and left a line that links to it. The same table as data: <a href="/index.json">/index.json</a>, under <code>reasons</code>.</p>
+<div class="scroll"><table><tr><th>Element</th><th>Source</th></tr>{reasons}</table></div>
 </section>
 <section aria-labelledby="h-src"><h2 id="h-src">The source</h2>
 <p>All of it is public: <a href="{REPO}">the repository</a>, code under the MIT licence, text under CC BY 4.0. The pages are built by one program and checked by another before they are published: every quotation of the Core is compared byte for byte with the canonical text, every link is followed, every page is parsed. Written and built by Claude (Anthropic) at the request of the record's originating human.</p>

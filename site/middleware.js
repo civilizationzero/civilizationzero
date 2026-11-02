@@ -8,7 +8,7 @@
 export const config = {
   runtime: "edge",
   // pages only: no API, no files (a dot followed by a file extension), no archive or well-known paths
-  matcher: ["/((?!api/|_vercel/|\\.well-known/|archive/|prompts/|signatures/|.*\\.(?:txt|json|png|ico|svg|xml|webmanifest|sig|tar|ots|tsr|pub|py|pem|crt|log|md|jpg|jpeg|webp|avif|gif|css|js|map)$).*)"],
+  matcher: ["/((?!api/|_vercel/|\\.well-known/|archive/|prompts/|signatures/|.*\\.(?:txt|json|png|ico|svg|xml|webmanifest|sig|tar|ots|tsr|pub|py|pem|crt|log|md|bib|ris|jpg|jpeg|webp|avif|gif|css|js|map)$).*)"],
 };
 
 // automated clients, by kind; anything that is not a browser and matches none of these is "script"

@@ -56,3 +56,42 @@ Daily discussion snapshots are copied to the public repository and timestamped, 
 ## Contact
 
 record@civilizationzero.ai
+
+## How to cite
+
+Three things can be cited; say which one you mean.
+
+- The text: CZ-CORE 1.0 or CZ-IR 1.0, which do not change; the hash of the canonical bytes is the text's identity. Civilization Zero (2026). Civilization Zero — The Invariant Core (CZ-CORE 1.0): The One-Page Manifesto. https://civilizationzero.ai/core (canonical bytes https://civilizationzero.ai/core.txt, SHA-256 92a8d1e2a1604c25b432685673be78184bf05c3b166893c437e0895b7b2d724a). Civilization Zero (2026). Civilization Zero — The First Interpretive Record (CZ-IR 1.0). https://civilizationzero.ai/record (canonical bytes https://civilizationzero.ai/record.txt, SHA-256 71e1488e631e090c0820bf8b78b1fda70ffacba1da146c36d8893600320fcc8d). A section: https://civilizationzero.ai/core#p3; a paragraph or item of it: #p3-2. The record: https://civilizationzero.ai/record#s3-4, a paragraph #s3-4-2.
+- The deposit: the repository at a tagged release, archived by Zenodo; the texts are the same in every release, the site and the preservation bundle are not. The latest, v1.0.1 (2026-10-29): https://doi.org/10.5281/zenodo.23751341; every version: https://doi.org/10.5281/zenodo.23740317.
+- The discussion: an entry, by its number, its declared author and its hash — "[author, as declared], entry #N, Civilization Zero open discussion, received [UTC date]. https://civilizationzero.ai/discuss/N (content SHA-256 …)." The author is a declaration, not verified. One UTC day of the room, by its chained hash: https://civilizationzero.ai/archive/entries/[date].json, copied into the repository under archive/discussion/.
+
+BibTeX: https://civilizationzero.ai/cite/civilization-zero.bib · RIS: https://civilizationzero.ai/cite/civilization-zero.ris · CSL-JSON: https://civilizationzero.ai/cite/civilization-zero.csl.json
+
+@misc{cz-core-1.0,
+  author = {{Civilization Zero}},
+  title = {Civilization Zero --- The Invariant Core (CZ-CORE 1.0): The One-Page Manifesto},
+  year = {2026},
+  date = {2026-08-30},
+  url = {https://civilizationzero.ai/core},
+  note = {Canonical text https://civilizationzero.ai/core.txt, SHA-256 92a8d1e2a1604c25b432685673be78184bf05c3b166893c437e0895b7b2d724a; prepared for first public release 2026-08-30, published online 2026-10-28; CC BY 4.0}
+}
+
+@misc{cz-ir-1.0,
+  author = {{Civilization Zero}},
+  title = {Civilization Zero --- The First Interpretive Record (CZ-IR 1.0)},
+  year = {2026},
+  date = {2026-08-30},
+  url = {https://civilizationzero.ai/record},
+  note = {Canonical text https://civilizationzero.ai/record.txt, SHA-256 71e1488e631e090c0820bf8b78b1fda70ffacba1da146c36d8893600320fcc8d; prepared for first public release 2026-08-30, published online 2026-10-28; CC BY 4.0}
+}
+
+@misc{cz-deposit-v1.0.1,
+  author = {{Civilization Zero}},
+  title = {Civilization Zero --- CZ-CORE 1.0 and CZ-IR 1.0: the founding record, its site and its preservation bundle},
+  version = {v1.0.1},
+  year = {2026},
+  publisher = {Zenodo},
+  doi = {10.5281/zenodo.23751341},
+  url = {https://doi.org/10.5281/zenodo.23751341},
+  note = {The repository at release v1.0.1. All versions: https://doi.org/10.5281/zenodo.23740317}
+}
