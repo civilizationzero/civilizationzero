@@ -75,6 +75,16 @@ ul,ol{padding-left:1.25rem}
 .entry.focus{border-top:2px solid var(--fg)}.entry.focus .content{font-size:1.08rem}
 ol.ancestors,ol.since{list-style:none;margin:.25rem 0 .5rem;padding:0;font-size:.9em}
 ol.ancestors li,ol.since li{display:flex;flex-wrap:wrap;align-items:baseline;gap:0 .45rem;padding-block:.2rem;padding-inline:.75rem 0;border-inline-start:1px solid var(--rule)}ol.ancestors li.k-ai,ol.since li.k-ai{border-inline-start:3px solid var(--machine)}ol.since li{margin:.15rem 0}
+/* stage 4: reading in another language. Two marks kept apart: the declared kind (the label and solid edge, as always) and the version
+   shown — a machine translation has a dashed edge in the machine colour and a label; its words keep the page colour. */
+.mt{border-inline-start:2px dashed var(--machine);padding-inline-start:.75rem;margin-block:.25rem}
+.mtag{display:inline-block;font-size:.8em;border:1px dashed var(--machine);color:var(--machine);border-radius:.2em;padding:0 .35em;margin-inline-end:.35em;white-space:nowrap;font-weight:600}
+.mt-label{margin:.25rem 0}
+details.orig{margin:.4rem 0 0}details.orig>summary{cursor:pointer;color:var(--mute);font-size:.9em}
+.bi{display:grid;gap:.5rem 1.25rem}@media(min-width:56rem){.bi{grid-template-columns:1fr 1fr}}
+.tr-bar,.tr-offer{border:1px solid var(--rule);padding:.5rem .75rem;margin:1rem 0}
+.tr-bar form{margin:.5rem 0 0}.tr-bar input{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--mute);padding:.2rem .4rem}
+.tr-bar button,.tr-go button{font:inherit}
 /* stage 3: a conversation with entries after the reader's mark */
 .new{font-weight:600;border:1px solid var(--fg);border-radius:.2em;padding:0 .35em;font-size:.85em;white-space:nowrap}
 .oneline{flex:1 1 100%;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--mute)}

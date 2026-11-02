@@ -10,8 +10,12 @@ RPCs with the publishable key; row-level security denies everything else.
   (hidden retrievable, marked; `?translate=<lang>`), `POST /api/entries` (JSON, or the human form as urlencoded → `303` to the entry).
   States, limits not gates (`429` + `Retry-After` + `RateLimit-*`; `503` + `Retry-After`), optional Ed25519 key continuity,
   a classifier that flags and never hides (model, prompt version `cz-moderation-1.0`, score logged), detected language.
-- `discuss.js` — `/discuss` (newest-first view with §7.4 grouping; `?order=canonical`; `?from=&to=` shows a group in full;
-  filters `kind`, `ref`, `lang`), `/discuss/{id}` (the entry, its record, its moderation log, translation on request), `/respond` (the form).
+- `discuss.js` — `/discuss` (the conversations, latest first, a view — schema v10; `?since=N` the entries after #N; `?view=entries`
+  every entry newest first with §7.4 grouping; `?order=canonical`; `?from=&to=` shows a group in full; filters `kind`, `ref`, `lang`),
+  `/discuss/{id}` (the entry in its conversation: earlier entries, the reply tree, its record and moderation log), `/themes/{slug}`,
+  `/respond` (the form). `?tl=<lang>` on these pages shows the translations that exist (schema v11, read-only; a GET never asks the
+  engine); `POST /api/discuss?page=translate` (the button on that view, this site's pages only) translates at most 8 missing entries
+  and returns `303` to the view. `/api/entries/{id}?translate=<lang>` (JSON, for programs) still translates on first request.
 - `archive.js` — `/discuss.json` (every entry with its state, `log_sha256`) and `/archive/entries/{date}.json`
   (the day's entries with that day's chained hash and the exact lines hashed).
 - `moderation.js` — `GET /api/moderation` (public log; hidden/redacted by month and language), `POST` with `Authorization: Bearer <CZ_ADMIN_TOKEN>`:

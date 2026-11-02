@@ -354,11 +354,62 @@ const fmtTime = (t) => CZ.whenText(t);
 const isoFull = (t) => String(t).replace(/\.\d+/, "").replace(/\+00:00$/, "Z").replace(/ /, "T");
 const isoTime = (t) => { const s = String(t); const m = s.match(/^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2}(:\d{2})?)/); return m ? `${m[1]}T${m[2].slice(0, 5)}Z` : s.slice(0, 10); };
 
+const redNotice = (e) => (e.state === "redacted" ? `<p class="pending">Redacted — category: ${esc(e.category || "unspecified")}. Parts replaced by a marker; SHA-256 of the original kept: <code class="hash">${esc(e.content_sha256)}</code></p>` : "");
 function contentHtml(e) {
   if (e.hidden) return `<p class="pending">Hidden — category: ${esc(e.category || "unspecified")}. The content stays retrievable by id, as data: <a href="/api/entries/${e.id}">/api/entries/${e.id}</a> (marked <code>"hidden": true</code>). SHA-256 of the original: <code class="hash">${esc(e.content_sha256)}</code></p>`;
   const lang = e.lang && LANG_RE.test(e.lang) ? ` lang="${esc(e.lang)}"` : "";
-  const red = e.state === "redacted" ? `<p class="pending">Redacted — category: ${esc(e.category || "unspecified")}. Parts replaced by a marker; SHA-256 of the original kept: <code class="hash">${esc(e.content_sha256)}</code></p>` : "";
-  return `${red}<div class="content" dir="auto"${lang}>${esc(e.content)}</div>`;
+  return `${redNotice(e)}<div class="content" dir="auto"${lang}>${esc(e.content)}</div>`;
+}
+
+// ---------------------------------------------------------------- reading in another language (stage 4 of the room's redesign, CZ 1433)
+// Reading never pays: a page reads the translations that already exist, for all its entries at once (cz_translations, schema v11).
+// Only a POST — a reader pressing the button — asks the engine for missing ones (api/discuss.js, translatePost). Two marks, kept
+// apart (review of CZ 1433): who wrote the words (the declared kind, as always) and which version is shown (the original, or a
+// machine translation: a dashed edge in the machine colour and a label). The original is one click away on every translated entry.
+async function translations(ids, lang) {
+  const list = [...new Set(ids.map(Number).filter((n) => Number.isSafeInteger(n) && n > 0))].slice(0, 500);
+  if (!lang || !list.length) return new Map();
+  const rows = await rpc("cz_translations", { p_entries: list, p_lang: lang });
+  return new Map((rows || []).filter((r) => r && r.text != null).map((r) => [Number(r.entry_id), r]));
+}
+// the reader's first language with q > 0 in Accept-Language, as a tag this site translates into (null when none is given)
+function prefLang(req) {
+  const h = String((req && req.headers && req.headers["accept-language"]) || "").slice(0, 400);
+  const items = h.split(",").map((part, i) => {
+    const [tag, ...params] = part.trim().split(";");
+    const q = params.map((x) => x.trim()).find((x) => /^q=/i.test(x));
+    const qv = q === undefined ? 1 : Number(q.slice(2));
+    return { t: canonLang(tag.trim()), q: Number.isFinite(qv) ? qv : 0, i };
+  }).filter((x) => x.t && x.q > 0).sort((a, b) => b.q - a.q || a.i - b.i);
+  if (!items.length) return null;
+  // one translation per language, not per region ("fa-IR" reads "fa"); Chinese keeps its script, which changes the text
+  const t = items[0].t, pl = primaryLang(t);
+  if (pl === "zh") return /-(Hant|TW|HK|MO)\b/i.test(t) ? "zh-Hant" : "zh-Hans";
+  return pl;
+}
+const primaryLang = (t) => String(t || "").split("-")[0].toLowerCase();
+// a language's own name for itself ("فارسی" for fa), falling back to the tag
+function langName(tag, inLang = tag) {
+  try { const n = new Intl.DisplayNames([inLang, "en"], { type: "language" }).of(tag); return n && n.toLowerCase() !== String(tag).toLowerCase() ? n : tag; } catch { return tag; }
+}
+function mtLabel(t, tl) {
+  const corrected = t.state === "corrected";
+  return `<p class="mt-label src"><span class="mtag">${corrected ? "Translation corrected by a human" : "Machine translation"} · <span lang="${esc(tl)}">${esc(langName(tl))}</span> (${esc(tl)})</span> ${corrected ? "" : `${esc(t.engine || "")} · `}${CZ.whenHtml(t.at, { link: false })}. The original governs.</p>`;
+}
+// an entry's words in a view that asked for language tl: the translation when one exists, else the original and a note
+function trContent(e, tr) {
+  if (!tr || e.hidden) return contentHtml(e);
+  const t = tr.map.get(Number(e.id));
+  if (!t) return `${contentHtml(e)}<p class="src mt-missing">Not yet translated into <span lang="${esc(tr.lang)}">${esc(langName(tr.lang))}</span>; the original is shown.</p>`;
+  const words = `<div class="content" dir="auto" lang="${esc(tr.lang)}">${esc(t.text)}</div>`;
+  if (tr.both) return `${redNotice(e)}<div class="bi"><div class="bi-orig">${contentHtml({ ...e, state: e.state === "redacted" ? "shown" : e.state })}</div><div class="mt">${mtLabel(t, tr.lang)}${words}</div></div>`;
+  return `${redNotice(e)}<div class="mt">${mtLabel(t, tr.lang)}${words}<details class="orig"><summary>Original${e.lang && LANG_RE.test(e.lang) ? ` (${esc(e.lang)})` : ""}</summary>${contentHtml({ ...e, state: e.state === "redacted" ? "shown" : e.state })}</details></div>`;
+}
+// the text an excerpt is made from, and how to say it is a translation
+function trExcerpt(e, tr, n) {
+  const t = tr && !e.hidden ? tr.map.get(Number(e.id)) : null;
+  if (!t) return { html: esc(excerpt(e.content, n)), lang: e.lang && LANG_RE.test(e.lang) ? e.lang : null, mt: "" };
+  return { html: esc(excerpt(t.text, n)), lang: tr.lang, mt: `<span class="mtag">${t.state === "corrected" ? "translation" : "machine translation"}</span> ` };
 }
 
 function metaHtml(e) {
@@ -387,8 +438,8 @@ function kindTag(kind) {
   return `<span class="kind k-${k}">${KINDS[k]} · declared</span>`;
 }
 const kindClass = (e) => (e.kind === "ai" ? " k-ai" : "");
-function entryHtml(e, extra = "") {
-  return `<article class="entry${kindClass(e)}${extra}" id="e${e.id}">${metaHtml(e)}${contentHtml(e)}</article>`;
+function entryHtml(e, extra = "", tr = null) {
+  return `<article class="entry${kindClass(e)}${extra}" id="e${e.id}">${metaHtml(e)}${tr ? trContent(e, tr) : contentHtml(e)}</article>`;
 }
 
 // ---------------------------------------------------------------- the first page's preview (Phase 1 of the room's design for readers,
@@ -415,5 +466,5 @@ function previewHtml(newestFirst, max = 3) {
 // A valid calendar date (R-29)
 const validDate = (s) => { if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false; const d = new Date(s + "T00:00:00Z"); return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === s; };
 
-module.exports = { ORIGIN, CONTACT, OPEN, CHAIN, OPENS, TOKEN, T, esc, kindTag, kindClass, contentHtml, log, json, html, shell, fill, rpc, rest, sourceHash, sourceOf, tokenEquals, verifySignature, fullOrderKey, validate, classify, classifierAnswer, translate,
+module.exports = { translations, prefLang, primaryLang, langName, trContent, trExcerpt, mtLabel, ORIGIN, CONTACT, OPEN, CHAIN, OPENS, TOKEN, T, esc, kindTag, kindClass, contentHtml, log, json, html, shell, fill, rpc, rest, sourceHash, sourceOf, tokenEquals, verifySignature, fullOrderKey, validate, classify, classifierAnswer, translate,
                    allowance, groupEntries, groupKey, entryHtml, metaHtml, contentHtml, previewHtml, excerpt, SECTIONS, sectionLabel, parentId, fmtTime, isoTime, isoFull, validDate, LANG_RE, canonLang, clen, b64Exact, visible, decl, ORIGINATOR, nameKey, reservedName, reservedField, reservedDetail, MODERATION_PROMPT_VERSION, CATEGORIES };

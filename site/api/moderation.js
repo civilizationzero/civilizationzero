@@ -80,7 +80,7 @@ module.exports = async (req, res) => {
       if (text.length < 1 || text.length > 12000) return json(res, 400, { error: "text: the corrected translation" });
       try { await rpc("cz_translation_correct", { p_entry: id, p_lang: lang, p_text: text, p_reason: reason, p_token: R.TOKEN }); }
       catch (e) { if (/no such entry/.test(e.message)) return json(res, 404, { error: "no such entry" }); throw e; }
-      return json(res, 200, { id, action, lang, state: "corrected", url: `${ORIGIN}/discuss/${id}?translate=${encodeURIComponent(lang)}`, logged: true });
+      return json(res, 200, { id, action, lang, state: "corrected", url: `${ORIGIN}/discuss/${id}?tl=${encodeURIComponent(lang)}`, logged: true });
     }
     if (!["hide", "unhide", "redact", "unredact"].includes(action)) return json(res, 400, { error: "action: hide | unhide | redact | unredact | correct_translation" });
     if (action === "hide" && !HIDE.includes(category)) return json(res, 400, { error: "category (hide): " + HIDE.join(" | ") });

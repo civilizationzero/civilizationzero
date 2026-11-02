@@ -1,8 +1,10 @@
 User-agent: *
 Allow: /
 Disallow: /*?translate=
+Disallow: /*?tl=
 Disallow: /discuss?
 Disallow: /discuss/*?
+Disallow: /themes/*?
 Disallow: /respond?
 Disallow: /calendar?
 Disallow: /admin

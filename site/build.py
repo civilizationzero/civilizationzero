@@ -1784,7 +1784,7 @@ def sitemap_xml():
 SECURITY_TXT_EXPIRES = "2027-10-29T00:00:00Z"
 write("/.well-known/security.txt", f"Contact: mailto:{CONTACT}\nExpires: {SECURITY_TXT_EXPIRES}\nPreferred-Languages: en, fa\n"
       f"Canonical: {ORIGIN}/.well-known/security.txt\n")
-write("/robots.txt", f"User-agent: *\nAllow: /\nDisallow: /*?translate=\nDisallow: /discuss?\nDisallow: /discuss/*?\nDisallow: /respond?\nDisallow: /calendar?\nDisallow: /admin\nSitemap: {ORIGIN}/sitemap.xml\nSitemap: {ORIGIN}/sitemap.txt\nSitemap: {ORIGIN}/sitemap-discussion.xml\n")
+write("/robots.txt", f"User-agent: *\nAllow: /\nDisallow: /*?translate=\nDisallow: /*?tl=\nDisallow: /discuss?\nDisallow: /discuss/*?\nDisallow: /themes/*?\nDisallow: /respond?\nDisallow: /calendar?\nDisallow: /admin\nSitemap: {ORIGIN}/sitemap.xml\nSitemap: {ORIGIN}/sitemap.txt\nSitemap: {ORIGIN}/sitemap-discussion.xml\n")
 write("/sitemap.xml", sitemap_xml())
 if ATPROTO_DID: write("/.well-known/atproto-did", ATPROTO_DID)   # Bluesky: the domain is the account's handle
 write(f"/{INDEXNOW_KEY}.txt", INDEXNOW_KEY)   # IndexNow: the workflow `announce` tells search engines which pages exist or changed

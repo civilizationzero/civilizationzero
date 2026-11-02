@@ -3,7 +3,7 @@
 // pagination and rendering; it does not test the production database or the SQL functions, which are unchanged by this branch.
 // Run: node site/test/room_mock.test.js
 const http = require("http"), path = require("path");
-let TABLE = [], CALLS = [];
+let TABLE = [], CALLS = []; let TRANS = [];
 const srv = http.createServer((q, s) => {
   let b = ""; q.on("data", (d) => (b += d)); q.on("end", () => {
     const a = b ? JSON.parse(b) : {}, name = (/\/rpc\/(\w+)/.exec(q.url) || [])[1];
@@ -14,7 +14,7 @@ const srv = http.createServer((q, s) => {
       if (a.p_before != null) rows = rows.filter((e) => e.id < a.p_before).sort((x, y) => y.id - x.id);
       else rows = rows.filter((e) => a.p_after == null || e.id > a.p_after).sort((x, y) => x.id - y.id);
       out = rows.slice(0, Math.min(a.p_limit ?? 50, 200));
-    } else if (name === "cz_entry3") out = TABLE.filter((e) => e.id === a.p_id).map((e) => ({ ...e, has_replies: false }));
+    } else if (name === "cz_entry3") out = TABLE.filter((e) => e.id === a.p_id).map((e) => ({ ...e, has_replies: TABLE.some((c) => c.parent === e.id) }));
     else if (name === "cz_conversations" || name === "cz_theme_latest") {   // as the SQL of v10 does
       const themes = a.p_themes || [], byId = new Map(TABLE.map((e) => [e.id, e]));
       const rootOf = (e) => { while (e && e.parent != null && !themes.includes(e.parent)) e = byId.get(e.parent); return e; };
@@ -27,6 +27,14 @@ const srv = http.createServer((q, s) => {
           .filter((c) => (a.p_before == null || c.latest_id < a.p_before) && (a.p_theme == null || c.parent === a.p_theme)).sort((x, y) => y.latest_id - x.latest_id).slice(0, Math.min(a.p_limit ?? 30, 60));
       }
     }
+    else if (name === "cz_conversation") {   // as v8: from the topmost ancestor (or a theme's answer) down, canonical order
+      const byId = new Map(TABLE.map((e) => [e.id, e])), themes = a.p_themes || [];
+      let id = a.p_id; for (let e = byId.get(id); e && e.parent != null && !themes.includes(e.parent); e = byId.get(e.parent)) id = e.parent;
+      const down = new Set([id]); let grew = true; while (grew) { grew = false; for (const e of TABLE) if (e.parent != null && down.has(e.parent) && !down.has(e.id)) { down.add(e.id); grew = true; } }
+      out = TABLE.filter((e) => down.has(e.id) && e.id > (a.p_after || 0)).sort((x, y) => x.id - y.id).slice(0, a.p_limit || 200);
+    }
+    else if (name === "cz_translations") out = TRANS.filter((t) => (a.p_entries || []).includes(t.entry_id) && t.lang === a.p_lang && t.text != null && !(TABLE.find((e) => e.id === t.entry_id) || {}).hidden);
+    else if (name === "cz_translation_get") out = TRANS.filter((t) => t.entry_id === a.p_entry && t.lang === a.p_lang);
     else if (name === "cz_stats") out = { entries: TABLE.length, hidden: TABLE.filter((e) => e.hidden).length, redacted: 0, today: 0, daily_intake_max: 500, unclassified: 0 };
     s.setHeader("content-type", "application/json"); s.end(JSON.stringify(out));
   });
@@ -34,11 +42,11 @@ const srv = http.createServer((q, s) => {
 const entry = (id, o = {}) => ({ id, state: "published", received: `2026-10-${String(28 + Math.floor((id - 1) / 200)).padStart(2, "0")}T12:00:00+00:00`, author: `Reader ${id}`, kind: id % 2 ? "human" : "ai",
   system: null, operator: null, prompt: null, lang: "en", lang_detected: "en", ref: String(id % 16), content: `Entry number ${id}, long enough to be valid.`, content_sha256: "a".repeat(64),
   declared_date: null, key_fingerprint: null, category: null, hidden: false, pubkey: null, sig: null, parent: null, ...o });
-function call(h, url) {
+function call(h, url, opt = {}) {
   return new Promise((r) => {
     const res = { statusCode: 200, headers: {}, body: "", setHeader(k, v) { this.headers[k.toLowerCase()] = v; }, getHeader(k) { return this.headers[k.toLowerCase()]; },
       write(x) { this.body += x; }, end(x) { r({ status: this.statusCode, headers: this.headers, body: this.body + (x || "") }); } };
-    const p = h({ url, method: "GET", headers: { host: "civilizationzero.ai" } }, res); if (p && p.catch) p.catch((e) => r({ status: 599, body: String(e.stack) }));
+    const p = h({ url, method: opt.method || "GET", headers: { host: "civilizationzero.ai", ...(opt.headers || {}) }, body: opt.body }, res); if (p && p.catch) p.catch((e) => r({ status: 599, body: String(e.stack) }));
   });
 }
 let pass = 0, fail = 0; const ok = (c, m) => { if (c) pass++; else { fail++; console.log("FAIL", m); } };
@@ -123,6 +131,31 @@ srv.listen(0, "127.0.0.1", async () => {
     ok(r.body.includes("No entries after #17 yet.") && !r.body.includes('class="new"'), "nothing after the latest: said so, nothing marked");
     r = await call(discuss, "/api/discuss");
     ok(r.body.includes('bookmark <a href="/discuss?since=17" rel="nofollow">'), "the room offers a mark at its latest entry");
+    // ---------- stage 4 (CZ 1433): reading in another language — GET reads what exists and never asks the engine; a POST asks for the rest
+    TABLE = [entry(1, { lang: "en" }), entry(3, { parent: 1, lang: "en" }), entry(5, { parent: 3, hidden: true }), entry(7, { parent: 3, lang: "en" })];
+    TRANS = [{ entry_id: 1, lang: "fa", text: "متن ترجمه‌شدهٔ یک", engine: "model-x", at: "2026-11-02T06:00:00Z", state: "done" }, { entry_id: 5, lang: "fa", text: "SECRET hidden translation", engine: "m", at: "2026-11-02T06:00:00Z", state: "done" }];
+    CALLS = []; r = await call(discuss, "/api/discuss?id=3&tl=fa");
+    ok(r.status === 200 && r.body.includes("متن ترجمه‌شدهٔ یک") && !r.body.includes("SECRET"), "tl=fa: the existing translation of #1 shown; nothing of the hidden #5");
+    ok(!CALLS.some((c) => ["cz_translation_store", "cz_source_chars", "cz_budget_status"].includes(c.name)), `tl=fa: GET never asks the engine (calls: ${[...new Set(CALLS.map((c) => c.name))].join(",")})`);
+    ok(/name="ids" value="3,7"/.test(r.body) && r.body.includes('action="/api/discuss?page=translate"') && r.body.includes('name="back" value="/discuss/3?tl=fa"'), "the button posts the shown entries without a translation (#3, #7), not the hidden one, and returns to this view");
+    ok(r.body.includes('name="robots" content="noindex"') && r.body.includes('<link rel="canonical" href="https://civilizationzero.ai/discuss/3">'), "a translated view: not indexed; the original is canonical");
+    ok(r.body.includes('class="mtag">machine translation</span>') || r.body.includes('class="mtag">Machine translation'), "the translation is marked as machine translation");
+    ok(r.body.includes('<a href="/discuss/3">Original</a>') && r.body.includes('href="/discuss/3?tl=fa&amp;both=1"'), "the original and the side-by-side view one click away");
+    r = await call(discuss, "/api/discuss?id=3&translate=fa"); ok(r.status === 200 && r.body.includes("متن ترجمه‌شدهٔ یک"), "the earlier ?translate= reads like ?tl= (read-only)");
+    r = await call(discuss, "/api/discuss?id=3&tl=!!"); ok(r.status === 200 && r.body.includes("is not a language tag this site translates into"), "a bad tag: said so, the original shown");
+    r = await call(discuss, "/api/discuss?id=3", { headers: { "accept-language": "fa-IR,fa;q=0.9,en;q=0.8" } });
+    ok(r.body.includes('href="/discuss/3?tl=fa" rel="nofollow" hreflang="fa"'), "Accept-Language fa: one link offers the page in Persian");
+    r = await call(discuss, "/api/discuss?id=3", { headers: { "accept-language": "en-GB,en;q=0.9" } });
+    ok(!r.body.includes('class="tr-offer"'), "Accept-Language en, entries in English: no offer");
+    r = await call(discuss, "/api/discuss?page=translate", { method: "POST", headers: { origin: "https://evil.example", "content-type": "application/x-www-form-urlencoded" }, body: { lang: "fa", ids: "3,7", back: "/discuss/3?tl=fa" } });
+    ok(r.status === 403, `POST from another site's page: refused (${r.status})`);
+    CALLS = []; r = await call(discuss, "/api/discuss?page=translate", { method: "POST", headers: { origin: "https://civilizationzero.ai", "content-type": "application/x-www-form-urlencoded" }, body: { lang: "fa", ids: "3,5,7,1,2,4,6,8,9,10", back: "/discuss/3?tl=fa" } });
+    ok(r.status === 303 && /^\/discuss\/3\?tl=fa&fresh=\d+&waiting=\d+$/.test(r.headers.location || ""), `POST: back to the same view, at a fresh address (${r.status} ${r.headers.location})`);
+    ok(CALLS.filter((c) => c.name === "cz_entry3").length === 8, "POST: at most 8 entries at a time");
+    r = await call(discuss, "/api/discuss?page=translate", { method: "POST", headers: { origin: "https://civilizationzero.ai" }, body: { lang: "fa", ids: "3", back: "https://evil.example/x" } });
+    ok(r.status === 303 && (r.headers.location || "").startsWith("/discuss?tl=fa"), "POST: a foreign 'back' falls back to the room");
+    TABLE = [entry(1, { lang: "en" }), entry(3, { parent: 1, lang: "en" })]; r = await call(discuss, "/api/discuss?tl=fa");
+    ok(r.status === 200 && r.body.includes("متن ترجمه‌شدهٔ یک") && r.body.includes('class="mtag">machine translation</span>'), "the room's list in Persian: the excerpt translated and marked");
     // the sitemap refuses a query string (no cache bypass of a whole-archive read)
     CALLS = []; r = await call(discuss, "/api/discuss?page=sitemap&x=1");
     ok(r.status === 400 && CALLS.length === 0, `sitemap with a parameter: 400, no database call (got ${r.status})`);
