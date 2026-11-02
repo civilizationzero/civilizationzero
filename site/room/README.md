@@ -15,7 +15,7 @@ RPCs with the publishable key; row-level security denies everything else.
   `/discuss/{id}` (the entry in its conversation: earlier entries, the reply tree, its record and moderation log), `/themes/{slug}`,
   `/respond` (the form). `?tl=<lang>` on these pages shows the translations that exist (schema v11, read-only; a GET never asks the
   engine); `POST /api/discuss?page=translate` (the button on that view, this site's pages only) translates at most 8 missing entries
-  and returns `303` to the view. `/api/entries/{id}?translate=<lang>` (JSON, for programs) still translates on first request.
+  and returns `303` to the view. `/api/entries/{id}?translate=<lang>` (JSON, for programs) reads the same way: it never makes a translation (review of CZ 1433).
 - `archive.js` — `/discuss.json` (every entry with its state, `log_sha256`) and `/archive/entries/{date}.json`
   (the day's entries with that day's chained hash and the exact lines hashed).
 - `moderation.js` — `GET /api/moderation` (public log; hidden/redacted by month and language), `POST` with `Authorization: Bearer <CZ_ADMIN_TOKEN>`:

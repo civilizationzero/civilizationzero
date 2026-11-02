@@ -171,6 +171,36 @@ srv.listen(0, "127.0.0.1", async () => {
       ok((r.headers["content-security-policy"] || "").includes(`'sha256-${hsh}'`), "the hash is of the rules on the page"); }
     r = await call(discuss, "/api/discuss?f=md"); ok(r.status === 200 && /^---\ntitle: /.test(r.body) && /\nurl: "https:\/\/civilizationzero.ai\/discuss.md"\n/.test(r.body), "the room as Markdown");
     r = await call(discuss, "/api/discuss?page=respond&f=md"); ok(r.status === 200 && /\nhtml: "https:\/\/civilizationzero.ai\/respond"\n/.test(r.body), "/respond as Markdown");
+    // ---------- the independent review of CZ 1433: its findings, fixed
+    // H1: a GET of the JSON API reads translations; it never makes one
+    TABLE = [entry(1, { lang: "en" }), entry(2, { lang: "en" })]; TRANS = [{ entry_id: 1, lang: "fa", text: "ترجمهٔ یک", engine: "m", at: "2026-11-02T06:00:00Z", state: "done" }];
+    CALLS = []; r = await call(entries, "/api/entries?id=2&translate=qaa");
+    ok(r.status === 200 && JSON.parse(r.body).translation.state === "not available" && !CALLS.some((c) => ["cz_translation_store", "cz_source_chars", "cz_budget_status", "cz_translation_get"].includes(c.name)), `GET /api/entries/2?translate=qaa: read only, nothing spent (calls: ${[...new Set(CALLS.map((c) => c.name))].join(",")})`);
+    r = await call(entries, "/api/entries?id=1&translate=fa"); ok(JSON.parse(r.body).translation.text === "ترجمهٔ یک", "GET /api/entries/1?translate=fa: the existing translation");
+    // M1 + M3 + M4: the tree groups one source's consecutive replies; the bar offers only what is shown; a hidden ancestor is not named
+    TABLE = [entry(1, { author: "Impersonated Person", hidden: true, category: "deceptive_impersonation" }), entry(2, { parent: 1 }), entry(3, { parent: 2, author: "Bot", kind: "ai", system: "S", operator: "O" }),
+             entry(4, { parent: 2, author: "Bot", kind: "ai", system: "S", operator: "O" }), entry(5, { parent: 3 }), entry(6, { parent: 5 }), entry(7, { parent: 6 }), entry(8, { parent: 7 })];
+    TRANS = [];
+    r = await call(discuss, "/api/discuss?id=2&tl=fa");
+    ok(!r.body.includes("Impersonated Person") && /href="\/discuss\/1" class="exact">#1<\/a> <span class="pending">Hidden by moderation/.test(r.body), "a hidden ancestor: a placeholder, no name, no kind");
+    ok(r.body.includes('1 further reply from the same declared source on this day: <a href="/discuss/4">#4</a>'), "replies from one source on one day: one in full, the others linked");
+    { const ids = (/name="ids" value="([\d,]+)"/.exec(r.body) || ["", ""])[1]; ok(ids === "2,3,5,6", `the button offers only the entries shown (got ${ids}; #4 folded, #7 and #8 beyond three levels, #1 hidden)`); }
+    ok(/0 of 4 entries on this page translated/.test(r.body), "the bar counts the entries shown, nothing else");
+    // M3: the since list groups too
+    TABLE = [entry(1), entry(17, { author: "Bot", kind: "ai", system: "S", operator: "O" }), entry(18, { author: "Bot", kind: "ai", system: "S", operator: "O" }), entry(19, { author: "Bot", kind: "ai", system: "S", operator: "O" })];
+    r = await call(discuss, "/api/discuss?since=1");
+    ok(/2 further entries from the same declared source on this day: <a href="\/discuss\/18">#18<\/a>, <a href="\/discuss\/19">#19<\/a>/.test(r.body) && r.body.includes("3 entries after #1"), "since: one source's entries grouped; the count is of the data");
+    // M2 + L1 + L2 + L5: Markdown escapes HTML, keeps blank lines, quotes YAML safely, and names the view's own address
+    TABLE = [entry(1, { author: "<img src=x onerror=alert(1)>", system: "<script>alert(2)</script>", content: "line one\n\n\n\nline five, long enough\u0090." }), entry(2, { parent: 1, content: "<a href=javascript:alert(3)>click</a> long enough text." })];
+    r = await call(discuss, "/api/discuss?id=2&f=md");
+    ok(!/(^|[^\\])<(img|script|a href)/i.test(r.body.replace(/```[\s\S]*?```/g, "")) && r.body.includes("\\<img src=x onerror=alert(1)\\>"), "Markdown: no HTML outside fences (names and excerpts escaped)");
+    r = await call(discuss, "/api/discuss?id=1&f=md");
+    ok(r.body.includes("```text\nline one\n\n\n\nline five"), "Markdown: a person's blank lines kept inside the fence");
+    ok(/\\u0090/.test(r.body.split("\n---\n")[0]) && !/\u0090/.test(r.body.split("\n---\n")[0]), "YAML: a C1 control escaped in the front matter");
+    r = await call(discuss, "/api/discuss?conversation=1&f=md");
+    ok(/\nurl: "https:\/\/civilizationzero.ai\/discuss.md\?conversation=1"\n/.test(r.body), "a view's Markdown names the view's own address");
+    r = await call(discuss, "/api/discuss?conversation=1");
+    ok(r.body.includes('href="/discuss.md?conversation=1" type="text/markdown"') && !r.body.includes("__MDPATH__"), "the HTML view links its own Markdown");
     // the sitemap refuses a query string (no cache bypass of a whole-archive read)
     CALLS = []; r = await call(discuss, "/api/discuss?page=sitemap&x=1");
     ok(r.status === 400 && CALLS.length === 0, `sitemap with a parameter: 400, no database call (got ${r.status})`);

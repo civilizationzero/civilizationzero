@@ -250,7 +250,7 @@
               "type": "string",
               "maxLength": 35
             },
-            "description": "A BCP 47 language tag: a language with an optional script and region (fa, zh-Hans, pt-BR), in any case; extensions and private-use parts are dropped. The entry then carries a translation object {lang, state, text, engine, date, reason}: state \"done\" (a machine translation, made on first request, kept and marked as machine), \"pending\" (not made yet; reason says why) or \"not available\" (a tag this site does not translate into, a hidden entry, or the room closed). The original stays the record"
+            "description": "A BCP 47 language tag: a language with an optional script and region (fa, zh-Hans, pt-BR), in any case; extensions and private-use parts are dropped. The entry then carries a translation object {lang, state, text, engine, date, reason}: state \"done\" (a machine translation, kept and marked as machine), \"corrected\" (corrected by a human, logged) or \"not available\" (none yet — this GET reads and never makes one; a reader makes one with the button on the entry's page, ?tl=<tag> — or a tag this site does not translate into, a hidden entry, or the room closed). The original stays the record"
           }
         ],
         "responses": {

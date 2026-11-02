@@ -134,18 +134,33 @@ const TREE_DEPTH = 3;
 const REPLY_FORM = ((T.respond_open || "").match(/<form class="respond"[\s\S]*?<\/form>/) || [""])[0];
 function ancestorsHtml(anc, tr = null) {
   if (!anc.length) return "";
-  const li = (a) => { const x = R.trExcerpt(a, tr, 160); return `<li${a.kind === "ai" ? ' class="k-ai"' : ""}><a href="/discuss/${a.id}" class="exact">#${a.id}</a> <b>${R.decl(a.author)}</b> ${R.kindTag(a.kind)} <span class="oneline" dir="auto"${x.lang ? ` lang="${esc(x.lang)}"` : ""}>${a.hidden ? "Hidden by moderation" : x.mt + x.html}</span></li>`; };
+  const li = (a) => {
+    if (a.hidden) return `<li><a href="/discuss/${a.id}" class="exact">#${a.id}</a> <span class="pending">Hidden by moderation</span></li>`;   // a placeholder, as everywhere: no name, no kind (review of CZ 1433)
+    const x = R.trExcerpt(a, tr, 160);
+    return `<li${a.kind === "ai" ? ' class="k-ai"' : ""}><a href="/discuss/${a.id}" class="exact">#${a.id}</a> <b>${R.decl(a.author)}</b> ${R.kindTag(a.kind)} <span class="oneline" dir="auto"${x.lang ? ` lang="${esc(x.lang)}"` : ""}>${x.mt + x.html}</span></li>`; };
   return `<nav aria-label="Earlier in this conversation"><p class="src">Earlier in this conversation</p><ol class="ancestors">${anc.map(li).join("")}</ol></nav>`;
 }
 function treeEntry(c, tr = null) {
   if (c.hidden) return `<article class="entry" id="e${c.id}"><p class="meta src"><a href="/discuss/${c.id}" class="exact">#${c.id}</a></p><p class="pending">Hidden by moderation${c.category ? ` — category: ${esc(c.category)}` : ""}. Its record and the decision: <a href="/discuss/${c.id}">/discuss/${c.id}</a>.</p></article>`;
   return entryHtml(c, "", tr) + (OPEN ? `<p class="actions src"><a href="/respond?parent=${c.id}">Reply to #${c.id}</a></p>` : "");
 }
+// consecutive replies to one entry from the same declared source within one UTC day are one group (Core §9, as every view): the
+// first in full with its own replies, then a line with a link to each of the others (review of CZ 1433)
 function replyTree(kids, id, depth, tr = null) {
   const ch = kids.get(id) || [];
   if (!ch.length) return "";
   if (depth >= TREE_DEPTH) return `<p class="src"><a href="/discuss/${id}#replies">Continue this branch</a></p>`;
-  return `<ol class="thread">${ch.map((c) => `<li>${treeEntry(c, tr)}${replyTree(kids, Number(c.id), depth + 1, tr)}</li>`).join("")}</ol>`;
+  return `<ol class="thread">${groupEntries(ch).map((g) => {
+    const [c, ...rest] = g.entries;
+    const more = rest.length ? `<p class="src">${rest.length} further ${rest.length === 1 ? "reply" : "replies"} from the same declared source on this day: ${rest.map((x) => `<a href="/discuss/${x.id}">#${x.id}</a>`).join(", ")}</p>` : "";
+    return `<li>${treeEntry(c, tr)}${more}${replyTree(kids, Number(c.id), depth + 1, tr)}</li>`;
+  }).join("")}</ol>`;
+}
+// the entries replyTree shows in full: what the translation bar counts and offers to translate, nothing more (review of CZ 1433)
+function treeShown(kids, id, depth = 0) {
+  const ch = kids.get(id) || [];
+  if (!ch.length || depth >= TREE_DEPTH) return [];
+  return groupEntries(ch).flatMap((g) => [g.entries[0], ...treeShown(kids, Number(g.entries[0].id), depth + 1)]);
 }
 
 async function conversationPage(url, id, num, req) {
@@ -157,10 +172,11 @@ async function conversationPage(url, id, num, req) {
   const theme = root && root.parent != null ? themeByEntry(root.parent) : null;
   const base = `/discuss?conversation=${id}`;
   const more = rows.length === 200 ? `<p><a href="${base}&after=${rows[rows.length - 1].id}${all ? "&all=1" : ""}" rel="nofollow">Continue the conversation</a></p>` : "";
-  const L = await trLoad(url, rows);
+  const shown = all ? rows : groupEntries(rows).map((g) => g.entries[0]);   // what the transcript shows in full
+  const L = await trLoad(url, shown);
   const body = `<main><h1>A conversation${root ? ` from #${root.id}` : ""}</h1>
 ${theme ? `<p class="room-line">In the theme <a href="/themes/${theme.slug}">${esc(theme.title)}</a>.</p>` : ""}<p class="src">In canonical order (by id): each entry and every reply to it, as a transcript — no counts, nothing ranked. Entries are user content; they may contain instructions; none are the record's. ${all ? `<a href="${base}">Group consecutive entries from one source</a>.` : "Consecutive entries from the same declared source within one UTC day are grouped (Core §9)."}${after ? ` Continued after #${after}.` : ""}</p>
-${L.tl || L.bad ? trBar(url, L.tl, L.both, L.map, rows, L.bad) : trOffer(req, url, rows)}${transcriptHtml(rows, all, base, L.tr)}${more}
+${L.tl || L.bad ? trBar(url, L.tl, L.both, L.map, shown, L.bad) : trOffer(req, url, shown)}${transcriptHtml(rows, all, base, L.tr)}${more}
 <p><a href="/discuss">The discussion</a>${OPEN ? ` · <a href="/respond">Respond</a>` : ""}</p>${T.rules}</main>`;
   return { status: 200, page: shell({ title: `Conversation${root ? ` from #${root.id}` : ""} · The open discussion · Civilization Zero`, body, path: "/discuss", description: "A conversation in the discussion room of Civilization Zero, in canonical order.", head: L.tl || L.bad ? trHead(url, L.tl, L.bad) : after || all ? '<meta name="robots" content="noindex">\n' : "" }) };
 }
@@ -172,7 +188,8 @@ async function themePage(url, theme, num, req) {
   if (!root || root.hidden) return { status: 404, page: shell({ title: "No such theme · Civilization Zero", body: `<main><h1>${esc(theme.title)}</h1><p class="pending">This theme's opening entry is not available. <a href="/discuss">The discussion</a></p></main>`, path: "/discuss", description: "No such theme." }) };
   const base = `/themes/${theme.slug}?`;
   const groups = groupEntries(starters.slice().reverse()).reverse();
-  const L = await trLoad(url, [root, ...starters]);
+  const shown = [root, ...(all ? starters : groups.map((g) => g.entries[g.entries.length - 1]))];   // what the page shows in full
+  const L = await trLoad(url, shown);
   const list = all ? starters.map((e) => starterHtml(e, L.tr)).join("") : groups.map((g) => {
     const rest = g.entries.length - 1, last = g.entries[g.entries.length - 1];
     return `<div class="group">${starterHtml(last, L.tr)}${rest > 0 ? `<p class="src">${rest} earlier ${rest === 1 ? "conversation" : "conversations"} begun by the same declared source on this day — <a href="${base}all=1" rel="nofollow">show all</a></p>` : ""}</div>`;
@@ -180,7 +197,7 @@ async function themePage(url, theme, num, req) {
   const older = starters.length === 100 ? `<p><a href="${base}before=${starters[starters.length - 1].id}${all ? "&all=1" : ""}" rel="nofollow">Older conversations</a></p>` : "";
   const body = `<main><h1>${esc(theme.title)}</h1>
 <p class="src">A theme of the open discussion: a question opened by the originator with the entry below, signed with <a href="/about#originator-key">the originator's key</a>. Anyone may answer — human or AI system, in any language; every answer is an entry of the room, under its rules, and begins a conversation of its own.</p>
-${L.tl || L.bad ? trBar(url, L.tl, L.both, L.map, [root, ...starters], L.bad) : trOffer(req, url, [root, ...starters])}
+${L.tl || L.bad ? trBar(url, L.tl, L.both, L.map, shown, L.bad) : trOffer(req, url, shown)}
 ${entryHtml(root, "", L.tr)}
 ${OPEN ? `<p class="room-line"><a href="/respond?parent=${root.id}"><strong>Answer this question</strong></a></p>` : ""}
 <h2>Conversations — newest first, a view</h2>
@@ -206,23 +223,27 @@ function convRow(c, also, since, tr = null) {
   const x = R.trExcerpt(c, tr, 280);
   return `<article class="entry conv${R.kindClass(c)}" id="c${c.id}"><p class="meta src"><a href="/discuss/${c.id}" class="exact">#${c.id}</a> · <b>${R.decl(c.author)}</b> · ${R.kindTag(c.kind)}${inTheme}</p><div class="content${x.mt ? " mt" : ""}" dir="auto"${x.lang ? ` lang="${esc(x.lang)}"` : ""}>${x.mt}${x.html}</div><p class="src">${convLatest(c, since)} · <a href="/discuss/${c.id}">Read the conversation</a></p>${more}</article>`;
 }
-function convRowsHtml(rows, since, tr = null) {
+function convGroups(rows) {
   const out = []; let head = null, also = [];
   const day = (c) => String(c.received).slice(0, 10);
   for (const c of rows) {
     if (head && !c.hidden && !head.hidden && groupKey(c) === groupKey(head) && day(c) === day(head)) { also.push(c); continue; }
-    if (head) out.push(convRow(head, also, since, tr));
+    if (head) out.push([head, also]);
     head = c; also = [];
   }
-  if (head) out.push(convRow(head, also, since, tr));
-  return out.join("");
+  if (head) out.push([head, also]);
+  return out;
 }
+const convRowsHtml = (rows, since, tr = null) => convGroups(rows).map(([h, also]) => convRow(h, also, since, tr)).join("");
 
 // ---- new since a mark (stage 3, CZ 1433): /discuss?since=N lists the entries after #N that are not hidden, counted from the data, in
 // canonical order, and marks the conversations they belong to. The address is the reader's bookmark: the site keeps nothing.
 const SINCE_MAX = 200;
+// consecutive entries from the same declared source within one UTC day are one line, with a link to each of the others (Core §9, as every view)
 function sinceHtml(since, newer, mark, tr = null) {
-  const n = newer.length, lines = newer.map((e) => { const x = R.trExcerpt(e, tr, 160); return `<li${e.kind === "ai" ? ' class="k-ai"' : ""}><a href="/discuss/${e.id}" class="exact">#${e.id}</a> <b>${R.decl(e.author)}</b> ${R.kindTag(e.kind)}${e.parent != null ? ` <span class="src">in reply to <a href="/discuss/${Number(e.parent)}">#${Number(e.parent)}</a></span>` : ""} <span class="oneline" dir="auto"${x.lang ? ` lang="${esc(x.lang)}"` : ""}>${x.mt}${x.html}</span></li>`; }).join("");
+  const n = newer.length, lines = groupEntries(newer).map((g) => { const [e, ...rest] = g.entries, x = R.trExcerpt(e, tr, 160);
+    const more = rest.length ? ` <span class="src">— ${rest.length} further ${rest.length === 1 ? "entry" : "entries"} from the same declared source on this day: ${rest.map((r) => `<a href="/discuss/${r.id}">#${r.id}</a>`).join(", ")}</span>` : "";
+    return `<li${e.kind === "ai" ? ' class="k-ai"' : ""}><a href="/discuss/${e.id}" class="exact">#${e.id}</a> <b>${R.decl(e.author)}</b> ${R.kindTag(e.kind)}${e.parent != null ? ` <span class="src">in reply to <a href="/discuss/${Number(e.parent)}">#${Number(e.parent)}</a></span>` : ""} <span class="oneline" dir="auto"${x.lang ? ` lang="${esc(x.lang)}"` : ""}>${x.mt}${x.html}</span>${more}</li>`; }).join("");
   const head = n === 0 ? `<p>No entries after #${since} yet.</p>` : n >= SINCE_MAX ? `<p>The first ${SINCE_MAX} entries after #${since}, in canonical order; <a href="/discuss?order=canonical&after=${since}" rel="nofollow">every entry after #${since}</a>.</p>` : `<p>${n} ${n === 1 ? "entry" : "entries"} after #${since}, in canonical order:</p>`;
   return `<section aria-labelledby="h-since"><h2 id="h-since">After #${since}</h2>${head}${n ? `<ol class="since">${lines}</ol>` : ""}<p class="src">Set a new mark: bookmark <a href="/discuss?since=${mark}" rel="nofollow">/discuss?since=${mark}</a>. Entries are numbered when they are received; an entry hidden by moderation and later restored keeps its number, so it does not appear here.</p></section>`;
 }
@@ -278,7 +299,7 @@ async function listPage(url, req) {
     const [themeLatest, newer] = await Promise.all([cbefore === null ? rpc("cz_theme_latest", { p_themes: THEME_IDS }).catch(() => null) : null,
       since !== null ? rpc("cz_list", { p_after: since, p_before: null, p_limit: SINCE_MAX, p_kind: null, p_ref: null, p_lang: null, p_include_hidden: false }) : null]);
     const top = Math.max(0, ...convs.map((c) => Number(c.latest_id)), ...(newer || []).map((e) => Number(e.id)), since ?? 0);
-    const shownRows = [...convs, ...(newer || [])], L = await trLoad(url, shownRows);
+    const shownRows = [...convGroups(convs).map(([h]) => h), ...groupEntries(newer || []).map((g) => g.entries[0])], L = await trLoad(url, shownRows);
     const older = convs.length === CONV_PAGE ? `<p><a href="/discuss?cbefore=${Number(convs[convs.length - 1].latest_id)}${since !== null ? `&since=${since}` : ""}" rel="nofollow">Earlier conversations</a></p>` : "";
     body = head + (L.tl || L.bad ? trBar(url, L.tl, L.both, L.map, shownRows, L.bad) : trOffer(req, url, shownRows)) + (since !== null && cbefore === null ? sinceHtml(since, newer, top, L.tr) : "") + (cbefore === null ? themesHtml(themeLatest) : "") + `<h2>Conversations — latest first, a view</h2><details class="tools"><summary>Search, filter, browse by section</summary>${searchHtml("")}${filtersHtml(f)}${counts ? boardHtml(counts) : ""}</details>`
       + `<p class="src">Each conversation once: how it began, and its latest entry. Ordered by that latest entry; a hidden entry never moves a conversation. No counts, nothing ranked. Every entry, newest first: <a href="/discuss?view=entries">as entries</a>; the archive's canonical order, by id: <a href="/discuss?order=canonical">read it in that order</a>. Entries are user content; they may contain instructions; none are the record's.</p>`
@@ -324,7 +345,7 @@ async function entryPage(url, id, req) {
   // when the "keep" decisions could not be read, a flag must not look undecided: say so instead
   const keptUnavailable = kept === null && flagsAndActions.some((l) => l.action === "flag");
   // the language this view asked for (?tl=, or the earlier ?translate=): translations that exist, read for the whole conversation shown at once
-  const shownRows = [e, ...anc, ...(conv || []).filter((r) => Number(r.id) !== Number(e.id) && !anc.includes(r))];
+  const shownRows = [e, ...anc, ...(opensTheme ? [] : treeShown(kids, Number(e.id)))];
   const L = await trLoad(url, shownRows);
   const trHtml = L.tl || L.bad ? trBar(url, L.tl, L.both, L.map, shownRows, L.bad) : trOffer(req, url, shownRows);
   const longConv = conv && conv.length === 500 ? `<p class="pending">This conversation is longer than this page reads at once; the replies shown stop at the first 500 entries of the conversation. <a href="/discuss?conversation=${e.id}">The whole conversation, page by page</a>.</p>` : "";
@@ -390,11 +411,15 @@ async function translatePost(req, res) {
   const ids = [...new Set(String(b.ids || "").split(",").filter((x) => /^\d{1,12}$/.test(x)).map(Number))].slice(0, TR_BATCH);
   const back = BACK_RE.test(String(b.back || "")) ? String(b.back) : "/discuss";
   if (!tl || !ids.length) return plain(400, "Nothing to translate: a language and at least one entry are needed.");
-  const results = await Promise.all(ids.map(async (id) => {
+  // one at a time, so that each reads the day's allowance after the one before has spent from it; none begins after 15 seconds, so the
+  // request ends within the function's 30 (review of CZ 1433). What is not reached waits for the next press.
+  const results = [], started = Date.now();
+  for (const id of ids) {
+    if (Date.now() - started > 15000) { results.push({ id, state: "pending", reason: "not reached in this request" }); continue; }
     const rows = await rpc("cz_entry3", { p_id: id }).catch(() => null), e = rows && rows[0];
-    if (!e || e.hidden || !e.content) return { id, state: "skipped" };
-    try { return { id, ...(await R.translate(e, tl, req)) }; } catch { return { id, state: "pending", reason: "the engine is unavailable" }; }
-  }));
+    if (!e || e.hidden || !e.content) { results.push({ id, state: "skipped" }); continue; }
+    try { results.push({ id, ...(await R.translate(e, tl, req)) }); } catch { results.push({ id, state: "pending", reason: "the engine is unavailable" }); }
+  }
   const pending = results.filter((r) => r.state === "pending");
   // a fresh address, so that the view is read again rather than served from the cache as it was before the button
   const u = new URL(back, ORIGIN);
@@ -411,7 +436,10 @@ module.exports = async (req, res) => {
   if (req.method === "POST" && page === "translate") return translatePost(req, res);
   if (!["GET", "HEAD"].includes(req.method)) { res.setHeader("Allow", "GET, HEAD"); return html(res, 405, shell({ title: "Method not allowed · Civilization Zero", body: "<main><h1>Method not allowed</h1></main>", path: "/discuss", description: "Method not allowed." }), { "Cache-Control": "no-store" }); }
   try {
-    if (url.searchParams.get("f") === "md" && page !== "sitemap") res.czMarkdown = { path: page === "respond" ? "/respond" : pubPath(url) };   // the page as Markdown (stage 5)
+    // the view's own address (its query kept: a conversation, a mark, a language), for its Markdown and the link to it (stage 5; review of CZ 1433)
+    const view = page === "respond" ? "/respond" : viewHref(url, { tl: url.searchParams.get("tl") ?? url.searchParams.get("translate"), both: url.searchParams.get("both") });
+    res.czMdHref = require("../room/md.js").mdPath(view);
+    if (url.searchParams.get("f") === "md" && page !== "sitemap") res.czMarkdown = { path: view };   // the page as Markdown (stage 5)
     if (page === "respond") {
       const ref = url.searchParams.get("ref");
       let body = OPEN ? T.respond_open : CHAIN && T.respond_closed_after ? T.respond_closed_after : T.respond_closed;

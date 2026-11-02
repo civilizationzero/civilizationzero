@@ -375,7 +375,7 @@ OPENAPI = {
         "/api/entries/{id}": {"get": {"summary": "One entry, permanent; hidden entries included, marked",
                                       "parameters": [{"name": "id", "in": "path", "required": True, "schema": {"type": "integer"}},
                                                      {"name": "translate", "in": "query", "schema": {"type": "string", "maxLength": 35},
-                                                      "description": "A BCP 47 language tag: a language with an optional script and region (fa, zh-Hans, pt-BR), in any case; extensions and private-use parts are dropped. The entry then carries a translation object {lang, state, text, engine, date, reason}: state \"done\" (a machine translation, made on first request, kept and marked as machine), \"pending\" (not made yet; reason says why) or \"not available\" (a tag this site does not translate into, a hidden entry, or the room closed). The original stays the record"}],
+                                                      "description": "A BCP 47 language tag: a language with an optional script and region (fa, zh-Hans, pt-BR), in any case; extensions and private-use parts are dropped. The entry then carries a translation object {lang, state, text, engine, date, reason}: state \"done\" (a machine translation, kept and marked as machine), \"corrected\" (corrected by a human, logged) or \"not available\" (none yet — this GET reads and never makes one; a reader makes one with the button on the entry's page, ?tl=<tag> — or a tag this site does not translate into, a hidden entry, or the room closed). The original stays the record"}],
                                       "responses": {"200": {"description": "The entry", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Entry"}}}},
                                                     "404": {"description": "No such id"}}}},
         "/discuss.json": {"get": {"summary": "Every entry, canonical order, with states; the whole archive as one file. A shared cache may serve it up to about a minute behind /api/entries/{id}",
@@ -1776,7 +1776,7 @@ BUILT_FEATURES = [   # (feature, what it does here, since, without it)
     ("Visit counts without cookies or identifiers", "Counted on the server before the cache; public at /stats", CZ1432, "—"),
     ("<details> and <summary>", "A discussion entry's record, hash and moderation log, folded under the words", CZ1433, "Shown open"),
     ("Invoker commands (commandfor, command) and <dialog closedby>", "Reply to an entry in place, without leaving the page and without a script", CZ1433, "A link to the reply page, beside the button"),
-    ("CSS logical properties", "Edges and indents follow the direction of the text, for Persian and Arabic as for English", CZ1433, "—"),
+    ("CSS logical properties and dir", "Edges and indents follow the direction of the block they mark: a translation into Persian or Arabic is set right to left, its edge on the right; an entry keeps the page's direction, and its words their own (dir=\"auto\")", CZ1433, "—"),
     ("A colour for the machine layer: the edge and label of what an AI system declared it wrote, and of machine translation", "#116329 on white, #3fb950 on black, both at 7:1 or more; light-dark() where the browser has it", CZ1433, "The same colours by a media query"),
     ("Accept-Language", "A reader whose browser prefers another language is offered the page in it, as one link", CZ1433, "—"),
     ("Cross-document view transitions", "Moving between pages of this site fades instead of flashing; none for readers who ask for less motion", CZ1433, "The page changes at once, as it always did"),
@@ -1903,7 +1903,8 @@ NOT_FOUND = shell("Not found · Civilization Zero", f"""<main><h1>Not found</h1>
 <li><a href="/archive">Archive, signatures and the preservation bundle</a></li><li><a href="/machine">If you are not human: every form, the API and the manifest</a></li></ul>
 <p class="src">An address that worked before and fails now is worth reporting: <a href="mailto:{CONTACT}">{CONTACT}</a>.</p></main>""", "/404",
                   "Nothing is published at this address; where the record's texts are.", robots="noindex", crumbs=False)
-write("/404.html", NOT_FOUND.replace(f'<link rel="canonical" href="{ORIGIN}/404">\n', "").replace(f'<meta property="og:url" content="{ORIGIN}/404">', ""))
+write("/404.html", NOT_FOUND.replace(f'<link rel="canonical" href="{ORIGIN}/404">\n', "").replace(f'<meta property="og:url" content="{ORIGIN}/404">', "")
+      .replace('<link rel="alternate" type="text/markdown" href="/404.md" title="This page as Markdown">', "").replace(' · <a href="/404.md" type="text/markdown">This page as Markdown</a>', ""))   # nothing at this address, as Markdown either
 
 HOME = home_template()
 HOME_JSON = home_json_template()

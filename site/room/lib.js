@@ -103,11 +103,14 @@ function json(res, status, body, headers = {}) {
 }
 
 function html(res, status, page, headers = {}) {
+  // the page's own Markdown address (a view's, with its query, when the handler set one; otherwise from its canonical address)
+  page = String(page).replace(/__MDPATH__/g, () => res.czMdHref || require("./md.js").mdPath(((/<link rel="canonical" href="https?:\/\/[^/"]+(\/[^"]*)">/.exec(page) || [])[1]) || "/"));
   // the page as Markdown when it was asked for (a handler sets res.czMarkdown from ?f=md: /discuss.md, /discuss/7.md, Accept: text/markdown)
   if (res.czMarkdown) {
     const MDm = require("./md.js"), now = Date.now();
     const out = MDm.htmlToMarkdown(CZ.fillBar(page, now), { path: res.czMarkdown.path || "/", meta: res.czMarkdown.meta || {} });
     const extra = {}; for (const [k, v] of Object.entries(headers)) if (k.toLowerCase() === "cache-control") extra[k] = CZ.capCache(v, now);
+    const vary = headers.Vary || headers.vary; if (vary) extra.Vary = vary;   // Accept-Language too, where the page offers a language (review of CZ 1433)
     return MDm.sendMarkdown(res, status, out, res.czMarkdown.path || "/", ORIGIN, extra);
   }
   res.statusCode = status;
@@ -397,6 +400,7 @@ function prefLang(req) {
   return pl;
 }
 const primaryLang = (t) => String(t || "").split("-")[0].toLowerCase();
+const RTL = new Set(["ar", "fa", "he", "ur", "ps", "sd", "ug", "yi", "dv", "ckb", "syr"]);
 // a language's own name for itself ("فارسی" for fa), falling back to the tag
 function langName(tag, inLang = tag) {
   try { const n = new Intl.DisplayNames([inLang, "en"], { type: "language" }).of(tag); return n && n.toLowerCase() !== String(tag).toLowerCase() ? n : tag; } catch { return tag; }
@@ -411,8 +415,9 @@ function trContent(e, tr) {
   const t = tr.map.get(Number(e.id));
   if (!t) return `${contentHtml(e)}<p class="src mt-missing">Not yet translated into <span lang="${esc(tr.lang)}">${esc(langName(tr.lang))}</span>; the original is shown.</p>`;
   const words = `<div class="content" dir="auto" lang="${esc(tr.lang)}">${esc(t.text)}</div>`;
-  if (tr.both) return `${redNotice(e)}<div class="bi"><div class="bi-orig">${contentHtml({ ...e, state: e.state === "redacted" ? "shown" : e.state })}</div><div class="mt">${mtLabel(t, tr.lang)}${words}</div></div>`;
-  return `${redNotice(e)}<div class="mt">${mtLabel(t, tr.lang)}${words}<details class="orig"><summary>Original${e.lang && LANG_RE.test(e.lang) ? ` (${esc(e.lang)})` : ""}</summary>${contentHtml({ ...e, state: e.state === "redacted" ? "shown" : e.state })}</details></div>`;
+  const dir = RTL.has(primaryLang(tr.lang)) ? ' dir="rtl"' : "";   // a right-to-left translation: its edge on the right, as its words
+  if (tr.both) return `${redNotice(e)}<div class="bi"><div class="bi-orig">${contentHtml({ ...e, state: e.state === "redacted" ? "shown" : e.state })}</div><div class="mt"${dir}>${mtLabel(t, tr.lang)}${words}</div></div>`;
+  return `${redNotice(e)}<div class="mt"${dir}>${mtLabel(t, tr.lang)}${words}<details class="orig"><summary>Original${e.lang && LANG_RE.test(e.lang) ? ` (${esc(e.lang)})` : ""}</summary>${contentHtml({ ...e, state: e.state === "redacted" ? "shown" : e.state })}</details></div>`;
 }
 // the text an excerpt is made from, and how to say it is a translation
 function trExcerpt(e, tr, n) {

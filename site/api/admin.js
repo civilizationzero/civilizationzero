@@ -13,6 +13,8 @@
 "use strict";
 const crypto = require("node:crypto");
 const R = require("../room/lib.js");
+// the speculation rules in the shell are data, allowed by their hash (stage 5, CZ 1433), read from the shell as built
+const SPEC_HASHES = [...String(R.T.shell || "").matchAll(/<script type="speculationrules">([\s\S]*?)<\/script>/g)].map((m) => `'sha256-${require("node:crypto").createHash("sha256").update(m[1], "utf8").digest("base64")}'`);
 const CZ = require("../room/cztime.js");
 const G = require("../room/register.js");
 const { ORIGIN, CONTACT, esc, rpc, rest } = R;
@@ -116,9 +118,11 @@ function send(res, status, body, headers = {}) {
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("X-Frame-Options", "DENY");
   res.setHeader("Referrer-Policy", "same-origin");
-  res.setHeader("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'; img-src 'self' data:; form-action 'self'; base-uri 'none'; frame-ancestors 'none'");
+  res.setHeader("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'; img-src 'self' data:; form-action 'self'; base-uri 'none'; frame-ancestors 'none'" + (SPEC_HASHES.length ? `; script-src ${SPEC_HASHES.join(" ")}` : ""));
   for (const [k, v] of Object.entries(headers)) res.setHeader(k, v);
-  res.end(CZ.fillBar(body, Date.now()));   // today's date in CZ time at the top, as on every page
+  // not offered as Markdown (the page is the administrator's); the weight line filled as on every page
+  const out = String(body).replace(/<link rel="alternate" type="text\/markdown" href="__MDPATH__"[^>]*>/, "").replace(/ · <a href="__MDPATH__" type="text\/markdown">This page as Markdown<\/a>/, "");
+  res.end(require("../room/weight.js").fillWeight(CZ.fillBar(out, Date.now())));   // today's date in CZ time at the top, as on every page
 }
 const page = (title, body) => R.shell({ title: `${title} · Civilization Zero`, path: "/admin", description: "The administrator's page of civilizationzero.ai.",
   head: '<meta name="robots" content="noindex, nofollow">\n<style>.admin form{margin:.75rem 0}.admin fieldset{border:1px solid var(--rule);margin:1rem 0;padding:.5rem .75rem}.admin .row{display:flex;flex-wrap:wrap;gap:.5rem;align-items:end}.admin .row label{flex:1 1 12rem}.admin .notice{border:2px solid var(--fg);padding:.5rem .75rem}.admin .content{white-space:pre-wrap;word-break:break-word;border-left:2px solid var(--rule);padding-left:.75rem}</style>\n',

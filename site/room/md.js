@@ -30,8 +30,9 @@ function parse(html) {
     const el = { tag, attrs, kids: [] };
     top.kids.push(el);
     if (tag === "script" || tag === "style") {   // raw text: skip to its end
-      const end = html.toLowerCase().indexOf(`</${tag}`, re.lastIndex);
-      re.lastIndex = end < 0 ? html.length : end;
+      const close = new RegExp(`</${tag}`, "ig"); close.lastIndex = re.lastIndex;   // a search in place, not in a lower-cased copy (whose length can differ)
+      const end = close.exec(html);
+      re.lastIndex = end ? end.index : html.length;
       continue;
     }
     if (!VOID.has(tag) && !m[4]) stack.push(el);
@@ -48,11 +49,12 @@ function absUrl(href, origin) {
   if (href.startsWith("#")) return href;
   return origin + (href.startsWith("/") ? href : "/" + href);
 }
-const escInline = (s) => s.replace(/([\\`*_\[\]])/g, "\\$1");
+// a backslash before Markdown's own characters, and before < and & so that no one's text becomes HTML or an entity (review of CZ 1433)
+const escInline = (s) => s.replace(/([\\`*_\[\]<>&#|~])/g, "\\$1");
 function fence(text) {
   const runs = (text.match(/`{3,}/g) || []).map((r) => r.length);
   const f = "`".repeat(Math.max(3, ...runs.map((n) => n + 1)));
-  return `${f}text\n${text.replace(/\n+$/, "")}\n${f}`;
+  return `${f}text\n${text}\n${f}`;   // exact: the block's text without its final newline is the text as received
 }
 
 // ---- render: inline content to a string; blocks to a list of Markdown blocks
@@ -65,7 +67,10 @@ function inline(n, o) {
     case "a": { const t = inner().trim(), h = absUrl(n.attrs.href, o.origin); return t ? (h && !h.startsWith("#") ? `[${t}](${h})` : t) : ""; }
     case "strong": case "b": { const t = inner().trim(); return t ? `**${t}**` : ""; }
     case "em": case "i": { const t = inner().trim(); return t ? `*${t}*` : ""; }
-    case "code": case "kbd": case "samp": { const t = textOf(n).replace(/\s+/g, " "); const tick = t.includes("`") ? "``" : "`"; return t ? `${tick}${t}${tick}` : ""; }
+    case "code": case "kbd": case "samp": {   // a code span: a run of backticks longer than any inside it, padded (CommonMark)
+      const t = textOf(n).replace(/\s+/g, " "); if (!t) return "";
+      const tick = "`".repeat(Math.max(0, ...(t.match(/`+/g) || []).map((r) => r.length)) + 1);
+      return `${tick} ${t} ${tick}`; }
     case "img": return n.attrs.alt ? `![${escInline(n.attrs.alt)}](${absUrl(n.attrs.src, o.origin)})` : "";
     case "input": case "textarea": return "";
     case "span": if (has(n, "oneline")) { const t = inner().trim(); return t ? `“${t}”` : ""; } return inner();   // an excerpt of someone's words: quoted
@@ -119,7 +124,12 @@ function blocks(n, o) {
   }
 }
 
-const yamlStr = (v) => (v === null || v === undefined ? "null" : typeof v === "number" || typeof v === "boolean" ? String(v) : JSON.stringify(String(v)));
+// a YAML double-quoted scalar: JSON's escapes, and also the characters YAML does not accept raw (C1 controls, U+FFFE/FFFF, line separators)
+const yamlStr = (v) => (v === null || v === undefined ? "null" : typeof v === "number" || typeof v === "boolean" ? String(v)
+  : JSON.stringify(String(v)).replace(/[<>&\u007f-\u009f\u2028\u2029\ufffe\uffff\ud800-\udfff]/g, (c, i, str) => {   // < > & too: no markup even in a string
+      const code = c.charCodeAt(0);
+      if (code >= 0xd800 && code <= 0xdfff) { const pair = /[\ud800-\udbff][\udc00-\udfff]/.test(str.slice(code <= 0xdbff ? i : i - 1, (code <= 0xdbff ? i : i - 1) + 2)); if (pair) return c; }
+      return "\\u" + code.toString(16).padStart(4, "0"); }));
 function frontMatter(meta) {
   return "---\n" + Object.entries(meta).filter(([, v]) => v !== undefined).map(([k, v]) => `${k}: ${yamlStr(v)}`).join("\n") + "\n---\n";
 }
@@ -131,14 +141,14 @@ function htmlToMarkdown(html, { origin = "https://civilizationzero.ai", path = "
   const main = find(tree, "main") || find(tree, "body") || tree;
   const title = meta.title ?? (() => { const t = find(tree, "title"); return t ? textOf(t).trim() : null; })();
   const descEl = (() => { const walk = (n) => { if (typeof n === "string") return null; if (n.tag === "meta" && n.attrs.name === "description") return n; for (const k of n.kids) { const f = walk(k); if (f) return f; } return null; }; return walk(tree); })();
-  const fm = { url: `${origin}${mdPath(path)}`, html: `${origin}${path}`, description: meta.description ?? (descEl ? descEl.attrs.content : undefined), ...meta };
+  const fm = { url: `${origin}${mdPath(path)}`, html: `${origin}${path}`, fenced_text: "a fenced block's text, without its final newline, is the text as received", description: meta.description ?? (descEl ? descEl.attrs.content : undefined), ...meta };
   delete fm.title; const head = { title, ...fm };
-  const body = blocks(main, { origin }).join("\n\n").replace(/\n{3,}/g, "\n\n").trim();
+  const body = blocks(main, { origin }).filter((b) => b.trim()).join("\n\n");   // never across a fence: a person's text keeps its blank lines
   return frontMatter(head) + "\n" + body + "\n";
 }
 
 // the address of a page's Markdown: "/" is "/index.md"
-const mdPath = (path) => (path === "/" ? "/index.md" : `${path}.md`);
+const mdPath = (path) => { const [p, q] = String(path).split("?"); return (p === "/" || p === "" ? "/index.md" : `${p}.md`) + (q ? `?${q}` : ""); };
 
 function sendMarkdown(res, status, md, path, origin = "https://civilizationzero.ai", extra = {}) {
   res.statusCode = status;
@@ -146,7 +156,7 @@ function sendMarkdown(res, status, md, path, origin = "https://civilizationzero.
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("Link", `<${origin}${path}>; rel="canonical"`);
   res.setHeader("X-Robots-Tag", "noindex");
-  res.setHeader("Vary", "Accept");
+  res.setHeader("Vary", extra.Vary || "Accept");
   res.setHeader("Access-Control-Allow-Origin", "*");
   for (const [k, v] of Object.entries(extra)) res.setHeader(k, v);
   res.end(md);

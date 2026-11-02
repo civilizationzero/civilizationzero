@@ -52,7 +52,7 @@ def resolves(path):
 
 pages = sorted(PUBLIC.glob("*.html")) + [SITE / "preview" / "index.html"]
 DT = json.loads((SITE / "api" / "discuss-templates.json").read_text("utf-8"))
-def dshell(title, body, path): return DT["shell"].replace("__TITLE__", title).replace("__DESC__", "d").replace("__PATH__", path).replace("__HEAD__", "").replace("__BODY__", body.replace("<main>", '<main id="content">', 1))   # as room/lib.js's shell
+def dshell(title, body, path): return DT["shell"].replace("__MDPATH__", path + ".md").replace("__TITLE__", title).replace("__DESC__", "d").replace("__PATH__", path).replace("__HEAD__", "").replace("__BODY__", body.replace("<main>", '<main id="content">', 1))   # as room/lib.js's shell
 VIRTUAL = {"discuss.html": dshell("The open discussion", DT["closed"], "/discuss"),
            "discuss-open.html": dshell("The open discussion", "<main><h1>The open discussion</h1><p>x</p>" + DT["rules"] + "</main>", "/discuss"),
            "respond.html": dshell("Respond", DT["respond_closed"], "/respond"), "respond-open.html": dshell("Respond", DT["respond_open"], "/respond")}

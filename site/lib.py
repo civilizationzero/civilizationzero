@@ -467,6 +467,7 @@ SPEC_HASH = "'sha256-" + __import__("base64").b64encode(__import__("hashlib").sh
 # the line at the foot of every page; the functions fill it with the page's own weight when they serve it (room/weight.js)
 WEIGHT_LINE = f'<p class="src cz-weight"><!--cz-weight-->No cookies<!--/cz-weight--> · <a href="{BUILT_PATH}">How this page is built</a> · <a href="__MD_PATH__" type="text/markdown">This page as Markdown</a></p>'
 def md_path(path):
+    if path == "__PATH__": return "__MDPATH__"   # a template: the function fills it with the view's own Markdown address (room/lib.js html)
     return "/index.md" if path == "/" else f"{path}.md"
 
 def footer_html(extra=""):
