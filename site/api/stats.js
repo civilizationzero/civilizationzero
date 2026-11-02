@@ -1,7 +1,8 @@
-// /stats and /stats.json: the visit counts (schema v9), public — the site keeps no other record of its readers.
-// Counted by the routing middleware (middleware.js) before the cache: page views by browsers, the number of distinct visitors per
-// UTC day (from a hash under a salt that lives one day; the hashes and the salt are deleted at the end of the day), referring
-// domains, countries (Vercel's two-letter code), and automated clients by kind, counted apart. No cookie, no identifier, no script.
+// /stats and /stats.json: the visit counts (schema v9, v12), public — the site keeps no other record of its readers.
+// Counted by the routing middleware (middleware.js) before the cache: page views by browsers, referring domains, countries (Vercel's
+// two-letter code), automated clients by kind, counted apart, and how machines enter (a page as Markdown, /llms.txt, the canonical
+// texts), by kind of client. No cookie, no identifier, no script. Distinct visitors were counted per UTC day until CZ 1433, from a
+// hash under a salt that lived one day; the originator stopped it (v12), and the numbers counted until then stay, marked.
 "use strict";
 const R = require("../room/lib.js");
 const CZ = require("../room/cztime.js");
@@ -26,15 +27,19 @@ module.exports = async (req, res) => {
     return html(res, 503, shell({ title: "Visits · Civilization Zero", body: "<main><h1>Visits</h1><p>The counts cannot be read right now. Try again shortly.</p></main>", path: "/stats", description: "Visits to Civilization Zero." }), { "Retry-After": "60", "Cache-Control": "no-store" });
   }
   if (url.searchParams.get("f") === "json") {
-    return json(res, 200, { what: "Visits to civilizationzero.ai, counted per UTC day by the server, without cookies or identifiers. views: page views by browsers; visitors: distinct visitors that day (approximate; today's still counting); automated: requests by crawlers, link previews and scripts, counted apart. Counting began on first_day.", ...s }, cache);
+    return json(res, 200, { what: "Visits to civilizationzero.ai, counted per UTC day by the server, without cookies or identifiers. views: page views by browsers; visitors: distinct visitors that day, approximate, counted only until visitors_counted_until (then stopped by the originator's decision: the address and the browser's description are not sent to the database any more), null after; automated: requests by crawlers, link previews and scripts, counted apart; entrances: requests for a page as Markdown, for /llms.txt and for the canonical texts, by address (every entry's Markdown as /discuss/{id}.md) and kind of client (human: a browser). Counting began on first_day.", ...s }, cache);
   }
   const days = s.days || [], tot = days.reduce((a, d) => ({ v: a.v + (d.views || 0), a: a.a + (d.automated || 0) }), { v: 0, a: 0 });
   const today = new Date().toISOString().slice(0, 10);
+  const until = typeof s.visitors_counted_until === "string" ? s.visitors_counted_until : null, untilDay = until ? until.slice(0, 10) : null;
+  const visitorsCell = (d) => d.visitors == null ? "—" : `${n(d.visitors)}${d.day === untilDay ? ` <span class="src">(until ${esc(until.slice(11, 16))} UTC)</span>` : ""}`;
+  const kindName = (k) => (k === "human" ? "Browsers" : BOT_NAMES[k] || k);
   const body = `<main><h1>Visits</h1>
-<p>How many people read this site, counted by the server and published here, as everything else is. No cookies, no scripts, no identifiers: for each UTC day the server counts page views by browsers, where they came from (the referring site's domain), and the country code its host gives. To count distinct visitors it keeps, for the current day only, a hash of each address and browser under a salt made for that day; at the end of the day it keeps the number and deletes the hashes and the salt. Crawlers, link previews and scripts — this site's own checks among them — are counted apart. ${s.first_day ? `Counting began on ${CZ.whenHtml(s.first_day)}.` : ""} The same counts as data: <a href="/stats.json">/stats.json</a>.</p>
+<p>How many people read this site, counted by the server and published here, as everything else is. No cookies, no scripts, no identifiers: for each UTC day the server counts page views by browsers, where they came from (the referring site's domain), and the country code its host gives. Crawlers, link previews and scripts — this site's own checks among them — are counted apart, and so are the ways machines come in: a page as Markdown, the summary for language models, the canonical texts. ${s.first_day ? `Counting began on ${CZ.whenHtml(s.first_day)}.` : ""} The same counts as data: <a href="/stats.json">/stats.json</a>.</p>
+${until ? `<p id="visitors">Until ${CZ.whenHtml(until)} the server also counted distinct visitors: for the current day only it kept a hash of each address and browser under a salt made for that day, and at the end of the day it kept the number and deleted the hashes and the salt. On ${CZ.whenHtml(untilDay)} the originator stopped it. A count of people needs something about each person, even for one day; a count of pages needs nothing. Since then no address and no description of a browser is sent to the database. The numbers counted until then stay below, in the column of visitors; the last day's is partial.</p>` : ""}
 <h2 id="h-days">The last 30 days</h2>
-<p class="src">${n(tot.v)} page views by browsers; ${n(tot.a)} automated requests. A visitor is counted once per day: the same person on two days is two.</p>
-${table(["Day", "Page views", "Visitors", "Automated"], days.map((d) => `<tr><td>${CZ.whenHtml(d.day)}${d.day === today ? " (today, still counting)" : ""}</td><td class="num">${n(d.views)}</td><td class="num">${d.visitors == null ? "—" : n(d.visitors)}</td><td class="num">${n(d.automated)}</td></tr>`))}
+<p class="src">${n(tot.v)} page views by browsers; ${n(tot.a)} automated requests.${until ? " Visitors: counted until the count stopped, once per day (the same person on two days was two); — since." : " A visitor is counted once per day: the same person on two days is two."}</p>
+${table(["Day", "Page views", "Visitors", "Automated"], days.map((d) => `<tr><td>${CZ.whenHtml(d.day)}${d.day === today ? " (today, still counting)" : ""}</td><td class="num">${n(d.views)}</td><td class="num">${visitorsCell(d)}</td><td class="num">${n(d.automated)}</td></tr>`))}
 <h2 id="h-pages">Pages</h2>
 ${table(["Page", "Views"], (s.pages || []).map((p) => `<tr><td>${p.key.startsWith("/") ? `<a href="${esc(p.key)}">${esc(p.key)}</a>` : esc(p.key)}</td><td class="num">${n(p.n)}</td></tr>`))}
 <h2 id="h-refs">Where readers came from</h2>
@@ -44,6 +49,9 @@ ${table(["Site", "Visits"], (s.refs || []).map((r) => `<tr><td>${esc(r.key)}</td
 ${table(["Country", "Page views"], (s.countries || []).map((c) => `<tr><td>${esc(c.key)}</td><td class="num">${n(c.n)}</td></tr>`))}
 <h2 id="h-automated">Automated clients</h2>
 ${table(["Kind", "Requests"], (s.automated || []).map((b) => `<tr><td>${esc(BOT_NAMES[b.key] || b.key)}</td><td class="num">${n(b.n)}</td></tr>`))}
+<h2 id="h-entrances">How machines come in</h2>
+<p class="src">Requests for a page as Markdown (<code>.md</code>), for <a href="/llms.txt">/llms.txt</a> and for the canonical texts (<a href="/core.txt">/core.txt</a>, <a href="/record.txt">/record.txt</a>), by address and kind of client, in the last 30 days — every entry's Markdown counted as one address. ${s.entrances_since ? `Counted since ${CZ.whenHtml(s.entrances_since)}; n` : "N"}othing about the client is kept. A page asked for as Markdown with <code>Accept: text/markdown</code> is counted with the page.</p>
+${table(["Address", "Client", "Requests"], (s.entrances || []).map((e) => `<tr><td><code>${esc(e.path)}</code></td><td>${esc(kindName(e.agent))}</td><td class="num">${n(e.n)}</td></tr>`))}
 </main>`;
   return html(res, 200, shell({ title: "Visits · Civilization Zero", body, path: "/stats", description: "How many people read Civilization Zero: page views and visitors per day, counted by the server without cookies or identifiers, and published." }), cache);
 };

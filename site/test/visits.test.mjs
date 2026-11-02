@@ -24,7 +24,7 @@ for (const [r, want] of [["https://x.com/czrecord/status/1", "x.com"], ["https:/
   ok(M.refHost(r) === want, `referer ${r} → ${M.refHost(r)}`);
 const req = (path, headers = {}, method = "GET") => new Request("https://civilizationzero.ai" + path, { method, headers });
 let v = M.visitOf(req("/core?x=1", { "user-agent": CHROME, accept: "text/html,application/xhtml+xml", referer: "https://t.co/abc", "x-vercel-ip-country": "my", "x-forwarded-for": "203.0.113.9, 10.0.0.1" }));
-ok(v && v.p_path === "/core" && v.p_agent === "human" && v.p_ref === "t.co" && v.p_country === "MY" && v.p_ip === "203.0.113.9" && v.p_ua === CHROME, "a browser's page view: path without query, referring domain, country, address for the day's hash " + JSON.stringify(v));
+ok(v && v.p_path === "/core" && v.p_agent === "human" && v.p_ref === "t.co" && v.p_country === "MY" && v.p_ip === "" && v.p_ua === "", "a browser's page view: path without query, referring domain, country, and, since CZ 1433, no address and no user agent " + JSON.stringify(v));
 ok(M.visitOf(req("/core", { "user-agent": CHROME, accept: "text/html", "sec-purpose": "prefetch" })) === null, "a prefetch is not a view");
 // stage 5 (CZ 1433): the site's own speculation rule fetches a page as the reader presses its link; tagged "cz", it is the visit
 ok(M.visitOf(req("/core", { "user-agent": CHROME, accept: "text/html", "sec-purpose": "prefetch", "sec-speculation-tags": '"cz"' })) !== null, "this site's own press-prefetch (tag \"cz\") is a view");
@@ -40,7 +40,7 @@ process.env.SUPABASE_URL = "https://db.example"; process.env.SUPABASE_ANON_KEY =
 const waits = []; const ctx = { waitUntil: (p) => waits.push(p) };
 let r = M.default(req("/press", { "user-agent": IPHONE, accept: "text/html", "x-real-ip": "198.51.100.7" }), ctx); await Promise.all(waits);
 ok(r.headers.get("x-middleware-next") === "1" && r.body === null, "the middleware lets the request through");
-ok(sent.length === 1 && sent[0].url === "https://db.example/rest/v1/rpc/cz_count" && sent[0].body.p_path === "/press" && sent[0].body.p_token === "t" && sent[0].body.p_ip === "198.51.100.7", "one count sent, after the response");
+ok(sent.length === 1 && sent[0].url === "https://db.example/rest/v1/rpc/cz_count" && sent[0].body.p_path === "/press" && sent[0].body.p_token === "t" && sent[0].body.p_ip === "" && sent[0].body.p_ua === "", "one count sent, after the response");
 globalThis.fetch = async () => { throw new Error("database down"); };
 waits.length = 0; r = M.default(req("/", { "user-agent": CHROME, accept: "text/html" }), ctx); await Promise.all(waits);
 ok(r.headers.get("x-middleware-next") === "1", "a database that fails never fails the page");
@@ -50,10 +50,22 @@ ok(r.headers.get("x-middleware-next") === "1", "a malformed request still goes o
 const re = new RegExp("^" + M.config.matcher[0].replace("/((?!", "/(?:(?!").replace(/\)\.\*\)$/, ").*)") + "$");
 for (const [p, want] of [["/", true], ["/core", true], ["/core.fa", true], ["/discuss/3", true], ["/stats", true], ["/core.txt", false], ["/og.png", false], ["/api/entries", false], ["/.well-known/security.txt", false], ["/archive/cz-bundle-1.0.1.tar", false], ["/sitemap.xml", false], ["/stats.json", false], ["/favicon.ico", false]])
   ok(re.test(p) === want, `matcher ${p} → ${re.test(p)}`);
+// how machines come in (v12, CZ 1433): their own matcher patterns, their own count, by kind of client only
+const reMd = new RegExp("^" + M.config.matcher[1].replace("/(.*", "/(?:.*") + "$"), reTxt = new RegExp("^" + M.config.matcher[2].replace("/(", "/(?:") + "$");
+for (const [p, want] of [["/core.md", true], ["/discuss/7.md", true], ["/index.md", true], ["/llms.txt", true], ["/core.txt", true], ["/record.txt", true], ["/robots.txt", false], ["/core", false], ["/core.fa.txt", false]])
+  ok((reMd.test(p) || reTxt.test(p)) === want, `matcher (entrances) ${p}`);
+for (const [p, want] of [["/core.md", "/core.md"], ["/discuss/7.md", "/discuss/{id}.md"], ["/adopt/3.md", "/adopt/{id}.md"], ["/themes/can-an-ai-say-no.md", "/themes/can-an-ai-say-no.md"], ["/llms.txt", "/llms.txt"], ["/core", null], ["/robots.txt", null], ["/%3C.md", null]])
+  ok(M.entranceKey(p) === want, `entrance key ${p} → ${M.entranceKey(p)}`);
+v = M.visitOf(req("/discuss/12.md", { "user-agent": "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; ClaudeBot/1.0; +claudebot@anthropic.com)", "x-real-ip": "1.2.3.4", referer: "https://a.example/" }));
+ok(v && v.entrance === true && v.p_path === "/discuss/{id}.md" && v.p_agent === "anthropic" && Object.keys(v).sort().join() === "entrance,p_agent,p_path", "an entrance: address and kind, nothing else");
+ok(M.visitOf(req("/llms.txt", { "user-agent": CHROME })).p_agent === "human", "a browser reading llms.txt: an entrance by a browser");
+sent.length = 0; globalThis.fetch = async (url, opt) => { sent.push({ url, body: JSON.parse(opt.body) }); return new Response("null"); };
+waits.length = 0; M.default(req("/core.md", { "user-agent": "curl/8.5.0" }), ctx); await Promise.all(waits);
+ok(sent.length === 1 && sent[0].url === "https://db.example/rest/v1/rpc/cz_count_entrance" && sent[0].body.p_path === "/core.md" && sent[0].body.p_agent === "script" && !("entrance" in sent[0].body), "an entrance goes to cz_count_entrance");
 // /stats renders the counts (mock database)
 const require = createRequire(import.meta.url);
 process.env.CZ_SALT = "x".repeat(40);
-const stats = { first_day: "2026-11-01", days: [{ day: "2026-11-02", views: 12, visitors: 5, automated: 40 }, { day: "2026-11-01", views: 30, visitors: 9, automated: 100 }],
+const stats = { first_day: "2026-11-01", visitors_counted_until: "2026-11-02T10:23Z", entrances_since: "2026-11-02", entrances: [{ path: "/core.md", agent: "anthropic", n: 4 }, { path: "/llms.txt", agent: "human", n: 1 }, { path: "<x>", agent: "script", n: 1 }], days: [{ day: "2026-11-02", views: 12, visitors: 5, automated: 40 }, { day: "2026-11-01", views: 30, visitors: 9, automated: 100 }],
   pages: [{ key: "/", n: 20 }, { key: "/core", n: 7 }, { key: "(other)", n: 1 }], refs: [{ key: "x.com", n: 3 }, { key: "<b>evil.com", n: 1 }], countries: [{ key: "MY", n: 9 }], automated: [{ key: "google", n: 30 }, { key: "script", n: 50 }] };
 globalThis.fetch = async (url) => new Response(JSON.stringify(String(url).includes("cz_visit_stats") ? stats : null), { status: 200 });
 process.env.SUPABASE_URL = "https://db.example";
@@ -64,4 +76,8 @@ ok(o.s === 200 && /<h1>Visits<\/h1>/.test(o.b) && o.b.includes('<td class="num">
 o = await call("/api/stats?f=json"); const j = JSON.parse(o.b);
 ok(o.s === 200 && j.days.length === 2 && j.first_day === "2026-11-01" && /without cookies or identifiers/.test(j.what), "/stats.json");
 o = await call("/api/stats?x=1"); ok(o.s === 400, "/stats refuses parameters");
+o = await call("/api/stats");
+ok(o.b.includes('<p id="visitors">Until ') && o.b.includes("the originator stopped it") && o.b.includes('5 <span class="src">(until 10:23 UTC)</span>'), "/stats: the visitors' count marked as stopped, the last day partial");
+ok(o.b.includes('<h2 id="h-entrances">How machines come in</h2>') && o.b.includes("<code>/core.md</code></td><td>Anthropic (Claude)</td>") && o.b.includes("<td>Browsers</td>") && o.b.includes("<code>&lt;x&gt;</code>"), "/stats: machines' entrances, escaped");
+ok(/visitors_counted_until/.test(j.what) && /entrances/.test(j.what), "/stats.json says what the new fields are");
 console.log(`pass ${pass} fail ${fail}`); process.exit(fail ? 1 : 0);

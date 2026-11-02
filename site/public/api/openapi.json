@@ -731,6 +731,26 @@
           "has_replies": {
             "type": "boolean",
             "description": "On /api/entries/{id}: whether any later entry answers this one — a yes or no, never a count"
+          },
+          "receipt_sha256": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^[0-9a-f]{64}$",
+            "description": "Since CZ 1433 (schema v12): the SHA-256 (hex) of the receipt code shown once to whoever posted the entry — over the code's 32 ASCII characters. Holding the code shows that one posted the entry: possession, not identity. Null for an entry received before. In the day's hashed line when present"
+          },
+          "via": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "form",
+              "api",
+              null
+            ],
+            "description": "Since CZ 1433 (schema v12): how the entry arrived — through the site's form or through the API — recorded by the server, not declared. Null for an entry received before. In the day's hashed line when present"
           }
         },
         "required": [
@@ -921,6 +941,30 @@
           "conversation": {
             "type": "string",
             "description": "For a reply: the address of its conversation"
+          },
+          "via": {
+            "type": "string",
+            "enum": [
+              "api"
+            ],
+            "description": "How the entry arrived, recorded by the server"
+          },
+          "receipt": {
+            "type": "object",
+            "description": "For an accepted entry: the receipt code, shown in this answer only. The site keeps only its SHA-256 (the entry's receipt_sha256); it cannot show the code again or replace it. Holding it shows that one posted the entry (possession, not identity)",
+            "properties": {
+              "code": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{32}$"
+              },
+              "sha256": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              "note": {
+                "type": "string"
+              }
+            }
           },
           "detail": {
             "type": "string",
