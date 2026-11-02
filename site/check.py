@@ -43,6 +43,8 @@ class P(HTMLParser):
 FUNCTION_ROUTES = {"/", "/sitemap-discussion.xml", "/stats", "/stats.json", "/index.json", "/index.txt", "/api/entries", "/discuss", "/discuss.json", "/respond", "/api/moderation", "/api/cron/daily", "/archive/entries.json",
                    "/adopt", "/adopt.json", "/api/adopt", "/archive/register.json", "/api/calendar", "/calendar.json"}
 def resolves(path):
+    if path == "/index.md": return True   # every page as Markdown (stage 5): the first page's, and <page>.md for the others (vercel.json, checked below)
+    if path.endswith(".md") and not (PUBLIC / path.lstrip("/")).exists(): return resolves(path[:-3])
     if any(path == f"/themes/{t['slug']}" for t in THEMES): return True   # a theme's page, served by the room's function
     if path in FUNCTION_ROUTES or re.match(r"^/(api/entries|discuss|adopt)/\d+$", path) or re.match(r"^/archive/(entries|register)/\d{4}-\d{2}-\d{2}\.json$", path): return True
     p = path.lstrip("/")
@@ -304,6 +306,14 @@ check(man["signature"]["release_manifest_sha256"] == sha256((PUBLIC / ".well-kno
 # 6. vercel.json and the functions exist
 v = json.loads((SITE / "vercel.json").read_text("utf-8"))
 check(any(r.get("source") == "/" and "has" in r for r in v.get("rewrites", [])), "vercel.json: content negotiation for /")
+# stage 5 (CZ 1433): every page as Markdown, routed before the patterns that would read ".md" as an id or a language; the static CSP names the speculation rules
+_rw = [r.get("source") for r in v.get("rewrites", [])]
+for _s in ("/index.md", "/discuss.md", "/discuss/:id(\\d{1,12}).md", "/respond.md", "/adopt.md", "/stats.md"):
+    check(_s in _rw, f"vercel.json: {_s} → Markdown")
+check(_rw.index("/discuss/:id(\\d{1,12}).md") < _rw.index("/discuss/:id"), "vercel.json: /discuss/<id>.md before /discuss/<id>")
+check(any(s_ and s_.startswith("/:page(") and s_.endswith(").md") and "how-it-is-built" in s_ for s_ in _rw), "vercel.json: <page>.md for the static pages")
+_csp = next(x["value"] for h_ in v["headers"] if h_["source"] == "/(.*)" and not h_.get("missing") for x in h_["headers"] if x["key"] == "Content-Security-Policy")
+check(_csp.endswith(f"; script-src {SPEC_HASH}"), "vercel.json: the CSP names the speculation rules by their hash")
 for fn in ("api/home.js", "api/entries.js", "api/discuss.js", "api/archive.js", "api/moderation.js", "api/cron/daily.js", "api/adopt.js", "room/lib.js", "room/register.js"):
     check((SITE / fn).exists(), f"function missing: {fn}")
 check(any(c.get("path") == "/api/cron/daily" for c in v.get("crons", [])), "vercel.json: daily cron")

@@ -26,6 +26,10 @@ const req = (path, headers = {}, method = "GET") => new Request("https://civiliz
 let v = M.visitOf(req("/core?x=1", { "user-agent": CHROME, accept: "text/html,application/xhtml+xml", referer: "https://t.co/abc", "x-vercel-ip-country": "my", "x-forwarded-for": "203.0.113.9, 10.0.0.1" }));
 ok(v && v.p_path === "/core" && v.p_agent === "human" && v.p_ref === "t.co" && v.p_country === "MY" && v.p_ip === "203.0.113.9" && v.p_ua === CHROME, "a browser's page view: path without query, referring domain, country, address for the day's hash " + JSON.stringify(v));
 ok(M.visitOf(req("/core", { "user-agent": CHROME, accept: "text/html", "sec-purpose": "prefetch" })) === null, "a prefetch is not a view");
+// stage 5 (CZ 1433): the site's own speculation rule fetches a page as the reader presses its link; tagged "cz", it is the visit
+ok(M.visitOf(req("/core", { "user-agent": CHROME, accept: "text/html", "sec-purpose": "prefetch", "sec-speculation-tags": '"cz"' })) !== null, "this site's own press-prefetch (tag \"cz\") is a view");
+ok(M.visitOf(req("/core", { "user-agent": CHROME, accept: "text/html", "sec-purpose": "prefetch", "sec-speculation-tags": 'null, "cdn-rule"' })) === null, "another rule's prefetch is not a view");
+ok(M.visitOf(req("/core", { "user-agent": CHROME, accept: "text/html", "sec-purpose": "prefetch;prerender", "sec-speculation-tags": '"cz"' })) === null, "a prerender is never a view, even tagged");
 ok(M.visitOf(req("/core", { "user-agent": CHROME, accept: "application/json" })) === null, "a browser asking for JSON is not a page view");
 ok(M.visitOf(req("/core", { "user-agent": CHROME, accept: "text/html" }, "HEAD")) === null, "HEAD is not a view");
 v = M.visitOf(req("/", { "user-agent": "Mozilla/5.0 (compatible; Googlebot/2.1)", accept: "*/*", referer: "https://example.com/", "x-real-ip": "66.249.66.1" }));

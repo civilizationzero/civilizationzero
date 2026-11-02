@@ -41,8 +41,10 @@ function clock(now) {
 // without q=0, and HTML wins whenever HTML is acceptable, so a browser always gets the page. "*/*" gets HTML.
 const Q0 = String.raw`\s*;\s*q\s*=\s*0(?:\.0{0,3})?\s*(?:,|$)`;
 const WANTS = (type) => new RegExp(String.raw`^(?!.*text/html(?!${Q0}))(?!.*${type}${Q0}).*${type}.*`);
-const JSON_RE = WANTS("application/json"), TXT_RE = WANTS("text/plain");
-const negotiate = (accept) => JSON_RE.test(accept) ? "json" : TXT_RE.test(accept) ? "txt" : "html";
+const JSON_RE = WANTS("application/json"), TXT_RE = WANTS("text/plain"), MD_RE = WANTS("text/markdown");
+const negotiate = (accept) => JSON_RE.test(accept) ? "json" : TXT_RE.test(accept) ? "txt" : MD_RE.test(accept) ? "md" : "html";
+// the speculation rules in the page (stage 5, CZ 1433) are data, allowed by their hash, read from the template as built
+const SPEC_HASHES = [...String(T.html || "").matchAll(/<script type="speculationrules">([\s\S]*?)<\/script>/g)].map((m) => `'sha256-${require("node:crypto").createHash("sha256").update(m[1], "utf8").digest("base64")}'`);
 
 function fill(s, c) {
   for (const k of Object.keys(c)) s = s.split(k).join(c[k]);
@@ -75,24 +77,32 @@ module.exports = async (req, res) => {
   const url = new URL(req.url, "http://x");
   let f = url.searchParams.get("f");
   if (!f) f = negotiate(String(req.headers["accept"] || ""));
+  const md = f === "md";   // the page as Markdown (/index.md, or Accept: text/markdown): the HTML page, converted (room/md.js)
+  if (md) f = "html";
   if (!(Object.hasOwn(T, f) && typeof T[f] === "string")) f = "html";   // ?f=constructor and the like: an inherited property is not a form (review of CZ 1432)
   const now = new Date();
   const c = { ...clock(now), "__ROOM_COUNT__": "", "__ROOM_LATEST__": "" };
   if ((T[f] ? f : "html") === "html") Object.assign(c, await roomOrNothing());
   const types = { html: "text/html; charset=utf-8", json: "application/json; charset=utf-8", txt: "text/plain; charset=utf-8" };
+  if (md) {
+    const MD = require("../room/md.js");
+    return MD.sendMarkdown(res, 200, MD.htmlToMarkdown(fill(T.html, c), { path: "/" }), "/", "https://civilizationzero.ai",
+      { "Cache-Control": `public, max-age=0, s-maxage=${Math.min(300, CZ.secondsToNextDay(now.getTime()))}` });
+  }
   res.statusCode = 200;
   res.setHeader("Content-Type", types[f] || types.html);
   // at most five minutes, and never past 00:00 UTC, when the date in the heading turns
   res.setHeader("Cache-Control", `public, max-age=0, s-maxage=${Math.min(300, CZ.secondsToNextDay(now.getTime()))}`);
   res.setHeader("Vary", "Accept");
-  const link = '</index.json>; rel="alternate"; type="application/json", </index.txt>; rel="alternate"; type="text/plain", </api/openapi.json>; rel="service-desc"; type="application/vnd.oai.openapi+json"';
+  const link = '</index.json>; rel="alternate"; type="application/json", </index.txt>; rel="alternate"; type="text/plain", </index.md>; rel="alternate"; type="text/markdown", </api/openapi.json>; rel="service-desc"; type="application/vnd.oai.openapi+json"';
   const isHtml = (T[f] ? f : "html") === "html";
   res.setHeader("Link", isHtml ? link : `<https://civilizationzero.ai/>; rel="canonical", ${link}`);   // the JSON and text forms name the page as canonical
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("Access-Control-Allow-Origin", "*");
   // the page: nothing loads from elsewhere, no script, no framing (as every page)
-  if (isHtml) res.setHeader("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'; img-src 'self' data:; manifest-src 'self'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'");
-  res.end(fill(T[f] || T.html, c));
+  if (isHtml) res.setHeader("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'; img-src 'self' data:; manifest-src 'self'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'" + (SPEC_HASHES.length ? `; script-src ${SPEC_HASHES.join(" ")}` : ""));
+  const body = fill(T[f] || T.html, c);
+  res.end(isHtml ? require("../room/weight.js").fillWeight(body) : body);   // the line at the foot: this page's weight as it is sent
 };
 
 module.exports.negotiate = negotiate;

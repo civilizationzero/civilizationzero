@@ -46,7 +46,10 @@ export function visitOf(request) {
   if (request.method !== "GET") return null;
   const h = request.headers, url = new URL(request.url);
   const purpose = `${h.get("sec-purpose") || ""} ${h.get("purpose") || ""} ${h.get("x-purpose") || ""} ${h.get("x-moz") || ""}`.toLowerCase();
-  if (purpose.includes("prefetch") || purpose.includes("prerender")) return null;
+  // a prefetch is not a page view — except this site's own speculation rule (stage 5, CZ 1433), tagged "cz", which fetches a page as the
+  // reader presses its link (eagerness "conservative"): that is the visit, since the browser will not ask again. Never a prerender.
+  const ownPress = /(^|[,\s])"cz"([,\s]|$)/.test(h.get("sec-speculation-tags") || "") && !purpose.includes("prerender");
+  if ((purpose.includes("prefetch") || purpose.includes("prerender")) && !ownPress) return null;
   const ua = h.get("user-agent") || "", agent = agentOf(ua);
   if (agent === "human" && !/text\/html|\*\/\*/.test(h.get("accept") || "")) return null;   // a browser asking for JSON is not a page view
   const human = agent === "human";

@@ -18,6 +18,7 @@ module.exports = async (req, res) => {
   if (!["GET", "HEAD"].includes(req.method)) { res.setHeader("Allow", "GET, HEAD"); return json(res, 405, { error: "method not allowed" }); }
   if ([...url.searchParams.keys()].some((k) => k !== "f")) return json(res, 400, { error: "this page takes no parameters" }, { "Cache-Control": "public, max-age=0, s-maxage=600" });
   const cache = { "Cache-Control": "public, max-age=0, s-maxage=300, stale-while-revalidate=300" };
+  if (url.searchParams.get("f") === "md") res.czMarkdown = { path: "/stats" };   // the page as Markdown (stage 5)
   let s;
   try { s = await rpc("cz_visit_stats", { p_days: 30 }); }
   catch (err) {

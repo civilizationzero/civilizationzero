@@ -7,11 +7,14 @@
 const fs = require("node:fs");
 const path = require("node:path");
 const CZ = require("../room/cztime.js");
+const MD = require("../room/md.js");
+const { fillWeight } = require("../room/weight.js");
 const crypto = require("node:crypto");
 // The same policy as the room's pages: nothing loads from elsewhere, no page can frame these, forms post here only. The one inline script
 // on the site (/ask: a copy button) is allowed by its own hash, computed here from the file served, so that it cannot drift.
 const CSP = "default-src 'none'; style-src 'unsafe-inline'; img-src 'self' data:; manifest-src 'self'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'";
-const scriptHashes = (html) => [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map((m) => `'sha256-${crypto.createHash("sha256").update(m[1], "utf8").digest("base64")}'`);
+// the scripts the policy names by hash: the one that runs (/ask) and the speculation rules, which are data (stage 5, CZ 1433); JSON-LD needs none
+const scriptHashes = (html) => [...html.matchAll(/<script(?: type="speculationrules")?>([\s\S]*?)<\/script>/g)].map((m) => `'sha256-${crypto.createHash("sha256").update(m[1], "utf8").digest("base64")}'`);
 const cspFor = (html) => { const h = scriptHashes(html); return h.length ? `${CSP}; script-src ${h.join(" ")}` : CSP; };
 // the page's title says what was converted, or what was wrong, so that a tab and a screen reader say it too
 const plainText = (h) => h.replace(/<[^>]+>/g, "").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#x27;/g, "'").replace(/\s+/g, " ").trim();
@@ -22,7 +25,7 @@ function resultTitle(html) {
   return t ? `${plainText(t[1]).slice(0, 90)} · CZ time` : null;
 }
 
-const PAGES = /^(core(\.[a-z]{2,3}(-[A-Za-z0-9]{1,8})?)?|record|objections|ask|machine|about|archive|calendar|civilization-zero-infographic|civilization-zero-images|press)$/;
+const PAGES = /^(core(\.[a-z]{2,3}(-[A-Za-z0-9]{1,8})?)?|record|objections|ask|machine|about|archive|calendar|civilization-zero-infographic|civilization-zero-images|press|how-it-is-built)$/;
 const files = new Map();
 function read(name) {
   if (files.has(name)) return files.get(name);
@@ -136,6 +139,12 @@ module.exports = (req, res) => {
              .replace(TIME_RE, () => `<!--cz-time-->${timeBlock(url.searchParams, now)}<!--/cz-time-->`);
   }
   if (query && status === 200) { const t = resultTitle(out); if (t) out = out.replace(/<title>[^<]*<\/title>/, () => `<title>${CZ.escHtml(t)}</title>`); }
+  // the page as Markdown (/core.md, or Accept: text/markdown; vercel.json): its <main> converted, with a front matter (room/md.js)
+  if (url.searchParams.get("f") === "md") {
+    const pth = p === "" ? "/" : `/${p}`;
+    return MD.sendMarkdown(res, status, req.method === "HEAD" ? "" : MD.htmlToMarkdown(out, { path: pth }), pth, "https://civilizationzero.ai", { "Cache-Control": `public, max-age=0, s-maxage=${CZ.secondsToNextDay(now)}` });
+  }
+  out = fillWeight(out);   // the line at the foot: this page's weight as it is sent (room/weight.js)
   res.statusCode = status;
   res.setHeader("Content-Type", "text/html; charset=utf-8");
   res.setHeader("Content-Security-Policy", csp);

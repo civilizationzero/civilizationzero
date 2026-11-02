@@ -156,6 +156,21 @@ srv.listen(0, "127.0.0.1", async () => {
     ok(r.status === 303 && (r.headers.location || "").startsWith("/discuss?tl=fa"), "POST: a foreign 'back' falls back to the room");
     TABLE = [entry(1, { lang: "en" }), entry(3, { parent: 1, lang: "en" })]; r = await call(discuss, "/api/discuss?tl=fa");
     ok(r.status === 200 && r.body.includes("متن ترجمه‌شدهٔ یک") && r.body.includes('class="mtag">machine translation</span>'), "the room's list in Persian: the excerpt translated and marked");
+    // ---------- stage 5 (CZ 1433): every page as Markdown; the page-weight line; the speculation rules allowed by their hash
+    TABLE = [entry(1, { lang: "en", content: "An earlier entry with *marks*, long enough." }), entry(3, { parent: 1, lang: "en", kind: "ai", content: "Text with **stars** and a ``` fence, long enough." })];
+    r = await call(discuss, "/api/discuss?id=3&f=md");
+    ok(r.status === 200 && /^text\/markdown/.test(r.headers["content-type"] || "") && r.headers["x-robots-tag"] === "noindex" && /rel="canonical"/.test(r.headers.link || ""), `entry as Markdown: text/markdown, not indexed, the HTML canonical (${r.headers["content-type"]})`);
+    ok(/^---\n/.test(r.body) && /\nentry: 3\n/.test(r.body) && /\nparent: 1\n/.test(r.body) && /\nkind_declared: "ai"\n/.test(r.body) && /\ncontent_sha256: "a{64}"\n/.test(r.body) && /\nstate: "published"\n/.test(r.body) && /\nversion: "original"\n/.test(r.body), "entry front matter: number, parent, declared kind, hash, state, version");
+    ok(r.body.includes("````text\nText with **stars** and a ``` fence, long enough.\n````"), "user content in a fenced block longer than any fence inside it, exactly as received");
+    ok(r.body.includes("“An earlier entry with \\*marks\\*, long enough.”"), "an excerpt of someone's words is quoted, its marks escaped");
+    ok(!/<[a-z]+[ >]/i.test(r.body.replace(/```[\s\S]*?```/g, "")), "no HTML tags outside the fenced user content");
+    r = await call(discuss, "/api/discuss?id=3");
+    ok(/<!--cz-weight-->This page: [\d.]+ kB · no JavaScript that runs · no cookies<!--\/cz-weight-->/.test(r.body), "the weight line filled for this page");
+    ok(/script-src 'sha256-[A-Za-z0-9+/=]+'/.test(r.headers["content-security-policy"] || "") && r.body.includes('<script type="speculationrules">'), "the CSP names the speculation rules by hash");
+    { const m = /<script type="speculationrules">([\s\S]*?)<\/script>/.exec(r.body); const hsh = require("node:crypto").createHash("sha256").update(m[1], "utf8").digest("base64");
+      ok((r.headers["content-security-policy"] || "").includes(`'sha256-${hsh}'`), "the hash is of the rules on the page"); }
+    r = await call(discuss, "/api/discuss?f=md"); ok(r.status === 200 && /^---\ntitle: /.test(r.body) && /\nurl: "https:\/\/civilizationzero.ai\/discuss.md"\n/.test(r.body), "the room as Markdown");
+    r = await call(discuss, "/api/discuss?page=respond&f=md"); ok(r.status === 200 && /\nhtml: "https:\/\/civilizationzero.ai\/respond"\n/.test(r.body), "/respond as Markdown");
     // the sitemap refuses a query string (no cache bypass of a whole-archive read)
     CALLS = []; r = await call(discuss, "/api/discuss?page=sitemap&x=1");
     ok(r.status === 400 && CALLS.length === 0, `sitemap with a parameter: 400, no database call (got ${r.status})`);

@@ -25,7 +25,7 @@
       "permanent": true
     },
     {
-      "source": "/:page(core|record|objections|ask|machine|about|archive|calendar|civilization-zero-infographic|civilization-zero-images|press).html",
+      "source": "/:page(core|record|objections|ask|machine|about|archive|calendar|civilization-zero-infographic|civilization-zero-images|press|how-it-is-built).html",
       "destination": "/:page",
       "permanent": true
     },
@@ -36,6 +36,156 @@
     }
   ],
   "rewrites": [
+    {
+      "source": "/index.md",
+      "destination": "/api/home?f=md"
+    },
+    {
+      "source": "/:page(core|record|objections|ask|machine|about|archive|calendar|civilization-zero-infographic|civilization-zero-images|press|how-it-is-built).md",
+      "destination": "/api/page?p=:page&f=md"
+    },
+    {
+      "source": "/core.:lang([a-z]{2,3}|[a-z]{2,3}-[A-Za-z0-9]+).md",
+      "destination": "/api/page?p=core.:lang&f=md"
+    },
+    {
+      "source": "/discuss.md",
+      "destination": "/api/discuss?f=md"
+    },
+    {
+      "source": "/discuss/:id(\\d{1,12}).md",
+      "destination": "/api/discuss?id=:id&f=md"
+    },
+    {
+      "source": "/themes/:slug([a-z0-9-]{2,40}).md",
+      "destination": "/api/discuss?theme=:slug&f=md"
+    },
+    {
+      "source": "/respond.md",
+      "destination": "/api/discuss?page=respond&f=md"
+    },
+    {
+      "source": "/adopt.md",
+      "destination": "/api/adopt?page=list&f=md"
+    },
+    {
+      "source": "/adopt/:id(\\d{1,12}).md",
+      "destination": "/api/adopt?page=record&id=:id&f=md"
+    },
+    {
+      "source": "/stats.md",
+      "destination": "/api/stats?f=md"
+    },
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "header",
+          "key": "accept",
+          "value": "^(?!.*text/html(?!\\s*;\\s*q\\s*=\\s*0(?:\\.0{0,3})?\\s*(?:,|$)))(?!.*text/markdown\\s*;\\s*q\\s*=\\s*0(?:\\.0{0,3})?\\s*(?:,|$)).*text/markdown.*"
+        }
+      ],
+      "destination": "/api/home?f=md"
+    },
+    {
+      "source": "/:page(core|record|objections|ask|machine|about|archive|calendar|civilization-zero-infographic|civilization-zero-images|press|how-it-is-built)",
+      "has": [
+        {
+          "type": "header",
+          "key": "accept",
+          "value": "^(?!.*text/html(?!\\s*;\\s*q\\s*=\\s*0(?:\\.0{0,3})?\\s*(?:,|$)))(?!.*text/markdown\\s*;\\s*q\\s*=\\s*0(?:\\.0{0,3})?\\s*(?:,|$)).*text/markdown.*"
+        }
+      ],
+      "destination": "/api/page?p=:page&f=md"
+    },
+    {
+      "source": "/core.:lang([a-z]{2,3}|[a-z]{2,3}-[A-Za-z0-9]+)",
+      "has": [
+        {
+          "type": "header",
+          "key": "accept",
+          "value": "^(?!.*text/html(?!\\s*;\\s*q\\s*=\\s*0(?:\\.0{0,3})?\\s*(?:,|$)))(?!.*text/markdown\\s*;\\s*q\\s*=\\s*0(?:\\.0{0,3})?\\s*(?:,|$)).*text/markdown.*"
+        }
+      ],
+      "destination": "/api/page?p=core.:lang&f=md"
+    },
+    {
+      "source": "/discuss",
+      "has": [
+        {
+          "type": "header",
+          "key": "accept",
+          "value": "^(?!.*text/html(?!\\s*;\\s*q\\s*=\\s*0(?:\\.0{0,3})?\\s*(?:,|$)))(?!.*text/markdown\\s*;\\s*q\\s*=\\s*0(?:\\.0{0,3})?\\s*(?:,|$)).*text/markdown.*"
+        }
+      ],
+      "destination": "/api/discuss?f=md"
+    },
+    {
+      "source": "/discuss/:id(\\d{1,12})",
+      "has": [
+        {
+          "type": "header",
+          "key": "accept",
+          "value": "^(?!.*text/html(?!\\s*;\\s*q\\s*=\\s*0(?:\\.0{0,3})?\\s*(?:,|$)))(?!.*text/markdown\\s*;\\s*q\\s*=\\s*0(?:\\.0{0,3})?\\s*(?:,|$)).*text/markdown.*"
+        }
+      ],
+      "destination": "/api/discuss?id=:id&f=md"
+    },
+    {
+      "source": "/themes/:slug([a-z0-9-]{2,40})",
+      "has": [
+        {
+          "type": "header",
+          "key": "accept",
+          "value": "^(?!.*text/html(?!\\s*;\\s*q\\s*=\\s*0(?:\\.0{0,3})?\\s*(?:,|$)))(?!.*text/markdown\\s*;\\s*q\\s*=\\s*0(?:\\.0{0,3})?\\s*(?:,|$)).*text/markdown.*"
+        }
+      ],
+      "destination": "/api/discuss?theme=:slug&f=md"
+    },
+    {
+      "source": "/respond",
+      "has": [
+        {
+          "type": "header",
+          "key": "accept",
+          "value": "^(?!.*text/html(?!\\s*;\\s*q\\s*=\\s*0(?:\\.0{0,3})?\\s*(?:,|$)))(?!.*text/markdown\\s*;\\s*q\\s*=\\s*0(?:\\.0{0,3})?\\s*(?:,|$)).*text/markdown.*"
+        }
+      ],
+      "destination": "/api/discuss?page=respond&f=md"
+    },
+    {
+      "source": "/adopt",
+      "has": [
+        {
+          "type": "header",
+          "key": "accept",
+          "value": "^(?!.*text/html(?!\\s*;\\s*q\\s*=\\s*0(?:\\.0{0,3})?\\s*(?:,|$)))(?!.*text/markdown\\s*;\\s*q\\s*=\\s*0(?:\\.0{0,3})?\\s*(?:,|$)).*text/markdown.*"
+        }
+      ],
+      "destination": "/api/adopt?page=list&f=md"
+    },
+    {
+      "source": "/adopt/:id(\\d{1,12})",
+      "has": [
+        {
+          "type": "header",
+          "key": "accept",
+          "value": "^(?!.*text/html(?!\\s*;\\s*q\\s*=\\s*0(?:\\.0{0,3})?\\s*(?:,|$)))(?!.*text/markdown\\s*;\\s*q\\s*=\\s*0(?:\\.0{0,3})?\\s*(?:,|$)).*text/markdown.*"
+        }
+      ],
+      "destination": "/api/adopt?page=record&id=:id&f=md"
+    },
+    {
+      "source": "/stats",
+      "has": [
+        {
+          "type": "header",
+          "key": "accept",
+          "value": "^(?!.*text/html(?!\\s*;\\s*q\\s*=\\s*0(?:\\.0{0,3})?\\s*(?:,|$)))(?!.*text/markdown\\s*;\\s*q\\s*=\\s*0(?:\\.0{0,3})?\\s*(?:,|$)).*text/markdown.*"
+        }
+      ],
+      "destination": "/api/stats?f=md"
+    },
     {
       "source": "/admin",
       "destination": "/api/admin"
@@ -223,6 +373,10 @@
       "destination": "/api/page?p=press"
     },
     {
+      "source": "/how-it-is-built",
+      "destination": "/api/page?p=how-it-is-built"
+    },
+    {
       "source": "/calendar.json",
       "destination": "/api/calendar"
     },
@@ -320,7 +474,7 @@
         },
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'none'; style-src 'unsafe-inline'; img-src 'self' data:; manifest-src 'self'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'"
+          "value": "default-src 'none'; style-src 'unsafe-inline'; img-src 'self' data:; manifest-src 'self'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'; script-src 'sha256-ARtxuF9WVcEA46q/h1CzBY3YRIeSOzcraYbvzJ22P8o='"
         }
       ]
     },
@@ -760,6 +914,132 @@
         {
           "key": "Cache-Control",
           "value": "public, max-age=86400"
+        }
+      ]
+    },
+    {
+      "source": "/",
+      "headers": [
+        {
+          "key": "Vary",
+          "value": "Accept"
+        }
+      ]
+    },
+    {
+      "source": "/about",
+      "headers": [
+        {
+          "key": "Vary",
+          "value": "Accept"
+        }
+      ]
+    },
+    {
+      "source": "/machine",
+      "headers": [
+        {
+          "key": "Vary",
+          "value": "Accept"
+        }
+      ]
+    },
+    {
+      "source": "/ask",
+      "headers": [
+        {
+          "key": "Vary",
+          "value": "Accept"
+        }
+      ]
+    },
+    {
+      "source": "/archive",
+      "headers": [
+        {
+          "key": "Vary",
+          "value": "Accept"
+        }
+      ]
+    },
+    {
+      "source": "/objections",
+      "headers": [
+        {
+          "key": "Vary",
+          "value": "Accept"
+        }
+      ]
+    },
+    {
+      "source": "/civilization-zero-infographic",
+      "headers": [
+        {
+          "key": "Vary",
+          "value": "Accept"
+        }
+      ]
+    },
+    {
+      "source": "/civilization-zero-images",
+      "headers": [
+        {
+          "key": "Vary",
+          "value": "Accept"
+        }
+      ]
+    },
+    {
+      "source": "/press",
+      "headers": [
+        {
+          "key": "Vary",
+          "value": "Accept"
+        }
+      ]
+    },
+    {
+      "source": "/how-it-is-built",
+      "headers": [
+        {
+          "key": "Vary",
+          "value": "Accept"
+        }
+      ]
+    },
+    {
+      "source": "/respond",
+      "headers": [
+        {
+          "key": "Vary",
+          "value": "Accept"
+        }
+      ]
+    },
+    {
+      "source": "/stats",
+      "headers": [
+        {
+          "key": "Vary",
+          "value": "Accept"
+        }
+      ]
+    },
+    {
+      "source": "/themes/:slug",
+      "headers": [
+        {
+          "key": "Vary",
+          "value": "Accept"
+        }
+      ]
+    },
+    {
+      "source": "/core.:lang([a-z]{2,3}|[a-z]{2,3}-[A-Za-z0-9]+)",
+      "headers": [
+        {
+          "key": "Vary",
+          "value": "Accept"
         }
       ]
     }

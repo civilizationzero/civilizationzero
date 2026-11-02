@@ -74,7 +74,9 @@ function reservedField(fields, fingerprint) {
   return null;
 }
 const reservedDetail = (field) => `${field}: "The originator" and "Civilization Zero", and names made to look like them, are reserved: an entry that uses them must be signed with the originator's key (fingerprint ${ORIGINATOR.fingerprint.slice(0, 16)}…, ${ORIGIN}/about#originator-key). Choose another name, or say who you are in your text.`;
-const CSP = "default-src 'none'; style-src 'unsafe-inline'; img-src 'self' data:; manifest-src 'self'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'";
+// the speculation rules in the shell (stage 5, CZ 1433) are data, allowed by their hash, read from the shell as built so that they cannot drift
+const SPEC_HASHES = [...String(T.shell || "").matchAll(/<script type="speculationrules">([\s\S]*?)<\/script>/g)].map((m) => `'sha256-${require("node:crypto").createHash("sha256").update(m[1], "utf8").digest("base64")}'`);
+const CSP = "default-src 'none'; style-src 'unsafe-inline'; img-src 'self' data:; manifest-src 'self'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'" + (SPEC_HASHES.length ? `; script-src ${SPEC_HASHES.join(" ")}` : "");
 if (OPEN && (!process.env.CZ_SALT || process.env.CZ_SALT.length < 32)) throw new Error("CZ_SALT missing: source hashes must be salted (Blueprint §7.3)");
 
 // A declared field (author, system, operator, prompt, language, declared date; a register's signatory, institution, capacity) is
@@ -101,6 +103,13 @@ function json(res, status, body, headers = {}) {
 }
 
 function html(res, status, page, headers = {}) {
+  // the page as Markdown when it was asked for (a handler sets res.czMarkdown from ?f=md: /discuss.md, /discuss/7.md, Accept: text/markdown)
+  if (res.czMarkdown) {
+    const MDm = require("./md.js"), now = Date.now();
+    const out = MDm.htmlToMarkdown(CZ.fillBar(page, now), { path: res.czMarkdown.path || "/", meta: res.czMarkdown.meta || {} });
+    const extra = {}; for (const [k, v] of Object.entries(headers)) if (k.toLowerCase() === "cache-control") extra[k] = CZ.capCache(v, now);
+    return MDm.sendMarkdown(res, status, out, res.czMarkdown.path || "/", ORIGIN, extra);
+  }
   res.statusCode = status;
   res.setHeader("Content-Type", "text/html; charset=utf-8");
   res.setHeader("X-Content-Type-Options", "nosniff");
@@ -111,7 +120,7 @@ function html(res, status, page, headers = {}) {
   // today's date in CZ time at the top of the page (the originator's decision of 30 Oct 2026), and a cache that ends at 00:00 UTC
   const now = Date.now();
   for (const [k, v] of Object.entries(headers)) res.setHeader(k, k.toLowerCase() === "cache-control" ? CZ.capCache(v, now) : v);
-  res.end(CZ.fillBar(page, now));
+  res.end(require("./weight.js").fillWeight(CZ.fillBar(page, now)));   // the line at the foot: this page's weight as it is sent
 }
 
 // The page shell comes from the build (same stylesheet, nav and footer as every static page). One pass over the template: every

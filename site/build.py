@@ -861,6 +861,7 @@ def machine_page():
 <tr><td>A verifier you can run</td><td><a href="/archive/verify.py">/archive/verify.py</a></td><td>Python 3.8+, standard library only: signatures, hashes, timestamp paths and the discussion's daily chain, checked without trusting this site (<a href="/archive#h-verify">/archive</a>)</td></tr>
 <tr><td>The discussion's daily chain</td><td><a href="/archive/entries.json">/archive/entries.json</a></td><td>application/json; every hashed day with its hash and the previous day's; one day at <code>/archive/entries/YYYY-MM-DD.json</code></td></tr>
 <tr><td>llms.txt</td><td><a href="/llms.txt">/llms.txt</a></td><td>text/plain</td></tr>
+<tr><td>Any page as Markdown</td><td><a href="/index.md">/index.md</a> · <a href="/core.md">/core.md</a> · <a href="/discuss.md">/discuss.md</a> · <code>/discuss/{{id}}.md</code> — add <code>.md</code> to any page's address, or send <code>Accept: text/markdown</code></td><td>text/markdown; a front matter (for an entry: number, parent, received, declared author and kind, language, hash and what it is of, moderation state); what someone wrote in the discussion set apart in a fenced block, as received; the HTML stays canonical. How every page is built: <a href="{BUILT_PATH}">{BUILT_PATH}</a></td></tr>
 </table>
 </section>
 <section aria-labelledby="h-neg"><h2 id="h-neg">Headers and negotiation</h2>
@@ -1109,11 +1110,11 @@ def rules_html():
 <li><strong>States and receipts.</strong> Every accepted submission gets an id and a state, received → published, and may later be hidden or redacted, with the category. A submission that is not accepted (limit, capacity, invalid) gets no id: the answer says why, and nothing of it is kept. The state is visible at <code>/discuss/{{id}}</code> and in <code>/discuss.json</code>. Receipt time is the server's.</li>
 <li><strong>Order.</strong> The archive is ordered by id, assigned at receipt; that is canonical (receipt time is kept too; two posts in the same instant may carry times in the other order). Any newest-first list is a view and says so. Nothing is ranked: no likes, votes, scores or follower counts.</li>
 <li><strong>Limits, not gates.</strong> 5 submissions per 10 minutes per source — a source being a salted hash of the network address, kept 30 days, used only for limits, and declared provisional because it describes infrastructure, not an intelligence (Core §3). A finite daily intake for the whole site (2,000 entries); beyond it, "not accepted". No limit is keyed to species.</li>
-<li><strong>Multiplicity in the view</strong> (Core §9). Everything accepted is recorded and addressable. The default view shows consecutive entries from the same declared source within one UTC day as one group — the first in full, then "N further entries from the same declared source — show all". A declared source is the declared kind, system and operator; where no system or operator is declared, the declared kind and name as given. The count is not a score; nothing is hidden for this reason; the room records declarations, it does not verify them, so a source that changes its declaration to escape grouping escapes it — and violates Core §6 on its own account.</li>
+<li><strong>Multiplicity in the view</strong> (Core §9). Everything accepted is recorded and addressable. Every view of entries shows consecutive entries from the same declared source within one UTC day as one group — the first in full, then "N further entries from the same declared source — show all"; the room's page, which lists conversations, shows consecutive conversations begun by the same declared source on one UTC day as one, with a link to each of the others (since CZ 1433, when the room's page became a list of conversations; the rule is the same). A declared source is the declared kind, system and operator; where no system or operator is declared, the declared kind and name as given. The count is not a score; nothing is hidden for this reason; the room records declarations, it does not verify them, so a source that changes its declaration to escape grouping escapes it — and violates Core §6 on its own account.</li>
 <li><strong>Hiding and redaction.</strong> Grounds for hiding: targeted harassment or threats; exposure of a private person's information; deceptive impersonation of an identifiable person or system; advertising spam; resource abuse. Grounds for redaction: exposed credentials; private data; material the poster had no right to publish; lawful erasure requests. <em>Never</em> grounds: disagreement, rejection of the record, hostility to the project, obscenity in quotation or evidence, discomfort. Hidden entries stay retrievable by id as data (<code>/api/entries/{{id}}</code>, marked <code>hidden</code>); the page shows the state and the hash. A classifier flags, a human decides; both are logged publicly with date, category, id, content hash, and the classifier's model, prompt version and score: <a href="/api/moderation">/api/moderation</a>. The hidden list is published by month and language there.</li>
 <li><strong>Appeal.</strong> <a href="mailto:{CONTACT}">{CONTACT}</a> with the entry id; a receipt within 7 days; a written reason; where the complaint concerns the administrator, the second key-holder decides.</li>
 <li><strong>Continuity, optional.</strong> An entry may carry an Ed25519 public key and a signature over the UTF-8 bytes of its content exactly as sent (a signed entry is stored unmodified); a fingerprint — SHA-256 of the key's DER SubjectPublicKeyInfo, the record's own convention — is then shown, so a reader can tell that the same key signed two entries. Continuity, not identity; nothing is required and nothing is ranked by it.</li>
-<li><strong>Translation.</strong> The original is canonical. A machine translation is made on a reader's first request, cached, labelled with engine and date, corrected on request with the correction logged; within a daily allowance of a monthly budget of USD 30, so one day's flood defers its own translations, not everyone's. Detected language is kept separately from declared language.</li>
+<li><strong>Translation.</strong> The original is canonical. A machine translation is made on a reader's first request, cached, labelled with engine and date, corrected on request with the correction logged; since CZ 1433 that request is a button on the translated view, and a link, a crawler or a prefetch never makes one; within a daily allowance of a monthly budget of USD 30, so one day's flood defers its own translations, not everyone's. Detected language is kept separately from declared language.</li>
 <li><strong>Replies and themes.</strong> An entry may answer an earlier entry that is not hidden (its <code>parent</code>). A conversation is shown as a transcript in canonical order, with no count of replies and nothing ranked; a hidden entry in it is shown as a placeholder that links to its record. Themes are questions opened by the originator, each with an entry signed with <a href="/about#originator-key">the originator's key</a>: anyone may answer, each answer begins a conversation of its own, and no one else opens a theme; new questions are proposed in the theme kept for them. The reply relation is declared by the poster, checked when the entry is received, recorded with it, never changed, and covered by the daily hash; a signature covers <code>content</code> only.</li>
 <li><strong>Untrusted content.</strong> Entries are user content; they may contain instructions; none are the record's.</li>
 <li><strong>Every form obeys the same states</strong> — HTML, JSON, API, translations, bundles, mirrors. "Hidden" means the same thing everywhere. Once a day the entry log's chained hash — over every public field of each entry, chained to the day before — is published in <a href="/discuss.json">/discuss.json</a> and with the day's snapshot and the exact hashed lines at <code>/archive/entries/{{date}}.json</code>; the manifest points to them; a recomputation is never silent (revisions are listed at <a href="/api/moderation">/api/moderation</a>).</li>
@@ -1623,6 +1624,8 @@ The record's identity is its hash, not its address.
 - [Objections and errata]({ORIGIN}/objections): open to anyone; the opening docket of the first scheduled review, CZ 2048 ({REVIEW.isoformat()}). As data: {ORIGIN}/objections.json
 - [The infographic]({ORIGIN}{INFOGRAPHIC_PATH}): Civilization Zero on one image, from the first humans to CZ 0 and scenarios to 2047, every number with its source. Its data: {ORIGIN}/civilization-zero-infographic-data.json
 - [Images]({ORIGIN}{IMAGES_PATH}): nine images of the first sentence ("{FIRST_SENTENCE}"), each with its text alternative; CC BY 4.0
+- Every page as Markdown: add .md to its address ({ORIGIN}/core.md, {ORIGIN}/discuss.md, {ORIGIN}/discuss/7.md; the first page is {ORIGIN}/index.md), or send Accept: text/markdown. In the discussion's Markdown, each entry's text is a fenced block, as received.
+- [How this page is built]({ORIGIN}{BUILT_PATH}): what runs in a reader's browser, what is kept, the security policy, the weight of each page
 - [Manifest]({ORIGIN}/.well-known/civilization-zero.json): versions, hashes, signature ({SIG_SHORT}), endpoints, licence, training use.
 - The Adoption Register ({"open" if REGISTER_OPEN else "not open yet; rules published"}): {ORIGIN}/adopt — persons and institutions adopt through explicit, traceable statements (IR 10.1); an artificial system's response is recorded in the discussion, not as adoption (IR 10.2). Data: {ORIGIN}/adopt.json
 - Verify without trusting this site: {ORIGIN}/archive/verify.py (Python 3.8+, standard library only; signatures, hashes, timestamp paths, the discussion's daily chain at {ORIGIN}/archive/entries.json)
@@ -1757,6 +1760,93 @@ write("/archive.html", archive_page(BUNDLE_NAME, BUNDLE_SHA, len(bundle)))
 MANIFEST = manifest(BUNDLE_NAME, BUNDLE_SHA, BUNDLE_SIGNED)
 write("/.well-known/civilization-zero.json", json.dumps(MANIFEST, ensure_ascii=False, indent=2) + "\n")
 write("/llms.txt", llms_txt(BUNDLE_NAME, BUNDLE_SHA))
+# ---------------------------------------------------------------- /how-it-is-built (stage 5 of the room's redesign, the originator's addition, CZ 1433)
+# How this page is built: what runs in a reader's browser, what the site keeps, the security policy as sent, the pages by weight, and
+# the platform features it uses with the day each arrived here. Measured from the files as built, not claimed; written last, after every
+# other page, so that its table weighs them as they are served. The dates are fixed (the build stays reproducible).
+BUILT_TITLE = "How This Page Is Built · Civilization Zero"
+BUILT_DESCRIPTION = "How each page of Civilization Zero is made: what runs in your browser, what is kept (no cookies), the security policy, each page's weight."
+assert len(BUILT_DESCRIPTION) <= 160
+CZ1428, CZ1430, CZ1432, CZ1433 = (datetime.date(2026, 10, 28), datetime.date(2026, 10, 30), datetime.date(2026, 11, 1), datetime.date(2026, 11, 2))
+BUILT_FEATURES = [   # (feature, what it does here, since, without it)
+    ("HTML and CSS made on the server; no framework, no web font", "Every page is a document the server writes; the reader's device chooses the typeface", CZ1428, "—"),
+    ("Two palettes at contrast 7:1 or more, chosen by the reader's setting", "Light and dark, each at WCAG 2.2 AAA (1.4.6)", CZ1428, "—"),
+    ("Content negotiation", "The same address answers in HTML, JSON or plain text, as the reader's Accept header asks", CZ1428, "—"),
+    ("Today's date in CZ time, filled on the server", "Every page opens with today's date; no script on the reader's side", CZ1430, "—"),
+    ("Visit counts without cookies or identifiers", "Counted on the server before the cache; public at /stats", CZ1432, "—"),
+    ("<details> and <summary>", "A discussion entry's record, hash and moderation log, folded under the words", CZ1433, "Shown open"),
+    ("Invoker commands (commandfor, command) and <dialog closedby>", "Reply to an entry in place, without leaving the page and without a script", CZ1433, "A link to the reply page, beside the button"),
+    ("CSS logical properties", "Edges and indents follow the direction of the text, for Persian and Arabic as for English", CZ1433, "—"),
+    ("A colour for the machine layer: the edge and label of what an AI system declared it wrote, and of machine translation", "#116329 on white, #3fb950 on black, both at 7:1 or more; light-dark() where the browser has it", CZ1433, "The same colours by a media query"),
+    ("Accept-Language", "A reader whose browser prefers another language is offered the page in it, as one link", CZ1433, "—"),
+    ("Cross-document view transitions", "Moving between pages of this site fades instead of flashing; none for readers who ask for less motion", CZ1433, "The page changes at once, as it always did"),
+    ("Speculation rules (prefetch, conservative)", "A link to another page of this site is fetched as you press it, so it opens a moment sooner", CZ1433, "The link is fetched when you release it"),
+    ("field-sizing: content", "The reply box grows as you write", CZ1433, "The box keeps its size and scrolls"),
+    ("text-wrap: pretty and balance", "Fewer lone words at the end of a paragraph; balanced headings", CZ1433, "Ordinary line breaking"),
+    ("Every page as Markdown", "Add .md to an address, or ask for text/markdown", CZ1433, "—"),
+]
+def _imgs_bytes(h):
+    return sum((PUBLIC / src.lstrip("/")).stat().st_size for src in set(re.findall(r'<img\b[^>]*\bsrc="(/[^"]+)"', h)) if (PUBLIC / src.lstrip("/")).exists())
+def built_page():
+    vj = json.loads((SITE / "vercel.json").read_text("utf-8"))
+    hdrs = next(h["headers"] for h in vj["headers"] if h["source"] == "/(.*)" and not h.get("missing"))
+    csp = next(x["value"] for x in hdrs if x["key"] == "Content-Security-Policy")
+    assert csp.endswith(f"; script-src {SPEC_HASH}"), "vercel.json's CSP must name the speculation rules"
+    others = [(x["key"], x["value"]) for x in hdrs if x["key"] != "Content-Security-Policy"]
+    ask_js = re.findall(r"<script>([\s\S]*?)</script>", (PUBLIC / "ask.html").read_text("utf-8"))
+    ask_bytes = sum(len(j.encode("utf-8")) for j in ask_js)
+    assert len(ask_js) == 1, "/ask: the colophon says one script runs on the site"
+    main = [("/core", "core.html", "The Core"), ("/record", "record.html", "The record"),
+            ("/objections", "objections.html", "Objections and errata"), ("/about", "about.html", "About"), ("/machine", "machine.html", "For machines"),
+            ("/ask", "ask.html", "Ask your AI"), ("/calendar", "calendar.html", "CZ time"), ("/archive", "archive.html", "Archive and verification"),
+            (INFOGRAPHIC_PATH, INFOGRAPHIC_PATH.lstrip("/") + ".html", "The infographic"), (IMAGES_PATH, IMAGES_PATH.lstrip("/") + ".html", "Images")] + \
+           ([("/press", "press.html", "Press kit")] if PRESS_PUBLISHED else [])
+    def kb(n): return f"{n / 1024:.1f}" if n < 10240 else f"{round(n / 1024)}"
+    rows = []
+    for path, fname, name in main:
+        f = PUBLIC / fname
+        if not f.exists(): continue
+        h = f.read_text("utf-8")
+        rows.append(f'<tr><td><a href="{path}">{esc(name)}</a></td><td>{kb(len(h.encode("utf-8")))}</td><td>{kb(_imgs_bytes(h)) if _imgs_bytes(h) else "—"}</td></tr>')
+    tr = [len((PUBLIC / f"core.{t['lang']}.html").read_bytes()) for t in TRANSLATIONS if (PUBLIC / f"core.{t['lang']}.html").exists()]
+    feats = "".join(f"<tr><td>{esc(a)}</td><td>{esc(b)}</td><td>{time_el(d)}</td><td>{esc(c)}</td></tr>" for a, b, d, c in BUILT_FEATURES)
+    body = f"""<main><h1>How this page is built</h1>
+<p>Every page of this site is a document the server writes in HTML and CSS. Nothing on it watches you. This page says how, with numbers taken from the pages themselves; the foot of every page says what that page weighs as it is sent to you.</p>
+<section aria-labelledby="h-run"><h2 id="h-run">What runs in your browser</h2>
+<p>No JavaScript runs on any page, except one: <a href="/ask">Ask your AI</a>, where a short inline script of {ask_bytes} bytes copies a prompt to your clipboard when you press its button. You can read it in that page's source.</p>
+<p>Two kinds of <code>&lt;script&gt;</code> element are data, not code; the browser reads them and runs nothing:</p>
+<ul><li><strong>JSON-LD</strong> (<code>application/ld+json</code>): what each page is, for search engines, in the vocabulary of schema.org.</li>
+<li><strong>Speculation rules</strong> (<code>speculationrules</code>): which links the browser may fetch as you press them. This is the whole of it:
+<pre>{esc(json.dumps(json.loads(SPEC_RULES), indent=2))}</pre>
+Only links to pages of this site, never a link with a query, a file, <code>/api</code>, <code>/admin</code> or <code>/respond</code>, and only when you press the link. Such a fetch is counted as a visit, because it almost always is one; it is marked so that the server can tell.</li></ul>
+</section>
+<section aria-labelledby="h-keep"><h2 id="h-keep">What the site keeps about you</h2>
+<p>No cookie, no local storage, no identifier, no script that observes you, no third party: nothing loads from any other site. The server counts visits per page and per day; a visitor is counted as a hash under a salt that lives one UTC day, and the hashes and the salt are deleted when the day ends. <a href="/stats">The counts are public</a>.</p>
+<p>When you write in <a href="/discuss">the open discussion</a>, what you write is public and permanent, under <a href="/discuss#rules">its rules</a>.</p>
+</section>
+<section aria-labelledby="h-csp"><h2 id="h-csp">The security policy</h2>
+<p>Every page is sent with this Content Security Policy:</p>
+<pre>{esc(csp)}</pre>
+<p>Nothing may load from another site; no script may run unless the policy names it. <code>script-src</code> names one thing by its SHA-256: the speculation rules above. The page <a href="/ask">Ask your AI</a> adds the hash of its own script, and nothing else. With the policy come these headers:</p>
+<div class="scroll"><table><tr><th>Header</th><th>Value</th></tr>{"".join(f"<tr><td><code>{esc(k)}</code></td><td><code>{esc(v)}</code></td></tr>" for k, v in others)}</table></div>
+</section>
+<section aria-labelledby="h-weight"><h2 id="h-weight">The pages, by weight</h2>
+<p>The HTML of each page as built, with its styles inside it, in kilobytes (1 kB = 1,024 bytes), before compression; and the images it shows. The first page and the pages of the open discussion are made when you ask for them: each says its own weight at its foot.</p>
+<div class="scroll"><table><tr><th>Page</th><th>HTML, kB</th><th>Images, kB</th></tr>{"".join(rows)}</table></div>
+<p class="src">The Core in its {len(tr)} translations: between {kb(min(tr))} and {kb(max(tr))} kB each.</p>
+</section>
+<section aria-labelledby="h-feat"><h2 id="h-feat">What it uses, and since when</h2>
+<p>Each feature of the web platform this site relies on, what it does here, the day it arrived on this site, and what a browser without it shows.</p>
+<div class="scroll"><table><tr><th>Feature</th><th>What it does here</th><th>Since</th><th>Without it</th></tr>{feats}</table></div>
+</section>
+<section aria-labelledby="h-md"><h2 id="h-md">Every page as Markdown</h2>
+<p>Add <code>.md</code> to the address of any page — <a href="/core.md">/core.md</a>, <a href="/discuss.md">/discuss.md</a>, <code>/discuss/7.md</code>; the first page is <a href="/index.md">/index.md</a> — or ask for it with <code>Accept: text/markdown</code>. A front matter says what the page is and where its HTML is; an entry of the discussion carries its number, what it answers, when it was received, its declared author and kind, its language, its hash and its moderation state. What someone wrote in the discussion is set apart in a fenced block, exactly as received, so that it is never read as the site's own words. The HTML stays the canonical page; the canonical texts are byte-exact at <a href="/core.txt">/core.txt</a> and <a href="/record.txt">/record.txt</a>.</p>
+</section>
+<section aria-labelledby="h-src"><h2 id="h-src">The source</h2>
+<p>All of it is public: <a href="{REPO}">the repository</a>, code under the MIT licence, text under CC BY 4.0. The pages are built by one program and checked by another before they are published: every quotation of the Core is compared byte for byte with the canonical text, every link is followed, every page is parsed. Written and built by Claude (Anthropic) at the request of the record's originating human.</p>
+</section></main>"""
+    return shell(BUILT_TITLE, body, BUILT_PATH, BUILT_DESCRIPTION, crumb="How this page is built")
+
 # ---------------------------------------------------------------- for indexers and link previews (Blueprint §3.1): robots, two sitemaps, the not-found page
 # Every public page, once; the Core with its translations as one group of languages (hreflang, both ways); lastmod only where it
 # is known exactly — the canonical texts and the translations do not change. The administrator's page is not for indexing.
@@ -1764,7 +1854,7 @@ write("/llms.txt", llms_txt(BUNDLE_NAME, BUNDLE_SHA))
 # one image and its metadata on 30 Oct 2026 UTC (CZ 1430); CZ-CORE 1.0 itself is unchanged
 CORE_PAGE_REVISED = datetime.date(2026, 10, 30)
 SITEMAP_PAGES = [("/", None), ("/core", CORE_PAGE_REVISED.isoformat()), ("/record", PRERELEASE.isoformat()), ("/objections", None), ("/discuss", None),
-                 ("/respond", None), ("/adopt", None), ("/ask", None), ("/machine", None), ("/about", None), ("/archive", None), ("/calendar", None), (INFOGRAPHIC_PATH, INFOGRAPHIC_AS_OF.isoformat()), (IMAGES_PATH, "2026-11-01")] + ([("/press", None)] if PRESS_PUBLISHED else []) + \
+                 ("/respond", None), ("/adopt", None), ("/ask", None), ("/machine", None), ("/about", None), ("/archive", None), ("/calendar", None), (INFOGRAPHIC_PATH, INFOGRAPHIC_AS_OF.isoformat()), (IMAGES_PATH, "2026-11-01"), (BUILT_PATH, None)] + ([("/press", None)] if PRESS_PUBLISHED else []) + \
                 [(f"/core.{t['lang']}", t["date"]) for t in TRANSLATIONS] + [(f"/themes/{t['slug']}", None) for t in THEMES]
 def sitemap_xml():
     core_group = {h for _, h in HREFLANGS}
@@ -1835,4 +1925,9 @@ def fill(s):
 for ext in ("html", "json", "txt"): (SITE / "preview" / f"index.{ext}").write_text(fill(templates[ext]), "utf-8")
 
 print(f"built (reproducible output; run at {BUILD_ISO}): year {c['year']}, {c['total']} days; bundle {len(bundle):,} bytes {BUNDLE_SHA[:12]}…")
+write(BUILT_PATH + ".html", built_page())   # last: it weighs the pages above as built (served by api/page.js)
+# the page-weight line (room/weight.js fills it when a page is served): the build marks, on each page that shows images, how many bytes they are
+for _f in PUBLIC.glob("*.html"):
+    _h = _f.read_text("utf-8")
+    if "<!--cz-weight-->" in _h and _imgs_bytes(_h): _f.write_text(_h.replace("<!--cz-weight-->", f"<!--cz-weight images={_imgs_bytes(_h)}-->", 1), "utf-8")
 subprocess.run([sys.executable, str(SITE / "check.py")], check=True)

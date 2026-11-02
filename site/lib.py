@@ -344,6 +344,8 @@ ul,ol{padding-left:1.25rem}
    (its tag and its edge) and, later, machine translations. The text keeps the page's palette; the colour is never the only sign: the tag's
    words carry it (WCAG 1.4.1). Contrast at least 7:1 on both palettes, like the rest of the page: #116329 on #fff 7.4:1; #3fb950 on #101010 7.5:1. */
 :root{--machine:#116329}@media(prefers-color-scheme:dark){:root{--machine:#3fb950}}
+/* stage 5: the same two values through light-dark() where a browser has it (the color-scheme above decides); the media rule stays for the others */
+@supports (color:light-dark(#000,#fff)){:root{--machine:light-dark(#116329,#3fb950)}}
 .kind{display:inline-block;font-size:.85em;line-height:1.4;padding:0 .4em;border:1px solid var(--mute);border-radius:.2em;white-space:nowrap}
 .kind.k-ai{border-color:var(--machine);color:var(--machine);font-weight:600}
 .entry.k-ai{border-inline-start:3px solid var(--machine);padding-inline-start:.75rem}
@@ -381,7 +383,7 @@ dialog.reply::backdrop{background:rgb(0 0 0 / .55)}dialog.reply h2{margin-top:0}
 p.room-line{border-left:3px solid var(--fg);padding-left:.75rem}ul.sections{columns:2 16rem;column-gap:2rem}ul.sections li{break-inside:avoid;margin:.2rem 0}
 .filters select,.filters input{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--mute);padding:.2rem .3rem}
 form.respond label{display:block;margin:.75rem 0}form.respond input,form.respond select,form.respond textarea{font:inherit;width:100%;box-sizing:border-box;padding:.4rem;border:1px solid var(--mute);background:var(--bg);color:var(--fg)}
-form.respond textarea{min-height:12rem}form.respond input[type=checkbox],form.respond input[type=radio]{width:1.25rem;height:1.25rem;vertical-align:-.25rem;margin:0 .5rem 0 0}form.respond fieldset{border:1px solid var(--rule);margin:.75rem 0}button{font:inherit;padding:.4rem .9rem;border:1px solid var(--fg);background:var(--bg);color:var(--fg)}
+form.respond textarea{min-height:12rem;field-sizing:content;max-height:75vh}form.respond input[type=checkbox],form.respond input[type=radio]{width:1.25rem;height:1.25rem;vertical-align:-.25rem;margin:0 .5rem 0 0}form.respond fieldset{border:1px solid var(--rule);margin:.75rem 0}button{font:inherit;padding:.4rem .9rem;border:1px solid var(--fg);background:var(--bg);color:var(--fg)}
 /* H: WCAG 2.2 reflow (1.4.10): nothing wider than a 320-pixel screen. A word breaks only when it cannot fit its line; on a narrow screen a long address or code in a table cell may break anywhere, so the table never widens the page and headings are never cut mid-word. */
 main,header,footer{overflow-wrap:break-word}th,td{overflow-wrap:break-word}@media(max-width:40em){td,td a,td code{overflow-wrap:anywhere}}
 /* H: WCAG 2.2 target size (2.5.8) and the platforms' touch guidance: every control at least 2.5rem tall. */
@@ -404,6 +406,13 @@ aside.tr-status{margin-top:1rem}
 /* the footer: where everything is, the licence, what this site does not do */
 footer ul.foot{list-style:none;padding:0;margin:0 0 1rem;columns:2 11rem;column-gap:2rem}footer ul.foot li{break-inside:avoid;padding:.2rem 0}footer{padding-bottom:1.5rem}
 @media print{aside.cz-now,nav.site,nav.readers,.skip,form,.filters,footer nav{display:none}a{text-decoration:none}main,header,footer{max-width:none}}
+/* stage 5 (CZ 1433): polish that needs no script and falls back to the plain page.
+   Cross-document view transitions: moving from page to page of this site fades instead of flashing; none for readers who ask for less motion.
+   text-wrap: fewer lone words at the end of a paragraph, balanced headings. */
+@view-transition{navigation:auto}
+@media(prefers-reduced-motion:reduce){@view-transition{navigation:none}}
+p,li,dd,blockquote{text-wrap:pretty}h1,h2,h3{text-wrap:balance}
+.cz-weight{font-variant-numeric:tabular-nums}
 """
 
 # The site's navigation, in English on every page (lang and dir set, so that a translated page does not read it in its own language
@@ -441,6 +450,25 @@ assert len(ONE_LINE_SHORT) <= 160
 FOOT_LINKS = [[("/core", "The Core"), ("/core#translations", f"{CORE_LANGUAGES} languages")], [("/record", "The Record")], [("/objections", "Objections and errata")],
               [("/discuss", "Discussion"), ("/respond", "Respond")], [("/adopt", "Adoption register")], [("/calendar", "CZ time")], [("/civilization-zero-infographic", "Infographic"), ("/civilization-zero-images", "Images")], [("/ask", "Ask your AI")],
               [("/machine", "For machines")], [("/about", "About")] + ([("/press", "Press kit")] if PRESS_PUBLISHED else []), [("/stats", "Visits")], [("/archive", "Archive and verification")]]
+# ---------------------------------------------------------------- stage 5 of the room's redesign (CZ 1433)
+# How this page is built: the page that says, with numbers, how every page is made.
+BUILT_PATH = "/how-it-is-built"
+# Speculation rules: a link to another page of this site is fetched as the reader presses it (eagerness "conservative": on pointer or
+# touch down), so the page opens a moment sooner. Data, not code: the browser reads it; nothing runs. Not for links with a query
+# (a view, a translation, a form's result), not for /api, /admin or /respond, not for files, not for links marked nofollow. Tagged
+# "cz", so that the server can count such a fetch as the visit it almost always is (middleware.js). The CSP allows it by its hash.
+SPEC_RULES = json.dumps({"tag": "cz", "prefetch": [{"where": {"and": [
+    {"href_matches": "/*"},
+    {"not": {"selector_matches": "a[href*='?'], a[href*='.'], a[rel~=nofollow], a[download]"}},
+    {"not": {"href_matches": "/api/*"}}, {"not": {"href_matches": "/admin"}}, {"not": {"href_matches": "/respond"}}]},
+    "eagerness": "conservative"}]}, separators=(",", ":"))
+SPEC_SCRIPT = f'<script type="speculationrules">{SPEC_RULES}</script>'
+SPEC_HASH = "'sha256-" + __import__("base64").b64encode(__import__("hashlib").sha256(SPEC_RULES.encode("utf-8")).digest()).decode() + "'"
+# the line at the foot of every page; the functions fill it with the page's own weight when they serve it (room/weight.js)
+WEIGHT_LINE = f'<p class="src cz-weight"><!--cz-weight-->No cookies<!--/cz-weight--> · <a href="{BUILT_PATH}">How this page is built</a> · <a href="__MD_PATH__" type="text/markdown">This page as Markdown</a></p>'
+def md_path(path):
+    return "/index.md" if path == "/" else f"{path}.md"
+
 def footer_html(extra=""):
     links = "".join("<li>" + " · ".join(f'<a href="{h}">{esc(t)}</a>' for h, t in row) + "</li>" for row in FOOT_LINKS)
     # the introduction at the foot of every page (the originator, 1 Nov 2026: "even in the footer"); the first page opens with it, and its
@@ -450,7 +478,7 @@ def footer_html(extra=""):
             f'<p class="src">Text <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a> · code MIT · <a href="{REPO}">source</a> · '
             f'<a href="mailto:{CONTACT}">{CONTACT}</a></p>'
             f'<p class="src">No trackers, no cookies, no scripts that observe readers; the server counts visits per day without identifiers, and <a href="/stats">the counts are public</a>. Every date counts days from Coordinate Zero, <a class="nw" href="/calendar">CZ 0</a> = '
-            f'<time datetime="2022-11-30">30 November 2022</time>; times are UTC.</p></footer>')
+            f'<time datetime="2022-11-30">30 November 2022</time>; times are UTC.</p>{WEIGHT_LINE}</footer>')
 FOOTER = footer_html()
 
 # ---------------------------------------------------------------- CZ time at the top of every page (the originator's decision of 30 Oct 2026)
@@ -543,15 +571,15 @@ def shell(title, body, path, description, alternates=(), ldjson=None, nav=True, 
 <title>{esc(title)}</title>
 <meta name="description" content="{esc(description)}">
 {meta}<link rel="canonical" href="{ORIGIN}{path}">
-{alt}{hl}<link rel="service-desc" type="application/vnd.oai.openapi+json" href="/api/openapi.json">
+{alt}{hl}<link rel="alternate" type="text/markdown" href="{md_path(path)}" title="This page as Markdown"><link rel="service-desc" type="application/vnd.oai.openapi+json" href="/api/openapi.json">
 {og}<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)"><meta name="theme-color" content="#101010" media="(prefers-color-scheme: dark)">
 {ICON_LINKS}<meta name="apple-mobile-web-app-title" content="Civilization Zero">
 {"".join(f'<link rel="me" href="{esc(u)}">' for u in SOCIAL)}{f'<meta name="fediverse:creator" content="{esc(FEDIVERSE_CREATOR)}">' if FEDIVERSE_CREATOR else ""}<style>{CSS}</style>
-{ld}{extra_head}</head>
+{ld}{SPEC_SCRIPT}{extra_head}</head>
 <body>
 {'<a class="skip" href="#content" lang="en" dir="ltr">Skip to content</a>' + chr(10) if nav else ""}{cz_bar_fallback() + chr(10) if nav and cz_bar else ""}{nav_html(path) if nav else ""}
 {body.replace('<main>', '<main id="content">', 1)}
-{footer_html(footer_extra)}
+{footer_html(footer_extra).replace("__MD_PATH__", md_path(path))}
 </body>
 </html>
 """

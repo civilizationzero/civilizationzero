@@ -258,6 +258,7 @@ module.exports = async (req, res) => {
   const method = req.method === "HEAD" ? "GET" : req.method;
   if (method === "OPTIONS") { res.statusCode = 204; res.setHeader("Access-Control-Allow-Origin", "*"); res.setHeader("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS"); return res.end(); }   // reads are open to every origin; writes are not
   const p = url.searchParams.get("page"), idq = url.searchParams.get("id");
+  if (url.searchParams.get("f") === "md" && method === "GET" && (p === "list" || p === "record")) res.czMarkdown = { path: p === "record" && /^\d{1,12}$/.test(idq || "") ? `/adopt/${idq}` : "/adopt" };   // the page as Markdown (stage 5)
   try {
     if (method === "POST") {
       if (foreignOrigin(req)) {
