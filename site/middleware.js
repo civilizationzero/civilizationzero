@@ -43,21 +43,28 @@ export function pathKey(pathname) {
 export function refHost(referer) {
   try { const u = new URL(referer); const h = u.hostname.toLowerCase(); return SELF.test(h) ? "" : h.replace(/^www\./, ""); } catch { return ""; }
 }
-// a machine's way in (v12): the address as counted — one key for every entry's Markdown, and for every register record's
-const ENTRANCE = /^\/(?:[A-Za-z0-9/._-]{1,118}\.md|llms\.txt|core\.txt|record\.txt)$/;
+// a machine's way in (v12): the address as counted — the site's own Markdown and text addresses, one key for every entry's Markdown
+// and for every register record's; any other address that ends in .md is "(other)" (nothing a client types reaches /stats)
+const PAGES_MD = /^\/(?:index|core|record|objections|ask|machine|about|archive|calendar|press|how-it-is-built|stats|discuss|respond|adopt|civilization-zero-infographic|civilization-zero-images|core\.[a-z]{2,3}(?:-[a-z0-9]{1,8})?)\.md$/;
 export function entranceKey(pathname) {
-  const p = String(pathname || "").replace(/\/{2,}/g, "/");
-  if (!ENTRANCE.test(p)) return null;
-  return p.replace(/^\/discuss\/\d{1,12}\.md$/, "/discuss/{id}.md").replace(/^\/adopt\/\d{1,12}\.md$/, "/adopt/{id}.md");
+  let p = String(pathname || "").replace(/\/{2,}/g, "/");
+  if (p.length > 1) p = p.replace(/\/+$/, "");
+  const l = p.toLowerCase();
+  if (/^\/(?:llms|core|record)\.txt$/.test(l)) return l;
+  if (!/\.md$/.test(l)) return null;
+  if (/^\/discuss\/\d{1,12}\.md$/.test(l)) return "/discuss/{id}.md";
+  if (/^\/adopt\/\d{1,12}\.md$/.test(l)) return "/adopt/{id}.md";
+  if (/^\/themes\/[a-z0-9-]{2,40}\.md$/.test(l) || PAGES_MD.test(l)) return l;
+  return "(other)";
 }
 // what one request contributes: null when it is not counted (not a page view: not GET, a prefetch, or a non-HTML request from a
 // browser); { entrance } for a machine's way in, counted apart, by kind of client only
 export function visitOf(request) {
   if (request.method !== "GET") return null;
   const h = request.headers, url = new URL(request.url);
-  const way = entranceKey(url.pathname);
-  if (way) return { entrance: true, p_path: way, p_agent: agentOf(h.get("user-agent") || "") };
   const purpose = `${h.get("sec-purpose") || ""} ${h.get("purpose") || ""} ${h.get("x-purpose") || ""} ${h.get("x-moz") || ""}`.toLowerCase();
+  const way = entranceKey(url.pathname);
+  if (way) return purpose.includes("prefetch") || purpose.includes("prerender") ? null : { entrance: true, p_path: way, p_agent: agentOf(h.get("user-agent") || "") };
   // a prefetch is not a page view — except this site's own speculation rule (stage 5, CZ 1433), tagged "cz", which fetches a page as the
   // reader presses its link (eagerness "conservative"): that is the visit, since the browser will not ask again. Never a prerender.
   const ownPress = /(^|[,\s])"cz"([,\s]|$)/.test(h.get("sec-speculation-tags") || "") && !purpose.includes("prerender");
