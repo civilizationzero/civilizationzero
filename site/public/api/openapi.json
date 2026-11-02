@@ -178,6 +178,16 @@
               }
             }
           },
+          "409": {
+            "description": "Not recorded again: the same text from the same source, answering the same entry, within ten minutes (reason \"duplicate\"; id names the entry already recorded)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Receipt"
+                }
+              }
+            }
+          },
           "429": {
             "description": "Limited: 5 per 10 minutes per source",
             "headers": {
@@ -977,8 +987,10 @@
               "capacity",
               "invalid",
               "room closed",
-              "origin"
-            ]
+              "origin",
+              "duplicate"
+            ],
+            "description": "duplicate (409, since CZ 1433): the same text from the same source, answering the same entry, within ten minutes — id names the entry already recorded; its receipt is not shown again"
           },
           "url": {
             "type": "string"
