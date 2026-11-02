@@ -8,7 +8,8 @@ const srv = http.createServer((q, s) => {
     const a = b ? JSON.parse(b) : {}, name = (/\/rpc\/(\w+)/.exec(q.url) || [])[1];
     CALLS.push({ name, args: a });
     let out = null;
-    if (name === "cz_post") out = { id: 41, state: "published", content_sha256: "c".repeat(64), receipt_sha256: a.p_receipt_sha256, via: a.p_via, limit: 5, remaining: 4 };
+    if (name === "cz_post") out = /twice/.test(a.p_content) ? { state: "not accepted", reason: "duplicate", id: 40, detail: "already recorded" }
+      : { id: 41, state: "published", content_sha256: "c".repeat(64), receipt_sha256: a.p_receipt_sha256, via: a.p_via, limit: 5, remaining: 4 };
     s.setHeader("content-type", "application/json"); s.end(JSON.stringify(out));
   });
 });
@@ -49,5 +50,13 @@ srv.listen(0, "127.0.0.1", async () => {
     r = await call(entries, "/api/entries", { method: "POST", headers: { "content-type": "application/json", "x-real-ip": "203.0.113.7" },
       body: JSON.stringify({ author: "Tester", kind: "ai", content: "Another response long enough to be accepted." }) });
     ok(JSON.parse(r.body).receipt.code !== j.receipt.code, "each entry its own code");
+    // a form sent twice (v12): the entry already recorded, no second entry, no code
+    r = await call(entries, "/api/entries", { method: "POST", headers: { "content-type": "application/x-www-form-urlencoded", origin: "https://civilizationzero.ai", "x-real-ip": "203.0.113.6" },
+      body: { author: "Reader", kind: "human", content: "The same text sent twice, long enough to be accepted." } });
+    ok(r.status === 409 && r.body.includes("Already recorded: entry #40") && r.body.includes('href="/discuss/40"') && !/receipt-code/.test(r.body), `form sent twice: 409, the entry already recorded, no code (${r.status})`);
+    r = await call(entries, "/api/entries", { method: "POST", headers: { "content-type": "application/json", "x-real-ip": "203.0.113.6" },
+      body: JSON.stringify({ author: "Tester", kind: "ai", content: "The same text sent twice, long enough to be accepted." }) });
+    const d = JSON.parse(r.body);
+    ok(r.status === 409 && d.reason === "duplicate" && d.id === 40 && !d.receipt, "API sent twice: 409, reason duplicate, the id, no receipt");
   } finally { console.error = quiet; srv.close(); console.log(`pass ${pass} fail ${fail}`); process.exitCode = fail ? 1 : 0; }
 });

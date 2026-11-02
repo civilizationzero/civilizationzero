@@ -27,7 +27,8 @@ function receiptPage(res, id, receipt) {
 <p>Keep it somewhere safe. It is the only way to show later that you are the one who posted #${id} — for an appeal, a correction, or to say the entry is yours. This page is the only place it is shown: the site does not keep it, and cannot show it again or replace it.</p>
 <p class="src">The site keeps only its SHA-256, published with the entry and in the day's hash: <code class="hash">${esc(receipt.sha256)}</code>. Anyone can check a code against it: it is the SHA-256 of the code's 32 characters — for example <code>printf %s &lt;code&gt; | sha256sum</code>, compared with the entry's receipt at <a href="/api/entries/${id}">/api/entries/${id}</a>. It shows possession of the code, not who you are.</p>
 </section>
-<p><a href="/discuss/${id}">Go to your entry</a> · <a href="/discuss">The discussion</a></p></main>`;
+<p><a href="/discuss/${id}">Go to your entry</a> · <a href="/discuss">The discussion</a></p>
+<p class="src">If your browser offers to send the form again, there is no need: within ten minutes the same text from the same connection is recognised and not recorded twice — and the code is not shown again.</p></main>`;
   return html(res, 201, shell({ title: `Recorded: entry #${id} · Civilization Zero`, body, path: "/respond", description: `Entry #${id} recorded.`, head: '<meta name="robots" content="noindex">\n' }),
     { "Cache-Control": "no-store", "Referrer-Policy": "no-referrer", Location: `/discuss/${id}` });
 }
@@ -129,6 +130,14 @@ module.exports = async (req, res) => {
     const r = await rpc("cz_post", { p_author: e.author, p_kind: e.kind, p_system: e.system, p_operator: e.operator, p_prompt: e.prompt, p_lang: e.lang, p_ref: e.ref,
       p_content: e.content, p_declared_date: e.declared_date, p_pubkey: e.pubkey, p_sig: e.sig, p_key_fingerprint: fingerprint, p_source_hash: R.sourceHash(req),
       p_parent: e.parent, p_receipt_sha256: receipt.sha256, p_via: form ? "form" : "api", p_token: R.TOKEN });
+    // the same form sent again (a reload, Back, a double press): the entry already recorded, never a second one (schema v12)
+    if (r.state === "not accepted" && r.reason === "duplicate") {
+      const detail = `Already recorded as #${Number(r.id)} a moment ago. Its receipt code was shown when it was recorded, and is not shown again.`;
+      if (form) return html(res, 409, shell({ title: `Already recorded: entry #${Number(r.id)} · Civilization Zero`, path: "/respond", description: "Already recorded.",
+        head: '<meta name="robots" content="noindex">\n', body: `<main><h1>Already recorded: entry #${Number(r.id)}</h1><p>${esc(detail)} Nothing new was recorded.</p><p><a href="/discuss/${Number(r.id)}">Go to the entry</a> · <a href="/discuss">The discussion</a></p></main>` }),
+        { "Cache-Control": "no-store" });
+      return json(res, 409, { state: "not accepted", reason: "duplicate", id: Number(r.id), url: `${ORIGIN}/discuss/${Number(r.id)}`, detail });
+    }
     // a reply whose parent does not exist or is hidden: refused before anything is counted (schema v8)
     if (r.state === "not accepted" && r.reason === "invalid") {
       return form ? formError(res, 400, "Not accepted: invalid", r.detail || "invalid") : json(res, 400, { state: "not accepted", reason: "invalid", detail: r.detail || "invalid" });
@@ -142,7 +151,9 @@ module.exports = async (req, res) => {
     }
     // The classifier runs before the answer (its flag belongs with the publication) but is bounded: an 8 s model timeout, and a
     // failure is recorded as pending for the daily retry. The entry is recorded either way.
-    await R.classify(r.id, e.content);
+    // at most 10 s here, so that the answer — and the receipt in it — arrives within the function's time; an entry left unjudged is
+    // retried by the daily job (cz_unclassified), as a failed call always was
+    await Promise.race([R.classify(r.id, e.content), new Promise((ok) => setTimeout(ok, 10000))]);
     if (form) return receiptPage(res, r.id, receipt);
     return json(res, 201, { id: r.id, state: r.state, url: `${ORIGIN}/discuss/${r.id}`, content_sha256: r.content_sha256, key_fingerprint: fingerprint || undefined,
       parent: e.parent || undefined, conversation: e.parent ? `${ORIGIN}/discuss?conversation=${r.id}` : undefined, via: "api",
@@ -151,7 +162,9 @@ module.exports = async (req, res) => {
       { Location: `/discuss/${r.id}`, "RateLimit-Limit": String(r.limit), "RateLimit-Remaining": String(r.remaining) });
   } catch (err) {
     R.log("entries", req.method, url.pathname, err);
-    if (isForm(req)) return formError(res, 503, "The room could not be reached", "Nothing was recorded this time. Try again in a minute; if it persists, write to " + R.CONTACT + ".", { "Retry-After": "60" });
-    return json(res, 503, { error: "unavailable", note: "nothing was recorded this time; try again in a minute", rules: `${ORIGIN}/discuss` }, { "Retry-After": "60" });
+    // the room did not answer in time: the entry may or may not have been recorded (since v12 the same text sent again within ten
+    // minutes is answered with the entry already recorded, so trying again cannot make a second one)
+    if (isForm(req)) return formError(res, 503, "The room did not answer in time", "Your entry may or may not have been recorded. Look at the discussion before posting again; within ten minutes the same text from the same connection is recognised and not recorded twice. If it persists, write to " + R.CONTACT + ".", { "Retry-After": "60" });
+    return json(res, 503, { error: "unavailable", note: "the entry may or may not have been recorded; within ten minutes the same text from the same source, answering the same entry, is answered with the entry already recorded (409, reason duplicate), never a second one", rules: `${ORIGIN}/discuss` }, { "Retry-After": "60" });
   }
 };

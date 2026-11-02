@@ -10,25 +10,14 @@
 --   3. An entry's receipt and how it arrived. A receipt code is made for each accepted entry and shown once, to whoever posted it;
 --      the database keeps only its SHA-256, public with the entry and in the day's hashed line. And how the entry arrived — through
 --      the site's form or through the API — recorded by the server, not declared. (item 9, parts 2 and 3)
--- Additive, with one exception: today's visitor hashes and salt are deleted (that is the decision). The site's current code keeps
+-- The 17-argument cz_post also answers a form sent twice (the same text from the same source, answering the same entry, within
+-- ten minutes) with the entry already recorded, instead of a second entry (review of CZ 1433).
+-- Additive, with one exception: today's visitor hashes and salt are deleted (that is the decision). Needs visits-v9.sql (the visit
+-- tables) — in schema.sql it is recorded just above. The site's current code keeps
 -- working after this file runs and before the new code is deployed: cz_count keeps its signature (it ignores an address now), the
 -- 15-argument cz_post and cz_entry3 stay as they are, and the new functions are new names or new signatures.
 
 -- ---------------------------------------------------------------- 1. distinct visitors: stopped
--- the day's count so far, kept; then the hashes and the salt, deleted
-insert into visit_counts (day, kind, key, n)
-  select day, 'total', 'visitors', count(*)::int from visit_seen group by day
-  on conflict (day, kind, key) do update set n = excluded.n;
-delete from visit_seen;
-delete from visit_salt;
--- when the count stopped, said by the database itself (the site prints it)
-insert into config (key, value) values ('visitors_counted_until', to_char(now() at time zone 'utc', 'YYYY-MM-DD"T"HH24:MI"Z"'))
-  on conflict (key) do update set value = excluded.value;
-
--- 2. kinds of count: page, ref, country, bot, total, and now entrance (how machines enter)
-alter table visit_counts drop constraint if exists visit_counts_kind_check;
-alter table visit_counts add constraint visit_counts_kind_check check (kind in ('page', 'ref', 'country', 'bot', 'total', 'entrance'));
-
 -- LIVE cz_count: as v9, without the visitor hash — p_ip and p_ua are accepted and ignored (the deployed middleware may still send
 -- them until the new one replaces it); nothing is written to visit_seen or visit_salt again
 create or replace function cz_count(p_token text, p_path text, p_ref text, p_country text, p_agent text, p_ip text, p_ua text)
@@ -57,6 +46,33 @@ begin
     insert into visit_counts values (d, 'country', p_country, 1) on conflict (day, kind, key) do update set n = visit_counts.n + 1;
   end if;
 end $$;
+
+-- LIVE cz_visits_close: the daily job's call (00:20 UTC). It no longer writes a count: it only deletes any visitor hash and salt
+-- left over — one written by a request the old code was still answering while this file ran (review of CZ 1433) — so that a
+-- leftover can neither outlive the decision nor overwrite the number kept below.
+create or replace function cz_visits_close(p_token text) returns json language plpgsql security definer set search_path = public as $$
+declare n_seen int; n_salt int;
+begin
+  if not cz_token_ok(p_token) then raise exception 'unauthorised'; end if;
+  delete from visit_seen; get diagnostics n_seen = row_count;
+  delete from visit_salt; get diagnostics n_salt = row_count;
+  return json_build_object('days_closed', 0, 'leftover_hashes_deleted', n_seen, 'leftover_salts_deleted', n_salt);
+end $$;
+
+-- the day's count so far, kept; then the hashes and the salt, deleted (cz_count above no longer writes them). A number already kept
+-- is never overwritten, so running this file again cannot replace it with a leftover's count.
+insert into visit_counts (day, kind, key, n)
+  select day, 'total', 'visitors', count(*)::int from visit_seen group by day
+  on conflict (day, kind, key) do nothing;
+delete from visit_seen;
+delete from visit_salt;
+-- when the count stopped, said by the database itself (the site prints it); set once: running this file again keeps it
+insert into config (key, value) values ('visitors_counted_until', to_char(now() at time zone 'utc', 'YYYY-MM-DD"T"HH24:MI"Z"'))
+  on conflict (key) do nothing;
+
+-- 2. kinds of count: page, ref, country, bot, total, and now entrance (how machines enter)
+alter table visit_counts drop constraint if exists visit_counts_kind_check;
+alter table visit_counts add constraint visit_counts_kind_check check (kind in ('page', 'ref', 'country', 'bot', 'total', 'entrance'));
 
 -- cz_count_entrance: one request for a machine's way in, counted by address and kind of client ("<path> <agent>"); the middleware
 -- sends the address already shaped (/discuss/{id}.md for every entry), at most 300 keys a day, nothing else
@@ -135,11 +151,12 @@ returns json language plpgsql security definer set search_path = public set time
 declare
   v_rate int := (select value::int from config where key = 'rate_per_10min');
   v_intake int := (select value::int from config where key = 'daily_intake_max');
-  v_recent int; v_oldest timestamptz; v_today int; v_id bigint; v_sha text; v_wait int; v_pstate text;
+  v_recent int; v_oldest timestamptz; v_today int; v_id bigint; v_sha text; v_wait int; v_pstate text; v_dup bigint;
 begin
   if not cz_token_ok(p_token) then raise exception 'unauthorised'; end if;
   if p_receipt_sha256 is null or p_receipt_sha256 !~ '^[0-9a-f]{64}$' then raise exception 'receipt: a SHA-256 in hex is required'; end if;
   if p_via is null or p_via not in ('form', 'api') then raise exception 'via: form or api'; end if;
+  v_sha := encode(extensions.digest(convert_to(p_content, 'UTF8'), 'sha256'), 'hex');
   if p_parent is not null then
     select state into v_pstate from entries where id = p_parent for key share;
     if not found then
@@ -150,6 +167,15 @@ begin
     end if;
   end if;
   perform pg_advisory_xact_lock(hashtext(p_source_hash));
+  -- the same text from the same source, answering the same entry, within ten minutes: a form sent again (a reload, Back, a double
+  -- press) — answered with the entry already recorded, never a second one; its receipt code was shown the first time
+  select id into v_dup from entries
+    where source_hash = p_source_hash and content_sha256 = v_sha and parent is not distinct from p_parent and received > now() - interval '10 minutes'
+    order by id desc limit 1;
+  if v_dup is not null then
+    return json_build_object('state', 'not accepted', 'reason', 'duplicate', 'id', v_dup,
+      'detail', 'already recorded as #' || v_dup || ' a moment ago; its receipt code was shown when it was recorded and is not shown again');
+  end if;
   select count(*), min(received) into v_recent, v_oldest from entries
     where source_hash = p_source_hash and received > now() - interval '10 minutes';
   if v_recent >= v_rate then
@@ -162,7 +188,6 @@ begin
     return json_build_object('state', 'not accepted', 'reason', 'capacity',
       'retry_after_seconds', ceil(extract(epoch from (date_trunc('day', now()) + interval '1 day' - now())))::int);
   end if;
-  v_sha := encode(extensions.digest(convert_to(p_content, 'UTF8'), 'sha256'), 'hex');
   insert into entries (author, kind, system, operator, prompt, lang, ref, content, content_sha256, declared_date, pubkey, sig, key_fingerprint, source_hash, parent,
                        receipt_sha256, via, received)
     values (p_author, p_kind, nullif(p_system, ''), nullif(p_operator, ''), nullif(p_prompt, ''), nullif(p_lang, ''), nullif(p_ref, ''),

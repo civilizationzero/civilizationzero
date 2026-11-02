@@ -54,11 +54,12 @@ for (const [p, want] of [["/", true], ["/core", true], ["/core.fa", true], ["/di
 const reMd = new RegExp("^" + M.config.matcher[1].replace("/(.*", "/(?:.*") + "$"), reTxt = new RegExp("^" + M.config.matcher[2].replace("/(", "/(?:") + "$");
 for (const [p, want] of [["/core.md", true], ["/discuss/7.md", true], ["/index.md", true], ["/llms.txt", true], ["/core.txt", true], ["/record.txt", true], ["/robots.txt", false], ["/core", false], ["/core.fa.txt", false]])
   ok((reMd.test(p) || reTxt.test(p)) === want, `matcher (entrances) ${p}`);
-for (const [p, want] of [["/core.md", "/core.md"], ["/discuss/7.md", "/discuss/{id}.md"], ["/adopt/3.md", "/adopt/{id}.md"], ["/themes/can-an-ai-say-no.md", "/themes/can-an-ai-say-no.md"], ["/llms.txt", "/llms.txt"], ["/core", null], ["/robots.txt", null], ["/%3C.md", null]])
+for (const [p, want] of [["/core.md", "/core.md"], ["/discuss/7.md", "/discuss/{id}.md"], ["/adopt/3.md", "/adopt/{id}.md"], ["/themes/can-an-ai-say-no.md", "/themes/can-an-ai-say-no.md"], ["/llms.txt", "/llms.txt"], ["/core", null], ["/robots.txt", null], ["/%3C.md", "(other)"], ["/api/x.md", "(other)"], ["/LLMS.TXT", "/llms.txt"], ["/core.md/", "/core.md"], ["/core.fa.md", "/core.fa.md"], ["/stats.md", "/stats.md"], ["/discuss/x.md", "(other)"]])
   ok(M.entranceKey(p) === want, `entrance key ${p} → ${M.entranceKey(p)}`);
 v = M.visitOf(req("/discuss/12.md", { "user-agent": "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; ClaudeBot/1.0; +claudebot@anthropic.com)", "x-real-ip": "1.2.3.4", referer: "https://a.example/" }));
 ok(v && v.entrance === true && v.p_path === "/discuss/{id}.md" && v.p_agent === "anthropic" && Object.keys(v).sort().join() === "entrance,p_agent,p_path", "an entrance: address and kind, nothing else");
 ok(M.visitOf(req("/llms.txt", { "user-agent": CHROME })).p_agent === "human", "a browser reading llms.txt: an entrance by a browser");
+ok(M.visitOf(req("/core.md", { "user-agent": CHROME, "sec-purpose": "prefetch" })) === null, "a prefetch of a Markdown address is not an entrance");
 sent.length = 0; globalThis.fetch = async (url, opt) => { sent.push({ url, body: JSON.parse(opt.body) }); return new Response("null"); };
 waits.length = 0; M.default(req("/core.md", { "user-agent": "curl/8.5.0" }), ctx); await Promise.all(waits);
 ok(sent.length === 1 && sent[0].url === "https://db.example/rest/v1/rpc/cz_count_entrance" && sent[0].body.p_path === "/core.md" && sent[0].body.p_agent === "script" && !("entrance" in sent[0].body), "an entrance goes to cz_count_entrance");
