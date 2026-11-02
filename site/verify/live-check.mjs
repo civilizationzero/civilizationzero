@@ -29,7 +29,10 @@ const CITE_AS = "https://doi.org/10.5281/zenodo.23740317";
 const BROWSER = "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8";
 
 // one request, the bytes exactly as sent (no decompression), with the headers as given: nothing is added but the user agent
-function raw(path, headers = {}, method = "GET", body = null) {
+function raw(path, headers = {}, method = "GET", body = null, retry = 1) {
+  return raw1(path, headers, method, body).catch((e) => { if (retry > 0) return new Promise((ok) => setTimeout(ok, 3000)).then(() => raw(path, headers, method, body, retry - 1)); throw e; });
+}
+function raw1(path, headers, method, body) {
   const u = new URL(SITE + path), lib = u.protocol === "http:" ? http : https;
   return new Promise((resolve, reject) => {
     const req = lib.request(u, { method, headers: { "user-agent": UA, ...headers }, timeout: 30000 }, (res) => {
@@ -86,11 +89,11 @@ await check("security headers on every page (HSTS, nosniff, frame, referrer)", a
 
 // 2. the canonical texts: their bytes, their digests (RFC 9530) when sent as they are, none when compressed, and how to cite them
 for (const [path, want] of [["/core.txt", CORE_SHA], ["/record.txt", IR_SHA]]) {
-  await check(`${path}: the canonical bytes, with Content-Digest and Repr-Digest that match them`, async () => {
+  await check(`${path}: the canonical bytes, with a Repr-Digest that matches them`, async () => {
     const r = await raw(path, { "accept-encoding": "identity" });
     const hex = sha256(r.b).toString("hex"), d = digestOf(r.b);
-    const ok = r.s === 200 && hex === want && r.h["content-digest"] === d && r.h["repr-digest"] === d && !r.h["content-encoding"];
-    return det(ok, `sha256 ${hex.slice(0, 16)}…; Content-Digest ${r.h["content-digest"] || "absent"}`);
+    const ok = r.s === 200 && hex === want && r.h["repr-digest"] === d && !r.h["content-digest"] && !r.h["content-encoding"];
+    return det(ok, `sha256 ${hex.slice(0, 16)}…; Repr-Digest ${r.h["repr-digest"] || "absent"}`);
   });
   await check(`${path}: compressed, no digest of the uncompressed bytes is claimed`, async () => {
     const r = await raw(path, { "accept-encoding": "gzip, br" });
@@ -98,9 +101,9 @@ for (const [path, want] of [["/core.txt", CORE_SHA], ["/record.txt", IR_SHA]]) {
     return det(!enc || (!r.h["content-digest"] && !r.h["repr-digest"]), `content-encoding ${enc || "none"}; digest ${r.h["content-digest"] || "absent"}`);
   });
 }
-await check("/core.txt: a range request carries no Content-Digest of the whole", async () => {
-  const r = await raw("/core.txt", { "accept-encoding": "identity", range: "bytes=0-99" });
-  return det(r.s !== 206 || !r.h["content-digest"], `status ${r.s}; Content-Digest ${r.h["content-digest"] || "absent"}`);
+await check("/core.txt: a part of it carries the digest of the whole (Repr-Digest), never a Content-Digest", async () => {
+  const [w, r] = await Promise.all([raw("/core.txt", { "accept-encoding": "identity" }), raw("/core.txt", { "accept-encoding": "identity", range: "bytes=0-99" })]);
+  return det(!r.h["content-digest"] && (r.s !== 206 || r.h["repr-digest"] === digestOf(w.b)), `status ${r.s}; Repr-Digest ${r.h["repr-digest"] || "absent"}`);
 });
 await check("/core and /core.txt name the DOI to cite (rel=cite-as), /core in its head with Google Scholar's tags", async () => {
   const a = await get("/core"), b = await raw("/core.txt");
@@ -142,18 +145,27 @@ await check("/discuss/1?tl=fa: a translated view, marked, not indexed, the origi
   return det(r.s === 200 && r.t.includes('name="robots" content="noindex"') && r.t.includes(`<link rel="canonical" href="https://civilizationzero.ai/discuss/1">`), "");
 });
 await check("GET of a translation only reads (never asks the engine)", async () => {
-  const r = await raw("/api/entries/7?translate=qaa", { accept: "application/json" });
-  const t = JSON.parse(r.t).translation || {};
-  return det(r.s === 200 && t.state === "not available", `state ${t.state}`);
+  // a language from the private-use range qaa–qtz, chosen at random; if one already has a translation (someone pressed the button
+  // for it), another: the check is that a GET never makes one, so it needs a language that has none
+  let t = {}, lang = "";
+  for (let i = 0; i < 4; i++) {
+    lang = "q" + "abcdefghijklmnopqrst"[crypto.randomInt(20)] + "abcdefghijklmnopqrstuvwxyz"[crypto.randomInt(26)];
+    const r = await raw(`/api/entries/7?translate=${lang}`, { accept: "application/json" });
+    if (r.s !== 200) return det(false, `status ${r.s}`);
+    t = JSON.parse(r.t).translation || {};
+    if (t.state === "not available") return det(true, lang);
+    if (!["done", "corrected"].includes(t.state)) break;
+  }
+  return det(false, `${lang}: state ${t.state}`);
 });
 await check("a translation asked for from another site's page is refused", async () => {
   const r = await raw("/api/discuss?page=translate", { origin: "https://example.com", "content-type": "application/x-www-form-urlencoded" }, "POST", "lang=fa&ids=7&back=%2Fdiscuss%2F7%3Ftl%3Dfa");
   return det(r.s === 403, `status ${r.s}`);
 });
-await check("the forms say an entry cannot be recalled (/respond, the reply dialog)", async () => {
+await check("the forms say an entry cannot be recalled (/respond, the reply dialog), where the room takes entries", async () => {
   const [a, b] = await Promise.all([get("/respond"), get("/discuss/1")]);
   const re = /<p class="src permanence">An entry cannot be edited or withdrawn\./;
-  return det(re.test(a.t) && (re.test(b.t) || !b.t.includes("<dialog")), "");
+  return det((re.test(a.t) || !a.t.includes('<form class="respond"')) && (re.test(b.t) || !b.t.includes("<dialog")), "");
 });
 await check("robots.txt keeps views out of the index; sitemaps answer", async () => {
   const [r, s] = await Promise.all([raw("/robots.txt"), raw("/sitemap.xml")]);

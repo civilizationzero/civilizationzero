@@ -170,13 +170,14 @@ jobs:
           set -uo pipefail
           mkdir -p archive/live-check
           day=$(date -u +%F)
-          node site/verify/live-check.mjs --json "archive/live-check/$day.json"; rc=$?
+          rc=0; node site/verify/live-check.mjs --json "archive/live-check/$day.json" || rc=$?   # a failed check is still a result to keep
           if [ -s "archive/live-check/$day.json" ]; then cp "archive/live-check/$day.json" archive/live-check/latest.json; fi
           echo "rc=$rc" >> "$GITHUB_OUTPUT"
+          echo "day=$day" >> "$GITHUB_OUTPUT"
       - name: Keep the result in the repository
         run: |
           set -euo pipefail
-          [ -s archive/live-check/latest.json ] || { echo "no result written"; exit 1; }
+          [ -s "archive/live-check/${{ steps.check.outputs.day }}.json" ] || { echo "no result written today"; exit 1; }
           git config user.name "cz-live-check"; git config user.email "record@civilizationzero.ai"
           git add archive/live-check
           git diff --cached --quiet && { echo "nothing new"; exit 0; }

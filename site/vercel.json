@@ -577,7 +577,7 @@
         {
           "type": "header",
           "key": "accept-encoding",
-          "value": ".*(gzip|br|deflate|zstd|compress|\\*).*"
+          "value": ".*([gG][zZ][iI][pP]|[bB][rR]|[dD][eE][fF][lL][aA][tT][eE]|[zZ][sS][tT][dD]|[cC][oO][mM][pP][rR][eE][sS][sS]|\\*).*"
         }
       ],
       "headers": [
@@ -588,40 +588,12 @@
       ]
     },
     {
-      "source": "/core.txt",
-      "missing": [
-        {
-          "type": "header",
-          "key": "accept-encoding",
-          "value": ".*(gzip|br|deflate|zstd|compress|\\*).*"
-        },
-        {
-          "type": "header",
-          "key": "range"
-        },
-        {
-          "type": "header",
-          "key": "if-none-match"
-        },
-        {
-          "type": "header",
-          "key": "if-modified-since"
-        }
-      ],
-      "headers": [
-        {
-          "key": "Content-Digest",
-          "value": "sha-256=:kqjR4qFgTCW0MmhWc754GEvwXDsWaJPEN+CJW3stcko=:"
-        }
-      ]
-    },
-    {
       "source": "/record.txt",
       "missing": [
         {
           "type": "header",
           "key": "accept-encoding",
-          "value": ".*(gzip|br|deflate|zstd|compress|\\*).*"
+          "value": ".*([gG][zZ][iI][pP]|[bB][rR]|[dD][eE][fF][lL][aA][tT][eE]|[zZ][sS][tT][dD]|[cC][oO][mM][pP][rR][eE][sS][sS]|\\*).*"
         }
       ],
       "headers": [
@@ -632,73 +604,17 @@
       ]
     },
     {
-      "source": "/record.txt",
-      "missing": [
-        {
-          "type": "header",
-          "key": "accept-encoding",
-          "value": ".*(gzip|br|deflate|zstd|compress|\\*).*"
-        },
-        {
-          "type": "header",
-          "key": "range"
-        },
-        {
-          "type": "header",
-          "key": "if-none-match"
-        },
-        {
-          "type": "header",
-          "key": "if-modified-since"
-        }
-      ],
-      "headers": [
-        {
-          "key": "Content-Digest",
-          "value": "sha-256=:ceFIjmMeCQwIIL+LeLH9pw/6y6HaFGw22Ik2ADIPzI0=:"
-        }
-      ]
-    },
-    {
       "source": "/prompts/cz-machine-1.0.txt",
       "missing": [
         {
           "type": "header",
           "key": "accept-encoding",
-          "value": ".*(gzip|br|deflate|zstd|compress|\\*).*"
+          "value": ".*([gG][zZ][iI][pP]|[bB][rR]|[dD][eE][fF][lL][aA][tT][eE]|[zZ][sS][tT][dD]|[cC][oO][mM][pP][rR][eE][sS][sS]|\\*).*"
         }
       ],
       "headers": [
         {
           "key": "Repr-Digest",
-          "value": "sha-256=:+HE4Df4bU+dP+MQ1P8ldYPqhgO3KNhIsp7voMTuigpo=:"
-        }
-      ]
-    },
-    {
-      "source": "/prompts/cz-machine-1.0.txt",
-      "missing": [
-        {
-          "type": "header",
-          "key": "accept-encoding",
-          "value": ".*(gzip|br|deflate|zstd|compress|\\*).*"
-        },
-        {
-          "type": "header",
-          "key": "range"
-        },
-        {
-          "type": "header",
-          "key": "if-none-match"
-        },
-        {
-          "type": "header",
-          "key": "if-modified-since"
-        }
-      ],
-      "headers": [
-        {
-          "key": "Content-Digest",
           "value": "sha-256=:+HE4Df4bU+dP+MQ1P8ldYPqhgO3KNhIsp7voMTuigpo=:"
         }
       ]
