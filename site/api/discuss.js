@@ -71,7 +71,7 @@ function starterHtml(e) {
 // ---- one entry in its conversation (stage 1 of the room's redesign, the originator's "let's go" of 2 Nov 2026, CZ 1433): the entries it
 // answers above, one line each; the entry; the replies under it as a tree, joined by lines (CSS only), to a depth of five, then a link
 // that continues the branch on its own page. The same order as everywhere (id); a count of replies is a fact, not a score.
-const TREE_DEPTH = 5;
+const TREE_DEPTH = 3;
 const REPLY_FORM = ((T.respond_open || "").match(/<form class="respond"[\s\S]*?<\/form>/) || [""])[0];
 function ancestorsHtml(anc) {
   if (!anc.length) return "";
@@ -85,8 +85,7 @@ function treeEntry(c) {
 function replyTree(kids, id, depth) {
   const ch = kids.get(id) || [];
   if (!ch.length) return "";
-  const size = (n) => (kids.get(n) || []).reduce((k, c) => k + 1 + size(Number(c.id)), 0);
-  if (depth >= TREE_DEPTH) { const n = size(id); return `<p class="src"><a href="/discuss/${id}#replies">Continue this branch — ${n} ${n === 1 ? "reply" : "replies"}</a></p>`; }
+  if (depth >= TREE_DEPTH) return `<p class="src"><a href="/discuss/${id}#replies">Continue this branch</a></p>`;
   return `<ol class="thread">${ch.map((c) => `<li>${treeEntry(c)}${replyTree(kids, Number(c.id), depth + 1)}</li>`).join("")}</ol>`;
 }
 
@@ -225,7 +224,7 @@ async function entryPage(url, id, req) {
     : (OPEN && !e.hidden ? `<p class="actions"><a href="/respond?parent=${e.id}">Reply to #${e.id}</a></p>` : "");
   const repliesHtml = opensTheme ? `<p class="room-line">This entry opens the theme <a href="/themes/${opensTheme.slug}">${esc(opensTheme.title)}</a>: its answers and their conversations are there.</p>`
     : convUnavailable ? `<p class="pending">The conversation around this entry could not be read just now. <a href="/discuss?conversation=${e.id}">Try the whole conversation</a>.</p>`
-    : nReplies ? `<section aria-labelledby="replies"><h2 id="replies">${nReplies} ${nReplies === 1 ? "reply" : "replies"}</h2><p class="src">In canonical order (by id), each under the entry it answers. <a href="/discuss?conversation=${e.id}">The whole conversation as one transcript</a>.</p>${replyTree(kids, e.id, 0)}</section>` : "";
+    : nReplies ? `<section aria-labelledby="replies"><h2 id="replies">Replies</h2><p class="src">In canonical order (by id), each under the entry it answers. <a href="/discuss?conversation=${e.id}">The whole conversation as one transcript</a>.</p>${replyTree(kids, e.id, 0)}</section>` : "";
   const body = `<main><h1>Entry #${e.id}</h1>
 ${inTheme ? `<p class="room-line">In the theme <a href="/themes/${inTheme.slug}">${esc(inTheme.title)}</a>.</p>` : ""}${ancestorsHtml(anc)}
 ${entryHtml(e, " focus")}

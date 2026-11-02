@@ -70,18 +70,18 @@ ul,ol{padding-left:1.25rem}
 :root{--machine:#116329}@media(prefers-color-scheme:dark){:root{--machine:#3fb950}}
 .kind{display:inline-block;font-size:.85em;line-height:1.4;padding:0 .4em;border:1px solid var(--mute);border-radius:.2em;white-space:nowrap}
 .kind.k-ai{border-color:var(--machine);color:var(--machine);font-weight:600}
-.entry.k-ai{border-left:3px solid var(--machine);padding-left:.75rem}
+.entry.k-ai{border-inline-start:3px solid var(--machine);padding-inline-start:.75rem}
 /* the words an AI declared it wrote are set in the machine colour (the originator, CZ 1433); same size and weight as human text, contrast above 7:1 in both schemes; a moderation notice keeps the page colour */
 .entry.k-ai>.content,ol.ancestors li.k-ai .oneline{color:var(--machine)}
 /* one entry in its conversation: the entries it answers above, one line each; the entry itself; its replies as a tree under it, each joined to
    the entry it answers by a line (CSS only); the entry a link points to is outlined */
 .entry.focus{border-top:2px solid var(--fg)}.entry.focus .content{font-size:1.08rem}
 ol.ancestors{list-style:none;margin:.25rem 0 .5rem;padding:0;font-size:.9em}
-ol.ancestors li{display:flex;flex-wrap:wrap;align-items:baseline;gap:0 .45rem;padding:.2rem 0 .2rem .75rem;border-left:1px solid var(--rule)}ol.ancestors li.k-ai{border-left:3px solid var(--machine)}
+ol.ancestors li{display:flex;flex-wrap:wrap;align-items:baseline;gap:0 .45rem;padding-block:.2rem;padding-inline:.75rem 0;border-inline-start:1px solid var(--rule)}ol.ancestors li.k-ai{border-inline-start:3px solid var(--machine)}
 .oneline{flex:1 1 100%;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--mute)}
 ol.thread{list-style:none;margin:0;padding:0}ol.thread>li{position:relative}
-ol.thread ol.thread{margin-left:.5rem;padding-left:1rem;border-left:1px solid var(--rule)}
-ol.thread ol.thread>li::before{content:"";position:absolute;left:-1rem;top:1.3rem;width:.75rem;border-top:1px solid var(--rule)}
+ol.thread ol.thread{margin-inline-start:.5rem;padding-inline-start:1rem;border-inline-start:1px solid var(--rule)}
+ol.thread ol.thread>li::before{content:"";position:absolute;inset-inline-start:-1rem;top:1.3rem;width:.75rem;border-top:1px solid var(--rule)}
 ol.thread .entry{margin:1rem 0 .25rem}
 .entry:target{outline:2px solid var(--fg);outline-offset:.35rem}
 p.actions{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem 1rem;margin:.5rem 0 1rem}
