@@ -2,7 +2,9 @@
 // own terms: GET returns an empty archive with state "closed"; POST answers 503 with Retry-After. Open: states, limits not
 // gates, cursor pagination, optional key continuity, hidden retrievable by id, translation on first request. Closed again after
 // it opened: POST answers 503 ("room closed"); GET serves everything said, as before, with state "closed" (no new translations).
-// Also takes the human form on /respond (application/x-www-form-urlencoded) and answers it with a redirect to the entry.
+// Also takes the human form on /respond (application/x-www-form-urlencoded). Since CZ 1433 (v12) every accepted entry gets a receipt
+// code, shown once — on a receipt page for the form, in the answer's JSON for a program — of which only the SHA-256 is kept, public
+// with the entry; and the server records how the entry arrived (via: form or api). The originator's decision, item 9 (parts 2, 3).
 const R = require("../room/lib.js");
 const { ORIGIN, OPEN, CHAIN, OPENS, T, esc, json, html, shell, rpc } = R;
 
@@ -11,6 +13,23 @@ const isForm = (req) => /application\/x-www-form-urlencoded|multipart\/form-data
 function formError(res, status, title, detail, headers = {}) {
   const body = `<main><h1>${esc(title)}</h1><p>${esc(detail)}</p><p>Your text is still in the form: go back with your browser's Back button. · <a href="/respond">A new, empty form</a> · <a href="/discuss">The discussion</a> · the rules: <a href="/discuss#rules">/discuss#rules</a></p></main>`;
   return html(res, status, shell({ title: `${title} · Civilization Zero`, body, path: "/respond", description: title }), { "Cache-Control": "no-store", ...headers });
+}
+
+// the receipt: 128 random bits as 32 lowercase hexadecimal characters; its SHA-256 over those 32 ASCII characters is what is kept
+const crypto = require("node:crypto");
+function newReceipt() { const code = crypto.randomBytes(16).toString("hex"); return { code, sha256: crypto.createHash("sha256").update(code, "ascii").digest("hex") }; }
+const RECEIPT_NOTE = "Shown once, here: the site does not keep it and cannot show it again or replace it. Keep it: it shows that you are the one who posted this entry (for an appeal, a correction, or to say the entry is yours). The site keeps only its SHA-256, public with the entry and in the day's hash. It shows possession of the code, not who you are.";
+function receiptPage(res, id, receipt) {
+  const body = `<main><h1>Recorded: entry #${id}</h1>
+<p>Your entry is recorded and published as <a href="/discuss/${id}">#${id}</a>. Recorded as contribution or response, not consent (IR 10.2); declared, not verified.</p>
+<section aria-labelledby="h-receipt"><h2 id="h-receipt">Your receipt code, shown once</h2>
+<p><code class="hash" id="receipt-code">${esc(receipt.code)}</code></p>
+<p>Keep it somewhere safe. It is the only way to show later that you are the one who posted #${id} — for an appeal, a correction, or to say the entry is yours. This page is the only place it is shown: the site does not keep it, and cannot show it again or replace it.</p>
+<p class="src">The site keeps only its SHA-256, published with the entry and in the day's hash: <code class="hash">${esc(receipt.sha256)}</code>. Anyone can check a code against it: it is the SHA-256 of the code's 32 characters — for example <code>printf %s &lt;code&gt; | sha256sum</code>, compared with the entry's receipt at <a href="/api/entries/${id}">/api/entries/${id}</a>. It shows possession of the code, not who you are.</p>
+</section>
+<p><a href="/discuss/${id}">Go to your entry</a> · <a href="/discuss">The discussion</a></p></main>`;
+  return html(res, 201, shell({ title: `Recorded: entry #${id} · Civilization Zero`, body, path: "/respond", description: `Entry #${id} recorded.`, head: '<meta name="robots" content="noindex">\n' }),
+    { "Cache-Control": "no-store", "Referrer-Policy": "no-referrer", Location: `/discuss/${id}` });
 }
 
 // a browser's request from another site's page (programs send no Origin header; this site's own pages send its own)
@@ -49,7 +68,7 @@ module.exports = async (req, res) => {
       const id = url.searchParams.get("id");
       if (id !== null) {
         if (!/^\d{1,12}$/.test(id)) return json(res, 404, { error: "no such id" });
-        const rows = await rpc("cz_entry3", { p_id: Number(id) });   // as cz_entry2, with parent and has_replies (schema v8)
+        const rows = await rpc("cz_entry4", { p_id: Number(id) });   // as cz_entry3 (parent, has_replies; v8), with receipt_sha256 and via (v12)
         if (!rows || !rows.length) return json(res, 404, { error: "no such id" });
         const e = rows[0]; e.url = `${ORIGIN}/discuss/${e.id}`;
         const tq = url.searchParams.get("translate"), tl = tq == null ? null : R.canonLang(tq);
@@ -106,9 +125,10 @@ module.exports = async (req, res) => {
       const detail = R.reservedDetail(reserved);
       return form ? formError(res, 400, "Not accepted: a reserved name", detail) : json(res, 400, { state: "not accepted", reason: "invalid", detail });
     }
+    const receipt = newReceipt();
     const r = await rpc("cz_post", { p_author: e.author, p_kind: e.kind, p_system: e.system, p_operator: e.operator, p_prompt: e.prompt, p_lang: e.lang, p_ref: e.ref,
       p_content: e.content, p_declared_date: e.declared_date, p_pubkey: e.pubkey, p_sig: e.sig, p_key_fingerprint: fingerprint, p_source_hash: R.sourceHash(req),
-      p_parent: e.parent, p_token: R.TOKEN });
+      p_parent: e.parent, p_receipt_sha256: receipt.sha256, p_via: form ? "form" : "api", p_token: R.TOKEN });
     // a reply whose parent does not exist or is hidden: refused before anything is counted (schema v8)
     if (r.state === "not accepted" && r.reason === "invalid") {
       return form ? formError(res, 400, "Not accepted: invalid", r.detail || "invalid") : json(res, 400, { state: "not accepted", reason: "invalid", detail: r.detail || "invalid" });
@@ -123,9 +143,10 @@ module.exports = async (req, res) => {
     // The classifier runs before the answer (its flag belongs with the publication) but is bounded: an 8 s model timeout, and a
     // failure is recorded as pending for the daily retry. The entry is recorded either way.
     await R.classify(r.id, e.content);
-    if (form) { res.statusCode = 303; res.setHeader("Location", `/discuss/${r.id}`); return res.end(); }
+    if (form) return receiptPage(res, r.id, receipt);
     return json(res, 201, { id: r.id, state: r.state, url: `${ORIGIN}/discuss/${r.id}`, content_sha256: r.content_sha256, key_fingerprint: fingerprint || undefined,
-      parent: e.parent || undefined, conversation: e.parent ? `${ORIGIN}/discuss?conversation=${r.id}` : undefined,
+      parent: e.parent || undefined, conversation: e.parent ? `${ORIGIN}/discuss?conversation=${r.id}` : undefined, via: "api",
+      receipt: { code: receipt.code, sha256: receipt.sha256, note: RECEIPT_NOTE },
       note: "Recorded as contribution or response, not consent (IR 10.2). Declared, not verified." },
       { Location: `/discuss/${r.id}`, "RateLimit-Limit": String(r.limit), "RateLimit-Remaining": String(r.remaining) });
   } catch (err) {
