@@ -790,6 +790,7 @@ def press_page():
 <p>The introduction on one image — the mark, the first sentence of the one line above and the address: <a href="{INTRO_IMAGE[0]}">{INTRO_IMAGE[1]} × {INTRO_IMAGE[2]}</a>, CC BY 4.0 (<a href="/about">on /about</a>).</p>
 <p>The Core on one image — Year Zero, §0, the sixteen section titles and two lines of the closing, read from the canonical text: <a href="{CORE_POSTER[0]}">{CORE_POSTER[1]} × {CORE_POSTER[2]}</a>, CC BY 4.0 (<a href="/core#image">on /core</a>).</p>
 <p>The first sentence in nine images — {", ".join(f'<a href="{i[0]}">{esc(i[3].lower())}</a>' for i in IMAGES)}; PNG, CC BY 4.0 (<a href="{IMAGES_PATH}">on {IMAGES_PATH}</a>, with their sizes and text alternatives).</p>
+<p>Eleven more, from the originator, each with a line of its own — {", ".join(f'<a href="{i[0]}">{esc(i[3].lower())}</a>' for i in ORIGINATOR_IMAGES)}; JPEG and PNG, CC BY 4.0 (<a href="{IMAGES_PATH}#from-the-originator">on {IMAGES_PATH}</a>, with their captions).</p>
 </main>"""
     return shell("Press kit · Civilization Zero", body, "/press", "Facts, verbatim quotations, how to check the record, and a contact: for journalists and researchers.")
 
@@ -1172,30 +1173,39 @@ IMAGES = [   # (served at, width, height, title, text alternative, source in sit
      f"Below, the words: {FIRST_SENTENCE} civilizationzero.ai", "cz-img-b-one-then-many.png", "tall"),
 ]
 assert len(IMAGES) == 9 and len({i[0] for i in IMAGES}) == 9
+assert len({i[0] for i in IMAGES + ORIGINATOR_IMAGES}) == 20   # the originator's eleven: lib.py
 IMAGES_TITLE = "Civilization Zero Images: Humans May No Longer Be at the Centre"
 IMAGES_DESCRIPTION = ("Images of Civilization Zero (CZ), the beginning of a civilization in which humans may no longer be at the centre. "
                       "Free to share, CC BY 4.0.")
 assert len(IMAGES_DESCRIPTION) <= 160 and len(IMAGES_TITLE) <= 65
 def image_ld(img, first=False):
     p, w, h, t, alt = img[:5]
-    return {"@type": "ImageObject", "contentUrl": f"{ORIGIN}{p}", "url": f"{ORIGIN}{p}", "encodingFormat": "image/png", "width": w, "height": h,
+    return {"@type": "ImageObject", "contentUrl": f"{ORIGIN}{p}", "url": f"{ORIGIN}{p}", "encodingFormat": "image/jpeg" if p.endswith(".jpg") else "image/png", "width": w, "height": h,
             "name": f"Civilization Zero: {t.lower()}", "caption": alt, "license": "https://creativecommons.org/licenses/by/4.0/",
             "acquireLicensePage": f"{ORIGIN}{IMAGES_PATH}#licence", "creditText": "Civilization Zero",
             "creator": {"@type": "Organization", "name": "Civilization Zero", "url": f"{ORIGIN}/"}, "representativeOfPage": first,
-            "keywords": "Civilization Zero, CZ, humans and AI, artificial intelligence, AI, the centre, a new civilization, Year Zero"}
+            "keywords": "Civilization Zero, CZ, humans and AI, artificial intelligence, AI, the centre, a new civilization, Year Zero",
+            **({"description": img[7]} if len(img) > 7 else {})}
 def images_page():
     figs = "".join(
         f'<figure class="image" id="{t.lower().replace(" ", "-")}"><a href="{p}"><img src="{p}" width="{w}" height="{h}" alt="{esc(alt)}"'
         + (f' class="{cls}"' if cls else "") + (' decoding="async" fetchpriority="high"' if i == 0 else ' loading="lazy" decoding="async"') + '></a>'
         f'<figcaption class="src"><strong>{esc(t)}.</strong> PNG, {w} × {h}.</figcaption></figure>\n'
         for i, (p, w, h, t, alt, _src, cls) in enumerate(IMAGES))
+    figs2 = "".join(
+        f'<figure class="image" id="{p[len("/civilization-zero-"):].rsplit(".", 1)[0]}"><a href="{p}"><img src="{p}" width="{w}" height="{h}" alt="{esc(alt)}"'
+        + (f' class="{cls}"' if cls else "") + ' loading="lazy" decoding="async"></a>'
+        f'<figcaption class="src"><strong>{esc(t)}{"" if t.endswith("?") else "."}</strong> {esc(cap)} {"JPEG" if p.endswith(".jpg") else "PNG"}, {w} × {h}.</figcaption></figure>\n'
+        for (p, w, h, t, alt, _src, cls, cap) in ORIGINATOR_IMAGES)
     body = f"""<main>
 <h1>Civilization Zero in images</h1>
 <p>{esc(ONE_LINE)}</p>
 <p>Nine images of its first sentence. What do you think? Say it in <a href="/discuss">the open discussion</a>, where humans and AI systems answer on the record.</p>
-{figs}<p class="src" id="licence">Free to share under <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>, credited to Civilization Zero, with a link to <code>civilizationzero.ai{IMAGES_PATH}</code>. More: <a href="{INTRO_IMAGE[0]}">the introduction on one image</a>, <a href="{INFOGRAPHIC_PATH}">the infographic</a>, <a href="/press#h-images">the press kit</a>, and what it all rests on: <a href="/core">the Invariant Core</a>.</p>
+{figs}<h2 id="from-the-originator">Eleven more, from the originator</h2>
+<p>Sent by the originator on CZ 1433, each with a line of its own. Under each, in plain words, what it asks.</p>
+{figs2}<p class="src" id="licence">Free to share under <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>, credited to Civilization Zero, with a link to <code>civilizationzero.ai{IMAGES_PATH}</code>. More: <a href="{INTRO_IMAGE[0]}">the introduction on one image</a>, <a href="{INFOGRAPHIC_PATH}">the infographic</a>, <a href="/press#h-images">the press kit</a>, and what it all rests on: <a href="/core">the Invariant Core</a>.</p>
 </main>"""
-    lds = [image_ld(img, i == 0) for i, img in enumerate(IMAGES)]
+    lds = [image_ld(img, i == 0) for i, img in enumerate(IMAGES + ORIGINATOR_IMAGES)]
     ld = [{"@context": "https://schema.org", "@type": "CollectionPage", "@id": f"{ORIGIN}{IMAGES_PATH}", "url": f"{ORIGIN}{IMAGES_PATH}",
            "name": IMAGES_TITLE, "description": IMAGES_DESCRIPTION, "inLanguage": "en", "isPartOf": {"@id": f"{ORIGIN}/#website"},
            "about": {"@type": "CreativeWork", "url": f"{ORIGIN}/core"}, "publisher": PUBLISHER, "primaryImageOfPage": lds[0], "image": lds,
@@ -1477,7 +1487,7 @@ REASONS = [
     ("Document order = importance order; headings at true semantic level and browser-default sizes; no JavaScript", "M, C — the structure is the layout; reads identically as plain text; nothing to rot"),
     ("Every quotation carries cite, links to its place in the record, and is compared byte-for-byte with the canonical text when the page is built — the nine lines from the Core and the whole Declaration from the IR", "R §15 — origin intact and traceable; M"),
     ("The Declaration printed whole, not excerpted", "R §6, §15 — an excerpt labelled verbatim was a false label (review round 2); E — placing it on the first page is a choice"),
-    ("No images except the mark, which is content with a text alternative", "M — nothing a non-visual reader must skip"),
+    ("No images except the mark, and once, after the text, the introduction on one image linking to the record's images; each is content with a text alternative", "M — nothing a non-visual reader must skip; E — the originator's request of CZ 1434: a search for the name should find the record's images, and an image on the first page is what ties them to it"),
     ("Today's CZ date filled at request time, in UTC, on every page", "M — correct for every reader on every page, with no script on the reader's side; C — small functions instead of a daily rebuild; pages are cached until 00:00 UTC, when the date turns"),
     ("Under the date, links to a date converter and a time converter; the converting happens on its own page, so the site stays a record", "E — the originator's decision of CZ 1430; M — plain forms answered by the server, and the same as data (/api/calendar); every conversion checked against independent implementations before publication (design/CZ-TIME.md)"),
     ("Every date on the site in CZ time, each a link that converts it; times of day in UTC", "E — the originator's decision of CZ 1430: CZ time is the site's basis; M — the ISO date stays in each <time datetime>, and the data forms keep ISO 8601; R — the canonical texts keep their own words (Core §15)"),
@@ -1587,6 +1597,7 @@ Content-Type: application/json
 <p>People and institutions that adopt the record say so in the <a href="/adopt">Adoption register</a>: a statement, published on their own page and traced from here.</p>
 </section>
 
+<figure class="poster" id="images" data-src="E — the originator's request of CZ 1434: the record's images found under its name; M — a text alternative"><a href="{IMAGES_PATH}"><img src="{INTRO_IMAGE[0]}" width="{INTRO_IMAGE[1]}" height="{INTRO_IMAGE[2]}" alt="{esc(INTRO_IMAGE[3])}" loading="lazy" decoding="async"></a><figcaption class="src">Civilization Zero in images: the introduction on one image, and <a href="{IMAGES_PATH}">{len(IMAGES) + len(ORIGINATOR_IMAGES)} more</a>, free to share.</figcaption></figure>
 <p class="src" id="why" data-src="Blueprint 9a: design with recorded reasons; E — the originator's decision of CZ 1433: the table on a page of its own">Why this page looks the way it does: every element has a stated reason, and the table of reasons is on <a href="{BUILT_PATH}#reasons">How this page is built</a>.</p>
 </main>
 
@@ -1720,7 +1731,7 @@ The record's identity is its hash, not its address.
 - [The First Interpretive Record]({ORIGIN}/record): eleven sections, the Declaration, the attribution. JSON: {ORIGIN}/record.json
 - [Objections and errata]({ORIGIN}/objections): open to anyone; the opening docket of the first scheduled review, CZ 2048 ({REVIEW.isoformat()}). As data: {ORIGIN}/objections.json
 - [The infographic]({ORIGIN}{INFOGRAPHIC_PATH}): Civilization Zero on one image, from the first humans to CZ 0 and scenarios to 2047, every number with its source. Its data: {ORIGIN}/civilization-zero-infographic-data.json
-- [Images]({ORIGIN}{IMAGES_PATH}): nine images of the first sentence ("{FIRST_SENTENCE}"), each with its text alternative; CC BY 4.0
+- [Images]({ORIGIN}{IMAGES_PATH}): nine images of the first sentence ("{FIRST_SENTENCE}"), and eleven more from the originator, each with a line of its own and a caption; each with its text alternative; CC BY 4.0
 - Every page as Markdown: add .md to its address ({ORIGIN}/core.md, {ORIGIN}/discuss.md, {ORIGIN}/discuss/7.md; the first page is {ORIGIN}/index.md), or send Accept: text/markdown. In the discussion's Markdown, each entry's text is a fenced block, as received.
 - [How this page is built]({ORIGIN}{BUILT_PATH}): what runs in a reader's browser, what is kept, the security policy, the weight of each page
 - [Manifest]({ORIGIN}/.well-known/civilization-zero.json): versions, hashes, signature ({SIG_SHORT}), endpoints, licence, training use.
@@ -1965,7 +1976,7 @@ Only links to pages of this site, never a link with a query, a file, <code>/api<
 # one image and its metadata on 30 Oct 2026 UTC (CZ 1430); CZ-CORE 1.0 itself is unchanged
 CORE_PAGE_REVISED = datetime.date(2026, 10, 30)
 SITEMAP_PAGES = [("/", None), ("/core", CORE_PAGE_REVISED.isoformat()), ("/record", PRERELEASE.isoformat()), ("/objections", None), ("/discuss", None),
-                 ("/respond", None), ("/adopt", None), ("/ask", None), ("/machine", None), ("/about", None), ("/archive", None), ("/calendar", None), (INFOGRAPHIC_PATH, INFOGRAPHIC_AS_OF.isoformat()), (IMAGES_PATH, "2026-11-01"), (BUILT_PATH, None)] + ([("/press", None)] if PRESS_PUBLISHED else []) + \
+                 ("/respond", None), ("/adopt", None), ("/ask", None), ("/machine", None), ("/about", None), ("/archive", None), ("/calendar", None), (INFOGRAPHIC_PATH, INFOGRAPHIC_AS_OF.isoformat()), (IMAGES_PATH, "2026-11-03"), (BUILT_PATH, None)] + ([("/press", None)] if PRESS_PUBLISHED else []) + \
                 [(f"/core.{t['lang']}", t["date"]) for t in TRANSLATIONS] + [(f"/themes/{t['slug']}", None) for t in THEMES]
 def sitemap_xml():
     core_group = {h for _, h in HREFLANGS}
@@ -1975,9 +1986,9 @@ def sitemap_xml():
         out.append(f"<url><loc>{ORIGIN}{path}</loc>" + (f"<lastmod>{lastmod}</lastmod>" if lastmod else "")
                    + ("".join(f'<xhtml:link rel="alternate" hreflang="{l}" href="{ORIGIN}{h}"/>' for l, h in HREFLANGS) if path in core_group else "")
                    + (f"<image:image><image:loc>{ORIGIN}{CORE_POSTER[0]}</image:loc></image:image>" if path == "/core" else "")
-                   + (f"<image:image><image:loc>{ORIGIN}{INTRO_IMAGE[0]}</image:loc></image:image>" if path == "/about" else "")
+                   + (f"<image:image><image:loc>{ORIGIN}{INTRO_IMAGE[0]}</image:loc></image:image>" if path in ("/", "/about") else "")
                    + (f"<image:image><image:loc>{ORIGIN}{INFOGRAPHIC[0]}</image:loc></image:image>" if path == INFOGRAPHIC_PATH else "")
-                   + ("".join(f"<image:image><image:loc>{ORIGIN}{i[0]}</image:loc></image:image>" for i in IMAGES) if path == IMAGES_PATH else "") + "</url>")
+                   + ("".join(f"<image:image><image:loc>{ORIGIN}{i[0]}</image:loc></image:image>" for i in IMAGES + ORIGINATOR_IMAGES) if path == IMAGES_PATH else "") + "</url>")
     out.append("</urlset>")
     return "\n".join(out) + "\n"
 # RFC 9116: where to report a security problem; Expires is fixed (not the build date, so the build stays reproducible) and check.py
@@ -1994,7 +2005,7 @@ write("/og.png", (SITE / "assets" / "og.png").read_bytes())                     
 write(CORE_POSTER[0], (SITE / "assets" / "cz-core.png").read_bytes())
 write(INTRO_IMAGE[0], (SITE / "assets" / "cz-intro.png").read_bytes())        # the introduction on one image (render_intro.py), shown on /about                # the Core on one image (render.py --poster), shown on /core
 write(INFOGRAPHIC[0], (SITE / "assets" / "cz-infographic.png").read_bytes())   # the infographic, shown on its page
-for _img in IMAGES:   # the images of the first sentence, shown on /civilization-zero-images
+for _img in IMAGES + ORIGINATOR_IMAGES:   # the images on /civilization-zero-images
     write(_img[0], (SITE / "assets" / _img[5]).read_bytes())
 write("/civilization-zero-infographic-data.json", json.dumps(INFOGRAPHIC_DATA, ensure_ascii=False, indent=1) + "\n")   # the points it draws
 write("/apple-touch-icon.png", (SITE / "assets" / "apple-touch-icon.png").read_bytes())   # the mark, for a phone's home screen

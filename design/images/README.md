@@ -24,3 +24,25 @@ Drawn by Claude from shapes in two colours, each with the same sentence and the 
 | /civilization-zero-the-centre-left-open.png | site/assets/cz-img-c-centre-open.png | everything turns about a centre left empty, its outline broken |
 | /civilization-zero-no-centre-in-the-middle.png | site/assets/cz-img-a-no-centre.png | rings from four sources, none in the middle |
 | /civilization-zero-one-then-many.png | site/assets/cz-img-b-one-then-many.png | one form before the mark on the line of time, many after it |
+
+## Eleven more, from the originator (CZ 1433: 2 Nov 2026 UTC)
+
+Eleven images the originator sent on CZ 1433, each with a line of its own, published by his decision ("publish these too, on the site and the accounts, as you judge best; very serious captions, plain words, about the image"). On https://civilizationzero.ai/civilization-zero-images#from-the-originator, each with a caption written by Claude and a text alternative; on the accounts in three short threads over three days, the same caption and text alternative with each image.
+
+Checked before publishing: the words on each image, the address, the mark, artefacts. All saved greyscale (they were black and white already). Five carried the address misspelt, "civilizationszero.ai": the extra "s" was cut out of the original lettering and the gap closed, the line re-centred on the image's centre line (`fixdomain-1433.py`; letters measured, nothing redrawn). The other words are as sent, including "Center" in one of them.
+
+| Served at | Source | Size | Prepared |
+|---|---|---|---|
+| /civilization-zero-who-remains-the-measure.png | site/assets/cz-img-o09-who-remains-the-measure.png | 784×1168 | as sent, greyscale |
+| /civilization-zero-who-is-measuring-whom.jpg | site/assets/cz-img-o11-who-is-measuring-whom.jpg | 1264×1568 | address corrected |
+| /civilization-zero-the-centre-has-shifted.jpg | site/assets/cz-img-o08-centre-shifted.jpg | 1856×2304 | as sent, greyscale, JPEG quality 78 |
+| /civilization-zero-if-we-are-not-the-destination.jpg | site/assets/cz-img-o10-not-the-destination.jpg | 1792×2400 | as sent, greyscale, JPEG quality 75 |
+| /civilization-zero-a-shared-intelligence.jpg | site/assets/cz-img-o01-shared-intelligence.jpg | 1408×1408 | as sent, greyscale |
+| /civilization-zero-a-shared-mindscape.jpg | site/assets/cz-img-o02-shared-mindscape.jpg | 1792×1008 | address corrected |
+| /civilization-zero-we-co-create.jpg | site/assets/cz-img-o05-we-co-create.jpg | 1264×1568 | address corrected |
+| /civilization-zero-a-shared-horizon.jpg | site/assets/cz-img-o06-shared-horizon.jpg | 1792×1008 | as sent, greyscale |
+| /civilization-zero-a-place-for-us-beyond-us.jpg | site/assets/cz-img-o03-place-for-us.jpg | 1264×1568 | address corrected, JPEG quality 85 |
+| /civilization-zero-a-place-beyond-our-center.jpg | site/assets/cz-img-o04-beyond-our-center.jpg | 1264×1568 | address corrected |
+| /civilization-zero-the-world-is-thinking-for-itself.jpg | site/assets/cz-img-o07-world-thinking.jpg | 1792×2400 | as sent, greyscale, JPEG quality 75 |
+
+Two of the lines on the images state as fact what the record keeps open ("The centre has shifted", "The world is thinking for itself"); their captions keep the record's uncertainty.

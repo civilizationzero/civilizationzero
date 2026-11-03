@@ -438,6 +438,22 @@ check(_im.count("Civilization Zero names the beginning of a civilization in whic
       and '<meta property="og:image" content="https://civilizationzero.ai/civilization-zero-one-human-among-many.png">' in _im,
       "/civilization-zero-images: every text alternative carries the sentence; its link preview is one of its images")
 check("civilization-zero-images" in (SITE / "api" / "page.js").read_text("utf-8"), "api/page.js serves the images' page")
+def _jpeg_size(b):   # (width, height, components) from the first SOF marker
+    i = 2
+    while i < len(b):
+        if b[i] != 0xFF: i += 1; continue
+        m = b[i + 1]
+        if m in (0xC0, 0xC1, 0xC2): return struct.unpack(">HH", b[i + 5:i + 9])[::-1] + (b[i + 9],)
+        i += 2 + struct.unpack(">H", b[i + 2:i + 4])[0]
+    return None
+_vj = (SITE / "vercel.json").read_text("utf-8")
+for _p, _w, _h, _t, _alt, _src, _cls, _cap in ORIGINATOR_IMAGES:
+    _b = (PUBLIC / _p.lstrip("/")).read_bytes()
+    _ok = (_b[:8] == b"\x89PNG\r\n\x1a\n" and struct.unpack(">II", _b[16:24]) == (_w, _h) and _b[25] == 0) if _p.endswith(".png") else (_b[:2] == b"\xff\xd8" and _jpeg_size(_b) == (_w, _h, 1))
+    check(_ok and f'<img src="{_p}" width="{_w}" height="{_h}" alt="{esc(_alt)}"' in _im and esc(_cap) in _im and "civilizationzero.ai" in _alt and "civilizationszero" not in _alt
+          and f"<image:loc>https://civilizationzero.ai{_p}</image:loc>" in _sm and _p.lstrip("/") in _vj,
+          f"{_p}: a {_w}x{_h} greyscale image, on its page with its size, text alternative and caption, in the sitemap, cached a day")
+check('id="from-the-originator"' in _im and _im.count("<figure") == 20, "/civilization-zero-images: the nine and the originator's eleven")
 
 # 9. every date the pages print (the originator, 30 Oct 2026: "every date on the site checked at least three times"): each CZ date in a
 # <time datetime> is the day of that ISO value, counted independently here as (date − 2022-11-30).days; each link around it opens the
