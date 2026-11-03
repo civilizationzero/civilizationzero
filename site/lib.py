@@ -545,7 +545,7 @@ def cz_bar_fallback():   # for copies that serve the files as they are: no date,
 # Open Graph, schema.org, hreflang, sitemaps.org — and nothing that observes a reader. The preview image is the mark (§9); the Core on
 # one image is shown on /core (31 Oct 2026). Every indexable page allows a large image preview (robots max-image-preview:large).
 GOOGLE_SITE_VERIFICATION = "Hf73qd5zTa6JZ_-O6QM0JBYPSqxOdIM-M33lsIGihhg"   # Google Search Console ("HTML tag" method), property https://civilizationzero.ai/, added by the originator on 29 Oct 2026; keep it, or the property loses its verification
-OG_IMAGE = ("/og.png", 1200, 630, "The mark CZ, a zero in which C and Z share their strokes, and the words: Civilization Zero names the beginning of a civilization in which humans may no longer be at the centre. Coordinate Zero, 30 November 2022.")
+OG_IMAGE = ("/civilization-zero.png", 1200, 630, "The mark CZ, a zero in which C and Z share their strokes, and the words: Civilization Zero names the beginning of a civilization in which humans may no longer be at the centre. Coordinate Zero, 30 November 2022.")
 
 def shell(title, body, path, description, alternates=(), ldjson=None, nav=True, extra_head="", hreflangs=(), og_type="website", robots=None, crumbs=True, cz_bar=True, footer_extra="", crumb=None, og_image=None):
     ogi = og_image or OG_IMAGE

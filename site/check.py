@@ -106,7 +106,7 @@ for f in pages + [pathlib.Path("virtual") / n for n in VIRTUAL]:
     canon = re.search(r'<link rel="canonical" href="([^"]+)">', h)
     check(canon and f'<meta property="og:url" content="{canon.group(1)}">' in h, f"{f.name}: og:url is not the canonical address")
     if canon: canonicals.add(canon.group(1))
-    _og = "/civilization-zero-one-human-among-many.png" if f.name == "civilization-zero-images.html" else "/og.png"   # the images' page previews with one of its images
+    _og = "/civilization-zero-one-human-among-many.png" if f.name == "civilization-zero-images.html" else "/civilization-zero.png"   # the images' page previews with one of its images
     check(f'<meta property="og:image" content="{ORIGIN}{_og}">' in h and '<meta name="twitter:card" content="summary_large_image">' in h, f"{f.name}: link-preview metadata")
     check(h.count("<title>") == 1 and "__TITLE__" not in h.split("<body>")[0], f"{f.name}: one title")
     if f in core_cluster: check(cluster_links <= set(re.findall(r'<link rel="alternate" hreflang="[^"]+" href="[^"]+">', h)), f"{f.name}: hreflang group incomplete")
@@ -120,6 +120,7 @@ rb = (PUBLIC / "robots.txt").read_text("utf-8")
 check(f"Sitemap: {ORIGIN}/sitemap.xml" in rb and f"Sitemap: {ORIGIN}/sitemap-discussion.xml" in rb and "Disallow: /admin" in rb, "robots.txt: sitemap and the administrator's page")
 og = (PUBLIC / "og.png").read_bytes()
 check(og[:8] == b"\x89PNG\r\n\x1a\n" and struct.unpack(">II", og[16:24]) == (1200, 630), "og.png: a 1200x630 PNG")
+check((PUBLIC / "civilization-zero.png").read_bytes() == og, "/civilization-zero.png: the link-preview image under its descriptive name, the same bytes as /og.png")
 # the icons: every page names them; each file is what its name says (a PNG of its size; an ICO of 16, 32 and 48 pixels)
 # (the ICO named at one size and the SVG at "any", last: then Chromium shows the SVG, which follows the reader's palette — lib.py)
 ICON_HEAD = ('<link rel="icon" href="/favicon.ico" sizes="48x48"><link rel="icon" href="/favicon-96x96.png" type="image/png" sizes="96x96">'

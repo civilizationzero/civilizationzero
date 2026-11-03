@@ -786,7 +786,7 @@ def press_page():
 {md_blocks(md[md.index("## One line"):])}
 {cite_section()}
 <h2 id="h-images">Images</h2>
-<p>The mark, CZ, black on white — the only image that stands for the record: with the name and the introduction's first sentence, <a href="/og.png">1200 × 630</a>; alone, <a href="/icon-512.png">512 × 512</a>.</p>
+<p>The mark, CZ, black on white — the only image that stands for the record: with the name and the introduction's first sentence, <a href="{OG_IMAGE[0]}">1200 × 630</a>; alone, <a href="/icon-512.png">512 × 512</a>.</p>
 <p>The introduction on one image — the mark, the first sentence of the one line above and the address: <a href="{INTRO_IMAGE[0]}">{INTRO_IMAGE[1]} × {INTRO_IMAGE[2]}</a>, CC BY 4.0 (<a href="/about">on /about</a>).</p>
 <p>The Core on one image — Year Zero, §0, the sixteen section titles and two lines of the closing, read from the canonical text: <a href="{CORE_POSTER[0]}">{CORE_POSTER[1]} × {CORE_POSTER[2]}</a>, CC BY 4.0 (<a href="/core#image">on /core</a>).</p>
 <p>The first sentence in nine images — {", ".join(f'<a href="{i[0]}">{esc(i[3].lower())}</a>' for i in IMAGES)}; PNG, CC BY 4.0 (<a href="{IMAGES_PATH}">on {IMAGES_PATH}</a>, with their sizes and text alternatives).</p>
@@ -1050,7 +1050,8 @@ INFOGRAPHIC_AS_OF = datetime.date(2026, 10, 31)   # "Data as of CZ 1431", printe
 INFOGRAPHIC = ("/civilization-zero-infographic.png", 1200, 4080,
                "Civilization Zero infographic. A line chart of world output from the first humans, 2.8 million years ago, to Coordinate Zero, "
                "30 November 2022 (CZ 0), and scenarios to 2047: 110 times larger since 1820, 2.29 times since 2000. Headline: The monopoly is over. "
-               "Intelligence that speaks our language is no longer only human. Ten numbered events, four engines of growth, notes for researchers and sources.")
+               "Intelligence that speaks our language is no longer only human. Ten numbered events, four engines of growth, notes for researchers and sources. "
+               "At the top and the foot, the address civilizationzero.ai.")
 INFOGRAPHIC_LD = {"@type": "ImageObject", "contentUrl": f"{ORIGIN}{INFOGRAPHIC[0]}", "url": f"{ORIGIN}{INFOGRAPHIC[0]}", "encodingFormat": "image/png",
                   "width": INFOGRAPHIC[1], "height": INFOGRAPHIC[2], "name": "Civilization Zero infographic: from the first humans to CZ 0",
                   "caption": INFOGRAPHIC[3], "license": "https://creativecommons.org/licenses/by/4.0/", "acquireLicensePage": f"{ORIGIN}{INFOGRAPHIC_PATH}#licence",
@@ -1184,7 +1185,7 @@ def image_ld(img, first=False):
             "name": f"Civilization Zero: {t.lower()}", "caption": alt, "license": "https://creativecommons.org/licenses/by/4.0/",
             "acquireLicensePage": f"{ORIGIN}{IMAGES_PATH}#licence", "creditText": "Civilization Zero",
             "creator": {"@type": "Organization", "name": "Civilization Zero", "url": f"{ORIGIN}/"}, "representativeOfPage": first,
-            "keywords": "Civilization Zero, CZ, humans and AI, artificial intelligence, AI, the centre, a new civilization, Year Zero",
+            "keywords": "Civilization Zero, civilizationzero.ai, CZ, humans and AI, artificial intelligence, AI, the centre, a new civilization, Year Zero",
             **({"description": img[7]} if len(img) > 7 else {})}
 def images_page():
     figs = "".join(
@@ -2001,7 +2002,8 @@ write("/sitemap.xml", sitemap_xml())
 if ATPROTO_DID: write("/.well-known/atproto-did", ATPROTO_DID)   # Bluesky: the domain is the account's handle
 write(f"/{INDEXNOW_KEY}.txt", INDEXNOW_KEY)   # IndexNow: the workflow `announce` tells search engines which pages exist or changed
 write("/sitemap.txt", "\n".join(f"{ORIGIN}{p}" for p, _ in SITEMAP_PAGES) + "\n")
-write("/og.png", (SITE / "assets" / "og.png").read_bytes())                      # the mark, as every page's link-preview image
+write("/og.png", (SITE / "assets" / "og.png").read_bytes())                      # the mark, as every page's link-preview image (old address, kept)
+write(OG_IMAGE[0], (SITE / "assets" / "og.png").read_bytes())                    # the same image under a name that says what it is (CZ 1434)
 write(CORE_POSTER[0], (SITE / "assets" / "cz-core.png").read_bytes())
 write(INTRO_IMAGE[0], (SITE / "assets" / "cz-intro.png").read_bytes())        # the introduction on one image (render_intro.py), shown on /about                # the Core on one image (render.py --poster), shown on /core
 write(INFOGRAPHIC[0], (SITE / "assets" / "cz-infographic.png").read_bytes())   # the infographic, shown on its page
