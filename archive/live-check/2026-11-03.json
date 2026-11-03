@@ -1,12 +1,12 @@
 {
  "what": "The daily check of the live site by site/verify/live-check.mjs: what the site sends and how it answers, against what its pages say. The record's own checks are verify.py's.",
- "checked_at": "2026-11-03T04:23:42Z",
+ "checked_at": "2026-11-03T11:19:02Z",
  "site": "https://civilizationzero.ai",
  "commit": "689c3128e2220cb2399920a25086563db043d2a1",
  "passed": 46,
  "total": 46,
  "failed": [],
- "run": "https://github.com/civilizationzero/civilizationzero/actions/runs/41577838622",
+ "run": "https://github.com/civilizationzero/civilizationzero/actions/runs/41626471120",
  "script": "site/verify/live-check.mjs",
  "checks": [
   {
@@ -62,7 +62,7 @@
   {
    "name": "/how-it-is-built: HTML with its policy, no cookie, its weight, its Markdown linked",
    "ok": true,
-   "detail": "42441 bytes"
+   "detail": "42236 bytes"
   },
   {
    "name": "/discuss: HTML with its policy, no cookie, its weight, its Markdown linked",
@@ -72,7 +72,7 @@
   {
    "name": "/stats: HTML with its policy, no cookie, its weight, its Markdown linked",
    "ok": true,
-   "detail": "36090 bytes"
+   "detail": "36352 bytes"
   },
   {
    "name": "/respond: HTML with its policy, no cookie, its weight, its Markdown linked",
@@ -212,7 +212,7 @@
   {
    "name": "GET of a translation only reads (never asks the engine)",
    "ok": true,
-   "detail": "qov"
+   "detail": "qrk"
   },
   {
    "name": "a translation asked for from another site's page is refused",
