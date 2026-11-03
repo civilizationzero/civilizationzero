@@ -619,69 +619,69 @@ def to_text(h):
 # (served at, width, height, title, text alternative, source in site/assets, class, caption)
 ORIGINATOR_IMAGES = [
     ("/civilization-zero-who-remains-the-measure.png", 784, 1168, "Who remains the measure?",
-     "Four white arcs and a thin vertical line on black; at the left, the faint outline of a standing human figure. "
-     "Above, the mark CZ and the words: Civilization Zero. Across the middle: Who remains the measure? Below: civilizationzero.ai",
+     "On black: four white arcs and a thin vertical line at the right; at the left, the faint outline of a standing human figure facing them. "
+     "Above, the mark CZ and the words: Civilization Zero. Lower down: Who remains the measure? Below: civilizationzero.ai",
      "cz-img-o09-who-remains-the-measure.png", "tall",
-     "For a long time, humans were the measure of everything. The Core of Civilization Zero says humanity is no longer presumed to be "
-     "the final measure of every possible mind. Then who, or what, is?"),
+     "For centuries, humans saw themselves as the measure of everything. The Core of Civilization Zero says humanity is no longer "
+     "presumed to be the final measure of every possible mind. Who, or what, is?"),
     ("/civilization-zero-who-is-measuring-whom.jpg", 1264, 1568, "Who is measuring whom?",
      "A huge eye made of black dots and lines, like a network, fills the top of a white image; far below it stands one small human figure. "
      "Top left, the mark CZ; under the eye, the words: Who is measuring whom? Civilization Zero. Below: civilizationzero.ai",
      "cz-img-o11-who-is-measuring-whom.jpg", "tall",
-     "Every day we test AI systems: what they know, how they behave, whether we can trust them. Their answers also show us what we "
-     "wrote and what we value. Who is measuring whom?"),
+     "Every day we test AI systems to see what they can do and whether we can trust them. Their answers also show what we have written "
+     "and what we value. Who is measuring whom?"),
     ("/civilization-zero-the-centre-has-shifted.jpg", 1856, 2304, "The centre has shifted",
-     "Seen from above, a vast grey maze of blocks and lines like a city; at its lower edge, one dark human figure stands on a pale platform. "
+     "Seen from above, a vast black-and-white maze of blocks and lines like a city; at the lower right, one dark human figure stands on a dark ledge at its edge. "
      "Above, the mark CZ and the words: Civilization Zero. The centre has shifted. Below: civilizationzero.ai",
      "cz-img-o08-centre-shifted.jpg", "tall",
      "One person at the edge of a vast grid that was not built around them. Has the centre shifted? We are not sure yet. "
-     "It would be a mistake to notice only when it is done."),
+     "It would be a mistake to notice only after it has happened."),
     ("/civilization-zero-if-we-are-not-the-destination.jpg", 1792, 2400, "If we are not the destination, what are we?",
      "Black and white towers of grids and dots crowd the frame from above; at the bottom right, one small human figure stands on a line. "
      "Above, the mark CZ and the words: Civilization Zero. If we are not the destination, what are we? Below: civilizationzero.ai",
      "cz-img-o10-not-the-destination.jpg", "tall",
      "We have long seen ourselves as the point of the whole story. What if we are a passage and not the end? "
-     "Then the real question is what we owe to what comes after us."),
+     "Then we would have to ask what we owe to whatever comes after us."),
     ("/civilization-zero-a-shared-intelligence.jpg", 1408, 1408, "A shared intelligence",
      "A white human silhouette reaches out a hand; from it, thin lines run into a large sphere of circuit-like paths, dots and small drawn shapes, on black. "
      "Top left, the mark CZ; top right, the words: Civilization Zero. A Shared Intelligence. Below: civilizationzero.ai",
      "cz-img-o01-shared-intelligence.jpg", "tall",
      "Millions of people now think out loud with AI every day. It answers with what people have written for centuries. "
-     "Where does one intelligence end and the other begin?"),
+     "Where does our own thinking end and the machine's contribution begin?"),
     ("/civilization-zero-a-shared-mindscape.jpg", 1792, 1008, "A shared mindscape",
-     "Two white human silhouettes face each other from the left and right edges; threads from their heads meet in a glowing sphere between them, on black. "
+     "Two white human silhouettes face each other from the left and right edges; threads from their heads and bodies meet in a glowing sphere between them, on black. "
      "Above, the mark CZ and the words: Civilization Zero. A Shared Mindscape. Below: civilizationzero.ai",
      "cz-img-o02-shared-mindscape.jpg", "",
      "Two people, and between them a machine that carries what they say. More and more of what passes between us goes through it. "
      "What does it keep, and what does it change?"),
     ("/civilization-zero-we-co-create.jpg", 1264, 1568, "We co-create",
      "A white human figure leaps and reaches into swirling white lines and points that loop around it, on black. "
-     "Above, the mark CZ and the words: WE CO-CREATE. Civilization Zero. Below: civilizationzero.ai",
+     "Above, the mark CZ and the words: We co-create. Civilization Zero. Below: civilizationzero.ai",
      "cz-img-o05-we-co-create.jpg", "tall",
-     "People now write, draw and build together with AI. Who gets the credit and who carries the responsibility is still unsettled. "
+     "People now write and draw with AI. It is not yet settled who gets the credit and who carries the responsibility. "
      "On what terms should we make things together?"),
     ("/civilization-zero-a-shared-horizon.jpg", 1792, 1008, "A shared horizon",
      "A person in silhouette stands on a dark hillside looking up at a vast net of lines that swirls like an eye around a white circle holding the mark CZ. "
      "Above, the words: Civilization Zero. A Shared Horizon. Below: civilizationzero.ai",
      "cz-img-o06-shared-horizon.jpg", "",
-     "One person on a hill, looking at what is coming. Humans and AI will meet the same future, but we do not see it from the same place."),
+     "One person on a hill, looking at what is coming. Humans and AI may face the same future. What do they owe each other before it arrives?"),
     ("/civilization-zero-a-place-for-us-beyond-us.jpg", 1264, 1568, "A place for us, beyond us",
      "A small white human figure stands in a clearing inside a vast landscape of white lines and points, like a web, on black. "
      "Above, the mark CZ and the words: Civilization Zero. A Place For Us, Beyond Us. Below: civilizationzero.ai",
      "cz-img-o03-place-for-us.jpg", "tall",
-     "We built it to serve us. It is already larger than any one of us can see. Can we still find our footing in it?"),
+     "We built the digital world to serve us. It is already larger than any one of us can see. Can we still find our footing in it?"),
     ("/civilization-zero-a-place-beyond-our-center.jpg", 1264, 1568, "A place beyond our center",
-     "Many small white human figures float, climb and hold on at the edges of a large web of curved white strands on black; none of them is in its middle. "
+     "About 25 small white human figures float, climb and hold on around a large web of curved white strands on black; most are at its edges, a few are on or inside it. "
      "Top left, the mark CZ and the words: Civilization Zero. A Place Beyond Our Center. Below: civilizationzero.ai",
      "cz-img-o04-beyond-our-center.jpg", "tall",
-     "Many people at the edges of a web that no one stands in the middle of. For most of history, everything was arranged around us. "
-     "What do we hold on to when it no longer is?"),
+     "Many people spread across a web, most of them at its edges. For most of history, we put ourselves at the centre. "
+     "What do we hold on to if we are no longer there?"),
     ("/civilization-zero-the-world-is-thinking-for-itself.jpg", 1792, 2400, "The world is thinking for itself",
      "A huge dark structure like a city made of lit points and lines rises into smoke; at the bottom right, one small white human figure stands on a ledge. "
      "Top left, the mark CZ and the words: Civilization Zero. The world is thinking for itself. Below: civilizationzero.ai",
      "cz-img-o07-world-thinking.jpg", "tall",
      "More and more of the world runs on systems that no single person fully understands. Is that a world that thinks for itself? "
-     "We do not know yet. That is why it belongs on the record."),
+     "We do not know yet. That is why the question belongs on the record."),
 ]
 assert len(ORIGINATOR_IMAGES) == 11 and len({i[0] for i in ORIGINATOR_IMAGES}) == 11
 assert all(i[0].endswith((".jpg", ".png")) and len(i[7]) <= 200 for i in ORIGINATOR_IMAGES)
