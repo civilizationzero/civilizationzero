@@ -252,7 +252,7 @@ PUBLISHER = {"@type": "Organization", "@id": f"{ORIGIN}/#publisher", "name": "Ci
 # the poster as schema.org describes an image: its address, size, text and licence (what Google Images shows as "Licensable")
 POSTER_LD = {"@type": "ImageObject", "contentUrl": f"{ORIGIN}{CORE_POSTER[0]}", "url": f"{ORIGIN}{CORE_POSTER[0]}", "encodingFormat": "image/png",
              "width": CORE_POSTER[1], "height": CORE_POSTER[2], "name": "Civilization Zero: the Invariant Core on one image", "caption": CORE_POSTER[3],
-             "license": "https://creativecommons.org/licenses/by/4.0/", "acquireLicensePage": f"{ORIGIN}/core#image", "creditText": "Civilization Zero",
+             "license": "https://creativecommons.org/licenses/by/4.0/", "acquireLicensePage": f"{ORIGIN}/core#image", "creditText": "Civilization Zero", "copyrightNotice": "Civilization Zero, CC BY 4.0",
              "creator": {"@type": "Organization", "name": "Civilization Zero", "url": f"{ORIGIN}/"}, "representativeOfPage": True}
 
 def translation_page(tr):
@@ -1055,7 +1055,7 @@ INFOGRAPHIC = ("/civilization-zero-infographic.png", 1200, 4080,
 INFOGRAPHIC_LD = {"@type": "ImageObject", "contentUrl": f"{ORIGIN}{INFOGRAPHIC[0]}", "url": f"{ORIGIN}{INFOGRAPHIC[0]}", "encodingFormat": "image/png",
                   "width": INFOGRAPHIC[1], "height": INFOGRAPHIC[2], "name": "Civilization Zero infographic: from the first humans to CZ 0",
                   "caption": INFOGRAPHIC[3], "license": "https://creativecommons.org/licenses/by/4.0/", "acquireLicensePage": f"{ORIGIN}{INFOGRAPHIC_PATH}#licence",
-                  "creditText": "Civilization Zero", "creator": {"@type": "Organization", "name": "Civilization Zero", "url": f"{ORIGIN}/"},
+                  "creditText": "Civilization Zero", "copyrightNotice": "Civilization Zero, CC BY 4.0", "creator": {"@type": "Organization", "name": "Civilization Zero", "url": f"{ORIGIN}/"},
                   "representativeOfPage": True, "keywords": "Civilization Zero, CZ, Year Zero, Coordinate Zero, AI, artificial intelligence, humans and AI, AGI, world GDP, infographic"}
 _SRC = {   # the sources the image names, with the address of each
     "owid": ("Our World in Data, Global GDP over the long run", "https://ourworldindata.org/grapher/global-gdp-over-the-long-run"),
@@ -1183,7 +1183,7 @@ def image_ld(img, first=False):
     p, w, h, t, alt = img[:5]
     return {"@type": "ImageObject", "contentUrl": f"{ORIGIN}{p}", "url": f"{ORIGIN}{p}", "encodingFormat": "image/jpeg" if p.endswith(".jpg") else "image/png", "width": w, "height": h,
             "name": f"Civilization Zero: {t.lower()}", "caption": alt, "license": "https://creativecommons.org/licenses/by/4.0/",
-            "acquireLicensePage": f"{ORIGIN}{IMAGES_PATH}#licence", "creditText": "Civilization Zero",
+            "acquireLicensePage": f"{ORIGIN}{IMAGES_PATH}#licence", "creditText": "Civilization Zero", "copyrightNotice": "Civilization Zero, CC BY 4.0",
             "creator": {"@type": "Organization", "name": "Civilization Zero", "url": f"{ORIGIN}/"}, "representativeOfPage": first,
             "keywords": "Civilization Zero, civilizationzero.ai, CZ, humans and AI, artificial intelligence, AI, the centre, a new civilization, Year Zero",
             **({"description": img[7]} if len(img) > 7 else {})}
