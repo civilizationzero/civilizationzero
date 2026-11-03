@@ -40,7 +40,7 @@ class P(HTMLParser):
         if self.stack and self.stack[-1] == t: self.stack.pop()
         else: self.err.append((t, self.stack[-3:]))
 
-FUNCTION_ROUTES = {"/", "/sitemap-discussion.xml", "/stats", "/stats.json", "/index.json", "/index.txt", "/api/entries", "/discuss", "/discuss.json", "/respond", "/api/moderation", "/api/cron/daily", "/archive/entries.json",
+FUNCTION_ROUTES = {"/", "/sitemap-discussion.xml", "/stats", "/stats.json", "/index.json", "/index.txt", "/api/entries", "/discuss", "/discuss.json", "/discuss.xml", "/respond", "/api/moderation", "/api/cron/daily", "/archive/entries.json",
                    "/adopt", "/adopt.json", "/api/adopt", "/archive/register.json", "/api/calendar", "/calendar.json"}
 def resolves(path):
     if path == "/index.md": return True   # every page as Markdown (stage 5): the first page's, and <page>.md for the others (vercel.json, checked below)
@@ -339,7 +339,8 @@ check(all(isinstance(t, dict) and re.fullmatch(r"[a-z0-9-]{2,40}", str(t.get("sl
       and len(set(_slugs)) == len(_slugs) and len(set(_entries)) == len(_entries) and sum(1 for t in THEMES if t.get("proposals")) <= 1, "THEMES: slug, title, entry and date for each; no repeats; one theme for proposals at most")
 check(DT.get("themes") == THEMES, "discuss templates: the themes as in lib.py")
 check(any(r.get("source") == "/discuss.json" and r.get("destination") == "/api/archive" for r in v.get("rewrites", [])), "vercel.json: /discuss.json → function")
-for fn in ("api/entries.js", "api/discuss.js", "api/archive.js", "api/moderation.js", "api/cron/daily.js", "api/adopt.js", "room/lib.js", "room/register.js"):
+check(any(r.get("source") == "/discuss.xml" and r.get("destination") == "/api/feed" for r in v.get("rewrites", [])), "vercel.json: /discuss.xml → the feed function")
+for fn in ("api/entries.js", "api/discuss.js", "api/archive.js", "api/feed.js", "api/moderation.js", "api/cron/daily.js", "api/adopt.js", "room/lib.js", "room/register.js"):
     r = subprocess.run(["node", "--check", str(SITE / fn)], capture_output=True)
     check(r.returncode == 0, f"{fn}: syntax {r.stderr.decode()[:200]}")
 check(not (PUBLIC / "index.html").exists(), "public/index.html must not exist (the function serves /)")

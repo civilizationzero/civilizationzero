@@ -298,6 +298,23 @@
         }
       }
     },
+    "/discuss.xml": {
+      "get": {
+        "summary": "The newest 50 entries that are not hidden, newest first, as an Atom feed (RFC 4287; replies carry thr:in-reply-to, RFC 4685). A view: the canonical order is in /discuss.json. Content is text, never markup; a shared cache may serve it up to about five minutes behind",
+        "responses": {
+          "200": {
+            "description": "The feed",
+            "content": {
+              "application/atom+xml": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/archive/entries.json": {
       "get": {
         "summary": "The index of the daily chain: every hashed UTC day with its hash, the previous day's hash, the count and the last id",

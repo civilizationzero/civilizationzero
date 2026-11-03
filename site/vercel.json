@@ -420,6 +420,10 @@
       "destination": "/api/archive"
     },
     {
+      "source": "/discuss.xml",
+      "destination": "/api/feed"
+    },
+    {
       "source": "/sitemap-discussion.xml",
       "destination": "/api/discuss?page=sitemap"
     },
@@ -532,7 +536,7 @@
         },
         {
           "key": "Link",
-          "value": "</discuss.json>; rel=\"alternate\"; type=\"application/json\""
+          "value": "</discuss.json>; rel=\"alternate\"; type=\"application/json\", </discuss.xml>; rel=\"alternate\"; type=\"application/atom+xml\""
         }
       ]
     },
@@ -864,6 +868,15 @@
         {
           "key": "Vary",
           "value": "Accept"
+        }
+      ]
+    },
+    {
+      "source": "/discuss.xml",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
         }
       ]
     },
