@@ -1,88 +1,88 @@
 {
  "what": "The daily check of the live site by site/verify/live-check.mjs: what the site sends and how it answers, against what its pages say. The record's own checks are verify.py's.",
- "checked_at": "2026-11-03T11:19:02Z",
+ "checked_at": "2026-11-03T12:50:16Z",
  "site": "https://civilizationzero.ai",
- "commit": "689c3128e2220cb2399920a25086563db043d2a1",
+ "commit": "0890a483015a897eb3e3b64a0982e54cf0c9d933",
  "passed": 46,
  "total": 46,
  "failed": [],
- "run": "https://github.com/civilizationzero/civilizationzero/actions/runs/41626471120",
+ "run": "https://github.com/civilizationzero/civilizationzero/actions/runs/41639026975",
  "script": "site/verify/live-check.mjs",
  "checks": [
   {
    "name": "/: HTML with its policy, no cookie, its weight, its Markdown linked",
    "ok": true,
-   "detail": "36928 bytes"
+   "detail": "36943 bytes"
   },
   {
    "name": "/core: HTML with its policy, no cookie, its weight, its Markdown linked",
    "ok": true,
-   "detail": "49880 bytes"
+   "detail": "49946 bytes"
   },
   {
    "name": "/record: HTML with its policy, no cookie, its weight, its Markdown linked",
    "ok": true,
-   "detail": "69693 bytes"
+   "detail": "69708 bytes"
   },
   {
    "name": "/about: HTML with its policy, no cookie, its weight, its Markdown linked",
    "ok": true,
-   "detail": "36402 bytes"
+   "detail": "36417 bytes"
   },
   {
    "name": "/machine: HTML with its policy, no cookie, its weight, its Markdown linked",
    "ok": true,
-   "detail": "33040 bytes"
+   "detail": "33055 bytes"
   },
   {
    "name": "/ask: HTML with its policy, no cookie, its weight, its Markdown linked",
    "ok": true,
-   "detail": "33216 bytes"
+   "detail": "33231 bytes"
   },
   {
    "name": "/archive: HTML with its policy, no cookie, its weight, its Markdown linked",
    "ok": true,
-   "detail": "39688 bytes"
+   "detail": "39703 bytes"
   },
   {
    "name": "/calendar: HTML with its policy, no cookie, its weight, its Markdown linked",
    "ok": true,
-   "detail": "35857 bytes"
+   "detail": "35872 bytes"
   },
   {
    "name": "/objections: HTML with its policy, no cookie, its weight, its Markdown linked",
    "ok": true,
-   "detail": "38021 bytes"
+   "detail": "38036 bytes"
   },
   {
    "name": "/press: HTML with its policy, no cookie, its weight, its Markdown linked",
    "ok": true,
-   "detail": "32908 bytes"
+   "detail": "32938 bytes"
   },
   {
    "name": "/how-it-is-built: HTML with its policy, no cookie, its weight, its Markdown linked",
    "ok": true,
-   "detail": "42236 bytes"
+   "detail": "42456 bytes"
   },
   {
    "name": "/discuss: HTML with its policy, no cookie, its weight, its Markdown linked",
    "ok": true,
-   "detail": "40610 bytes"
+   "detail": "40625 bytes"
   },
   {
    "name": "/stats: HTML with its policy, no cookie, its weight, its Markdown linked",
    "ok": true,
-   "detail": "36352 bytes"
+   "detail": "36372 bytes"
   },
   {
    "name": "/respond: HTML with its policy, no cookie, its weight, its Markdown linked",
    "ok": true,
-   "detail": "24387 bytes"
+   "detail": "24402 bytes"
   },
   {
    "name": "/adopt: HTML with its policy, no cookie, its weight, its Markdown linked",
    "ok": true,
-   "detail": "31103 bytes"
+   "detail": "31118 bytes"
   },
   {
    "name": "security headers on every page (HSTS, nosniff, frame, referrer)",
@@ -212,7 +212,7 @@
   {
    "name": "GET of a translation only reads (never asks the engine)",
    "ok": true,
-   "detail": "qrk"
+   "detail": "qdk"
   },
   {
    "name": "a translation asked for from another site's page is refused",
@@ -237,7 +237,7 @@
   {
    "name": "/how-it-is-built names the commit it was deployed from",
    "ok": true,
-   "detail": "689c3128e2220cb2399920a25086563db043d2a1"
+   "detail": "0890a483015a897eb3e3b64a0982e54cf0c9d933"
   }
  ]
 }
