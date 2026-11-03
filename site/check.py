@@ -413,7 +413,7 @@ for fn in ("api/page.js", "api/calendar.js", "room/cztime.js", "api/home.js"):
     _rc = subprocess.run(["node", "--check", str(SITE / fn)], capture_output=True)
     check(_rc.returncode == 0, f"{fn}: syntax {_rc.stderr.decode()[:200]}")
 check(any(r.get("source") == "/calendar" and r.get("destination") == "/api/page?p=calendar" for r in v.get("rewrites", [])), "vercel.json: /calendar → api/page.js")
-for _src in ("/core", "/record", "/objections", "/ask", "/machine", "/about", "/archive", "/civilization-zero-infographic", "/civilization-zero-images") + (("/press",) if PRESS_PUBLISHED else ()):
+for _src in ("/core", "/record", "/objections", "/ask", "/machine", "/about", "/archive", "/civilization-zero-infographic", "/civilization-zero-evidence-atlas", "/civilization-zero-images") + (("/press",) if PRESS_PUBLISHED else ()):
     check(any(r.get("source") == _src and "has" not in r and r.get("destination") == f"/api/page?p={_src[1:]}" for r in v.get("rewrites", [])), f"vercel.json: {_src} → api/page.js (CZ time at the top)")
 check("public/*.html" in json.dumps(v.get("functions", {}).get("api/page.js", {})), "vercel.json: api/page.js carries the pages (includeFiles)")
 # the infographic (31 Oct 2026): its page names the image, its size and its text alternative; the image is the PNG of that size; the sitemap
@@ -424,6 +424,18 @@ check(_igb[:8] == b"\x89PNG\r\n\x1a\n" and struct.unpack(">II", _igb[16:24]) == 
       "the infographic: a 1200x4080 PNG, named on its page with its size and text alternative")
 check("<image:loc>https://civilizationzero.ai/civilization-zero-infographic.png</image:loc>" in (PUBLIC / "sitemap.xml").read_text("utf-8"), "sitemap.xml: the infographic's image")
 check("civilization-zero-infographic" in (SITE / "api" / "page.js").read_text("utf-8"), "api/page.js serves the infographic's page")
+# the evidence atlas (3 Nov 2026): its page names the image, its size and its text alternative; the two PNGs are the sizes named and the
+# PDF is a PDF; the ten panels are written out on the page; the sitemap lists the page with its images; api/page.js serves the page
+_at = (PUBLIC / "civilization-zero-evidence-atlas.html").read_text("utf-8")
+_atb, _atf = (PUBLIC / "civilization-zero-evidence-atlas.png").read_bytes(), (PUBLIC / "civilization-zero-evidence-atlas-full.png").read_bytes()
+check(_atb[:8] == b"\x89PNG\r\n\x1a\n" and struct.unpack(">II", _atb[16:24]) == (1200, 1697) and 'width="1200" height="1697"' in _at
+      and 'alt="Civilization Zero evidence atlas, After Coordinate Zero:' in _at and _atf[:8] == b"\x89PNG\r\n\x1a\n" and struct.unpack(">II", _atf[16:24]) == (2339, 3308)
+      and (PUBLIC / "civilization-zero-evidence-atlas.pdf").read_bytes()[:5] == b"%PDF-", "the evidence atlas: the PNGs of the sizes named, the PDF, the text alternative")
+check(all(f'id="panel-{_l}"' in _at for _l in "abcdefghij"), "the evidence atlas: the ten panels written out with their sources")
+_smx = (PUBLIC / "sitemap.xml").read_text("utf-8")
+check("<loc>https://civilizationzero.ai/civilization-zero-evidence-atlas</loc>" in _smx and "<image:loc>https://civilizationzero.ai/civilization-zero-evidence-atlas.png</image:loc>" in _smx,
+      "sitemap.xml: the evidence atlas and its image")
+check("civilization-zero-evidence-atlas" in (SITE / "api" / "page.js").read_text("utf-8"), "api/page.js serves the evidence atlas")
 # the images of the first sentence (CZ 1432): each a greyscale PNG of the size its page names, with its text alternative carrying the
 # sentence word for word; all three in the sitemap with their page; the page served by api/page.js and its preview image one of them
 _im = (PUBLIC / "civilization-zero-images.html").read_text("utf-8")

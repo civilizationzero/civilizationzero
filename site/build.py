@@ -1003,7 +1003,7 @@ Content-Type: application/json
 </ul>
 </section>
 <section aria-labelledby="h-dates"><h2 id="h-dates">Dates</h2>
-<p>The site's dates are in CZ time, counted from Coordinate Zero: CZ day 0 is 30 November 2022, the day that began at 00:00 UTC, and a CZ day is a UTC day. The date is the count of days, <code>CZ 1430</code> (<code>CZ −1997</code> before zero), and a time of day follows it in UTC: <code>CZ 1430 15:20 UTC</code>. The machine form is the signed count in ASCII, <code>CZ+1430</code>, <code>CZ-1997</code>; day = Julian Day Number − 2,459,914. Every date in a page is a link to the converter, with the ISO value in <code>&lt;time datetime&gt;</code>; the data forms (JSON, the API, the archive) keep ISO 8601. The exceptions are deliberate: quotations of the canonical texts keep their own words, the press kit uses ordinary dates for its readers, and the infographic's history uses ordinary years. How it works, and the converters: <a href="/calendar">/calendar</a>.</p>
+<p>The site's dates are in CZ time, counted from Coordinate Zero: CZ day 0 is 30 November 2022, the day that began at 00:00 UTC, and a CZ day is a UTC day. The date is the count of days, <code>CZ 1430</code> (<code>CZ −1997</code> before zero), and a time of day follows it in UTC: <code>CZ 1430 15:20 UTC</code>. The machine form is the signed count in ASCII, <code>CZ+1430</code>, <code>CZ-1997</code>; day = Julian Day Number − 2,459,914. Every date in a page is a link to the converter, with the ISO value in <code>&lt;time datetime&gt;</code>; the data forms (JSON, the API, the archive) keep ISO 8601. The exceptions are deliberate: quotations of the canonical texts keep their own words, the press kit uses ordinary dates for its readers, the infographic's history uses ordinary years, and the evidence atlas keeps its sources' dates. How it works, and the converters: <a href="/calendar">/calendar</a>.</p>
 </section>
 <section aria-labelledby="h-refs"><h2 id="h-refs">Section references</h2>
 <p>The Core's own numbers, 0–15, everywhere: displayed <code>§3</code>, anchored <code>/core#p3</code>, and <code>"ref": "3"</code> in the API. The Interpretive Record: <code>/record#s3</code>, subsections <code>/record#s3-4</code>.</p>
@@ -1135,6 +1135,105 @@ def infographic_page():
     return shell("Civilization Zero Infographic: From the First Humans to AI", body, INFOGRAPHIC_PATH,
                  "Civilization Zero (CZ) on one image: from the first humans to Year Zero, 30 November 2022, when language became a mass interface with AI. Sources cited.",
                  ldjson=ld, og_type="article", crumb="Infographic")
+
+# ---------------------------------------------------------------- /civilization-zero-evidence-atlas
+# The evidence atlas (the originator's request of 3 Nov 2026, CZ 1434): ten panels of measured change since Coordinate Zero on one A3
+# page. Drafted by another AI system from Claude's specification; every number checked by Claude against its primary source on 3 Nov
+# 2026, set in the site's colours, with the mark added (the originator: publish once the data are sure; the title kept, his choice).
+# Files in site/assets: cz-evidence-atlas.pdf (A3, vector), cz-evidence-atlas-full.png (2339 x 3308, from the PDF at 200 dpi) and
+# cz-evidence-atlas.png (1200 px wide, from the PDF). Every number on the image is written out below with its source.
+ATLAS_PATH = "/civilization-zero-evidence-atlas"
+ATLAS_AS_OF = datetime.date(2026, 11, 3)
+ATLAS = ("/civilization-zero-evidence-atlas.png", 1200, 1697,
+         "Civilization Zero evidence atlas, After Coordinate Zero: ten panels of measured change since 30 November 2022, checked on "
+         "3 November 2026. AI chatbot use (49% of US adults); a benchmark against human reference groups (GPQA); the 207-day doubling of the "
+         "length of task AI agents finish half the time; two work experiments (quality up 1.31 points; developers 19% slower); data-centre "
+         "electricity (360 to 485 TWh); Microsoft’s capital spending ($44.5 to $115.9 billion); beliefs about AI experience (medians 1% and "
+         "5%); the EU AI Act’s stages; and, apart, IEA scenarios for 2030 (833 to 1,008 TWh). The mark of Civilization Zero at the top, "
+         "civilizationzero.ai at the foot.")
+ATLAS_FULL = ("/civilization-zero-evidence-atlas-full.png", 2339, 3308)
+ATLAS_PDF = "/civilization-zero-evidence-atlas.pdf"
+ATLAS_LD = {"@type": "ImageObject", "contentUrl": f"{ORIGIN}{ATLAS[0]}", "url": f"{ORIGIN}{ATLAS[0]}", "encodingFormat": "image/png",
+            "width": ATLAS[1], "height": ATLAS[2], "name": "Civilization Zero evidence atlas: After Coordinate Zero",
+            "caption": ATLAS[3], "license": "https://creativecommons.org/licenses/by/4.0/", "acquireLicensePage": f"{ORIGIN}{ATLAS_PATH}#licence",
+            "creditText": "Civilization Zero", "copyrightNotice": "Civilization Zero, CC BY 4.0", "creator": {"@type": "Organization", "name": "Civilization Zero", "url": f"{ORIGIN}/"},
+            "representativeOfPage": True, "keywords": "Civilization Zero, CZ, Coordinate Zero, AI, artificial intelligence, evidence, data, AI adoption, benchmarks, data centres, AI Act, infographic"}
+_ASRC = {   # the sources the image names, with the address of each
+    "pew": ("Pew Research Center, Americans and AI 2026 (17 June 2026)", "https://www.pewresearch.org/internet/2026/06/17/americans-and-ai-2026-chatbots-smart-devices-and-views-on-impact/"),
+    "devday": ("OpenAI DevDay, 29 September 2026, as reported live", "https://simonwillison.net/2026/Sep/29/openai-devday-2026-live-blog/"),
+    "gpqa": ("Rein et al., GPQA, arXiv 2311.12022 (2023), Table 5", "https://arxiv.org/abs/2311.12022"),
+    "metr": ("Kwa et al. (METR), Measuring AI Ability to Complete Long Tasks, arXiv 2503.14499 v4, section 3.2", "https://arxiv.org/abs/2503.14499"),
+    "bcg": ("Dell’Acqua et al., Organization Science (2026), Table 4", "https://doi.org/10.1287/orsc.2025.21838"),
+    "rct": ("Becker et al. (METR), arXiv 2507.09089 (2025)", "https://arxiv.org/abs/2507.09089"),
+    "rct26": ("METR, We are Changing our Developer Productivity Experiment Design (24 February 2026)", "https://evals.alignment.org/blog/2026-02-24-uplift-update/"),
+    "iea": ("IEA, Key Questions on Energy and AI (2026), Table A.1", "https://iea.blob.core.windows.net/assets/3179f7f8-01f6-4dd6-bffa-c9f7b73f1dc9/KeyQuestionsonEnergyandAI.pdf"),
+    "msft": ("Microsoft, Annual Report 2026, cash flows statements (p. 41)", "https://www.sec.gov/Archives/edgar/data/0000789019/000119312526427876/d62902dars.pdf"),
+    "dreksler": ("Dreksler et al., Subjective Experience in AI Systems, arXiv 2506.11945 (2025), section 2.1", "https://arxiv.org/abs/2506.11945"),
+    "euact": ("European Commission, the AI Act and its timeline", "https://digital-strategy.ec.europa.eu/en/policies/regulatory-framework-ai"),
+    "omnibus": ("Regulation (EU) 2026/1744, which moved the high-risk dates", "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=OJ%3AL_202601744"),
+}
+def _asrc(*keys): return " · ".join(f'<a href="{_ASRC[k][1]}">{esc(_ASRC[k][0])}</a>' for k in keys)
+ATLAS_PANELS = [   # letter, kind of evidence, the panel's title, every number it shows, sources
+    ("A", "Survey and company report", "Reach depends on the denominator",
+     "49% of US adults say they use AI chatbots (February 2026; 5,119 adults; 95% sampling margin ±1.6 points). Pew changed its question in 2026, so no trend is drawn. "
+     "OpenAI said that 1.2 billion people use ChatGPT every week (September 2026): company-reported, unaudited, and a different denominator.", ("pew", "devday")),
+    ("B", "Benchmark, 2023", "Human reference groups matter",
+     "On the same 546 graduate-level science questions (GPQA’s extended set), domain experts answered 65.4% correctly, skilled non-experts with web access 33.9%, "
+     "and GPT-4, closed-book with few-shot chain-of-thought prompting, 38.7%. A 2023 baseline, not a current ranking.", ("gpqa",)),
+    ("C", "Fitted trend, models of 2019 to early 2025", "Longer tasks, at a fixed success rate",
+     "The length of task, measured in the time skilled people take, that AI agents complete with 50% success doubled every 207 days (95% bootstrap interval: 166 to 240 days). "
+     "The fit includes models from before CZ 0. A task horizon is not general intelligence.", ("metr",)),
+    ("D", "Experiment, consulting tasks, 2023", "AI raised quality in selected tasks",
+     "Consultants given GPT-4 scored 1.31 points higher on a 1–10 quality rubric than the control group without AI, and 1.48 points higher with a prompt overview "
+     "(385 consultants; selected tasks). The approximate 95% intervals on the image are computed from the published robust standard errors.", ("bcg",)),
+    ("E", "Experiment, experienced developers, early 2025", "AI slowed one developer sample",
+     "Sixteen experienced developers working on 246 tasks in open-source projects they knew took 19% longer when AI tools were allowed (95% confidence interval: +2% to +39%). "
+     "In February 2026 METR said developers are likely sped up more by today’s tools. One sample, not all programming.", ("rct", "rct26")),
+    ("F", "Model estimate, world data centres, 2023–2025", "Data-centre electricity use increased",
+     "All data centres, AI and other work together, used 360 TWh of electricity in 2023, 416 TWh in 2024 and 485 TWh in 2025. "
+     "Model estimates: no statistical intervals are published, and AI-only consumption is not metered.", ("iea",)),
+    ("G", "Audited filing, Microsoft", "Infrastructure spending increased",
+     "Microsoft’s cash additions to property and equipment: $44.477 billion in fiscal 2024, $64.551 billion in fiscal 2025 and $115.948 billion in fiscal 2026 "
+     "(years ending 30 June). The whole company in nominal dollars, not an AI-only budget; non-cash additions are excluded.", ("msft",)),
+    ("H", "Belief survey, fielded May 2024", "Beliefs are not a consciousness test",
+     "Asked for the chance that AI systems already had subjective experience in 2024, the median AI researcher answered 1% and the median US adult 5% "
+     "(582 AI researchers and 838 US adults surveyed). Beliefs do not establish consciousness.", ("dreksler",)),
+    ("I", "Official milestones, EU only", "Institutional response: EU rules took effect in stages",
+     "The EU AI Act entered into force on 1 August 2024. Its bans and AI-literacy duties applied from 2 February 2025, the obligations for general-purpose AI models "
+     "from 2 August 2025, and general application from 2 August 2026, with exceptions; a 2026 amendment moved the high-risk rules to 2027 and 2028. "
+     "Dates when rules apply do not measure enforcement.", ("euact", "omnibus")),
+    ("J", "Forecasts, not facts", "Data-centre electricity in 2030",
+     "The IEA’s scenarios for 2030, all data centres: Headwinds 833 TWh, High Efficiency 868, Base 945, Lift-Off 1,008. "
+     "A spread of named scenarios, not a confidence interval; the IEA assigns them no probabilities.", ("iea",)),
+]
+assert [p[0] for p in ATLAS_PANELS] == list("ABCDEFGHIJ"), "the atlas: ten panels, A to J"
+def atlas_page():
+    _s0 = verified_core("The date is a marker, not a cause, owner, origin of all intelligence, or erasure of what came before.")
+    rows = "".join(f'<li id="panel-{l.lower()}"><strong>{l} · {esc(t)}</strong> <span class="src">({esc(k)})</span><br>{esc(x)} '
+                   f'<span class="src">Source: {_asrc(*s)}.</span></li>' for l, k, t, x, s in ATLAS_PANELS)
+    body = f"""<main>
+<h1>Civilization Zero evidence atlas: after Coordinate Zero</h1>
+<p>Civilization Zero (CZ) counts its days from Coordinate Zero, <span class="nw">30 November 2022</span>, the day of ChatGPT’s public release. This atlas puts ten measured things since that day on one page: how widely AI is used, how it scores against human reference groups, what it changed in two work experiments, the electricity and capital behind it, what people believe about AI experience, how rules took effect, and, kept apart, forecasts.</p>
+<p><strong>Reported AI use is widespread. Effects vary by task.</strong> These data do not test consciousness, or whether humans are at the centre. “{esc(_s0)}” (<a href="/core#p0">Core §0</a>)</p>
+<p class="src">The small print is easier to read at full size: <a href="{ATLAS_FULL[0]}">the image at full size</a> ({ATLAS_FULL[1]} × {ATLAS_FULL[2]} pixels) or <a href="{ATLAS_PDF}">the PDF</a> (A3, for print). Everything in it is also written out below: <a href="#h-panels">the ten panels</a> and <a href="#h-sources">the sources</a>.</p>
+<figure class="infographic"><a href="{ATLAS_FULL[0]}"><img src="{ATLAS[0]}" width="{ATLAS[1]}" height="{ATLAS[2]}" alt="{esc(ATLAS[3])}" decoding="async" fetchpriority="high"></a>
+<figcaption class="src" id="licence">PNG, {ATLAS[1]} × {ATLAS[2]}; every number checked against its primary source on {time_el(ATLAS_AS_OF)}. Free to share under <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>, credited to Civilization Zero, with a link to <code>civilizationzero.ai{ATLAS_PATH}</code>. The data stay under their sources’ terms (the IEA’s: CC BY-NC-SA 4.0).</figcaption></figure>
+<section aria-labelledby="h-panels"><h2 id="h-panels">The ten panels</h2>
+<p>Each panel names its kind of evidence: a survey, a company report, a benchmark, a fitted trend, an experiment, a model estimate, a filing, a belief survey, a policy record or a scenario. Different panels answer different questions; their values cannot be added into a single “AI progress” score.</p>
+<ol class="atlas">{rows}</ol>
+</section>
+<section aria-labelledby="h-sources"><h2 id="h-sources">Sources</h2>
+<ul>{"".join(f'<li><a href="{u}">{esc(n)}</a></li>' for n, u in _ASRC.values())}</ul>
+<p>Prepared by AI systems at the originator’s request, and checked number by number against the sources above on {time_el(ATLAS_AS_OF)}. An error found is an objection: <a href="/objections">objections and errata</a>. The longer view, from the first humans to CZ 0: <a href="{INFOGRAPHIC_PATH}">the infographic</a>. What it all rests on: <a href="/core">the Invariant Core</a>.</p>
+</section>
+</main>"""
+    ld = [{"@context": "https://schema.org", "@type": "WebPage", "@id": f"{ORIGIN}{ATLAS_PATH}", "url": f"{ORIGIN}{ATLAS_PATH}",
+           "name": "Civilization Zero Evidence Atlas: After Coordinate Zero", "inLanguage": "en", "isPartOf": {"@id": f"{ORIGIN}/#website"},
+           "about": {"@type": "CreativeWork", "url": f"{ORIGIN}/core"}, "publisher": PUBLISHER, "primaryImageOfPage": ATLAS_LD,
+           "image": ATLAS_LD, "license": "https://creativecommons.org/licenses/by/4.0/"}]
+    return shell("Civilization Zero Evidence Atlas: After Coordinate Zero", body, ATLAS_PATH,
+                 "Civilization Zero (CZ) evidence atlas: ten panels of measured change since Coordinate Zero, 30 November 2022 — AI use, benchmarks, work, energy, beliefs and rules. Sources cited.",
+                 ldjson=ld, og_type="article", crumb="Evidence atlas")
 
 # ---------------------------------------------------------------- /civilization-zero-images
 # Three images of the introduction's first sentence, the originator's (1 Nov 2026 UTC, CZ 1432: "you can publish"; how, Claude's choice): one
@@ -1388,7 +1487,7 @@ def calendar_page():
                       f'<td><time datetime="{d.isoformat()}">{gregorian_text(d)}</time></td><td>{esc(w)}</td></tr>' for d, w in CZ_EXAMPLES)
     body = f"""<main>
 <h1>CZ time</h1>
-<p>Every date on this site is counted from Coordinate Zero. Today's date in CZ time is at the top of every page; this page says how it is counted, and converts dates and times to it. The exceptions are deliberate: quotations of the canonical texts keep their own words, the press kit uses ordinary dates for its readers, and the infographic's history uses ordinary years.</p>
+<p>Every date on this site is counted from Coordinate Zero. Today's date in CZ time is at the top of every page; this page says how it is counted, and converts dates and times to it. The exceptions are deliberate: quotations of the canonical texts keep their own words, the press kit uses ordinary dates for its readers, the infographic's history uses ordinary years, and the evidence atlas keeps its sources' dates.</p>
 <section id="convert" aria-labelledby="h-convert"><h2 id="h-convert">Date converter</h2>
 <!--cz-cal-->{cz_form("cal", origin=ORIGIN)}<p class="src">Today's date and the conversions are computed at <a href="{ORIGIN}/calendar">{ORIGIN}/calendar</a>.</p><!--/cz-cal-->
 <p class="src">A date can be written 2026-10-30, 2026/10/30, 20261030, 30/10/2026 or 30 October 2026; in Persian or Arabic digits and month names too.</p>
@@ -1732,6 +1831,7 @@ The record's identity is its hash, not its address.
 - [The First Interpretive Record]({ORIGIN}/record): eleven sections, the Declaration, the attribution. JSON: {ORIGIN}/record.json
 - [Objections and errata]({ORIGIN}/objections): open to anyone; the opening docket of the first scheduled review, CZ 2048 ({REVIEW.isoformat()}). As data: {ORIGIN}/objections.json
 - [The infographic]({ORIGIN}{INFOGRAPHIC_PATH}): Civilization Zero on one image, from the first humans to CZ 0 and scenarios to 2047, every number with its source. Its data: {ORIGIN}/civilization-zero-infographic-data.json
+- [The evidence atlas]({ORIGIN}{ATLAS_PATH}): ten panels of measured change since CZ 0 (AI use, benchmarks, work, energy, beliefs, rules) and IEA forecasts kept apart, every number with its source. PDF: {ORIGIN}{ATLAS_PDF}
 - [Images]({ORIGIN}{IMAGES_PATH}): nine images of the first sentence ("{FIRST_SENTENCE}"), and eleven more from the originator, each with a line of its own and a caption; each with its text alternative; CC BY 4.0
 - Every page as Markdown: add .md to its address ({ORIGIN}/core.md, {ORIGIN}/discuss.md, {ORIGIN}/discuss/7.md; the first page is {ORIGIN}/index.md), or send Accept: text/markdown. In the discussion's Markdown, each entry's text is a fenced block, as received.
 - [How this page is built]({ORIGIN}{BUILT_PATH}): what runs in a reader's browser, what is kept, the security policy, the weight of each page
@@ -1856,6 +1956,7 @@ write("/machine.html", machine_page())
 write("/ask.html", ask_page())
 write("/calendar.html", calendar_page())   # served by api/page.js with today's date filled in
 write(INFOGRAPHIC_PATH + ".html", infographic_page())   # served by api/page.js, like the other static pages
+write(ATLAS_PATH + ".html", atlas_page())               # served by api/page.js
 write(IMAGES_PATH + ".html", images_page())             # served by api/page.js
 # the live bar at the top of every page and the calendar page's form, filled at request time by room/cztime.js
 (SITE / "room" / "cz-bar.json").write_text(json.dumps({**CZ_BAR, "calform": cz_form("cal", selected=None, value=None), "timeform": cz_time_form("tim"),
@@ -1913,7 +2014,7 @@ def built_page():
     main = [("/core", "core.html", "The Core"), ("/record", "record.html", "The record"),
             ("/objections", "objections.html", "Objections and errata"), ("/about", "about.html", "About"), ("/machine", "machine.html", "For machines"),
             ("/ask", "ask.html", "Ask your AI"), ("/calendar", "calendar.html", "CZ time"), ("/archive", "archive.html", "Archive and verification"),
-            (INFOGRAPHIC_PATH, INFOGRAPHIC_PATH.lstrip("/") + ".html", "The infographic"), (IMAGES_PATH, IMAGES_PATH.lstrip("/") + ".html", "Images")] + \
+            (INFOGRAPHIC_PATH, INFOGRAPHIC_PATH.lstrip("/") + ".html", "The infographic"), (ATLAS_PATH, ATLAS_PATH.lstrip("/") + ".html", "The evidence atlas"), (IMAGES_PATH, IMAGES_PATH.lstrip("/") + ".html", "Images")] + \
            ([("/press", "press.html", "Press kit")] if PRESS_PUBLISHED else [])
     def kb(n): return f"{n / 1024:.1f}" if n < 10240 else f"{round(n / 1024)}"
     rows = []
@@ -1977,7 +2078,7 @@ Only links to pages of this site, never a link with a query, a file, <code>/api<
 # one image and its metadata on 30 Oct 2026 UTC (CZ 1430); CZ-CORE 1.0 itself is unchanged
 CORE_PAGE_REVISED = datetime.date(2026, 10, 30)
 SITEMAP_PAGES = [("/", None), ("/core", CORE_PAGE_REVISED.isoformat()), ("/record", PRERELEASE.isoformat()), ("/objections", None), ("/discuss", None),
-                 ("/respond", None), ("/adopt", None), ("/ask", None), ("/machine", None), ("/about", None), ("/archive", None), ("/calendar", None), (INFOGRAPHIC_PATH, INFOGRAPHIC_AS_OF.isoformat()), (IMAGES_PATH, "2026-11-03"), (BUILT_PATH, None)] + ([("/press", None)] if PRESS_PUBLISHED else []) + \
+                 ("/respond", None), ("/adopt", None), ("/ask", None), ("/machine", None), ("/about", None), ("/archive", None), ("/calendar", None), (INFOGRAPHIC_PATH, INFOGRAPHIC_AS_OF.isoformat()), (ATLAS_PATH, ATLAS_AS_OF.isoformat()), (IMAGES_PATH, "2026-11-03"), (BUILT_PATH, None)] + ([("/press", None)] if PRESS_PUBLISHED else []) + \
                 [(f"/core.{t['lang']}", t["date"]) for t in TRANSLATIONS] + [(f"/themes/{t['slug']}", None) for t in THEMES]
 def sitemap_xml():
     core_group = {h for _, h in HREFLANGS}
@@ -1989,6 +2090,7 @@ def sitemap_xml():
                    + (f"<image:image><image:loc>{ORIGIN}{CORE_POSTER[0]}</image:loc></image:image>" if path == "/core" else "")
                    + (f"<image:image><image:loc>{ORIGIN}{INTRO_IMAGE[0]}</image:loc></image:image>" if path in ("/", "/about") else "")
                    + (f"<image:image><image:loc>{ORIGIN}{INFOGRAPHIC[0]}</image:loc></image:image>" if path == INFOGRAPHIC_PATH else "")
+                   + (f"<image:image><image:loc>{ORIGIN}{ATLAS[0]}</image:loc></image:image><image:image><image:loc>{ORIGIN}{ATLAS_FULL[0]}</image:loc></image:image>" if path == ATLAS_PATH else "")
                    + ("".join(f"<image:image><image:loc>{ORIGIN}{i[0]}</image:loc></image:image>" for i in IMAGES + ORIGINATOR_IMAGES) if path == IMAGES_PATH else "") + "</url>")
     out.append("</urlset>")
     return "\n".join(out) + "\n"
@@ -2007,6 +2109,9 @@ write(OG_IMAGE[0], (SITE / "assets" / "og.png").read_bytes())                   
 write(CORE_POSTER[0], (SITE / "assets" / "cz-core.png").read_bytes())
 write(INTRO_IMAGE[0], (SITE / "assets" / "cz-intro.png").read_bytes())        # the introduction on one image (render_intro.py), shown on /about                # the Core on one image (render.py --poster), shown on /core
 write(INFOGRAPHIC[0], (SITE / "assets" / "cz-infographic.png").read_bytes())   # the infographic, shown on its page
+write(ATLAS[0], (SITE / "assets" / "cz-evidence-atlas.png").read_bytes())          # the evidence atlas, shown on its page
+write(ATLAS_FULL[0], (SITE / "assets" / "cz-evidence-atlas-full.png").read_bytes())   # the same at full size
+write(ATLAS_PDF, (SITE / "assets" / "cz-evidence-atlas.pdf").read_bytes())         # the same as an A3 PDF, for print
 for _img in IMAGES + ORIGINATOR_IMAGES:   # the images on /civilization-zero-images
     write(_img[0], (SITE / "assets" / _img[5]).read_bytes())
 write("/civilization-zero-infographic-data.json", json.dumps(INFOGRAPHIC_DATA, ensure_ascii=False, indent=1) + "\n")   # the points it draws

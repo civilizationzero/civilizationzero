@@ -309,6 +309,7 @@ pre{white-space:pre-wrap;word-break:break-word;border:1px solid var(--rule);padd
 figure.poster{margin:1.5rem 0}figure.poster img{display:block;width:100%;max-width:30rem;height:auto;border:1px solid var(--rule)}
 figure.infographic{margin:1.5rem 0}
 figure.infographic img{display:block;width:100%;height:auto;border:1px solid var(--rule)}
+ol.atlas li{margin:0 0 .9rem}
 figure.image{margin:1.5rem 0}
 figure.image img{display:block;width:100%;height:auto;border:1px solid var(--rule)}
 figure.image img.tall{max-width:30rem}
@@ -448,7 +449,7 @@ ONE_LINE_SHORT = ("Civilization Zero names the beginning of a civilization in wh
                   "what they owe each other.")
 assert len(ONE_LINE_SHORT) <= 160
 FOOT_LINKS = [[("/core", "The Core"), ("/core#translations", f"{CORE_LANGUAGES} languages")], [("/record", "The Record")], [("/objections", "Objections and errata")],
-              [("/discuss", "Discussion"), ("/respond", "Respond")], [("/adopt", "Adoption register")], [("/calendar", "CZ time")], [("/civilization-zero-infographic", "Infographic"), ("/civilization-zero-images", "Images")], [("/ask", "Ask your AI")],
+              [("/discuss", "Discussion"), ("/respond", "Respond")], [("/adopt", "Adoption register")], [("/calendar", "CZ time")], [("/civilization-zero-infographic", "Infographic"), ("/civilization-zero-evidence-atlas", "Evidence atlas"), ("/civilization-zero-images", "Images")], [("/ask", "Ask your AI")],
               [("/machine", "For machines")], [("/about", "About")] + ([("/press", "Press kit")] if PRESS_PUBLISHED else []), [("/stats", "Visits")], [("/archive", "Archive and verification")]]
 # ---------------------------------------------------------------- stage 5 of the room's redesign (CZ 1433)
 # How this page is built: the page that says, with numbers, how every page is made.
