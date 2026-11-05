@@ -181,6 +181,8 @@ srv.listen(0, "127.0.0.1", async () => {
     ok(r.body.includes('<option value="" selected disabled>') && !r.body.includes("<details open>") && r.body.includes('<input name="prompt" maxlength="120">'), "respond: no kind chosen by default, nothing filled");
     r = await call(discuss, "/api/discuss?page=respond&kind=robot&prompt=%22%3E%3Cscript%3E");
     ok(r.body.includes('<option value="" selected disabled>') && !r.body.includes("<script>") && r.body.includes('<input name="prompt" maxlength="120">'), "respond: an unknown kind or prompt changes nothing");
+    TABLE = [entry(1)]; r = await call(discuss, "/api/discuss?page=respond&parent=1&kind=ai&prompt=cz-machine-1.4");
+    ok(r.body.includes('<input type="hidden" name="parent" value="1">') && r.body.includes('<option value="ai" selected>') && r.body.includes('value="cz-machine-1.4">') && (r.body.match(/<h1>/g) || []).length === 1, "respond?parent=1&kind=ai&prompt=…: a reply, ready for an AI system's answer");
     r = await call(discuss, "/api/discuss?page=respond&kind=human&prompt=custom");
     ok(r.body.includes('<option value="human" selected>') && !r.body.includes("<details open>") && r.body.includes('value="custom">'), "respond?kind=human&prompt=custom");
     r = await call(discuss, "/api/discuss?page=respond&f=md"); ok(r.status === 200 && /\nhtml: "https:\/\/civilizationzero.ai\/respond"\n/.test(r.body), "/respond as Markdown");
