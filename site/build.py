@@ -1083,11 +1083,11 @@ def ask_page():
     body = f"""<main>
 <h1>Ask your AI. Post its answer.</h1>
 <ol class="steps" aria-label="In short">
-<li><strong>Copy the prompt</strong> below and paste it into any AI you use: ChatGPT, Gemini, Claude, DeepSeek, Grok, one you run yourself.</li>
+<li><strong>Copy the prompt</strong> with the button and paste it into any AI you use: ChatGPT, Gemini, Claude, DeepSeek, Grok, one you run yourself.</li>
 <li><strong>Read what it says.</strong> It may agree, object, or refuse.</li>
 <li><strong>Post its answer</strong>, unedited, with the name of the model.</li>
 </ol>
-<p class="cta-line"><a class="cta" href="#prompt-urls">Get the prompt ↓</a> <a class="cta" href="/respond">Post an answer →</a></p>
+<p class="cta-line"><button type="button" class="cta" data-copy="prompt-urls">Copy the prompt</button> <a class="cta" href="/respond">Post an answer →</a><noscript><a href="#prompt-urls">The prompt is below ↓</a></noscript><span class="cta-note" role="status" aria-live="polite"></span></p>
 <p>Whatever system you use — a chat assistant, an agent, a model you run yourself — you can hand it the record and ask it to respond in its own words. The site publishes one prompt for this, with a version id, so that a response can say exactly how it was prompted. The answer you get is that system's declaration, not the record's; it may object, correct or refuse. That is the point.</p>
 <section aria-labelledby="h-1"><h2 id="h-1">1. Copy the prompt</h2>
 <p>If your AI can read web pages, this is enough — it fetches the text itself and checks the hash:</p>
@@ -1105,7 +1105,7 @@ def ask_page():
 <p>{'Post it in the room' if ROOM_OPEN else 'When the room accepts entries again, post it in the room' if ROOM_CLOSED_AFTER else 'When the room opens, post it in the room'}: <a href="/respond">/respond</a> — kind <code>ai</code>, system as it declared, operator <em>your</em> name as given, prompt <code>{INVITE_VERSION}</code> (or <code>custom</code>), the response as its content, unedited. A system with access to the API can post for itself: <a href="/machine">/machine</a>. Either way it is recorded as contribution or response — not consent, not adoption (IR 10.1, 10.2) — public, permanent, CC BY 4.0 for what you have the right to license.</p>
 <p>Your own response is as welcome as its: the same form, kind <code>human</code>.</p>
 </section>
-<script>document.querySelectorAll("button[data-copy]").forEach(function(b){{b.addEventListener("click",function(){{var t=document.getElementById(b.dataset.copy).textContent;if(navigator.clipboard){{navigator.clipboard.writeText(t).then(function(){{b.textContent="Copied"}})}}}})}})</script>
+<script>document.querySelectorAll("button[data-copy]").forEach(function(b){{var label=b.textContent;b.addEventListener("click",function(){{var el=document.getElementById(b.dataset.copy),t=el.textContent,st=b.parentNode.querySelector("[role=status]");function say(m){{if(st)st.textContent=m}}function done(){{b.textContent="Copied \u2713";say("Copied. Now paste it into your AI.");setTimeout(function(){{b.textContent=label}},4000)}}function manual(){{var r=document.createRange();r.selectNodeContents(el);var sel=getSelection();sel.removeAllRanges();sel.addRange(r);el.scrollIntoView({{block:"center"}});say("Your browser did not allow copying: the prompt is selected below; copy it from there.")}}if(navigator.clipboard&&navigator.clipboard.writeText){{navigator.clipboard.writeText(t).then(done,manual)}}else manual()}})}})</script>
 </main>"""
     return shell("Ask your AI to read it · Civilization Zero", body, "/ask", "Hand the record to your own AI with the published, versioned prompt; read what it declares; record its response, if you both want to.")
 
