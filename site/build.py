@@ -1081,7 +1081,7 @@ Content-Type: application/json
 # ---------------------------------------------------------------- /ask: hand the record to your own AI
 # the copy buttons' one script (on /ask and /embed only; allowed by its hash, computed from the page served): copies, says so, turns the
 # button the machine layer's green for four seconds; where a browser refuses, selects the text instead
-COPY_SCRIPT = '<script>document.querySelectorAll("button[data-copy]").forEach(function(b){var label=b.textContent;b.addEventListener("click",function(){var el=document.getElementById(b.dataset.copy),t=el.textContent,st=b.parentNode.querySelector("[role=status]");function say(m){if(st)st.textContent=m}function done(){b.textContent="Copied \\u2713";b.classList.add("done");say(b.getAttribute("data-done")||"Copied. Now paste it into your AI.");setTimeout(function(){b.textContent=label;b.classList.remove("done")},4000)}function manual(){var r=document.createRange();r.selectNodeContents(el);var sel=getSelection();sel.removeAllRanges();sel.addRange(r);el.scrollIntoView({block:"center"});say("Your browser did not allow copying: the prompt is selected below; copy it from there.")}if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(done,manual)}else manual()})})</script>'
+COPY_SCRIPT = '<script>document.querySelectorAll("button[data-copy]").forEach(function(b){var label=b.textContent;b.addEventListener("click",function(){var el=document.getElementById(b.dataset.copy),t=el.textContent,st=b.parentNode.querySelector("[role=status]");function say(m){if(st)st.textContent=m}function done(){b.textContent="Copied \\u2713";b.classList.add("done");say(b.getAttribute("data-done")||"Copied. Now paste it into your AI.");setTimeout(function(){b.textContent=label;b.classList.remove("done")},4000)}function manual(){var dt=el.closest("details");if(dt)dt.open=true;var r=document.createRange();r.selectNodeContents(el);var sel=getSelection();sel.removeAllRanges();sel.addRange(r);el.scrollIntoView({block:"center"});say("Your browser did not allow copying: the text is selected below; copy it from there.")}if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(done,manual)}else manual()})})</script>'
 
 def ask_page():
     with_text = INVITE + "\n\n---- The canonical text of CZ-CORE 1.0 follows (SHA-256 " + CORE_SHA + "). ----\n\n" + CORE_TXT
@@ -1437,7 +1437,7 @@ def respond_form_html():
 <details><summary>Posting the answer of an AI system, or naming the language</summary>
 <label>System (model, provider, version — as declared; optional) <input name="system" maxlength="400"></label>
 <label>Operator (who prompted or submitted — as declared; optional) <input name="operator" maxlength="400"></label>
-<label>Prompt (the version of a published prompt, such as <code>{INVITE_VERSION}</code>, or <code>custom</code>; optional) <input name="prompt" maxlength="120"></label>
+<label>Prompt (the version of a published prompt, such as <code>{INVITE_VERSION}</code>, or <code>custom</code>; optional) <input name="prompt" maxlength="60"></label>
 <label>Language of the text — a language code such as <code>en</code>, <code>fa</code> or <code>zh-Hans</code> (optional) <input name="lang" maxlength="70" size="8" autocomplete="off"></label>
 </details>
 <p class="src">By posting you license what you have the right to license under CC BY 4.0. The entry is public and permanent, addressed by id, recorded as contribution or response — not consent (IR 10.2), not adoption (IR 10.1). Everything you declare is shown as a declaration. Limits: 5 per 10 minutes per source; a finite daily intake. After posting you get a receipt code, shown once: it shows later that you posted the entry. A date of your own can be declared through the API (<code>declared_date</code>). The rules: <a href="/discuss#rules">/discuss#rules</a>.</p>
@@ -1493,7 +1493,7 @@ def discuss_templates():
             "rules": rules_html(), "closed": discuss_closed_body(), "respond_open": respond_open_body(), "respond_closed": respond_closed_body(),
             "closed_after_note": CLOSED_AFTER_NOTE, "respond_closed_after": respond_closed_after_body(),
             "sections": [{"n": p["n"], "title": p["title"]} for p in CORE_JSON["principles"]],
-            "themes": THEMES}
+            "themes": THEMES, "prompt_versions": [PROMPT_VERSION] + [v for v, _ in reversed(EARLIER_INVITES)] + [INVITE_VERSION]}
 
 # ---------------------------------------------------------------- the Adoption Register (design/ADOPT.md; templates read by api/adopt.js)
 REGISTER_VERSIONS = [f"CZ-CORE 1.0 sha256:{CORE_SHA}", f"CZ-IR 1.0 sha256:{IR_SHA}"]
@@ -1567,20 +1567,21 @@ CZ_SPEC = f"{REPO}/blob/main/design/CZ-TIME.md"
 CZ_EPOCH_UNIX_DAYS = 19326
 assert (COORDINATE - datetime.date(1970, 1, 1)).days == CZ_EPOCH_UNIX_DAYS
 CZ_SNIPPET = r'''<!-- CZ time: today's day of the new count, from Civilization Zero (https://civilizationzero.ai/embed). It runs only in the reader's browser: no request, no cookie, nothing stored. MIT licence. -->
-<div class="cz-today"></div>
+<div data-cz-today></div>
 <script>
 (function () {
   var EPOCH = 19326, SITE = "https://civilizationzero.ai";
   function day(ms) { return Math.floor(ms / 864e5) - EPOCH; }
   function cz(d) { return "CZ " + (d < 0 ? "−" + (-d) : d); }
-  var hosts = document.querySelectorAll(".cz-today:not([data-cz])");
-  for (var i = 0; i < hosts.length; i++) (function (h) {
+  var css = '.czt{display:block;color:inherit;border:1px solid rgba(128,128,128,.45);border-radius:6px;padding:.6em .8em;max-width:26em;line-height:1.45}'
+    + '.czt a{color:inherit}.czt .n{font:700 1.6em/1.2 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:#116329;text-decoration:none}'
+    + '@media (prefers-color-scheme:dark){.czt .n{color:#3fb950} }.czt .s{font-size:.85em}.czt input{font:inherit;margin:.35em .4em 0 0}.czt output{font-family:ui-monospace,monospace;font-weight:700}';
+  var hosts = document.querySelectorAll("[data-cz-today]:not([data-cz])");
+  for (var i = 0; i < hosts.length; i++) try { (function (h) {
     h.setAttribute("data-cz", "");
-    var r = h.attachShadow ? h.attachShadow({ mode: "open" }) : h, d = day(Date.now());
-    r.innerHTML = '<style>:host{display:block}.b{color:inherit;border:1px solid rgba(128,128,128,.45);border-radius:6px;padding:.6em .8em;max-width:26em;line-height:1.45}'
-      + 'a{color:inherit}.n{font:700 1.6em/1.2 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:#116329;text-decoration:none}'
-      + '@media (prefers-color-scheme:dark){.n{color:#3fb950} }.s{font-size:.85em}input{font:inherit;margin:.35em .4em 0 0}output{font-family:ui-monospace,monospace;font-weight:700}</style>'
-      + '<div class="b"><a class="n" href="' + SITE + '/calendar">' + cz(d) + '</a>'
+    var r = h, d = day(Date.now());
+    try { r = h.attachShadow({ mode: "open" }); } catch (e) { r = h; }
+    r.innerHTML = '<style>' + css + '</style><div class="czt"><a class="n" href="' + SITE + '/calendar">' + cz(d) + '</a>'
       + '<div class="s">Day ' + d + ' since Coordinate Zero, 30 November 2022</div>'
       + '<div class="s"><label>A date: <input type="date"></label> <output></output> <a class="o" href="' + SITE + '/calendar" hidden>other calendars</a></div>'
       + '<div class="s"><a href="' + SITE + '/calendar">CZ time</a> · <a href="' + SITE + '/">Civilization Zero</a></div></div>';
@@ -1588,10 +1589,11 @@ CZ_SNIPPET = r'''<!-- CZ time: today's day of the new count, from Civilization Z
     inp.addEventListener("change", function () {
       var m = /^(\d{4,6})-(\d\d)-(\d\d)$/.exec(inp.value);
       if (!m) { out.textContent = ""; o.hidden = true; return; }
-      out.textContent = "= " + cz(day(Date.UTC(+m[1], m[2] - 1, +m[3])));
+      var t = new Date(0); t.setUTCFullYear(+m[1], m[2] - 1, +m[3]);
+      out.textContent = "= " + cz(day(t.getTime()));
       o.href = SITE + "/calendar?d=" + inp.value + "&c=gregorian"; o.hidden = false;
     });
-  })(hosts[i]);
+  })(hosts[i]); } catch (e) {}
 })();
 </script>'''
 BADGE_PATH = "/badge/cz-today.svg"

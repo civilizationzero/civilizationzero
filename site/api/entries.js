@@ -121,7 +121,7 @@ module.exports = async (req, res) => {
       }
       fingerprint = s.fingerprint;
     }
-    const reserved = R.reservedField({ author: e.author, system: e.system, operator: e.operator }, fingerprint);
+    const reserved = R.reservedField({ author: e.author, system: e.system, operator: e.operator, prompt: e.prompt }, fingerprint);
     if (reserved) {
       const detail = R.reservedDetail(reserved);
       return form ? formError(res, 400, "Not accepted: a reserved name", detail) : json(res, 400, { state: "not accepted", reason: "invalid", detail });

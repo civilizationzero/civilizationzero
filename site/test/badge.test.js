@@ -11,8 +11,8 @@ test("today's day, as an image other sites may show, cached until 00:00 UTC", ()
   assert.match(r.headers["content-type"], /^image\/svg\+xml/);
   assert.ok(r.body.includes(`>CZ ${d}</text>`) && r.body.includes(`day ${d} since Coordinate Zero`));
   assert.equal(r.headers["cross-origin-resource-policy"], "cross-origin");
-  const s = Number(/max-age=(\d+)/.exec(r.headers["cache-control"])[1]);
-  assert.ok(s >= 60 && s <= 86400);
+  const b = Number(/(?:^|[ ,])max-age=(\d+)/.exec(r.headers["cache-control"])[1]), s = Number(/s-maxage=(\d+)/.exec(r.headers["cache-control"])[1]);
+  assert.ok(b >= 1 && b <= 300 && s >= b && s <= 86400 && s === CZ.secondsToNextDay(Date.now()) || Math.abs(s - CZ.secondsToNextDay(Date.now())) <= 1);
   assert.ok(r.body.includes("prefers-color-scheme:dark"));
 });
 test("themes: light and dark fixed, anything else follows the reader", () => {

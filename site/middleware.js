@@ -37,8 +37,8 @@ export function agentOf(ua) {
 export function pathKey(pathname) {
   let p = String(pathname || "/").replace(/\/{2,}/g, "/");
   if (p.length > 1) p = p.replace(/\/+$/, "");
-  try { p = decodeURIComponent(p); } catch {}
-  return /^\/[A-Za-z0-9/._-]{0,118}$/.test(p) ? p : "(other)";
+  try { p = decodeURIComponent(p).replace(/\/{2,}/g, "/"); } catch {}   // again after decoding: "/%2Fx" must not become "//x" (review of CZ 1436)
+  return /^\/(?!\/)[A-Za-z0-9/._-]{0,118}$/.test(p) ? p : "(other)";
 }
 export function refHost(referer) {
   try { const u = new URL(referer); const h = u.hostname.toLowerCase(); return SELF.test(h) ? "" : h.replace(/^www\./, ""); } catch { return ""; }

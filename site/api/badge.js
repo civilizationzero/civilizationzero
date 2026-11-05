@@ -24,12 +24,14 @@ function badge(day, theme) {
 
 module.exports = (req, res) => {
   const ms = Date.now();
-  if (!["GET", "HEAD"].includes(req.method)) { res.statusCode = 405; res.setHeader("Allow", "GET, HEAD"); return res.end("GET only\n"); }
+  if (!["GET", "HEAD"].includes(req.method)) { res.statusCode = 405; res.setHeader("Allow", "GET, HEAD"); res.setHeader("Content-Type", "text/plain; charset=utf-8"); return res.end("GET only\n"); }
   const t = new URL(req.url, "http://x").searchParams.get("theme");
   res.statusCode = 200;
   res.setHeader("Content-Type", "image/svg+xml; charset=utf-8");
-  const s = Math.max(60, CZ.secondsToNextDay(ms));
-  res.setHeader("Cache-Control", `public, max-age=${s}, s-maxage=${s}`);
+  // the CDN keeps it until 00:00 UTC; a browser or an image proxy at most five minutes, so that no copy outlives the day by more
+  // (a long max-age fixed at generation would travel with every CDN copy; review of CZ 1436)
+  const s = CZ.secondsToNextDay(ms);
+  res.setHeader("Cache-Control", `public, max-age=${Math.min(300, s)}, s-maxage=${s}`);
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
   res.setHeader("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'");

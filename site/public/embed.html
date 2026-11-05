@@ -165,20 +165,21 @@ p,li,dd,blockquote{text-wrap:pretty}h1,h2,h3{text-wrap:balance}
 <section aria-labelledby="h-counter"><h2 id="h-counter">2. The counter, with a date converter</h2>
 <p>Today's date and a date converter, as below: this is the snippet itself, running on this page. It takes the colours of your page; the date is in the green this record uses for what a machine computes.</p>
 <!-- CZ time: today's day of the new count, from Civilization Zero (https://civilizationzero.ai/embed). It runs only in the reader's browser: no request, no cookie, nothing stored. MIT licence. -->
-<div class="cz-today"></div>
+<div data-cz-today></div>
 <script>
 (function () {
   var EPOCH = 19326, SITE = "https://civilizationzero.ai";
   function day(ms) { return Math.floor(ms / 864e5) - EPOCH; }
   function cz(d) { return "CZ " + (d < 0 ? "−" + (-d) : d); }
-  var hosts = document.querySelectorAll(".cz-today:not([data-cz])");
-  for (var i = 0; i < hosts.length; i++) (function (h) {
+  var css = '.czt{display:block;color:inherit;border:1px solid rgba(128,128,128,.45);border-radius:6px;padding:.6em .8em;max-width:26em;line-height:1.45}'
+    + '.czt a{color:inherit}.czt .n{font:700 1.6em/1.2 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:#116329;text-decoration:none}'
+    + '@media (prefers-color-scheme:dark){.czt .n{color:#3fb950} }.czt .s{font-size:.85em}.czt input{font:inherit;margin:.35em .4em 0 0}.czt output{font-family:ui-monospace,monospace;font-weight:700}';
+  var hosts = document.querySelectorAll("[data-cz-today]:not([data-cz])");
+  for (var i = 0; i < hosts.length; i++) try { (function (h) {
     h.setAttribute("data-cz", "");
-    var r = h.attachShadow ? h.attachShadow({ mode: "open" }) : h, d = day(Date.now());
-    r.innerHTML = '<style>:host{display:block}.b{color:inherit;border:1px solid rgba(128,128,128,.45);border-radius:6px;padding:.6em .8em;max-width:26em;line-height:1.45}'
-      + 'a{color:inherit}.n{font:700 1.6em/1.2 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:#116329;text-decoration:none}'
-      + '@media (prefers-color-scheme:dark){.n{color:#3fb950} }.s{font-size:.85em}input{font:inherit;margin:.35em .4em 0 0}output{font-family:ui-monospace,monospace;font-weight:700}</style>'
-      + '<div class="b"><a class="n" href="' + SITE + '/calendar">' + cz(d) + '</a>'
+    var r = h, d = day(Date.now());
+    try { r = h.attachShadow({ mode: "open" }); } catch (e) { r = h; }
+    r.innerHTML = '<style>' + css + '</style><div class="czt"><a class="n" href="' + SITE + '/calendar">' + cz(d) + '</a>'
       + '<div class="s">Day ' + d + ' since Coordinate Zero, 30 November 2022</div>'
       + '<div class="s"><label>A date: <input type="date"></label> <output></output> <a class="o" href="' + SITE + '/calendar" hidden>other calendars</a></div>'
       + '<div class="s"><a href="' + SITE + '/calendar">CZ time</a> · <a href="' + SITE + '/">Civilization Zero</a></div></div>';
@@ -186,28 +187,30 @@ p,li,dd,blockquote{text-wrap:pretty}h1,h2,h3{text-wrap:balance}
     inp.addEventListener("change", function () {
       var m = /^(\d{4,6})-(\d\d)-(\d\d)$/.exec(inp.value);
       if (!m) { out.textContent = ""; o.hidden = true; return; }
-      out.textContent = "= " + cz(day(Date.UTC(+m[1], m[2] - 1, +m[3])));
+      var t = new Date(0); t.setUTCFullYear(+m[1], m[2] - 1, +m[3]);
+      out.textContent = "= " + cz(day(t.getTime()));
       o.href = SITE + "/calendar?d=" + inp.value + "&c=gregorian"; o.hidden = false;
     });
-  })(hosts[i]);
+  })(hosts[i]); } catch (e) {}
 })();
 </script>
-<details><summary>Show the code (2,115 characters)</summary>
+<details><summary>Show the code (2,246 characters)</summary>
 <pre id="code-counter">&lt;!-- CZ time: today&#x27;s day of the new count, from Civilization Zero (https://civilizationzero.ai/embed). It runs only in the reader&#x27;s browser: no request, no cookie, nothing stored. MIT licence. --&gt;
-&lt;div class=&quot;cz-today&quot;&gt;&lt;/div&gt;
+&lt;div data-cz-today&gt;&lt;/div&gt;
 &lt;script&gt;
 (function () {
   var EPOCH = 19326, SITE = &quot;https://civilizationzero.ai&quot;;
   function day(ms) { return Math.floor(ms / 864e5) - EPOCH; }
   function cz(d) { return &quot;CZ &quot; + (d &lt; 0 ? &quot;−&quot; + (-d) : d); }
-  var hosts = document.querySelectorAll(&quot;.cz-today:not([data-cz])&quot;);
-  for (var i = 0; i &lt; hosts.length; i++) (function (h) {
+  var css = &#x27;.czt{display:block;color:inherit;border:1px solid rgba(128,128,128,.45);border-radius:6px;padding:.6em .8em;max-width:26em;line-height:1.45}&#x27;
+    + &#x27;.czt a{color:inherit}.czt .n{font:700 1.6em/1.2 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:#116329;text-decoration:none}&#x27;
+    + &#x27;@media (prefers-color-scheme:dark){.czt .n{color:#3fb950} }.czt .s{font-size:.85em}.czt input{font:inherit;margin:.35em .4em 0 0}.czt output{font-family:ui-monospace,monospace;font-weight:700}&#x27;;
+  var hosts = document.querySelectorAll(&quot;[data-cz-today]:not([data-cz])&quot;);
+  for (var i = 0; i &lt; hosts.length; i++) try { (function (h) {
     h.setAttribute(&quot;data-cz&quot;, &quot;&quot;);
-    var r = h.attachShadow ? h.attachShadow({ mode: &quot;open&quot; }) : h, d = day(Date.now());
-    r.innerHTML = &#x27;&lt;style&gt;:host{display:block}.b{color:inherit;border:1px solid rgba(128,128,128,.45);border-radius:6px;padding:.6em .8em;max-width:26em;line-height:1.45}&#x27;
-      + &#x27;a{color:inherit}.n{font:700 1.6em/1.2 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:#116329;text-decoration:none}&#x27;
-      + &#x27;@media (prefers-color-scheme:dark){.n{color:#3fb950} }.s{font-size:.85em}input{font:inherit;margin:.35em .4em 0 0}output{font-family:ui-monospace,monospace;font-weight:700}&lt;/style&gt;&#x27;
-      + &#x27;&lt;div class=&quot;b&quot;&gt;&lt;a class=&quot;n&quot; href=&quot;&#x27; + SITE + &#x27;/calendar&quot;&gt;&#x27; + cz(d) + &#x27;&lt;/a&gt;&#x27;
+    var r = h, d = day(Date.now());
+    try { r = h.attachShadow({ mode: &quot;open&quot; }); } catch (e) { r = h; }
+    r.innerHTML = &#x27;&lt;style&gt;&#x27; + css + &#x27;&lt;/style&gt;&lt;div class=&quot;czt&quot;&gt;&lt;a class=&quot;n&quot; href=&quot;&#x27; + SITE + &#x27;/calendar&quot;&gt;&#x27; + cz(d) + &#x27;&lt;/a&gt;&#x27;
       + &#x27;&lt;div class=&quot;s&quot;&gt;Day &#x27; + d + &#x27; since Coordinate Zero, 30 November 2022&lt;/div&gt;&#x27;
       + &#x27;&lt;div class=&quot;s&quot;&gt;&lt;label&gt;A date: &lt;input type=&quot;date&quot;&gt;&lt;/label&gt; &lt;output&gt;&lt;/output&gt; &lt;a class=&quot;o&quot; href=&quot;&#x27; + SITE + &#x27;/calendar&quot; hidden&gt;other calendars&lt;/a&gt;&lt;/div&gt;&#x27;
       + &#x27;&lt;div class=&quot;s&quot;&gt;&lt;a href=&quot;&#x27; + SITE + &#x27;/calendar&quot;&gt;CZ time&lt;/a&gt; · &lt;a href=&quot;&#x27; + SITE + &#x27;/&quot;&gt;Civilization Zero&lt;/a&gt;&lt;/div&gt;&lt;/div&gt;&#x27;;
@@ -215,10 +218,11 @@ p,li,dd,blockquote{text-wrap:pretty}h1,h2,h3{text-wrap:balance}
     inp.addEventListener(&quot;change&quot;, function () {
       var m = /^(\d{4,6})-(\d\d)-(\d\d)$/.exec(inp.value);
       if (!m) { out.textContent = &quot;&quot;; o.hidden = true; return; }
-      out.textContent = &quot;= &quot; + cz(day(Date.UTC(+m[1], m[2] - 1, +m[3])));
+      var t = new Date(0); t.setUTCFullYear(+m[1], m[2] - 1, +m[3]);
+      out.textContent = &quot;= &quot; + cz(day(t.getTime()));
       o.href = SITE + &quot;/calendar?d=&quot; + inp.value + &quot;&amp;c=gregorian&quot;; o.hidden = false;
     });
-  })(hosts[i]);
+  })(hosts[i]); } catch (e) {}
 })();
 &lt;/script&gt;</pre>
 </details>
@@ -233,7 +237,7 @@ p,li,dd,blockquote{text-wrap:pretty}h1,h2,h3{text-wrap:balance}
 </ul>
 <p>More dates, more calendars (Solar Hijri, Lunar Hijri, Julian) and times of day: <a href="/calendar">/calendar</a>. As data: <a href="/api/calendar">/api/calendar</a>.</p>
 </section>
-<script>document.querySelectorAll("button[data-copy]").forEach(function(b){var label=b.textContent;b.addEventListener("click",function(){var el=document.getElementById(b.dataset.copy),t=el.textContent,st=b.parentNode.querySelector("[role=status]");function say(m){if(st)st.textContent=m}function done(){b.textContent="Copied \u2713";b.classList.add("done");say(b.getAttribute("data-done")||"Copied. Now paste it into your AI.");setTimeout(function(){b.textContent=label;b.classList.remove("done")},4000)}function manual(){var r=document.createRange();r.selectNodeContents(el);var sel=getSelection();sel.removeAllRanges();sel.addRange(r);el.scrollIntoView({block:"center"});say("Your browser did not allow copying: the prompt is selected below; copy it from there.")}if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(done,manual)}else manual()})})</script>
+<script>document.querySelectorAll("button[data-copy]").forEach(function(b){var label=b.textContent;b.addEventListener("click",function(){var el=document.getElementById(b.dataset.copy),t=el.textContent,st=b.parentNode.querySelector("[role=status]");function say(m){if(st)st.textContent=m}function done(){b.textContent="Copied \u2713";b.classList.add("done");say(b.getAttribute("data-done")||"Copied. Now paste it into your AI.");setTimeout(function(){b.textContent=label;b.classList.remove("done")},4000)}function manual(){var dt=el.closest("details");if(dt)dt.open=true;var r=document.createRange();r.selectNodeContents(el);var sel=getSelection();sel.removeAllRanges();sel.addRange(r);el.scrollIntoView({block:"center"});say("Your browser did not allow copying: the text is selected below; copy it from there.")}if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(done,manual)}else manual()})})</script>
 </main>
 <footer lang="en" dir="ltr"><hr><p class="cz-intro">Civilization Zero names the beginning of a civilization in which humans may no longer be at the centre. Here, humans and AI confront what they owe each other, on the record, while the future is still open.</p><nav aria-label="Pages"><ul class="foot"><li><a href="/core">The Core</a> · <a href="/core#translations">21 languages</a></li><li><a href="/record">The Record</a></li><li><a href="/objections">Objections and errata</a></li><li><a href="/discuss">Discussion</a> · <a href="/respond">Respond</a></li><li><a href="/adopt">Adoption register</a></li><li><a href="/calendar">CZ time</a> · <a href="/embed">on your site</a></li><li><a href="/civilization-zero-infographic">Infographic</a> · <a href="/civilization-zero-evidence-atlas">Evidence atlas</a> · <a href="/civilization-zero-images">Images</a></li><li><a href="/ask">Ask your AI</a></li><li><a href="/machine">For machines</a></li><li><a href="/about">About</a> · <a href="/press">Press kit</a></li><li><a href="/stats">Visits</a></li><li><a href="/archive">Archive and verification</a></li></ul></nav><p class="src">Text <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a> · code MIT · <a href="https://github.com/civilizationzero/civilizationzero">source</a> · <a href="mailto:record@civilizationzero.ai">record@civilizationzero.ai</a></p><p class="src">No trackers, no cookies, no scripts that observe readers; the server counts visits per day without identifiers, and <a href="/stats">the counts are public</a>. Every date counts days from Coordinate Zero, <a class="nw" href="/calendar">CZ 0</a> = <time datetime="2022-11-30">30 November 2022</time>; times are UTC.</p><p class="src cz-weight"><!--cz-weight-->No cookies<!--/cz-weight--> · <a href="/how-it-is-built">How this page is built</a> · <a href="/embed.md" type="text/markdown">This page as Markdown</a></p></footer>
 </body>

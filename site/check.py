@@ -333,9 +333,10 @@ for _lab in ("Your name, as you want it shown", "ai — the answer of an AI syst
     check(f'"{_lab}"' in _inv, f"the invitation does not quote the form's label {_lab!r}")
     check(_lab in _tpl, f"the form lacks the label {_lab!r} that the invitation quotes")
 check('<select name=\\"kind\\" required><option value=\\"\\" selected disabled>' in _tpl, "the form's kind has a default")
-check(all((PUBLIC / f"prompts/cz-machine-1.{_n}.txt").exists() for _n in range(4)), "an earlier prompt is no longer served")
+_pv = json.loads(_tpl).get("prompt_versions") or []
+check(len(_pv) >= 2 and _pv[0] == PROMPT_VERSION and _pv[-1] == _inv.split(" ", 1)[0] and all((PUBLIC / f"prompts/{_v}.txt").exists() for _v in _pv), "the published prompts (discuss-templates prompt_versions) are not all served, or the list is wrong")
 # the pieces api/discuss.js replaces to open the form ready for an AI system's answer (?kind=ai&prompt=…) stand in the form exactly once
-for _piece in ('<option value=\\"\\" selected disabled>', '<option value=\\"ai\\">', '<details><summary>Posting the answer of an AI system', '<input name=\\"prompt\\" maxlength=\\"120\\">'):
+for _piece in ('<option value=\\"\\" selected disabled>', '<option value=\\"ai\\">', '<details><summary>Posting the answer of an AI system', '<input name=\\"prompt\\" maxlength=\\"60\\">'):
     check(_tpl.count(_piece) == 1, f"the form lacks, or repeats, the piece {_piece!r} that /respond?kind=ai replaces")
 check("/respond?kind=ai&prompt=" in _inv, "the invitation's manual steps do not open the form ready for an AI system's answer")
 # CZ time on other sites (/embed, 6 Nov 2026 SGT): the badge draws the site's own mark, the snippet counts from the same epoch, the routes exist
@@ -348,7 +349,7 @@ check({"source": "/badge/cz-today.svg", "destination": "/api/badge"} in v["rewri
 # every link to the current prompt opens the current version (the originator's request of 6 Nov 2026 SGT): the stable address redirects to it,
 # and no page but the lists of earlier versions names an earlier invitation
 _cur = (PUBLIC / "ask.html").read_text("utf-8")
-_curv = re.search(r'<pre id="prompt-urls">(cz-machine-1\.\d+) ', _cur).group(1)
+_curm = re.search(r'<pre id="prompt-urls">(cz-machine-1\.\d+) ', _cur); check(bool(_curm), "/ask: the prompt's version is not where the page shows it"); _curv = _curm.group(1) if _curm else ""
 check({"source": "/prompts/current.txt", "destination": f"/prompts/{_curv}.txt", "permanent": False} in v["redirects"], f"vercel.json: /prompts/current.txt does not redirect to {_curv}")
 check(_curv == sorted((p_.stem for p_ in (PUBLIC / "prompts").glob("cz-machine-1.*.txt")), key=lambda x: int(x.split(".")[-1]))[-1], "the prompt /ask offers is not the newest published")
 check((PUBLIC / "prompts/current.txt").read_bytes() == (PUBLIC / f"prompts/{_curv}.txt").read_bytes(), "prompts/current.txt is not the current prompt")

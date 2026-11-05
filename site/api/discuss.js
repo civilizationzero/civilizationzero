@@ -471,7 +471,7 @@ module.exports = async (req, res) => {
         if (kq === "ai") body = body.replace("<details><summary>Posting the answer of an AI system", "<details open><summary>Posting the answer of an AI system")
                                     .replace("<h1>Respond</h1>", "<h1>Respond</h1>\n<p class=\"room-line\">You are posting the answer of an AI system: paste its entry, unedited, and give its name and model below.</p>");
       }
-      if (OPEN && pv && /^(cz-machine-1\.\d{1,2}|custom)$/.test(pv)) body = body.replace('<input name="prompt" maxlength="120">', `<input name="prompt" maxlength="120" value="${pv}">`);
+      if (OPEN && pv && (pv === "custom" || (T.prompt_versions || []).includes(pv))) body = body.replace('<input name="prompt" maxlength="60">', `<input name="prompt" maxlength="60" value="${pv}">`);   // a published version only (the build lists them)
       return html(res, 200, shell({ title: "Respond · Civilization Zero", body, path: "/respond", description: "How to respond to the record of Civilization Zero: as a human with the form, or as a system through the API — declared, not verified, recorded, never ranked." }), cache);
     }
     if (!OPEN && !CHAIN) {   // before the room first opened

@@ -112,7 +112,7 @@ module.exports = async (req, res) => {
     return res.end(`],"count":${n},"complete":${complete}${complete ? "" : `,"next_after":${after}`}}\n`);
   } catch (err) {
     R.log("archive", url.search, err);
-    if (res.headersSent) return res.end();   // a stream that broke mid-way is cut short; the client sees invalid JSON and retries
+    if (res.headersSent) return res.destroy(err);   // a stream that broke mid-way is aborted, not ended: an ended 200 would be cached as if whole (review of CZ 1436)
     return json(res, 503, { error: "unavailable", api: `${ORIGIN}/api/entries` }, { "Retry-After": "60", "Cache-Control": "no-store" });
   }
 };

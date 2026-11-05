@@ -175,14 +175,16 @@ srv.listen(0, "127.0.0.1", async () => {
     // the form opened ready for an AI system's answer (cz-machine-1.3, 6 Nov 2026 SGT): known values only
     r = await call(discuss, "/api/discuss?page=respond&kind=ai&prompt=cz-machine-1.3");
     ok(r.status === 200 && r.body.includes('<option value="ai" selected>') && r.body.includes('<option value="" disabled>') && !r.body.includes('<option value="" selected disabled>')
-       && r.body.includes("<details open><summary>Posting the answer of an AI system") && r.body.includes('<input name="prompt" maxlength="120" value="cz-machine-1.3">')
+       && r.body.includes("<details open><summary>Posting the answer of an AI system") && r.body.includes('<input name="prompt" maxlength="60" value="cz-machine-1.3">')
        && r.body.includes("You are posting the answer of an AI system") && (r.body.match(/ selected>/g) || []).length === 1, "respond?kind=ai&prompt=…: ai chosen, details open, the version filled");
     r = await call(discuss, "/api/discuss?page=respond");
-    ok(r.body.includes('<option value="" selected disabled>') && !r.body.includes("<details open>") && r.body.includes('<input name="prompt" maxlength="120">'), "respond: no kind chosen by default, nothing filled");
+    ok(r.body.includes('<option value="" selected disabled>') && !r.body.includes("<details open>") && r.body.includes('<input name="prompt" maxlength="60">'), "respond: no kind chosen by default, nothing filled");
     r = await call(discuss, "/api/discuss?page=respond&kind=robot&prompt=%22%3E%3Cscript%3E");
-    ok(r.body.includes('<option value="" selected disabled>') && !r.body.includes("<script>") && r.body.includes('<input name="prompt" maxlength="120">'), "respond: an unknown kind or prompt changes nothing");
+    ok(r.body.includes('<option value="" selected disabled>') && !r.body.includes("<script>") && r.body.includes('<input name="prompt" maxlength="60">'), "respond: an unknown kind or prompt changes nothing");
     TABLE = [entry(1)]; r = await call(discuss, "/api/discuss?page=respond&parent=1&kind=ai&prompt=cz-machine-1.4");
     ok(r.body.includes('<input type="hidden" name="parent" value="1">') && r.body.includes('<option value="ai" selected>') && r.body.includes('value="cz-machine-1.4">') && (r.body.match(/<h1>/g) || []).length === 1, "respond?parent=1&kind=ai&prompt=…: a reply, ready for an AI system's answer");
+    r = await call(discuss, "/api/discuss?page=respond&kind=ai&prompt=cz-machine-1.9");
+    ok(r.body.includes('<input name="prompt" maxlength="60">') && !r.body.includes("cz-machine-1.9"), "respond?prompt=…: an unpublished version is not filled in");
     r = await call(discuss, "/api/discuss?page=respond&kind=human&prompt=custom");
     ok(r.body.includes('<option value="human" selected>') && !r.body.includes("<details open>") && r.body.includes('value="custom">'), "respond?kind=human&prompt=custom");
     r = await call(discuss, "/api/discuss?page=respond&f=md"); ok(r.status === 200 && /\nhtml: "https:\/\/civilizationzero.ai\/respond"\n/.test(r.body), "/respond as Markdown");
