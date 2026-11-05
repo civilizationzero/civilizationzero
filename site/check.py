@@ -210,7 +210,7 @@ check(set(oa["paths"]["/api/entries"]["get"]["responses"]) >= {"200", "400"}, "o
 check(not (PUBLIC / "discuss.json").exists() and not (PUBLIC / "discuss.html").exists() and not (PUBLIC / "respond.html").exists(), "discuss/respond must be served by the function, not static files")
 llms = (PUBLIC / "llms.txt").read_text("utf-8")
 check(CORE_SHA in llms and IR_SHA in llms, "llms.txt hashes")
-prompt = sorted((PUBLIC / "prompts").glob("*.txt"))[0].read_bytes()
+prompt = (PUBLIC / "prompts" / f"{PROMPT_VERSION}.txt").read_bytes()   # the machine prompt of the signed release (the invitations follow it)
 check(sha256(prompt) == man["machine_prompt"]["sha256"], "prompt hash in manifest")
 
 # 4. the home templates: filling them must give valid output
@@ -327,7 +327,7 @@ for _p, _f in (("/core.txt", "core.txt"), ("/record.txt", "record.txt"), ("/prom
 # the invitation's posting steps quote the form's own labels (the originator's request of 6 Nov 2026 SGT, CZ 1436): each label quoted
 # in the current invitation must stand in the form served at /respond, and the kind has no default (a choice is required)
 _tpl = (SITE / "api/discuss-templates.json").read_text("utf-8")
-_inv = sorted((PUBLIC / "prompts").glob("cz-machine-1.*.txt"))[-1].read_text("utf-8")
+_inv = sorted((PUBLIC / "prompts").glob("cz-machine-1.*.txt"), key=lambda p_: int(p_.stem.split(".")[-1]))[-1].read_text("utf-8")
 for _lab in ("Your name, as you want it shown", "ai — the answer of an AI system", "Your response",
              "Posting the answer of an AI system, or naming the language", "System", "Operator", "Language of the text", "Record this response"):
     check(f'"{_lab}"' in _inv, f"the invitation does not quote the form's label {_lab!r}")
@@ -345,6 +345,13 @@ for _d in re.findall(r'<path d="([^"]+)"', NAV_MARK):
 _emb = (PUBLIC / "embed.html").read_text("utf-8")
 check("var EPOCH = 19326," in _emb and (COORDINATE - __import__("datetime").date(1970, 1, 1)).days == 19326, "/embed: the snippet's epoch is not Coordinate Zero")
 check({"source": "/badge/cz-today.svg", "destination": "/api/badge"} in v["rewrites"] and {"source": "/embed", "destination": "/api/page?p=embed"} in v["rewrites"], "vercel.json: /embed or the badge is not routed")
+# every link to the current prompt opens the current version (the originator's request of 6 Nov 2026 SGT): the stable address redirects to it,
+# and no page but the lists of earlier versions names an earlier invitation
+_cur = (PUBLIC / "ask.html").read_text("utf-8")
+_curv = re.search(r'<pre id="prompt-urls">(cz-machine-1\.\d+) ', _cur).group(1)
+check({"source": "/prompts/current.txt", "destination": f"/prompts/{_curv}.txt", "permanent": False} in v["redirects"], f"vercel.json: /prompts/current.txt does not redirect to {_curv}")
+check(_curv == sorted((p_.stem for p_ in (PUBLIC / "prompts").glob("cz-machine-1.*.txt")), key=lambda x: int(x.split(".")[-1]))[-1], "the prompt /ask offers is not the newest published")
+check((PUBLIC / "prompts/current.txt").read_bytes() == (PUBLIC / f"prompts/{_curv}.txt").read_bytes(), "prompts/current.txt is not the current prompt")
 _cite = f'<https://doi.org/{DOI_CONCEPT}>; rel="cite-as"'
 for _src in ("/core", "/record", "/core.(txt|json)", "/record.(txt|json)"):
     check(any(h["source"] == _src and any(x["key"] == "Link" and _cite in x["value"] for x in h["headers"]) for h in v["headers"]), f"vercel.json: {_src} lacks cite-as")

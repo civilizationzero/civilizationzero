@@ -471,11 +471,13 @@
   "machine_prompt": {
     "version": "cz-machine-1.0",
     "url": "https://civilizationzero.ai/prompts/cz-machine-1.0.txt",
-    "sha256": "f871380dfe1b53e74ff8c4353fc95d60faa180edca36122ca7bbe8313ba2829a"
+    "sha256": "f871380dfe1b53e74ff8c4353fc95d60faa180edca36122ca7bbe8313ba2829a",
+    "note": "the prompt of the signed release 1.0; the current prompt is \"invitation\""
   },
   "invitation": {
     "version": "cz-machine-1.4",
     "url": "https://civilizationzero.ai/prompts/cz-machine-1.4.txt",
+    "current": "https://civilizationzero.ai/prompts/current.txt",
     "sha256": "c50b2e657eae961db3c6468d96e1887151a4388015862757dd40f3c5ac320828",
     "page": "https://civilizationzero.ai/ask",
     "earlier": [
