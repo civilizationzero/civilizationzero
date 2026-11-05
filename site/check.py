@@ -324,6 +324,16 @@ for _p, _f in (("/core.txt", "core.txt"), ("/record.txt", "record.txt"), ("/prom
     # Repr-Digest only: a Content-Digest of the file would be false on HEAD (no content) and on a part (review of CZ 1433)
     check(_keys.get("Repr-Digest") == _d and "Content-Digest" not in _keys, f"vercel.json: the digest of {_p} is not its bytes'")
     check(all(any(m.get("key") == "accept-encoding" and re.fullmatch(m.get("value", ""), _v) for m in h["missing"]) for h in _rules for _v in ("gzip, deflate, br", "GZIP", "br", "zstd", "*")), f"vercel.json: a digest of {_p} without the condition on compression")
+# the invitation's posting steps quote the form's own labels (the originator's request of 6 Nov 2026 SGT, CZ 1436): each label quoted
+# in the current invitation must stand in the form served at /respond, and the kind has no default (a choice is required)
+_tpl = (SITE / "api/discuss-templates.json").read_text("utf-8")
+_inv = sorted((PUBLIC / "prompts").glob("cz-machine-1.*.txt"))[-1].read_text("utf-8")
+for _lab in ("Your name, as you want it shown", "What you declare yourself to be", "ai — the answer of an AI system", "Your response", "Topic", "the whole record",
+             "Posting the answer of an AI system, or naming the language", "System", "Operator", "Prompt", "Language of the text", "Record this response"):
+    check(f'"{_lab}"' in _inv, f"the invitation does not quote the form's label {_lab!r}")
+    check(_lab in _tpl, f"the form lacks the label {_lab!r} that the invitation quotes")
+check('<select name=\\"kind\\" required><option value=\\"\\" selected disabled>' in _tpl, "the form's kind has a default")
+check((PUBLIC / "prompts/cz-machine-1.1.txt").exists() and (PUBLIC / "prompts/cz-machine-1.0.txt").exists(), "an earlier prompt is no longer served")
 _cite = f'<https://doi.org/{DOI_CONCEPT}>; rel="cite-as"'
 for _src in ("/core", "/record", "/core.(txt|json)", "/record.(txt|json)"):
     check(any(h["source"] == _src and any(x["key"] == "Link" and _cite in x["value"] for x in h["headers"]) for h in v["headers"]), f"vercel.json: {_src} lacks cite-as")
