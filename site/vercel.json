@@ -25,7 +25,7 @@
       "permanent": true
     },
     {
-      "source": "/:page(core|record|objections|ask|machine|about|archive|calendar|civilization-zero-infographic|civilization-zero-evidence-atlas|civilization-zero-images|press|how-it-is-built).html",
+      "source": "/:page(core|record|objections|ask|machine|about|archive|calendar|civilization-zero-infographic|civilization-zero-evidence-atlas|civilization-zero-images|press|how-it-is-built|embed).html",
       "destination": "/:page",
       "permanent": true
     },
@@ -41,7 +41,7 @@
       "destination": "/api/home?f=md"
     },
     {
-      "source": "/:page(core|record|objections|ask|machine|about|archive|calendar|civilization-zero-infographic|civilization-zero-evidence-atlas|civilization-zero-images|press|how-it-is-built).md",
+      "source": "/:page(core|record|objections|ask|machine|about|archive|calendar|civilization-zero-infographic|civilization-zero-evidence-atlas|civilization-zero-images|press|how-it-is-built|embed).md",
       "destination": "/api/page?p=:page&f=md"
     },
     {
@@ -202,7 +202,7 @@
       "destination": "/api/home?f=md"
     },
     {
-      "source": "/:page(core|record|objections|ask|machine|about|archive|calendar|civilization-zero-infographic|civilization-zero-evidence-atlas|civilization-zero-images|press|how-it-is-built)",
+      "source": "/:page(core|record|objections|ask|machine|about|archive|calendar|civilization-zero-infographic|civilization-zero-evidence-atlas|civilization-zero-images|press|how-it-is-built|embed)",
       "has": [
         {
           "type": "header",
@@ -368,6 +368,14 @@
     {
       "source": "/how-it-is-built",
       "destination": "/api/page?p=how-it-is-built"
+    },
+    {
+      "source": "/embed",
+      "destination": "/api/page?p=embed"
+    },
+    {
+      "source": "/badge/cz-today.svg",
+      "destination": "/api/badge"
     },
     {
       "source": "/calendar.json",
@@ -1113,6 +1121,15 @@
     },
     {
       "source": "/how-it-is-built",
+      "headers": [
+        {
+          "key": "Vary",
+          "value": "Accept"
+        }
+      ]
+    },
+    {
+      "source": "/embed",
       "headers": [
         {
           "key": "Vary",

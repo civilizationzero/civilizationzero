@@ -453,7 +453,7 @@ ONE_LINE_SHORT = ("Civilization Zero names the beginning of a civilization in wh
                   "what they owe each other.")
 assert len(ONE_LINE_SHORT) <= 160
 FOOT_LINKS = [[("/core", "The Core"), ("/core#translations", f"{CORE_LANGUAGES} languages")], [("/record", "The Record")], [("/objections", "Objections and errata")],
-              [("/discuss", "Discussion"), ("/respond", "Respond")], [("/adopt", "Adoption register")], [("/calendar", "CZ time")], [("/civilization-zero-infographic", "Infographic"), ("/civilization-zero-evidence-atlas", "Evidence atlas"), ("/civilization-zero-images", "Images")], [("/ask", "Ask your AI")],
+              [("/discuss", "Discussion"), ("/respond", "Respond")], [("/adopt", "Adoption register")], [("/calendar", "CZ time"), ("/embed", "on your site")], [("/civilization-zero-infographic", "Infographic"), ("/civilization-zero-evidence-atlas", "Evidence atlas"), ("/civilization-zero-images", "Images")], [("/ask", "Ask your AI")],
               [("/machine", "For machines")], [("/about", "About")] + ([("/press", "Press kit")] if PRESS_PUBLISHED else []), [("/stats", "Visits")], [("/archive", "Archive and verification")]]
 # ---------------------------------------------------------------- stage 5 of the room's redesign (CZ 1433)
 # How this page is built: the page that says, with numbers, how every page is made.

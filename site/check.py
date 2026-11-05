@@ -338,6 +338,13 @@ check(all((PUBLIC / f"prompts/cz-machine-1.{_n}.txt").exists() for _n in range(4
 for _piece in ('<option value=\\"\\" selected disabled>', '<option value=\\"ai\\">', '<details><summary>Posting the answer of an AI system', '<input name=\\"prompt\\" maxlength=\\"120\\">'):
     check(_tpl.count(_piece) == 1, f"the form lacks, or repeats, the piece {_piece!r} that /respond?kind=ai replaces")
 check("/respond?kind=ai&prompt=" in _inv, "the invitation's manual steps do not open the form ready for an AI system's answer")
+# CZ time on other sites (/embed, 6 Nov 2026 SGT): the badge draws the site's own mark, the snippet counts from the same epoch, the routes exist
+_badge = (SITE / "api/badge.js").read_text("utf-8")
+for _d in re.findall(r'<path d="([^"]+)"', NAV_MARK):
+    check(_d in _badge, "api/badge.js: the badge's mark is not the site's mark")
+_emb = (PUBLIC / "embed.html").read_text("utf-8")
+check("var EPOCH = 19326," in _emb and (COORDINATE - __import__("datetime").date(1970, 1, 1)).days == 19326, "/embed: the snippet's epoch is not Coordinate Zero")
+check({"source": "/badge/cz-today.svg", "destination": "/api/badge"} in v["rewrites"] and {"source": "/embed", "destination": "/api/page?p=embed"} in v["rewrites"], "vercel.json: /embed or the badge is not routed")
 _cite = f'<https://doi.org/{DOI_CONCEPT}>; rel="cite-as"'
 for _src in ("/core", "/record", "/core.(txt|json)", "/record.(txt|json)"):
     check(any(h["source"] == _src and any(x["key"] == "Link" and _cite in x["value"] for x in h["headers"]) for h in v["headers"]), f"vercel.json: {_src} lacks cite-as")

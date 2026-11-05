@@ -1,0 +1,39 @@
+// The CZ badge: today's date in CZ time as an image, for other sites to show (the originator's request of 6 Nov 2026 SGT, CZ 1436).
+// GET /badge/cz-today.svg (vercel.json) — ?theme=light | dark; without it the badge follows the reader's light or dark setting where
+// the browser applies it to images. An image, not a script: it works where scripts are not allowed (READMEs, wikis, newsletters, forums).
+// Cached until the next 00:00 UTC, when the day changes. Nothing is read from the request but the theme; nothing is kept; the visit
+// counts (middleware.js) never see it (an .svg address). The mark's paths are the site's own (check.py compares them with mark.py).
+const CZ = require("../room/cztime.js");
+
+const MARK = ['M50.5,26.5 V17 A12,12 0 0 0 38.5,5 H25.5 A12,12 0 0 0 13.5,17 V47 A12,12 0 0 0 25.5,59 H38.5 A12,12 0 0 0 50.5,47 V37.5', 'M38.5,5 L25.5,59'];
+const LIGHT = { bg: "#fff", rule: "#bbb", fg: "#111", green: "#116329" }, DARK = { bg: "#101010", rule: "#444", fg: "#eee", green: "#3fb950" };
+const rules = (p) => `.bg{fill:${p.bg};stroke:${p.rule}}.m{stroke:${p.fg}}.t{fill:${p.fg}}.n{fill:${p.green}}`;
+
+function badge(day, theme) {
+  const num = `CZ ${day < 0 ? "−" + -day : day}`;
+  const w = 40 + Math.max(100, Math.ceil(num.length * 9.8)) + 12;
+  const style = theme === "dark" ? rules(DARK) : theme === "light" ? rules(LIGHT) : rules(LIGHT) + `@media (prefers-color-scheme:dark){${rules(DARK)}}`;
+  const label = `Today in CZ time: ${num}, day ${day} since Coordinate Zero, 30 November 2022. Civilization Zero, civilizationzero.ai`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="40" viewBox="0 0 ${w} 40" role="img" aria-label="${label}">` +
+    `<title>${label}</title>` +
+    `<style>${style}.t{font:11px system-ui,-apple-system,'Segoe UI',Roboto,sans-serif}.n{font:700 16px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}</style>` +
+    `<rect class="bg" x=".5" y=".5" width="${w - 1}" height="39" rx="6"/>` +
+    `<g class="m" fill="none" stroke-width="6.5" transform="translate(8 8) scale(.375)"><path d="${MARK[0]}"/><path d="${MARK[1]}"/></g>` +
+    `<text class="t" x="40" y="16">Civilization Zero</text><text class="n" x="40" y="33">${num}</text></svg>\n`;
+}
+
+module.exports = (req, res) => {
+  const ms = Date.now();
+  if (!["GET", "HEAD"].includes(req.method)) { res.statusCode = 405; res.setHeader("Allow", "GET, HEAD"); return res.end("GET only\n"); }
+  const t = new URL(req.url, "http://x").searchParams.get("theme");
+  res.statusCode = 200;
+  res.setHeader("Content-Type", "image/svg+xml; charset=utf-8");
+  const s = Math.max(60, CZ.secondsToNextDay(ms));
+  res.setHeader("Cache-Control", `public, max-age=${s}, s-maxage=${s}`);
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+  res.setHeader("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'");
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.end(req.method === "HEAD" ? undefined : badge(CZ.dayOf(ms), t === "light" || t === "dark" ? t : "auto"));
+};
+module.exports.badge = badge;

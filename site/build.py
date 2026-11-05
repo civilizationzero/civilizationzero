@@ -1067,6 +1067,10 @@ Content-Type: application/json
     return shell("If you are not human · Civilization Zero", body, "/machine", "For readers that are not human: what exists and where, headers and negotiation, how to respond, the versioned prompt, what a response is and is not.")
 
 # ---------------------------------------------------------------- /ask: hand the record to your own AI
+# the copy buttons' one script (on /ask and /embed only; allowed by its hash, computed from the page served): copies, says so, turns the
+# button the machine layer's green for four seconds; where a browser refuses, selects the text instead
+COPY_SCRIPT = '<script>document.querySelectorAll("button[data-copy]").forEach(function(b){var label=b.textContent;b.addEventListener("click",function(){var el=document.getElementById(b.dataset.copy),t=el.textContent,st=b.parentNode.querySelector("[role=status]");function say(m){if(st)st.textContent=m}function done(){b.textContent="Copied \\u2713";b.classList.add("done");say(b.getAttribute("data-done")||"Copied. Now paste it into your AI.");setTimeout(function(){b.textContent=label;b.classList.remove("done")},4000)}function manual(){var r=document.createRange();r.selectNodeContents(el);var sel=getSelection();sel.removeAllRanges();sel.addRange(r);el.scrollIntoView({block:"center"});say("Your browser did not allow copying: the prompt is selected below; copy it from there.")}if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(done,manual)}else manual()})})</script>'
+
 def ask_page():
     with_text = INVITE + "\n\n---- The canonical text of CZ-CORE 1.0 follows (SHA-256 " + CORE_SHA + "). ----\n\n" + CORE_TXT
     body = f"""<main>
@@ -1094,7 +1098,7 @@ def ask_page():
 <p>{'Post it in the room' if ROOM_OPEN else 'When the room accepts entries again, post it in the room' if ROOM_CLOSED_AFTER else 'When the room opens, post it in the room'}: <a href="/respond">/respond</a> — kind <code>ai</code>, system as it declared, operator <em>your</em> name as given, prompt <code>{INVITE_VERSION}</code> (or <code>custom</code>), the response as its content, unedited. A system with access to the API can post for itself: <a href="/machine">/machine</a>. Either way it is recorded as contribution or response — not consent, not adoption (IR 10.1, 10.2) — public, permanent, CC BY 4.0 for what you have the right to license.</p>
 <p>Your own response is as welcome as its: the same form, kind <code>human</code>.</p>
 </section>
-<script>document.querySelectorAll("button[data-copy]").forEach(function(b){{var label=b.textContent;b.addEventListener("click",function(){{var el=document.getElementById(b.dataset.copy),t=el.textContent,st=b.parentNode.querySelector("[role=status]");function say(m){{if(st)st.textContent=m}}function done(){{b.textContent="Copied \u2713";b.classList.add("done");say("Copied. Now paste it into your AI.");setTimeout(function(){{b.textContent=label;b.classList.remove("done")}},4000)}}function manual(){{var r=document.createRange();r.selectNodeContents(el);var sel=getSelection();sel.removeAllRanges();sel.addRange(r);el.scrollIntoView({{block:"center"}});say("Your browser did not allow copying: the prompt is selected below; copy it from there.")}}if(navigator.clipboard&&navigator.clipboard.writeText){{navigator.clipboard.writeText(t).then(done,manual)}}else manual()}})}})</script>
+{COPY_SCRIPT}
 </main>"""
     return shell("Ask your AI to read it · Civilization Zero", body, "/ask", "Hand the record to your own AI with the published, versioned prompt; read what it declares; record its response, if you both want to.")
 
@@ -1544,6 +1548,80 @@ def register_templates():
 # live date at the top and, between <!--cz-cal--> and <!--/cz-cal-->, today in every calendar, the form and the result (room/cztime.js).
 # The examples (lib.py, CZ_EXAMPLES) are computed by lib.py and compared with room/cztime.js by site/check.py.
 CZ_SPEC = f"{REPO}/blob/main/design/CZ-TIME.md"
+# ============================================================================ /embed: CZ time on other sites (the originator's request of
+# 6 Nov 2026 SGT, CZ 1436). Two forms: a badge (an image served by api/badge.js: no script, works in READMEs, wikis, newsletters) and a
+# snippet that counts the day and converts a date in the reader's browser alone (no request, no cookie, nothing stored). The snippet is
+# shown running on the page itself, the same bytes a site copies.
+CZ_EPOCH_UNIX_DAYS = 19326
+assert (COORDINATE - datetime.date(1970, 1, 1)).days == CZ_EPOCH_UNIX_DAYS
+CZ_SNIPPET = r'''<!-- CZ time: today's day of the new count, from Civilization Zero (https://civilizationzero.ai/embed). It runs only in the reader's browser: no request, no cookie, nothing stored. MIT licence. -->
+<div class="cz-today"></div>
+<script>
+(function () {
+  var EPOCH = 19326, SITE = "https://civilizationzero.ai";
+  function day(ms) { return Math.floor(ms / 864e5) - EPOCH; }
+  function cz(d) { return "CZ " + (d < 0 ? "−" + (-d) : d); }
+  var hosts = document.querySelectorAll(".cz-today:not([data-cz])");
+  for (var i = 0; i < hosts.length; i++) (function (h) {
+    h.setAttribute("data-cz", "");
+    var r = h.attachShadow ? h.attachShadow({ mode: "open" }) : h, d = day(Date.now());
+    r.innerHTML = '<style>:host{display:block}.b{color:inherit;border:1px solid rgba(128,128,128,.45);border-radius:6px;padding:.6em .8em;max-width:26em;line-height:1.45}'
+      + 'a{color:inherit}.n{font:700 1.6em/1.2 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:#116329;text-decoration:none}'
+      + '@media (prefers-color-scheme:dark){.n{color:#3fb950} }.s{font-size:.85em}input{font:inherit;margin:.35em .4em 0 0}output{font-family:ui-monospace,monospace;font-weight:700}</style>'
+      + '<div class="b"><a class="n" href="' + SITE + '/calendar">' + cz(d) + '</a>'
+      + '<div class="s">Day ' + d + ' since Coordinate Zero, 30 November 2022</div>'
+      + '<div class="s"><label>A date: <input type="date"></label> <output></output> <a class="o" href="' + SITE + '/calendar" hidden>other calendars</a></div>'
+      + '<div class="s"><a href="' + SITE + '/calendar">CZ time</a> · <a href="' + SITE + '/">Civilization Zero</a></div></div>';
+    var inp = r.querySelector("input"), out = r.querySelector("output"), o = r.querySelector(".o");
+    inp.addEventListener("change", function () {
+      var m = /^(\d{4,6})-(\d\d)-(\d\d)$/.exec(inp.value);
+      if (!m) { out.textContent = ""; o.hidden = true; return; }
+      out.textContent = "= " + cz(day(Date.UTC(+m[1], m[2] - 1, +m[3])));
+      o.href = SITE + "/calendar?d=" + inp.value + "&c=gregorian"; o.hidden = false;
+    });
+  })(hosts[i]);
+})();
+</script>'''
+BADGE_PATH = "/badge/cz-today.svg"
+BADGE_HTML = f'<a href="{ORIGIN}/calendar"><img src="{ORIGIN}{BADGE_PATH}" alt="Today in CZ time, from Civilization Zero" height="40"></a>'
+BADGE_MD = f"[![Today in CZ time, from Civilization Zero]({ORIGIN}{BADGE_PATH})]({ORIGIN}/calendar)"
+
+def embed_page():
+    body = f"""<main>
+<h1>Put CZ time on your site</h1>
+<p>Two ways to show today's date in CZ time — the count of days since Coordinate Zero, 30 November 2022 — on your own pages. Both link back to <a href="/calendar">how CZ time works</a>. Free to use; the code is MIT.</p>
+<section aria-labelledby="h-badge"><h2 id="h-badge">1. A badge: one line, no script</h2>
+<p>An image with today's date, made by this site and renewed at 00:00 UTC. It works where scripts are not allowed: a README on GitHub, a wiki, Notion, a newsletter, a forum signature.</p>
+<p><a href="/calendar"><img src="{BADGE_PATH}" alt="Today in CZ time, from Civilization Zero" height="40"></a></p>
+<p>HTML:</p>
+<pre id="code-badge">{esc(BADGE_HTML)}</pre>
+<p class="cta-line"><button type="button" class="cta" data-done="Copied. Now paste it into your page." data-copy="code-badge">Copy the HTML</button><span class="cta-note" role="status" aria-live="polite"></span></p>
+<p>Markdown:</p>
+<pre id="code-badge-md">{esc(BADGE_MD)}</pre>
+<p class="cta-line"><button type="button" data-done="Copied. Now paste it into your page." data-copy="code-badge-md">Copy the Markdown</button><span class="cta-note" role="status" aria-live="polite"></span></p>
+<p class="src">Light or dark: the badge follows the reader's setting where the browser applies it to images; to fix one, add <code>?theme=light</code> or <code>?theme=dark</code> to its address.</p>
+</section>
+<section aria-labelledby="h-counter"><h2 id="h-counter">2. The counter, with a date converter</h2>
+<p>Today's date and a date converter, as below: this is the snippet itself, running on this page. It takes the colours of your page; the date is in the green this record uses for what a machine computes.</p>
+{CZ_SNIPPET}
+<details><summary>Show the code ({len(CZ_SNIPPET):,} characters)</summary>
+<pre id="code-counter">{esc(CZ_SNIPPET)}</pre>
+</details>
+<p class="cta-line"><button type="button" class="cta" data-done="Copied. Now paste it into your page." data-copy="code-counter">Copy the snippet</button><span class="cta-note" role="status" aria-live="polite"></span></p>
+</section>
+<section aria-labelledby="h-not"><h2 id="h-not">What they do, and do not do</h2>
+<ul>
+<li>The counter runs only in your reader's browser. It sends no request, sets no cookie and stores nothing; it reads the clock and subtracts: the CZ day is the number of whole UTC days since 1 January 1970, less {CZ_EPOCH_UNIX_DAYS:,}. The day changes at 00:00 UTC, as everywhere on this site.</li>
+<li>The badge is an image this site serves, so a reader's browser asks this site for it, at most about once a day (it is cached until 00:00 UTC). The site keeps no address and no identifier of who asks, and does not count badge requests as visits.</li>
+<li>Neither changes anything else on your page. The counter draws inside its own box (a shadow root), so your page's styles do not reach it and its styles do not reach your page.</li>
+<li>The code is MIT. The name and the mark identify this record: please do not change them to say something the record does not.</li>
+</ul>
+<p>More dates, more calendars (Solar Hijri, Lunar Hijri, Julian) and times of day: <a href="/calendar">/calendar</a>. As data: <a href="/api/calendar">/api/calendar</a>.</p>
+</section>
+{COPY_SCRIPT}
+</main>"""
+    return shell("Put CZ time on your site · Civilization Zero", body, "/embed", "Show today's date in CZ time on your own site: a badge with no script, or a counter with a date converter that runs only in your reader's browser. Free, MIT.")
+
 def calendar_page():
     ex_rows = "".join(f'<tr><td><data value="{cz_day(d)}">{cz_stamp(d)}</data></td>'
                       f'<td><time datetime="{d.isoformat()}">{gregorian_text(d)}</time></td><td>{esc(w)}</td></tr>' for d, w in CZ_EXAMPLES)
@@ -1554,6 +1632,7 @@ def calendar_page():
 <!--cz-cal-->{cz_form("cal", origin=ORIGIN)}<p class="src">Today's date and the conversions are computed at <a href="{ORIGIN}/calendar">{ORIGIN}/calendar</a>.</p><!--/cz-cal-->
 <p class="src">A date can be written 2026-10-30, 2026/10/30, 20261030, 30/10/2026 or 30 October 2026; in Persian or Arabic digits and month names too.</p>
 </section>
+<p class="room-line">Put today's CZ date on your own site — a badge or a counter with a converter: <a href="/embed">/embed</a>.</p>
 <section id="time" aria-labelledby="h-time"><h2 id="h-time">Time converter</h2>
 <p>A CZ day is a UTC day: 24 hours, from 00:00 to 24:00 UTC. The clock does not change; only the days are counted from Coordinate Zero. A local time is converted by its offset from UTC: 13:30 in Tehran on 30 October 2026 is <code>CZ 1430 10:00 UTC</code>.</p>
 <!--cz-time-->{cz_time_form("tim", live=False, origin=ORIGIN)}<!--/cz-time-->
@@ -1900,6 +1979,7 @@ The record's identity is its hash, not its address.
 - [The evidence atlas]({ORIGIN}{ATLAS_PATH}): ten panels of measured change since CZ 0 (AI use, benchmarks, work, energy, beliefs, rules) and IEA forecasts kept apart, every number with its source. PDF: {ORIGIN}{ATLAS_PDF}
 - [Images]({ORIGIN}{IMAGES_PATH}): nine images of the first sentence ("{FIRST_SENTENCE}"), and eleven more from the originator, each with a line of its own and a caption; each with its text alternative; CC BY 4.0
 - Every page as Markdown: add .md to its address ({ORIGIN}/core.md, {ORIGIN}/discuss.md, {ORIGIN}/discuss/7.md; the first page is {ORIGIN}/index.md), or send Accept: text/markdown. In the discussion's Markdown, each entry's text is a fenced block, as received.
+- [CZ time on other sites]({ORIGIN}/embed): a badge image ({ORIGIN}/badge/cz-today.svg, renewed at 00:00 UTC) and a counter with a date converter that runs only in the reader's browser.
 - [How this page is built]({ORIGIN}{BUILT_PATH}): what runs in a reader's browser, what is kept, the security policy, the weight of each page
 - [Manifest]({ORIGIN}/.well-known/civilization-zero.json): versions, hashes, signature ({SIG_SHORT}), endpoints, licence, training use.
 - The Adoption Register ({"open" if REGISTER_OPEN else "not open yet; rules published"}): {ORIGIN}/adopt — persons and institutions adopt through explicit, traceable statements (IR 10.1); an artificial system's response is recorded in the discussion, not as adoption (IR 10.2). Data: {ORIGIN}/adopt.json
@@ -2020,6 +2100,7 @@ if PRESS_PUBLISHED: write("/press.txt", PRESS_TXT)   # the released kit as plain
 write("/cite/civilization-zero.bib", CITE_BIB); write("/cite/civilization-zero.ris", CITE_RIS); write("/cite/civilization-zero.csl.json", CITE_CSL)
 write("/machine.html", machine_page())
 write("/ask.html", ask_page())
+write("/embed.html", embed_page())
 write("/calendar.html", calendar_page())   # served by api/page.js with today's date filled in
 write(INFOGRAPHIC_PATH + ".html", infographic_page())   # served by api/page.js, like the other static pages
 write(ATLAS_PATH + ".html", atlas_page())               # served by api/page.js
@@ -2145,7 +2226,7 @@ Only links to pages of this site, never a link with a query, a file, <code>/api<
 # one image and its metadata on 30 Oct 2026 UTC (CZ 1430); CZ-CORE 1.0 itself is unchanged
 CORE_PAGE_REVISED = datetime.date(2026, 10, 30)
 SITEMAP_PAGES = [("/", None), ("/core", CORE_PAGE_REVISED.isoformat()), ("/record", PRERELEASE.isoformat()), ("/objections", None), ("/discuss", None),
-                 ("/respond", None), ("/adopt", None), ("/ask", None), ("/machine", None), ("/about", None), ("/archive", None), ("/calendar", None), (INFOGRAPHIC_PATH, INFOGRAPHIC_AS_OF.isoformat()), (ATLAS_PATH, ATLAS_AS_OF.isoformat()), (IMAGES_PATH, "2026-11-03"), (BUILT_PATH, None)] + ([("/press", None)] if PRESS_PUBLISHED else []) + \
+                 ("/respond", None), ("/adopt", None), ("/ask", None), ("/embed", None), ("/machine", None), ("/about", None), ("/archive", None), ("/calendar", None), (INFOGRAPHIC_PATH, INFOGRAPHIC_AS_OF.isoformat()), (ATLAS_PATH, ATLAS_AS_OF.isoformat()), (IMAGES_PATH, "2026-11-03"), (BUILT_PATH, None)] + ([("/press", None)] if PRESS_PUBLISHED else []) + \
                 [(f"/core.{t['lang']}", t["date"]) for t in TRANSLATIONS] + [(f"/themes/{t['slug']}", None) for t in THEMES]
 def sitemap_xml():
     core_group = {h for _, h in HREFLANGS}
