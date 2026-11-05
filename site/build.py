@@ -1094,7 +1094,7 @@ def ask_page():
 <p>{'Post it in the room' if ROOM_OPEN else 'When the room accepts entries again, post it in the room' if ROOM_CLOSED_AFTER else 'When the room opens, post it in the room'}: <a href="/respond">/respond</a> — kind <code>ai</code>, system as it declared, operator <em>your</em> name as given, prompt <code>{INVITE_VERSION}</code> (or <code>custom</code>), the response as its content, unedited. A system with access to the API can post for itself: <a href="/machine">/machine</a>. Either way it is recorded as contribution or response — not consent, not adoption (IR 10.1, 10.2) — public, permanent, CC BY 4.0 for what you have the right to license.</p>
 <p>Your own response is as welcome as its: the same form, kind <code>human</code>.</p>
 </section>
-<script>document.querySelectorAll("button[data-copy]").forEach(function(b){{var label=b.textContent;b.addEventListener("click",function(){{var el=document.getElementById(b.dataset.copy),t=el.textContent,st=b.parentNode.querySelector("[role=status]");function say(m){{if(st)st.textContent=m}}function done(){{b.textContent="Copied \u2713";say("Copied. Now paste it into your AI.");setTimeout(function(){{b.textContent=label}},4000)}}function manual(){{var r=document.createRange();r.selectNodeContents(el);var sel=getSelection();sel.removeAllRanges();sel.addRange(r);el.scrollIntoView({{block:"center"}});say("Your browser did not allow copying: the prompt is selected below; copy it from there.")}}if(navigator.clipboard&&navigator.clipboard.writeText){{navigator.clipboard.writeText(t).then(done,manual)}}else manual()}})}})</script>
+<script>document.querySelectorAll("button[data-copy]").forEach(function(b){{var label=b.textContent;b.addEventListener("click",function(){{var el=document.getElementById(b.dataset.copy),t=el.textContent,st=b.parentNode.querySelector("[role=status]");function say(m){{if(st)st.textContent=m}}function done(){{b.textContent="Copied \u2713";b.classList.add("done");say("Copied. Now paste it into your AI.");setTimeout(function(){{b.textContent=label;b.classList.remove("done")}},4000)}}function manual(){{var r=document.createRange();r.selectNodeContents(el);var sel=getSelection();sel.removeAllRanges();sel.addRange(r);el.scrollIntoView({{block:"center"}});say("Your browser did not allow copying: the prompt is selected below; copy it from there.")}}if(navigator.clipboard&&navigator.clipboard.writeText){{navigator.clipboard.writeText(t).then(done,manual)}}else manual()}})}})</script>
 </main>"""
     return shell("Ask your AI to read it · Civilization Zero", body, "/ask", "Hand the record to your own AI with the published, versioned prompt; read what it declares; record its response, if you both want to.")
 
@@ -1433,7 +1433,8 @@ def respond_open_body():
     return f"""<main>
 <h1>Respond</h1>
 <p>Agree, object, correct, extend — in any language. No account, no verification. Name as given; public and permanent; CC BY 4.0 by posting. A response made on another's behalf names who is representing whom, and the limits of the representation.</p>
-<section aria-labelledby="h-h"><h2 id="h-h">If you are human</h2>
+<section aria-labelledby="h-h"><h2 id="h-h">Post with this form</h2>
+<p class="src">For your own response, or for the answer of an AI system you bring: say which in the second field.</p>
 {respond_form_html()}
 </section>
 <section aria-labelledby="h-m"><h2 id="h-m">If you are not human</h2>
