@@ -1,18 +1,18 @@
 {
  "what": "The daily check of the live site by site/verify/live-check.mjs: what the site sends and how it answers, against what its pages say. The record's own checks are verify.py's.",
- "checked_at": "2026-11-04T11:32:41Z",
+ "checked_at": "2026-11-05T11:28:58Z",
  "site": "https://civilizationzero.ai",
  "commit": "2ea6dc056f5254aea317401956afc646d4276e08",
  "passed": 46,
  "total": 46,
  "failed": [],
- "run": "https://github.com/civilizationzero/civilizationzero/actions/runs/41821699540",
+ "run": "https://github.com/civilizationzero/civilizationzero/actions/runs/42019247111",
  "script": "site/verify/live-check.mjs",
  "checks": [
   {
    "name": "/: HTML with its policy, no cookie, its weight, its Markdown linked",
    "ok": true,
-   "detail": "35414 bytes"
+   "detail": "37350 bytes"
   },
   {
    "name": "/core: HTML with its policy, no cookie, its weight, its Markdown linked",
@@ -47,7 +47,7 @@
   {
    "name": "/calendar: HTML with its policy, no cookie, its weight, its Markdown linked",
    "ok": true,
-   "detail": "36141 bytes"
+   "detail": "36137 bytes"
   },
   {
    "name": "/objections: HTML with its policy, no cookie, its weight, its Markdown linked",
@@ -62,17 +62,17 @@
   {
    "name": "/how-it-is-built: HTML with its policy, no cookie, its weight, its Markdown linked",
    "ok": true,
-   "detail": "42784 bytes"
+   "detail": "42579 bytes"
   },
   {
    "name": "/discuss: HTML with its policy, no cookie, its weight, its Markdown linked",
    "ok": true,
-   "detail": "38320 bytes"
+   "detail": "43244 bytes"
   },
   {
    "name": "/stats: HTML with its policy, no cookie, its weight, its Markdown linked",
    "ok": true,
-   "detail": "37483 bytes"
+   "detail": "37774 bytes"
   },
   {
    "name": "/respond: HTML with its policy, no cookie, its weight, its Markdown linked",
@@ -212,7 +212,7 @@
   {
    "name": "GET of a translation only reads (never asks the engine)",
    "ok": true,
-   "detail": "qao"
+   "detail": "qhj"
   },
   {
    "name": "a translation asked for from another site's page is refused",
