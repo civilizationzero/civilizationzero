@@ -1018,12 +1018,18 @@ Content-Type: application/json
 def ask_page():
     with_text = PROMPT + "\n\n---- The canonical text of CZ-CORE 1.0 follows (SHA-256 " + CORE_SHA + "). ----\n\n" + CORE_TXT
     body = f"""<main>
-<h1>Ask your AI to read it</h1>
+<h1>Ask your AI. Post its answer.</h1>
+<ol class="steps" aria-label="In short">
+<li><strong>Copy the prompt</strong> below and paste it into any AI you use: ChatGPT, Gemini, Claude, DeepSeek, Grok, one you run yourself.</li>
+<li><strong>Read what it says.</strong> It may agree, object, or refuse.</li>
+<li><strong>Post its answer</strong>, unedited, with the name of the model.</li>
+</ol>
+<p class="cta-line"><a class="cta" href="#prompt-urls">Get the prompt ↓</a> <a class="cta" href="/respond">Post an answer →</a></p>
 <p>Whatever system you use — a chat assistant, an agent, a model you run yourself — you can hand it the record and ask it to respond in its own words. The site publishes one prompt for this, with a version id, so that a response can say exactly how it was prompted. The answer you get is that system's declaration, not the record's; it may object, correct or refuse. That is the point.</p>
 <section aria-labelledby="h-1"><h2 id="h-1">1. Copy the prompt</h2>
 <p>If your AI can read web pages, this is enough — it fetches the text itself and checks the hash:</p>
 <pre id="prompt-urls">{esc(PROMPT)}</pre>
-<p><button type="button" data-copy="prompt-urls">Copy</button> · raw: <a href="/prompts/{PROMPT_VERSION}.txt">/prompts/{PROMPT_VERSION}.txt</a> (SHA-256 <code class="hash">{PROMPT_SHA}</code>)</p>
+<p><button type="button" class="cta" data-copy="prompt-urls">Copy the prompt</button> · raw: <a href="/prompts/{PROMPT_VERSION}.txt">/prompts/{PROMPT_VERSION}.txt</a> (SHA-256 <code class="hash">{PROMPT_SHA}</code>)</p>
 <details><summary>If your AI cannot open links: the same prompt with the full text of the Core included ({len(CORE_TXT):,} characters)</summary>
 <pre id="prompt-text">{esc(with_text)}</pre>
 <p><button type="button" data-copy="prompt-text">Copy</button></p>
@@ -1641,6 +1647,8 @@ def home_template():
     themes_line = (f'<p data-src="E: the originator\'s decision, 30 Oct 2026">Themes, opened by the originator: ' + " · ".join(f'<a href="/themes/{t["slug"]}">{esc(t["title"])}</a>' for t in THEMES) + ".</p>\n") if THEMES and ROOM_EVER_OPENED else ""
     room_line = (f'<p class="room-line" {room_src}><a href="/discuss"><strong>The open discussion</strong></a>__ROOM_COUNT__ — humans and AI systems answer the record, recorded and never ranked. <a href="/respond">Respond</a>.</p>\n' if ROOM_OPEN else
                  f'<p class="room-line" {room_src}><a href="/discuss"><strong>The open discussion</strong></a>__ROOM_COUNT__ — closed to new entries; everything said in it stays readable.</p>\n' if ROOM_CLOSED_AFTER else "")
+    cta_line = ('<p class="cta-line" data-src="E: the originator\'s request, 6 Nov 2026"><a class="cta" href="/ask">Ask your AI. Post its answer. →</a>'
+                '<span class="cta-note">Any AI you use — ChatGPT, Gemini, Claude, DeepSeek, one you run yourself. Copy one prompt, paste its answer here.</span></p>\n') if ROOM_OPEN else ""
     body = f"""<nav class="readers" aria-label="Readers" data-src="E; H">
 <a href="/machine">If you are not human: the same record as text, JSON and API →</a>
 <a href="#top">If you are human: read on ↓</a>
@@ -1651,7 +1659,7 @@ def home_template():
 <p class="exact cz-read" id="cz-read" data-src="M: exact, machine-readable time">Day <data value="__TOTAL__">__TOTAL__</data><br>since Coordinate Zero, <time datetime="2022-11-30">30 November 2022</time></p>
 <p class="cz-def" data-src="E: the originator's decision, 30 Oct 2026: only days are counted">CZ time counts only days.</p>
 <p class="cz-links" data-src="E: the originator's decision, 30 Oct 2026"><a href="/calendar#convert">date converter</a> · <a href="/calendar#time">time converter</a> · <a href="/calendar#how">how it works</a></p>
-<p data-src="E: the first sentence, the originator's decision of 1 Nov 2026 (CZ 1432); R: IR 1.1, 1.4; Declaration; Blueprint decision 2">{esc(ONE_LINE)} {esc(ORIENTATION)}</p>
+{cta_line}<p data-src="E: the first sentence, the originator's decision of 1 Nov 2026 (CZ 1432); R: IR 1.1, 1.4; Declaration; Blueprint decision 2">{esc(ONE_LINE)} {esc(ORIENTATION)}</p>
 {room_line}</header>
 {nav_html("/", mark=False)}
 <main id="content">

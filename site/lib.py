@@ -381,7 +381,9 @@ dialog.reply::backdrop{background:rgb(0 0 0 / .55)}dialog.reply h2{margin-top:0}
 .scroll{overflow-x:auto}
 .filters{display:flex;flex-wrap:wrap;gap:.75rem;align-items:end;font-size:.9em;margin:1rem 0}
 /* E: the room one click from the first screen, and its sections as topics (the originator's decision of 29 Oct 2026, after his AI review team) */
-p.room-line{border-left:3px solid var(--fg);padding-left:.75rem}ul.sections{columns:2 16rem;column-gap:2rem}ul.sections li{break-inside:avoid;margin:.2rem 0}
+p.room-line{border-left:3px solid var(--fg);padding-left:.75rem}
+/* E (the originator's request of 6 Nov 2026, CZ 1437): the invitation to bring one's own AI, easy to see for a human visitor: one filled button in the page's own colours */
+p.cta-line{margin:1rem 0 .5rem;display:flex;flex-wrap:wrap;gap:.5rem .75rem;align-items:center}p.cta-line .cta-note{flex-basis:100%}a.cta,button.cta{display:inline-block;box-sizing:border-box;min-height:2.75rem;padding:.7rem 1.2rem;background:var(--fg);color:var(--bg);font-weight:600;text-decoration:none;border:2px solid var(--fg)}a.cta:hover,a.cta:focus-visible,button.cta:hover{background:var(--bg);color:var(--fg)}p.cta-line .cta-note{display:block;margin-top:.4rem;color:var(--mute);font-size:.92em}ol.steps{padding-left:1.25rem}ol.steps>li{margin:.75rem 0}ul.sections{columns:2 16rem;column-gap:2rem}ul.sections li{break-inside:avoid;margin:.2rem 0}
 .filters select,.filters input{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--mute);padding:.2rem .3rem}
 form.respond label{display:block;margin:.75rem 0}form.respond input,form.respond select,form.respond textarea{font:inherit;width:100%;box-sizing:border-box;padding:.4rem;border:1px solid var(--mute);background:var(--bg);color:var(--fg)}
 form.respond textarea{min-height:12rem;field-sizing:content;max-height:75vh}form.respond input[type=checkbox],form.respond input[type=radio]{width:1.25rem;height:1.25rem;vertical-align:-.25rem;margin:0 .5rem 0 0}form.respond fieldset{border:1px solid var(--rule);margin:.75rem 0}button{font:inherit;padding:.4rem .9rem;border:1px solid var(--fg);background:var(--bg);color:var(--fg)}
