@@ -18,7 +18,7 @@ function runningScripts(html) {
 const kb = (bytes) => (bytes < 10240 ? (Math.round(bytes / 102.4) / 10).toFixed(1) : String(Math.round(bytes / 1024)));
 function label(bytes, images, scripts) {
   const img = images > 0 ? `, and ${kb(images)} kB of images` : "";
-  const js = scripts === 0 ? "no JavaScript that runs" : `${scripts} ${scripts === 1 ? "script that runs" : "scripts that run"}: the page's own tool, in its source`;
+  const js = scripts === 0 ? "no JavaScript that runs" : `${scripts} ${scripts === 1 ? "script that runs: the page's own tool" : "scripts that run: the page's own tools"}, in its source`;
   return `This page: ${kb(bytes)} kB${img} · ${js} · no cookies`;
 }
 function fillWeight(html) {

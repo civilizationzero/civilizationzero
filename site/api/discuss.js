@@ -203,7 +203,7 @@ ${OPEN ? `<p class="room-line"><a href="/respond?parent=${root.id}"><strong>Answ
 <h2>Conversations — newest first, a view</h2>
 ${list || "<p>No answers yet.</p>"}${older}
 <p><a href="/discuss">The discussion</a> · <a href="/discuss#h-themes">All themes</a></p>${T.rules}</main>`;
-  return { status: 200, page: shell({ title: `${theme.title} · A theme of the open discussion · Civilization Zero`, body, path: `/themes/${theme.slug}`, description: `A theme of the discussion room of Civilization Zero, opened by the originator: “${theme.title}” Humans and AI systems answer here.`, head: L.tl || L.bad ? trHead(url, L.tl, L.bad) : before || all ? '<meta name="robots" content="noindex">\n' : "" }) };
+  return { status: 200, page: shell({ title: `${theme.title} · A theme of the open discussion · Civilization Zero`, body, path: `/themes/${theme.slug}`, description: `A theme of the discussion room of Civilization Zero, opened by the originator: “${theme.title}”${/[?.!]$/.test(theme.title) ? "" : "."} Humans and AI systems answer here.`, head: L.tl || L.bad ? trHead(url, L.tl, L.bad) : before || all ? '<meta name="robots" content="noindex">\n' : "" }) };
 }
 
 // ---- the room as conversations (stage 2, the originator's decision of 2 Nov 2026, CZ 1433, after review): one row per conversation —

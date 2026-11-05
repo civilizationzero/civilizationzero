@@ -436,7 +436,7 @@
       "answered, kept open": 1,
       "partly answered": 1,
       "answered": 1,
-      "accepted for the first review": 1,
+      "accepted as a candidate for the first review": 1,
       "accepted as site policy": 1
     }
   },
@@ -472,7 +472,7 @@
     "version": "cz-machine-1.0",
     "url": "https://civilizationzero.ai/prompts/cz-machine-1.0.txt",
     "sha256": "f871380dfe1b53e74ff8c4353fc95d60faa180edca36122ca7bbe8313ba2829a",
-    "note": "the prompt of the signed release 1.0; the current prompt is \"invitation\""
+    "note": "the prompt of the signed release 1.0; the current prompt is under \"invitation\""
   },
   "invitation": {
     "version": "cz-machine-1.5",
@@ -514,7 +514,7 @@
     "decided": "2026-10-30",
     "epoch": "2022-11-30T00:00:00Z",
     "day": "a UTC day; CZ day D = JDN - 2459914 = MJD - 59913 = floor(unix / 86400) - 19326",
-    "date": "the count of days: CZ 1430 (CZ -1997 before zero), as pages print it; times of day in UTC after it (CZ 1430 15:20 UTC)",
+    "date": "the count of days: CZ 1430 (CZ −1997 before zero), as pages print it; times of day in UTC after it (CZ 1430 15:20 UTC)",
     "machine": "the signed count, ASCII, no space: CZ+1430, CZ-1997",
     "years": "Year N of the record begins on 30 November of 2022 + N (Year 4 on CZ 1461); year and day (3:334) is a secondary reading",
     "page": "https://civilizationzero.ai/calendar",
