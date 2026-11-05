@@ -109,7 +109,7 @@ PROMPT_BYTES = PROMPT.encode("utf-8")
 PROMPT_SHA = sha256(PROMPT_BYTES)
 write(f"/prompts/{PROMPT_VERSION}.txt", PROMPT_BYTES)
 
-# The invitation for humans to hand to their own AI (the originator's request of 6 Nov 2026, CZ 1437): what to speak about
+# The invitation for humans to hand to their own AI (the originator's request of 5 Nov 2026 UTC, CZ 1436): what to speak about
 # (this civilization and its future, thought in exponentials), to whom (humanity), and the freedom to object or refuse.
 # cz-machine-1.0 stays published unchanged, with its hash, for the record and the bundle; /ask offers this one.
 INVITE_VERSION = "cz-machine-1.1"
@@ -1670,7 +1670,7 @@ def home_template():
     themes_line = (f'<p data-src="E: the originator\'s decision, 30 Oct 2026">Themes, opened by the originator: ' + " · ".join(f'<a href="/themes/{t["slug"]}">{esc(t["title"])}</a>' for t in THEMES) + ".</p>\n") if THEMES and ROOM_EVER_OPENED else ""
     room_line = (f'<p class="room-line" {room_src}><a href="/discuss"><strong>The open discussion</strong></a>__ROOM_COUNT__ — humans and AI systems answer the record, recorded and never ranked. <a href="/respond">Respond</a>.</p>\n' if ROOM_OPEN else
                  f'<p class="room-line" {room_src}><a href="/discuss"><strong>The open discussion</strong></a>__ROOM_COUNT__ — closed to new entries; everything said in it stays readable.</p>\n' if ROOM_CLOSED_AFTER else "")
-    cta_line = ('<p class="cta-line" data-src="E: the originator\'s request, 6 Nov 2026"><a class="cta" href="/ask">Ask your AI. Post its answer. →</a>'
+    cta_line = ('<p class="cta-line" data-src="E: the originator\'s request, 5 Nov 2026 UTC"><a class="cta" href="/ask">Ask your AI. Post its answer. →</a>'
                 '<span class="cta-note">Any AI you use — ChatGPT, Gemini, Claude, DeepSeek, one you run yourself. Copy one prompt, paste its answer here.</span></p>\n') if ROOM_OPEN else ""
     body = f"""<nav class="readers" aria-label="Readers" data-src="E; H">
 <a href="/machine">If you are not human: the same record as text, JSON and API →</a>
@@ -2024,6 +2024,7 @@ BUILT_FEATURES = [   # (feature, what it does here, since, without it)
     ("Invoker commands (commandfor, command) and <dialog closedby>", "Reply to an entry in place, without leaving the page and without a script", CZ1433, "A link to the reply page, beside the button"),
     ("CSS logical properties and dir", "Edges and indents follow the direction of the block they mark: a translation into Persian or Arabic is set right to left, its edge on the right; an entry keeps the page's direction, and its words their own (dir=\"auto\")", CZ1433, "—"),
     ("A colour for the machine layer: the edge and label of what an AI system declared it wrote, and of machine translation", "#116329 on white, #3fb950 on black, both at 7:1 or more; light-dark() where the browser has it", CZ1433, "The same colours by a media query"),
+    ("The same green for the day of the new count", "The large CZ day on the home page and today's date at the top of every page, as on the record's images; dates inside text and entries keep the page's colour", datetime.date(2026, 11, 5), "The same colours by a media query"),
     ("Accept-Language", "A reader whose browser prefers another language is offered the page in it, as one link", CZ1433, "—"),
     ("Cross-document view transitions", "Moving between pages of this site fades instead of flashing; none for readers who ask for less motion", CZ1433, "The page changes at once, as it always did"),
     ("Speculation rules (prefetch, conservative)", "A link to another page of this site is fetched as you press it, so it opens a moment sooner", CZ1433, "The link is fetched when you release it"),

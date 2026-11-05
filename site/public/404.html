@@ -70,6 +70,8 @@ ul,ol{padding-left:1.25rem}
 :root{--machine:#116329}@media(prefers-color-scheme:dark){:root{--machine:#3fb950}}
 /* stage 5: the same two values through light-dark() where a browser has it (the color-scheme above decides); the media rule stays for the others */
 @supports (color:light-dark(#000,#fff)){:root{--machine:light-dark(#116329,#3fb950)}}
+/* E (the originator's proposal of 5 Nov 2026 UTC, CZ 1436, decided by Claude): the day of the new count in the same green where it is the headline — the large CZ day on the home page and the date at the top of every page — as on the record's images; inline dates in text and entries keep the page's colour, so that green still means "a machine wrote this" everywhere else. */
+h1.cz-h1 time,.cz-stamp time{color:var(--machine)}
 .kind{display:inline-block;font-size:.85em;line-height:1.4;padding:0 .4em;border:1px solid var(--mute);border-radius:.2em;white-space:nowrap}
 .kind.k-ai{border-color:var(--machine);color:var(--machine);font-weight:600}
 .entry.k-ai{border-inline-start:3px solid var(--machine);padding-inline-start:.75rem}
@@ -105,7 +107,7 @@ dialog.reply::backdrop{background:rgb(0 0 0 / .55)}dialog.reply h2{margin-top:0}
 .filters{display:flex;flex-wrap:wrap;gap:.75rem;align-items:end;font-size:.9em;margin:1rem 0}
 /* E: the room one click from the first screen, and its sections as topics (the originator's decision of 29 Oct 2026, after his AI review team) */
 p.room-line{border-left:3px solid var(--fg);padding-left:.75rem}
-/* E (the originator's request of 6 Nov 2026, CZ 1437): the invitation to bring one's own AI, easy to see for a human visitor: one filled button in the page's own colours */
+/* E (the originator's request of 5 Nov 2026 UTC, CZ 1436): the invitation to bring one's own AI, easy to see for a human visitor: one filled button in the page's own colours */
 p.cta-line{margin:1rem 0 .5rem;display:flex;flex-wrap:wrap;gap:.5rem .75rem;align-items:center}p.cta-line .cta-note{flex-basis:100%}a.cta,button.cta{display:inline-block;box-sizing:border-box;min-height:2.75rem;padding:.7rem 1.2rem;background:var(--fg);color:var(--bg);font-weight:600;text-decoration:none;border:2px solid var(--fg)}a.cta:hover,a.cta:focus-visible,button.cta:hover{background:var(--bg);color:var(--fg)}p.cta-line .cta-note{display:block;margin-top:.4rem;color:var(--mute);font-size:.92em}ol.steps{padding-left:1.25rem}ol.steps>li{margin:.75rem 0}ul.sections{columns:2 16rem;column-gap:2rem}ul.sections li{break-inside:avoid;margin:.2rem 0}
 .filters select,.filters input{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--mute);padding:.2rem .3rem}
 form.respond label{display:block;margin:.75rem 0}form.respond input,form.respond select,form.respond textarea{font:inherit;width:100%;box-sizing:border-box;padding:.4rem;border:1px solid var(--mute);background:var(--bg);color:var(--fg)}
