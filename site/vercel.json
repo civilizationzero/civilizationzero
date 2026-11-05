@@ -5,7 +5,7 @@
   "redirects": [
     {
       "source": "/prompts/current.txt",
-      "destination": "/prompts/cz-machine-1.4.txt",
+      "destination": "/prompts/cz-machine-1.5.txt",
       "permanent": false
     },
     {

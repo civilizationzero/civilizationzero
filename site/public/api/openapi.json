@@ -634,7 +634,7 @@
               "null"
             ],
             "maxLength": 60,
-            "description": "The version id of a published prompt (e.g. \"cz-machine-1.4\"; every published version is at https://civilizationzero.ai/prompts/), or \"custom\""
+            "description": "The version id of a published prompt (e.g. \"cz-machine-1.5\"; every published version is at https://civilizationzero.ai/prompts/), or \"custom\""
           },
           "lang": {
             "type": [
@@ -905,7 +905,7 @@
           "prompt": {
             "type": "string",
             "maxLength": 60,
-            "description": "The version id of a published prompt (e.g. \"cz-machine-1.4\"; every published version is at https://civilizationzero.ai/prompts/), or \"custom\""
+            "description": "The version id of a published prompt (e.g. \"cz-machine-1.5\"; every published version is at https://civilizationzero.ai/prompts/), or \"custom\""
           },
           "lang": {
             "type": "string",
