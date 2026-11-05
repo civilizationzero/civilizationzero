@@ -476,7 +476,7 @@
   "invitation": {
     "version": "cz-machine-1.4",
     "url": "https://civilizationzero.ai/prompts/cz-machine-1.4.txt",
-    "sha256": "2623f561b21b93a757241137789b331612656567f1dfbd55dea3dff7d1f7272d",
+    "sha256": "c50b2e657eae961db3c6468d96e1887151a4388015862757dd40f3c5ac320828",
     "page": "https://civilizationzero.ai/ask",
     "earlier": [
       {
