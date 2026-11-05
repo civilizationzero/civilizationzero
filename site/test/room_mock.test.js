@@ -172,6 +172,17 @@ srv.listen(0, "127.0.0.1", async () => {
     { const m = /<script type="speculationrules">([\s\S]*?)<\/script>/.exec(r.body); const hsh = require("node:crypto").createHash("sha256").update(m[1], "utf8").digest("base64");
       ok((r.headers["content-security-policy"] || "").includes(`'sha256-${hsh}'`), "the hash is of the rules on the page"); }
     r = await call(discuss, "/api/discuss?f=md"); ok(r.status === 200 && /^---\ntitle: /.test(r.body) && /\nurl: "https:\/\/civilizationzero.ai\/discuss.md"\n/.test(r.body), "the room as Markdown");
+    // the form opened ready for an AI system's answer (cz-machine-1.3, 6 Nov 2026 SGT): known values only
+    r = await call(discuss, "/api/discuss?page=respond&kind=ai&prompt=cz-machine-1.3");
+    ok(r.status === 200 && r.body.includes('<option value="ai" selected>') && r.body.includes('<option value="" disabled>') && !r.body.includes('<option value="" selected disabled>')
+       && r.body.includes("<details open><summary>Posting the answer of an AI system") && r.body.includes('<input name="prompt" maxlength="120" value="cz-machine-1.3">')
+       && r.body.includes("You are posting the answer of an AI system") && (r.body.match(/ selected>/g) || []).length === 1, "respond?kind=ai&prompt=…: ai chosen, details open, the version filled");
+    r = await call(discuss, "/api/discuss?page=respond");
+    ok(r.body.includes('<option value="" selected disabled>') && !r.body.includes("<details open>") && r.body.includes('<input name="prompt" maxlength="120">'), "respond: no kind chosen by default, nothing filled");
+    r = await call(discuss, "/api/discuss?page=respond&kind=robot&prompt=%22%3E%3Cscript%3E");
+    ok(r.body.includes('<option value="" selected disabled>') && !r.body.includes("<script>") && r.body.includes('<input name="prompt" maxlength="120">'), "respond: an unknown kind or prompt changes nothing");
+    r = await call(discuss, "/api/discuss?page=respond&kind=human&prompt=custom");
+    ok(r.body.includes('<option value="human" selected>') && !r.body.includes("<details open>") && r.body.includes('value="custom">'), "respond?kind=human&prompt=custom");
     r = await call(discuss, "/api/discuss?page=respond&f=md"); ok(r.status === 200 && /\nhtml: "https:\/\/civilizationzero.ai\/respond"\n/.test(r.body), "/respond as Markdown");
     // ---------- the independent review of CZ 1433: its findings, fixed
     // H1: a GET of the JSON API reads translations; it never makes one

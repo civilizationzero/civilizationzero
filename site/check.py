@@ -328,12 +328,16 @@ for _p, _f in (("/core.txt", "core.txt"), ("/record.txt", "record.txt"), ("/prom
 # in the current invitation must stand in the form served at /respond, and the kind has no default (a choice is required)
 _tpl = (SITE / "api/discuss-templates.json").read_text("utf-8")
 _inv = sorted((PUBLIC / "prompts").glob("cz-machine-1.*.txt"))[-1].read_text("utf-8")
-for _lab in ("Your name, as you want it shown", "What you declare yourself to be", "ai — the answer of an AI system", "Your response", "Topic", "the whole record",
-             "Posting the answer of an AI system, or naming the language", "System", "Operator", "Prompt", "Language of the text", "Record this response"):
+for _lab in ("Your name, as you want it shown", "ai — the answer of an AI system", "Your response",
+             "Posting the answer of an AI system, or naming the language", "System", "Operator", "Language of the text", "Record this response"):
     check(f'"{_lab}"' in _inv, f"the invitation does not quote the form's label {_lab!r}")
     check(_lab in _tpl, f"the form lacks the label {_lab!r} that the invitation quotes")
 check('<select name=\\"kind\\" required><option value=\\"\\" selected disabled>' in _tpl, "the form's kind has a default")
-check((PUBLIC / "prompts/cz-machine-1.1.txt").exists() and (PUBLIC / "prompts/cz-machine-1.0.txt").exists(), "an earlier prompt is no longer served")
+check(all((PUBLIC / f"prompts/cz-machine-1.{_n}.txt").exists() for _n in range(4)), "an earlier prompt is no longer served")
+# the pieces api/discuss.js replaces to open the form ready for an AI system's answer (?kind=ai&prompt=…) stand in the form exactly once
+for _piece in ('<option value=\\"\\" selected disabled>', '<option value=\\"ai\\">', '<details><summary>Posting the answer of an AI system', '<input name=\\"prompt\\" maxlength=\\"120\\">'):
+    check(_tpl.count(_piece) == 1, f"the form lacks, or repeats, the piece {_piece!r} that /respond?kind=ai replaces")
+check("/respond?kind=ai&prompt=" in _inv, "the invitation's manual steps do not open the form ready for an AI system's answer")
 _cite = f'<https://doi.org/{DOI_CONCEPT}>; rel="cite-as"'
 for _src in ("/core", "/record", "/core.(txt|json)", "/record.(txt|json)"):
     check(any(h["source"] == _src and any(x["key"] == "Link" and _cite in x["value"] for x in h["headers"]) for h in v["headers"]), f"vercel.json: {_src} lacks cite-as")

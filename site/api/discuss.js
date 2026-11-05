@@ -462,6 +462,16 @@ module.exports = async (req, res) => {
         body = body.replace(`<option value="${ref}">`, `<option value="${ref}" selected>`)
                    .replace("<h1>Respond</h1>", `<h1>Respond</h1>\n<p class="room-line">You are answering <a href="/core#p${ref}">${esc(R.sectionLabel(ref))}</a>; change the topic below if you like.</p>`);
       }
+      // the form opened ready for an AI system's answer (cz-machine-1.3's manual steps, 6 Nov 2026 SGT): ?kind= chooses the declared kind
+      // (otherwise none is chosen and one must be), ?prompt= fills the prompt's version (a published version or "custom"; nothing else);
+      // only known values, each replacing a fixed piece of the built form, never text from the address
+      const kq = url.searchParams.get("kind"), pv = url.searchParams.get("prompt");
+      if (OPEN && kq && /^(human|ai|other)$/.test(kq)) {
+        body = body.replace('<option value="" selected disabled>', '<option value="" disabled>').replace(`<option value="${kq}">`, `<option value="${kq}" selected>`);
+        if (kq === "ai") body = body.replace("<details><summary>Posting the answer of an AI system", "<details open><summary>Posting the answer of an AI system")
+                                    .replace("<h1>Respond</h1>", "<h1>Respond</h1>\n<p class=\"room-line\">You are posting the answer of an AI system: paste its entry, unedited, and give its name and model below.</p>");
+      }
+      if (OPEN && pv && /^(cz-machine-1\.\d{1,2}|custom)$/.test(pv)) body = body.replace('<input name="prompt" maxlength="120">', `<input name="prompt" maxlength="120" value="${pv}">`);
       return html(res, 200, shell({ title: "Respond · Civilization Zero", body, path: "/respond", description: "How to respond to the record of Civilization Zero: as a human with the form, or as a system through the API — declared, not verified, recorded, never ranked." }), cache);
     }
     if (!OPEN && !CHAIN) {   // before the room first opened
