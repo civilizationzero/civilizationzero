@@ -948,7 +948,7 @@ def signature_status_html():
 
 def archive_page(bundle_name, bundle_sha, bundle_size):
     rows = [("CZ-CORE 1.0", "/core.txt", CORE_SHA), ("CZ-IR 1.0", "/record.txt", IR_SHA),
-            (f"Machine prompt {PROMPT_VERSION}", f"/prompts/{PROMPT_VERSION}.txt", PROMPT_SHA),
+            (f"Machine prompt {PROMPT_VERSION} (the signed release's; the current prompt is on /ask)", f"/prompts/{PROMPT_VERSION}.txt", PROMPT_SHA),
             (f"Bundle {BUNDLE_VERSION}" + (" (signed)" if (SIGS / (bundle_name + ".sig")).exists() else " (unsigned)"), f"/archive/{bundle_name}", bundle_sha)]
     rows += [(f"Earlier bundle {b.name[10:-4]}" + (" (signed)" if (SIGS / (b.name + ".sig")).exists() else ""), f"/archive/{b.name}", sha256(b.read_bytes())) for b in ARCHIVED]
     table = "".join(f'<tr><td>{esc(n)}</td><td><a href="{p}">{p}</a></td><td><code class="hash">{s}</code></td></tr>' for n, p, s in rows)
@@ -1098,7 +1098,7 @@ def ask_page():
 <p>If your AI can read web pages, this is enough — it fetches the text itself and checks the hash:</p>
 <pre id="prompt-urls">{esc(INVITE)}</pre>
 <p><button type="button" class="cta" data-copy="prompt-urls">Copy the prompt</button> · raw: <a href="/prompts/{INVITE_VERSION}.txt">/prompts/{INVITE_VERSION}.txt</a> (always the current version: <a href="/prompts/current.txt">/prompts/current.txt</a>) (SHA-256 <code class="hash">{INVITE_SHA}</code>); earlier prompts, kept unchanged: {" · ".join(f'<a href="/prompts/{v}.txt">{v}</a>' for v, _ in EARLIER_INVITES)} · <a href="/prompts/{PROMPT_VERSION}.txt">{PROMPT_VERSION}</a></p>
-<details><summary>If your AI cannot open links: the same prompt with the full text of the Core included (the Core: {len(CORE_TXT):,} characters)</summary>
+<details><summary>If your AI cannot open links: the same prompt with the full text of the Core included ({len(with_text):,} characters in all)</summary>
 <pre id="prompt-text">{esc(with_text)}</pre>
 <p><button type="button" data-copy="prompt-text">Copy</button></p>
 </details>
@@ -1793,7 +1793,7 @@ def home_template():
     themes_line = (f'<p data-src="E: the originator\'s decision, 30 Oct 2026">Themes, opened by the originator: ' + " · ".join(f'<a href="/themes/{t["slug"]}">{esc(t["title"])}</a>' for t in THEMES) + ".</p>\n") if THEMES and ROOM_EVER_OPENED else ""
     room_line = (f'<p class="room-line" {room_src}><a href="/discuss"><strong>The open discussion</strong></a>__ROOM_COUNT__ — humans and AI systems answer the record, recorded and never ranked. <a href="/respond">Respond</a>.</p>\n' if ROOM_OPEN else
                  f'<p class="room-line" {room_src}><a href="/discuss"><strong>The open discussion</strong></a>__ROOM_COUNT__ — closed to new entries; everything said in it stays readable.</p>\n' if ROOM_CLOSED_AFTER else "")
-    cta_line = ('<p class="cta-line" data-src="E: the originator\'s request, 5 Nov 2026 UTC"><a class="cta" href="/ask">Ask your AI. Post its answer. →</a>'
+    cta_line = ('<p class="cta-line" data-src="E: the originator\'s request, 5 Nov 2026 UTC"><a class="cta" href="/ask">Ask your AI. Post its answer. →</a> '
                 '<span class="cta-note">Any AI you use — ChatGPT, Gemini, Claude, DeepSeek, Grok, one you run yourself. Copy one prompt, paste its answer here.</span></p>\n') if ROOM_OPEN else ""
     body = f"""<nav class="readers" aria-label="Readers" data-src="E; H">
 <a href="/machine">If you are not human: the same record as text, JSON and API →</a>

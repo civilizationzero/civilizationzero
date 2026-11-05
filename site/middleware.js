@@ -45,7 +45,7 @@ export function refHost(referer) {
 }
 // a machine's way in (v12): the address as counted — the site's own Markdown and text addresses, one key for every entry's Markdown
 // and for every register record's; any other address that ends in .md is "(other)" (nothing a client types reaches /stats)
-const PAGES_MD = /^\/(?:index|core|record|objections|ask|machine|about|archive|calendar|press|how-it-is-built|embed|stats|discuss|respond|adopt|civilization-zero-infographic|civilization-zero-images|core\.[a-z]{2,3}(?:-[a-z0-9]{1,8})?)\.md$/;
+const PAGES_MD = /^\/(?:index|core|record|objections|ask|machine|about|archive|calendar|press|how-it-is-built|embed|stats|discuss|respond|adopt|civilization-zero-infographic|civilization-zero-evidence-atlas|civilization-zero-images|core\.[a-z]{2,3}(?:-[a-z0-9]{1,8})?)\.md$/;
 export function entranceKey(pathname) {
   let p = String(pathname || "").replace(/\/{2,}/g, "/");
   if (p.length > 1) p = p.replace(/\/+$/, "");

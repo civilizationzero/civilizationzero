@@ -17,7 +17,9 @@ const BOT_NAMES = { google: "Google", bing: "Bing", yandex: "Yandex", baidu: "Ba
 module.exports = async (req, res) => {
   const url = new URL(req.url, "http://x");
   if (!["GET", "HEAD"].includes(req.method)) { res.setHeader("Allow", "GET, HEAD"); return json(res, 405, { error: "method not allowed" }); }
-  if ([...url.searchParams.keys()].some((k) => k !== "f")) return json(res, 400, { error: "this page takes no parameters" }, { "Cache-Control": "public, max-age=0, s-maxage=600" });
+  // the tags that link sharers add (fbclid, utm_…, gclid, ref) are ignored, so that a shared link opens the page; anything else is refused,
+  // so that the counts cannot be read past the cache with made-up parameters (live audit of CZ 1436)
+  if ([...url.searchParams.keys()].some((k) => k !== "f" && !/^(utm_[a-z]+|fbclid|gclid|msclkid|igshid|ref|ref_src|s)$/i.test(k))) return json(res, 400, { error: "this page takes no parameters" }, { "Cache-Control": "public, max-age=0, s-maxage=600" });
   const cache = { "Cache-Control": "public, max-age=0, s-maxage=300, stale-while-revalidate=300" };
   if (url.searchParams.get("f") === "md") res.czMarkdown = { path: "/stats" };   // the page as Markdown (stage 5)
   let s;
