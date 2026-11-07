@@ -18,9 +18,10 @@ REVIEW = datetime.date(2028, 7, 9)         # first scheduled review of the Core:
 CZ_TIME_DECIDED = datetime.date(2026, 10, 30)   # CZ time became the basis of the site's dates (the originator's decisions; CZ 1430)
 CHARTER_DRAFT = datetime.date(2026, 11, 30)   # the review committee's charter, in draft for public comment
 CHARTER_FINAL = datetime.date(2027, 3, 31)    # ... and in final form
-# CZ time (design/CZ-TIME.md; the originator's decisions of 30 Oct 2026): the site's dates are counted from Coordinate Zero. CZ day 0 is
-# 30 November 2022, the day that began at 00:00 UTC; D = the date's Rata Die − 738,489. The date is the count: "CZ 1430", "CZ −1997";
-# times of day in UTC after it. Year and day (CZ+N:ddd: N whole years from one 30 November to the next, and ddd days; CZ−N:ddd its
+# CZ time (design/CZ-TIME.md; the originator's decisions of 30 Oct and 7 Nov 2026): the site's dates are counted from Coordinate Zero.
+# CZ day 0 is 30 November 2022; D = the date's Rata Die − 738,489. A CZ date is a calendar date, and today's date turns at midnight
+# where the reader is (filled at request time, room/cztime.js). The date is the count: "CZ 1430", "CZ −1997"; a moment is named by
+# its UTC date and its time in UTC after it. Year and day (CZ+N:ddd: N whole years from one 30 November to the next, and ddd days; CZ−N:ddd its
 # mirror before zero) is a secondary reading. The request-time twin is room/cztime.js; site/check.py compares the two.
 CZ_RD0 = 738489
 def cz_day(d): return d.toordinal() - CZ_RD0
@@ -57,7 +58,7 @@ def gregorian_text(d): return f"{d.day} {d.strftime('%B')} {d.year}"
 def cz_href(D): return "/calendar?d=" + cz_machine(D).replace("+", "%2B")
 def time_el(d):   # a date as the pages print it (the originator's decision of 30 Oct 2026): CZ time only; the link converts it
     return f'<a class="cz-date" href="{cz_href(cz_day(d))}"><time datetime="{d.isoformat()}">{cz_stamp(d)}</time></a>'
-def moment_el(dt, seconds=False):   # a moment: the CZ day and its time in UTC (a CZ day is a UTC day, 24 hours)
+def moment_el(dt, seconds=False):   # a moment: its UTC date as a CZ day and its time in UTC, one name for it everywhere
     t = dt.strftime("%H:%M:%S" if seconds else "%H:%M")
     iso = dt.strftime("%Y-%m-%dT%H:%M:%SZ" if seconds else "%Y-%m-%dT%H:%MZ")
     return f'<a class="cz-date" href="{cz_href(cz_day(dt.date()))}"><time datetime="{iso}">{cz_stamp(dt.date())} {t} UTC</time></a>'
@@ -92,7 +93,7 @@ THEMES = [{"slug": "is-the-future-frightening", "title": "Is the future frighten
           {"slug": "propose-a-question", "title": "Propose a question", "entry": 16, "opened": "2026-10-31", "proposals": True}]   # opened by the originator on CZ 1431 ("post themes"), entries #10–#16, each signed with his key
 PRESS_PUBLISHED = True   # the press kit at /press, from press/PRESS-KIT.md: published by the originator's decision of 1 Nov 2026 (CZ 1431, "انتشار پرس‌کیت")
 ATPROTO_DID = "did:plc:gwscq3c3msvucpbatvrrm2f4"   # set 29 Oct 2026 (the account civilizationzero.bsky.social); "did:plc:…" from Bluesky ("I have my own domain", "No DNS panel"); the handle is then @civilizationzero.ai
-SOCIAL = ["https://bsky.app/profile/civilizationzero.ai", "https://x.com/czrecord", "https://mastodon.social/@civilizationzero", "https://www.instagram.com/civilizationzero.ai/", "https://www.facebook.com/czrecord"]   # profile addresses: each is a rel="me" link on every page and a schema.org sameAs of the publisher
+SOCIAL = ["https://bsky.app/profile/civilizationzero.ai", "https://x.com/czrecord", "https://mastodon.social/@civilizationzero", "https://www.instagram.com/civilizationzero.ai/", "https://www.facebook.com/czrecord", "https://t.me/Civilization_Zero"]   # profile addresses: each is a rel="me" link on every page and a schema.org sameAs of the publisher
 FEDIVERSE_CREATOR = "@civilizationzero@mastodon.social"   # Mastodon's author attribution (fediverse:creator): a link to this site shared on Mastodon credits this account, once the account lists civilizationzero.ai among the websites allowed to credit it; set 29 Oct 2026 (the account was made that day)
 IA_RELEASE = {"/": "https://web.archive.org/web/20261028174615/https://civilizationzero.ai/"}   # the snapshot at release (28 Oct 2026)
 def _ia_latest():   # the latest Internet Archive snapshot of each page, as the workflow `announce` keeps it in the repository
@@ -484,7 +485,7 @@ def footer_html(extra=""):
             f'<p class="src">Text <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a> · code MIT · <a href="{REPO}">source</a> · '
             f'<a href="mailto:{CONTACT}">{CONTACT}</a></p>'
             f'<p class="src">No trackers, no cookies, no scripts that observe readers; the server counts visits per day without identifiers, and <a href="/stats">the counts are public</a>. Every date counts days from Coordinate Zero, <a class="nw" href="/calendar">CZ 0</a> = '
-            f'<time datetime="2022-11-30">30 November 2022</time>; times are UTC.</p>{WEIGHT_LINE}</footer>')
+            f'<time datetime="2022-11-30">30 November 2022</time>; today\'s date turns at midnight where you are, and times of day are in UTC.</p>{WEIGHT_LINE}</footer>')
 FOOTER = footer_html()
 
 # ---------------------------------------------------------------- CZ time at the top of every page (the originator's decision of 30 Oct 2026)

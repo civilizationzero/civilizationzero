@@ -5,7 +5,7 @@ function call(url, method = "GET") {
   const res = { statusCode: 0, headers: {}, body: "", setHeader(k, v) { this.headers[k.toLowerCase()] = v; }, end(x) { this.body = x || ""; } };
   badge({ url, method }, res); return res;
 }
-test("today's day, as an image other sites may show, cached until 00:00 UTC", () => {
+test("today's day, as an image other sites may show, cached until midnight (UTC, without a time zone)", () => {
   const r = call("/api/badge"), d = CZ.dayOf(Date.now());
   assert.equal(r.statusCode, 200);
   assert.match(r.headers["content-type"], /^image\/svg\+xml/);

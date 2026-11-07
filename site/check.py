@@ -217,14 +217,14 @@ check(sha256(prompt) == man["machine_prompt"]["sha256"], "prompt hash in manifes
 T = json.loads((SITE / "api" / "home-templates.json").read_text("utf-8"))
 sample = {"__YEAR__": "3", "__DAYS_IN_YEAR__": "332", "__TOTAL__": "1428", "__TOTAL_FMT__": "1,428", "__NEXT_YEAR__": "4", "__NEXT_ISO__": "2026-11-30",
           "__NEXT_HUMAN__": "30 November 2026", "__ASOF_ISO__": "2026-10-28T10:00Z", "__ASOF_HUMAN__": "2026-10-28 10:00 UTC",
-          "__CZ_ISO__": "2026-10-28", "__CZ_STAMP__": "CZ 1428", "__CZ_DOYN__": "332", "__CZ_SINCE__": "3 years and 332 days", "__CZ_TO_NEXT_N__": "33", "__CZ_TO_NEXT__": "33 days", "__CZ_NEXT_DAY__": "1461", "__UTC_DAY_SHORT__": "28 Oct 2026"}
+          "__CZ_ISO__": "2026-10-28", "__CZ_STAMP__": "CZ 1428", "__CZ_DOYN__": "332", "__CZ_SINCE__": "3 years and 332 days", "__CZ_TO_NEXT_N__": "33", "__CZ_TO_NEXT__": "33 days", "__CZ_NEXT_DAY__": "1461", "__UTC_DAY_SHORT__": "28 Oct 2026", "__CZ_ZONE__": "Asia/Kuala_Lumpur", "__CZ_UTC_ISO__": "2026-10-27"}
 # the room's two places on the first page (Phase 1, 29 Oct 2026) are filled by api/home.js from the database, after the clock and
 # last of all, so that nothing in an entry is ever filled again; with the database slow or down, both are left empty
 import subprocess
 ROOM_KEYS = ("__ROOM_COUNT__", "__ROOM_LATEST__")
 def fill(s, room=("", "")):
     for k in ("__TOTAL_FMT__", "__YEAR__", "__DAYS_IN_YEAR__", "__TOTAL__", "__NEXT_YEAR__", "__NEXT_ISO__", "__NEXT_HUMAN__", "__ASOF_ISO__", "__ASOF_HUMAN__",
-              "__CZ_ISO__", "__CZ_STAMP__", "__CZ_DOYN__", "__CZ_SINCE__", "__CZ_TO_NEXT_N__", "__CZ_TO_NEXT__", "__CZ_NEXT_DAY__", "__UTC_DAY_SHORT__"):
+              "__CZ_ISO__", "__CZ_STAMP__", "__CZ_DOYN__", "__CZ_SINCE__", "__CZ_TO_NEXT_N__", "__CZ_TO_NEXT__", "__CZ_NEXT_DAY__", "__UTC_DAY_SHORT__", "__CZ_ZONE__", "__CZ_UTC_ISO__"):
         s = s.replace(k, sample[k])
     for k, v in zip(ROOM_KEYS, room):
         s = s.replace(k, v)
@@ -258,7 +258,8 @@ for ext in ("html", "json", "txt"):
     if ext == "json":
         try:
             o = json.loads(filled); check(o["year"] == 3 and o["elapsed"]["total_days"] == 1428 and o["cz_time"]["day"] == 1428 and o["cz_time"]["day_of_year"] == 332
-                                          and o["cz_time"]["next_year_begins"] == {"date": "CZ 1461", "day": 1461, "in_days": 33} and o["cz_time"]["date"] == "CZ 1428", "home json numbers")
+                                          and o["cz_time"]["next_year_begins"] == {"date": "CZ 1461", "day": 1461, "in_days": 33} and o["cz_time"]["date"] == "CZ 1428"
+                                          and o["cz_time"]["time_zone"] == "Asia/Kuala_Lumpur" and o["cz_time"]["gregorian"] == "2026-10-28" and o["cz_time"]["date_utc"] == "2026-10-27", "home json numbers")
         except Exception as e: fails.append(f"home json: {e}")
 # every quotation in the home template is verbatim (build asserts it; re-check the emitted bytes)
 for m in re.findall(r'<blockquote cite="/core#[^"]+" data-src="R"><p>(.*?)</p>', T["html"], re.S):

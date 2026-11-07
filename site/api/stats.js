@@ -15,6 +15,7 @@ const BOT_NAMES = { google: "Google", bing: "Bing", yandex: "Yandex", baidu: "Ba
   seo: "SEO tools", archive: "Web archives", "other-bot": "Other crawlers", script: "Scripts and checks (including this site's own)" };
 
 module.exports = async (req, res) => {
+  res.czZone = require("../room/cztime.js").readerZone(req.headers);   // the reader's day at the top of the page (CZ 1438)
   const url = new URL(req.url, "http://x");
   if (!["GET", "HEAD"].includes(req.method)) { res.setHeader("Allow", "GET, HEAD"); return json(res, 405, { error: "method not allowed" }); }
   // the tags that link sharers add (fbclid, utm_…, gclid, ref) are ignored, so that a shared link opens the page; anything else is refused,
@@ -41,7 +42,7 @@ module.exports = async (req, res) => {
 ${until ? `<p id="visitors">Until ${CZ.whenHtml(until)} the server also counted distinct visitors: for the current day only it kept a hash of each address and browser under a salt made for that day, and at the end of the day it kept the number and deleted the hashes and the salt. On ${CZ.whenHtml(untilDay)} the originator stopped it. A count of people needs something about each person, even for one day; a count of pages needs nothing. Since then no address and no description of a browser is kept or counted. The numbers counted until then stay below, in the column of visitors${(days.find((d) => d.day === untilDay) || {}).visitors != null ? "; the last day's is partial" : ""}.</p>` : ""}
 <h2 id="h-days">The last 30 days</h2>
 <p class="src">${n(tot.v)} page views by browsers; ${n(tot.a)} automated requests.${until ? " Visitors: counted until the count stopped, once per day (the same person on two days was two); — since." : " A visitor is counted once per day: the same person on two days is two."}</p>
-${table(["Day", "Page views", "Visitors", "Automated"], days.map((d) => `<tr><td>${CZ.whenHtml(d.day)}${d.day === today ? " (today, still counting)" : ""}</td><td class="num">${n(d.views)}</td><td class="num">${visitorsCell(d)}</td><td class="num">${n(d.automated)}</td></tr>`))}
+${table(["Day", "Page views", "Visitors", "Automated"], days.map((d) => `<tr><td>${CZ.whenHtml(d.day)}${d.day === today ? " (this UTC day, still counting)" : ""}</td><td class="num">${n(d.views)}</td><td class="num">${visitorsCell(d)}</td><td class="num">${n(d.automated)}</td></tr>`))}
 <h2 id="h-pages">Pages</h2>
 ${table(["Page", "Views"], (s.pages || []).map((p) => `<tr><td>${/^\/(?!\/)/.test(p.key) ? `<a href="${esc(p.key)}">${esc(p.key)}</a>` : esc(p.key)}</td><td class="num">${n(p.n)}</td></tr>`))}
 <h2 id="h-refs">Where readers came from</h2>

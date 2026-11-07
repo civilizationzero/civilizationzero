@@ -10,6 +10,7 @@ const dns = require("node:dns");
 const https = require("node:https");
 const net = require("node:net");
 const R = require("./lib.js");
+const CZ = require("./cztime.js");
 const RT = require("../api/register-templates.json");
 
 const OPEN = RT.open === true || process.env.CZ_REGISTER_OPEN === "1";
@@ -30,7 +31,8 @@ function canonical(obj) {
   return "{" + keys.map((k) => JSON.stringify(k) + ":" + (Array.isArray(obj[k]) ? "[" + obj[k].map((x) => JSON.stringify(x)).join(",") + "]" : JSON.stringify(obj[k]))).join(",") + "}";
 }
 const sha256 = (s) => crypto.createHash("sha256").update(Buffer.from(s, "utf8")).digest("hex");
-const todayUTC = () => new Date().toISOString().slice(0, 10);
+// the latest date anywhere on Earth (UTC+14): a statement may carry its signatory's own today, wherever that is (CZ 1438)
+const latestToday = () => CZ.isoDate(...CZ.toGregorian(CZ.todayIn(Date.now(), "Pacific/Kiritimati")));
 
 // ---------------------------------------------------------------- validation (the contract in /api/openapi.json and on /adopt)
 // Unsigned statements: CRLF → LF and ASCII whitespace trimmed in every field. Signed statements: taken exactly as sent; a field that
@@ -80,7 +82,7 @@ function validateStatement(b) {
     if (R.clen(out.scope) < 20 || R.clen(out.scope) > 4000) return { error: "scope: the scope of the commitment, 20–4,000 characters (IR 10.1)" };
     if (R.clen(out.reservations) < 1 || R.clen(out.reservations) > 4000) return { error: "reservations: any reservations, 1–4,000 characters; write \"none\" if there are none (IR 10.1)" };
   }
-  if (!R.validDate(out.declared_date) || out.declared_date < "2022-11-30" || out.declared_date > todayUTC()) return { error: "declared_date: the date of the statement, YYYY-MM-DD, not in the future (UTC)" };
+  if (!R.validDate(out.declared_date) || out.declared_date < "2022-11-30" || out.declared_date > latestToday()) return { error: "declared_date: the date of the statement, YYYY-MM-DD, not later than today anywhere on Earth" };
   if (out.lang && (out.lang.length > 35 || !R.LANG_RE.test(out.lang))) return { error: "lang: a BCP 47 tag in its usual case, e.g. en, fa, zh-Hans, pt-BR (a statement is recorded as written, so it is not rewritten)" };
   if (out.type === "adoption") { if (out.refers_to) return { error: "refers_to: an adoption refers to nothing" }; }
   else if (!/^[1-9]\d{0,11}$/.test(out.refers_to)) return { error: "refers_to: the id of the adoption this " + out.type + " changes" };

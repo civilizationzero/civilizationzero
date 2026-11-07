@@ -37,6 +37,7 @@ function receiptPage(res, id, receipt) {
 const foreignOrigin = (req) => { const o = req.headers.origin; if (!o) return false; const host = req.headers["x-forwarded-host"] || req.headers.host || ""; return o !== `https://${host}` && o !== ORIGIN; };
 
 module.exports = async (req, res) => {
+  res.czZone = require("../room/cztime.js").readerZone(req.headers);   // the reader's day at the top of the page (CZ 1438)
   const url = new URL(req.url, "http://x");
   const method = req.method === "HEAD" ? "GET" : req.method;
   // reads are open to every origin; a post is not: another site's page must not make its visitors' browsers post here (R3-23)
@@ -146,7 +147,7 @@ module.exports = async (req, res) => {
       const h = { "Retry-After": String(r.retry_after_seconds) };
       if (r.reason === "limit") Object.assign(h, { "RateLimit-Limit": String(r.limit), "RateLimit-Remaining": "0", "RateLimit-Reset": String(r.reset) });
       const status = r.reason === "limit" ? 429 : 503;
-      if (form) return formError(res, status, "Not accepted: " + r.reason, r.reason === "limit" ? `5 submissions per 10 minutes per source. Try again in ${r.retry_after_seconds} seconds.` : `Today's intake is full. Try again in ${r.retry_after_seconds} seconds.`, h);
+      if (form) return formError(res, status, "Not accepted: " + r.reason, r.reason === "limit" ? `5 submissions per 10 minutes per source. Try again in ${r.retry_after_seconds} seconds.` : `This UTC day's intake is full. Try again in ${r.retry_after_seconds} seconds.`, h);
       return json(res, status, { state: "not accepted", reason: r.reason, retry_after_seconds: r.retry_after_seconds, rules: `${ORIGIN}/discuss` }, h);
     }
     // The classifier runs before the answer (its flag belongs with the publication) but is bounded: an 8 s model timeout, and a

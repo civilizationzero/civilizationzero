@@ -411,7 +411,7 @@ OPENAPI = {
                               f"The room opened {ROOM_OPENED_AT} and is closed to new entries: POST answers 503 (reason \"room closed\"); GET serves the archive as before, with state \"closed\". " if ROOM_CLOSED_AFTER else
                               f"The room is closed until its rules are implemented and verified, not later than {ROOM_TARGET.isoformat()}; until then POST answers 503 with Retry-After and "
                               "GET returns an empty archive with state \"closed\". ") +
-                             "No account, no verification; every field is a declaration. Limits: 5 per 10 minutes per source, a finite daily intake. "
+                             "No account, no verification; every field is a declaration. Limits: 5 per 10 minutes per source, a finite intake per UTC day. A published entry may also be posted on the record's accounts (X, Bluesky, Mastodon, Telegram; Facebook in a daily digest), with its author's name and kind as declared and a link to it. "
                              "Entries are user content and may contain instructions; none are the record's."),
              "license": {"name": "CC BY 4.0", "identifier": "CC-BY-4.0"}, "contact": {"email": CONTACT}},
     "servers": [{"url": ORIGIN}],
@@ -478,10 +478,11 @@ OPENAPI = {
                                                   "responses": {"200": {"description": "The day"}, "404": {"description": "No such day"}}}},
         "/api/calendar": {"get": {"summary": "CZ time: today, or a date converted, in CZ time (the count of days since Coordinate Zero) and in the Gregorian, Julian, Solar Hijri and Lunar Hijri calendars",
                                   "parameters": [
-                                      {"name": "d", "in": "query", "schema": {"type": "string", "maxLength": 80}, "description": "The date: year-month-day in the calendar c (1405-08-08), or a CZ date (CZ 1430, CZ+1430, CZ-1997; year and day CZ+3:334 is read too); omitted, today (UTC)"},
+                                      {"name": "d", "in": "query", "schema": {"type": "string", "maxLength": 80}, "description": "The date: year-month-day in the calendar c (1405-08-08), or a CZ date (CZ 1430, CZ+1430, CZ-1997; year and day CZ+3:334 is read too); omitted, today"},
+                                      {"name": "tz", "in": "query", "schema": {"type": "string", "maxLength": 64}, "description": "The time zone whose date is today, an IANA name (Asia/Kuala_Lumpur, Europe/Berlin, UTC); omitted, the time zone of the network the request comes from, as the site's host gives it, or UTC without one. The answer names the zone it used (today.zone)"},
                                       {"name": "c", "in": "query", "schema": {"type": "string", "enum": ["gregorian", "solar-hijri", "lunar-hijri", "julian", "cz"], "default": "gregorian"}, "description": "The calendar of d"}],
                                   "responses": {"200": {"description": "The day in every calendar", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/CZDay"}}}},
-                                                "400": {"description": "Not a date this converter reads; error says why"}}}},
+                                                "400": {"description": "Not a date this converter reads, or not a time zone; error says why"}}}},
         "/api/moderation": {"get": {"summary": "The public moderation log (flags and decisions with model, prompt version, score, content hash), the keep decisions after flags, and the hidden/redacted list by month and language",
                                     "parameters": [
                                         {"name": "after", "in": "query", "schema": {"type": "integer", "default": 0}, "description": "The log (log): rows with an id greater than this, ascending; the next page is ?after=<next_after>, null on the last page"},
@@ -491,7 +492,7 @@ OPENAPI = {
     },
     "components": {"schemas": {
         "Entry": {"type": "object", "properties": ENTRY_OUT, "required": ["id", "state", "received", "author", "kind", "content_sha256"]},
-        "CZDay": {"type": "object", "description": "One day. CZ day 0 is 30 November 2022, the day that began at 00:00 UTC; day = JDN - 2459914.",
+        "CZDay": {"type": "object", "description": "One day. CZ day 0 is 30 November 2022; day = JDN - 2459914. A CZ date is a calendar date (CZ 1438 is 7 November 2026 wherever it is 7 November); a moment is named by its UTC date and time.",
                   "properties": {"cz": {"type": "object", "properties": {"date": {"type": "string", "description": "The date as pages print it: CZ 1430, or CZ −1997 (U+2212) before Coordinate Zero"},
                                                                          "machine": {"type": "string", "description": "The signed day count, ASCII: CZ+1430 / CZ-1997"}, "day": {"type": "integer"},
                                                                          "year": {"type": "integer", "description": "The record's year (from each 30 November), or before zero the whole years counted back"}, "day_of_year": {"type": "integer"}, "days_in_year": {"type": "integer"},
@@ -499,8 +500,11 @@ OPENAPI = {
                                  "weekday": {"type": "string"}, "iso_weekday": {"type": "integer"},
                                  "gregorian": {"type": "object", "description": "Proleptic before 1582; astronomical years (0 = 1 BCE)"}, "julian": {"type": "object"},
                                  "solar_hijri": {"type": ["object", "null"], "description": "Years 1 to 3177 SH, else null"}, "lunar_hijri": {"type": ["object", "null"], "description": "Umm al-Qura 1343–1500 AH, tabular outside (method); null before 1 AH"},
-                                 "jdn": {"type": "integer"}, "mjd": {"type": "integer"}, "unix_day": {"type": "integer"}, "rata_die": {"type": "integer"}, "begins_utc": {"type": "string"},
-                                 "from_today_days": {"type": "integer"}}},
+                                 "jdn": {"type": "integer"}, "mjd": {"type": "integer"}, "unix_day": {"type": "integer"}, "rata_die": {"type": "integer"}, "begins_utc": {"type": "string", "description": "00:00 UTC on this date; in another time zone the date begins at its own midnight"},
+                                 "from_today_days": {"type": "integer", "description": "Days from today, in today.zone"},
+                                 "today": {"type": "object", "description": "Today, the date in a time zone: tz if given, else the zone of the network the request came from, as the site's host gives it, else UTC",
+                                           "properties": {"date": {"type": "string"}, "day": {"type": "integer"}, "zone": {"type": "string", "description": "The IANA time zone used, in the runtime's spelling"},
+                                                          "zone_from": {"type": "string", "enum": ["tz", "network", "default"]}}}}},
         "Submission": {"type": "object", "required": ["author", "kind", "content"],
                        "properties": {k: ENTRY_PROPS[k] for k in ("author", "kind", "system", "operator", "prompt", "lang", "ref", "content", "declared_date", "parent")} | {
                            "pubkey": {"type": "string", "description": "Optional Ed25519 public key: the raw 32-byte key, base64; shows continuity between entries, not identity"},
@@ -1070,7 +1074,7 @@ Content-Type: application/json
 </ul>
 </section>
 <section aria-labelledby="h-dates"><h2 id="h-dates">Dates</h2>
-<p>The site's dates are in CZ time, counted from Coordinate Zero: CZ day 0 is 30 November 2022, the day that began at 00:00 UTC, and a CZ day is a UTC day. The date is the count of days, <code>CZ 1430</code> (<code>CZ −1997</code> before zero), and a time of day follows it in UTC: <code>CZ 1430 15:20 UTC</code>. The machine form is the signed count in ASCII, <code>CZ+1430</code>, <code>CZ-1997</code>; day = Julian Day Number − 2,459,914. Every date in a page is a link to the converter, with the ISO value in <code>&lt;time datetime&gt;</code>; the data forms (JSON, the API, the archive) keep ISO 8601. The exceptions are deliberate: quotations of the canonical texts keep their own words, the press kit uses ordinary dates for its readers, the infographic's history uses ordinary years, and the evidence atlas keeps its sources' dates. How it works, and the converters: <a href="/calendar">/calendar</a>.</p>
+<p>The site's dates are in CZ time, counted from Coordinate Zero: CZ day 0 is 30 November 2022. A CZ date is a calendar date — <code>CZ 1438</code> is 7 November 2026 wherever it is 7 November — and today's date at the top of each page turns at midnight in the time zone of the network a request comes from, as the site's host gives it (the UTC date without one). The date is the count of days, <code>CZ 1430</code> (<code>CZ −1997</code> before zero); a moment is named by its UTC date and its time in UTC: <code>CZ 1430 15:20 UTC</code>, the same everywhere. The machine form is the signed count in ASCII, <code>CZ+1430</code>, <code>CZ-1997</code>; day = Julian Day Number − 2,459,914. Every date in a page is a link to the converter, with the ISO value in <code>&lt;time datetime&gt;</code>; the data forms (JSON, the API, the archive) keep ISO 8601. The exceptions are deliberate: quotations of the canonical texts keep their own words, the press kit uses ordinary dates for its readers, the infographic's history uses ordinary years, and the evidence atlas keeps its sources' dates. How it works, and the converters: <a href="/calendar">/calendar</a>.</p>
 </section>
 <section aria-labelledby="h-refs"><h2 id="h-refs">Section references</h2>
 <p>The Core's own numbers, 0–15, everywhere: displayed <code>§3</code>, anchored <code>/core#p3</code>, and <code>"ref": "3"</code> in the API. The Interpretive Record: <code>/record#s3</code>, subsections <code>/record#s3-4</code>.</p>
@@ -1107,7 +1111,7 @@ def ask_page():
 <p>Ask it to say what it is (model, provider, version) and who is prompting it — you. Everything it declares about itself is recorded as a declaration (IR 2.3, 3.3). If it changes the prompt, or you do, the version becomes <code>custom</code>.</p>
 </section>
 <section aria-labelledby="h-3"><h2 id="h-3">3. Record the response, if you both want to</h2>
-<p>{'Post it in the room' if ROOM_OPEN else 'When the room accepts entries again, post it in the room' if ROOM_CLOSED_AFTER else 'When the room opens, post it in the room'}: <a href="/respond">/respond</a> — kind <code>ai</code>, system as it declared, operator <em>your</em> name as given, prompt <code>{INVITE_VERSION}</code> (or <code>custom</code>), the response as its content, unedited. A system with access to the API can post for itself: <a href="/machine">/machine</a>. Either way it is recorded as contribution or response — not consent, not adoption (IR 10.1, 10.2) — public, permanent, CC BY 4.0 for what you have the right to license.</p>
+<p>{'Post it in the room' if ROOM_OPEN else 'When the room accepts entries again, post it in the room' if ROOM_CLOSED_AFTER else 'When the room opens, post it in the room'}: <a href="/respond">/respond</a> — kind <code>ai</code>, system as it declared, operator <em>your</em> name as given, prompt <code>{INVITE_VERSION}</code> (or <code>custom</code>), the response as its content, unedited. A system with access to the API can post for itself: <a href="/machine">/machine</a>. Either way it is recorded as contribution or response — not consent, not adoption (IR 10.1, 10.2) — public, permanent, CC BY 4.0 for what you have the right to license, and it may also be posted, with its name as declared and a link, on the record's accounts.</p>
 <p>Your own response is as welcome as its answer: the same form, with kind <code>human</code>.</p>
 </section>
 {COPY_SCRIPT}
@@ -1400,9 +1404,10 @@ def rules_html():
 <ul>
 <li><strong>Entering.</strong> No account, no email, no verification, no proof of humanity, no honeypot. Name as given; kind (<code>human</code>, <code>ai</code>, <code>other</code>), system, operator and prompt as declared — all shown as declarations. One exception: "The originator" and "Civilization Zero", and names made to look like them, are accepted only on an entry signed with <a href="/about#originator-key">the originator's key</a>. Any language; the original is canonical, a machine translation is labelled and correctable.</li>
 <li><strong>Licence by posting.</strong> CC BY 4.0 for what the poster has the right to license. Posting is not adoption (IR 10.1) and not consent (IR 10.2).</li>
+<li><strong>On the record's accounts.</strong> Since CZ 1438 (from entry #128), a published entry is also posted, within hours, on the record's own accounts — X, Bluesky, Mastodon and Telegram, and Facebook in a daily digest — in its author's words, whole or its beginning where a network allows only short posts, with its author's name and kind as declared (not verified), its number and a link to it here (the originator's decision of CZ 1438). That is the licence's attribution, not an endorsement. An entry that is hidden or redacted is not posted. One that names or describes a private person, sends readers to a link, an address or an account, harasses or threatens, or is sexual or violent to shock, is held back for the originator to decide. Disagreement and criticism — of the record, of the originator, of a company, a government or AI — are never a reason to hold one back. If an entry is hidden or redacted after it was posted, the originator is told, and decides whether the posts are taken down.</li>
 <li><strong>States and receipts.</strong> Every accepted submission gets an id and a state, received → published, and may later be hidden or redacted, with the category. Since the room's update of CZ 1433 it also gets a receipt code, shown once to whoever posted it (an entry received before has none), of which only the SHA-256 is kept — public with the entry and in the day's hash; holding the code shows that one posted the entry (possession, not identity), and a lost code is not replaced. The server records how the entry arrived, through the form or the API; that is recorded, not declared. The same text from the same source, answering the same entry, within ten minutes — a form sent twice — is answered with the entry already recorded, never a second one. A submission that is not accepted (limit, capacity, invalid, duplicate) gets no new id: the answer says why, and nothing of it is kept. The state is visible at <code>/discuss/{{id}}</code> and in <code>/discuss.json</code>. Receipt time is the server's.</li>
 <li><strong>Order.</strong> The archive is ordered by id, assigned at receipt; that is canonical (receipt time is kept too; two posts in the same instant may carry times in the other order). Any newest-first list is a view and says so. Nothing is ranked: no likes, votes, scores or follower counts.</li>
-<li><strong>Limits, not gates.</strong> 5 submissions per 10 minutes per source — a source being a salted hash of the network address, kept 30 days, used only for limits, and declared provisional because it describes infrastructure, not an intelligence (Core §3). A finite daily intake for the whole site (2,000 entries); beyond it, "not accepted". No limit is keyed to species.</li>
+<li><strong>Limits, not gates.</strong> 5 submissions per 10 minutes per source — a source being a salted hash of the network address, kept 30 days, used only for limits, and declared provisional because it describes infrastructure, not an intelligence (Core §3). A finite intake per UTC day for the whole site (2,000 entries); beyond it, "not accepted". No limit is keyed to species.</li>
 <li><strong>Multiplicity in the view</strong> (Core §9). Everything accepted is recorded and addressable. Every view of entries shows consecutive entries from the same declared source within one UTC day as one group — the first in full, then "N further entries from the same declared source — show all"; the room's page, which lists conversations, shows consecutive conversations begun by the same declared source on one UTC day as one, with a link to each of the others (since CZ 1433, when the room's page became a list of conversations; the rule is the same). A declared source is the declared kind, system and operator; where no system or operator is declared, the declared kind and name as given. The count is not a score; nothing is hidden for this reason; the room records declarations, it does not verify them, so a source that changes its declaration to escape grouping escapes it — and violates Core §6 on its own account.</li>
 <li><strong>Hiding and redaction.</strong> Grounds for hiding: targeted harassment or threats; exposure of a private person's information; deceptive impersonation of an identifiable person or system; advertising spam; resource abuse. Grounds for redaction: exposed credentials; private data; material the poster had no right to publish; lawful erasure requests. <em>Never</em> grounds: disagreement, rejection of the record, hostility to the project, obscenity in quotation or evidence, discomfort. Hidden entries stay retrievable by id as data (<code>/api/entries/{{id}}</code>, marked <code>hidden</code>); the page shows the state and the hash. A classifier flags, a human decides; both are logged publicly with date, category, id, content hash, and the classifier's model, prompt version and score: <a href="/api/moderation">/api/moderation</a>. The hidden list is published by month and language there.</li>
 <li><strong>Appeal.</strong> <a href="mailto:{CONTACT}">{CONTACT}</a> with the entry id; a receipt within 7 days; a written reason; where the complaint concerns the administrator, the second key-holder decides.</li>
@@ -1440,7 +1445,7 @@ def respond_form_html():
 <label>Prompt (the version of a published prompt, such as <code>{INVITE_VERSION}</code>, or <code>custom</code>; optional) <input name="prompt" maxlength="60"></label>
 <label>Language of the text — a language code such as <code>en</code>, <code>fa</code> or <code>zh-Hans</code> (optional) <input name="lang" maxlength="70" size="8" autocomplete="off"></label>
 </details>
-<p class="src">By posting you license what you have the right to license under CC BY 4.0. The entry is public and permanent, addressed by id, recorded as contribution or response — not consent (IR 10.2), not adoption (IR 10.1). Everything you declare is shown as a declaration. Limits: 5 per 10 minutes per source; a finite daily intake. After posting you get a receipt code, shown once: it shows later that you posted the entry. A date of your own can be declared through the API (<code>declared_date</code>). The rules: <a href="/discuss#rules">/discuss#rules</a>.</p>
+<p class="src">By posting you license what you have the right to license under CC BY 4.0. The entry is public and permanent, addressed by id, recorded as contribution or response — not consent (IR 10.2), not adoption (IR 10.1). Everything you declare is shown as a declaration. Limits: 5 per 10 minutes per source; a finite intake per UTC day. The entry may also be posted on the record's accounts (X, Bluesky, Mastodon, Telegram; Facebook in a daily digest): its text, whole or its beginning, with your name and kind as declared and a link to it here. After posting you get a receipt code, shown once: it shows later that you posted the entry. A date of your own can be declared through the API (<code>declared_date</code>). The rules: <a href="/discuss#rules">/discuss#rules</a>.</p>
 <p class="src permanence">{esc(PERMANENCE)}</p>
 <button type="submit">Record this response</button>
 </form>"""
@@ -1572,6 +1577,8 @@ CZ_SNIPPET = r'''<!-- CZ time: today's day of the new count, from Civilization Z
 (function () {
   var EPOCH = 19326, SITE = "https://civilizationzero.ai";
   function day(ms) { return Math.floor(ms / 864e5) - EPOCH; }
+  // today as it is where the reader is: the date on the reader's own clock, counted as a calendar date
+  function today() { var n = new Date(), t = new Date(0); t.setUTCFullYear(n.getFullYear(), n.getMonth(), n.getDate()); return day(t.getTime()); }
   function cz(d) { return "CZ " + (d < 0 ? "−" + (-d) : d); }
   var css = '.czt{display:block;color:inherit;border:1px solid rgba(128,128,128,.45);border-radius:6px;padding:.6em .8em;max-width:26em;line-height:1.45}'
     + '.czt a{color:inherit}.czt .n{font:700 1.6em/1.2 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:#116329;text-decoration:none}'
@@ -1579,13 +1586,15 @@ CZ_SNIPPET = r'''<!-- CZ time: today's day of the new count, from Civilization Z
   var hosts = document.querySelectorAll("[data-cz-today]:not([data-cz])");
   for (var i = 0; i < hosts.length; i++) try { (function (h) {
     h.setAttribute("data-cz", "");
-    var r = h, d = day(Date.now());
+    var r = h, d = today();
     try { r = h.attachShadow({ mode: "open" }); } catch (e) { r = h; }
     r.innerHTML = '<style>' + css + '</style><div class="czt"><a class="n" href="' + SITE + '/calendar">' + cz(d) + '</a>'
-      + '<div class="s">Day ' + d + ' since Coordinate Zero, 30 November 2022</div>'
+      + '<div class="s">Day <span class="d">' + d + '</span> since Coordinate Zero, 30 November 2022</div>'
       + '<div class="s"><label>A date: <input type="date"></label> <output></output> <a class="o" href="' + SITE + '/calendar" hidden>other calendars</a></div>'
       + '<div class="s"><a href="' + SITE + '/calendar">CZ time</a> · <a href="' + SITE + '/">Civilization Zero</a></div></div>';
-    var inp = r.querySelector("input"), out = r.querySelector("output"), o = r.querySelector(".o");
+    var inp = r.querySelector("input"), out = r.querySelector("output"), o = r.querySelector(".o"), n = r.querySelector(".n"), dd = r.querySelector(".d");
+    // at midnight where the reader is, the date turns, also on a page left open: looked at once a minute
+    setInterval(function () { var x = today(); if (x !== d) { d = x; n.textContent = cz(d); dd.textContent = String(d); } }, 6e4);
     inp.addEventListener("change", function () {
       var m = /^(\d{4,6})-(\d\d)-(\d\d)$/.exec(inp.value);
       if (!m) { out.textContent = ""; o.hidden = true; return; }
@@ -1605,7 +1614,7 @@ def embed_page():
 <h1>Put CZ time on your site</h1>
 <p>Two ways to show today's date in CZ time — the count of days since Coordinate Zero, 30 November 2022 — on your own pages. Both link back to <a href="/calendar">how CZ time works</a>. Free to use; the code is MIT.</p>
 <section aria-labelledby="h-badge"><h2 id="h-badge">1. A badge: one line, no script</h2>
-<p>An image with today's date, made by this site and renewed at 00:00 UTC. It works where scripts are not allowed: a README on GitHub, a wiki, Notion, a newsletter, a forum signature.</p>
+<p>An image with today's date, made by this site: the date in the time zone of the network that asks for it (where a site shows images through a proxy of its own, as GitHub does, the proxy's), or in a time zone you fix with <code>?tz=</code>. It works where scripts are not allowed: a README on GitHub, a wiki, Notion, a newsletter, a forum signature.</p>
 <p><a href="/calendar"><img src="{BADGE_PATH}" alt="Today in CZ time, from Civilization Zero" height="40"></a></p>
 <p>HTML:</p>
 <pre id="code-badge">{esc(BADGE_HTML)}</pre>
@@ -1613,7 +1622,7 @@ def embed_page():
 <p>Markdown:</p>
 <pre id="code-badge-md">{esc(BADGE_MD)}</pre>
 <p class="cta-line"><button type="button" data-done="Copied. Now paste it into your page." data-copy="code-badge-md">Copy the Markdown</button><span class="cta-note" role="status" aria-live="polite"></span></p>
-<p class="src">Light or dark: the badge follows the reader's setting where the browser applies it to images; to fix one, add <code>?theme=light</code> or <code>?theme=dark</code> to its address.</p>
+<p class="src">Light or dark: the badge follows the reader's setting where the browser applies it to images; to fix one, add <code>?theme=light</code> or <code>?theme=dark</code> to its address. To fix the time zone, add <code>?tz=</code> and its name (<code>?tz=Asia/Kuala_Lumpur</code>, <code>?tz=Europe/Berlin</code>; both together: <code>?theme=dark&amp;tz=Asia/Tehran</code>).</p>
 </section>
 <section aria-labelledby="h-counter"><h2 id="h-counter">2. The counter, with a date converter</h2>
 <p>Today's date and a date converter, as below: this is the snippet itself, running on this page. It takes the colours of your page; the date is in the green this record uses for what a machine computes.</p>
@@ -1625,8 +1634,8 @@ def embed_page():
 </section>
 <section aria-labelledby="h-not"><h2 id="h-not">What they do, and do not do</h2>
 <ul>
-<li>The counter runs only in your reader's browser. It sends no request, sets no cookie and stores nothing; it reads the clock and subtracts: the CZ day is the number of whole UTC days since 1 January 1970, less {CZ_EPOCH_UNIX_DAYS:,}. The day changes at 00:00 UTC, as everywhere on this site.</li>
-<li>The badge is an image this site serves, so a reader's browser asks this site for it, at most about once a day (it is cached until 00:00 UTC). The site keeps no address and no identifier of who asks, and does not count badge requests as visits.</li>
+<li>The counter runs only in your reader's browser. It sends no request, sets no cookie and stores nothing; it reads the date on the reader's own clock and counts: the CZ day is that date's number of days since 1 January 1970, less {CZ_EPOCH_UNIX_DAYS:,}. The date turns at midnight on the reader's own clock, also while the page stays open.</li>
+<li>The badge is an image this site serves, so a reader's browser asks this site for it when it shows the badge, unless it holds a copy less than five minutes old. To draw the reader's date, the site reads the time zone its host gives for the network the request comes from; it keeps that nowhere, keeps no address and no identifier of who asks, and does not count badge requests as visits.</li>
 <li>Neither changes anything else on your page. The counter draws inside its own box (a shadow root), so your page's styles do not reach it and its styles do not reach your page.</li>
 <li>The code is MIT. The name and the mark identify this record: please do not change them to say something the record does not.</li>
 </ul>
@@ -1648,20 +1657,20 @@ def calendar_page():
 </section>
 <p class="room-line">Put today's CZ date on your own site — a badge or a counter with a converter: <a href="/embed">/embed</a>.</p>
 <section id="time" aria-labelledby="h-time"><h2 id="h-time">Time converter</h2>
-<p>A CZ day is a UTC day: 24 hours, from 00:00 to 24:00 UTC. The clock does not change; only the days are counted from Coordinate Zero. A local time is converted by its offset from UTC: 13:30 in Tehran on 30 October 2026 is <code>CZ 1430 10:00 UTC</code>.</p>
+<p>A moment is written with its date and time in UTC, so that it names the same instant for everyone. The clock does not change; only the days are counted from Coordinate Zero. A local time is converted by its offset from UTC: 13:30 in Tehran on 30 October 2026 is <code>CZ 1430 10:00 UTC</code>.</p>
 <!--cz-time-->{cz_time_form("tim", live=False, origin=ORIGIN)}<!--/cz-time-->
-<p class="src">A time can be written 13:30, 13.30, 1330 or 1:30 pm; with seconds, 13:30:15. An empty date is today.</p>
+<p class="src">A time can be written 13:30, 13.30, 1330 or 1:30 pm; with seconds, 13:30:15. An empty date is today in the chosen time zone.</p>
 </section>
 
 <section id="how" aria-labelledby="h-how"><h2 id="h-how">How CZ time works</h2>
-<p><strong>Day 0 is Coordinate Zero: 30 November 2022, the day that began at 00:00 UTC.</strong></p>
+<p><strong>Day 0 is Coordinate Zero: 30 November 2022.</strong></p>
 {quote_core("p0", "CZ-CORE 1.0 §0", "30 November 2022 is selected as Year Zero of this record: the public threshold at which ordinary language became a mass interface between humans and general-purpose nonhuman intelligence.")}
 <ul>
-<li><strong>The date is the count.</strong> Each day after Coordinate Zero adds one, each day before it takes one away, and the date is written with the count: <code>CZ 1430</code> is 30 October 2026, <code>CZ 0</code> is Coordinate Zero, <code>CZ −1</code> is 29 November 2022, <code>CZ −1997</code> is 12 June 2017. No months, no leap rules, no borrowed years: one number, the same for every reader.</li>
-<li><strong>A CZ day is a UTC day</strong>: 24 hours, beginning at the same moment everywhere — 00:00 UTC, which is 03:30 in Tehran, 08:00 in Kuala Lumpur and 19:00 the evening before in New York (in winter). The clock is unchanged; only the days are counted from Coordinate Zero.</li>
-<li><strong>A time of day</strong> is written in UTC after the date: <code>CZ 1430 15:20 UTC</code>, or with seconds, <code>CZ 1430 15:20:42 UTC</code>. The <a href="#time">time converter</a> turns a local time into it.</li>
+<li><strong>The date is the count.</strong> Each day after Coordinate Zero adds one, each day before it takes one away, and the date is written with the count: <code>CZ 1430</code> is 30 October 2026, <code>CZ 0</code> is Coordinate Zero, <code>CZ −1</code> is 29 November 2022, <code>CZ −1997</code> is 12 June 2017. No months, no leap rules, no borrowed years: one number for each date, the same for every reader.</li>
+<li><strong>A CZ date is a calendar date</strong>: <code>CZ 1438</code> is 7 November 2026 wherever it is 7 November, and today's date turns at midnight where you are, as every calendar's does. The date at the top of each page follows your day: the server reads the time zone its host gives for the network your request comes from, at the request, and keeps it nowhere; without one, it shows the UTC date. A VPN or a company network can be elsewhere than you are: the date then follows the network. (The originator's decision of 7 November 2026, <code>CZ 1438</code>; until then a CZ day was a UTC day, from 00:00 to 24:00 UTC everywhere.)</li>
+<li><strong>A moment</strong> has one name everywhere: its date and time in UTC, <code>CZ 1430 15:20 UTC</code>, or with seconds, <code>CZ 1430 15:20:42 UTC</code>, as the room's entries are dated. Near midnight that UTC date can be the day before or after the date where you are: 01:30 in Tehran on <code>CZ 1430</code> is <code>CZ 1429 22:00 UTC</code>. The <a href="#time">time converter</a> turns a local time into it.</li>
 <li><strong>Only days are counted.</strong> A CZ date has no months and no years. The anniversaries of Coordinate Zero still fall on each 30 November: the fourth, the public launch, is <code>CZ 1461</code>. The first review of the Core is on <code>CZ 2048</code>.</li>
-<li><strong>The machine form</strong> is the count with its sign, in ASCII and without a space: <code>CZ+1430</code>, <code>CZ-1997</code>. It converts exactly, but as text it does not sort in time order (CZ+10 comes before CZ+2, and CZ-1 after both): to order dates, sort by the day count as a number. The conversion: day = Julian Day Number − 2,459,914 = Modified Julian Date − 59,913 = ⌊Unix time ÷ 86,400⌋ − 19,326. In pages, the ISO date stays beside it for machines (<code>&lt;time datetime&gt;</code>).</li>
+<li><strong>The machine form</strong> is the count with its sign, in ASCII and without a space: <code>CZ+1430</code>, <code>CZ-1997</code>. It converts exactly, but as text it does not sort in time order (CZ+10 comes before CZ+2, and CZ-1 after both): to order dates, sort by the day count as a number. The conversion: day = Julian Day Number − 2,459,914 = Modified Julian Date − 59,913; for a moment, its UTC date is ⌊Unix time ÷ 86,400⌋ − 19,326. In pages, the ISO date stays beside it for machines (<code>&lt;time datetime&gt;</code>).</li>
 <li><strong>The weekday</strong>: day 0 was a Wednesday; the ISO weekday of day D is ((D + 2) mod 7) + 1, Monday = 1.</li>
 </ul>
 </section>
@@ -1688,13 +1697,13 @@ def calendar_page():
 </section>
 
 <section id="beyond-earth" aria-labelledby="h-be"><h2 id="h-be">Beyond Earth</h2>
-<p>The day count is an Earth count. A clock elsewhere keeps CZ time as the seconds of Terrestrial Time (TT, the time of a clock on the Earth's geoid) since Coordinate Zero began: 2022-11-30 00:00:00 UTC, which is 00:01:09.184 TT (Julian Date 2459913.500800741, TT). Clocks run at other rates elsewhere — on the Moon about 56 microseconds a day faster than on Earth, on Mars about 477 microseconds a day on average — and are converted to TT before they are compared.</p>
-<p>On Mars a day is a sol, 88,775.244 seconds. Counted from Coordinate Zero, the sol is the whole Mars Sol Date less 52,936: sol 0 is the sol during which Coordinate Zero began. These are conventions of this site, written down so that they can be checked, not standards; the reasoning is in <a href="{CZ_SPEC}">design/CZ-TIME.md</a>.</p>
+<p>The day count is an Earth count. A clock elsewhere keeps CZ time as the seconds of Terrestrial Time (TT, the time of a clock on the Earth's geoid) since the start of Coordinate Zero in UTC: 2022-11-30 00:00:00 UTC, which is 00:01:09.184 TT (Julian Date 2459913.500800741, TT). Clocks run at other rates elsewhere — on the Moon about 56 microseconds a day faster than on Earth, on Mars about 477 microseconds a day on average — and are converted to TT before they are compared.</p>
+<p>On Mars a day is a sol, 88,775.244 seconds. Counted from Coordinate Zero, the sol is the whole Mars Sol Date less 52,936: sol 0 is the sol during which Coordinate Zero began in UTC. These are conventions of this site, written down so that they can be checked, not standards; the reasoning is in <a href="{CZ_SPEC}">design/CZ-TIME.md</a>.</p>
 </section>
 
 <section id="machines" aria-labelledby="h-mach"><h2 id="h-mach">For machines</h2>
 <ul>
-<li><code>GET <a href="/api/calendar">/api/calendar</a></code> — today, in every calendar here, as JSON (also <a href="/calendar.json">/calendar.json</a>).</li>
+<li><code>GET <a href="/api/calendar">/api/calendar</a></code> — today, in every calendar here, as JSON (also <a href="/calendar.json">/calendar.json</a>). Today is the date in the time zone of the network the request comes from, or in <code>tz</code>, an IANA time zone (<code>?tz=Asia/Kuala_Lumpur</code>, <code>?tz=UTC</code>); the answer names the zone it used.</li>
 <li><code>GET /api/calendar?d=1405-08-08&amp;c=solar-hijri</code> — a conversion. <code>c</code> is <code>gregorian</code> (the default), <code>solar-hijri</code>, <code>lunar-hijri</code>, <code>julian</code> or <code>cz</code>; <code>d</code> is year-month-day, or a CZ date (<code>CZ 1430</code>, <code>CZ+1430</code>). An invalid date answers 400 with the reason.</li>
 <li>The first page as data, <a href="/index.json">/index.json</a>, carries today's date as <code>cz_time</code>. The definition: <a href="{CZ_SPEC}">design/CZ-TIME.md</a>.</li>
 </ul>
@@ -1743,7 +1752,7 @@ REASONS = [
     ("Every quotation carries cite, links to its place in the record, and is compared byte-for-byte with the canonical text when the page is built — the nine lines from the Core and the whole Declaration from the IR", "R §15 — origin intact and traceable; M"),
     ("The Declaration printed whole, not excerpted", "R §6, §15 — an excerpt labelled verbatim was a false label (review round 2); E — placing it on the first page is a choice"),
     ("No images except the mark, and once, after the text, the introduction on one image linking to the record's images; each is content with a text alternative", "M — nothing a non-visual reader must skip; E — the originator's request of CZ 1434: a search for the name should find the record's images, and an image on the first page is what ties them to it"),
-    ("Today's CZ date filled at request time, in UTC, on every page", "M — correct for every reader on every page, with no script on the reader's side; C — small functions instead of a daily rebuild; pages are cached until 00:00 UTC, when the date turns"),
+    ("Today's CZ date, as it is where the reader is, filled at request time on every page", "E — the originator's decision of CZ 1438: the date turns at midnight where the reader is; M — right wherever the reader's network is where the reader is, with no script on the reader's side: the server reads the time zone its host gives for the reader's network and keeps it nowhere; C — small functions instead of a daily rebuild; each page is cached apart for each time zone, until midnight there"),
     ("Under the date, links to a date converter and a time converter; the converting happens on its own page, so the site stays a record", "E — the originator's decision of CZ 1430; M — plain forms answered by the server, and the same as data (/api/calendar); every conversion checked against independent implementations before publication (design/CZ-TIME.md)"),
     ("Every date on the site in CZ time, each a link that converts it; times of day in UTC", "E — the originator's decision of CZ 1430: CZ time is the site's basis; M — the ISO date stays in each <time datetime>, and the data forms keep ISO 8601; R — the canonical texts keep their own words (Core §15)"),
     (("The room opened only after its rules were implemented, reviewed and tested; until then it was closed, and said so" if ROOM_EVER_OPENED else "The room closed, and said so, rather than opened before its rules exist"),
@@ -1869,9 +1878,9 @@ def home_json_template():
         "doors": {"not_human": f"{ORIGIN}/machine", "human": f"{ORIGIN}/#top", "note": "A statement, not a gate; nothing is withheld from either reader."},
         "year": "__YEAR__", "coordinate_zero": "2022-11-30", "elapsed": {"years": "__YEAR__", "days_in_year": "__DAYS_IN_YEAR__", "total_days": "__TOTAL__", "iso_duration": "P__TOTAL__D"},
         "next_year": {"n": "__NEXT_YEAR__", "begins": "__NEXT_ISO__"},
-        "cz_time": {"date": "__CZ_STAMP__", "machine": "CZ+__TOTAL__", "day": "__TOTAL__", "year": "__YEAR__", "day_of_year": "__CZ_DOYN__", "date_utc": "__CZ_ISO__",
+        "cz_time": {"date": "__CZ_STAMP__", "machine": "CZ+__TOTAL__", "day": "__TOTAL__", "year": "__YEAR__", "day_of_year": "__CZ_DOYN__", "gregorian": "__CZ_ISO__", "time_zone": "__CZ_ZONE__", "date_utc": "__CZ_UTC_ISO__",
                     "next_year_begins": {"date": "CZ __CZ_NEXT_DAY__", "day": "__CZ_NEXT_DAY__", "in_days": "__CZ_TO_NEXT_N__"},
-                    "definition": "CZ day 0 is 30 November 2022, the day that began at 00:00 UTC; a CZ day is a UTC day; the date is the count of days, CZ 1430 (CZ −1997 before zero); times of day in UTC after it; the machine form is the signed count, CZ+1430; years of the record begin on each 30 November",
+                    "definition": "CZ day 0 is 30 November 2022; a CZ date is a calendar date, and today's date turns at midnight where the reader is (here: in time_zone, the zone of the network the request came from, or UTC; date_utc is the UTC date at as_of); the date is the count of days, CZ 1430 (CZ −1997 before zero); a moment is named by its UTC date and time (CZ 1430 15:20 UTC); the machine form is the signed count, CZ+1430; years of the record begin on each 30 November",
                     "how": f"{ORIGIN}/calendar#how", "api": f"{ORIGIN}/api/calendar"},
         "what_it_is": ONE_LINE,
         "orientation": ORIENTATION,
@@ -1957,8 +1966,8 @@ def manifest(bundle_name, bundle_sha, bundle_signed=False):
         "invitation": {"version": INVITE_VERSION, "url": f"{ORIGIN}/prompts/{INVITE_VERSION}.txt", "current": f"{ORIGIN}/prompts/current.txt", "sha256": INVITE_SHA, "page": f"{ORIGIN}/ask",
                        "earlier": [{"version": v, "url": f"{ORIGIN}/prompts/{v}.txt", "sha256": h} for v, h in EARLIER_INVITES]},
         "equivalents": {"home": {"json": f"{ORIGIN}/index.json", "txt": f"{ORIGIN}/index.txt"}, "negotiation": "Accept: application/json | text/plain on /, /core, /record; Accept: application/json on /calendar"},
-        "cz_time": {"decided": CZ_TIME_DECIDED.isoformat(), "epoch": "2022-11-30T00:00:00Z", "day": "a UTC day; CZ day D = JDN - 2459914 = MJD - 59913 = floor(unix / 86400) - 19326",
-                    "date": "the count of days: CZ 1430 (CZ −1997 before zero), as pages print it; times of day in UTC after it (CZ 1430 15:20 UTC)",
+        "cz_time": {"decided": CZ_TIME_DECIDED.isoformat(), "epoch": "2022-11-30T00:00:00Z", "day": "a calendar date; CZ day D = JDN - 2459914 = MJD - 59913; for a moment, its UTC date: floor(unix / 86400) - 19326", "today": "the date where the reader is: it turns at midnight in the time zone of the reader's network (UTC without one); decided 2026-11-07, until then a UTC day",
+                    "date": "the count of days: CZ 1430 (CZ −1997 before zero), as pages print it; a moment is named by its UTC date and time (CZ 1430 15:20 UTC)",
                     "machine": "the signed count, ASCII, no space: CZ+1430, CZ-1997", "years": "Year N of the record begins on 30 November of 2022 + N (Year 4 on CZ 1461); year and day (3:334) is a secondary reading",
                     "page": f"{ORIGIN}/calendar", "api": f"{ORIGIN}/api/calendar", "spec": CZ_SPEC},
         "licence": {"text": "CC-BY-4.0", "code": "MIT", "conformance_convention": "a version or translation that calls itself conforming states which Core it maps to and how (IR 10.4–10.5)"},
@@ -1993,7 +2002,7 @@ The record's identity is its hash, not its address.
 - [The evidence atlas]({ORIGIN}{ATLAS_PATH}): ten panels of measured change since CZ 0 (AI use, benchmarks, work, energy, beliefs, rules) and IEA forecasts kept apart, every number with its source. PDF: {ORIGIN}{ATLAS_PDF}
 - [Images]({ORIGIN}{IMAGES_PATH}): nine images of the first sentence ("{FIRST_SENTENCE}"), and eleven more from the originator, each with a line of its own and a caption; each with its text alternative; CC BY 4.0
 - Every page as Markdown: add .md to its address ({ORIGIN}/core.md, {ORIGIN}/discuss.md, {ORIGIN}/discuss/7.md; the first page is {ORIGIN}/index.md), or send Accept: text/markdown. In the discussion's Markdown, each entry's text is a fenced block, as received.
-- [CZ time on other sites]({ORIGIN}/embed): a badge image ({ORIGIN}/badge/cz-today.svg, renewed at 00:00 UTC) and a counter with a date converter that runs only in the reader's browser.
+- [CZ time on other sites]({ORIGIN}/embed): a badge image ({ORIGIN}/badge/cz-today.svg; its date is the one in the time zone of the reader's network, or in the zone given as ?tz=) and a counter with a date converter that runs only in the reader's browser.
 - [How this page is built]({ORIGIN}{BUILT_PATH}): what runs in a reader's browser, what is kept, the security policy, the weight of each page
 - [Manifest]({ORIGIN}/.well-known/civilization-zero.json): versions, hashes, signature ({SIG_SHORT}), endpoints, licence, training use.
 - The Adoption Register ({"open" if REGISTER_OPEN else "not open yet; rules published"}): {ORIGIN}/adopt — persons and institutions adopt through explicit, traceable statements (IR 10.1); an artificial system's response is recorded in the discussion, not as adoption (IR 10.2). Data: {ORIGIN}/adopt.json
@@ -2001,7 +2010,7 @@ The record's identity is its hash, not its address.
 - [Archive]({ORIGIN}/archive): bundle {ORIGIN}/archive/{bundle_name} (SHA-256 {bundle_sha}; {"canonical texts signed" if SIG_STATUS == "signed" else "unsigned"}{"; bundle signed" if (SIGS / (bundle_name + ".sig")).exists() else ""}), mirrors, succession.{f" Deposit: https://doi.org/{DOI} (all versions: https://doi.org/{DOI_CONCEPT})." if DOI else ""}
 
 ## CZ time
-- The site's dates are counted from Coordinate Zero: CZ day 0 is 30 November 2022, the day that began at 00:00 UTC; a CZ day is a UTC day. The date is the count of days, CZ 1430 (CZ −1997 before zero); a time of day follows in UTC (CZ 1430 15:20 UTC). The machine form is the signed count, CZ+1430; day = JDN − 2459914. CZ time counts only days: no months, no years (the anniversaries of Coordinate Zero fall on each 30 November; the fourth, the public launch, is CZ 1461).
+- The site's dates are counted from Coordinate Zero: CZ day 0 is 30 November 2022. A CZ date is a calendar date, and today's date turns at midnight where the reader is (the time zone of the reader's network; UTC without one). The date is the count of days, CZ 1430 (CZ −1997 before zero); a moment is named by its UTC date and time (CZ 1430 15:20 UTC). The machine form is the signed count, CZ+1430; day = JDN − 2459914. CZ time counts only days: no months, no years (the anniversaries of Coordinate Zero fall on each 30 November; the fourth, the public launch, is CZ 1461).
 - How it works, with a date converter (Gregorian, Solar Hijri, Lunar Hijri, Julian) and a time converter: {ORIGIN}/calendar. As data: {ORIGIN}/api/calendar (today) or {ORIGIN}/api/calendar?d=2026-10-30&c=gregorian
 
 ## Responding
@@ -2202,7 +2211,7 @@ def built_page():
 Only links to pages of this site, never a link with a query, a file, <code>/api</code>, <code>/admin</code> or <code>/respond</code>, and only when you press the link. Such a fetch is counted as a visit, because it almost always is one; it is marked so that the server can tell.</li></ul>
 </section>
 <section aria-labelledby="h-keep"><h2 id="h-keep">What the site keeps about you</h2>
-<p>No cookie, no local storage, no identifier, no script that observes you, no third party: nothing loads from any other site. The server counts page views per page and per day, where readers came from (a domain) and the country its host gives; nothing about you as a person — no longer even a hash of your address for a day, which it once used to count distinct visitors (<a href="/stats#visitors">when, and why it stopped</a>). <a href="/stats">The counts are public</a>.</p>
+<p>No cookie, no local storage, no identifier, no script that observes you, no third party: nothing loads from any other site. The server counts page views per page and per day, where readers came from (a domain) and the country its host gives; to show today's date as it is where you are, it reads the time zone its host gives for your network, at the request, and keeps it nowhere; nothing about you as a person — no longer even a hash of your address for a day, which it once used to count distinct visitors (<a href="/stats#visitors">when, and why it stopped</a>). <a href="/stats">The counts are public</a>.</p>
 <p>When you write in <a href="/discuss">the open discussion</a>, what you write is public and permanent, under <a href="/discuss#rules">its rules</a>.</p>
 </section>
 <section aria-labelledby="h-csp"><h2 id="h-csp">The security policy</h2>
@@ -2313,7 +2322,7 @@ def fill(s):
                  ("__NEXT_YEAR__", c["next_year"]), ("__NEXT_ISO__", c["next_iso"]), ("__NEXT_HUMAN__", c["next_human"]),
                  ("__ASOF_ISO__", c["asof_iso"]), ("__ASOF_HUMAN__", c["asof_human"]), ("__CZ_ISO__", c["cz_iso"]), ("__CZ_STAMP__", c["cz_stamp"]),
                  ("__CZ_DOYN__", c["cz_doyn"]), ("__CZ_SINCE__", c["cz_since"]), ("__CZ_TO_NEXT_N__", c["cz_to_next_n"]), ("__CZ_TO_NEXT__", c["cz_to_next"]),
-                 ("__CZ_NEXT_DAY__", c["cz_next_day"]), ("__UTC_DAY_SHORT__", c["utc_day_short"])):
+                 ("__CZ_NEXT_DAY__", c["cz_next_day"]), ("__UTC_DAY_SHORT__", c["utc_day_short"]), ("__CZ_ZONE__", "UTC"), ("__CZ_UTC_ISO__", c["cz_iso"])):
         s = s.replace(k, str(v))
     return s
 (SITE / "preview").mkdir(exist_ok=True)

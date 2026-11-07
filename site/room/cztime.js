@@ -1,7 +1,10 @@
 // CZ time: dates counted from Coordinate Zero (design/CZ-TIME.md; the originator's decision of 30 October 2026, CZ 1430).
 //
-// CZ day 0 is 30 November 2022, the day that began at 00:00 UTC (CZ-CORE 1.0 §0). A CZ day is a UTC day. The day count D is
-// exact and needs no calendar:  D = JDN − 2,459,914 = MJD − 59,913 = ⌊Unix seconds / 86,400⌋ − 19,326 = Rata Die − 738,489.
+// CZ day 0 is 30 November 2022 (CZ-CORE 1.0 §0). A CZ date is a calendar date: CZ 1438 is 7 November 2026 wherever it is 7 November,
+// and today's date turns at midnight where the reader is, as every calendar's does (the originator's decision of 7 November 2026,
+// CZ 1438; until then a CZ day was a UTC day). A moment keeps one name for everyone: its UTC date and time, "CZ 1437 15:39 UTC".
+// The day count D of a date is exact and needs no calendar: D = JDN − 2,459,914 = MJD − 59,913 = Rata Die − 738,489, and for a
+// moment's UTC date ⌊Unix seconds / 86,400⌋ − 19,326.
 // The date is the count itself, written "CZ 1430" (CZ −1997 before Coordinate Zero): the originator's decision of 30 October 2026,
 // after first choosing year and day. Times of day are UTC, after the date: "CZ 1430 15:20 UTC". The machine form is the same count,
 // signed, in ASCII and without a space: CZ+1430, CZ-1997. Years of the record still begin on each 30 November (Year 4 on CZ 1461);
@@ -365,8 +368,8 @@ function fillBar(html, ms) {
 }
 
 // ---------------------------------------------------------------- every date on the site (the originator's decision of 30 Oct 2026)
-// A day or a moment as the pages print it: the CZ stamp, and for a moment its time of day in UTC (a CZ day is a UTC day: 24 hours,
-// 00:00 to 24:00 UTC); a link to the converter for that day; the ISO value stays in the datetime attribute, for machines.
+// A day or a moment as the pages print it: the CZ stamp, and for a moment its UTC date and its time of day in UTC (one name for the
+// moment everywhere); a link to the converter for that day; the ISO value stays in the datetime attribute, for machines.
 function whenParts(v) {
   const s = String(v ?? "").trim();
   const m = /^(-?\d{4,6})-(\d{2})-(\d{2})$/.exec(s);
@@ -397,12 +400,21 @@ function whenHtml(v, { seconds = false, link = true } = {}) {
 const utcMs = (y, m, d, hh = 0, mi = 0, ss = 0) => { const t = new Date(0); t.setUTCFullYear(y, m - 1, d); t.setUTCHours(hh, mi, ss, 0); return t.getTime(); };
 const ZONE_FMT = new Map();
 function validZone(z) {
-  if (typeof z !== "string" || !/^[A-Za-z_]+(\/[A-Za-z0-9_+-]+){0,2}$|^UTC$/.test(z)) return false;
+  if (typeof z !== "string" || z.length > 64 || !/^[A-Za-z_]+(\/[A-Za-z0-9_+-]+){0,2}$|^UTC$/.test(z)) return false;
   try { new Intl.DateTimeFormat("en-US", { timeZone: z }); return true; } catch { return false; }
+}
+// the runtime's own spelling of a zone ("asia/tehran" → "Asia/Tehran"), or null: names are compared, shown and cached only in it, so
+// that the many spellings of one zone are one zone (review of CZ 1438: a cache per spelling could grow without bound)
+function canonicalZone(z) {
+  if (!validZone(z)) return null;
+  try { return new Intl.DateTimeFormat("en-US", { timeZone: z }).resolvedOptions().timeZone; } catch { return null; }
 }
 function zoneOffsetMin(zone, ms) {   // minutes east of UTC at that moment
   let f = ZONE_FMT.get(zone);
-  if (!f) { f = new Intl.DateTimeFormat("en-US", { timeZone: zone, hourCycle: "h23", era: "short", year: "numeric", month: "numeric", day: "numeric", hour: "numeric", minute: "numeric", second: "numeric" }); ZONE_FMT.set(zone, f); }
+  if (!f) {
+    if (ZONE_FMT.size >= 1000) ZONE_FMT.clear();   // a bound, whatever reaches here: about 600 zones exist
+    f = new Intl.DateTimeFormat("en-US", { timeZone: zone, hourCycle: "h23", era: "short", year: "numeric", month: "numeric", day: "numeric", hour: "numeric", minute: "numeric", second: "numeric" }); ZONE_FMT.set(zone, f);
+  }
   const p = {};
   for (const x of f.formatToParts(new Date(ms))) p[x.type] = x.value;
   let y = Number(p.year);
@@ -443,17 +455,48 @@ function convertTime(dayD, t, zone) {
   if (r.all.length > 1) out.also = r.all.slice(1).map((c) => ({ utc_ms: c.ms, offset: c.offset, day: dayOf(c.ms), utc: hms(c.ms) }));   // clocks went back: the same wall time came twice
   return out;
 }
-// the local time at which a CZ day begins in a zone (its 00:00 UTC), e.g. "03:30" in Tehran, "19:00 the day before" in New York
+// the local time at which a UTC day begins in a zone (its 00:00 UTC), e.g. "03:30" in Tehran, "19:00 the day before" in New York
 function dayStartLocal(D, zone) {
   const ms = (D + UNIX0) * DAY_MS, off = zoneOffsetMin(zone, ms), local = new Date(ms + off * 60000);
   return { time: `${pad(local.getUTCHours(), 2)}:${pad(local.getUTCMinutes(), 2)}`, offset: off, before: off < 0 };
 }
 
-// a Cache-Control whose s-maxage (with stale-while-revalidate) would reach past 00:00 UTC is cut to end there, when the date turns
-function capCache(cc, ms) {
+// ---------------------------------------------------------------- the reader's day (the originator's decision of 7 Nov 2026, CZ 1438)
+// Today's date turns at midnight where the reader is. With no script on the reader's side, the server reads where that is from the
+// header the host adds to each request: the time zone of the network the request came from (x-vercel-ip-timezone, an IANA name such
+// as Asia/Kuala_Lumpur or Europe/Berlin), at request time, and keeps nothing. Without it, or with a name the runtime does not know,
+// the day is the UTC day. A network can be elsewhere than its reader (a VPN, a company network): the date then follows the network.
+// Every page that shows today's date is cached apart for each time zone (Vary: X-Vercel-IP-Timezone), until midnight there.
+const ZONE_HEADER = "x-vercel-ip-timezone", VARY_ZONE = "X-Vercel-IP-Timezone";
+function readerZone(headers) {
+  let z = headers && (typeof headers.get === "function" ? headers.get(ZONE_HEADER) : headers[ZONE_HEADER]);
+  if (Array.isArray(z)) z = z[0];
+  return (typeof z === "string" && z !== "" && canonicalZone(z)) || "UTC";
+}
+// the reader's wall clock at a moment, as milliseconds read in UTC: dayOf() of it is the reader's date, fields() of it the bar's
+const localMs = (ms, zone) => (zone && zone !== "UTC" ? ms + zoneOffsetMin(zone, ms) * 60000 : ms);
+const todayIn = (ms, zone) => dayOf(localMs(ms, zone));
+// seconds from a moment to the next midnight in a zone (where a clock change skips midnight, to the moment the clocks jump)
+function secondsToNextLocalDay(ms, zone) {
+  if (!zone || zone === "UTC") return secondsToNextDay(ms);
+  const [y, m, d] = toGregorian(todayIn(ms, zone) + 1);
+  const r = localToUTC(zone, y, m, d, 0, 0, 0);
+  const next = r.ms !== null ? r.ms : utcMs(y, m, d) - r.gap[0] * 60000;
+  return Math.max(1, Math.ceil((next - ms) / 1000));
+}
+// a Vary value with the time-zone header added once
+function varyZone(v) {
+  const parts = String(v || "").split(",").map((x) => x.trim()).filter(Boolean);
+  if (!parts.some((x) => x.toLowerCase() === ZONE_HEADER)) parts.push(VARY_ZONE);
+  return parts.join(", ");
+}
+
+// a Cache-Control whose s-maxage (with stale-while-revalidate) would reach past midnight in the reader's zone (UTC when none is
+// given) is cut to end there, when the date turns
+function capCache(cc, ms, zone = "UTC") {
   const m = /s-maxage=(\d+)/.exec(String(cc || ""));
   if (!m) return cc;
-  const swr = Number((/stale-while-revalidate=(\d+)/.exec(cc) || [])[1] || 0), left = secondsToNextDay(ms);
+  const swr = Number((/stale-while-revalidate=(\d+)/.exec(cc) || [])[1] || 0), left = secondsToNextLocalDay(ms, zone);
   return Number(m[1]) + swr <= left ? cc : `public, max-age=0, s-maxage=${Math.min(Number(m[1]), left)}`;
 }
 
@@ -464,5 +507,5 @@ module.exports = {
   fromLunarHijri, toLunarHijri, lunarHijriMonthDays, tabularFrom, tabularTo, UAQ_START, UAQ_Y0, UAQ_Y1,
   anniversary, parts, stamp, czDay, machine, fromStamp, dayOf, secondsToNextDay, isoWeekday, isoDate, fmtInt, describe, parse, normalizeInput,
   fields, fillTemplate, fillBar, barTemplates, capCache, whenParts, whenText, whenHtml, converterHref, escHtml,
-  utcMs, validZone, zoneOffsetMin, localToUTC, parseTime, offsetText, convertTime, dayStartLocal, WEEKDAYS_FA, WEEKDAYS_AR, FA_DIGITS, AR_DIGITS, digitsIn, MONTHS, SOLAR, SOLAR_FA, LUNAR, LUNAR_AR, WEEKDAYS,
+  utcMs, validZone, canonicalZone, zoneOffsetMin, localToUTC, parseTime, offsetText, convertTime, dayStartLocal, readerZone, localMs, todayIn, secondsToNextLocalDay, varyZone, VARY_ZONE, WEEKDAYS_FA, WEEKDAYS_AR, FA_DIGITS, AR_DIGITS, digitsIn, MONTHS, SOLAR, SOLAR_FA, LUNAR, LUNAR_AR, WEEKDAYS,
 };

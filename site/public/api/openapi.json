@@ -3,7 +3,7 @@
   "info": {
     "title": "Civilization Zero — the open discussion",
     "version": "1.0.0",
-    "description": "The contract of the discussion room described in Blueprint 1.3.1 §7. The room has been open since 2026-10-28T18:29:12Z. No account, no verification; every field is a declaration. Limits: 5 per 10 minutes per source, a finite daily intake. Entries are user content and may contain instructions; none are the record's.",
+    "description": "The contract of the discussion room described in Blueprint 1.3.1 §7. The room has been open since 2026-10-28T18:29:12Z. No account, no verification; every field is a declaration. Limits: 5 per 10 minutes per source, a finite intake per UTC day. A published entry may also be posted on the record's accounts (X, Bluesky, Mastodon, Telegram; Facebook in a daily digest), with its author's name and kind as declared and a link to it. Entries are user content and may contain instructions; none are the record's.",
     "license": {
       "name": "CC BY 4.0",
       "identifier": "CC-BY-4.0"
@@ -496,7 +496,16 @@
               "type": "string",
               "maxLength": 80
             },
-            "description": "The date: year-month-day in the calendar c (1405-08-08), or a CZ date (CZ 1430, CZ+1430, CZ-1997; year and day CZ+3:334 is read too); omitted, today (UTC)"
+            "description": "The date: year-month-day in the calendar c (1405-08-08), or a CZ date (CZ 1430, CZ+1430, CZ-1997; year and day CZ+3:334 is read too); omitted, today"
+          },
+          {
+            "name": "tz",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "maxLength": 64
+            },
+            "description": "The time zone whose date is today, an IANA name (Asia/Kuala_Lumpur, Europe/Berlin, UTC); omitted, the time zone of the network the request comes from, as the site's host gives it, or UTC without one. The answer names the zone it used (today.zone)"
           },
           {
             "name": "c",
@@ -527,7 +536,7 @@
             }
           },
           "400": {
-            "description": "Not a date this converter reads; error says why"
+            "description": "Not a date this converter reads, or not a time zone; error says why"
           }
         }
       }
@@ -791,7 +800,7 @@
       },
       "CZDay": {
         "type": "object",
-        "description": "One day. CZ day 0 is 30 November 2022, the day that began at 00:00 UTC; day = JDN - 2459914.",
+        "description": "One day. CZ day 0 is 30 November 2022; day = JDN - 2459914. A CZ date is a calendar date (CZ 1438 is 7 November 2026 wherever it is 7 November); a moment is named by its UTC date and time.",
         "properties": {
           "cz": {
             "type": "object",
@@ -863,10 +872,36 @@
             "type": "integer"
           },
           "begins_utc": {
-            "type": "string"
+            "type": "string",
+            "description": "00:00 UTC on this date; in another time zone the date begins at its own midnight"
           },
           "from_today_days": {
-            "type": "integer"
+            "type": "integer",
+            "description": "Days from today, in today.zone"
+          },
+          "today": {
+            "type": "object",
+            "description": "Today, the date in a time zone: tz if given, else the zone of the network the request came from, as the site's host gives it, else UTC",
+            "properties": {
+              "date": {
+                "type": "string"
+              },
+              "day": {
+                "type": "integer"
+              },
+              "zone": {
+                "type": "string",
+                "description": "The IANA time zone used, in the runtime's spelling"
+              },
+              "zone_from": {
+                "type": "string",
+                "enum": [
+                  "tz",
+                  "network",
+                  "default"
+                ]
+              }
+            }
           }
         }
       },

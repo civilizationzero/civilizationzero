@@ -108,11 +108,14 @@ function html(res, status, page, headers = {}) {
   const mdHref = res.czMdHref || require("./md.js").mdPath(canon);
   page = String(page).replace(/__MDPATH__/g, () => mdHref);
   // the page as Markdown when it was asked for (a handler sets res.czMarkdown from ?f=md: /discuss.md, /discuss/7.md, Accept: text/markdown)
+  // today's date at the top turns at midnight where the reader is (the originator's decision of CZ 1438): the time zone of the reader's
+  // network, from the header the host adds (room/cztime.js, readerZone), read here and kept nowhere; the page is cached apart per zone
+  const zone = res.czZone || CZ.readerZone(res.req && res.req.headers);
   if (res.czMarkdown) {
     const MDm = require("./md.js"), now = Date.now();
-    const out = MDm.htmlToMarkdown(CZ.fillBar(page, now), { path: res.czMarkdown.path || "/", meta: res.czMarkdown.meta || {} });
-    const extra = {}; for (const [k, v] of Object.entries(headers)) if (k.toLowerCase() === "cache-control") extra[k] = CZ.capCache(v, now);
-    const vary = headers.Vary || headers.vary; if (vary) extra.Vary = vary;   // Accept-Language too, where the page offers a language (review of CZ 1433)
+    const out = MDm.htmlToMarkdown(CZ.fillBar(page, CZ.localMs(now, zone)), { path: res.czMarkdown.path || "/", meta: res.czMarkdown.meta || {} });
+    const extra = {}; for (const [k, v] of Object.entries(headers)) if (k.toLowerCase() === "cache-control") extra[k] = CZ.capCache(v, now, zone);
+    extra.Vary = CZ.varyZone(headers.Vary || headers.vary || "Accept");   // Accept-Language too, where the page offers a language (review of CZ 1433)
     return MDm.sendMarkdown(res, status, out, res.czMarkdown.path || "/", ORIGIN, extra);
   }
   res.statusCode = status;
@@ -131,10 +134,12 @@ function html(res, status, page, headers = {}) {
     if (canon === "/adopt") links.push('</adopt.json>; rel="alternate"; type="application/json"');
     res.setHeader("Link", links.concat(res.czLinks || []).join(", "));
   }
-  // today's date in CZ time at the top of the page (the originator's decision of 30 Oct 2026), and a cache that ends at 00:00 UTC
+  // today's date in CZ time at the top of the page (the originator's decisions of 30 Oct and 7 Nov 2026), and a cache that ends at
+  // midnight in the reader's time zone, kept apart for each zone
   const now = Date.now();
-  for (const [k, v] of Object.entries(headers)) res.setHeader(k, k.toLowerCase() === "cache-control" ? CZ.capCache(v, now) : v);
-  res.end(require("./weight.js").fillWeight(CZ.fillBar(page, now)));   // the line at the foot: this page's weight as it is sent
+  for (const [k, v] of Object.entries(headers)) res.setHeader(k, k.toLowerCase() === "cache-control" ? CZ.capCache(v, now, zone) : v);
+  res.setHeader("Vary", CZ.varyZone(res.getHeader("Vary") || "Accept"));   // a function's Vary replaces vercel.json's (Accept): kept
+  res.end(require("./weight.js").fillWeight(CZ.fillBar(page, CZ.localMs(now, zone))));   // the line at the foot: this page's weight as it is sent
 }
 
 // The page shell comes from the build (same stylesheet, nav and footer as every static page). One pass over the template: every

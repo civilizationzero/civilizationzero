@@ -1,6 +1,7 @@
 # CZ time
 
-How the dates of Civilization Zero are written: the originator's decisions of 30 October 2026 (CZ 1430). CZ time is the basis of the
+How the dates of Civilization Zero are written: the originator's decisions of 30 October 2026 (CZ 1430), and of 7 November 2026
+(CZ 1438) on when today's date turns. CZ time is the basis of the
 site's dates; every date on civilizationzero.ai is written in it; the date is the count of days since Coordinate Zero. Today's date is at
 the top of every page, linked to [/calendar](https://civilizationzero.ai/calendar), which explains it and holds a date converter and a
 time converter. This file is the definition; `site/room/cztime.js` (at request time) and `site/lib.py` (at build time) implement it, and
@@ -8,13 +9,24 @@ time converter. This file is the definition; `site/room/cztime.js` (at request t
 
 ## 1. The day count
 
-- **Day 0** is Coordinate Zero: 30 November 2022, the day that began at 00:00 UTC (CZ-CORE 1.0 §0: "30 November 2022 is selected as
+- **Day 0** is Coordinate Zero: 30 November 2022 (CZ-CORE 1.0 §0: "30 November 2022 is selected as
   Year Zero of this record").
-- **A CZ day is a UTC day**: 24 hours, beginning at 00:00 UTC everywhere. The clock is unchanged; only the days are counted.
+- **A CZ date is a calendar date** (the originator's decision of 7 November 2026, CZ 1438): `CZ 1438` is 7 November 2026 wherever it
+  is 7 November, and **today's date turns at midnight where the reader is**, as every calendar's does. The clock is unchanged; only
+  the days are counted. Until CZ 1438 a CZ day was a UTC day, beginning at 00:00 UTC everywhere: at 02:00 in Kuala Lumpur on
+  7 November the site still showed CZ 1437, as it did at 19:00 the evening before in Berlin; now Kuala Lumpur sees CZ 1438 at its
+  midnight and Berlin at its own.
+- **A moment** keeps one name for everyone: its UTC date and its time in UTC, `CZ 1437 15:39 UTC` (§2). Near midnight that UTC date
+  can be the day before or after the reader's date: 01:30 in Tehran on CZ 1430 is `CZ 1429 22:00 UTC`.
+- **Where the reader is**, with no script on the reader's side: the server reads the time zone its host gives for the network a
+  request comes from (`x-vercel-ip-timezone`, an IANA name such as `Asia/Kuala_Lumpur`), at the request, and keeps it nowhere;
+  without one, or with a name the runtime does not know, the date is the UTC date. A VPN or a company network can be elsewhere than
+  its reader; the date then follows the network. The counter for other sites (/embed) reads the reader's own clock instead; the
+  badge and `/api/calendar` take a time zone as `tz` (`?tz=Europe/Berlin`), and the API names the zone it used.
 - **D**, the CZ day number, is the count of days from day 0, negative before it:
 
   ```
-  D = JDN − 2,459,914 = MJD − 59,913 = ⌊Unix time / 86,400⌋ − 19,326 = Rata Die − 738,489
+  D = JDN − 2,459,914 = MJD − 59,913 = Rata Die − 738,489; for a moment, its UTC date is ⌊Unix time / 86,400⌋ − 19,326
   ```
 
   (JDN: Julian Day Number of the day; MJD: Modified Julian Date at 00:00 UTC; Rata Die: day 1 = 1 January 1, proleptic Gregorian.)
@@ -23,13 +35,13 @@ time converter. This file is the definition; `site/room/cztime.js` (at request t
 ## 2. How a date is written
 
 - **The date is the count**: `CZ 1430` (30 October 2026); `CZ 0` is Coordinate Zero; `CZ −1` is 29 November 2022; `CZ −1997` is 12 June
-  2017. No months, no leap rules, no borrowed years: one number, the same for every reader. Display uses U+2212 (−) for the minus sign and
+  2017. No months, no leap rules, no borrowed years: one number for each date, the same for every reader. Display uses U+2212 (−) for the minus sign and
   no thousands separators (`CZ 365242`); anything typed or parsed accepts the hyphen-minus, U+2212 and the dashes, and Persian and Arabic
   digits; a date also as eight digits without separators (20261030, ISO 8601's basic form; 30102026 when only that reading is a
   date), and a time as 13:30, 13.30, 13h30, 1330 or 1:30 pm (also ب.ظ and م).
-- **A time of day** follows the date, in UTC: `CZ 1430 15:20 UTC`; with seconds, `CZ 1430 15:20:42 UTC`. (The colon is kept for hours and
+- **A time of day** follows the date, in UTC, and the date is then the moment's UTC date: `CZ 1430 15:20 UTC`; with seconds, `CZ 1430 15:20:42 UTC`. (The colon is kept for hours and
   minutes, as everywhere; a space separates the day from the time.)
-- **The machine form** is the same count, signed, in ASCII, without a space: `CZ+1430`, `CZ-1997`. It sorts in time order. Beside a date
+- **The machine form** is the same count, signed, in ASCII, without a space: `CZ+1430`, `CZ-1997`. It converts exactly, but as text it does not sort in time order (CZ+10 before CZ+2): sort by the count as a number. Beside a date
   in a page, the ISO value stays in `<time datetime>`; the data forms (JSON, the API, the archive's files) keep ISO 8601.
 - **Only days are counted** (the originator's decision of 30 October 2026, after the first two releases): a CZ date has no months and
   no years, and the pages say so in one line under the date ("CZ time counts only days."). The anniversaries of Coordinate Zero still fall
@@ -83,7 +95,7 @@ record also has a few months of 28 or 31 days in its early years, kept as publis
 of 1342 AH and Umm al-Qura's first of 1343 AH fall on the same day; the converter uses Umm al-Qura from that day on.
 
 **The time converter** takes a local date (in any of the calendars), a time and a time zone (any IANA zone; the page offers common ones),
-and gives the CZ date and the UTC time of that moment, the zone's offset, and the local time at which a CZ day begins there (03:30 in
+and gives the CZ date and the UTC time of that moment, the zone's offset, and the date there (until CZ 1438 the converter showed instead the local time at which a UTC day began there: 03:30 in
 Tehran, 08:00 in Kuala Lumpur). Offsets come from the runtime's time zone database, so summer time and a zone's history are counted
 (16:17:40 in New York on 20 July 1969 is CZ −19491 20:17:40 UTC). In a gap or overlap of summer time, the first offset is used.
 
@@ -107,7 +119,7 @@ longer meaningful, the years are written alone with the units of deep time (ka, 
 The day count is an Earth count. These are conventions of this project, written down so that they can be checked; they are not
 standards.
 
-- A clock off Earth keeps CZ time as **T_CZ = TT − TT(E)**: the SI seconds of Terrestrial Time since Coordinate Zero began.
+- A clock off Earth keeps CZ time as **T_CZ = TT − TT(E)**: the SI seconds of Terrestrial Time since Coordinate Zero began in UTC.
   TT(E) = 2022-11-30T00:00:00 UTC + 69.184 s = 2022-11-30T00:01:09.184 TT = JD 2459913.500800741 (TT), since TAI − UTC = 37 s (from
   1 January 2017) and TT − TAI = 32.184 s.
 - Clocks run at other rates elsewhere: on the Moon's surface about 56.02 µs a day faster than on the Earth's geoid; on Mars about
@@ -126,7 +138,10 @@ standards.
 - `/index.json` carries today's date as `cz_time`; the manifest (`/.well-known/civilization-zero.json`) carries the definition.
 - Pages: the build writes a fallback between `<!--cz-now-->` and `<!--/cz-now-->` at the top of every page but the first (for copies
   that serve the files as they are: no date, links to this site); `api/page.js` and the room's functions put the live date there at
-  request time from `room/cz-bar.json`. Pages are cached until the next 00:00 UTC, when the date turns.
+  request time from `room/cz-bar.json`, for the reader's time zone. Each page is cached apart for each time zone
+  (`Vary: X-Vercel-IP-Timezone`), until midnight there, when the date turns.
+- `GET /api/calendar?tz=Asia/Kuala_Lumpur` — today in that time zone; without `tz`, the network's (`today.zone`, `today.zone_from`:
+  `tz`, `network` or `default`). The badge, `/badge/cz-today.svg`, takes `tz` too.
 
 ## 8. What CZ time is not
 

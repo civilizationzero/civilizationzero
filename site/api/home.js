@@ -11,8 +11,10 @@ const plural = (n, w) => `${n.toLocaleString("en-US")} ${w}${n === 1 ? "" : "s"}
 // "3 years and 334 days", as site/lib.py's cz_since_text writes it
 const sinceText = (y, d) => (y && d ? `${plural(y, "year")} and ${plural(d, "day")}` : y ? plural(y, "year") : plural(d, "day"));
 
-function clock(now) {
-  const t = now.getTime();
+// now: the moment (the as-of time is in UTC); local: the reader's wall clock read in UTC (room/cztime.js, localMs), for every count of
+// days, so that the date in the heading turns at midnight where the reader is (the originator's decision of 7 Nov 2026, CZ 1438)
+function clock(now, local = now.getTime()) {
+  const t = local, L = new Date(local);
   let year = 0;
   while (Date.UTC(2022 + year + 1, 10, 30) <= t) year++;
   const anniv = Date.UTC(2022 + year, 10, 30);
@@ -33,7 +35,7 @@ function clock(now) {
     "__ASOF_HUMAN__": `${now.getUTCFullYear()}-${pad(now.getUTCMonth() + 1)}-${pad(now.getUTCDate())} ${pad(now.getUTCHours())}:${pad(now.getUTCMinutes())} UTC`,
     "__CZ_ISO__": f.ISO, "__CZ_STAMP__": f.STAMP, "__CZ_DOYN__": f.DOYN, "__CZ_SINCE__": sinceText(f.p.year, f.p.day),
     "__CZ_TO_NEXT_N__": f.TO_NEXT, "__CZ_TO_NEXT__": plural(Number(f.TO_NEXT), "day"), "__CZ_NEXT_DAY__": f.NEXT_DAY,
-    "__UTC_DAY_SHORT__": `${now.getUTCDate()} ${MON[now.getUTCMonth()]} ${now.getUTCFullYear()}`,
+    "__UTC_DAY_SHORT__": `${L.getUTCDate()} ${MON[L.getUTCMonth()]} ${L.getUTCFullYear()}`,   // the reader's date beside the count
   };
 }
 
@@ -80,20 +82,21 @@ module.exports = async (req, res) => {
   const md = f === "md";   // the page as Markdown (/index.md, or Accept: text/markdown): the HTML page, converted (room/md.js)
   if (md) f = "html";
   if (!(Object.hasOwn(T, f) && typeof T[f] === "string")) f = "html";   // ?f=constructor and the like: an inherited property is not a form (review of CZ 1432)
-  const now = new Date();
-  const c = { ...clock(now), "__ROOM_COUNT__": "", "__ROOM_LATEST__": "" };
+  const now = new Date(), zone = CZ.readerZone(req.headers);   // the reader's date: their network's time zone, read and kept nowhere
+  const c = { ...clock(now, CZ.localMs(now.getTime(), zone)), "__CZ_ZONE__": zone, "__CZ_UTC_ISO__": now.toISOString().slice(0, 10), "__ROOM_COUNT__": "", "__ROOM_LATEST__": "" };
+  const ttl = Math.min(300, CZ.secondsToNextLocalDay(now.getTime(), zone)), vary = CZ.varyZone("Accept");
   if ((T[f] ? f : "html") === "html") Object.assign(c, await roomOrNothing());
   const types = { html: "text/html; charset=utf-8", json: "application/json; charset=utf-8", txt: "text/plain; charset=utf-8" };
   if (md) {
     const MD = require("../room/md.js");
     return MD.sendMarkdown(res, 200, MD.htmlToMarkdown(fill(T.html, c), { path: "/" }), "/", "https://civilizationzero.ai",
-      { "Cache-Control": `public, max-age=0, s-maxage=${Math.min(300, CZ.secondsToNextDay(now.getTime()))}` });
+      { "Cache-Control": `public, max-age=0, s-maxage=${ttl}`, Vary: vary });
   }
   res.statusCode = 200;
   res.setHeader("Content-Type", types[f] || types.html);
-  // at most five minutes, and never past 00:00 UTC, when the date in the heading turns
-  res.setHeader("Cache-Control", `public, max-age=0, s-maxage=${Math.min(300, CZ.secondsToNextDay(now.getTime()))}`);
-  res.setHeader("Vary", "Accept");
+  // at most five minutes, and never past midnight in the reader's time zone, when the date in the heading turns; each zone's copy apart
+  res.setHeader("Cache-Control", `public, max-age=0, s-maxage=${ttl}`);
+  res.setHeader("Vary", vary);
   const link = '</index.json>; rel="alternate"; type="application/json", </index.txt>; rel="alternate"; type="text/plain", </index.md>; rel="alternate"; type="text/markdown", </api/openapi.json>; rel="service-desc"; type="application/vnd.oai.openapi+json"';
   const isHtml = (T[f] ? f : "html") === "html";
   res.setHeader("Link", isHtml ? link : `<https://civilizationzero.ai/>; rel="canonical", ${link}`);   // the JSON and text forms name the page as canonical

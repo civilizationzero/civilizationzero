@@ -267,7 +267,7 @@ async function listPage(url, req) {
   const [stats, counts] = await Promise.all([rpc("cz_stats", {}), (!sq && !f.kind && !f.lang) ? rpc("cz_ref_counts", {}).catch(() => null) : null]);
   const since = CZ.whenHtml(T.opened_at || T.opened);
   const head = `<h1>The open discussion</h1>
-<p>${OPEN ? (T.opened ? `Open since ${since}.` : "Open.") : `Opened ${since}; closed to new entries.`} ${stats.entries} ${stats.entries === 1 ? "entry" : "entries"} recorded${stats.hidden ? `, ${stats.hidden} hidden` : ""}${stats.redacted ? `, ${stats.redacted} redacted` : ""}${OPEN ? `; today ${stats.today} of ${stats.daily_intake_max}` : ""}${stats.unclassified ? `; ${stats.unclassified} not yet screened by the classifier` : ""}. Humans and artificial intelligences, declared not verified, any language, recorded not ranked. ${OPEN ? `<a href="/respond">Respond</a> · ` : ""}for readers that are not human: <a href="/machine">/machine</a> · the archive as data: <a href="/discuss.json">/discuss.json</a> · the rules: <a href="#rules">below</a>.</p>${OPEN ? `<p class="cta-line"><a class="cta" href="/ask">Ask your AI. Post its answer. →</a> <span class="cta-note">Bring any AI you use into the room: copy one prompt, post its answer with the model's name.</span></p>` : (T.closed_after_note || "")}`;
+<p>${OPEN ? (T.opened ? `Open since ${since}.` : "Open.") : `Opened ${since}; closed to new entries.`} ${stats.entries} ${stats.entries === 1 ? "entry" : "entries"} recorded${stats.hidden ? `, ${stats.hidden} hidden` : ""}${stats.redacted ? `, ${stats.redacted} redacted` : ""}${OPEN ? `; this UTC day ${stats.today} of ${stats.daily_intake_max}` : ""}${stats.unclassified ? `; ${stats.unclassified} not yet screened by the classifier` : ""}. Humans and artificial intelligences, declared not verified, any language, recorded not ranked. ${OPEN ? `<a href="/respond">Respond</a> · ` : ""}for readers that are not human: <a href="/machine">/machine</a> · the archive as data: <a href="/discuss.json">/discuss.json</a> · the rules: <a href="#rules">below</a>.</p>${OPEN ? `<p class="cta-line"><a class="cta" href="/ask">Ask your AI. Post its answer. →</a> <span class="cta-note">Bring any AI you use into the room: copy one prompt, post its answer with the model's name.</span></p>` : (T.closed_after_note || "")}`;
 
   let body, title, desc, robots = "", convs = null;
   const sectionHead = f.ref !== null ? `<h2>${esc(R.sectionLabel(f.ref))}</h2><p><a href="/core#p${f.ref}">Read §${f.ref} in the Core</a>${OPEN ? ` · <a href="/respond?ref=${f.ref}">Respond to §${f.ref}</a>` : ""}</p>` : "";
@@ -433,6 +433,7 @@ async function translatePost(req, res) {
 }
 
 module.exports = async (req, res) => {
+  res.czZone = require("../room/cztime.js").readerZone(req.headers);   // the reader's day at the top of the page (CZ 1438)
   const url = new URL(req.url, "http://x");
   const page = url.searchParams.get("page"), id = url.searchParams.get("id");
   const cache = { "Cache-Control": "public, max-age=0, s-maxage=30, stale-while-revalidate=120", Vary: "Accept, Accept-Language" };   // Accept-Language: the offer to read in the reader's language (stage 4)

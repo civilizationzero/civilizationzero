@@ -1,8 +1,9 @@
 // The site's static pages (site/public/*.html, written by site/build.py), served with today's date in CZ time at the top: the
 // originator's decision of 30 October 2026 (CZ 1430) made CZ time the basis of the site's dates, on every page. The files are
 // bundled with this function (vercel.json, includeFiles) and read once per instance; the build leaves a fallback where the date
-// goes (<!--cz-now--> … <!--/cz-now-->), which room/cztime.js replaces. The CDN keeps each page until the next 00:00 UTC, when
-// the date turns. /calendar also gets, in its place (<!--cz-cal--> … <!--/cz-cal-->), today in every calendar, the converter
+// goes (<!--cz-now--> … <!--/cz-now-->), which room/cztime.js replaces with the reader's date: it turns at midnight where the reader
+// is (the originator's decision of 7 November 2026, CZ 1438), read from the time zone of the reader's network (cztime.js, readerZone).
+// The CDN keeps each page apart for each time zone (Vary: X-Vercel-IP-Timezone), until midnight there. /calendar also gets, in its place (<!--cz-cal--> … <!--/cz-cal-->), today in every calendar, the converter
 // with what was typed, and the conversion.
 const fs = require("node:fs");
 const path = require("node:path");
@@ -72,50 +73,51 @@ ${rows([
 <p class="src">This day as data: <a href="${esc(data)}">${esc(data)}</a></p></section>`;
 }
 
-// the date converter (#convert): today in each calendar, one to a line, the form, and the conversion
-function calendarBlock(q, ms) {
-  const T = CZ.barTemplates(), today = CZ.dayOf(ms), t = CZ.describe(today);
+// the date converter (#convert): today in each calendar, one to a line, the form, and the conversion; today is the reader's date
+function calendarBlock(q, ms, zone = "UTC") {
+  const local = CZ.localMs(ms, zone), T = CZ.barTemplates(), today = CZ.dayOf(local), t = CZ.describe(today);
   const d = String(q.get("d") ?? "").slice(0, 80), c = q.get("c") || "gregorian", cal = CZ.CALENDARS.includes(c) ? c : "gregorian";
   const timeAsked = String(q.get("t") ?? "").trim() !== "";
   const line = `<p class="cz-today-head">Today is ${czLink(today, t.cz.date)}</p><ul class="cz-today"><li><time datetime="${t.gregorian.date}">${esc(`${t.weekday}, ${t.gregorian.text}`)}</time></li>`
     + `<li>${fa(t.solar_hijri.native_long)}</li><li>${lunarCell(t.lunar_hijri)}</li></ul>`;
-  const form = typeof T.calform === "string" ? CZ.fillTemplate(T.calform, CZ.fields(ms), cal, timeAsked ? "" : esc(d)) : "";
+  const form = typeof T.calform === "string" ? CZ.fillTemplate(T.calform, CZ.fields(local), cal, timeAsked ? "" : esc(d)) : "";
   let out = "";
   if (d.trim() && !timeAsked) {
-    const r = CZ.parse(d, cal, ms);
+    const r = CZ.parse(d, cal, local);
     out = r.ok ? dateResult(r, today) : `<p class="pending" role="alert" id="result">${esc(r.error)}</p>`;
   }
   return `${line}\n${form}\n${out}`;
 }
 
-// the time converter (#time): a local date and time in a time zone, to CZ time (a CZ day is a UTC day)
-function timeBlock(q, ms) {
+// the time converter (#time): a local date and time in a time zone, to CZ time: the moment's name in UTC (CZ 1438 10:00 UTC), the
+// same for everyone; an empty date is today in that time zone. The zone chosen at first is the reader's, when the list has it
+function timeBlock(q, ms, readerZone = "UTC") {
   const T = CZ.barTemplates(), zones = Array.isArray(T.zones) ? T.zones : [["UTC", "UTC"]];
   const d = String(q.get("d") ?? "").slice(0, 80), c = q.get("c") || "gregorian", cal = CZ.CALENDARS.includes(c) ? c : "gregorian";
-  const tq = String(q.get("t") ?? "").slice(0, 12), zq = String(q.get("z") ?? "UTC");
-  const zi = Math.max(0, zones.findIndex(([z]) => z === zq));
-  const zone = CZ.validZone(zq) ? zq : "UTC", zoneName = (zones.find(([z]) => z === zone) || [zone, zone])[1];
+  const zFirst = zones.some(([z]) => z === readerZone) ? readerZone : "UTC";
+  const tq = String(q.get("t") ?? "").slice(0, 12), zq = String(q.get("z") ?? zFirst);
+  const zone = CZ.canonicalZone(zq) || "UTC", zoneName = (zones.find(([z]) => z === zone) || [zone, zone])[1];   // one spelling per zone (CZ 1438)
+  const zi = Math.max(0, zones.findIndex(([z]) => z === zone));
   const extra = { TVALUE: tq.trim() ? esc(d) : "", TTIME: esc(tq) };
   zones.forEach((_, i) => { extra[`Z${i}`] = i === zi ? " selected" : ""; });
-  const form = typeof T.timeform === "string" ? CZ.fillTemplate(T.timeform, CZ.fields(ms), cal, "", extra) : "";
+  const form = typeof T.timeform === "string" ? CZ.fillTemplate(T.timeform, CZ.fields(CZ.localMs(ms, zone)), cal, "", extra) : "";
   if (!tq.trim()) return form;
   const time = CZ.parseTime(tq);
   if (!time) return `${form}\n<p class="pending" role="alert" id="time-result">A time of day is written HH:MM in 24 hours, for example 13:30.</p>`;
-  const r = d.trim() ? CZ.parse(d, cal, ms) : { ok: true, day: CZ.dayOf(ms), calendar: cal, native: "today", today: true };
+  const r = d.trim() ? CZ.parse(d, cal, CZ.localMs(ms, zone)) : { ok: true, day: CZ.todayIn(ms, zone), calendar: cal, native: "today", today: true };
   if (!r.ok) return `${form}\n<p class="pending" role="alert" id="time-result">${esc(r.error)}</p>`;
   const v = CZ.convertTime(r.day, time, zone);
   if (!v.ok) return `${form}\n<p class="pending" role="alert" id="time-result">${esc(v.error)}</p>`;
-  const x = CZ.describe(r.day), stampUTC = `${CZ.czDay(v.day)} ${v.utc} UTC`, start = CZ.dayStartLocal(v.day, zone);
+  const x = CZ.describe(r.day), stampUTC = `${CZ.czDay(v.day)} ${v.utc} UTC`;
   const localDate = r.calendar === "solar-hijri" ? fa(x.solar_hijri ? x.solar_hijri.native_long : r.native) : r.calendar === "lunar-hijri" && x.lunar_hijri ? lunarCell(x.lunar_hijri)
     : esc(`${x.weekday}, ${r.calendar === "julian" ? `${x.julian.text} (Julian)` : x.gregorian.text}`);
-  const differs = v.day !== r.day ? `<p class="src">In UTC this moment falls on ${v.day < r.day ? "the day before" : "the next day"}: the CZ day is ${czLink(v.day, CZ.czDay(v.day))}.</p>` : "";
+  const differs = v.day !== r.day ? `<p class="src">In UTC this moment falls on ${v.day < r.day ? "the day before" : "the next day"}: it is named with ${czLink(v.day, CZ.czDay(v.day))}; in ${esc(zoneName)} the date is ${czLink(r.day, CZ.czDay(r.day))}.</p>` : "";
   const twice = v.also && v.also.length ? `<p class="src" id="time-twice">${esc(v.local.time)} came twice that day in ${esc(zoneName)}, because the clocks were moved back: the first time (${esc(CZ.offsetText(v.offset))}) is shown above; the second, at ${esc(CZ.offsetText(v.also[0].offset))}, is ${czLink(v.also[0].day, `${CZ.czDay(v.also[0].day)} ${v.also[0].utc} UTC`)}.</p>` : "";
   return `${form}\n<section id="time-result" aria-labelledby="h-time-result"><h3 id="h-time-result">${esc(v.local.time)} in ${esc(zoneName)} = ${esc(stampUTC)}</h3>
 ${rows([
     ["CZ", `<strong>${czLink(v.day, stampUTC)}</strong>`],
-    [`In ${esc(zoneName)}`, `${localDate} · ${esc(v.local.time)} <span class="src">(${esc(CZ.offsetText(v.offset))})</span>`],
+    [`In ${esc(zoneName)}`, `${czLink(r.day, CZ.czDay(r.day))} · ${localDate} · ${esc(v.local.time)} <span class="src">(${esc(CZ.offsetText(v.offset))})</span>`],
     ...(v.also && v.also.length ? [[`${esc(v.local.time)} again`, `<strong>${czLink(v.also[0].day, `${CZ.czDay(v.also[0].day)} ${v.also[0].utc} UTC`)}</strong> <span class="src">(${esc(CZ.offsetText(v.also[0].offset))}, after the clocks went back)</span>`]] : []),
-    ["The CZ day there", `begins at ${esc(start.time)}${start.before ? " the evening before" : ""}, ${esc(zoneName)} time (${esc(CZ.offsetText(start.offset))}): 00:00 UTC`],
   ])}${differs}${twice}</section>`;
 }
 
@@ -172,31 +174,33 @@ module.exports = async (req, res) => {
   const p = url.searchParams.get("p") || "";
   let status = 200, html = PAGES.test(p) ? read(p) : null;
   if (html === null) { status = 404; html = read("404") || "<!doctype html><title>Not found</title><p>Nothing is published at this address.</p>\n"; }
-  const now = Date.now();
+  const now = Date.now(), zone = CZ.readerZone(req.headers);   // the reader's date (CZ 1438): their network's time zone, read and kept nowhere
   const csp = cspFor(html);   // from the file as built, before anything from the request is put in (review of CZ 1432)
-  let out = CZ.fillBar(html, now);
+  let out = CZ.fillBar(html, CZ.localMs(now, zone));
   const query = p === "calendar" && ["d", "c", "t", "z"].some((k) => url.searchParams.has(k));
   if (p === "calendar" && status === 200) {
-    out = out.replace(CAL_RE, () => `<!--cz-cal-->${calendarBlock(url.searchParams, now)}<!--/cz-cal-->`)
-             .replace(TIME_RE, () => `<!--cz-time-->${timeBlock(url.searchParams, now)}<!--/cz-time-->`);
+    out = out.replace(CAL_RE, () => `<!--cz-cal-->${calendarBlock(url.searchParams, now, zone)}<!--/cz-cal-->`)
+             .replace(TIME_RE, () => `<!--cz-time-->${timeBlock(url.searchParams, now, zone)}<!--/cz-time-->`);
   }
   if (query && status === 200) { const t = resultTitle(out); if (t) out = out.replace(/<title>[^<]*<\/title>/, () => `<title>${CZ.escHtml(t)}</title>`); }
   const colophon = p === "how-it-is-built" && status === 200;
   if (colophon) { const v = await latestCheck(now); out = out.replace(DEPLOY_RE, () => `<!--cz-deploy-->${deployBlock(v, process.env.VERCEL_GIT_COMMIT_SHA)}<!--/cz-deploy-->`); }
-  // the colophon at most an hour in the cache, so that a new day's check shows the same morning; every other page until 00:00 UTC
-  const ttl = colophon ? Math.min(3600, CZ.secondsToNextDay(now)) : CZ.secondsToNextDay(now);
+  // the colophon at most an hour in the cache, so that a new day's check shows the same morning; every other page until midnight in
+  // the reader's time zone, each zone's copy apart
+  const left = CZ.secondsToNextLocalDay(now, zone), ttl = colophon ? Math.min(3600, left) : left, vary = CZ.varyZone("Accept");
   // the page as Markdown (/core.md, or Accept: text/markdown; vercel.json): its <main> converted, with a front matter (room/md.js)
   if (url.searchParams.get("f") === "md") {
     const pth = p === "" ? "/" : `/${p}`;
     // the Core and the record name the DOI to cite them by in this form too (CZ 1433, item 5): this Link replaces sendMarkdown's, so it repeats the canonical
     const link = ["core", "record"].includes(p) && status === 200 ? { Link: `<https://civilizationzero.ai${pth}>; rel="canonical", ${CITE_AS}` } : {};
-    return MD.sendMarkdown(res, status, req.method === "HEAD" ? "" : MD.htmlToMarkdown(out, { path: pth }), pth, "https://civilizationzero.ai", { "Cache-Control": `public, max-age=0, s-maxage=${ttl}`, ...link });
+    return MD.sendMarkdown(res, status, req.method === "HEAD" ? "" : MD.htmlToMarkdown(out, { path: pth }), pth, "https://civilizationzero.ai", { "Cache-Control": `public, max-age=0, s-maxage=${ttl}`, Vary: vary, ...link });
   }
   out = fillWeight(out);   // the line at the foot: this page's weight as it is sent (room/weight.js)
   res.statusCode = status;
   res.setHeader("Content-Type", "text/html; charset=utf-8");
   res.setHeader("Content-Security-Policy", csp);
   res.setHeader("Cache-Control", `public, max-age=0, s-maxage=${ttl}`);
+  res.setHeader("Vary", vary);   // a function's Vary replaces vercel.json's (Accept), so Accept is said again
   if (query || status === 404) res.setHeader("X-Robots-Tag", "noindex");   // a conversion is a view, not a page to index
   if (status === 200) res.setHeader("Link", linkFor(p));
   res.setHeader("X-Content-Type-Options", "nosniff");

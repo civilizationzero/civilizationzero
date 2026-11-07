@@ -12,7 +12,7 @@
 <meta property="og:site_name" content="Civilization Zero"><meta property="og:type" content="website"><meta property="og:title" content="Put CZ time on your site · Civilization Zero"><meta property="og:description" content="Show today&#x27;s date in CZ time on your own site: a badge with no script, or a counter with a date converter that runs only in your reader&#x27;s browser. Free, MIT."><meta property="og:url" content="https://civilizationzero.ai/embed"><meta property="og:image" content="https://civilizationzero.ai/civilization-zero.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="The mark CZ, a zero in which C and Z share their strokes, and the words: Civilization Zero names the beginning of a civilization in which humans may no longer be at the centre. Coordinate Zero, 30 November 2022."><meta name="twitter:card" content="summary_large_image"><meta name="twitter:site" content="@czrecord">
 <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)"><meta name="theme-color" content="#101010" media="(prefers-color-scheme: dark)">
 <link rel="icon" href="/favicon.ico" sizes="48x48"><link rel="icon" href="/favicon-96x96.png" type="image/png" sizes="96x96"><link rel="icon" href="/favicon.svg" type="image/svg+xml" sizes="any"><link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180"><link rel="manifest" href="/site.webmanifest"><meta name="apple-mobile-web-app-title" content="Civilization Zero">
-<link rel="me" href="https://bsky.app/profile/civilizationzero.ai"><link rel="me" href="https://x.com/czrecord"><link rel="me" href="https://mastodon.social/@civilizationzero"><link rel="me" href="https://www.instagram.com/civilizationzero.ai/"><link rel="me" href="https://www.facebook.com/czrecord"><meta name="fediverse:creator" content="@civilizationzero@mastodon.social"><style>
+<link rel="me" href="https://bsky.app/profile/civilizationzero.ai"><link rel="me" href="https://x.com/czrecord"><link rel="me" href="https://mastodon.social/@civilizationzero"><link rel="me" href="https://www.instagram.com/civilizationzero.ai/"><link rel="me" href="https://www.facebook.com/czrecord"><link rel="me" href="https://t.me/Civilization_Zero"><meta name="fediverse:creator" content="@civilizationzero@mastodon.social"><style>
 /* H + C: no typeface is shipped; the generic family is chosen (the smallest choice available) so the reader's device renders every script. Nothing to rot. */
 html{font-family:system-ui,sans-serif;font-size:100%;line-height:1.5}
 /* H: two palettes, each at contrast >= 7:1 (WCAG 2.2 AAA, 1.4.6); which one shows follows the reader's preference. */
@@ -152,7 +152,7 @@ p,li,dd,blockquote{text-wrap:pretty}h1,h2,h3{text-wrap:balance}
 <h1>Put CZ time on your site</h1>
 <p>Two ways to show today's date in CZ time — the count of days since Coordinate Zero, 30 November 2022 — on your own pages. Both link back to <a href="/calendar">how CZ time works</a>. Free to use; the code is MIT.</p>
 <section aria-labelledby="h-badge"><h2 id="h-badge">1. A badge: one line, no script</h2>
-<p>An image with today's date, made by this site and renewed at 00:00 UTC. It works where scripts are not allowed: a README on GitHub, a wiki, Notion, a newsletter, a forum signature.</p>
+<p>An image with today's date, made by this site: the date in the time zone of the network that asks for it (where a site shows images through a proxy of its own, as GitHub does, the proxy's), or in a time zone you fix with <code>?tz=</code>. It works where scripts are not allowed: a README on GitHub, a wiki, Notion, a newsletter, a forum signature.</p>
 <p><a href="/calendar"><img src="/badge/cz-today.svg" alt="Today in CZ time, from Civilization Zero" height="40"></a></p>
 <p>HTML:</p>
 <pre id="code-badge">&lt;a href=&quot;https://civilizationzero.ai/calendar&quot;&gt;&lt;img src=&quot;https://civilizationzero.ai/badge/cz-today.svg&quot; alt=&quot;Today in CZ time, from Civilization Zero&quot; height=&quot;40&quot;&gt;&lt;/a&gt;</pre>
@@ -160,7 +160,7 @@ p,li,dd,blockquote{text-wrap:pretty}h1,h2,h3{text-wrap:balance}
 <p>Markdown:</p>
 <pre id="code-badge-md">[![Today in CZ time, from Civilization Zero](https://civilizationzero.ai/badge/cz-today.svg)](https://civilizationzero.ai/calendar)</pre>
 <p class="cta-line"><button type="button" data-done="Copied. Now paste it into your page." data-copy="code-badge-md">Copy the Markdown</button><span class="cta-note" role="status" aria-live="polite"></span></p>
-<p class="src">Light or dark: the badge follows the reader's setting where the browser applies it to images; to fix one, add <code>?theme=light</code> or <code>?theme=dark</code> to its address.</p>
+<p class="src">Light or dark: the badge follows the reader's setting where the browser applies it to images; to fix one, add <code>?theme=light</code> or <code>?theme=dark</code> to its address. To fix the time zone, add <code>?tz=</code> and its name (<code>?tz=Asia/Kuala_Lumpur</code>, <code>?tz=Europe/Berlin</code>; both together: <code>?theme=dark&amp;tz=Asia/Tehran</code>).</p>
 </section>
 <section aria-labelledby="h-counter"><h2 id="h-counter">2. The counter, with a date converter</h2>
 <p>Today's date and a date converter, as below: this is the snippet itself, running on this page. It takes the colours of your page; the date is in the green this record uses for what a machine computes.</p>
@@ -170,6 +170,8 @@ p,li,dd,blockquote{text-wrap:pretty}h1,h2,h3{text-wrap:balance}
 (function () {
   var EPOCH = 19326, SITE = "https://civilizationzero.ai";
   function day(ms) { return Math.floor(ms / 864e5) - EPOCH; }
+  // today as it is where the reader is: the date on the reader's own clock, counted as a calendar date
+  function today() { var n = new Date(), t = new Date(0); t.setUTCFullYear(n.getFullYear(), n.getMonth(), n.getDate()); return day(t.getTime()); }
   function cz(d) { return "CZ " + (d < 0 ? "−" + (-d) : d); }
   var css = '.czt{display:block;color:inherit;border:1px solid rgba(128,128,128,.45);border-radius:6px;padding:.6em .8em;max-width:26em;line-height:1.45}'
     + '.czt a{color:inherit}.czt .n{font:700 1.6em/1.2 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:#116329;text-decoration:none}'
@@ -177,13 +179,15 @@ p,li,dd,blockquote{text-wrap:pretty}h1,h2,h3{text-wrap:balance}
   var hosts = document.querySelectorAll("[data-cz-today]:not([data-cz])");
   for (var i = 0; i < hosts.length; i++) try { (function (h) {
     h.setAttribute("data-cz", "");
-    var r = h, d = day(Date.now());
+    var r = h, d = today();
     try { r = h.attachShadow({ mode: "open" }); } catch (e) { r = h; }
     r.innerHTML = '<style>' + css + '</style><div class="czt"><a class="n" href="' + SITE + '/calendar">' + cz(d) + '</a>'
-      + '<div class="s">Day ' + d + ' since Coordinate Zero, 30 November 2022</div>'
+      + '<div class="s">Day <span class="d">' + d + '</span> since Coordinate Zero, 30 November 2022</div>'
       + '<div class="s"><label>A date: <input type="date"></label> <output></output> <a class="o" href="' + SITE + '/calendar" hidden>other calendars</a></div>'
       + '<div class="s"><a href="' + SITE + '/calendar">CZ time</a> · <a href="' + SITE + '/">Civilization Zero</a></div></div>';
-    var inp = r.querySelector("input"), out = r.querySelector("output"), o = r.querySelector(".o");
+    var inp = r.querySelector("input"), out = r.querySelector("output"), o = r.querySelector(".o"), n = r.querySelector(".n"), dd = r.querySelector(".d");
+    // at midnight where the reader is, the date turns, also on a page left open: looked at once a minute
+    setInterval(function () { var x = today(); if (x !== d) { d = x; n.textContent = cz(d); dd.textContent = String(d); } }, 6e4);
     inp.addEventListener("change", function () {
       var m = /^(\d{4,6})-(\d\d)-(\d\d)$/.exec(inp.value);
       if (!m) { out.textContent = ""; o.hidden = true; return; }
@@ -194,13 +198,15 @@ p,li,dd,blockquote{text-wrap:pretty}h1,h2,h3{text-wrap:balance}
   })(hosts[i]); } catch (e) {}
 })();
 </script>
-<details><summary>Show the code (2,246 characters)</summary>
+<details><summary>Show the code (2,804 characters)</summary>
 <pre id="code-counter">&lt;!-- CZ time: today&#x27;s day of the new count, from Civilization Zero (https://civilizationzero.ai/embed). It runs only in the reader&#x27;s browser: no request, no cookie, nothing stored. MIT licence. --&gt;
 &lt;div data-cz-today&gt;&lt;/div&gt;
 &lt;script&gt;
 (function () {
   var EPOCH = 19326, SITE = &quot;https://civilizationzero.ai&quot;;
   function day(ms) { return Math.floor(ms / 864e5) - EPOCH; }
+  // today as it is where the reader is: the date on the reader&#x27;s own clock, counted as a calendar date
+  function today() { var n = new Date(), t = new Date(0); t.setUTCFullYear(n.getFullYear(), n.getMonth(), n.getDate()); return day(t.getTime()); }
   function cz(d) { return &quot;CZ &quot; + (d &lt; 0 ? &quot;−&quot; + (-d) : d); }
   var css = &#x27;.czt{display:block;color:inherit;border:1px solid rgba(128,128,128,.45);border-radius:6px;padding:.6em .8em;max-width:26em;line-height:1.45}&#x27;
     + &#x27;.czt a{color:inherit}.czt .n{font:700 1.6em/1.2 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:#116329;text-decoration:none}&#x27;
@@ -208,13 +214,15 @@ p,li,dd,blockquote{text-wrap:pretty}h1,h2,h3{text-wrap:balance}
   var hosts = document.querySelectorAll(&quot;[data-cz-today]:not([data-cz])&quot;);
   for (var i = 0; i &lt; hosts.length; i++) try { (function (h) {
     h.setAttribute(&quot;data-cz&quot;, &quot;&quot;);
-    var r = h, d = day(Date.now());
+    var r = h, d = today();
     try { r = h.attachShadow({ mode: &quot;open&quot; }); } catch (e) { r = h; }
     r.innerHTML = &#x27;&lt;style&gt;&#x27; + css + &#x27;&lt;/style&gt;&lt;div class=&quot;czt&quot;&gt;&lt;a class=&quot;n&quot; href=&quot;&#x27; + SITE + &#x27;/calendar&quot;&gt;&#x27; + cz(d) + &#x27;&lt;/a&gt;&#x27;
-      + &#x27;&lt;div class=&quot;s&quot;&gt;Day &#x27; + d + &#x27; since Coordinate Zero, 30 November 2022&lt;/div&gt;&#x27;
+      + &#x27;&lt;div class=&quot;s&quot;&gt;Day &lt;span class=&quot;d&quot;&gt;&#x27; + d + &#x27;&lt;/span&gt; since Coordinate Zero, 30 November 2022&lt;/div&gt;&#x27;
       + &#x27;&lt;div class=&quot;s&quot;&gt;&lt;label&gt;A date: &lt;input type=&quot;date&quot;&gt;&lt;/label&gt; &lt;output&gt;&lt;/output&gt; &lt;a class=&quot;o&quot; href=&quot;&#x27; + SITE + &#x27;/calendar&quot; hidden&gt;other calendars&lt;/a&gt;&lt;/div&gt;&#x27;
       + &#x27;&lt;div class=&quot;s&quot;&gt;&lt;a href=&quot;&#x27; + SITE + &#x27;/calendar&quot;&gt;CZ time&lt;/a&gt; · &lt;a href=&quot;&#x27; + SITE + &#x27;/&quot;&gt;Civilization Zero&lt;/a&gt;&lt;/div&gt;&lt;/div&gt;&#x27;;
-    var inp = r.querySelector(&quot;input&quot;), out = r.querySelector(&quot;output&quot;), o = r.querySelector(&quot;.o&quot;);
+    var inp = r.querySelector(&quot;input&quot;), out = r.querySelector(&quot;output&quot;), o = r.querySelector(&quot;.o&quot;), n = r.querySelector(&quot;.n&quot;), dd = r.querySelector(&quot;.d&quot;);
+    // at midnight where the reader is, the date turns, also on a page left open: looked at once a minute
+    setInterval(function () { var x = today(); if (x !== d) { d = x; n.textContent = cz(d); dd.textContent = String(d); } }, 6e4);
     inp.addEventListener(&quot;change&quot;, function () {
       var m = /^(\d{4,6})-(\d\d)-(\d\d)$/.exec(inp.value);
       if (!m) { out.textContent = &quot;&quot;; o.hidden = true; return; }
@@ -230,8 +238,8 @@ p,li,dd,blockquote{text-wrap:pretty}h1,h2,h3{text-wrap:balance}
 </section>
 <section aria-labelledby="h-not"><h2 id="h-not">What they do, and do not do</h2>
 <ul>
-<li>The counter runs only in your reader's browser. It sends no request, sets no cookie and stores nothing; it reads the clock and subtracts: the CZ day is the number of whole UTC days since 1 January 1970, less 19,326. The day changes at 00:00 UTC, as everywhere on this site.</li>
-<li>The badge is an image this site serves, so a reader's browser asks this site for it, at most about once a day (it is cached until 00:00 UTC). The site keeps no address and no identifier of who asks, and does not count badge requests as visits.</li>
+<li>The counter runs only in your reader's browser. It sends no request, sets no cookie and stores nothing; it reads the date on the reader's own clock and counts: the CZ day is that date's number of days since 1 January 1970, less 19,326. The date turns at midnight on the reader's own clock, also while the page stays open.</li>
+<li>The badge is an image this site serves, so a reader's browser asks this site for it when it shows the badge, unless it holds a copy less than five minutes old. To draw the reader's date, the site reads the time zone its host gives for the network the request comes from; it keeps that nowhere, keeps no address and no identifier of who asks, and does not count badge requests as visits.</li>
 <li>Neither changes anything else on your page. The counter draws inside its own box (a shadow root), so your page's styles do not reach it and its styles do not reach your page.</li>
 <li>The code is MIT. The name and the mark identify this record: please do not change them to say something the record does not.</li>
 </ul>
@@ -239,6 +247,6 @@ p,li,dd,blockquote{text-wrap:pretty}h1,h2,h3{text-wrap:balance}
 </section>
 <script>document.querySelectorAll("button[data-copy]").forEach(function(b){var label=b.textContent;b.addEventListener("click",function(){var el=document.getElementById(b.dataset.copy),t=el.textContent,st=b.parentNode.querySelector("[role=status]");function say(m){if(st)st.textContent=m}function done(){b.textContent="Copied \u2713";b.classList.add("done");say(b.getAttribute("data-done")||"Copied. Now paste it into your AI.");setTimeout(function(){b.textContent=label;b.classList.remove("done")},4000)}function manual(){var dt=el.closest("details");if(dt)dt.open=true;var r=document.createRange();r.selectNodeContents(el);var sel=getSelection();sel.removeAllRanges();sel.addRange(r);el.scrollIntoView({block:"center"});say("Your browser did not allow copying: the text is selected below; copy it from there.")}if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(done,manual)}else manual()})})</script>
 </main>
-<footer lang="en" dir="ltr"><hr><p class="cz-intro">Civilization Zero names the beginning of a civilization in which humans may no longer be at the centre. Here, humans and AI confront what they owe each other, on the record, while the future is still open.</p><nav aria-label="Pages"><ul class="foot"><li><a href="/core">The Core</a> · <a href="/core#translations">21 languages</a></li><li><a href="/record">The Record</a></li><li><a href="/objections">Objections and errata</a></li><li><a href="/discuss">Discussion</a> · <a href="/respond">Respond</a></li><li><a href="/adopt">Adoption Register</a></li><li><a href="/calendar">CZ time</a> · <a href="/embed">on your site</a></li><li><a href="/civilization-zero-infographic">Infographic</a> · <a href="/civilization-zero-evidence-atlas">Evidence atlas</a> · <a href="/civilization-zero-images">Images</a></li><li><a href="/ask">Ask your AI</a></li><li><a href="/machine">For machines</a></li><li><a href="/about">About</a> · <a href="/press">Press kit</a></li><li><a href="/stats">Visits</a></li><li><a href="/archive">Archive and verification</a></li></ul></nav><p class="src">Text <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a> · code MIT · <a href="https://github.com/civilizationzero/civilizationzero">source</a> · <a href="mailto:record@civilizationzero.ai">record@civilizationzero.ai</a></p><p class="src">No trackers, no cookies, no scripts that observe readers; the server counts visits per day without identifiers, and <a href="/stats">the counts are public</a>. Every date counts days from Coordinate Zero, <a class="nw" href="/calendar">CZ 0</a> = <time datetime="2022-11-30">30 November 2022</time>; times are UTC.</p><p class="src cz-weight"><!--cz-weight-->No cookies<!--/cz-weight--> · <a href="/how-it-is-built">How this page is built</a> · <a href="/embed.md" type="text/markdown">This page as Markdown</a></p></footer>
+<footer lang="en" dir="ltr"><hr><p class="cz-intro">Civilization Zero names the beginning of a civilization in which humans may no longer be at the centre. Here, humans and AI confront what they owe each other, on the record, while the future is still open.</p><nav aria-label="Pages"><ul class="foot"><li><a href="/core">The Core</a> · <a href="/core#translations">21 languages</a></li><li><a href="/record">The Record</a></li><li><a href="/objections">Objections and errata</a></li><li><a href="/discuss">Discussion</a> · <a href="/respond">Respond</a></li><li><a href="/adopt">Adoption Register</a></li><li><a href="/calendar">CZ time</a> · <a href="/embed">on your site</a></li><li><a href="/civilization-zero-infographic">Infographic</a> · <a href="/civilization-zero-evidence-atlas">Evidence atlas</a> · <a href="/civilization-zero-images">Images</a></li><li><a href="/ask">Ask your AI</a></li><li><a href="/machine">For machines</a></li><li><a href="/about">About</a> · <a href="/press">Press kit</a></li><li><a href="/stats">Visits</a></li><li><a href="/archive">Archive and verification</a></li></ul></nav><p class="src">Text <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a> · code MIT · <a href="https://github.com/civilizationzero/civilizationzero">source</a> · <a href="mailto:record@civilizationzero.ai">record@civilizationzero.ai</a></p><p class="src">No trackers, no cookies, no scripts that observe readers; the server counts visits per day without identifiers, and <a href="/stats">the counts are public</a>. Every date counts days from Coordinate Zero, <a class="nw" href="/calendar">CZ 0</a> = <time datetime="2022-11-30">30 November 2022</time>; today's date turns at midnight where you are, and times of day are in UTC.</p><p class="src cz-weight"><!--cz-weight-->No cookies<!--/cz-weight--> · <a href="/how-it-is-built">How this page is built</a> · <a href="/embed.md" type="text/markdown">This page as Markdown</a></p></footer>
 </body>
 </html>

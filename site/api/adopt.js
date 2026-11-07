@@ -86,7 +86,7 @@ async function registerPage() {
   const hidden = all.filter((r) => r.hidden);
   const list = (xs) => xs.length ? xs.map((x) => summaryHtml(x.r, x.st)).join("") : "<p>None.</p>";
   const body = `<h1>The Adoption Register</h1>${stateLine()}
-<p>${stats.traced} traced, ${stats.received} received and not traced${stats.hidden ? `, ${stats.hidden} hidden` : ""}${G.OPEN ? `; today ${stats.today} of ${stats.daily_intake_max}. Limits in force: ${stats.rate_per_day} statements a day per source, ${stats.daily_intake_max} in all; ${stats.checks_per_hour} checks an hour per source; one check of a record in 10 minutes` : ""}. Canonical order by id; as data: <a href="/adopt.json">/adopt.json</a>; the daily chain: <a href="/archive/register.json">/archive/register.json</a>.${complete ? "" : ` <strong>This page shows the first ${all.length.toLocaleString("en")} records only;</strong> every record is in /adopt.json, page by page.`}</p>
+<p>${stats.traced} traced, ${stats.received} received and not traced${stats.hidden ? `, ${stats.hidden} hidden` : ""}${G.OPEN ? `; this UTC day ${stats.today} of ${stats.daily_intake_max}. Limits in force: ${stats.rate_per_day} statements a day per source, ${stats.daily_intake_max} in all; ${stats.checks_per_hour} checks an hour per source; one check of a record in 10 minutes` : ""}. Canonical order by id; as data: <a href="/adopt.json">/adopt.json</a>; the daily chain: <a href="/archive/register.json">/archive/register.json</a>.${complete ? "" : ` <strong>This page shows the first ${all.length.toLocaleString("en")} records only;</strong> every record is in /adopt.json, page by page.`}</p>
 ${RT.intro}
 <section aria-labelledby="h-in"><h2 id="h-in">Adoptions in force</h2>${list(inForce)}</section>
 <section aria-labelledby="h-wd"><h2 id="h-wd">Withdrawn</h2><p class="src">An adopter may withdraw; the record of adoption and withdrawal stays visible (IR 10.1).</p>${list(withdrawn)}</section>
@@ -226,7 +226,7 @@ async function doPost(req, res) {
   if (r.state === "not accepted") {
     const status = r.reason === "limit" ? 429 : r.reason === "capacity" ? 503 : 400;
     const h = r.retry_after_seconds ? { "Retry-After": String(r.retry_after_seconds) } : {};
-    const detail = r.detail || (r.reason === "limit" ? `${r.limit || 5} statements a day per source. Try again in ${r.retry_after_seconds} seconds.` : r.reason === "capacity" ? "Today's intake is full." : "invalid");
+    const detail = r.detail || (r.reason === "limit" ? `${r.limit || 5} statements a day per source. Try again in ${r.retry_after_seconds} seconds.` : r.reason === "capacity" ? "This UTC day's intake is full." : "invalid");
     return form ? formError(res, status, "Not accepted: " + r.reason, detail, h) : jsonPost(res, status, { state: "not accepted", reason: r.reason, detail, retry_after_seconds: r.retry_after_seconds }, h);
   }
   if (form) return html(res, 201, receiptPage(r.id, { ...s, statement_sha256: r.statement_sha256 }, r.trace_token), NO_STORE);
@@ -254,6 +254,7 @@ async function streamAll(res, start) {
 }
 
 module.exports = async (req, res) => {
+  res.czZone = require("../room/cztime.js").readerZone(req.headers);   // the reader's day at the top of the page (CZ 1438)
   const url = new URL(req.url, "http://x");
   const method = req.method === "HEAD" ? "GET" : req.method;
   if (method === "OPTIONS") { res.statusCode = 204; res.setHeader("Access-Control-Allow-Origin", "*"); res.setHeader("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS"); return res.end(); }   // reads are open to every origin; writes are not

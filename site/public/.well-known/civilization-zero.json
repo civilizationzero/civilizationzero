@@ -513,8 +513,9 @@
   "cz_time": {
     "decided": "2026-10-30",
     "epoch": "2022-11-30T00:00:00Z",
-    "day": "a UTC day; CZ day D = JDN - 2459914 = MJD - 59913 = floor(unix / 86400) - 19326",
-    "date": "the count of days: CZ 1430 (CZ −1997 before zero), as pages print it; times of day in UTC after it (CZ 1430 15:20 UTC)",
+    "day": "a calendar date; CZ day D = JDN - 2459914 = MJD - 59913; for a moment, its UTC date: floor(unix / 86400) - 19326",
+    "today": "the date where the reader is: it turns at midnight in the time zone of the reader's network (UTC without one); decided 2026-11-07, until then a UTC day",
+    "date": "the count of days: CZ 1430 (CZ −1997 before zero), as pages print it; a moment is named by its UTC date and time (CZ 1430 15:20 UTC)",
     "machine": "the signed count, ASCII, no space: CZ+1430, CZ-1997",
     "years": "Year N of the record begins on 30 November of 2022 + N (Year 4 on CZ 1461); year and day (3:334) is a secondary reading",
     "page": "https://civilizationzero.ai/calendar",

@@ -89,7 +89,7 @@ const ok = (c, m) => { if (c) pass++; else { fail++; console.log("FAIL", m); } }
   }
   const tday = await call(page, `/api/page?p=calendar&d=2026-10-30&c=gregorian&t=01:30&z=Asia%2FTehran`);
   ok(tday.body.includes("In UTC this moment falls on the day before"), "the CZ day differs from the local date: said");
-  ok(text(tday.body).includes("begins at 03:30, Tehran time"), "where a CZ day begins, locally");
+  ok(text(tday.body).includes("In UTC this moment falls on the day before: it is named with CZ 1429; in Tehran the date is CZ 1430."), "the date there, and the moment's UTC name");
   const tbad = await call(page, `/api/page?p=calendar&t=25:00&z=UTC`); ok(/role="alert" id="time-result">A time of day is written HH:MM/.test(tbad.body), "a bad time: said");
   // summer time: a wall time that did not exist is refused; one that came twice gives both moments (audit CZ01)
   const tgap = await call(page, `/api/page?p=calendar&d=2026-03-08&t=02:30&z=America%2FNew_York`);
