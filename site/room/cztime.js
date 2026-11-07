@@ -403,11 +403,23 @@ function validZone(z) {
   if (typeof z !== "string" || z.length > 64 || !/^[A-Za-z_]+(\/[A-Za-z0-9_+-]+){0,2}$|^UTC$/.test(z)) return false;
   try { new Intl.DateTimeFormat("en-US", { timeZone: z }); return true; } catch { return false; }
 }
-// the runtime's own spelling of a zone ("asia/tehran" → "Asia/Tehran"), or null: names are compared, shown and cached only in it, so
-// that the many spellings of one zone are one zone (review of CZ 1438: a cache per spelling could grow without bound)
+// a zone's usual spelling ("asia/tehran" → "Asia/Tehran"), or null. Names are matched without regard to case against the runtime's
+// list and the converter's own list (which keeps current names such as Asia/Kolkata, where the runtime may say Asia/Calcutta); a
+// name in neither keeps the runtime's spelling when it is the same name, else the one given. The formatter cache is bounded either way.
+let KNOWN = null;
+function knownZones() {
+  if (!KNOWN) {
+    KNOWN = new Map([["utc", "UTC"]]);
+    try { for (const z of Intl.supportedValuesOf("timeZone")) KNOWN.set(z.toLowerCase(), z); } catch { /* an older runtime: the lists below */ }
+    for (const [z] of (Array.isArray(barTemplates().zones) ? barTemplates().zones : [])) KNOWN.set(String(z).toLowerCase(), String(z));
+  }
+  return KNOWN;
+}
 function canonicalZone(z) {
   if (!validZone(z)) return null;
-  try { return new Intl.DateTimeFormat("en-US", { timeZone: z }).resolvedOptions().timeZone; } catch { return null; }
+  const k = knownZones().get(z.toLowerCase());
+  if (k) return k;
+  try { const r = new Intl.DateTimeFormat("en-US", { timeZone: z }).resolvedOptions().timeZone; return r.toLowerCase() === z.toLowerCase() ? r : z; } catch { return null; }
 }
 function zoneOffsetMin(zone, ms) {   // minutes east of UTC at that moment
   let f = ZONE_FMT.get(zone);

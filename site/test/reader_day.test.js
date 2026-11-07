@@ -192,3 +192,15 @@ test("the first page's data keeps date_utc, the UTC date, beside the reader's da
   assert.equal(j.cz_time.date_utc, new Date().toISOString().slice(0, 10));
   assert.equal(j.cz_time.gregorian, CZ.isoDate(...CZ.toGregorian(CZ.todayIn(Date.now(), EAST))));
 });
+
+test("current zone names stay as they are: Asia/Kolkata is not turned into Asia/Calcutta", async () => {
+  assert.equal(CZ.canonicalZone("Asia/Kolkata"), "Asia/Kolkata");
+  assert.equal(CZ.canonicalZone("asia/kolkata"), "Asia/Kolkata");
+  assert.equal(CZ.canonicalZone("Europe/Kyiv"), "Europe/Kyiv");
+  assert.equal(CZ.canonicalZone("utc"), "UTC");
+  const page = require("../api/page.js");
+  const r = await call(page, "/api/page?p=calendar&d=2026-10-30&c=gregorian&t=13:30&z=Asia%2FKolkata");
+  assert.ok(/<h3 id="h-time-result">13:30 in Delhi, Mumbai = /.test(r.body) && r.body.includes('<option value="Asia/Kolkata" selected>'));
+  const k = await call(page, "/api/page?p=calendar", Z("Asia/Kolkata"));
+  assert.ok(k.body.includes('<option value="Asia/Kolkata" selected>'), "a reader in India: the converter starts there");
+});
