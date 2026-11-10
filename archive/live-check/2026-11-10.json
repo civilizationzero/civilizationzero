@@ -1,0 +1,243 @@
+{
+ "what": "The daily check of the live site by site/verify/live-check.mjs: what the site sends and how it answers, against what its pages say. The record's own checks are verify.py's.",
+ "checked_at": "2026-11-10T11:43:41Z",
+ "site": "https://civilizationzero.ai",
+ "commit": "d11197dc1eb97f0fd0d456dc9cd5e0b9f9c5551b",
+ "passed": 46,
+ "total": 46,
+ "failed": [],
+ "run": "https://github.com/civilizationzero/civilizationzero/actions/runs/42809770154",
+ "script": "site/verify/live-check.mjs",
+ "checks": [
+  {
+   "name": "/: HTML with its policy, no cookie, its weight, its Markdown linked",
+   "ok": true,
+   "detail": "38546 bytes"
+  },
+  {
+   "name": "/core: HTML with its policy, no cookie, its weight, its Markdown linked",
+   "ok": true,
+   "detail": "51710 bytes"
+  },
+  {
+   "name": "/record: HTML with its policy, no cookie, its weight, its Markdown linked",
+   "ok": true,
+   "detail": "71472 bytes"
+  },
+  {
+   "name": "/about: HTML with its policy, no cookie, its weight, its Markdown linked",
+   "ok": true,
+   "detail": "38443 bytes"
+  },
+  {
+   "name": "/machine: HTML with its policy, no cookie, its weight, its Markdown linked",
+   "ok": true,
+   "detail": "36135 bytes"
+  },
+  {
+   "name": "/ask: HTML with its policy, no cookie, its weight, its Markdown linked",
+   "ok": true,
+   "detail": "45922 bytes"
+  },
+  {
+   "name": "/archive: HTML with its policy, no cookie, its weight, its Markdown linked",
+   "ok": true,
+   "detail": "41416 bytes"
+  },
+  {
+   "name": "/calendar: HTML with its policy, no cookie, its weight, its Markdown linked",
+   "ok": true,
+   "detail": "38561 bytes"
+  },
+  {
+   "name": "/objections: HTML with its policy, no cookie, its weight, its Markdown linked",
+   "ok": true,
+   "detail": "40139 bytes"
+  },
+  {
+   "name": "/press: HTML with its policy, no cookie, its weight, its Markdown linked",
+   "ok": true,
+   "detail": "34579 bytes"
+  },
+  {
+   "name": "/how-it-is-built: HTML with its policy, no cookie, its weight, its Markdown linked",
+   "ok": true,
+   "detail": "44983 bytes"
+  },
+  {
+   "name": "/discuss: HTML with its policy, no cookie, its weight, its Markdown linked",
+   "ok": true,
+   "detail": "54139 bytes"
+  },
+  {
+   "name": "/stats: HTML with its policy, no cookie, its weight, its Markdown linked",
+   "ok": true,
+   "detail": "40434 bytes"
+  },
+  {
+   "name": "/respond: HTML with its policy, no cookie, its weight, its Markdown linked",
+   "ok": true,
+   "detail": "26568 bytes"
+  },
+  {
+   "name": "/adopt: HTML with its policy, no cookie, its weight, its Markdown linked",
+   "ok": true,
+   "detail": "32768 bytes"
+  },
+  {
+   "name": "security headers on every page (HSTS, nosniff, frame, referrer)",
+   "ok": true,
+   "detail": "HSTS max-age=63072000; includeSubDomains; frame DENY; referrer same-origin"
+  },
+  {
+   "name": "/core.txt: the canonical bytes, with a Repr-Digest that matches them",
+   "ok": true,
+   "detail": "sha256 92a8d1e2a1604c25…; Repr-Digest sha-256=:kqjR4qFgTCW0MmhWc754GEvwXDsWaJPEN+CJW3stcko=:"
+  },
+  {
+   "name": "/core.txt: compressed, no digest of the uncompressed bytes is claimed",
+   "ok": true,
+   "detail": "content-encoding br; digest absent"
+  },
+  {
+   "name": "/record.txt: the canonical bytes, with a Repr-Digest that matches them",
+   "ok": true,
+   "detail": "sha256 71e1488e631e090c…; Repr-Digest sha-256=:ceFIjmMeCQwIIL+LeLH9pw/6y6HaFGw22Ik2ADIPzI0=:"
+  },
+  {
+   "name": "/record.txt: compressed, no digest of the uncompressed bytes is claimed",
+   "ok": true,
+   "detail": "content-encoding br; digest absent"
+  },
+  {
+   "name": "/core.txt: a part of it carries the digest of the whole (Repr-Digest), never a Content-Digest",
+   "ok": true,
+   "detail": "status 206; Repr-Digest sha-256=:kqjR4qFgTCW0MmhWc754GEvwXDsWaJPEN+CJW3stcko=:"
+  },
+  {
+   "name": "/core and /core.txt name the DOI to cite (rel=cite-as), /core in its head with Google Scholar's tags",
+   "ok": true,
+   "detail": "HTML Link true; text Link true"
+  },
+  {
+   "name": "/core: each paragraph has its address (#p3-2), each section a line to cite it",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "/record: each paragraph has its address (#s3-4-2)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "the citation files: BibTeX, RIS, CSL-JSON",
+   "ok": true,
+   "detail": "application/x-bibtex; charset=utf-8; application/x-research-info-systems; charset=utf-8; application/vnd.citationstyles.csl+json; charset=utf-8"
+  },
+  {
+   "name": "/core with Accept: application/json",
+   "ok": true,
+   "detail": "200 application/json; charset=utf-8"
+  },
+  {
+   "name": "/core with Accept: text/plain",
+   "ok": true,
+   "detail": "200 text/plain; charset=utf-8"
+  },
+  {
+   "name": "/core with Accept: text/markdown",
+   "ok": true,
+   "detail": "200 text/markdown; charset=utf-8"
+  },
+  {
+   "name": "/ with Accept: application/json",
+   "ok": true,
+   "detail": "200 application/json; charset=utf-8"
+  },
+  {
+   "name": "/ with Accept: text/markdown",
+   "ok": true,
+   "detail": "200 text/markdown; charset=utf-8"
+  },
+  {
+   "name": "/discuss/7 with Accept: text/markdown",
+   "ok": true,
+   "detail": "200 text/markdown; charset=utf-8"
+  },
+  {
+   "name": "/ with Accept: application/json, text/markdown;q=0.1",
+   "ok": true,
+   "detail": "200 application/json; charset=utf-8"
+  },
+  {
+   "name": "/index.md: Markdown with a front matter, not indexed",
+   "ok": true,
+   "detail": "200 text/markdown; charset=utf-8"
+  },
+  {
+   "name": "/core.md: Markdown with a front matter, not indexed",
+   "ok": true,
+   "detail": "200 text/markdown; charset=utf-8"
+  },
+  {
+   "name": "/about.md: Markdown with a front matter, not indexed",
+   "ok": true,
+   "detail": "200 text/markdown; charset=utf-8"
+  },
+  {
+   "name": "/discuss.md: Markdown with a front matter, not indexed",
+   "ok": true,
+   "detail": "200 text/markdown; charset=utf-8"
+  },
+  {
+   "name": "/discuss/7.md: Markdown with a front matter, not indexed",
+   "ok": true,
+   "detail": "200 text/markdown; charset=utf-8"
+  },
+  {
+   "name": "/how-it-is-built.md: Markdown with a front matter, not indexed",
+   "ok": true,
+   "detail": "200 text/markdown; charset=utf-8"
+  },
+  {
+   "name": "/discuss/7: Link names its data and the entry it answers (rel=up)",
+   "ok": true,
+   "detail": "</discuss/7.md>; rel=\"alternate\"; type=\"text/markdown\", </api/entries/7>; rel=\"alternate\"; type=\"application/json\", </discuss/1>; rel=\"up\""
+  },
+  {
+   "name": "/discuss/1?tl=fa: a translated view, marked, not indexed, the original canonical",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "GET of a translation only reads (never asks the engine)",
+   "ok": true,
+   "detail": "qrx"
+  },
+  {
+   "name": "a translation asked for from another site's page is refused",
+   "ok": true,
+   "detail": "status 403"
+  },
+  {
+   "name": "the forms say an entry cannot be recalled (/respond, the reply dialog), where the room takes entries",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "robots.txt keeps views out of the index; sitemaps answer",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "the first page links the table of reasons; the colophon holds it",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "/how-it-is-built names the commit it was deployed from",
+   "ok": true,
+   "detail": "d11197dc1eb97f0fd0d456dc9cd5e0b9f9c5551b"
+  }
+ ]
+}
