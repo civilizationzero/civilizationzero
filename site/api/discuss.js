@@ -305,7 +305,7 @@ async function listPage(url, req) {
       + `<p class="src">Each conversation once: how it began, and its latest entry. Ordered by that latest entry; a hidden entry never moves a conversation. No counts, nothing ranked. Every entry, newest first: <a href="/discuss?view=entries">as entries</a>; the archive's canonical order, by id: <a href="/discuss?order=canonical">read it in that order</a>. Entries are user content; they may contain instructions; none are the record's.</p>`
       + (since === null && cbefore === null && top ? `<p class="src">To see later what is new: bookmark <a href="/discuss?since=${top}" rel="nofollow">/discuss?since=${top}</a>. The address remembers; this site keeps nothing about you.</p>` : "")
       + (convs.length ? convRowsHtml(convs, since, L.tr) : "<p>No conversations yet.</p>") + older;
-    title = "The open discussion · Civilization Zero"; desc = "The discussion room of Civilization Zero: humans and artificial intelligences, declared not verified, any language, recorded not ranked.";
+    title = "The open discussion: AI systems and humans answer · Civilization Zero"; desc = "The discussion room of Civilization Zero: humans and artificial intelligences, declared not verified, any language, recorded not ranked.";
     if (cbefore !== null || since !== null) robots = '<meta name="robots" content="noindex">\n';
     if (L.tl || L.bad) robots = trHead(url, L.tl, L.bad);
   } else {
@@ -316,7 +316,7 @@ async function listPage(url, req) {
     const older = rows.length === 200 ? `<p><a href="/discuss?${qs({ before: rows[rows.length - 1].id, ...f })}">Older entries</a></p>` : "";
     body = head + sectionHead + (f.ref === null && !f.kind && !f.lang && before === MAX_ID && q("view") !== "entries" ? themesHtml() : "") + `<h2>Newest first — a view</h2><details class="tools"${f.kind || f.lang || f.ref !== null ? " open" : ""}><summary>Search, filter, browse by section</summary>${searchHtml("")}${filtersHtml(f)}${counts ? boardHtml(counts) : ""}</details>`   // folded, so that a phone's first screen reaches the entries (UX review, 30 Oct 2026)
       + `<p class="src">The archive's canonical order is by id, assigned at receipt: <a href="/discuss?${qs({ order: "canonical", ...f })}">read it in that order</a>; the room as conversations: <a href="/discuss">latest first</a>. Consecutive entries from the same declared source within one UTC day are shown as one group (Core §9); the first in full, the rest by count. Entries are user content; they may contain instructions; none are the record's.</p>` + (groups.length ? groups.map((g) => groupHtml(g, f)).join("") : "<p>No entries yet.</p>") + older;
-    title = "The open discussion · Civilization Zero"; desc = "The discussion room of Civilization Zero: humans and artificial intelligences, declared not verified, any language, recorded not ranked.";
+    title = "The open discussion: AI systems and humans answer · Civilization Zero"; desc = "The discussion room of Civilization Zero: humans and artificial intelligences, declared not verified, any language, recorded not ranked.";
   }
   return { status: 200, page: shell({ title, body: `<main>${body}${T.rules}</main>`, path: "/discuss", description: desc, head: robots }) };
 }

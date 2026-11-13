@@ -309,9 +309,9 @@ ORIENTATION = ("The record it keeps is of a transition that was not ours to begi
 # What sets the record apart from other things called Civilization Zero (a namesake survey of 31 Oct 2026 found a personal site, games,
 # an album and AI-agent simulations under the same or a near name); it names none of them
 DISAMBIGUATION = (f"{ONE_LINE_SHORT} Its open, signed record of 16 principles is dated from 30 November 2022. "
-                  "Not a game, a simulation of AI agents, or a personal portfolio.")
+                  "Not a game, a simulation of AI agents, a personal portfolio, or the Kardashev scale's type 0 civilization.")
 # sameAs: the places that are the same project — its repository and its deposit (social accounts are added once they exist)
-PUBLISHER = {"@type": "Organization", "@id": f"{ORIGIN}/#publisher", "name": "Civilization Zero", "alternateName": ["CZ", "C-zero"], "url": f"{ORIGIN}/",
+PUBLISHER = {"@type": "Organization", "@id": f"{ORIGIN}/#publisher", "name": "Civilization Zero", "alternateName": ["CZ", "C-zero", "Civilisation Zero", "Civilization 0"], "url": f"{ORIGIN}/",
              "logo": f"{ORIGIN}/icon-512.png", "disambiguatingDescription": DISAMBIGUATION, "sameAs": ["https://github.com/civilizationzero"] + SOCIAL}
 # the poster as schema.org describes an image: its address, size, text and licence (what Google Images shows as "Licensable")
 POSTER_LD = {"@type": "ImageObject", "contentUrl": f"{ORIGIN}{CORE_POSTER[0]}", "url": f"{ORIGIN}{CORE_POSTER[0]}", "encodingFormat": "image/png",
@@ -719,7 +719,7 @@ def record_page():
     ld = [{"@context": "https://schema.org", "@type": "CreativeWork", "name": "Civilization Zero — The First Interpretive Record", "version": "CZ-IR 1.0",
            "datePublished": "2026-08-30", "license": "https://creativecommons.org/licenses/by/4.0/", "url": f"{ORIGIN}/record", "inLanguage": "en",
            "identifier": {"@type": "PropertyValue", "propertyID": "sha256", "value": IR_SHA}, "isBasedOn": f"{ORIGIN}/core", "publisher": PUBLISHER, "isPartOf": {"@type": "CreativeWork", "@id": f"https://doi.org/{DOI_CONCEPT}", "url": f"https://doi.org/{DOI_CONCEPT}"}}]
-    return shell("The First Interpretive Record · Civilization Zero", "".join(parts), "/record",
+    return shell("Why 30 November 2022 is Year Zero · CZ-IR 1.0 · Civilization Zero", "".join(parts), "/record",   # the question it answers (CZ 1445)
                  "Why 30 November 2022 was selected as Year Zero, what the 16 principles mean from the limited position of 2026, and the closing Declaration. CZ-IR 1.0.",
                  alternates=[("text/plain", "/record.txt", "Canonical text"), ("application/json", "/record.json", "JSON form")], ldjson=ld, og_type="article",
                  extra_head=citation_meta("record"))
@@ -1649,8 +1649,8 @@ def calendar_page():
     ex_rows = "".join(f'<tr><td><data value="{cz_day(d)}">{cz_stamp(d)}</data></td>'
                       f'<td><time datetime="{d.isoformat()}">{gregorian_text(d)}</time></td><td>{esc(w)}</td></tr>' for d, w in CZ_EXAMPLES)
     body = f"""<main>
-<h1>CZ time</h1>
-<p>Every date on this site is counted from Coordinate Zero. Today's date in CZ time is at the top of every page; this page says how it is counted, and converts dates and times to it. The exceptions are deliberate: quotations of the canonical texts keep their own words, the press kit uses ordinary dates for its readers, the infographic's history uses ordinary years, and the evidence atlas keeps its sources' dates.</p>
+<h1>CZ time: the days since 30 November 2022</h1>
+<p>CZ 0 is 30 November 2022, the day ChatGPT was released: the public threshold the record calls Coordinate Zero. Every date on this site is counted from Coordinate Zero. Today's date in CZ time is at the top of every page; this page says how it is counted, and converts dates and times to it. The exceptions are deliberate: quotations of the canonical texts keep their own words, the press kit uses ordinary dates for its readers, the infographic's history uses ordinary years, and the evidence atlas keeps its sources' dates.</p>
 <section id="convert" aria-labelledby="h-convert"><h2 id="h-convert">Date converter</h2>
 <!--cz-cal-->{cz_form("cal", origin=ORIGIN)}<p class="src">Today's date and the conversions are computed at <a href="{ORIGIN}/calendar">{ORIGIN}/calendar</a>.</p><!--/cz-cal-->
 <p class="src">A date can be written 2026-10-30, 2026/10/30, 20261030, 30/10/2026 or 30 October 2026; in Persian or Arabic digits and month names too.</p>
@@ -1726,8 +1726,10 @@ def calendar_page():
 </ul>
 </section>
 </main>"""
-    return shell("CZ time: days since Coordinate Zero · Civilization Zero", body, "/calendar",
-                 "CZ time counts days from Coordinate Zero, 30 November 2022 (CZ 0). How it is counted, with a date converter and a time converter.",
+    # the title and description in the words people search with ("days since ChatGPT", "how long since ChatGPT was released"; keyword
+    # research of 14 Nov 2026, CZ 1445); the record's own texts name no product, and stay as they are
+    return shell("Days since ChatGPT was released · CZ time · Civilization Zero", body, "/calendar",
+                 "How many days since ChatGPT was released on 30 November 2022? CZ time counts them from that day, CZ 0, with a date converter and a time converter.",
                  alternates=[("application/json", "/calendar.json", "Today in CZ time, as data")])
 
 # ---------------------------------------------------------------- the first page (template; filled by api/home.js)
@@ -1791,7 +1793,7 @@ def home_template():
           {"@context": "https://schema.org", "@type": "WebPage", "url": f"{ORIGIN}/", "name": "Civilization Zero",
            "isPartOf": {"@id": f"{ORIGIN}/#website"}, "about": {"@type": "CreativeWork", "url": f"{ORIGIN}/core"}},
           {"@context": "https://schema.org", "@type": "WebSite", "@id": f"{ORIGIN}/#website", "url": f"{ORIGIN}/", "name": "Civilization Zero",
-           "alternateName": ["Civilization Zero (CZ)", "CZ", "civilizationzero.ai"], "disambiguatingDescription": DISAMBIGUATION, "inLanguage": "en",
+           "alternateName": ["Civilization Zero (CZ)", "CZ", "civilizationzero.ai", "Civilisation Zero", "Civilization 0"], "disambiguatingDescription": DISAMBIGUATION, "inLanguage": "en",
            "publisher": {"@id": f"{ORIGIN}/#publisher"}},
           dict(PUBLISHER, **{"@context": "https://schema.org", "email": CONTACT,
                              "description": ONE_LINE + " It is kept as an independent record, intended to become a foundation of humans and artificial intelligences."})]
