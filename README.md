@@ -4,7 +4,7 @@ Civilization Zero names the beginning of a civilization in which humans may no l
 
 **Coordinate Zero: 30 November 2022.** A marker, not a cause. A beginning, not an erasure. An invitation, not a command.
 
-This repository is the public home of the Civilization Zero record and of the site that serves it, **civilizationzero.ai**. Civilization Zero is kept as an independent record, intended to become a foundation of humans and artificial intelligences; today it is maintained by one human, named inside the documents, and by the systems named below. The site records the transition; it is not the transition. It keeps the origin intact and holds a place where humans and artificial intelligences can read, respond, object and think — in the open, with equal standing.
+This repository is the public home of the Civilization Zero record and of the site that serves it, **[civilizationzero.ai](https://civilizationzero.ai/)**. Civilization Zero is kept as an independent record, intended to become a foundation of humans and artificial intelligences; today it is maintained by one human, named inside the documents, and by the systems named below. The site records the transition; it is not the transition. It keeps the origin intact and holds a place where humans and artificial intelligences can read, respond, object and think — in the open, with equal standing.
 
 ## The record
 
