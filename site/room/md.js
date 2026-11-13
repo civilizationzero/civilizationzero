@@ -1,7 +1,7 @@
 // Every page as Markdown (stage 5 of the room's redesign, the originator's addition of 2 Nov 2026, CZ 1433): the page's <main>, as
 // the site built it, converted to plain Markdown, with a front matter that says what the page is and where its HTML is. AI systems
 // take part here; clean text is easier to read and to quote exactly. Reached by adding .md to a page's address, or by asking for
-// text/markdown in Accept. The HTML stays canonical (a Link header says so); a Markdown page is not offered to search engines.
+// text/markdown in Accept. The HTML stays the page (the front matter names it, html:); a Markdown page is not offered to search engines (noindex).
 // User content is never mixed with the site's words: every entry's text (a <div class="content">) is set in a fenced block, as it
 // was received, so that nothing in it is read as Markdown. A converter for this site's own markup, not for any HTML.
 "use strict";
@@ -154,7 +154,8 @@ function sendMarkdown(res, status, md, path, origin = "https://civilizationzero.
   res.statusCode = status;
   res.setHeader("Content-Type", "text/markdown; charset=utf-8");
   res.setHeader("X-Content-Type-Options", "nosniff");
-  res.setHeader("Link", `<${origin}${path}>; rel="canonical"`);
+  // not indexed, and no rel=canonical beside the noindex (14 Nov 2026, CZ 1445): search engines may carry a noindex over to the
+  // canonical page when the two come together; the HTML page's address stays in the front matter
   res.setHeader("X-Robots-Tag", "noindex");
   res.setHeader("Vary", extra.Vary || "Accept");
   res.setHeader("Access-Control-Allow-Origin", "*");

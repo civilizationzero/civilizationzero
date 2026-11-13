@@ -191,8 +191,8 @@ module.exports = async (req, res) => {
   // the page as Markdown (/core.md, or Accept: text/markdown; vercel.json): its <main> converted, with a front matter (room/md.js)
   if (url.searchParams.get("f") === "md") {
     const pth = p === "" ? "/" : `/${p}`;
-    // the Core and the record name the DOI to cite them by in this form too (CZ 1433, item 5): this Link replaces sendMarkdown's, so it repeats the canonical
-    const link = ["core", "record"].includes(p) && status === 200 ? { Link: `<https://civilizationzero.ai${pth}>; rel="canonical", ${CITE_AS}` } : {};
+    // the Core and the record name the DOI to cite them by in this form too (CZ 1433, item 5); no canonical beside the noindex (CZ 1445)
+    const link = ["core", "record"].includes(p) && status === 200 ? { Link: CITE_AS } : {};
     return MD.sendMarkdown(res, status, req.method === "HEAD" ? "" : MD.htmlToMarkdown(out, { path: pth }), pth, "https://civilizationzero.ai", { "Cache-Control": `public, max-age=0, s-maxage=${ttl}`, Vary: vary, ...link });
   }
   out = fillWeight(out);   // the line at the foot: this page's weight as it is sent (room/weight.js)

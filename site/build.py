@@ -341,7 +341,7 @@ def translation_page(tr):
     parts.append(f'<section id="integrity" lang="en" dir="ltr"><h2>Integrity record</h2><table><tr><th>Maps to</th><td><code>CZ-CORE 1.0</code>, SHA-256 <code class="hash">{CORE_SHA}</code></td></tr>'
                  f'<tr><th>This translation</th><td><a href="/core.{lang}.json">/core.{lang}.json</a>, SHA-256 <code class="hash">{tr["_sha"]}</code></td></tr>'
                  f'<tr><th>Status</th><td>{esc(tr["kind"])}; {"reviewed by " + esc(tr["reviewed_by"]) if tr.get("reviewed_by") else "not human-reviewed"}; the English text governs where they differ</td></tr></table></section></main>')
-    html = shell(f'{tr["title"]} · CZ-CORE 1.0', "".join(parts), f"/core.{lang}",
+    html = shell(f'{tr["title"]} · CZ-CORE 1.0 · Civilization Zero', "".join(parts), f"/core.{lang}",   # the name searched for, beside the name in the language (CZ 1445)
                  tr["principles"][0]["statements"][0],   # the translation's own first sentence, §0, word for word: what a reader of that language meets first
                  alternates=[("application/json", f"/core.{lang}.json", "This translation as JSON")], hreflangs=HREFLANGS, og_type="article",
                  ldjson=[{"@context": "https://schema.org", "@type": "CreativeWork", "name": tr["title"], "inLanguage": lang, "url": f"{ORIGIN}/core.{lang}",
@@ -1810,7 +1810,7 @@ def home_template():
 </nav>
 
 <header id="top">
-<h1 class="cz-h1" data-src="R: identity of the record; R §0; E: CZ time, the originator's decision of 30 Oct 2026"><span class="cz-name">{MARK}Civilization Zero (CZ)</span><a href="/calendar" aria-describedby="cz-read"><time datetime="__CZ_ISO__">__CZ_STAMP__</time></a></h1>
+<h1 class="cz-h1" data-src="R: identity of the record; R §0; E: CZ time, the originator's decision of 30 Oct 2026"><span class="cz-name">{MARK}Civilization Zero (CZ)</span> <a href="/calendar" aria-describedby="cz-read"><time datetime="__CZ_ISO__">__CZ_STAMP__</time></a></h1>
 <p class="exact cz-read" id="cz-read" data-src="M: exact, machine-readable time">Day <data value="__TOTAL__">__TOTAL__</data><br>since Coordinate Zero, <time datetime="2022-11-30">30 November 2022</time></p>
 <p class="cz-def" data-src="E: the originator's decision, 30 Oct 2026: only days are counted">CZ time counts only days.</p>
 <p class="cz-links" data-src="E: the originator's decision, 30 Oct 2026"><a href="/calendar#convert">date converter</a> · <a href="/calendar#time">time converter</a> · <a href="/calendar#how">how it works</a></p>

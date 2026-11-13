@@ -27,6 +27,9 @@ jobs:
           set -euo pipefail
           curl -fsSL --retry 3 https://civilizationzero.ai/sitemap.txt -o urls.txt
           wc -l urls.txt
+          # the discussion's entries too, for IndexNow only (14 Nov 2026, CZ 1445): the Internet Archive keeps the pages above
+          curl -fsSL --retry 3 https://civilizationzero.ai/sitemap-discussion.xml | python3 -c "import re,sys;print('\n'.join(re.findall(r'<loc>(https://civilizationzero\.ai/[^<]+)</loc>', sys.stdin.read())))" > entries.txt
+          wc -l entries.txt
       - name: IndexNow
         if: ${{ inputs.indexnow }}
         run: |
@@ -36,7 +39,7 @@ jobs:
           python3 - "$KEY" <<'EOF'
           import json, sys, urllib.request
           key = sys.argv[1]
-          urls = [u.strip() for u in open("urls.txt") if u.strip()]
+          urls = list(dict.fromkeys(u.strip() for f in ("urls.txt", "entries.txt") for u in open(f) if u.strip()))[:10000]
           body = json.dumps({"host": "civilizationzero.ai", "key": key, "keyLocation": f"https://civilizationzero.ai/{key}.txt", "urlList": urls}).encode()
           req = urllib.request.Request("https://api.indexnow.org/indexnow", data=body, headers={"Content-Type": "application/json; charset=utf-8"})
           with urllib.request.urlopen(req, timeout=60) as r:

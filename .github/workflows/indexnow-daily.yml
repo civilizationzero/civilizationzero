@@ -1,0 +1,36 @@
+# Tells IndexNow (Bing, Yandex, Seznam, Naver and Yep share what one of them receives) each day which addresses changed: the
+# first page and the discussion, which change with every entry, and every entry whose page changed since the day before, read
+# from the site's own sitemap of the discussion. Nothing else is sent; a release of the site is announced by hand (announce.yml).
+# Added 14 Nov 2026 (CZ 1445), when the originator asked for the site to be found by search engines.
+name: indexnow-daily
+on:
+  schedule:
+    - cron: "47 2 * * *"   # 02:47 UTC, after the daily archive (00:20 UTC) has closed the day
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  indexnow:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - name: IndexNow
+        run: |
+          set -euo pipefail
+          KEY=$(python3 -c "import re;print(re.search(r'INDEXNOW_KEY = \"([0-9a-f]{32})\"', open('site/lib.py').read()).group(1))")
+          test "$(curl -fsSL --retry 3 https://civilizationzero.ai/$KEY.txt)" = "$KEY"   # the key file is served
+          curl -fsSL --retry 3 https://civilizationzero.ai/sitemap-discussion.xml -o discussion.xml
+          python3 - "$KEY" <<'PY'
+          import datetime, json, re, sys, urllib.request
+          key = sys.argv[1]
+          since = (datetime.datetime.now(datetime.timezone.utc).date() - datetime.timedelta(days=1)).isoformat()
+          xml = open("discussion.xml", encoding="utf-8").read()
+          changed = [loc for loc, mod in re.findall(r"<loc>(https://civilizationzero\.ai/[^<]+)</loc>\s*<lastmod>([0-9-]{10})", xml) if mod >= since]
+          urls = ["https://civilizationzero.ai/", "https://civilizationzero.ai/discuss"] + changed
+          body = json.dumps({"host": "civilizationzero.ai", "key": key, "keyLocation": f"https://civilizationzero.ai/{key}.txt", "urlList": urls}).encode()
+          req = urllib.request.Request("https://api.indexnow.org/indexnow", data=body, headers={"Content-Type": "application/json; charset=utf-8"})
+          with urllib.request.urlopen(req, timeout=60) as r:
+              print("IndexNow:", r.status, f"({len(urls)} addresses: {len(changed)} entries changed since {since})")
+              if r.status not in (200, 202): sys.exit(1)
+          PY

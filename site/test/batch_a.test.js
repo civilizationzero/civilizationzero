@@ -37,9 +37,9 @@ const pub = (f) => fs.readFileSync(`${SITE}/public/${f}`, "utf8");
   ok(!(await call(page, "/api/page?p=nothing")).headers.link, "a 404 has no Link");
   for (const p of ["core", "record"]) {
     const m = await call(page, `/api/page?p=${p}&f=md`);
-    ok(m.headers.link === `<https://civilizationzero.ai/${p}>; rel="canonical", <https://doi.org/10.5281/zenodo.23740317>; rel="cite-as"` && /^text\/markdown/.test(m.headers["content-type"]), `${p}.md: canonical and cite-as`);
+    ok(m.headers.link === `<https://doi.org/10.5281/zenodo.23740317>; rel="cite-as"` && m.headers["x-robots-tag"] === "noindex" && /^text\/markdown/.test(m.headers["content-type"]), `${p}.md: cite-as, not indexed, no canonical beside the noindex`);
   }
-  ok((await call(page, "/api/page?p=about&f=md")).headers.link === '<https://civilizationzero.ai/about>; rel="canonical"', "about.md: canonical only");
+  { const m = await call(page, "/api/page?p=about&f=md"); ok(m.headers.link === undefined && m.headers["x-robots-tag"] === "noindex", "about.md: not indexed, no canonical beside the noindex"); }
   ok(/rel="cite-as"/.test(vLink("/core")) && /rel="cite-as"/.test(vLink("/core.(txt|json)")) && /rel="cite-as"/.test(vLink("/record.(txt|json)")), "vercel.json: cite-as on the texts in every form");
 
   // 4. the colophon: the deployment and the latest check
