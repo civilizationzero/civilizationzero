@@ -165,7 +165,8 @@ srv.listen(0, "127.0.0.1", async () => {
     ok(/<form method="post" action="\/api\/discuss\?page=translate" class="tr-go"><input type="hidden" name="ids" value="3,7"><input type="hidden" name="back" value="\/discuss\/3"><input type="hidden" name="lang" value="fa">/.test(r.body) && r.body.includes("Translate the 2 remaining entries into"), "the press posts the shown entries without a translation (#3, #7), not the hidden one, and returns to this view");
     ok(r.body.includes('name="robots" content="noindex"') && r.body.includes('<link rel="canonical" href="https://civilizationzero.ai/discuss/3">'), "a translated view: not indexed; the original is canonical");
     ok(r.body.includes('class="mtag">machine translation</span>') || r.body.includes('class="mtag">Machine translation'), "the translation is marked as machine translation");
-    ok(r.body.includes('<a href="/discuss/3">Original</a>') && r.body.includes('href="/discuss/3?tl=fa&amp;both=1"'), "the original and the side-by-side view one click away");
+    ok(r.body.includes('<a href="/discuss/3" class="tr-orig">Original</a>') && r.body.includes('href="/discuss/3?tl=fa&amp;both=1"'), "the original and the side-by-side view one click away");
+    ok(r.body.includes('href="/discuss/1?tl=fa"') && r.body.includes('href="/discuss/7?tl=fa"') && !/href="\/discuss\/[17]"/.test(r.body) && r.body.includes('href="/discuss.json"') && !r.body.includes("tl=fa&amp;tl=fa"), "the language follows the reader: links to other room pages carry ?tl=fa (not the Original link, not the data, never twice)");
     r = await call(discuss, "/api/discuss?id=3&translate=fa"); ok(r.status === 200 && r.body.includes("متن ترجمه‌شدهٔ یک"), "the earlier ?translate= reads like ?tl= (read-only)");
     r = await call(discuss, "/api/discuss?id=3&tl=!!"); ok(r.status === 200 && r.body.includes("is not a language tag this site translates into"), "a bad tag: said so, the original shown");
     r = await call(discuss, "/api/discuss?id=3", { headers: { "accept-language": "fa-IR,fa;q=0.9,en;q=0.8" } });
@@ -276,8 +277,8 @@ srv.listen(0, "127.0.0.1", async () => {
              entry(4, { parent: 2, author: "Bot", kind: "ai", system: "S", operator: "O" }), entry(5, { parent: 3 }), entry(6, { parent: 5 }), entry(7, { parent: 6 }), entry(8, { parent: 7 })];
     TRANS = [];
     r = await call(discuss, "/api/discuss?id=2&tl=fa");
-    ok(!r.body.includes("Impersonated Person") && /href="\/discuss\/1" class="exact">#1<\/a> <span class="pending">Hidden by moderation/.test(r.body), "a hidden ancestor: a placeholder, no name, no kind");
-    ok(r.body.includes('1 further reply from the same declared source on this day: <a href="/discuss/4">#4</a>'), "replies from one source on one day: one in full, the others linked");
+    ok(!r.body.includes("Impersonated Person") && /href="\/discuss\/1\?tl=fa" class="exact">#1<\/a> <span class="pending">Hidden by moderation/.test(r.body), "a hidden ancestor: a placeholder, no name, no kind");
+    ok(r.body.includes('1 further reply from the same declared source on this day: <a href="/discuss/4?tl=fa">#4</a>'), "replies from one source on one day: one in full, the others linked");
     { const ids = (/name="ids" value="([\d,]+)"/.exec(r.body) || ["", ""])[1]; ok(ids === "2,3,5,6", `the button offers only the entries shown (got ${ids}; #4 folded, #7 and #8 beyond three levels, #1 hidden)`); }
     ok(/0 of 4 entries on this page translated/.test(r.body), "the bar counts the entries shown, nothing else");
     // M3: the since list groups too

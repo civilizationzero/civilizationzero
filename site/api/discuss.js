@@ -80,9 +80,22 @@ function trControls(req, url, L, rows) {
   const same = shown.filter((e) => !map.has(Number(e.id)) && R.sameLang(e, tl)), missing = shown.filter((e) => !map.has(Number(e.id)) && !R.sameLang(e, tl));
   const want = shown.length - same.length, done = want - missing.length;
   const counted = want ? `${done} of ${want} ${want === 1 ? "entry" : "entries"} on this page translated, each marked` : "every entry on this page is already in this language";
-  const status = `<p>Shown in ${nameOf(tl)} (${esc(tl)}): ${counted}${same.length && want ? `; ${same.length} already in ${nameOf(tl)}` : ""}${missing.length ? "; the others in their original" : ""}. <a href="${esc(viewHref(url))}">Original</a> · ${both ? `<a href="${esc(viewHref(url, { tl }))}">One language</a>` : `<a href="${esc(viewHref(url, { tl, both: "1" }))}" rel="nofollow">Side by side</a>`}</p>`;
+  const status = `<p>Shown in ${nameOf(tl)} (${esc(tl)}): ${counted}${same.length && want ? `; ${same.length} already in ${nameOf(tl)}` : ""}${missing.length ? "; the others in their original" : ""}. <a href="${esc(viewHref(url))}" class="tr-orig">Original</a> · ${both ? `<a href="${esc(viewHref(url, { tl }))}">One language</a>` : `<a href="${esc(viewHref(url, { tl, both: "1" }))}" rel="nofollow">Side by side</a>`}</p>`;
   const go = OPEN && missing.length ? trPress(url, missing, { lang: tl, label: `<button type="submit" class="cta">Translate ${missing.length === 1 ? "the remaining entry" : `the ${Math.min(missing.length, TR_BATCH)} remaining entries`} into ${nameOf(tl)}</button>` }) : "";
   return `<section class="tr-bar" id="language" aria-label="Language">${status}${go}${trPicker(url, rows, tl, "Another language:")}</section>`;
+}
+// The language follows the reader (the originator's finding of 14 Nov 2026, CZ 1445: a page read in Persian, then "read the
+// conversation", and the next page was in the original again). On a page read in language tl, every link to another room page — an
+// entry, a conversation, a theme, the room, the next page — carries ?tl=, so the reader stays in that language; what was translated
+// is shown at once there, and the bar offers one press for the rest. The links that leave the language say so (class "tr-orig"); the
+// Markdown, JSON and feed addresses are not room pages and stay as they are. No cookie: the choice lives in the address only.
+const ROOM_HREF = /<a\b[^>]*>/g;
+function carryLang(page, tl) {
+  const add = `tl=${encodeURIComponent(tl)}`;
+  return page.replace(ROOM_HREF, (tag) => (/\btr-orig\b/.test(tag) ? tag : tag.replace(/\shref="(\/discuss(?:\/\d{1,12})?|\/themes\/[a-z0-9-]{2,40})(\?[^"#]*)?(#[^"]*)?"/, (m, path, q, frag) => {
+    if (q && /(^|[?&;])tl=/.test(q)) return m;
+    return ` href="${path}${q ? `${q}&amp;${add}` : `?${add}`}${frag || ""}"`;
+  })));
 }
 async function trLoad(url, rows) {
   const { tl, bad } = trOf(url);
@@ -628,6 +641,7 @@ module.exports = async (req, res) => {
       return res.end(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.join("\n")}\n</urlset>\n`);
     }
     const r = id !== null ? await entryPage(url, id, req) : await listPage(url, req);
+    { const { tl } = trOf(url); if (tl && typeof r.page === "string") r.page = carryLang(r.page, tl); }
     if (res.czMarkdown && r.mdMeta) res.czMarkdown.meta = r.mdMeta;
     if (r.links) res.czLinks = r.links;
     return html(res, r.status, r.page, r.noStore || url.searchParams.has("fresh") ? { "Cache-Control": "no-store", Vary: "Accept, Accept-Language" } : cache);   // "fresh": the view a press opens, never served from or kept by a cache   // a page missing part of its record is not cached
