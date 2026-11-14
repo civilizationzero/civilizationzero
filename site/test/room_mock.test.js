@@ -39,6 +39,17 @@ const srv = http.createServer((q, s) => {
       .map((t) => ({ entry_id: t.entry_id, state: t.state, engine: t.engine, at: t.at, unchanged: t.text != null && t.text === (TABLE.find((e) => e.id === t.entry_id) || {}).content, snippet: ["done", "corrected"].includes(t.state) ? t.text : null }));
     else if (name === "cz_budget_status") out = { cap_cents: 3000, spent_cents: 0, today_cents: 0, days_remaining: 17, source_chars_per_day: SOURCE_CAP };
     else if (name === "cz_source_chars") out = SOURCE_USED;
+    else if (name === "cz_translation_claim") {   // as the SQL: entries no one is translating now, marked "working" and returned
+      out = [];
+      for (const id of a.p_entries) {
+        const i = TRANS.findIndex((t) => t.entry_id === id && t.lang === a.p_lang), e = TABLE.find((x) => x.id === id), t = TRANS[i];
+        if (!e || e.hidden) continue;
+        if (t && !((t.state === "pending" && !(/^working/.test(t.engine) && Date.now() - Date.parse(t.at) < a.p_window_s * 1000)) || (t.state === "done" && t.text === e.content))) continue;
+        const row = { entry_id: id, lang: a.p_lang, text: null, engine: "working: since now", at: new Date().toISOString(), state: "pending" };
+        if (i >= 0) TRANS[i] = row; else TRANS.push(row);
+        out.push({ entry_id: id });
+      }
+    }
     else if (name === "cz_translation_note" || name === "cz_translation_store") {   // as the SQL: a note never over a good translation
       for (const id of name === "cz_translation_note" ? a.p_entries : [a.p_entry]) {
         const i = TRANS.findIndex((t) => t.entry_id === id && t.lang === a.p_lang), e = TABLE.find((x) => x.id === id);
@@ -174,7 +185,7 @@ srv.listen(0, "127.0.0.1", async () => {
     global.fetch = async (u, o) => {
       if (!String(u).includes("api.anthropic.com")) return realFetch(u, o);
       const q = JSON.parse(o.body), text = /<text>\n([\s\S]*)\n<\/text>/.exec(q.messages[0].content)[1]; asked.push({ model: q.model, text, system: q.system });
-      const out = q.model.includes("haiku") && text.startsWith("Entry number 3") ? text : `ترجمهٔ فارسی: ${text.replace(/[A-Za-z]/g, "ب")}`;
+      const out = (q.model.includes("haiku") && text.startsWith("Entry number 3")) || text.startsWith("من ") ? text : `ترجمهٔ فارسی: ${text.replace(/[A-Za-z]/g, "ب")}`;
       return { ok: true, json: async () => ({ model: q.model, stop_reason: "end_turn", content: [{ type: "text", text: `<translation>${out}</translation>` }], usage: { input_tokens: 100, output_tokens: 100 } }) };
     };
     TABLE = [entry(1, { lang: "en" }), entry(3, { parent: 1, lang: "en" }), entry(5, { parent: 3, hidden: true }), entry(7, { parent: 3, lang: "fa", lang_detected: "fa" }), entry(9, { parent: 3, lang: "en" })];
@@ -184,18 +195,32 @@ srv.listen(0, "127.0.0.1", async () => {
     ok(r.status === 303 && /^\/discuss\/translating\?tl=fa&ids=3\.9&ts=\d+&back=%2Fdiscuss%2F3$/.test(loc), `POST: answered with the progress page of #3 and #9 — not #1 (translated), #5 (hidden), #7 (already Persian) (${loc})`);
     ok(asked.filter((x) => x.text.startsWith("Entry number 3")).map((x) => x.model).join(",") === "claude-haiku-5-5,claude-sonnet-5-5" && asked.find((x) => x.model.includes("sonnet")).system.includes("rejected because the engine gave the original back"), `an answer that hands back the original is asked again of the stronger model, told why (${asked.map((x) => x.model).join(",")})`);
     ok(TRANS.find((t) => t.entry_id === 3).state === "done" && TRANS.find((t) => t.entry_id === 3).engine === "claude-sonnet-5-5" && TRANS.find((t) => t.entry_id === 9).engine === "claude-haiku-5-5", "both kept, each with the engine that made it");
-    ok(CALLS.filter((c) => c.name === "cz_source_chars").map((c) => c.args.p_chars).join(",") === `0,${TABLE[1].content.length + TABLE[4].content.length}` && CALLS.some((c) => c.name === "cz_translation_note" && /^working/.test(c.args.p_note)), "the reader's characters checked before any work, charged once for what is done; each entry marked as being translated");
+    ok(CALLS.filter((c) => c.name === "cz_source_chars").map((c) => c.args.p_chars).sort((x, y) => x - y).join(",") === [0, TABLE[1].content.length, TABLE[4].content.length].sort((x, y) => x - y).join(",") && CALLS.some((c) => c.name === "cz_translation_claim" && c.args.p_entries.join(",") === "3,9"), "the reader's characters checked before any work, each entry charged as its work begins; the entries claimed in one call");
     r = await call(discuss, "/api/discuss" + loc.replace("/discuss/translating?", "?page=progress&"));
-    ok(r.status === 200 && r.body.includes("<strong>2 of 2</strong>") && /<meta http-equiv="refresh" content="1;url=\/discuss\/3\?tl=fa&amp;fresh=\d+">/.test(r.body) && r.body.includes('name="robots" content="noindex"'), "the progress page: all done, it opens the translated page by itself");
-    ok(r.body.includes('<li class="tr-done"><a href="/discuss/3">#3</a> <span class="tr-st">translated</span> <span class="tr-snip" dir="auto" lang="fa">ترجمهٔ فارسی'), "each entry with its first translated words");
+    ok(r.status === 200 && r.body.includes("<strong>2 of 2</strong>") && /<meta http-equiv="refresh" content="0;url=\/discuss\/3\?tl=fa&amp;fresh=\d+">/.test(r.body) && r.body.includes('name="robots" content="noindex"'), "the progress page: all done, it opens the translated page by itself");
+    ok(r.body.includes('<li class="tr-done"><a href="/discuss/3?tl=fa">#3</a> <span class="tr-st">translated</span> <span class="tr-snip" dir="auto" lang="fa">ترجمهٔ فارسی'), "each entry with its first translated words");
     r = await call(discuss, "/api/discuss?id=3&tl=fa");
     ok(r.body.includes("3 of 3 entries on this page translated") && r.body.includes("1 already in") && !r.body.includes("remaining"), "the view: everything that needed it translated; the Persian entry counted as already in Persian");
+    r = await call(discuss, "/api/discuss?id=3&tl=fa&fresh=123");
+    ok(r.headers["cache-control"] === "no-store", `the view a press opens ("fresh") is never cached (${r.headers["cache-control"]})`);
+    // an entry labelled English but written in Persian: the engine hands it back, and that is right — no second model, no failure
+    TABLE.push(entry(15, { parent: 3, lang: "en", lang_detected: null, content: "من با آنچه این پروژه می‌کوشد انجام دهد موافقم و فکر می‌کنم این گفت‌وگو مهم است." }));
+    asked.length = 0; r = await call(discuss, "/api/discuss?page=translate", { method: "POST", headers: { origin: "https://civilizationzero.ai" }, body: { lang: "fa", ids: "15", back: "/discuss/3" } });
+    ok(asked.length === 1 && /^same:/.test((TRANS.find((t) => t.entry_id === 15) || {}).engine || ""), `already in Persian though labelled English: one call, recorded as such (${asked.map((x) => x.model).join(",")})`);
+    r = await call(discuss, "/api/discuss" + (r.headers.location || "").replace("/discuss/translating?", "?page=progress&"));
+    ok(r.body.includes('<li class="tr-same"><a href="/discuss/15?tl=fa">#15</a> <span class="tr-st">already in <span lang="fa">فارسی</span></span>'), "the progress page: already in Persian, counted as done");
+    CALLS = []; r = await call(discuss, "/api/discuss?page=translate", { method: "POST", headers: { origin: "https://civilizationzero.ai" }, body: { lang: "fa", ids: "15", back: "/discuss/3" } });
+    ok(r.status === 303 && /^\/discuss\/3\?tl=fa&fresh=\d+$/.test(r.headers.location || "") && !CALLS.some((c) => c.name === "cz_source_chars"), "pressed again: nothing to do, nothing charged");
     // while work goes on, and when it fails
     const ts = Math.floor(Date.now() / 1000);
     TRANS.push({ entry_id: 11, lang: "fa", text: null, engine: "working: since now", at: new Date().toISOString(), state: "pending" }, { entry_id: 13, lang: "fa", text: null, engine: "error: the engine was busy", at: new Date().toISOString(), state: "pending" });
     TABLE.push(entry(11, { parent: 3 }), entry(13, { parent: 3 }));
     r = await call(discuss, `/api/discuss?page=progress&tl=fa&ids=3.11.13&ts=${ts}&back=%2Fdiscuss%2F3`);
-    ok(/<meta http-equiv="refresh" content="1">/.test(r.body) && r.body.includes("<strong>1 of 3</strong>") && r.body.includes('aria-busy="true"') && r.body.includes('<span class="tr-spin" aria-hidden="true"></span>being translated') && r.body.includes("— the engine was busy"), "while work goes on: the page reloads itself; done, working and failed each said");
+    ok(/<meta http-equiv="refresh" content="2">/.test(r.body) && r.body.includes("<strong>1 of 3</strong>") && !r.body.includes("aria-busy") && r.body.includes('<span class="tr-spin" aria-hidden="true"></span>being translated') && r.body.includes("— the engine was busy") && r.body.includes("still=1\">Stop updating</a>"), "while work goes on: the page reloads itself every two seconds, with a link to stop it; done, working and failed each said");
+    r = await call(discuss, `/api/discuss?page=progress&tl=fa&ids=3.11.13&ts=${ts}&back=%2Fdiscuss%2F3&still=1`);
+    ok(!r.body.includes('http-equiv="refresh"') && r.body.includes("This page is holding still"), "?still=1: the page holds still");
+    r = await call(discuss, `/api/discuss?page=progress&tl=fa&ids=11&ts=${ts + 86400 * 3}&back=%2Fdiscuss%2F3&held=constructor&heldn=-5`);
+    ok(!r.body.includes('http-equiv="refresh"') && !r.body.includes("native code") && !r.body.includes("-5 entr"), "a time in the future, a prototype name, a negative count: none taken");
     TRANS = TRANS.filter((t) => t.entry_id !== 11);
     r = await call(discuss, `/api/discuss?page=progress&tl=fa&ids=3.11.13&ts=${ts - 400}&back=%2Fdiscuss%2F3`);
     ok(!r.body.includes('http-equiv="refresh"') && r.body.includes("— it did not finish in time") && /<input type="hidden" name="ids" value="11,13">.*Try the 2 again/.test(r.body), "after the window: no more reloading; what did not finish said, with a press to try again");

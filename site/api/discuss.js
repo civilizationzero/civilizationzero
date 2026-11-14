@@ -22,8 +22,10 @@ const qs = (o) => Object.entries(o).filter(([, v]) => v != null && v !== "").map
 // offered to search engines: unreviewed machine translation is not published as pages to index; it points to the original as
 // canonical. The list names the languages the Core is published in; any other BCP 47 tag can still be asked for with ?tl=.
 const TR_LANGS = ["en", "ar", "bn", "de", "es", "fa", "fr", "hi", "id", "it", "ja", "ko", "ms", "nl", "pt", "ru", "sw", "tr", "ur", "vi", "zh-Hans"];
-const TR_BATCH = 30;     // entries one press translates (a page usually shows fewer; a longer one: the rest with the next press)
-const TR_WINDOW = 150;   // seconds the progress page waits for a press's work before it says what did not finish
+const TR_BATCH = 24;      // entries one press translates (a page usually shows fewer; a longer one: the rest with the next press)
+const TR_PARALLEL = 6;    // of them in flight at once (22 entries into German took 19 s with four)
+const TR_WORK = 125;      // seconds a press's work can last at most (the function's 120, and a margin); a "working" note older is dead
+const TR_WINDOW = 150;    // seconds the progress page waits for a press's work before it says what did not finish
 const TR_KEEP = ["conversation", "since", "cbefore", "all", "after", "before"];   // the parameters that make a view what it is
 function trOf(url) {
   const raw = url.searchParams.get("tl") ?? url.searchParams.get("translate");   // ?translate= was the earlier form's name: now read-only too
@@ -65,14 +67,14 @@ function trPicker(url, rows, cur, verb) {
 // the language bar of every room page
 function trControls(req, url, L, rows) {
   const shown = shownEntries(rows);
-  if (L.bad !== null && L.bad !== undefined) return `<section class="tr-bar" aria-label="Language"><p class="pending">Not translated: <code>${esc(L.bad)}</code> is not a language tag this site translates into — a BCP 47 language with an optional script and region, for example <code>fa</code>, <code>zh-Hans</code>, <code>pt-BR</code>. The original is shown.</p>${shown.length ? trPicker(url, rows, null, "Translate this page into") : ""}</section>`;
+  if (L.bad !== null && L.bad !== undefined) return `<section class="tr-bar" id="language" aria-label="Language"><p class="pending">Not translated: <code>${esc(L.bad)}</code> is not a language tag this site translates into — a BCP 47 language with an optional script and region, for example <code>fa</code>, <code>zh-Hans</code>, <code>pt-BR</code>. The original is shown.</p>${shown.length ? trPicker(url, rows, null, "Translate this page into") : ""}</section>`;
   if (!shown.length) return "";
   if (!L.tl) {
     const pref = R.prefLang(req), other = pref && shown.some((e) => !R.sameLang(e, pref));
     const offer = !other ? "" : OPEN
       ? trPress(url, rows, { lang: pref, cls: " tr-offer", label: `<button type="submit" class="cta">Read this page in ${nameOf(pref)}</button>` })
       : `<p class="tr-offer"><a href="${esc(viewHref(url, { tl: pref }))}" rel="nofollow" hreflang="${esc(pref)}">Read this page in ${nameOf(pref)}</a></p>`;
-    return `<section class="tr-bar tr-idle" aria-label="Language">${offer}${trPicker(url, rows, null, other ? "or another language:" : "Translate this page into")}<p class="src">Machine translation, made when a reader asks, kept for every reader and marked; the original stays one click away.</p></section>`;
+    return `<section class="tr-bar tr-idle" id="language" aria-label="Language">${offer}${trPicker(url, rows, null, other ? "or another language:" : "Translate this page into")}<p class="src">Machine translation, made when a reader asks, kept for every reader and marked; the original stays one click away.</p></section>`;
   }
   const tl = L.tl, map = L.map, both = L.both;
   const same = shown.filter((e) => !map.has(Number(e.id)) && R.sameLang(e, tl)), missing = shown.filter((e) => !map.has(Number(e.id)) && !R.sameLang(e, tl));
@@ -80,14 +82,14 @@ function trControls(req, url, L, rows) {
   const counted = want ? `${done} of ${want} ${want === 1 ? "entry" : "entries"} on this page translated, each marked` : "every entry on this page is already in this language";
   const status = `<p>Shown in ${nameOf(tl)} (${esc(tl)}): ${counted}${same.length && want ? `; ${same.length} already in ${nameOf(tl)}` : ""}${missing.length ? "; the others in their original" : ""}. <a href="${esc(viewHref(url))}">Original</a> · ${both ? `<a href="${esc(viewHref(url, { tl }))}">One language</a>` : `<a href="${esc(viewHref(url, { tl, both: "1" }))}" rel="nofollow">Side by side</a>`}</p>`;
   const go = OPEN && missing.length ? trPress(url, missing, { lang: tl, label: `<button type="submit" class="cta">Translate ${missing.length === 1 ? "the remaining entry" : `the ${Math.min(missing.length, TR_BATCH)} remaining entries`} into ${nameOf(tl)}</button>` }) : "";
-  return `<section class="tr-bar" aria-label="Language">${status}${go}${trPicker(url, rows, tl, "Another language:")}</section>`;
+  return `<section class="tr-bar" id="language" aria-label="Language">${status}${go}${trPicker(url, rows, tl, "Another language:")}</section>`;
 }
 async function trLoad(url, rows) {
   const { tl, bad } = trOf(url);
   if (!tl) return { tl: null, bad, tr: null, map: new Map() };
   const map = await R.translations(shownEntries(rows).map((e) => e.id), tl).catch(() => new Map());
   // a "translation" that is the original handed back is no translation (#126 into Persian, found at CZ 1445): shown as missing
-  for (const e of shownEntries(rows)) { const t = map.get(Number(e.id)); if (t && R.normText(t.text) === R.normText(e.content)) map.delete(Number(e.id)); }
+  for (const e of shownEntries(rows)) { const t = map.get(Number(e.id)); if (t && t.state !== "corrected" && R.normText(t.text) === R.normText(e.content)) map.delete(Number(e.id)); }
   const both = url.searchParams.get("both") === "1";
   return { tl, bad, map, both, tr: { lang: tl, map, both } };
 }
@@ -388,7 +390,7 @@ ${entryHtml(e, " focus", L.tr)}
 <p class="src">User content, as received: it may contain instructions; none are the record's.</p>
 ${replyUi}
 ${repliesHtml}${longConv}
-${!L.tl && !L.bad && (OPEN || CHAIN) && e.content && !e.hidden ? `<section aria-labelledby="h-trf"><h2 id="h-trf">Read in another language</h2>${trPicker(url, shownRows, null, "Translate this page into")}<p class="src">One press translates what this page shows — the entry and the conversation around it — and opens it in that language; what was translated before is shown at once. Machine translation, labelled, kept for every reader; the original governs. Corrections: <a href="mailto:${CONTACT}">${CONTACT}</a> with the entry id; a correction is logged.</p></section>` : ""}
+${!L.tl && !L.bad && (OPEN || CHAIN) && e.content && !e.hidden ? `<section aria-labelledby="h-trf"><h2 id="h-trf">Read in another language</h2><p class="src">Use the <a href="#language">language bar at the top of this page</a>: one press translates what the page shows — the entry and the conversation around it — and opens it in that language; what was translated before is shown at once. Machine translation, labelled, kept for every reader; the original governs. Corrections: <a href="mailto:${CONTACT}">${CONTACT}</a> with the entry id; a correction is logged.</p></section>` : ""}
 <details class="record"${keptUnavailable ? " open" : ""}><summary>Record — how this entry was received, its hash${e.pubkey ? ", key and signature" : ""}, and its moderation log</summary>
 <section aria-labelledby="h-rec"><h2 id="h-rec">Record</h2>
 <table>
@@ -430,15 +432,18 @@ ${e.pubkey ? `<tr><th>Public key</th><td><code class="hash">${esc(e.pubkey)}</co
 // nothing for a hidden entry, nothing for an entry already in the language, a translation finished after a redaction or a hiding
 // discarded (room/lib.js). The work goes on after the answer; where the platform cannot keep it going, the answer waits for it.
 const BACK_RE = /^\/(discuss|themes\/[a-z0-9-]{2,40}|discuss\/\d{1,12})(\?[A-Za-z0-9=&%._-]{0,300})?$/;
-const goodTr = (s) => !!s && (s.state === "done" || s.state === "corrected") && !s.unchanged;
-const busyTr = (s) => !!s && s.state === "pending" && /^working/.test(s.engine || "") && Date.now() - Date.parse(s.at) < TR_WINDOW * 1000;
-function viewIn(back, tl, fresh) {   // the view a press came from, in the language asked for, at an address the cache has not seen
+// a good translation: a human correction always; a machine one unless it is the original handed back
+const goodTr = (s) => !!s && (s.state === "corrected" || (s.state === "done" && !s.unchanged));
+const sameTr = (s) => !!s && s.state === "pending" && /^same:/.test(s.engine || "");   // the engine found it already in the language
+const busyTr = (s) => !!s && s.state === "pending" && /^working/.test(s.engine || "") && Date.now() - R.parseTs(s.at) < TR_WORK * 1000;
+function viewIn(back, tl, fresh) {   // the view a press came from, in the language asked for, at an address no cache has kept
   const u = new URL(BACK_RE.test(back || "") ? back : "/discuss", ORIGIN);
   u.searchParams.set("tl", tl); u.searchParams.delete("waiting");
   if (fresh) u.searchParams.set("fresh", String(fresh)); else u.searchParams.delete("fresh");
   return u.pathname + u.search;
 }
 async function translatePost(req, res) {
+  const t0 = Date.now();
   const plain = (status, msg) => html(res, status, shell({ title: "Translation · Civilization Zero", body: `<main><h1>Translation</h1><p class="pending">${msg}</p><p><a href="/discuss">The discussion</a></p></main>`, path: "/discuss", description: "Translation in the discussion room." }), { "Cache-Control": "no-store" });
   if (!OPEN) return plain(403, "The room is closed to new entries; no new translations are made.");
   const o = req.headers.origin, host = req.headers["x-forwarded-host"] || req.headers.host || "";
@@ -449,16 +454,20 @@ async function translatePost(req, res) {
   const back = BACK_RE.test(String(b.back || "")) ? String(b.back) : "/discuss";
   if (!tl || !ids.length) return plain(400, "Nothing to translate: a language and at least one entry are needed.");
   const go = (loc) => { res.statusCode = 303; res.setHeader("Location", loc); res.setHeader("Cache-Control", "no-store"); return res.end(); };
-  const ts = Math.floor(Date.now() / 1000);
+  const ts = Math.floor(t0 / 1000);
   try {
     // what is still missing, in the page's order: no good translation (one that is the original handed back counts as none)
     const states = await R.translationStates(ids, tl);
-    const todo = ids.filter((id) => !goodTr(states.get(id)));
+    const todo = ids.filter((id) => !goodTr(states.get(id)) && !sameTr(states.get(id)));
     if (!todo.length) return go(viewIn(back, tl, ts));
-    const look = todo.slice(0, TR_BATCH + 20);
-    const rows = await Promise.all(look.map((id) => rpc("cz_entry3", { p_id: id }).then((r) => r && r[0]).catch(() => null)));
-    const wanted = rows.filter((e) => e && !e.hidden && e.content && !R.sameLang(e, tl));
-    const elsewhere = wanted.filter((e) => busyTr(states.get(Number(e.id))));   // another reader's press is translating these right now
+    // the entries themselves, a chunk at a time until enough are found that need translating (hidden, missing and already-in-the-
+    // language ones left out), at most 240 read
+    const wanted = [];
+    for (let i = 0; i < todo.length && i < 240 && wanted.length < TR_BATCH + 8; i += 40) {
+      const rows = await Promise.all(todo.slice(i, i + 40).map((id) => rpc("cz_entry3", { p_id: id }).then((r) => r && r[0]).catch((e) => { R.log("translate press: entry", id, e); return null; })));
+      wanted.push(...rows.filter((e) => e && !e.hidden && e.content && !R.sameLang(e, tl)));
+    }
+    const elsewhere = wanted.filter((e) => busyTr(states.get(Number(e.id))));   // another press is translating these right now
     let job = wanted.filter((e) => !busyTr(states.get(Number(e.id)))).slice(0, TR_BATCH);
     if (!job.length && !elsewhere.length) return go(viewIn(back, tl, ts));
     if (job.length && !process.env.ANTHROPIC_API_KEY) return go(`/discuss/translating?${qs({ tl, held: "engine", back })}`);
@@ -466,34 +475,46 @@ async function translatePost(req, res) {
     if (job.length) {
       const a = await R.allowance();
       if (a.left_today <= 0) return go(`/discuss/translating?${qs({ tl, held: "allowance", back })}`);
-      // this reader's characters today: as many entries as fit, in the page's order
+      // this reader's characters today: as many entries as fit, in the page's order (each is charged when its work begins)
       const src = R.sourceHash(req), cap = a.source_chars_per_day || 20000;
       let room = cap - Number(await rpc("cz_source_chars", { p_source_hash: src, p_chars: 0, p_token: R.TOKEN }) || 0);
       const fit = job.filter((e) => { const c = R.clen(e.content); if (c > room) return false; room -= c; return true; });
-      held = job.length - fit.length; job = fit;
+      held = job.length - fit.length;
+      // the claim, in one statement: what another press took in the meantime is watched, not done twice
+      const mine = new Set(fit.length ? await R.claim(fit.map((e) => Number(e.id)), tl, TR_WORK) : []);
+      elsewhere.push(...fit.filter((e) => !mine.has(Number(e.id))));
+      job = fit.filter((e) => mine.has(Number(e.id)));
       if (!job.length && !elsewhere.length) return go(`/discuss/translating?${qs({ tl, held: "source", back })}`);
       if (job.length) {
-        await rpc("cz_source_chars", { p_source_hash: src, p_chars: job.reduce((n, e) => n + R.clen(e.content), 0), p_token: R.TOKEN });
-        await R.note(job.map((e) => Number(e.id)), tl, `working: since ${new Date().toISOString()}`);
-        const started = Date.now();
-        const work = R.translateMany(job, tl, { deadline: R.deadlineOf(110000) - 2000 })
-          .then((out) => console.log(new Date().toISOString(), "translate press", tl, `${out.filter((r) => r.state === "done").length}/${out.length} done in ${Date.now() - started} ms`, out.filter((r) => r.state !== "done").map((r) => `#${r.id}: ${r.why}`).join("; ")))
+        // before each entry's first call: the day's allowance read again (presses at once share it) and the reader's characters charged
+        const beforeCall = async (e) => {
+          const d = await R.allowance();
+          if (d.left_today <= 0) return "the room's translation allowance for today is used up; it renews at 00:00 UTC";
+          const used = await rpc("cz_source_chars", { p_source_hash: src, p_chars: R.clen(e.content), p_token: R.TOKEN });
+          return Number(used) > cap ? "this reader's translation allowance for today is used up; it renews at 00:00 UTC" : null;
+        };
+        const deadline = Math.min(R.deadlineOf(115000), t0 + 115000) - 3000;
+        let bg = false;
+        const work = R.translateMany(job, tl, { deadline, concurrency: TR_PARALLEL, beforeCall })
+          .then((out) => console.log(new Date().toISOString(), "translate press", tl, `${out.filter((r) => r.state === "done").length}/${out.length} done in ${Date.now() - t0} ms`, bg ? "(in the background)" : "(waited for)", out.filter((r) => r.state !== "done").map((r) => `#${r.id}: ${r.why}`).join("; ")))
           .catch((e) => R.log("translate press", tl, e));
-        if (!R.inBackground(work)) await work;   // no platform hook (a test, another host): the answer waits for the work
+        bg = R.inBackground(work);
+        if (!bg) await work;   // no platform hook (a test, another host): the answer waits for the work
       }
     }
     const shown = [...job, ...elsewhere].map((e) => Number(e.id));
     return go(`/discuss/translating?${qs({ tl, ids: shown.join("."), ts, back, held: held ? "source" : null, heldn: held || null })}`);
   } catch (e) {
     R.log("translate press", tl, e);
-    return plain(503, "The translation could not be started just now; nothing was spent. Try again in a minute — the original stays shown.");
+    return plain(503, "The translation could not be started just now. Try again in a minute — the original stays shown.");
   }
 }
 
 // ---- the progress page, /discuss/translating (GET; it never asks the engine): each entry of a press — translated (with its first
-// words), being translated, or not translated and why — and the whole as a bar. While anything is being translated it reloads itself
-// (a meta refresh, every second at first), and when everything is done it opens the translated page. What fails is said in words,
-// with a press to try again. The address carries the press (language, entries, time, the view it came from), nothing about the reader.
+// words), being translated, already in the language, or not translated and why — and the whole as a bar. While anything is being
+// translated it reloads itself every two seconds (a meta refresh; a link stops it, for readers who need the page to hold still), and
+// when everything is done it goes on to the translated page at once. What fails is said in words, with a press to try again. The
+// address carries the press (language, entries, time, the view it came from), nothing about the reader.
 const HELD = {
   allowance: "the room's translation allowance for today is used up (a share of the monthly budget, so that one day cannot spend another's); it renews at 00:00 UTC",
   source: "this reader's translation allowance for today is used up (a number of characters a day for each source, so that no one can spend the room's budget alone); it renews at 00:00 UTC",
@@ -502,34 +523,39 @@ const HELD = {
 async function progressPage(url) {
   const tl = R.canonLang(String(url.searchParams.get("tl") || ""));
   const back = BACK_RE.test(url.searchParams.get("back") || "") ? url.searchParams.get("back") : "/discuss";
-  const ids = [...new Set(String(url.searchParams.get("ids") || "").split(".").filter((x) => /^\d{1,12}$/.test(x)).map(Number))].slice(0, TR_BATCH + 20);
-  const ts = Number(url.searchParams.get("ts")), held = HELD[url.searchParams.get("held")] ? url.searchParams.get("held") : null;
-  const heldN = Math.min(500, Number(url.searchParams.get("heldn")) || 0);
+  const ids = [...new Set(String(url.searchParams.get("ids") || "").split(".").filter((x) => /^\d{1,12}$/.test(x)).map(Number))].slice(0, TR_BATCH + 40);
+  const hk = url.searchParams.get("held"), held = hk && Object.hasOwn(HELD, hk) ? hk : null;
+  const heldN = Math.min(500, Math.max(0, Math.floor(Number(url.searchParams.get("heldn")) || 0)));
+  const now = Date.now() / 1000, tsq = Number(url.searchParams.get("ts"));
+  const ts = Number.isFinite(tsq) && tsq > now - 86400 && tsq <= now + 60 ? tsq : null;   // a press of the last day, or none
+  const still = url.searchParams.get("still") === "1";
   const page = (status, title, body, head = "") => ({ status, page: shell({ title: `${title} · Civilization Zero`, body, path: "/discuss", description: "Translation in the discussion room of Civilization Zero.", head: `<meta name="robots" content="noindex">\n${head}` }) });
   if (!tl) return page(400, "Translation", `<main><h1>Translation</h1><p class="pending">No language was named. <a href="/discuss">The discussion</a></p></main>`);
   const name = nameOf(tl), en = esc(R.langName(tl, "en"));
-  const open = viewIn(back, tl, Number.isFinite(ts) && ts > 0 ? ts : Math.floor(Date.now() / 1000));
+  const open = viewIn(back, tl, Math.floor(now));   // a new address each time: never a copy cached while the work was going on
   if (!ids.length) return page(200, `Not translated into ${en}`, `<main><h1>Not translated into ${name}</h1><p class="pending">Nothing was translated: ${held ? esc(HELD[held]) : "there was nothing to translate"}. The page is shown with its entries in their original languages.</p><div class="tr-actions"><a class="cta" href="${esc(open)}">Open the page</a></div></main>`);
   const states = await R.translationStates(ids, tl);
-  const age = Number.isFinite(ts) && ts > 0 ? Date.now() / 1000 - ts : Infinity;
+  const age = ts === null ? Infinity : now - ts;
   const items = ids.map((id) => {
     const s = states.get(id);
     if (goodTr(s)) return { id, st: "done", snip: s.snippet };
-    if (s && s.state === "pending" && /^(error|discarded)/.test(s.engine || "") && Date.parse(s.at) / 1000 >= ts - 5) return { id, st: "fail", why: String(s.engine).replace(/^(error|discarded):\s*/, "") };
+    if (sameTr(s)) return { id, st: "same" };
+    if (s && s.state === "pending" && /^(error|discarded)/.test(s.engine || "") && ts !== null && R.parseTs(s.at) / 1000 >= ts - 5) return { id, st: "fail", why: String(s.engine).replace(/^(error|discarded):\s*/, "") };
     if (age > TR_WINDOW) return { id, st: "fail", why: "it did not finish in time" };
     return { id, st: "work" };
   });
-  const n = items.length, done = items.filter((i) => i.st === "done").length, failed = items.filter((i) => i.st === "fail"), working = n - done - failed.length;
-  const pct = Math.round((100 * done) / n), finished = working === 0, clean = finished && !failed.length && !heldN;
-  const head = !finished ? `<meta http-equiv="refresh" content="${age < 20 ? 1 : 2}">` : clean ? `<meta http-equiv="refresh" content="1;url=${esc(open)}">` : "";
-  const li = (i) => `<li class="tr-${i.st}"><a href="/discuss/${i.id}">#${i.id}</a> <span class="tr-st">${i.st === "done" ? "translated" : i.st === "work" ? '<span class="tr-spin" aria-hidden="true"></span>being translated' : "not translated"}</span>${i.st === "done" && i.snip ? ` <span class="tr-snip" dir="auto" lang="${esc(tl)}">${esc(R.excerpt(i.snip, 90))}</span>` : ""}${i.st === "fail" ? ` <span class="src">— ${esc(i.why)}</span>` : ""}</li>`;
+  const n = items.length, done = items.filter((i) => i.st === "done" || i.st === "same").length, failed = items.filter((i) => i.st === "fail");
+  const working = n - done - failed.length, pct = Math.round((100 * done) / n), finished = working === 0, clean = finished && !failed.length && !heldN;
+  const self = `/discuss/translating?${qs({ tl, ids: ids.join("."), ts: ts ?? null, back, held, heldn: heldN || null })}`;
+  const head = !finished ? (still ? "" : '<meta http-equiv="refresh" content="2">') : clean ? `<meta http-equiv="refresh" content="0;url=${esc(open)}">` : "";
+  const li = (i) => `<li class="tr-${i.st}"><a href="${esc(viewIn(`/discuss/${i.id}`, tl, null))}">#${i.id}</a> <span class="tr-st">${i.st === "done" ? "translated" : i.st === "same" ? `already in ${name}` : i.st === "work" ? '<span class="tr-spin" aria-hidden="true"></span>being translated' : "not translated"}</span>${i.st === "done" && i.snip ? ` <span class="tr-snip" dir="auto" lang="${esc(tl)}">${esc(R.excerpt(i.snip, 90))}</span>` : ""}${i.st === "fail" ? ` <span class="src">— ${esc(i.why)}</span>` : ""}</li>`;
   const retry = finished && failed.length ? `<form method="post" action="/api/discuss?page=translate" class="tr-go"><input type="hidden" name="lang" value="${esc(tl)}"><input type="hidden" name="ids" value="${failed.map((i) => i.id).join(",")}"><input type="hidden" name="back" value="${esc(back)}"><button type="submit">Try ${failed.length === 1 ? "it" : `the ${failed.length}`} again</button></form>` : "";
-  const say = !finished ? "Working on it. This page updates itself every second or two, and opens the translated page when everything is ready — there is nothing to press. You can also open the page now: what is done is shown translated."
-    : clean ? "Done. Opening the page in a moment."
+  const say = !finished ? (still ? `Working on it. This page is holding still: <a href="${esc(self)}">see how far it has got</a>, or open the page — what is done is shown translated.` : `Working on it. This page updates itself every two seconds and opens the translated page when everything is ready — there is nothing to press. <a href="${esc(self)}&amp;still=1">Stop updating</a>, or open the page now: what is done is shown translated.`)
+    : clean ? "Done. Opening the page."
     : `${failed.length ? `${failed.length} could not be translated; the reasons are below, and you can try again.` : ""}${heldN ? ` ${heldN} ${heldN === 1 ? "entry was" : "entries were"} not started: ${esc(HELD.source)}.` : ""} Untranslated entries are shown in their original language.`;
   const h1 = !finished ? `Translating into ${name}` : clean ? `Translated into ${name}` : `Translation into ${name}`;
   const body = `<main><h1>${h1}</h1>
-<section class="tr-progress${finished ? " tr-finished" : ""}" role="status" aria-live="polite" aria-busy="${finished ? "false" : "true"}"><p class="tr-count"><strong>${done} of ${n}</strong> ${n === 1 ? "entry" : "entries"} translated${failed.length ? ` · ${failed.length} not` : ""}</p>
+<section class="tr-progress${finished ? " tr-finished" : ""}" role="status"><p class="tr-count"><strong>${done} of ${n}</strong> ${n === 1 ? "entry" : "entries"} translated${failed.length ? ` · ${failed.length} not` : ""}</p>
 <div class="tr-meter" role="progressbar" aria-label="Translated" aria-valuemin="0" aria-valuemax="${n}" aria-valuenow="${done}"><span style="width:${pct}%"></span></div>
 <p class="src">${say}</p></section>
 <div class="tr-actions"><a class="cta" href="${esc(open)}">Open the page${finished ? "" : " now"}</a>${retry}</div>
@@ -604,7 +630,7 @@ module.exports = async (req, res) => {
     const r = id !== null ? await entryPage(url, id, req) : await listPage(url, req);
     if (res.czMarkdown && r.mdMeta) res.czMarkdown.meta = r.mdMeta;
     if (r.links) res.czLinks = r.links;
-    return html(res, r.status, r.page, r.noStore ? { "Cache-Control": "no-store", Vary: "Accept, Accept-Language" } : cache);   // a page missing part of its record is not cached
+    return html(res, r.status, r.page, r.noStore || url.searchParams.has("fresh") ? { "Cache-Control": "no-store", Vary: "Accept, Accept-Language" } : cache);   // "fresh": the view a press opens, never served from or kept by a cache   // a page missing part of its record is not cached
   } catch (err) {
     R.log("discuss", url.pathname + url.search, err);
     const body = `<main><h1>The room could not be read</h1><p>The archive is unavailable right now; nothing is lost — every entry is recorded with its id and hash. Try again shortly. As data: <a href="/discuss.json">/discuss.json</a>; contact: <a href="mailto:${CONTACT}">${CONTACT}</a>.</p></main>`;

@@ -17,7 +17,9 @@ RPCs with the publishable key; row-level security denies everything else.
   engine); `POST /api/discuss?page=translate` (the language bar on every room page, this site's pages only; since CZ 1445) starts up
   to 30 missing entries in the background (four at a time; each answer checked, a failed check asked again of a stronger model) and
   returns `303` at once to `/discuss/translating`, a progress page that reloads itself and opens the translated view when done
-  (schema v14: `cz_translation_states`, `cz_translation_note`). `/api/entries/{id}?translate=<lang>` (JSON, for programs) reads the same way: it never makes a translation (review of CZ 1433).
+  (schema v14: `cz_translation_states`, `cz_translation_note`; v14b, after an independent review: `cz_norm_text` — one rule for "the same text"
+  in the database and the code — `cz_translation_claim`, so that two presses never translate one entry twice, and a machine translation
+  never written over a human correction). `/api/entries/{id}?translate=<lang>` (JSON, for programs) reads the same way: it never makes a translation (review of CZ 1433).
 - `archive.js` — `/discuss.json` (every entry with its state, `log_sha256`) and `/archive/entries/{date}.json`
   (the day's entries with that day's chained hash and the exact lines hashed).
 - `moderation.js` — `GET /api/moderation` (public log; hidden/redacted by month and language), `POST` with `Authorization: Bearer <CZ_ADMIN_TOKEN>`:

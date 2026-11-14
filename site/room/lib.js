@@ -373,15 +373,23 @@ function scriptTest(lang) {
   if (sc === "Hangul") return /[\p{Script=Hangul}\p{Script=Han}]/u;
   return new RegExp(`\\p{Script=${sc}}`, "u");
 }
+// the same rule as cz_norm_text in the database (schema v14b): NFC, every run of white space one space, none at either end
 const normText = (s) => String(s || "").normalize("NFC").replace(/\s+/g, " ").trim();
+// what the script check counts: letters, leaving out what a translation keeps as written (addresses, code, references, the names)
+const KEPT_RE = /https?:\/\/\S+|www\.\S+|[\w.+-]+@[\w-]+\.[\w.-]+|`[^`]*`|#\d+|\bCivilization Zero\b|\bCZ(?:-[A-Z]+)?\b/g;
+function scriptShare(text, lang) {   // the share of a text's letters written in the script of lang (null when that cannot be told)
+  const sc = scriptTest(lang), letters = normText(text).replace(KEPT_RE, " ").match(/\p{L}/gu) || [];
+  return sc && letters.length >= 8 ? letters.filter((ch) => sc.test(ch)).length / letters.length : null;
+}
+// a text already written in a language with a script of its own (Persian, Japanese, Russian…): an answer that hands it back is right
+const alreadyIn = (text, lang) => { const sc = SUBTAG_SCRIPT[String(lang).split("-").find((p) => p.length === 4) || ""] || SCRIPT_OF[primaryLang(lang)]; return !!sc && sc !== "Latin" && (scriptShare(text, lang) ?? 0) >= 0.6; };
 // null when the answer can be kept; otherwise why not, in words a reader can use
 function checkTranslation(src, out, lang, stop) {
   if (stop === "max_tokens") return "the translation came back cut off";
   if (!normText(out)) return "the engine gave no translation";
   if (normText(out) === normText(src)) return "the engine gave the original back, untranslated";
-  const sc = scriptTest(lang);
-  const letters = normText(out).match(/\p{L}/gu) || [];
-  if (sc && letters.length >= 8 && letters.filter((ch) => sc.test(ch)).length / letters.length < 0.35) return `the answer was not written in ${langName(lang, "en")}`;
+  const share = scriptShare(out, lang);
+  if (share !== null && share < 0.35) return `the answer was not written in ${langName(lang, "en")}`;
   const a = clen(normText(src)), b = clen(normText(out));
   if (a >= 40 && (b < a * 0.15 || b > a * 6)) return "the translation's length did not match the original's";
   return null;
@@ -396,14 +404,27 @@ const trSystem = (lang, retry) => `You translate entries of a public discussion 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 // a note in place of a translation (working on it, or why it failed), written only where no good translation exists; with its cost
 const note = (ids, lang, text, cents = 0) => rpc("cz_translation_note", { p_entries: ids, p_lang: lang, p_note: String(text).slice(0, 300), p_cost_cents: cents, p_token: TOKEN });
+// the press's claim, in one statement (schema v14b): entries no one is translating now (no "working" note younger than windowS) are
+// marked "working" and returned; two presses at once each get their own share, never the same entry twice
+const claim = async (ids, lang, windowS) => ((await rpc("cz_translation_claim", { p_entries: ids, p_lang: lang, p_window_s: windowS, p_token: TOKEN })) || []).map((r) => Number(r.entry_id ?? r));
+// a time as PostgREST or psql writes it ("2026-11-14 10:22:11.976917+00", "…T…+00:00"), in ms since the epoch (NaN when unreadable)
+const parseTs = (v) => Date.parse(String(v || "").trim().replace(" ", "T").replace(/([+-]\d\d)$/, "$1:00"));
 
-// One entry into one language, until the deadline (ms since the epoch). Returns { state: "done", text, engine } or { state: "failed", why }.
-async function translateOne(entry, lang, { deadline = Date.now() + 25000 } = {}) {
+// One entry into one language, until the deadline (ms since the epoch). beforeCall(entry), when given, runs once, just before the
+// engine is first asked (the press charges the reader's characters and re-reads the day's allowance there, so that nothing is
+// charged for an entry never started); a reason it returns stops the entry. Returns { state: "done", text, engine }, { state: "same",
+// why } (the entry is already in that language) or { state: "failed", why }.
+async function translateOne(entry, lang, { deadline = Date.now() + 25000, beforeCall = null } = {}) {
   const n = clen(entry.content), user = "<text>\n" + entry.content + "\n</text>";
-  let model = TR_FAST, escalated = false, spent = 0, why = "", rejected = "";
+  let model = TR_FAST, escalated = false, spent = 0, why = "", rejected = "", begun = false;
   for (let attempt = 1; attempt <= 4; attempt++) {
     const left = deadline - Date.now() - 1500;
     if (left < 6000) { why = why || "the request ran out of time"; break; }
+    if (!begun) {
+      begun = true;
+      const stop = beforeCall ? await beforeCall(entry) : null;
+      if (stop) { why = stop; break; }
+    }
     let r;
     try {
       r = await anthropic(trSystem(lang, rejected), user, escalated ? Math.min(16000, 2000 + 3 * n) : Math.min(12000, 1500 + 2 * n), Math.min(60000, left), model);
@@ -424,6 +445,11 @@ async function translateOne(entry, lang, { deadline = Date.now() + 25000 } = {})
     const m = r.stop === "refusal" ? null : r.text.match(/<translation>([\s\S]*?)(?:<\/translation>|$)/);
     const text = m ? m[1].trim() : "";
     const bad = r.stop === "refusal" ? "the engine declined to translate this text" : !m ? "the engine's answer was not a translation" : checkTranslation(entry.content, text, lang, r.stop);
+    if (bad && /original back/.test(bad) && alreadyIn(entry.content, lang)) {   // labelled as another language, written in this one
+      const same = `the entry is already in ${langName(lang, "en")}`;
+      try { await note([entry.id], lang, "same: " + same, spent); } catch (e) { log("translate note", entry.id, lang, e); }
+      return { state: "same", why: same };
+    }
     if (bad) {
       log("translate", entry.id, lang, r.model, "rejected:", bad);
       why = bad; rejected = bad;
@@ -443,13 +469,13 @@ async function translateOne(entry, lang, { deadline = Date.now() + 25000 } = {})
   return { state: "failed", why };
 }
 
-// Several entries into one language, a few at a time (the API's rate limits are per minute; four in flight keep a page quick without
-// tripping them), each until the deadline. Returns one result per entry.
-async function translateMany(entries, lang, { deadline = Date.now() + 25000, concurrency = 4 } = {}) {
+// Several entries into one language, a few at a time (the API's rate limits are per minute; a handful in flight keep a page quick
+// without tripping them), each until the deadline. Returns one result per entry.
+async function translateMany(entries, lang, { deadline = Date.now() + 25000, concurrency = 4, beforeCall = null } = {}) {
   const queue = entries.slice(), out = [];
   const worker = async () => {
     for (let e = queue.shift(); e; e = queue.shift()) {
-      const r = await translateOne(e, lang, { deadline }).catch((err) => { log("translate", e.id, lang, err); return { state: "failed", why: "an unexpected error" }; });
+      const r = await translateOne(e, lang, { deadline, beforeCall }).catch((err) => { log("translate", e.id, lang, err); return { state: "failed", why: "an unexpected error" }; });
       out.push({ id: Number(e.id), ...r });
     }
   };
@@ -476,7 +502,7 @@ function deadlineOf(fallbackMs) {
 async function translate(entry, lang, req) {
   if (!entry.content || entry.hidden) return { state: "pending", text: null, reason: "the entry is hidden" };
   const cached = await rpc("cz_translation_get", { p_entry: entry.id, p_lang: lang });
-  if (cached && cached.length && cached[0].state !== "pending" && normText(cached[0].text) !== normText(entry.content))
+  if (cached && cached.length && (cached[0].state === "corrected" || (cached[0].state === "done" && normText(cached[0].text) !== normText(entry.content))))
     return { state: cached[0].state, text: cached[0].text, engine: cached[0].engine, date: String(cached[0].at).slice(0, 10) };
   if (!process.env.ANTHROPIC_API_KEY) return { state: "pending", text: null, reason: "no translation engine is configured" };
   try {
@@ -553,7 +579,9 @@ function prefLang(req) {
 }
 const primaryLang = (t) => String(t || "").split("-")[0].toLowerCase();
 // an entry already written in language tl (by the classifier's reading, else the declared language): there is nothing to translate
-const sameLang = (e, tl) => { const l = e && (e.lang_detected || e.lang); return !!l && primaryLang(l) === primaryLang(tl) && !(primaryLang(tl) === "zh" && /-(Hant|Hans)\b/i.test(l) && l.toLowerCase() !== String(tl).toLowerCase()); };
+// (Chinese: the same script too — Traditional for Hant, TW, HK and MO, Simplified otherwise, a bare "zh" included)
+const zhScript = (t) => (/-(hant|tw|hk|mo)\b/i.test(String(t)) ? "hant" : "hans");
+const sameLang = (e, tl) => { const l = e && (e.lang_detected || e.lang); return !!l && primaryLang(l) === primaryLang(tl) && (primaryLang(tl) !== "zh" || zhScript(l) === zhScript(tl)); };
 const RTL = new Set(["ar", "fa", "he", "ur", "ps", "sd", "ug", "yi", "dv", "ckb", "syr"]);
 // a language's own name for itself ("فارسی" for fa), falling back to the tag
 function langName(tag, inLang = tag) {
@@ -635,5 +663,5 @@ function previewHtml(newestFirst, max = 3) {
 // A valid calendar date (R-29)
 const validDate = (s) => { if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false; const d = new Date(s + "T00:00:00Z"); return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === s; };
 
-module.exports = { translations, sameLang, translationStates, translateOne, translateMany, checkTranslation, inBackground, deadlineOf, normText, note, TR_FAST, TR_STRONG, prefLang, primaryLang, langName, trContent, trExcerpt, mtLabel, ORIGIN, CONTACT, OPEN, CHAIN, OPENS, TOKEN, T, esc, kindTag, kindClass, contentHtml, log, json, html, shell, fill, rpc, rest, sourceHash, sourceOf, tokenEquals, verifySignature, fullOrderKey, validate, classify, classifierAnswer, translate,
+module.exports = { translations, sameLang, translationStates, claim, parseTs, alreadyIn, translateOne, translateMany, checkTranslation, inBackground, deadlineOf, normText, note, TR_FAST, TR_STRONG, prefLang, primaryLang, langName, trContent, trExcerpt, mtLabel, ORIGIN, CONTACT, OPEN, CHAIN, OPENS, TOKEN, T, esc, kindTag, kindClass, contentHtml, log, json, html, shell, fill, rpc, rest, sourceHash, sourceOf, tokenEquals, verifySignature, fullOrderKey, validate, classify, classifierAnswer, translate,
                    allowance, groupEntries, groupKey, entryHtml, metaHtml, previewHtml, excerpt, SECTIONS, sectionLabel, parentId, fmtTime, isoTime, isoFull, validDate, LANG_RE, canonLang, clen, b64Exact, visible, decl, ORIGINATOR, nameKey, reservedName, reservedField, reservedDetail, MODERATION_PROMPT_VERSION, CATEGORIES };
