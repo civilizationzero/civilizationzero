@@ -54,5 +54,11 @@ async function run(answers) {
   ok(t.out.state === "pending" && t.store.length === 0 && t.notes.length === 1 && /^discarded/.test(t.notes[0].p_note) && t.notes[0].p_cost_cents > 0, "redacted meanwhile: discarded (a note, never over a good translation), cost kept");
   t = await tr({ id: 7, content: null, hidden: true, state: "hidden" });
   ok(t.out.state === "pending" && t.store.length === 0 && t.notes.length === 1, "hidden meanwhile: discarded");
+  // checkTranslation: a slip into another script is caught; a script's own marks and kept names are not (CZ 1445)
+  const src = "Humanity still assumes the systems that now generate most novel technical knowledge remain steerable.";
+  ok(/another language's script/.test(R.checkTranslation(src, "人類هنوز فرض می‌کند که سامانه‌هایی که اکنون بیشتر دانش فنی تازه را تولید می‌کنند، قابل هدایت‌اند.", "fa", "end_turn") || ""), "Persian with Chinese letters slipped in: rejected");
+  ok(R.checkTranslation(src, "بشریت هنوز فرض می‌کند که سامانه‌هایی که اکنون بیشتر دانش فنی تازه را تولید می‌کنند، قابل هدایت‌اند؛ Civilization Zero و CZ می‌مانند.", "fa", "end_turn") === null, "good Persian with the names kept: accepted");
+  ok(R.checkTranslation(src, "人類は今も、新しい技術的知識の大半を生み出すシステムが、完全に制御可能な道具のままだと考えている。データー。", "ja", "end_turn") === null, "Japanese with its long-vowel mark: accepted");
+  ok(/another language's script/.test(R.checkTranslation(src, "Die Menschheit nimmt noch an, dass die Systeme steuerbar bleiben — 人类 es.", "de", "end_turn") || ""), "German with Chinese letters: rejected");
   console.log(`pass ${pass} fail ${fail}`); process.exit(fail ? 1 : 0);
 })();

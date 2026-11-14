@@ -383,6 +383,16 @@ function scriptShare(text, lang) {   // the share of a text's letters written in
 }
 // a text already written in a language with a script of its own (Persian, Japanese, Russian…): an answer that hands it back is right
 const alreadyIn = (text, lang) => { const sc = SUBTAG_SCRIPT[String(lang).split("-").find((p) => p.length === 4) || ""] || SCRIPT_OF[primaryLang(lang)]; return !!sc && sc !== "Latin" && (scriptShare(text, lang) ?? 0) >= 0.6; };
+// letters of a script that is neither the language's own nor Latin, and not in the original: a model slipping into another language
+// in mid-text (#122 into Persian began with the Chinese "人類", found the evening of CZ 1445). Letters common to scripts (the Japanese
+// long-vowel mark, for one) are not counted.
+const NEUTRAL_RE = /[\p{Script=Latin}\p{Script=Common}\p{Script=Inherited}]/u;
+function foreignLetters(src, out, lang) {
+  const sc = scriptTest(lang);
+  if (!sc) return 0;
+  const seen = new Set(Array.from(normText(src)));
+  return (normText(out).replace(KEPT_RE, " ").match(/\p{L}/gu) || []).filter((ch) => !NEUTRAL_RE.test(ch) && !sc.test(ch) && !seen.has(ch)).length;
+}
 // null when the answer can be kept; otherwise why not, in words a reader can use
 function checkTranslation(src, out, lang, stop) {
   if (stop === "max_tokens") return "the translation came back cut off";
@@ -390,6 +400,7 @@ function checkTranslation(src, out, lang, stop) {
   if (normText(out) === normText(src)) return "the engine gave the original back, untranslated";
   const share = scriptShare(out, lang);
   if (share !== null && share < 0.35) return `the answer was not written in ${langName(lang, "en")}`;
+  if (foreignLetters(src, out, lang)) return `the answer slipped into another language's script`;
   const a = clen(normText(src)), b = clen(normText(out));
   if (a >= 40 && (b < a * 0.15 || b > a * 6)) return "the translation's length did not match the original's";
   return null;
