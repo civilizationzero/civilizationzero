@@ -62,6 +62,7 @@ export function entranceKey(pathname) {
 export function visitOf(request) {
   if (request.method !== "GET") return null;
   const h = request.headers, url = new URL(request.url);
+  if (url.pathname === "/discuss/translating") return null;   // the translation progress page updates itself every second or two (CZ 1445): not views
   const purpose = `${h.get("sec-purpose") || ""} ${h.get("purpose") || ""} ${h.get("x-purpose") || ""} ${h.get("x-moz") || ""}`.toLowerCase();
   const way = entranceKey(url.pathname);
   if (way) return purpose.includes("prefetch") || purpose.includes("prerender") ? null : { entrance: true, p_path: way, p_agent: agentOf(h.get("user-agent") || "") };

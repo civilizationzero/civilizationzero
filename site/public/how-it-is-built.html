@@ -88,9 +88,22 @@ ol.ancestors li,ol.since li{display:flex;flex-wrap:wrap;align-items:baseline;gap
 .mt-label{margin:.25rem 0}
 details.orig{margin:.4rem 0 0}details.orig>summary{cursor:pointer;color:var(--mute);font-size:.9em}
 .bi{display:grid;gap:.5rem 1.25rem}@media(min-width:56rem){.bi{grid-template-columns:1fr 1fr}}
-.tr-bar,.tr-offer{border:1px solid var(--rule);padding:.5rem .75rem;margin:1rem 0}
-.tr-bar form{margin:.5rem 0 0}.tr-bar input{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--mute);padding:.2rem .4rem}
-.tr-bar button,.tr-go button{font:inherit}
+.tr-bar{border:1px solid var(--rule);padding:.5rem .75rem;margin:1rem 0}.tr-bar p{margin:.25rem 0}.tr-bar form{margin:.5rem 0 0}
+.tr-go{display:flex;flex-wrap:wrap;align-items:center;gap:.4rem .6rem}.tr-go label{display:flex;flex-wrap:wrap;align-items:center;gap:.4rem}
+.tr-bar select,.tr-bar input{font:inherit;font-size:1rem;color:var(--fg);background:var(--bg);border:1px solid var(--mute);padding:.2rem .4rem;max-width:100%}
+.tr-bar button,.tr-go button{font:inherit}.tr-idle p.src{margin:.45rem 0 0;font-size:.9em}
+/* the translation's progress page (CZ 1445): a bar in the machine colour, a sweep while work goes on, each entry's state; no script — the page
+   reloads itself and the view transition carries the bar across. Motion only for readers who have not asked for less. */
+.tr-progress{border:1px solid var(--rule);padding:.75rem 1rem;margin:1rem 0}.tr-count{margin:0 0 .5rem;font-variant-numeric:tabular-nums}
+.tr-meter{position:relative;height:.65rem;border:1px solid var(--machine);overflow:hidden;view-transition-name:tr-meter}.tr-meter span{display:block;height:100%;background:var(--machine)}
+.tr-progress:not(.tr-finished) .tr-meter::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--machine) 40%,transparent),transparent);transform:translateX(-100%);animation:tr-sweep 1.1s linear infinite}
+@keyframes tr-sweep{to{transform:translateX(100%)}}
+.tr-spin{display:inline-block;width:.75em;height:.75em;margin-inline-end:.35em;border:2px solid var(--rule);border-top-color:var(--machine);border-radius:50%;animation:tr-spin .8s linear infinite;vertical-align:-.1em}
+@keyframes tr-spin{to{transform:rotate(1turn)}}
+ol.tr-items{list-style:none;padding:0;margin:1rem 0}ol.tr-items li{padding:.3rem 0;padding-inline-start:.75rem;border-inline-start:3px solid var(--rule);margin:.2rem 0}
+ol.tr-items li.tr-done{border-inline-start-color:var(--machine)}ol.tr-items li.tr-fail{border-inline-start-style:dashed}.tr-done .tr-st{color:var(--machine);font-weight:600}.tr-snip{color:var(--mute)}
+div.tr-actions{display:flex;flex-wrap:wrap;gap:.5rem .75rem;align-items:center;margin:1rem 0}div.tr-actions form{margin:0}
+@media(prefers-reduced-motion:reduce){.tr-progress .tr-meter::after{animation:none;display:none}.tr-spin{animation:none}}
 /* stage 3: a conversation with entries after the reader's mark */
 .new{font-weight:600;border:1px solid var(--fg);border-radius:.2em;padding:0 .35em;font-size:.85em;white-space:nowrap}
 .oneline{flex:1 1 100%;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--mute)}
@@ -204,8 +217,8 @@ Only links to pages of this site, never a link with a query, a file, <code>/api<
 </section>
 <section aria-labelledby="h-weight"><h2 id="h-weight">The pages, by weight</h2>
 <p>The HTML of each page as built, with its styles inside it, in kilobytes (1 kB = 1,024 bytes), before compression; and the images it shows. The first page and the pages of the open discussion are made when you ask for them: each says its own weight at its foot.</p>
-<div class="scroll"><table><tr><th>Page</th><th>HTML, kB</th><th>Images, kB</th></tr><tr><td><a href="/core">The Core</a></td><td>51</td><td>65</td></tr><tr><td><a href="/record">The record</a></td><td>70</td><td>—</td></tr><tr><td><a href="/objections">Objections and errata</a></td><td>39</td><td>—</td></tr><tr><td><a href="/about">About</a></td><td>38</td><td>29</td></tr><tr><td><a href="/machine">For machines</a></td><td>35</td><td>—</td></tr><tr><td><a href="/ask">Ask your AI</a></td><td>45</td><td>—</td></tr><tr><td><a href="/calendar">CZ time</a></td><td>38</td><td>—</td></tr><tr><td><a href="/archive">Archive and verification</a></td><td>40</td><td>—</td></tr><tr><td><a href="/civilization-zero-infographic">The infographic</a></td><td>40</td><td>507</td></tr><tr><td><a href="/civilization-zero-evidence-atlas">The evidence atlas</a></td><td>38</td><td>319</td></tr><tr><td><a href="/civilization-zero-images">Images</a></td><td>62</td><td>6692</td></tr><tr><td><a href="/press">Press kit</a></td><td>34</td><td>—</td></tr></table></div>
-<p class="src">The Core in its 20 translations: between 35 and 46 kB each.</p>
+<div class="scroll"><table><tr><th>Page</th><th>HTML, kB</th><th>Images, kB</th></tr><tr><td><a href="/core">The Core</a></td><td>53</td><td>65</td></tr><tr><td><a href="/record">The record</a></td><td>72</td><td>—</td></tr><tr><td><a href="/objections">Objections and errata</a></td><td>41</td><td>—</td></tr><tr><td><a href="/about">About</a></td><td>39</td><td>29</td></tr><tr><td><a href="/machine">For machines</a></td><td>37</td><td>—</td></tr><tr><td><a href="/ask">Ask your AI</a></td><td>47</td><td>—</td></tr><tr><td><a href="/calendar">CZ time</a></td><td>40</td><td>—</td></tr><tr><td><a href="/archive">Archive and verification</a></td><td>42</td><td>—</td></tr><tr><td><a href="/civilization-zero-infographic">The infographic</a></td><td>42</td><td>507</td></tr><tr><td><a href="/civilization-zero-evidence-atlas">The evidence atlas</a></td><td>40</td><td>319</td></tr><tr><td><a href="/civilization-zero-images">Images</a></td><td>64</td><td>6692</td></tr><tr><td><a href="/press">Press kit</a></td><td>36</td><td>—</td></tr></table></div>
+<p class="src">The Core in its 20 translations: between 37 and 48 kB each.</p>
 </section>
 <section aria-labelledby="h-feat"><h2 id="h-feat">What it uses, and since when</h2>
 <p>Each feature of the web platform this site relies on, what it does here, the day it arrived on this site, and what a browser without it shows.</p>

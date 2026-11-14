@@ -58,6 +58,10 @@
       "destination": "/api/discuss?f=md"
     },
     {
+      "source": "/discuss/translating",
+      "destination": "/api/discuss?page=progress"
+    },
+    {
       "source": "/discuss/:id(\\d{1,12}).md",
       "destination": "/api/discuss?id=:id&f=md"
     },
@@ -1196,7 +1200,7 @@
       "maxDuration": 30
     },
     "api/discuss.js": {
-      "maxDuration": 30
+      "maxDuration": 120
     },
     "api/moderation.js": {
       "maxDuration": 30

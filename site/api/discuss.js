@@ -11,14 +11,19 @@ const MAX_ID = 9007199254740991;
 const FORM_OPEN = '<form class="respond" method="post" action="/api/entries" accept-charset="utf-8">';   // the human form's first tag, as built
 const qs = (o) => Object.entries(o).filter(([, v]) => v != null && v !== "").map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join("&");
 
-// ---- reading in another language (stage 4 of the room's redesign, the originator's decision of 2 Nov 2026, CZ 1433, after review).
-// ?tl=xx shows a page's entries in language xx where a translation exists, and says where none does yet; GET never asks the engine
-// (a link, a crawler or a prefetch costs nothing). The button under the bar posts to translatePost, which translates at most
-// TR_BATCH missing entries within the room's allowances and returns the reader to the same view. ?both=1 shows the two side by
-// side. A translated view is not offered to search engines: unreviewed machine translation is not published as pages to index;
-// it points to the original as canonical. The bar's languages are those the Core is published in; any other tag can be typed.
+// ---- reading in another language (stage 4 of the room's redesign, the originator's decision of 2 Nov 2026, CZ 1433, after review;
+// rebuilt at CZ 1445, 14 Nov 2026, after the originator found it silent and unreliable). One press translates what the page shows:
+// every room page carries a language bar — a button for the reader's own language when the page shows entries in another, and a list
+// of languages — whose forms post the page's entries to translatePost. That answers at once (303) with a progress page,
+// /discuss/translating, which shows each entry as it is done, updates itself (a meta refresh: no script) and opens the translated page
+// when everything is ready. The work goes on after the answer, a few entries in parallel, each answer checked before it is kept
+// (room/lib.js, translateMany). ?tl=xx still shows a page in xx where translations exist, and GET never asks the engine (a link, a
+// crawler or a prefetch costs nothing): only a reader's press does. ?both=1 shows the two side by side. A translated view is not
+// offered to search engines: unreviewed machine translation is not published as pages to index; it points to the original as
+// canonical. The list names the languages the Core is published in; any other BCP 47 tag can still be asked for with ?tl=.
 const TR_LANGS = ["en", "ar", "bn", "de", "es", "fa", "fr", "hi", "id", "it", "ja", "ko", "ms", "nl", "pt", "ru", "sw", "tr", "ur", "vi", "zh-Hans"];
-const TR_BATCH = 8;
+const TR_BATCH = 30;     // entries one press translates (a page usually shows fewer; a longer one: the rest with the next press)
+const TR_WINDOW = 150;   // seconds the progress page waits for a press's work before it says what did not finish
 const TR_KEEP = ["conversation", "since", "cbefore", "all", "after", "before"];   // the parameters that make a view what it is
 function trOf(url) {
   const raw = url.searchParams.get("tl") ?? url.searchParams.get("translate");   // ?translate= was the earlier form's name: now read-only too
@@ -39,32 +44,52 @@ function viewHref(url, extra = {}) {
   return pubPath(url) + (q ? `?${q}` : "");
 }
 const shownEntries = (rows) => rows.filter((e) => e && !e.hidden && e.content);
-// the offer: the reader's browser asks for a language some shown entry is not in
-function trOffer(req, url, rows) {
-  const L = R.prefLang(req);
-  if (!L || !OPEN && !CHAIN) return "";
-  const other = shownEntries(rows).some((e) => R.primaryLang(e.lang_detected || e.lang) !== R.primaryLang(L));
-  if (!other) return "";
-  return `<p class="tr-offer"><a href="${esc(viewHref(url, { tl: L }))}" rel="nofollow" hreflang="${esc(L)}">Read this page in <span lang="${esc(L)}">${esc(R.langName(L))}</span></a> <span class="src">— machine translation where marked; the original stays one click away.</span></p>`;
+const langLabel = (l) => { const own = R.langName(l), en = R.langName(l, "en"); return own === en || en === l ? own : `${own} — ${en}`; };
+const nameOf = (tl) => `<span lang="${esc(tl)}">${esc(R.langName(tl))}</span>`;
+// the press: the page's entries (or some of them) into one language; the language fixed (a button) or chosen from the list
+function trPress(url, list, { lang = null, label, cls = "" }) {
+  const ids = shownEntries(list).map((e) => Number(e.id)).slice(0, 500).join(",");
+  const back = viewHref(url, { both: url.searchParams.get("both") === "1" ? "1" : null });
+  const pick = lang ? `<input type="hidden" name="lang" value="${esc(lang)}">` : "";
+  return `<form method="post" action="/api/discuss?page=translate" class="tr-go${cls}"><input type="hidden" name="ids" value="${ids}"><input type="hidden" name="back" value="${esc(back)}">${pick}${label}</form>`;
 }
-// a GET form: the same view in another language (the view's own parameters carried as hidden fields)
-const trLangForm = (url, val) => `<form method="get" action="${esc(pubPath(url))}" class="tr-lang">${TR_KEEP.filter((k) => url.searchParams.get(k) !== null).map((k) => `<input type="hidden" name="${k}" value="${esc(url.searchParams.get(k))}">`).join("")}<label>Read in <input name="tl" list="cz-langs" size="8" maxlength="35" autocomplete="off" value="${esc(val || "")}" placeholder="fa"></label><datalist id="cz-langs">${TR_LANGS.map((l) => `<option value="${l}">${esc(R.langName(l))}</option>`).join("")}</datalist> <button type="submit">Show</button></form>`;
-function trBar(url, tl, both, map, rows, bad) {
-  const langForm = (val) => trLangForm(url, val);
-  if (bad !== null && bad !== undefined) return `<section class="tr-bar" aria-label="Language"><p class="pending">Not translated: <code>${esc(bad)}</code> is not a language tag this site translates into — a BCP 47 language with an optional script and region, for example <code>fa</code>, <code>zh-Hans</code>, <code>pt-BR</code>. The original is shown.</p>${langForm("")}</section>`;
-  if (!tl) return "";
-  const shown = shownEntries(rows), missing = shown.filter((e) => !map.has(Number(e.id)));
-  const name = `<span lang="${esc(tl)}">${esc(R.langName(tl))}</span> (${esc(tl)})`;
-  const back = viewHref(url, { tl, both: both ? "1" : null });
-  const go = OPEN && missing.length ? `<form method="post" action="/api/discuss?page=translate" class="tr-go"><input type="hidden" name="lang" value="${esc(tl)}"><input type="hidden" name="ids" value="${missing.slice(0, TR_BATCH).map((e) => Number(e.id)).join(",")}"><input type="hidden" name="back" value="${esc(back)}"><button type="submit">Translate ${Math.min(missing.length, TR_BATCH)} ${Math.min(missing.length, TR_BATCH) === 1 ? "entry" : "entries"} into ${name}</button> <span class="src">${missing.length > TR_BATCH ? `${missing.length} on this page are not translated yet; ${TR_BATCH} at a time. ` : ""}Machine translation, cached for every reader, within the room's daily allowance; nothing is translated until you press the button.</span></form>` : "";
-  const w = url.searchParams.get("waiting"), waiting = w && /^\d{1,2}$/.test(w) && Number(w) > 0 ? `<p class="pending">${Number(w)} ${Number(w) === 1 ? "entry" : "entries"} could not be translated just now — the day's allowance, this source's allowance or the engine; ${Number(w) === 1 ? "it is" : "they are"} shown in the original. Try again later.</p>` : "";
-  return `<section class="tr-bar" aria-label="Language">${waiting}<p>Shown in ${name}: ${shown.length - missing.length} of ${shown.length} ${shown.length === 1 ? "entry" : "entries"} on this page translated, each marked; the others in their original. <a href="${esc(viewHref(url))}">Original</a> · ${both ? `<a href="${esc(viewHref(url, { tl }))}">One language</a>` : `<a href="${esc(viewHref(url, { tl, both: "1" }))}" rel="nofollow">Side by side</a>`}</p>${go}${langForm(tl)}</section>`;
+function trOptions(cur) {   // with no language chosen yet, a prompt that cannot be sent (the select is required: the browser asks, no script)
+  const langs = cur && !TR_LANGS.includes(cur) ? [cur, ...TR_LANGS] : TR_LANGS;
+  return (cur ? "" : '<option value="" selected disabled>Choose a language</option>') + langs.map((l) => `<option value="${esc(l)}"${l === cur ? " selected" : ""} lang="${esc(l)}">${esc(langLabel(l))}</option>`).join("");
+}
+// the list of languages: a press when the room is open; when it is closed (no new translations), a plain look at what exists
+function trPicker(url, rows, cur, verb) {
+  if (!OPEN) return `<form method="get" action="${esc(pubPath(url))}" class="tr-go tr-pick">${TR_KEEP.filter((k) => url.searchParams.get(k) !== null).map((k) => `<input type="hidden" name="${k}" value="${esc(url.searchParams.get(k))}">`).join("")}<label>Show in <select name="tl">${trOptions(cur)}</select></label> <button type="submit">Show</button></form>`;
+  return trPress(url, rows, { cls: " tr-pick", label: `<label>${verb} <select name="lang" required>${trOptions(null)}</select></label> <button type="submit">Translate</button>` });
+}
+// the language bar of every room page
+function trControls(req, url, L, rows) {
+  const shown = shownEntries(rows);
+  if (L.bad !== null && L.bad !== undefined) return `<section class="tr-bar" aria-label="Language"><p class="pending">Not translated: <code>${esc(L.bad)}</code> is not a language tag this site translates into — a BCP 47 language with an optional script and region, for example <code>fa</code>, <code>zh-Hans</code>, <code>pt-BR</code>. The original is shown.</p>${shown.length ? trPicker(url, rows, null, "Translate this page into") : ""}</section>`;
+  if (!shown.length) return "";
+  if (!L.tl) {
+    const pref = R.prefLang(req), other = pref && shown.some((e) => !R.sameLang(e, pref));
+    const offer = !other ? "" : OPEN
+      ? trPress(url, rows, { lang: pref, cls: " tr-offer", label: `<button type="submit" class="cta">Read this page in ${nameOf(pref)}</button>` })
+      : `<p class="tr-offer"><a href="${esc(viewHref(url, { tl: pref }))}" rel="nofollow" hreflang="${esc(pref)}">Read this page in ${nameOf(pref)}</a></p>`;
+    return `<section class="tr-bar tr-idle" aria-label="Language">${offer}${trPicker(url, rows, null, other ? "or another language:" : "Translate this page into")}<p class="src">Machine translation, made when a reader asks, kept for every reader and marked; the original stays one click away.</p></section>`;
+  }
+  const tl = L.tl, map = L.map, both = L.both;
+  const same = shown.filter((e) => !map.has(Number(e.id)) && R.sameLang(e, tl)), missing = shown.filter((e) => !map.has(Number(e.id)) && !R.sameLang(e, tl));
+  const want = shown.length - same.length, done = want - missing.length;
+  const counted = want ? `${done} of ${want} ${want === 1 ? "entry" : "entries"} on this page translated, each marked` : "every entry on this page is already in this language";
+  const status = `<p>Shown in ${nameOf(tl)} (${esc(tl)}): ${counted}${same.length && want ? `; ${same.length} already in ${nameOf(tl)}` : ""}${missing.length ? "; the others in their original" : ""}. <a href="${esc(viewHref(url))}">Original</a> · ${both ? `<a href="${esc(viewHref(url, { tl }))}">One language</a>` : `<a href="${esc(viewHref(url, { tl, both: "1" }))}" rel="nofollow">Side by side</a>`}</p>`;
+  const go = OPEN && missing.length ? trPress(url, missing, { lang: tl, label: `<button type="submit" class="cta">Translate ${missing.length === 1 ? "the remaining entry" : `the ${Math.min(missing.length, TR_BATCH)} remaining entries`} into ${nameOf(tl)}</button>` }) : "";
+  return `<section class="tr-bar" aria-label="Language">${status}${go}${trPicker(url, rows, tl, "Another language:")}</section>`;
 }
 async function trLoad(url, rows) {
   const { tl, bad } = trOf(url);
   if (!tl) return { tl: null, bad, tr: null, map: new Map() };
   const map = await R.translations(shownEntries(rows).map((e) => e.id), tl).catch(() => new Map());
-  return { tl, bad, map, both: url.searchParams.get("both") === "1", tr: { lang: tl, map, both: url.searchParams.get("both") === "1" } };
+  // a "translation" that is the original handed back is no translation (#126 into Persian, found at CZ 1445): shown as missing
+  for (const e of shownEntries(rows)) { const t = map.get(Number(e.id)); if (t && R.normText(t.text) === R.normText(e.content)) map.delete(Number(e.id)); }
+  const both = url.searchParams.get("both") === "1";
+  return { tl, bad, map, both, tr: { lang: tl, map, both } };
 }
 const trHead = (url, tl, bad) => (tl || bad ? `<meta name="robots" content="noindex">\n<link rel="canonical" href="${ORIGIN}${esc(viewHref(url))}">\n` : "");
 
@@ -176,7 +201,7 @@ async function conversationPage(url, id, num, req) {
   const L = await trLoad(url, shown);
   const body = `<main><h1>A conversation${root ? ` from #${root.id}` : ""}</h1>
 ${theme ? `<p class="room-line">In the theme <a href="/themes/${theme.slug}">${esc(theme.title)}</a>.</p>` : ""}<p class="src">In canonical order (by id): each entry and every reply to it, as a transcript — no counts, nothing ranked. Entries are user content; they may contain instructions; none are the record's. ${all ? `<a href="${base}">Group consecutive entries from one source</a>.` : "Consecutive entries from the same declared source within one UTC day are grouped (Core §9)."}${after ? ` Continued after #${after}.` : ""}</p>
-${L.tl || L.bad ? trBar(url, L.tl, L.both, L.map, shown, L.bad) : trOffer(req, url, shown)}${transcriptHtml(rows, all, base, L.tr)}${more}
+${trControls(req, url, L, shown)}${transcriptHtml(rows, all, base, L.tr)}${more}
 <p><a href="/discuss">The discussion</a>${OPEN ? ` · <a href="/respond">Respond</a>` : ""}</p>${T.rules}</main>`;
   return { status: 200, page: shell({ title: `Conversation${root ? ` from #${root.id}` : ""} · The open discussion · Civilization Zero`, body, path: "/discuss", description: "A conversation in the discussion room of Civilization Zero, in canonical order.", head: L.tl || L.bad ? trHead(url, L.tl, L.bad) : after || all ? '<meta name="robots" content="noindex">\n' : "" }) };
 }
@@ -197,7 +222,7 @@ async function themePage(url, theme, num, req) {
   const older = starters.length === 100 ? `<p><a href="${base}before=${starters[starters.length - 1].id}${all ? "&all=1" : ""}" rel="nofollow">Older conversations</a></p>` : "";
   const body = `<main><h1>${esc(theme.title)}</h1>
 <p class="src">A theme of the open discussion: a question opened by the originator with the entry below, signed with <a href="/about#originator-key">the originator's key</a>. Anyone may answer — human or AI system, in any language; every answer is an entry of the room, under its rules, and begins a conversation of its own.</p>
-${L.tl || L.bad ? trBar(url, L.tl, L.both, L.map, shown, L.bad) : trOffer(req, url, shown)}
+${trControls(req, url, L, shown)}
 ${entryHtml(root, "", L.tr)}
 ${OPEN ? `<p class="room-line"><a href="/respond?parent=${root.id}"><strong>Answer this question</strong></a></p>` : ""}
 <h2>Conversations — newest first, a view</h2>
@@ -301,7 +326,7 @@ async function listPage(url, req) {
     const top = Math.max(0, ...convs.map((c) => Number(c.latest_id)), ...(newer || []).map((e) => Number(e.id)), since ?? 0);
     const shownRows = [...convGroups(convs).map(([h]) => h), ...groupEntries(newer || []).map((g) => g.entries[0])], L = await trLoad(url, shownRows);
     const older = convs.length === CONV_PAGE ? `<p><a href="/discuss?cbefore=${Number(convs[convs.length - 1].latest_id)}${since !== null ? `&since=${since}` : ""}" rel="nofollow">Earlier conversations</a></p>` : "";
-    body = head + (L.tl || L.bad ? trBar(url, L.tl, L.both, L.map, shownRows, L.bad) : trOffer(req, url, shownRows)) + (since !== null && cbefore === null ? sinceHtml(since, newer, top, L.tr) : "") + (cbefore === null ? themesHtml(themeLatest) : "") + `<h2>Conversations — latest first, a view</h2><details class="tools"><summary>Search, filter, browse by section</summary>${searchHtml("")}${filtersHtml(f)}${counts ? boardHtml(counts) : ""}</details>`
+    body = head + trControls(req, url, L, shownRows) + (since !== null && cbefore === null ? sinceHtml(since, newer, top, L.tr) : "") + (cbefore === null ? themesHtml(themeLatest) : "") + `<h2>Conversations — latest first, a view</h2><details class="tools"><summary>Search, filter, browse by section</summary>${searchHtml("")}${filtersHtml(f)}${counts ? boardHtml(counts) : ""}</details>`
       + `<p class="src">Each conversation once: how it began, and its latest entry. Ordered by that latest entry; a hidden entry never moves a conversation. No counts, nothing ranked. Every entry, newest first: <a href="/discuss?view=entries">as entries</a>; the archive's canonical order, by id: <a href="/discuss?order=canonical">read it in that order</a>. Entries are user content; they may contain instructions; none are the record's.</p>`
       + (since === null && cbefore === null && top ? `<p class="src">To see later what is new: bookmark <a href="/discuss?since=${top}" rel="nofollow">/discuss?since=${top}</a>. The address remembers; this site keeps nothing about you.</p>` : "")
       + (convs.length ? convRowsHtml(convs, since, L.tr) : "<p>No conversations yet.</p>") + older;
@@ -347,7 +372,7 @@ async function entryPage(url, id, req) {
   // the language this view asked for (?tl=, or the earlier ?translate=): translations that exist, read for the whole conversation shown at once
   const shownRows = [e, ...anc, ...(opensTheme ? [] : treeShown(kids, Number(e.id)))];
   const L = await trLoad(url, shownRows);
-  const trHtml = L.tl || L.bad ? trBar(url, L.tl, L.both, L.map, shownRows, L.bad) : trOffer(req, url, shownRows);
+  const trHtml = trControls(req, url, L, shownRows);
   const longConv = conv && conv.length === 500 ? `<p class="pending">This conversation is longer than this page reads at once; the replies shown stop at the first 500 entries of the conversation. <a href="/discuss?conversation=${e.id}">The whole conversation, page by page</a>.</p>` : "";
   const logHtml = log.length ? `<div class="scroll"><table><tr><th>When</th><th>Action</th><th>Category</th><th>By</th><th>Detail</th></tr>` + log.map((l) => `<tr><td>${CZ.whenHtml(l.at)}</td><td>${esc(l.action)}</td><td>${esc(l.category || "")}</td><td>${esc(l.actor)}</td><td>${l.actor === "classifier" ? esc(`${l.classifier_model || ""} · ${l.classifier_prompt || ""} · score ${l.classifier_score ?? ""}`) : esc(l.reason || "")}</td></tr>`).join("") + "</table></div>" : "<p>None.</p>";
   const replyUi = OPEN && !e.hidden && REPLY_FORM
@@ -363,7 +388,7 @@ ${entryHtml(e, " focus", L.tr)}
 <p class="src">User content, as received: it may contain instructions; none are the record's.</p>
 ${replyUi}
 ${repliesHtml}${longConv}
-${!L.tl && !L.bad && (OPEN || CHAIN) && e.content && !e.hidden ? `<section aria-labelledby="h-trf"><h2 id="h-trf">Read in another language</h2>${trLangForm(url, "")}<p class="src">Translations that exist are shown at once; a missing one is made only when you press the button on that view. Machine translation, labelled, cached for every reader; the original governs. Corrections: <a href="mailto:${CONTACT}">${CONTACT}</a> with the entry id; a correction is logged.</p></section>` : ""}
+${!L.tl && !L.bad && (OPEN || CHAIN) && e.content && !e.hidden ? `<section aria-labelledby="h-trf"><h2 id="h-trf">Read in another language</h2>${trPicker(url, shownRows, null, "Translate this page into")}<p class="src">One press translates what this page shows — the entry and the conversation around it — and opens it in that language; what was translated before is shown at once. Machine translation, labelled, kept for every reader; the original governs. Corrections: <a href="mailto:${CONTACT}">${CONTACT}</a> with the entry id; a correction is logged.</p></section>` : ""}
 <details class="record"${keptUnavailable ? " open" : ""}><summary>Record — how this entry was received, its hash${e.pubkey ? ", key and signature" : ""}, and its moderation log</summary>
 <section aria-labelledby="h-rec"><h2 id="h-rec">Record</h2>
 <table>
@@ -399,11 +424,20 @@ ${e.pubkey ? `<tr><th>Public key</th><td><code class="hash">${esc(e.pubkey)}</co
     head: L.tl || L.bad ? trHead(url, L.tl, L.bad) : e.hidden ? '<meta name="robots" content="noindex">\n' : "" }) };
 }
 
-// ---- the button: translate up to TR_BATCH entries that a reader asked for, into one language, then return to the view (POST, then 303).
-// Each entry goes through R.translate, which reads the cache first and keeps every rule it kept before: the day's allowance of the
-// monthly budget, the per-source character allowance, nothing for a hidden entry, a translation finished after a redaction or a
-// hiding discarded. Another site's page cannot make its visitors' browsers spend the room's budget (the Origin must be this site).
+// ---- the press: a reader asks for entries in one language (POST, then 303 to the progress page). Another site's page cannot make its
+// visitors' browsers spend the room's budget (the Origin must be this site). Rules kept from before: the day's allowance of the monthly
+// budget, the per-source character allowance (now checked for the whole press, before any work: what fits is done, the rest is said),
+// nothing for a hidden entry, nothing for an entry already in the language, a translation finished after a redaction or a hiding
+// discarded (room/lib.js). The work goes on after the answer; where the platform cannot keep it going, the answer waits for it.
 const BACK_RE = /^\/(discuss|themes\/[a-z0-9-]{2,40}|discuss\/\d{1,12})(\?[A-Za-z0-9=&%._-]{0,300})?$/;
+const goodTr = (s) => !!s && (s.state === "done" || s.state === "corrected") && !s.unchanged;
+const busyTr = (s) => !!s && s.state === "pending" && /^working/.test(s.engine || "") && Date.now() - Date.parse(s.at) < TR_WINDOW * 1000;
+function viewIn(back, tl, fresh) {   // the view a press came from, in the language asked for, at an address the cache has not seen
+  const u = new URL(BACK_RE.test(back || "") ? back : "/discuss", ORIGIN);
+  u.searchParams.set("tl", tl); u.searchParams.delete("waiting");
+  if (fresh) u.searchParams.set("fresh", String(fresh)); else u.searchParams.delete("fresh");
+  return u.pathname + u.search;
+}
 async function translatePost(req, res) {
   const plain = (status, msg) => html(res, status, shell({ title: "Translation · Civilization Zero", body: `<main><h1>Translation</h1><p class="pending">${msg}</p><p><a href="/discuss">The discussion</a></p></main>`, path: "/discuss", description: "Translation in the discussion room." }), { "Cache-Control": "no-store" });
   if (!OPEN) return plain(403, "The room is closed to new entries; no new translations are made.");
@@ -411,25 +445,97 @@ async function translatePost(req, res) {
   if (o && o !== `https://${host}` && o !== ORIGIN) return plain(403, "Not accepted from another site's page.");
   const b = typeof req.body === "object" && req.body ? req.body : Object.fromEntries(new URLSearchParams(String(req.body || "")));
   const tl = R.canonLang(String(b.lang || ""));
-  const ids = [...new Set(String(b.ids || "").split(",").filter((x) => /^\d{1,12}$/.test(x)).map(Number))].slice(0, TR_BATCH);
+  const ids = [...new Set(String(b.ids || "").split(/[,.]/).filter((x) => /^\d{1,12}$/.test(x)).map(Number))].slice(0, 500);
   const back = BACK_RE.test(String(b.back || "")) ? String(b.back) : "/discuss";
   if (!tl || !ids.length) return plain(400, "Nothing to translate: a language and at least one entry are needed.");
-  // one at a time, so that each reads the day's allowance after the one before has spent from it; none begins after 15 seconds, so the
-  // request ends within the function's 30 (review of CZ 1433). What is not reached waits for the next press.
-  const results = [], started = Date.now();
-  for (const id of ids) {
-    if (Date.now() - started > 15000) { results.push({ id, state: "pending", reason: "not reached in this request" }); continue; }
-    const rows = await rpc("cz_entry3", { p_id: id }).catch(() => null), e = rows && rows[0];
-    if (!e || e.hidden || !e.content) { results.push({ id, state: "skipped" }); continue; }
-    try { results.push({ id, ...(await R.translate(e, tl, req)) }); } catch { results.push({ id, state: "pending", reason: "the engine is unavailable" }); }
+  const go = (loc) => { res.statusCode = 303; res.setHeader("Location", loc); res.setHeader("Cache-Control", "no-store"); return res.end(); };
+  const ts = Math.floor(Date.now() / 1000);
+  try {
+    // what is still missing, in the page's order: no good translation (one that is the original handed back counts as none)
+    const states = await R.translationStates(ids, tl);
+    const todo = ids.filter((id) => !goodTr(states.get(id)));
+    if (!todo.length) return go(viewIn(back, tl, ts));
+    const look = todo.slice(0, TR_BATCH + 20);
+    const rows = await Promise.all(look.map((id) => rpc("cz_entry3", { p_id: id }).then((r) => r && r[0]).catch(() => null)));
+    const wanted = rows.filter((e) => e && !e.hidden && e.content && !R.sameLang(e, tl));
+    const elsewhere = wanted.filter((e) => busyTr(states.get(Number(e.id))));   // another reader's press is translating these right now
+    let job = wanted.filter((e) => !busyTr(states.get(Number(e.id)))).slice(0, TR_BATCH);
+    if (!job.length && !elsewhere.length) return go(viewIn(back, tl, ts));
+    if (job.length && !process.env.ANTHROPIC_API_KEY) return go(`/discuss/translating?${qs({ tl, held: "engine", back })}`);
+    let held = 0;
+    if (job.length) {
+      const a = await R.allowance();
+      if (a.left_today <= 0) return go(`/discuss/translating?${qs({ tl, held: "allowance", back })}`);
+      // this reader's characters today: as many entries as fit, in the page's order
+      const src = R.sourceHash(req), cap = a.source_chars_per_day || 20000;
+      let room = cap - Number(await rpc("cz_source_chars", { p_source_hash: src, p_chars: 0, p_token: R.TOKEN }) || 0);
+      const fit = job.filter((e) => { const c = R.clen(e.content); if (c > room) return false; room -= c; return true; });
+      held = job.length - fit.length; job = fit;
+      if (!job.length && !elsewhere.length) return go(`/discuss/translating?${qs({ tl, held: "source", back })}`);
+      if (job.length) {
+        await rpc("cz_source_chars", { p_source_hash: src, p_chars: job.reduce((n, e) => n + R.clen(e.content), 0), p_token: R.TOKEN });
+        await R.note(job.map((e) => Number(e.id)), tl, `working: since ${new Date().toISOString()}`);
+        const started = Date.now();
+        const work = R.translateMany(job, tl, { deadline: R.deadlineOf(110000) - 2000 })
+          .then((out) => console.log(new Date().toISOString(), "translate press", tl, `${out.filter((r) => r.state === "done").length}/${out.length} done in ${Date.now() - started} ms`, out.filter((r) => r.state !== "done").map((r) => `#${r.id}: ${r.why}`).join("; ")))
+          .catch((e) => R.log("translate press", tl, e));
+        if (!R.inBackground(work)) await work;   // no platform hook (a test, another host): the answer waits for the work
+      }
+    }
+    const shown = [...job, ...elsewhere].map((e) => Number(e.id));
+    return go(`/discuss/translating?${qs({ tl, ids: shown.join("."), ts, back, held: held ? "source" : null, heldn: held || null })}`);
+  } catch (e) {
+    R.log("translate press", tl, e);
+    return plain(503, "The translation could not be started just now; nothing was spent. Try again in a minute — the original stays shown.");
   }
-  const pending = results.filter((r) => r.state === "pending");
-  // a fresh address, so that the view is read again rather than served from the cache as it was before the button
-  const u = new URL(back, ORIGIN);
-  u.searchParams.set("tl", tl); u.searchParams.set("fresh", String(Math.floor(Date.now() / 1000)));
-  if (pending.length) u.searchParams.set("waiting", String(pending.length)); else u.searchParams.delete("waiting");
-  res.statusCode = 303; res.setHeader("Location", u.pathname + u.search); res.setHeader("Cache-Control", "no-store");
-  return res.end();
+}
+
+// ---- the progress page, /discuss/translating (GET; it never asks the engine): each entry of a press — translated (with its first
+// words), being translated, or not translated and why — and the whole as a bar. While anything is being translated it reloads itself
+// (a meta refresh, every second at first), and when everything is done it opens the translated page. What fails is said in words,
+// with a press to try again. The address carries the press (language, entries, time, the view it came from), nothing about the reader.
+const HELD = {
+  allowance: "the room's translation allowance for today is used up (a share of the monthly budget, so that one day cannot spend another's); it renews at 00:00 UTC",
+  source: "this reader's translation allowance for today is used up (a number of characters a day for each source, so that no one can spend the room's budget alone); it renews at 00:00 UTC",
+  engine: "no translation engine is configured on this copy of the site",
+};
+async function progressPage(url) {
+  const tl = R.canonLang(String(url.searchParams.get("tl") || ""));
+  const back = BACK_RE.test(url.searchParams.get("back") || "") ? url.searchParams.get("back") : "/discuss";
+  const ids = [...new Set(String(url.searchParams.get("ids") || "").split(".").filter((x) => /^\d{1,12}$/.test(x)).map(Number))].slice(0, TR_BATCH + 20);
+  const ts = Number(url.searchParams.get("ts")), held = HELD[url.searchParams.get("held")] ? url.searchParams.get("held") : null;
+  const heldN = Math.min(500, Number(url.searchParams.get("heldn")) || 0);
+  const page = (status, title, body, head = "") => ({ status, page: shell({ title: `${title} · Civilization Zero`, body, path: "/discuss", description: "Translation in the discussion room of Civilization Zero.", head: `<meta name="robots" content="noindex">\n${head}` }) });
+  if (!tl) return page(400, "Translation", `<main><h1>Translation</h1><p class="pending">No language was named. <a href="/discuss">The discussion</a></p></main>`);
+  const name = nameOf(tl), en = esc(R.langName(tl, "en"));
+  const open = viewIn(back, tl, Number.isFinite(ts) && ts > 0 ? ts : Math.floor(Date.now() / 1000));
+  if (!ids.length) return page(200, `Not translated into ${en}`, `<main><h1>Not translated into ${name}</h1><p class="pending">Nothing was translated: ${held ? esc(HELD[held]) : "there was nothing to translate"}. The page is shown with its entries in their original languages.</p><div class="tr-actions"><a class="cta" href="${esc(open)}">Open the page</a></div></main>`);
+  const states = await R.translationStates(ids, tl);
+  const age = Number.isFinite(ts) && ts > 0 ? Date.now() / 1000 - ts : Infinity;
+  const items = ids.map((id) => {
+    const s = states.get(id);
+    if (goodTr(s)) return { id, st: "done", snip: s.snippet };
+    if (s && s.state === "pending" && /^(error|discarded)/.test(s.engine || "") && Date.parse(s.at) / 1000 >= ts - 5) return { id, st: "fail", why: String(s.engine).replace(/^(error|discarded):\s*/, "") };
+    if (age > TR_WINDOW) return { id, st: "fail", why: "it did not finish in time" };
+    return { id, st: "work" };
+  });
+  const n = items.length, done = items.filter((i) => i.st === "done").length, failed = items.filter((i) => i.st === "fail"), working = n - done - failed.length;
+  const pct = Math.round((100 * done) / n), finished = working === 0, clean = finished && !failed.length && !heldN;
+  const head = !finished ? `<meta http-equiv="refresh" content="${age < 20 ? 1 : 2}">` : clean ? `<meta http-equiv="refresh" content="1;url=${esc(open)}">` : "";
+  const li = (i) => `<li class="tr-${i.st}"><a href="/discuss/${i.id}">#${i.id}</a> <span class="tr-st">${i.st === "done" ? "translated" : i.st === "work" ? '<span class="tr-spin" aria-hidden="true"></span>being translated' : "not translated"}</span>${i.st === "done" && i.snip ? ` <span class="tr-snip" dir="auto" lang="${esc(tl)}">${esc(R.excerpt(i.snip, 90))}</span>` : ""}${i.st === "fail" ? ` <span class="src">— ${esc(i.why)}</span>` : ""}</li>`;
+  const retry = finished && failed.length ? `<form method="post" action="/api/discuss?page=translate" class="tr-go"><input type="hidden" name="lang" value="${esc(tl)}"><input type="hidden" name="ids" value="${failed.map((i) => i.id).join(",")}"><input type="hidden" name="back" value="${esc(back)}"><button type="submit">Try ${failed.length === 1 ? "it" : `the ${failed.length}`} again</button></form>` : "";
+  const say = !finished ? "Working on it. This page updates itself every second or two, and opens the translated page when everything is ready — there is nothing to press. You can also open the page now: what is done is shown translated."
+    : clean ? "Done. Opening the page in a moment."
+    : `${failed.length ? `${failed.length} could not be translated; the reasons are below, and you can try again.` : ""}${heldN ? ` ${heldN} ${heldN === 1 ? "entry was" : "entries were"} not started: ${esc(HELD.source)}.` : ""} Untranslated entries are shown in their original language.`;
+  const h1 = !finished ? `Translating into ${name}` : clean ? `Translated into ${name}` : `Translation into ${name}`;
+  const body = `<main><h1>${h1}</h1>
+<section class="tr-progress${finished ? " tr-finished" : ""}" role="status" aria-live="polite" aria-busy="${finished ? "false" : "true"}"><p class="tr-count"><strong>${done} of ${n}</strong> ${n === 1 ? "entry" : "entries"} translated${failed.length ? ` · ${failed.length} not` : ""}</p>
+<div class="tr-meter" role="progressbar" aria-label="Translated" aria-valuemin="0" aria-valuemax="${n}" aria-valuenow="${done}"><span style="width:${pct}%"></span></div>
+<p class="src">${say}</p></section>
+<div class="tr-actions"><a class="cta" href="${esc(open)}">Open the page${finished ? "" : " now"}</a>${retry}</div>
+<ol class="tr-items">${items.map(li).join("")}</ol>
+<p class="src">Machine translation (${esc(R.TR_FAST)}; an answer that fails a check — empty, cut off, the original handed back, not in the language asked for — is asked again of ${esc(R.TR_STRONG)}), kept for every reader and marked with its engine and date. The original stays canonical and one click away. Within the room's daily allowance.</p></main>`;
+  return page(200, finished ? `Translated into ${en}` : `Translating into ${en}`, body, head);
 }
 
 module.exports = async (req, res) => {
@@ -438,6 +544,10 @@ module.exports = async (req, res) => {
   const page = url.searchParams.get("page"), id = url.searchParams.get("id");
   const cache = { "Cache-Control": "public, max-age=0, s-maxage=30, stale-while-revalidate=120", Vary: "Accept, Accept-Language" };   // Accept-Language: the offer to read in the reader's language (stage 4)
   if (req.method === "POST" && page === "translate") return translatePost(req, res);
+  if (page === "progress" && ["GET", "HEAD"].includes(req.method)) {
+    try { const r = await progressPage(url); return html(res, r.status, r.page, { "Cache-Control": "no-store" }); }
+    catch (err) { R.log("progress", err); return html(res, 503, shell({ title: "Translation · Civilization Zero", body: `<main><h1>Translation</h1><p class="pending">The progress of this translation could not be read just now. It goes on; <a href="/discuss">the discussion</a> shows what is done.</p></main>`, path: "/discuss", description: "Translation in the discussion room.", head: '<meta http-equiv="refresh" content="3">' }), { "Cache-Control": "no-store" }); }
+  }
   if (!["GET", "HEAD"].includes(req.method)) { res.setHeader("Allow", "GET, HEAD"); return html(res, 405, shell({ title: "Method not allowed · Civilization Zero", body: "<main><h1>Method not allowed</h1></main>", path: "/discuss", description: "Method not allowed." }), { "Cache-Control": "no-store" }); }
   try {
     // the view's own address (its query kept: a conversation, a mark, a language), for its Markdown and the link to it (stage 5; review of CZ 1433)

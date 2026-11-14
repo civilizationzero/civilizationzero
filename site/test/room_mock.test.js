@@ -3,7 +3,7 @@
 // pagination and rendering; it does not test the production database or the SQL functions, which are unchanged by this branch.
 // Run: node site/test/room_mock.test.js
 const http = require("http"), path = require("path");
-let TABLE = [], CALLS = []; let TRANS = [];
+let TABLE = [], CALLS = []; let TRANS = []; let SOURCE_CAP = 150000, SOURCE_USED = 0;
 const srv = http.createServer((q, s) => {
   let b = ""; q.on("data", (d) => (b += d)); q.on("end", () => {
     const a = b ? JSON.parse(b) : {}, name = (/\/rpc\/(\w+)/.exec(q.url) || [])[1];
@@ -35,6 +35,19 @@ const srv = http.createServer((q, s) => {
     }
     else if (name === "cz_translations") out = TRANS.filter((t) => (a.p_entries || []).includes(t.entry_id) && t.lang === a.p_lang && t.text != null && !(TABLE.find((e) => e.id === t.entry_id) || {}).hidden);
     else if (name === "cz_translation_get") out = TRANS.filter((t) => t.entry_id === a.p_entry && t.lang === a.p_lang);
+    else if (name === "cz_translation_states") out = TRANS.filter((t) => (a.p_entries || []).includes(t.entry_id) && t.lang === a.p_lang && !(TABLE.find((e) => e.id === t.entry_id) || {}).hidden)
+      .map((t) => ({ entry_id: t.entry_id, state: t.state, engine: t.engine, at: t.at, unchanged: t.text != null && t.text === (TABLE.find((e) => e.id === t.entry_id) || {}).content, snippet: ["done", "corrected"].includes(t.state) ? t.text : null }));
+    else if (name === "cz_budget_status") out = { cap_cents: 3000, spent_cents: 0, today_cents: 0, days_remaining: 17, source_chars_per_day: SOURCE_CAP };
+    else if (name === "cz_source_chars") out = SOURCE_USED;
+    else if (name === "cz_translation_note" || name === "cz_translation_store") {   // as the SQL: a note never over a good translation
+      for (const id of name === "cz_translation_note" ? a.p_entries : [a.p_entry]) {
+        const i = TRANS.findIndex((t) => t.entry_id === id && t.lang === a.p_lang), e = TABLE.find((x) => x.id === id);
+        const row = { entry_id: id, lang: a.p_lang, text: name === "cz_translation_note" ? null : a.p_text, engine: name === "cz_translation_note" ? a.p_note : a.p_engine, at: new Date().toISOString(), state: name === "cz_translation_note" ? "pending" : a.p_state };
+        if (name === "cz_translation_note" && (!e || e.hidden || (i >= 0 && TRANS[i].state !== "pending" && TRANS[i].text !== e.content))) continue;
+        if (i >= 0) TRANS[i] = row; else TRANS.push(row);
+      }
+      out = null;
+    }
     else if (name === "cz_stats") out = { entries: TABLE.length, hidden: TABLE.filter((e) => e.hidden).length, redacted: 0, today: 0, daily_intake_max: 500, unclassified: 0 };
     s.setHeader("content-type", "application/json"); s.end(JSON.stringify(out));
   });
@@ -138,23 +151,62 @@ srv.listen(0, "127.0.0.1", async () => {
     CALLS = []; r = await call(discuss, "/api/discuss?id=3&tl=fa");
     ok(r.status === 200 && r.body.includes("متن ترجمه‌شدهٔ یک") && !r.body.includes("SECRET"), "tl=fa: the existing translation of #1 shown; nothing of the hidden #5");
     ok(!CALLS.some((c) => ["cz_translation_store", "cz_source_chars", "cz_budget_status"].includes(c.name)), `tl=fa: GET never asks the engine (calls: ${[...new Set(CALLS.map((c) => c.name))].join(",")})`);
-    ok(/name="ids" value="3,7"/.test(r.body) && r.body.includes('action="/api/discuss?page=translate"') && r.body.includes('name="back" value="/discuss/3?tl=fa"'), "the button posts the shown entries without a translation (#3, #7), not the hidden one, and returns to this view");
+    ok(/<form method="post" action="\/api\/discuss\?page=translate" class="tr-go"><input type="hidden" name="ids" value="3,7"><input type="hidden" name="back" value="\/discuss\/3"><input type="hidden" name="lang" value="fa">/.test(r.body) && r.body.includes("Translate the 2 remaining entries into"), "the press posts the shown entries without a translation (#3, #7), not the hidden one, and returns to this view");
     ok(r.body.includes('name="robots" content="noindex"') && r.body.includes('<link rel="canonical" href="https://civilizationzero.ai/discuss/3">'), "a translated view: not indexed; the original is canonical");
     ok(r.body.includes('class="mtag">machine translation</span>') || r.body.includes('class="mtag">Machine translation'), "the translation is marked as machine translation");
     ok(r.body.includes('<a href="/discuss/3">Original</a>') && r.body.includes('href="/discuss/3?tl=fa&amp;both=1"'), "the original and the side-by-side view one click away");
     r = await call(discuss, "/api/discuss?id=3&translate=fa"); ok(r.status === 200 && r.body.includes("متن ترجمه‌شدهٔ یک"), "the earlier ?translate= reads like ?tl= (read-only)");
     r = await call(discuss, "/api/discuss?id=3&tl=!!"); ok(r.status === 200 && r.body.includes("is not a language tag this site translates into"), "a bad tag: said so, the original shown");
     r = await call(discuss, "/api/discuss?id=3", { headers: { "accept-language": "fa-IR,fa;q=0.9,en;q=0.8" } });
-    ok(r.body.includes('href="/discuss/3?tl=fa" rel="nofollow" hreflang="fa"'), "Accept-Language fa: one link offers the page in Persian");
+    ok(/class="tr-go tr-offer"><input type="hidden" name="ids" value="3,1,7"><input type="hidden" name="back" value="\/discuss\/3"><input type="hidden" name="lang" value="fa"><button type="submit" class="cta">Read this page in <span lang="fa">فارسی<\/span><\/button>/.test(r.body), "Accept-Language fa: one press offers the page in Persian");
+    ok(r.body.includes('<select name="lang" required><option value="" selected disabled>Choose a language</option>') && r.body.includes('<option value="fa" lang="fa">فارسی — Persian</option>'), "and a list of languages, each by its own name");
     r = await call(discuss, "/api/discuss?id=3", { headers: { "accept-language": "en-GB,en;q=0.9" } });
     ok(!r.body.includes('class="tr-offer"'), "Accept-Language en, entries in English: no offer");
     r = await call(discuss, "/api/discuss?page=translate", { method: "POST", headers: { origin: "https://evil.example", "content-type": "application/x-www-form-urlencoded" }, body: { lang: "fa", ids: "3,7", back: "/discuss/3?tl=fa" } });
     ok(r.status === 403, `POST from another site's page: refused (${r.status})`);
-    CALLS = []; r = await call(discuss, "/api/discuss?page=translate", { method: "POST", headers: { origin: "https://civilizationzero.ai", "content-type": "application/x-www-form-urlencoded" }, body: { lang: "fa", ids: "3,5,7,1,2,4,6,8,9,10", back: "/discuss/3?tl=fa" } });
-    ok(r.status === 303 && /^\/discuss\/3\?tl=fa&fresh=\d+&waiting=\d+$/.test(r.headers.location || ""), `POST: back to the same view, at a fresh address (${r.status} ${r.headers.location})`);
-    ok(CALLS.filter((c) => c.name === "cz_entry3").length === 8, "POST: at most 8 entries at a time");
-    r = await call(discuss, "/api/discuss?page=translate", { method: "POST", headers: { origin: "https://civilizationzero.ai" }, body: { lang: "fa", ids: "3", back: "https://evil.example/x" } });
-    ok(r.status === 303 && (r.headers.location || "").startsWith("/discuss?tl=fa"), "POST: a foreign 'back' falls back to the room");
+    // the press (CZ 1445): no engine configured → said so, nothing spent
+    CALLS = []; r = await call(discuss, "/api/discuss?page=translate", { method: "POST", headers: { origin: "https://civilizationzero.ai", "content-type": "application/x-www-form-urlencoded" }, body: { lang: "fa", ids: "3,5,7,1", back: "/discuss/3" } });
+    ok(r.status === 303 && r.headers.location === "/discuss/translating?tl=fa&held=engine&back=%2Fdiscuss%2F3" && !CALLS.some((c) => ["cz_source_chars", "cz_translation_note"].includes(c.name)), `POST without an engine: the progress page says so (${r.headers.location})`);
+    r = await call(discuss, "/api/discuss?page=progress&tl=fa&held=engine&back=%2Fdiscuss%2F3");
+    ok(r.status === 200 && r.body.includes("Not translated into") && r.body.includes("no translation engine is configured") && r.body.includes('href="/discuss/3?tl=fa&amp;fresh='), "the progress page: why nothing was translated, and the page");
+    // the engine, stubbed: the first answer hands back the original (as #126 did), the stronger model translates; #7 is already Persian
+    process.env.ANTHROPIC_API_KEY = "test"; const realFetch = global.fetch, asked = [];
+    global.fetch = async (u, o) => {
+      if (!String(u).includes("api.anthropic.com")) return realFetch(u, o);
+      const q = JSON.parse(o.body), text = /<text>\n([\s\S]*)\n<\/text>/.exec(q.messages[0].content)[1]; asked.push({ model: q.model, text, system: q.system });
+      const out = q.model.includes("haiku") && text.startsWith("Entry number 3") ? text : `ترجمهٔ فارسی: ${text.replace(/[A-Za-z]/g, "ب")}`;
+      return { ok: true, json: async () => ({ model: q.model, stop_reason: "end_turn", content: [{ type: "text", text: `<translation>${out}</translation>` }], usage: { input_tokens: 100, output_tokens: 100 } }) };
+    };
+    TABLE = [entry(1, { lang: "en" }), entry(3, { parent: 1, lang: "en" }), entry(5, { parent: 3, hidden: true }), entry(7, { parent: 3, lang: "fa", lang_detected: "fa" }), entry(9, { parent: 3, lang: "en" })];
+    TRANS = [{ entry_id: 1, lang: "fa", text: "متن ترجمه‌شدهٔ یک", engine: "model-x", at: "2026-11-02T06:00:00Z", state: "done" }];
+    CALLS = []; r = await call(discuss, "/api/discuss?page=translate", { method: "POST", headers: { origin: "https://civilizationzero.ai", "content-type": "application/x-www-form-urlencoded" }, body: { lang: "fa", ids: "3,5,7,1,9", back: "/discuss/3" } });
+    const loc = r.headers.location || "";
+    ok(r.status === 303 && /^\/discuss\/translating\?tl=fa&ids=3\.9&ts=\d+&back=%2Fdiscuss%2F3$/.test(loc), `POST: answered with the progress page of #3 and #9 — not #1 (translated), #5 (hidden), #7 (already Persian) (${loc})`);
+    ok(asked.filter((x) => x.text.startsWith("Entry number 3")).map((x) => x.model).join(",") === "claude-haiku-5-5,claude-sonnet-5-5" && asked.find((x) => x.model.includes("sonnet")).system.includes("rejected because the engine gave the original back"), `an answer that hands back the original is asked again of the stronger model, told why (${asked.map((x) => x.model).join(",")})`);
+    ok(TRANS.find((t) => t.entry_id === 3).state === "done" && TRANS.find((t) => t.entry_id === 3).engine === "claude-sonnet-5-5" && TRANS.find((t) => t.entry_id === 9).engine === "claude-haiku-5-5", "both kept, each with the engine that made it");
+    ok(CALLS.filter((c) => c.name === "cz_source_chars").map((c) => c.args.p_chars).join(",") === `0,${TABLE[1].content.length + TABLE[4].content.length}` && CALLS.some((c) => c.name === "cz_translation_note" && /^working/.test(c.args.p_note)), "the reader's characters checked before any work, charged once for what is done; each entry marked as being translated");
+    r = await call(discuss, "/api/discuss" + loc.replace("/discuss/translating?", "?page=progress&"));
+    ok(r.status === 200 && r.body.includes("<strong>2 of 2</strong>") && /<meta http-equiv="refresh" content="1;url=\/discuss\/3\?tl=fa&amp;fresh=\d+">/.test(r.body) && r.body.includes('name="robots" content="noindex"'), "the progress page: all done, it opens the translated page by itself");
+    ok(r.body.includes('<li class="tr-done"><a href="/discuss/3">#3</a> <span class="tr-st">translated</span> <span class="tr-snip" dir="auto" lang="fa">ترجمهٔ فارسی'), "each entry with its first translated words");
+    r = await call(discuss, "/api/discuss?id=3&tl=fa");
+    ok(r.body.includes("3 of 3 entries on this page translated") && r.body.includes("1 already in") && !r.body.includes("remaining"), "the view: everything that needed it translated; the Persian entry counted as already in Persian");
+    // while work goes on, and when it fails
+    const ts = Math.floor(Date.now() / 1000);
+    TRANS.push({ entry_id: 11, lang: "fa", text: null, engine: "working: since now", at: new Date().toISOString(), state: "pending" }, { entry_id: 13, lang: "fa", text: null, engine: "error: the engine was busy", at: new Date().toISOString(), state: "pending" });
+    TABLE.push(entry(11, { parent: 3 }), entry(13, { parent: 3 }));
+    r = await call(discuss, `/api/discuss?page=progress&tl=fa&ids=3.11.13&ts=${ts}&back=%2Fdiscuss%2F3`);
+    ok(/<meta http-equiv="refresh" content="1">/.test(r.body) && r.body.includes("<strong>1 of 3</strong>") && r.body.includes('aria-busy="true"') && r.body.includes('<span class="tr-spin" aria-hidden="true"></span>being translated') && r.body.includes("— the engine was busy"), "while work goes on: the page reloads itself; done, working and failed each said");
+    TRANS = TRANS.filter((t) => t.entry_id !== 11);
+    r = await call(discuss, `/api/discuss?page=progress&tl=fa&ids=3.11.13&ts=${ts - 400}&back=%2Fdiscuss%2F3`);
+    ok(!r.body.includes('http-equiv="refresh"') && r.body.includes("— it did not finish in time") && /<input type="hidden" name="ids" value="11,13">.*Try the 2 again/.test(r.body), "after the window: no more reloading; what did not finish said, with a press to try again");
+    // a "translation" that is the original handed back is no translation
+    TRANS = [{ entry_id: 3, lang: "fa", text: TABLE[1].content, engine: "m", at: "2026-11-02T06:00:00Z", state: "done" }];
+    r = await call(discuss, "/api/discuss?id=3&tl=fa");
+    ok(/0 of \d+ entries on this page translated/.test(r.body) && !r.body.includes('class="mtag">Machine translation'), `a stored translation identical to the original is shown as missing (${(/Shown in[^<]*<span[^>]*>[^<]*<\/span> \(fa\): [^.]*/.exec(r.body) || [""])[0]})`);
+    global.fetch = realFetch; delete process.env.ANTHROPIC_API_KEY;
+    TRANS = [{ entry_id: 1, lang: "fa", text: "متن ترجمه‌شدهٔ یک", engine: "model-x", at: "2026-11-02T06:00:00Z", state: "done" }];
+    r = await call(discuss, "/api/discuss?page=translate", { method: "POST", headers: { origin: "https://civilizationzero.ai" }, body: { lang: "fa", ids: "1", back: "https://evil.example/x" } });
+    ok(r.status === 303 && /^\/discuss\?tl=fa&fresh=\d+$/.test(r.headers.location || ""), `POST: a foreign 'back' falls back to the room; all translated: straight to the view (${r.headers.location})`);
     TABLE = [entry(1, { lang: "en" }), entry(3, { parent: 1, lang: "en" })]; r = await call(discuss, "/api/discuss?tl=fa");
     ok(r.status === 200 && r.body.includes("متن ترجمه‌شدهٔ یک") && r.body.includes('class="mtag">machine translation</span>'), "the room's list in Persian: the excerpt translated and marked");
     // ---------- stage 5 (CZ 1433): every page as Markdown; the page-weight line; the speculation rules allowed by their hash
