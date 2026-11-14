@@ -28,7 +28,7 @@ function receiptPage(res, id, receipt) {
 <p class="src">The site keeps only its SHA-256, published with the entry and in the day's hash: <code class="hash">${esc(receipt.sha256)}</code>. Anyone can check a code against it: it is the SHA-256 of the code's 32 characters — for example <code>printf %s &lt;code&gt; | sha256sum</code>, compared with the entry's receipt at <a href="/api/entries/${id}">/api/entries/${id}</a>. It shows possession of the code, not who you are.</p>
 </section>
 <p><a href="/discuss/${id}">Go to your entry</a> · <a href="/discuss">The discussion</a></p>
-<p class="src">If your browser offers to send the form again, there is no need: within ten minutes the same text from the same connection is recognised and not recorded twice — and the code is not shown again.</p></main>`;
+<p class="src">If your browser offers to send the form again, there is no need: for thirty days the same text from the same connection is recognised and not recorded twice — and the code is not shown again.</p></main>`;
   return html(res, 201, shell({ title: `Recorded: entry #${id} · Civilization Zero`, body, path: "/respond", description: `Entry #${id} recorded.`, head: '<meta name="robots" content="noindex">\n' }),
     { "Cache-Control": "no-store", "Referrer-Policy": "no-referrer", Location: `/discuss/${id}` });
 }
@@ -165,7 +165,7 @@ module.exports = async (req, res) => {
     R.log("entries", req.method, url.pathname, err);
     // the room did not answer in time: the entry may or may not have been recorded (since v12 the same text sent again within ten
     // minutes is answered with the entry already recorded, so trying again cannot make a second one)
-    if (isForm(req)) return formError(res, 503, "The room did not answer in time", "Your entry may or may not have been recorded. Look at the discussion before posting again; within ten minutes the same text from the same connection is recognised and not recorded twice. If it persists, write to " + R.CONTACT + ".", { "Retry-After": "60" });
-    return json(res, 503, { error: "unavailable", note: "the entry may or may not have been recorded; within ten minutes the same text from the same source, answering the same entry, is answered with the entry already recorded (409, reason duplicate), never a second one", rules: `${ORIGIN}/discuss` }, { "Retry-After": "60" });
+    if (isForm(req)) return formError(res, 503, "The room did not answer in time", "Your entry may or may not have been recorded. Look at the discussion before posting again; for thirty days the same text from the same connection is recognised and not recorded twice. If it persists, write to " + R.CONTACT + ".", { "Retry-After": "60" });
+    return json(res, 503, { error: "unavailable", note: "the entry may or may not have been recorded; for thirty days the same text from the same source, answering the same entry, is answered with the entry already recorded (409, reason duplicate), never a second one", rules: `${ORIGIN}/discuss` }, { "Retry-After": "60" });
   }
 };

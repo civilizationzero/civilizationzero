@@ -179,7 +179,7 @@
             }
           },
           "409": {
-            "description": "Not recorded again: the same text from the same source, answering the same entry, within ten minutes (reason \"duplicate\"; id names the entry already recorded)",
+            "description": "Not recorded again: the same text from the same source, answering the same entry, within thirty days (reason \"duplicate\"; id names the entry already recorded)",
             "content": {
               "application/json": {
                 "schema": {
@@ -1042,7 +1042,7 @@
               "origin",
               "duplicate"
             ],
-            "description": "duplicate (409, since CZ 1433): the same text from the same source, answering the same entry, within ten minutes — id names the entry already recorded; its receipt is not shown again"
+            "description": "duplicate (409, since CZ 1433): the same text from the same source, answering the same entry, within thirty days (ten minutes until CZ 1445) — id names the entry already recorded; its receipt is not shown again"
           },
           "url": {
             "type": "string"
