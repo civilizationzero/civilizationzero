@@ -6,6 +6,7 @@ const R = require("../room/lib.js");
 const { ORIGIN, OPEN, CHAIN, json, rpc, rest } = R;
 
 const HIDE = ["harassment_or_threat", "private_person_exposure", "deceptive_impersonation", "advertising_spam", "resource_abuse"];
+const ROOM_HIDE = [...HIDE, "duplicate"];   // the room only, from CZ 1445: an exact repeat of an entry already recorded (same text, same source)
 const REDACT = ["exposed_credentials", "private_data", "no_right_to_publish", "lawful_erasure"];
 const NEVER = ["disagreement", "rejection of the record", "hostility to the project", "obscenity in quotation or evidence", "discomfort"];
 const REASON_MAX = 2000, REGISTER_REASON_MAX = 500;   // the room's and the register's limits for a written reason (characters)
@@ -21,7 +22,7 @@ module.exports = async (req, res) => {
   if (method === "OPTIONS") { res.statusCode = 204; res.setHeader("Access-Control-Allow-Origin", "*"); res.setHeader("Access-Control-Allow-Methods", "GET, HEAD, POST, OPTIONS"); res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization"); return res.end(); }
   try {
     if (method === "GET") {
-      const grounds = { hide: HIDE, redact: REDACT, never: NEVER };
+      const grounds = { hide: ROOM_HIDE, redact: REDACT, never: NEVER, register_hide: HIDE };
       if (!OPEN && !CHAIN) return json(res, 200, { state: "closed", log: [], hidden_and_redacted: [], grounds }, { "Cache-Control": "public, max-age=300" });   // before it first opened; afterwards the log stays public
       const num = (k) => (url.searchParams.get(k) && /^\d{1,12}$/.test(url.searchParams.get(k)) ? Number(url.searchParams.get(k)) : null);
       const after = num("after") ?? 0, keptAfter = num("kept_after") ?? 0, limit = Math.min(500, Math.max(1, num("limit") ?? 500));
@@ -83,7 +84,7 @@ module.exports = async (req, res) => {
       return json(res, 200, { id, action, lang, state: "corrected", url: `${ORIGIN}/discuss/${id}?tl=${encodeURIComponent(lang)}`, logged: true });
     }
     if (!["hide", "unhide", "redact", "unredact"].includes(action)) return json(res, 400, { error: "action: hide | unhide | redact | unredact | correct_translation" });
-    if (action === "hide" && !HIDE.includes(category)) return json(res, 400, { error: "category (hide): " + HIDE.join(" | ") });
+    if (action === "hide" && !ROOM_HIDE.includes(category)) return json(res, 400, { error: "category (hide): " + ROOM_HIDE.join(" | ") });
     if (action === "redact" && !REDACT.includes(category)) return json(res, 400, { error: "category (redact): " + REDACT.join(" | ") });
     if (action === "redact" && (typeof b.redacted_text !== "string" || b.redacted_text.length < 1 || b.redacted_text.length > 6000)) return json(res, 400, { error: "redacted_text: the content with markers in place of the removed parts" });
     try { await rpc("cz_moderate", { p_entry: id, p_action: action, p_category: (action === "hide" || action === "redact") ? category : null, p_reason: reason, p_redacted_text: action === "redact" ? b.redacted_text : null, p_token: R.TOKEN }); }

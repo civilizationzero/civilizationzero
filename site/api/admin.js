@@ -20,6 +20,9 @@ const G = require("../room/register.js");
 const { ORIGIN, CONTACT, esc, rpc, rest } = R;
 
 const HIDE = ["harassment_or_threat", "private_person_exposure", "deceptive_impersonation", "advertising_spam", "resource_abuse"];
+// the room only (the originator's decision of 14 Nov 2026, CZ 1445, after #135 repeated #133): an exact repeat of an entry already
+// recorded, the same text from the same source; the original stays. The Adoption Register keeps HIDE.
+const ROOM_HIDE = [...HIDE, "duplicate"];
 const REDACT = ["exposed_credentials", "private_data", "no_right_to_publish", "lawful_erasure"];
 const NEVER = "disagreement, rejection of the record, hostility to the project, obscenity in quotation or evidence, discomfort";
 const COOKIE = "__Host-cz_admin";
@@ -179,18 +182,18 @@ async function dashboard(s, panel, notice, error) {
 <div class="content" dir="auto" lang="${esc(f.lang || "")}">${esc(f.content || "")}</div>
 <form class="respond" method="post" action="/admin">${csrf}<input type="hidden" name="do" value="decide"><input type="hidden" name="flag" value="${num(f.flag_id)}"><input type="hidden" name="entry" value="${num(f.entry_id)}">
 <div class="row"><label>Decision <select name="decision"><option value="keep">keep — no ground applies</option><option value="hide">hide</option><option value="redact">redact</option></select></label>
-<label>Category (for hide or redact) <select name="category"><option value="">—</option><optgroup label="hide">${opts(HIDE)}</optgroup><optgroup label="redact">${opts(REDACT)}</optgroup></select></label></div>
+<label>Category (for hide or redact) <select name="category"><option value="">—</option><optgroup label="hide">${opts(ROOM_HIDE)}</optgroup><optgroup label="redact">${opts(REDACT)}</optgroup></select></label></div>
 <label>Written reason (public) <input name="reason" required maxlength="2000"></label>
 <label>For a redaction: the content with markers in place of what is removed <textarea name="redacted_text" maxlength="6000"></textarea></label>
 <p><button type="submit">Decide</button></p></form></fieldset>`).join("");
   const flagsSec = `<section aria-labelledby="h-fl"><h2 id="h-fl">Flags awaiting a decision${flags.ok ? ` (${flags.v.length})` : ""}</h2>
-<p class="src">Grounds for hiding: ${HIDE.map((c) => c.replace(/_/g, " ")).join(", ")}. For redaction: ${REDACT.map((c) => c.replace(/_/g, " ")).join(", ")}. Never grounds: ${NEVER} (Blueprint §7.5).</p>${flagHtml}</section>`;
+<p class="src">Grounds for hiding: ${ROOM_HIDE.map((c) => c.replace(/_/g, " ")).join(", ")}. For redaction: ${REDACT.map((c) => c.replace(/_/g, " ")).join(", ")}. Never grounds: ${NEVER} (Blueprint §7.5).</p>${flagHtml}</section>`;
 
   const act = `<section aria-labelledby="h-act"><h2 id="h-act">Act on an entry</h2>
 <form class="respond" method="post" action="/admin">${csrf}<input type="hidden" name="do" value="act">
 <div class="row"><label>Entry id <input name="id" inputmode="numeric" pattern="[0-9]{1,12}" required></label>
 <label>Action <select name="action"><option value="hide">hide</option><option value="unhide">unhide</option><option value="redact">redact</option><option value="unredact">unredact</option></select></label>
-<label>Category <select name="category"><option value="">— (unhide, unredact)</option><optgroup label="hide">${opts(HIDE)}</optgroup><optgroup label="redact">${opts(REDACT)}</optgroup></select></label></div>
+<label>Category <select name="category"><option value="">— (unhide, unredact)</option><optgroup label="hide">${opts(ROOM_HIDE)}</optgroup><optgroup label="redact">${opts(REDACT)}</optgroup></select></label></div>
 <label>Written reason (public) <input name="reason" required maxlength="2000"></label>
 <label>For a redaction: the content with markers in place of what is removed <textarea name="redacted_text" maxlength="6000"></textarea></label>
 <p><button type="submit">Apply</button></p></form></section>`;
@@ -254,7 +257,7 @@ async function perform(b) {
     const id = id12(b.id), action = String(b.action || ""), category = String(b.category || "");
     if (!id) return { error: "an entry id" };
     if (!["hide", "unhide", "redact", "unredact"].includes(action)) return { error: "the action: hide, unhide, redact or unredact" };
-    if (action === "hide" && !HIDE.includes(category)) return { error: "a hiding ground: " + HIDE.join(", ") };
+    if (action === "hide" && !ROOM_HIDE.includes(category)) return { error: "a hiding ground: " + ROOM_HIDE.join(", ") };
     if (action === "redact" && !REDACT.includes(category)) return { error: "a redaction ground: " + REDACT.join(", ") };
     const text = typeof b.redacted_text === "string" ? b.redacted_text.replace(/\r\n/g, "\n") : "";
     if (action === "redact" && (text.length < 1 || text.length > 6000)) return { error: "the redacted content: the entry's text with markers in place of what is removed" };
