@@ -1,12 +1,12 @@
 {
  "what": "The daily check of the live site by site/verify/live-check.mjs: what the site sends and how it answers, against what its pages say. The record's own checks are verify.py's.",
- "checked_at": "2026-11-14T10:53:34Z",
+ "checked_at": "2026-11-15T11:28:26Z",
  "site": "https://civilizationzero.ai",
- "commit": "48ee7980acee03a19065ee80d5badc8db46c2812",
+ "commit": "a5eb2419fda25a592ebb53c512c0673b374d6a18",
  "passed": 46,
  "total": 46,
  "failed": [],
- "run": "https://github.com/civilizationzero/civilizationzero/actions/runs/43587377194",
+ "run": "https://github.com/civilizationzero/civilizationzero/actions/runs/43709058490",
  "script": "site/verify/live-check.mjs",
  "checks": [
   {
@@ -47,7 +47,7 @@
   {
    "name": "/calendar: HTML with its policy, no cookie, its weight, its Markdown linked",
    "ok": true,
-   "detail": "40785 bytes"
+   "detail": "40787 bytes"
   },
   {
    "name": "/objections: HTML with its policy, no cookie, its weight, its Markdown linked",
@@ -67,12 +67,12 @@
   {
    "name": "/discuss: HTML with its policy, no cookie, its weight, its Markdown linked",
    "ok": true,
-   "detail": "58018 bytes"
+   "detail": "58032 bytes"
   },
   {
    "name": "/stats: HTML with its policy, no cookie, its weight, its Markdown linked",
    "ok": true,
-   "detail": "43272 bytes"
+   "detail": "43466 bytes"
   },
   {
    "name": "/respond: HTML with its policy, no cookie, its weight, its Markdown linked",
@@ -212,7 +212,7 @@
   {
    "name": "GET of a translation only reads (never asks the engine)",
    "ok": true,
-   "detail": "qbz"
+   "detail": "qhf"
   },
   {
    "name": "a translation asked for from another site's page is refused",
@@ -237,7 +237,7 @@
   {
    "name": "/how-it-is-built names the commit it was deployed from",
    "ok": true,
-   "detail": "48ee7980acee03a19065ee80d5badc8db46c2812"
+   "detail": "a5eb2419fda25a592ebb53c512c0673b374d6a18"
   }
  ]
 }
