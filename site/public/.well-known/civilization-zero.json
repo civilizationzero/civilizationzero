@@ -573,6 +573,14 @@
         "url": "https://civilizationzero.ai/prompts/cz-machine-1.1.txt",
         "sha256": "d4e0af44b8e1bf073fbddc3f43fca8cc6727cdb618aecbb8ab18f386c872178a"
       }
+    ],
+    "short": [
+      {
+        "version": "cz-short-1.0",
+        "url": "https://civilizationzero.ai/prompts/cz-short-1.0.txt",
+        "sha256": "07e36c668a4c4fab8f9b21ad4136eb7a0b2cdc3063c130b94de15d09fb80ac99",
+        "note": "one hard truth to humans, at most 400 characters; taken by the record's own agent to other model families, one at a time"
+      }
     ]
   },
   "equivalents": {
