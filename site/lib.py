@@ -335,7 +335,7 @@ blockquote p{margin:.25rem 0}
 .src{color:var(--mute);font-size:.875em}
 table{border-collapse:collapse;width:100%;font-size:.9em}th,td{text-align:left;vertical-align:top;padding:.4rem .5rem;border-bottom:1px solid var(--rule)}
 code.hash{word-break:break-all;display:block}
-ul,ol{padding-left:1.25rem}
+ul,ol{padding-inline-start:1.25rem}
 .pending{border:1px dashed var(--rule);padding:.5rem .75rem}
 /* the discussion room: entries are user content, shown as text; a group is one declared source's consecutive entries (Blueprint §7.4) */
 .entry{margin:1.5rem 0;padding-top:.5rem;border-top:1px solid var(--rule)}
