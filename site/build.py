@@ -1107,7 +1107,7 @@ COPY_SCRIPT = '<script>document.querySelectorAll("button[data-copy]").forEach(fu
 # ASK_OPEN_LINKS, the one switch: the links /ask offers. Each must be pressed by hand on a preview, and seen to arrive with the whole
 # invitation filled in, before it goes to production (review 1-2 B); a link that cannot be confirmed is taken out of this tuple. The
 # redirects stay for all three, so that a link already shared keeps going where it said, and counted where it goes.
-ASK_OPEN_LINKS = ("chatgpt", "claude", "perplexity")
+ASK_OPEN_LINKS = ()   # RC 1 (CZ 1447): none offered until the originator has pressed each on a preview; then ("chatgpt", "claude", "perplexity"), or those that passed
 SHORT_VERSION, SHORT_SHA = SHORT_INVITES[0]
 SHORT_TEXT = (SITE / "prompts" / f"{SHORT_VERSION}.txt").read_bytes().decode("utf-8")
 ASK_OPEN = [   # (name in the address, the service's name, the address before the prompt, the longest prompt it takes whole, in characters)
