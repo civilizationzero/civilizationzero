@@ -1105,8 +1105,10 @@ COPY_SCRIPT = '<script>document.querySelectorAll("button[data-copy]").forEach(fu
 # third-party link generators (https://u2l.ai/tools/chatgpt-prompt-link-generator, https://u2l.ai/tools/perplexity-prompt-link-generator),
 # which advise at most 2,000 characters before encoding. A link whose prompt would be cut by a known limit is not offered.
 # ASK_OPEN_LINKS, the one switch: the links /ask offers. Each must be pressed by hand on a preview, and seen to arrive with the whole
-# invitation filled in, before it goes to production (review 1-2 B); a link that cannot be confirmed is taken out of this tuple. The
-# redirects stay for all three, so that a link already shared keeps going where it said, and counted where it goes.
+# invitation filled in, before it goes to production (review 1-2 B); a link that cannot be confirmed is taken out of this tuple.
+# A link that is not in the tuple is neither served nor counted (review B of RC 1: api/page.js answers "not found", and the
+# middleware counts no press): no link has been offered in production yet, so none is in anyone's hands. Whoever changes the tuple
+# writes the same names into ASK_OFFERED in middleware.js; check.py fails the build when the two differ.
 ASK_OPEN_LINKS = ()   # RC 1 (CZ 1447): none offered until the originator has pressed each on a preview; then ("chatgpt", "claude", "perplexity"), or those that passed
 SHORT_VERSION, SHORT_SHA = SHORT_INVITES[0]
 SHORT_TEXT = (SITE / "prompts" / f"{SHORT_VERSION}.txt").read_bytes().decode("utf-8")

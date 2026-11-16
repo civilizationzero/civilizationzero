@@ -166,10 +166,11 @@ function deployBlock(v, sha) {
 // /ask/open/<name> (vercel.json rewrites it to ?open=<name>): the links of /ask that open another company's assistant with the short
 // invitation filled in (CZ 1447). A redirect, never cached, so that every press reaches the routing middleware, which counts it by the
 // link's name alone (middleware.js) — this function counts nothing and keeps nothing. The addresses are made by site/build.py from the
-// frozen prompt file and checked byte for byte by site/check.py (api/ask-open.json).
+// frozen prompt file and checked byte for byte by site/check.py (api/ask-open.json). Only a link /ask offers now is served ("offered",
+// from build.py's ASK_OPEN_LINKS): any other name is not found, the three included while none has been offered (review B of RC 1).
 const OPEN = require("./ask-open.json");
 function askOpen(res, name, head) {
-  const to = Object.prototype.hasOwnProperty.call(OPEN.to, name) ? OPEN.to[name] : null;
+  const to = (OPEN.offered || []).includes(name) && Object.prototype.hasOwnProperty.call(OPEN.to, name) ? OPEN.to[name] : null;
   if (!to) return false;
   res.statusCode = 302;
   res.setHeader("Location", to);

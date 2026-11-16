@@ -8,7 +8,14 @@ import { createRequire } from "node:module";
 const here = dirname(fileURLToPath(import.meta.url)), SITE = join(here, "..");
 const tmp = mkdtempSync(join(tmpdir(), "czmw-")); writeFileSync(join(tmp, "mw.mjs"), readFileSync(join(SITE, "middleware.js")));
 const M = await import(join(tmp, "mw.mjs"));
+// the links /ask offers are a switch (build.py, ASK_OPEN_LINKS → api/ask-open.json, "offered"; middleware.js, ASK_OFFERED). Whatever the
+// switch says in this commit, both states are tested: M3 is the same middleware with all three links offered, M0 with none (RC 2)
+const OFFERED_NOW = JSON.parse(readFileSync(join(SITE, "api/ask-open.json"), "utf8")).offered;
+const mwWith = async (names, file) => { const src = readFileSync(join(SITE, "middleware.js"), "utf8"), line = /^export const ASK_OFFERED = \[[^\]\n]*\];$/m;
+  if (!line.test(src)) throw new Error("middleware.js: no ASK_OFFERED line"); writeFileSync(join(tmp, file), src.replace(line, `export const ASK_OFFERED = ${JSON.stringify(names)};`)); return import(join(tmp, file)); };
+const M3 = await mwWith(["chatgpt", "claude", "perplexity"], "mw3.mjs"), M0 = await mwWith([], "mw0.mjs");
 let pass = 0, fail = 0; const ok = (c, m) => { if (c) pass++; else { fail++; console.log("FAIL", m); } };
+ok(JSON.stringify(M.ASK_OFFERED) === JSON.stringify(OFFERED_NOW) && M3.ASK_OFFERED.length === 3 && M0.ASK_OFFERED.length === 0, `the middleware counts presses on the links /ask offers, and no others: ${JSON.stringify(M.ASK_OFFERED)} and ${JSON.stringify(OFFERED_NOW)}`);
 const CHROME = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36";
 const IPHONE = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1";
 for (const [ua, want] of [[CHROME, "human"], [IPHONE, "human"], ["Mozilla/5.0 (X11; Linux x86_64; rv:130.0) Gecko/20100101 Firefox/130.0", "human"],
@@ -45,11 +52,19 @@ for (const [ua, want] of [
   ok(M.agentOf(ua) === want, `agent by purpose ${JSON.stringify(ua.slice(0, 60))} → ${M.agentOf(ua)} want ${want}`);
 for (const [p, want] of [["/", "/"], ["/core/", "/core"], ["/core.fa", "/core.fa"], ["/discuss/12", "/discuss/12"], ["//core", "/core"], ["/%3Cscript%3E", "(other)"], ["/" + "a".repeat(200), "(other)"], ["/themes/can-an-ai-say-no", "/themes/can-an-ai-say-no"]])
   ok(M.pathKey(p) === want, `path ${p.slice(0, 30)} → ${M.pathKey(p)}`);
+// only the site's own addresses are keys: nothing a client types becomes a row, or a link, on /stats (review B of RC 1)
+for (const p of ["/this-site-is-a-fraud-call-0123456789", "/wp-login.php", "/Core", "/core.md.bak", "/core/x", "/discuss/x", "/discuss/12/x", "/themes", "/themes/A", "/adopt/x", "/404", "/index", "/api", "/ask/open", "/x", "/core.toolong", "/.env"])
+  ok(M.pathKey(p) === "(other)", `not an address of the site: ${p} → ${M.pathKey(p)}`);
+for (const p of ["/", "/core", "/record", "/objections", "/ask", "/machine", "/about", "/archive", "/calendar", "/press", "/how-it-is-built", "/embed", "/stats", "/discuss", "/respond", "/adopt", "/admin", "/civilization-zero-infographic",
+  "/civilization-zero-evidence-atlas", "/civilization-zero-images", "/core.fa", "/core.zh-Hans", "/discuss/137", "/adopt/1", "/themes/can-an-ai-say-no"])
+  ok(M.pathKey(p) === p, `an address of the site is its own key: ${p} → ${M.pathKey(p)}`);
 for (const [r, want] of [["https://x.com/czrecord/status/1", "x.com"], ["https://www.google.com/", "google.com"], ["https://civilizationzero.ai/core", ""], ["https://www.civilizationzero.ai/", ""], ["https://civilization-zero-abc-sharifmatrix.vercel.app/", ""], ["not a url", ""], ["", ""]])
   ok(M.refHost(r) === want, `referer ${r} → ${M.refHost(r)}`);
 const req = (path, headers = {}, method = "GET") => new Request("https://civilizationzero.ai" + path, { method, headers });
 let v = M.visitOf(req("/core?x=1", { "user-agent": CHROME, accept: "text/html,application/xhtml+xml", referer: "https://t.co/abc", "x-vercel-ip-country": "my", "x-forwarded-for": "203.0.113.9, 10.0.0.1" }));
 ok(v && v.p_path === "/core" && v.p_agent === "human" && v.p_ref === "t.co" && v.p_country === "MY" && v.p_ip === "" && v.p_ua === "", "a browser's page view: path without query, referring domain, country, and, since CZ 1433, no address and no user agent " + JSON.stringify(v));
+v = M.visitOf(req("/this-site-is-a-fraud-call-0123456789", { "user-agent": CHROME, accept: "text/html", referer: "https://t.co/abc" }));
+ok(v && v.p_path === "(other)" && v.p_agent === "human", "a made-up address is counted as (other), never under its own name " + JSON.stringify(v));
 ok(M.visitOf(req("/core", { "user-agent": CHROME, accept: "text/html", "sec-purpose": "prefetch" })) === null, "a prefetch is not a view");
 ok(M.visitOf(req("/discuss/translating?tl=fa&ids=1&ts=1", { "user-agent": CHROME, accept: "text/html" })) === null, "the translation progress page, refreshing itself, is not a view");
 // stage 5 (CZ 1433): the site's own speculation rule fetches a page as the reader presses its link; tagged "cz", it is the visit
@@ -90,23 +105,40 @@ sent.length = 0; globalThis.fetch = async (url, opt) => { sent.push({ url, body:
 waits.length = 0; M.default(req("/core.md", { "user-agent": "curl/8.5.0" }), ctx); await Promise.all(waits);
 ok(sent.length === 1 && sent[0].url === "https://db.example/rest/v1/rpc/cz_count_entrance" && sent[0].body.p_path === "/core.md" && sent[0].body.p_agent === "script" && !("entrance" in sent[0].body), "an entrance goes to cz_count_entrance");
 // a press on one of /ask's links to an assistant (CZ 1447): counted by the link's name alone, only a browser's, never a prefetch, never a page view
-v = M.visitOf(req("/ask/open/claude", { "user-agent": IPHONE, accept: "text/html", referer: "https://civilizationzero.ai/ask", "x-vercel-ip-country": "MY", "x-real-ip": "198.51.100.7" }));
+v = M3.visitOf(req("/ask/open/claude", { "user-agent": IPHONE, accept: "text/html", referer: "https://civilizationzero.ai/ask", "x-vercel-ip-country": "MY", "x-real-ip": "198.51.100.7" }));
 ok(v && v.open === true && v.p_name === "claude" && Object.keys(v).sort().join() === "open,p_name", "a press: the link's name, nothing else " + JSON.stringify(v));
+// while /ask offers no link, nothing is counted: not as a press, not as a page view (review B of RC 1)
+for (const name of ["chatgpt", "claude", "perplexity"])
+  ok(M0.visitOf(req(`/ask/open/${name}`, { "user-agent": IPHONE, accept: "text/html", referer: "https://civilizationzero.ai/ask", "sec-fetch-dest": "document", "sec-fetch-mode": "navigate", "sec-fetch-site": "same-origin" })) === null, `no link offered: /ask/open/${name} is not counted`);
+{ const one = await mwWith(["claude"], "mw1.mjs"), hd = { "user-agent": CHROME, accept: "text/html" };
+  ok((one.visitOf(req("/ask/open/claude", hd)) || {}).p_name === "claude" && one.visitOf(req("/ask/open/chatgpt", hd)) === null && one.visitOf(req("/ask/open/perplexity", hd)) === null, "one link offered: only that link's presses are counted"); }
 for (const [p, h, why] of [["/ask/open/chatgpt", { "user-agent": CHROME, "sec-purpose": "prefetch" }, "a prefetch"], ["/ask/open/chatgpt", { "user-agent": CHROME, "sec-purpose": "prefetch", "sec-speculation-tags": '"cz"' }, "even the site's own press-prefetch"],
   ["/ask/open/perplexity", { "user-agent": "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)" }, "a crawler"], ["/ask/open/chatgpt", { "user-agent": "curl/8.5.0" }, "a script"],
   ["/ask/open/gemini", { "user-agent": CHROME }, "a name it does not serve"], ["/ask/open/chatgpt/", { "user-agent": CHROME }, "a trailing slash (redirected, then counted once)"], ["/ask/open", { "user-agent": CHROME }, "no name"],
   ["/ask/open/ChatGPT", { "user-agent": CHROME }, "another case"]])
-  ok(M.visitOf(req(p, h)) === null, `not counted, and not a page view: ${why} (${p})`);
-ok(M.visitOf(req("/ask/open/chatgpt", { "user-agent": CHROME }, "HEAD")) === null, "a HEAD is not a press");
+  ok(M3.visitOf(req(p, h)) === null && M0.visitOf(req(p, h)) === null, `not counted, and not a page view: ${why} (${p})`);
+ok(M3.visitOf(req("/ask/open/chatgpt", { "user-agent": CHROME }, "HEAD")) === null, "a HEAD is not a press");
 ok(M.visitOf(req("/ask", { "user-agent": CHROME, accept: "text/html" })).p_path === "/ask", "/ask itself is still a page view");
-sent.length = 0; waits.length = 0; r = M.default(req("/ask/open/perplexity", { "user-agent": CHROME, accept: "text/html" }), ctx); await Promise.all(waits);
+sent.length = 0; waits.length = 0; r = M3.default(req("/ask/open/perplexity", { "user-agent": CHROME, accept: "text/html" }), ctx); await Promise.all(waits);
 ok(r.headers.get("x-middleware-next") === "1" && sent.length === 1 && sent[0].url === "https://db.example/rest/v1/rpc/cz_count_ask_open" && JSON.stringify(sent[0].body) === '{"p_name":"perplexity","p_token":"t"}', "a press goes to cz_count_ask_open: the name and the token, nothing else " + JSON.stringify(sent[0] && sent[0].body));
+sent.length = 0; waits.length = 0; r = M0.default(req("/ask/open/perplexity", { "user-agent": CHROME, accept: "text/html" }), ctx); await Promise.all(waits);
+ok(r.headers.get("x-middleware-next") === "1" && sent.length === 0, "no link offered: the request goes on, and nothing is sent to the database " + JSON.stringify(sent));
 // the redirect (api/page.js): to the assistant, with exactly the short invitation in the query, never cached; nothing counted there
 const pageFn = createRequire(import.meta.url)(join(SITE, "api/page.js"));
 const SHORT = readFileSync(join(SITE, "prompts/cz-short-1.0.txt"), "utf8");
 const hit = (url, method = "GET") => new Promise((resolve) => { const res = { statusCode: 200, h: {}, setHeader(k, x) { this.h[k.toLowerCase()] = x; }, getHeader(k) { return this.h[k.toLowerCase()]; }, end(b) { resolve({ s: this.statusCode, h: this.h, b: String(b || "") }); } };
   Promise.resolve(pageFn({ url, method, headers: { accept: "text/html" } }, res)).catch((e) => resolve({ s: 599, h: {}, b: String(e.stack) })); });
 sent.length = 0; let o;
+// only a link /ask offers is served (review B of RC 1): with none offered, each of the three names is not found; with one, that one only.
+// The function reads "offered" at each request, so both states are tried here whatever this commit offers, and its own list is then restored
+ok(JSON.stringify(pageFn.OPEN.offered) === JSON.stringify(OFFERED_NOW), "api/page.js serves the links api/ask-open.json offers");
+pageFn.OPEN.offered = [];
+for (const name of ["chatgpt", "claude", "perplexity"]) { o = await hit(`/api/page?open=${name}`); ok(o.s === 404 && !o.h.location && !/chatgpt\.com|claude\.ai|perplexity\.ai/.test(o.b), `no link offered: /ask/open/${name} is not found, and names no address (${o.s})`); }
+o = await hit("/api/page?open=claude", "HEAD"); ok(o.s === 404 && !o.h.location, "no link offered: HEAD is not found either");
+pageFn.OPEN.offered = ["claude"];
+o = await hit("/api/page?open=claude"); ok(o.s === 302 && (o.h.location || "").startsWith("https://claude.ai/new?q="), "one link offered: that one is served");
+o = await hit("/api/page?open=chatgpt"); ok(o.s === 404 && !o.h.location, "one link offered: another of the three is not found");
+pageFn.OPEN.offered = ["chatgpt", "claude", "perplexity"];
 for (const [name, base] of [["chatgpt", "https://chatgpt.com/?q="], ["claude", "https://claude.ai/new?q="], ["perplexity", "https://www.perplexity.ai/search?q="]]) {
   o = await hit(`/api/page?open=${name}`); const loc = o.h.location || "";
   ok(o.s === 302 && loc.startsWith(base) && decodeURIComponent(loc.slice(base.length)) === SHORT && o.h["cache-control"] === "no-store" && /noindex/.test(o.h["x-robots-tag"] || ""), `/ask/open/${name} → 302 to ${base}…, the short invitation byte for byte, not cached (${o.s} ${loc.slice(0, 60)})`);
@@ -117,20 +149,26 @@ o = await hit("/api/page?open=evil"); ok(o.s === 404 && !o.h.location, "another 
 o = await hit("/api/page?open=__proto__"); ok(o.s === 404 && !o.h.location, "a name from the object's prototype: not found");
 o = await hit("/api/page?open=claude", "POST"); ok(o.s === 405, "POST: refused");
 ok(sent.length === 0, "the redirect itself sends nothing to the database (the middleware counts)");
+// (the three stay offered to the function for the tests below, which try what it refuses even then; the middleware's copies are M3 and M0)
 // review 1-2 C (adversarial). 1. ChatGPT agent, OpenAI's hosted browser, sends a plain Chrome user agent and is named only by
 // Signature-Agent "https://chatgpt.com" (RFC 9421 signatures; help.openai.com article 11845367): automated, as Claude-Agent is
 const SIGNED = { "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36", accept: "text/html",
   "signature-agent": '"https://chatgpt.com"', "signature-input": 'sig1=("@authority" "signature-agent");tag="web-bot-auth"', signature: "sig1=:AA==:", "x-vercel-ip-country": "US", referer: "https://chatgpt.com/" };
 v = M.visitOf(req("/core", SIGNED));
 ok(v && v.p_agent === "openai-agent" && v.p_ref === "" && v.p_country === "", "ChatGPT agent (Signature-Agent chatgpt.com) is automated, not a browser " + JSON.stringify(v));
-ok(M.visitOf(req("/ask/open/claude", SIGNED)) === null && M.BOT_KINDS.includes("openai-agent"), "ChatGPT agent's press is not counted, as Claude-Agent's is not");
+ok(M3.visitOf(req("/ask/open/claude", SIGNED)) === null && M.BOT_KINDS.includes("openai-agent"), "ChatGPT agent's press is not counted, as Claude-Agent's is not");
 // 2. a press is a top-level navigation: another site's <img>, fetch(), script or iframe aimed at /ask/open/<name>, run by its readers' real browsers, is not
 for (const [dest, mode] of [["image", "no-cors"], ["empty", "no-cors"], ["empty", "cors"], ["script", "no-cors"], ["iframe", "navigate"]])
-  ok(M.visitOf(req("/ask/open/claude", { "user-agent": CHROME, accept: "*/*", "sec-fetch-dest": dest, "sec-fetch-mode": mode, "sec-fetch-site": "cross-site", referer: "https://elsewhere.example/" })) === null, `not a press: Sec-Fetch-Dest ${dest}, Sec-Fetch-Mode ${mode}`);
-ok((M.visitOf(req("/ask/open/claude", { "user-agent": CHROME, accept: "text/html", "sec-fetch-dest": "document", "sec-fetch-mode": "navigate", "sec-fetch-site": "same-origin", "sec-fetch-user": "?1" })) || {}).p_name === "claude", "a press: a navigation of the top-level document");
+  ok(M3.visitOf(req("/ask/open/claude", { "user-agent": CHROME, accept: "*/*", "sec-fetch-dest": dest, "sec-fetch-mode": mode, "sec-fetch-site": "cross-site", referer: "https://elsewhere.example/" })) === null
+     && M3.visitOf(req("/ask/open/claude", { "user-agent": CHROME, accept: "*/*", "sec-fetch-dest": dest, "sec-fetch-mode": mode, "sec-fetch-site": "same-origin" })) === null, `not a press: Sec-Fetch-Dest ${dest}, Sec-Fetch-Mode ${mode}, from another site or from this one`);
+ok((M3.visitOf(req("/ask/open/claude", { "user-agent": CHROME, accept: "text/html", "sec-fetch-dest": "document", "sec-fetch-mode": "navigate", "sec-fetch-site": "same-origin", "sec-fetch-user": "?1" })) || {}).p_name === "claude", "a press: a navigation of the top-level document, from this site's own page");
+// 2b. (review B of RC 1) a press is a press on /ask's own link: another site's link, window or redirect to /ask/open/<name> is a
+// top-level navigation too, by its readers' real browsers, and is not counted; nor is an address typed or kept as a bookmark
+for (const site of ["cross-site", "same-site", "none"])
+  ok(M3.visitOf(req("/ask/open/claude", { "user-agent": CHROME, accept: "text/html", "sec-fetch-dest": "document", "sec-fetch-mode": "navigate", "sec-fetch-site": site, "sec-fetch-user": "?1", referer: "https://elsewhere.example/" })) === null, `not a press on /ask's link: Sec-Fetch-Site ${site}`);
 // 3. no other spelling of /ask/open/<name> becomes a page view (pathKey collapses slashes and decodes, after the prefix test)
 for (const p of ["/ask//open/claude", "//ask/open/claude", "/ask/open%2Fclaude", "/ask/%6Fpen/claude", "/ask%2Fopen%2Fclaude", "/ASK/OPEN/claude"])
-  ok(M.visitOf(req(p, { "user-agent": CHROME, accept: "text/html" })) === null, `never a page view: ${p}`);
+  ok(M.visitOf(req(p, { "user-agent": CHROME, accept: "text/html" })) === null && M3.visitOf(req(p, { "user-agent": CHROME, accept: "text/html" })) === null && M0.visitOf(req(p, { "user-agent": CHROME, accept: "text/html" })) === null, `never a page view: ${p}`);
 // 4. the redirect has one job: an "open" it does not serve is not found, never the page named by another parameter
 o = await hit("/api/page?open=evil&p=ask"); ok(o.s === 404 && !o.h.location, `open=evil&p=ask: not found, not /ask (${o.s})`);
 // 5. iMessage's link previews are not Meta's, Telegram's are not X's (both name the others' crawlers in their user agents)
@@ -149,16 +187,16 @@ ok(M.agentOf("Mozilla/5.0 (compatible; Pinterestbot/1.0; +http://www.pinterest.c
 // review 1-2 A: one "open" only, so that what is counted is where the reader is sent; another "open" in the query is neither counted nor followed
 o = await hit("/api/page?open=chatgpt&open=claude"); ok(o.s === 404 && !o.h.location, `two values of open: not found (${o.s})`);
 o = await hit("/api/page?open="); ok(o.s === 404 && !o.h.location, "an empty open: not found");
-ok(M.visitOf(req("/ask/open/claude?open=chatgpt", { "user-agent": CHROME, accept: "text/html" })) === null, "a press whose query names another open is not counted");
-ok((M.visitOf(req("/ask/open/claude?utm_source=x", { "user-agent": CHROME, accept: "text/html" })) || {}).p_name === "claude", "a press with a sharer's tag is counted");
-ok((M.visitOf(req("/ask/open/claude", { "user-agent": CHROME, accept: "text/html" })) || {}).p_name === "claude", "a press from a browser that sends no Sec-Fetch headers (older Safari) is counted");
+ok(M3.visitOf(req("/ask/open/claude?open=chatgpt", { "user-agent": CHROME, accept: "text/html" })) === null, "a press whose query names another open is not counted");
+ok((M3.visitOf(req("/ask/open/claude?utm_source=x", { "user-agent": CHROME, accept: "text/html" })) || {}).p_name === "claude", "a press with a sharer's tag is counted");
+ok((M3.visitOf(req("/ask/open/claude", { "user-agent": CHROME, accept: "text/html" })) || {}).p_name === "claude", "a press from a browser that sends no Sec-Fetch headers (older Safari) is counted");
 // ChatGPT agent's other requests: an entrance by kind, a signed agent of another company is an automated client
 ok(M.visitOf(req("/core.md", SIGNED)).p_agent === "openai-agent", "ChatGPT agent reading Markdown: an entrance by openai-agent");
 ok(M.visitOf(req("/core", { ...SIGNED, "signature-agent": '"https://agent.example"' })).p_agent === "other-bot", "another signed agent with a browser's user agent: an automated client");
 // review 1-2 C: a count the database does not keep leaves a line in the host's logs (the function and the status, nothing else)
 { const logged = [], err = console.error; console.error = (...a) => logged.push(a.join(" "));
   globalThis.fetch = async () => new Response('{"code":"PGRST202"}', { status: 404 });
-  waits.length = 0; M.default(req("/ask/open/claude", { "user-agent": CHROME, accept: "text/html" }), ctx); await Promise.all(waits);
+  waits.length = 0; M3.default(req("/ask/open/claude", { "user-agent": CHROME, accept: "text/html" }), ctx); await Promise.all(waits);
   console.error = err;
   ok(logged.length === 1 && logged[0] === "count not kept: cz_count_ask_open answered 404", "a lost count is logged: " + JSON.stringify(logged)); }
 // /stats renders the counts (mock database)
@@ -168,6 +206,7 @@ const stats = { first_day: "2026-11-01", visitors_counted_until: "2026-11-02T10:
   pages: [{ key: "/", n: 20 }, { key: "/core", n: 7 }, { key: "(other)", n: 1 }], refs: [{ key: "x.com", n: 3 }, { key: "<b>evil.com", n: 1 }], countries: [{ key: "MY", n: 9 }], automated: [{ key: "google", n: 30 }, { key: "script", n: 50 }] };
 globalThis.fetch = async (url) => new Response(JSON.stringify(String(url).includes("cz_visit_stats") ? stats : null), { status: 200 });
 process.env.SUPABASE_URL = "https://db.example";
+pageFn.OPEN.offered = OFFERED_NOW;   // as this commit has it again, before /stats reads the same file
 const page = require(join(SITE, "api/stats.js"));
 // every key the middleware counts under has a name on /stats, and the keys fit the database's rule for a key (cz_count: [a-z0-9_.-], 40)
 for (const k of M.BOT_KINDS) ok(typeof page.BOT_NAMES[k] === "string" && /^[a-z0-9_.-]{1,40}$/.test(k), `/stats names the kind ${k}`);

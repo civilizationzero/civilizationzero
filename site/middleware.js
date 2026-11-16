@@ -78,12 +78,18 @@ export function agentOfRequest(h) {
   if (/^\s*"?https:\/\/chatgpt\.com\/?"?\s*$/i.test(sig)) return "openai-agent";
   return sig.trim() && a === "human" ? "other-bot" : a;
 }
-export function pathKey(pathname) {
+// the site's own pages (site/check.py holds this list against the pages the build makes and the addresses vercel.json routes)
+const PAGES_HTML = /^\/(?:|core|record|objections|ask|machine|about|archive|calendar|press|how-it-is-built|embed|stats|discuss|respond|adopt|admin|civilization-zero-infographic|civilization-zero-evidence-atlas|civilization-zero-images|core\.[a-z]{2,3}(?:-[A-Za-z0-9]{1,8})?|discuss\/\d{1,12}|adopt\/\d{1,12}|themes\/[a-z0-9-]{2,40})$/;
+function normPath(pathname) {
   let p = String(pathname || "/").replace(/\/{2,}/g, "/");
   if (p.length > 1) p = p.replace(/\/+$/, "");
   try { p = decodeURIComponent(p).replace(/\/{2,}/g, "/"); } catch {}   // again after decoding: "/%2Fx" must not become "//x" (review of CZ 1436)
   return /^\/(?!\/)[A-Za-z0-9/._-]{0,118}$/.test(p) ? p : "(other)";
 }
+// the address as counted: only the site's own addresses are keys, and anything else is "(other)" — nothing a client types reaches
+// /stats, as for the machines' entrances since v12 (review B of RC 1: any address asked for some twenty times became a row, and a
+// link, in the public table). An entry's or a record's number and a theme's name are keys by their form, whether or not they exist.
+export function pathKey(pathname) { const p = normPath(pathname); return PAGES_HTML.test(p) ? p : "(other)"; }
 export function refHost(referer) {
   try { const u = new URL(referer); const h = u.hostname.toLowerCase(); return SELF.test(h) ? "" : h.replace(/^www\./, ""); } catch { return ""; }
 }
@@ -104,6 +110,10 @@ export function entranceKey(pathname) {
 // the assistants /ask links to (api/ask-open.json, made by build.py, has their addresses); a trailing slash is not one of them, since the
 // site redirects it to the address without, which is then counted once
 const ASK_OPEN = /^\/ask\/open\/(chatgpt|claude|perplexity)$/;
+// the links /ask offers now: the same names as "offered" in api/ask-open.json, which build.py writes from ASK_OPEN_LINKS (site/check.py
+// fails the build when the two differ). A press is counted only on a link that is offered: while /ask offers none, nothing is
+// counted, and api/page.js serves no redirect either (review B of RC 1)
+export const ASK_OFFERED = [];
 // what one request contributes: null when it is not counted (not a page view: not GET, a prefetch, or a non-HTML request from a
 // browser); { entrance } for a machine's way in, counted apart, by kind of client only; { open } for a press on a link of /ask to an
 // assistant, by the link's name only
@@ -116,13 +126,15 @@ export function visitOf(request) {
   // api/page.js answers with a redirect. Counted by the link's name only, and only when a browser, by its user agent, navigates there
   // itself: not a crawler, an AI's browser or a script; not a prefetch (the links are rel="nofollow", which the speculation rules and
   // polite crawlers leave alone); not another site's image, script, frame or fetch aimed at it (Sec-Fetch-Dest and Sec-Fetch-Mode,
-  // when the browser sends them: older ones do not); and not an address that names another "open" in its query, so that what is
-  // counted is where the reader is sent (review 1-2 A and C). No spelling of /ask/open/… is ever a page view: the raw address and the
-  // address as counted, any case, are both tested (review 1-2 C).
-  if (/^\/ask\/open(\/|$)/.test(url.pathname) || /^\/ask\/open(\/|$)/.test(pathKey(url.pathname).toLowerCase())) {
-    const m = ASK_OPEN.exec(url.pathname), dest = h.get("sec-fetch-dest"), mode = h.get("sec-fetch-mode");
-    const navigation = (!dest || dest === "document") && (!mode || mode === "navigate");
-    return m && navigation && !url.searchParams.has("open") && !purpose.includes("prefetch") && !purpose.includes("prerender") && agentOfRequest(h) === "human"
+  // when the browser sends them: older ones do not); not a link, a window or a redirect on another site (Sec-Fetch-Site, when the
+  // browser sends it: counted when it says this site's own page, or says nothing; review B of RC 1), so that "a press on a link of
+  // /ask" is what is counted; only a link /ask offers now (ASK_OFFERED); and not an address that names another "open" in its query,
+  // so that what is counted is where the reader is sent (review 1-2 A and C). No spelling of /ask/open/… is ever a page view: the
+  // raw address and the address as normalised, any case, are both tested (review 1-2 C).
+  if (/^\/ask\/open(\/|$)/.test(url.pathname) || /^\/ask\/open(\/|$)/.test(normPath(url.pathname).toLowerCase())) {
+    const m = ASK_OPEN.exec(url.pathname), dest = h.get("sec-fetch-dest"), mode = h.get("sec-fetch-mode"), from = h.get("sec-fetch-site");
+    const navigation = (!dest || dest === "document") && (!mode || mode === "navigate"), ownLink = !from || from === "same-origin";
+    return m && ASK_OFFERED.includes(m[1]) && ownLink && navigation && !url.searchParams.has("open") && !purpose.includes("prefetch") && !purpose.includes("prerender") && agentOfRequest(h) === "human"
       ? { open: true, p_name: m[1] } : null;
   }
   const way = entranceKey(url.pathname);
