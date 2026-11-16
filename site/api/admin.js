@@ -126,11 +126,14 @@ function send(res, status, body, headers = {}) {
   // not offered as Markdown (the page is the administrator's); the weight line filled as on every page
   const out = String(body).replace(/<link rel="alternate" type="text\/markdown" href="__MDPATH__"[^>]*>/, "").replace(/ · <a href="__MDPATH__" type="text\/markdown">This page as Markdown<\/a>/, "");
   const zone = CZ.readerZone(res.req && res.req.headers);   // the reader's day, as on every page (CZ 1438); not cached (no-store)
-  res.end(require("../room/weight.js").fillWeight(CZ.fillBar(out, CZ.localMs(Date.now(), zone))));   // today's date in CZ time at the top, as on every page
+  // today's date in CZ time at the top and the weight line at the foot, as on every page; but this page keeps a cookie, and says so
+  res.end(require("../room/weight.js").fillWeight(CZ.fillBar(out, CZ.localMs(Date.now(), zone))).replace(/ · no cookies(<!--\/cz-weight-->)/, " · one cookie after sign-in: the administrator's session$1"));
 }
 const page = (title, body) => R.shell({ title: `${title} · Civilization Zero`, path: "/admin", description: "The administrator's page of civilizationzero.ai.",
   head: '<meta name="robots" content="noindex, nofollow">\n<style>.admin form{margin:.75rem 0}.admin fieldset{border:1px solid var(--rule);margin:1rem 0;padding:.5rem .75rem}.admin .row{display:flex;flex-wrap:wrap;gap:.5rem;align-items:end}.admin .row label{flex:1 1 12rem}.admin .notice{border:2px solid var(--fg);padding:.5rem .75rem}.admin .content{white-space:pre-wrap;word-break:break-word;border-left:2px solid var(--rule);padding-left:.75rem}</style>\n',
-  body: `<main class="admin">${body}</main>` });
+  body: `<main class="admin">${body}</main>` })
+  // this page alone keeps a cookie (the administrator's session), so its foot must not say what every other page's foot says (and send() above)
+  .replace("No trackers, no cookies, no scripts that observe readers", "No trackers, no scripts that observe readers, and no cookie but this page's own, for the administrator's session");
 const redirect = (res, to, headers = {}) => { res.statusCode = 303; res.setHeader("Location", to); res.setHeader("Cache-Control", "no-store"); for (const [k, v] of Object.entries(headers)) res.setHeader(k, v); res.end(); };
 const t = (x) => (x ? `<time datetime="${esc(R.isoTime(x))}">${esc(R.fmtTime(x))}</time>` : "—");
 const num = (x) => (Number.isFinite(Number(x)) ? String(Number(x)) : "?");   // counts and ids from the database, printed as numbers only
