@@ -88,6 +88,23 @@ await check("security headers on every page (HSTS, nosniff, frame, referrer)", a
   return det(ok, `HSTS ${h["strict-transport-security"]}; frame ${h["x-frame-options"]}; referrer ${h["referrer-policy"]}`);
 });
 
+// 1b. today's date at the top of the pages (CZ 1438): filled at the request for the time zone of the network that asks, and cached
+// only until midnight there. The zone is the one the site names for this network (/index.json); the day is counted here, by this
+// program's own clock, so that a page kept past midnight, or one made for another zone, fails.
+await check("the date at the top of the pages is today's, in the time zone of this network", async () => {
+  const dayIn = (zone, ms) => Math.round((Date.parse(new Intl.DateTimeFormat("en-CA", { timeZone: zone, year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(ms)) + "T00:00:00Z") - Date.UTC(2022, 10, 30)) / 86400000);
+  const before = Date.now();
+  const j = JSON.parse((await raw("/index.json", { accept: "application/json" })).t), zone = j.cz_time && j.cz_time.time_zone;
+  if (!zone) return det(false, "/index.json names no time zone");
+  const seen = [`/index.json ${j.cz_time.day}`];
+  for (const p of ["/", "/core", "/about", "/press", "/discuss"]) {
+    const m = /<time datetime="\d{4}-\d{2}-\d{2}">CZ (\d+)<\/time>/.exec((await get(p)).t);   // the first date of a page is the one at its top
+    seen.push(`${p} ${m ? m[1] : "none"}`);
+  }
+  const want = new Set([dayIn(zone, before), dayIn(zone, Date.now())]);   // both, if midnight there passed while this ran
+  return det(seen.every((x) => want.has(Number(x.split(" ")[1]))), `${zone}: today is CZ ${[...want].join(" or ")}; ${seen.join(", ")}`);
+});
+
 // 2. the canonical texts: their bytes, their digests (RFC 9530) when sent as they are, none when compressed, and how to cite them
 for (const [path, want] of [["/core.txt", CORE_SHA], ["/record.txt", IR_SHA]]) {
   await check(`${path}: the canonical bytes, with a Repr-Digest that matches them`, async () => {
