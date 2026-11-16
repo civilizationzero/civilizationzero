@@ -189,7 +189,10 @@ ok(o.b.includes('<h2 id="h-entrances">How machines come in</h2>') && o.b.include
 ok(/visitors_counted_until/.test(j.what) && /entrances/.test(j.what), "/stats.json says what the new fields are");
 // before the database has v15 (room/ask-open-v15.sql): no presses to show, and the page says so
 ok(/<p class="src" id="by-purpose">The agents of the AI companies that publish one name per purpose are now counted apart/.test(o.b) && !/id="by-purpose">Since/.test(o.b), "/stats: before the database gives the day of the split, the line names none");
-ok(o.b.includes('<h2 id="h-ask-open">Opened from /ask in an assistant</h2>') && /<h2 id="h-ask-open">[\s\S]*?<p>None yet\.<\/p>/.test(o.b) && !o.b.includes("counted since <a"), "/stats: the presses' section, empty and undated before the database counts them");
+// ... while /ask offers a link (build.py, ASK_OPEN_LINKS; api/ask-open.json, offered); with none offered and none counted, /stats has no such section (RC 1)
+if (JSON.parse(readFileSync(join(SITE, "api/ask-open.json"), "utf8")).offered.length)
+  ok(o.b.includes('<h2 id="h-ask-open">Opened from /ask in an assistant</h2>') && /<h2 id="h-ask-open">[\s\S]*?<p>None yet\.<\/p>/.test(o.b) && !o.b.includes("counted since <a"), "/stats: the presses' section, empty and undated before the database counts them");
+else ok(!o.b.includes('id="h-ask-open"') && !o.b.includes("Opened from /ask in an assistant") && !o.b.includes("counted since <a"), "/stats: no section for the presses while /ask offers no link and none was counted");
 // the split by purpose (CZ 1447): the new keys named by company and purpose, the old ones as counted together, the day of the split said once
 stats.automated.push({ key: "openai-user", n: 7 }, { key: "openai", n: 62 }, { key: "anthropic-agent", n: 2 }, { key: "perplexity-search", n: 3 }, { key: "<made-up>", n: 1 });
 stats.entrances.push({ path: "/llms.txt", agent: "openai-search", n: 2 });
