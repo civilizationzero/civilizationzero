@@ -38,6 +38,21 @@
       "source": "/index.html",
       "destination": "/",
       "permanent": true
+    },
+    {
+      "source": "/verify",
+      "destination": "/archive#h-verify",
+      "permanent": false
+    },
+    {
+      "source": "/cite",
+      "destination": "/press#cite",
+      "permanent": false
+    },
+    {
+      "source": "/themes",
+      "destination": "/discuss#h-themes",
+      "permanent": false
     }
   ],
   "rewrites": [
