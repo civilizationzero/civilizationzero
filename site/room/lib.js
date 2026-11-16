@@ -647,7 +647,7 @@ function kindTag(kind) {
 }
 const kindClass = (e) => (e.kind === "ai" ? " k-ai" : "");
 function entryHtml(e, extra = "", tr = null) {
-  return `<article class="entry${kindClass(e)}${extra}" id="e${e.id}">${metaHtml(e)}${tr ? trContent(e, tr) : contentHtml(e)}</article>`;
+  return `<article class="entry${kindClass(e)}${extra}" id="e${e.id}" aria-label="Entry #${e.id}">${metaHtml(e)}${tr ? trContent(e, tr) : contentHtml(e)}</article>`;
 }
 
 // ---------------------------------------------------------------- the first page's preview (Phase 1 of the room's design for readers,
@@ -665,7 +665,7 @@ function previewHtml(newestFirst, max = 3) {
   const items = groups.map((g) => {
     const e = g.entries[g.entries.length - 1], more = g.entries.length - 1;
     const lang = e.lang && LANG_RE.test(e.lang) ? ` lang="${esc(e.lang)}"` : "";
-    return `<article class="entry">${metaHtml(e)}<div class="content" dir="auto"${lang}>${esc(excerpt(e.content))}</div>`
+    return `<article class="entry" aria-label="Entry #${e.id}">${metaHtml(e)}<div class="content" dir="auto"${lang}>${esc(excerpt(e.content))}</div>`
       + `<p class="src"><a href="/discuss/${e.id}">Read #${e.id} in full</a>${more ? ` · ${more} earlier ${more === 1 ? "entry" : "entries"} from the same declared source that day` : ""}</p></article>`;
   }).join("");
   return `<h3>The latest entries</h3><p class="src">Newest first — the latest, never the best: nothing here is ranked. User content, not the record's; only entries already screened, with no decision pending. Excerpts; each entry in full at its address.</p>${items}<p><a href="/discuss">All entries</a>${OPEN ? ' · <a href="/respond">Respond</a>' : ""}</p>`;

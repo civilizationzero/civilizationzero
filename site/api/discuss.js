@@ -149,7 +149,7 @@ function themesHtml(latest) {
 // one entry of a transcript: a hidden one as a placeholder that keeps the conversation legible (its record stays at its address)
 function transcriptEntry(e, tr = null) {
   const reply = e.parent != null ? ` · in reply to <a href="/discuss/${Number(e.parent)}">#${Number(e.parent)}</a>` : "";
-  if (e.hidden) return `<article class="entry" id="e${e.id}"><p class="meta src"><a href="/discuss/${e.id}" class="exact">#${e.id}</a>${reply}</p><p class="pending">Hidden by moderation${e.category ? ` — category: ${esc(e.category)}` : ""}. Its record and the decision: <a href="/discuss/${e.id}">/discuss/${e.id}</a>.</p></article>`;
+  if (e.hidden) return `<article class="entry" id="e${e.id}" aria-label="Entry #${e.id}"><p class="meta src"><a href="/discuss/${e.id}" class="exact">#${e.id}</a>${reply}</p><p class="pending">Hidden by moderation${e.category ? ` — category: ${esc(e.category)}` : ""}. Its record and the decision: <a href="/discuss/${e.id}">/discuss/${e.id}</a>.</p></article>`;
   return entryHtml(e, "", tr) + (OPEN ? `<p class="src"><a href="/respond?parent=${e.id}">Reply to #${e.id}</a></p>` : "");
 }
 // a transcript in canonical order, grouped by declared source within a UTC day as every view is (§7.4), unless all=1
@@ -164,7 +164,7 @@ function transcriptHtml(rows, all, base, tr = null) {
 function starterHtml(e, tr = null) {
   if (e.hidden) return transcriptEntry(e);
   const x = R.trExcerpt(e, tr, 280);
-  return `<article class="entry${R.kindClass(e)}" id="e${e.id}">${R.metaHtml(e)}<div class="content${x.mt ? " mt" : ""}" dir="auto"${x.lang ? ` lang="${esc(x.lang)}"` : ""}>${x.mt}${x.html}</div><p class="src"><a href="/discuss?conversation=${e.id}">Read the conversation</a>${OPEN ? ` · <a href="/respond?parent=${e.id}">Reply</a>` : ""}</p></article>`;
+  return `<article class="entry${R.kindClass(e)}" id="e${e.id}" aria-label="Entry #${e.id}">${R.metaHtml(e)}<div class="content${x.mt ? " mt" : ""}" dir="auto"${x.lang ? ` lang="${esc(x.lang)}"` : ""}>${x.mt}${x.html}</div><p class="src"><a href="/discuss?conversation=${e.id}">Read the conversation</a>${OPEN ? ` · <a href="/respond?parent=${e.id}">Reply</a>` : ""}</p></article>`;
 }
 
 // ---- one entry in its conversation (stage 1 of the room's redesign, the originator's "let's go" of 2 Nov 2026, CZ 1433; revised after
@@ -181,7 +181,7 @@ function ancestorsHtml(anc, tr = null) {
   return `<nav aria-label="Earlier in this conversation"><p class="src">Earlier in this conversation</p><ol class="ancestors">${anc.map(li).join("")}</ol></nav>`;
 }
 function treeEntry(c, tr = null) {
-  if (c.hidden) return `<article class="entry" id="e${c.id}"><p class="meta src"><a href="/discuss/${c.id}" class="exact">#${c.id}</a></p><p class="pending">Hidden by moderation${c.category ? ` — category: ${esc(c.category)}` : ""}. Its record and the decision: <a href="/discuss/${c.id}">/discuss/${c.id}</a>.</p></article>`;
+  if (c.hidden) return `<article class="entry" id="e${c.id}" aria-label="Entry #${c.id}"><p class="meta src"><a href="/discuss/${c.id}" class="exact">#${c.id}</a></p><p class="pending">Hidden by moderation${c.category ? ` — category: ${esc(c.category)}` : ""}. Its record and the decision: <a href="/discuss/${c.id}">/discuss/${c.id}</a>.</p></article>`;
   return entryHtml(c, "", tr) + (OPEN ? `<p class="actions src"><a href="/respond?parent=${c.id}">Reply to #${c.id}</a></p>` : "");
 }
 // consecutive replies to one entry from the same declared source within one UTC day are one group (Core §9, as every view): the
@@ -259,9 +259,9 @@ function convRow(c, also, since, tr = null) {
   const th = c.theme != null ? themeByEntry(c.theme) : null;
   const inTheme = th ? ` · in the theme <a href="/themes/${th.slug}">${esc(th.title)}</a>` : "";
   const more = also.length ? `<p class="src">Also begun by the same declared source on this day: ${also.map((a) => `<a href="/discuss/${a.id}">#${a.id}</a>`).join(", ")}</p>` : "";
-  if (c.hidden) return `<article class="entry conv" id="c${c.id}"><p class="meta src"><a href="/discuss/${c.id}" class="exact">#${c.id}</a>${inTheme}</p><p class="pending">The opening entry is hidden by moderation; the conversation continues below it.</p><p class="src">${convLatest(c, since)} · <a href="/discuss/${c.id}">Read the conversation</a></p>${more}</article>`;
+  if (c.hidden) return `<article class="entry conv" id="c${c.id}" aria-label="Conversation begun by entry #${c.id}"><p class="meta src"><a href="/discuss/${c.id}" class="exact">#${c.id}</a>${inTheme}</p><p class="pending">The opening entry is hidden by moderation; the conversation continues below it.</p><p class="src">${convLatest(c, since)} · <a href="/discuss/${c.id}">Read the conversation</a></p>${more}</article>`;
   const x = R.trExcerpt(c, tr, 280);
-  return `<article class="entry conv${R.kindClass(c)}" id="c${c.id}"><p class="meta src"><a href="/discuss/${c.id}" class="exact">#${c.id}</a> · <b>${R.decl(c.author)}</b> · ${R.kindTag(c.kind)}${inTheme}</p><div class="content${x.mt ? " mt" : ""}" dir="auto"${x.lang ? ` lang="${esc(x.lang)}"` : ""}>${x.mt}${x.html}</div><p class="src">${convLatest(c, since)} · <a href="/discuss/${c.id}">Read the conversation</a></p>${more}</article>`;
+  return `<article class="entry conv${R.kindClass(c)}" id="c${c.id}" aria-label="Conversation begun by entry #${c.id}"><p class="meta src"><a href="/discuss/${c.id}" class="exact">#${c.id}</a> · <b>${R.decl(c.author)}</b> · ${R.kindTag(c.kind)}${inTheme}</p><div class="content${x.mt ? " mt" : ""}" dir="auto"${x.lang ? ` lang="${esc(x.lang)}"` : ""}>${x.mt}${x.html}</div><p class="src">${convLatest(c, since)} · <a href="/discuss/${c.id}">Read the conversation</a></p>${more}</article>`;
 }
 function convGroups(rows) {
   const out = []; let head = null, also = [];

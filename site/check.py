@@ -250,7 +250,7 @@ if ROOM_EVER:
     _prev = _r.stdout.decode()
     for _room in (("", ""), (' (<data value="2">2</data> entries)', _prev)):
         _pg = P(); _pg.feed(fill(T["html"], _room)); check(not _pg.err and not _pg.stack, f"home with the room {'filled' if _room[1] else 'empty'}: HTML nesting {_pg.err[:3]} {_pg.stack[-3:]}")
-    check("<script>" not in _prev and "S __YEAR__" in _prev and "__ASOF_HUMAN__" in _prev and _prev.count('<article class="entry">') == 2, "home: the preview escapes entries, and is never filled again")
+    check("<script>" not in _prev and "S __YEAR__" in _prev and "__ASOF_HUMAN__" in _prev and _prev.count('<article class="entry" aria-label="Entry #') == 2 and _prev.count("<article") == 2, "home: the preview escapes entries, and is never filled again")
 else:
     check(not any("__ROOM_" in T[x] for x in ("html", "json", "txt")), "home: no room placeholders before the room has opened")
 check("__ROOM_" not in T["json"], "home: the data form carries no room placeholder (api/home.js reads the room for the page only; the text form's are left empty)")

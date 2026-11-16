@@ -70,7 +70,7 @@ function summaryHtml(root, st) {
   else parts.push(`<b>${esc(st.status)}</b>${e.id !== root.id ? ` (<a href="/adopt/${e.id}">#${e.id}</a>)` : ""}`);
   const lang = e.lang && R.LANG_RE.test(e.lang) ? ` lang="${esc(e.lang)}"` : "";
   const text = !e.hidden && e.scope ? `<div class="content" dir="auto"${lang}><b>Scope.</b> ${esc(e.scope)}${e.reservations ? `\n<b>Reservations.</b> ${esc(e.reservations)}` : ""}</div>` : "";
-  return `<article class="entry" id="a${root.id}"><p class="meta src">${parts.join(" · ")}</p>${text}</article>`;
+  return `<article class="entry" id="a${root.id}" aria-label="Record #${root.id}"><p class="meta src">${parts.join(" · ")}</p>${text}</article>`;
 }
 
 // ---------------------------------------------------------------- the register page
