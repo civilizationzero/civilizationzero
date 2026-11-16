@@ -11,7 +11,8 @@ jobs:
       - name: Rebuild the site from the record and verify it
         run: python3 site/build.py
       - name: The committed output must equal the rebuilt output (reproducible build)
-        run: git diff --exit-code -- site/public site/api/home-templates.json
+        # everything the build writes that is committed and served: the pages, the templates the functions fill, the links /ask offers, the date bar
+        run: git diff --exit-code -- site/public site/api/home-templates.json site/api/discuss-templates.json site/api/register-templates.json site/api/ask-open.json site/room/cz-bar.json
       - name: The tests of the functions and the verifier (no network; the database and outside services are stubs)
         env:
           CZ_SALT: "build-time-verification-salt-not-used-in-production"
