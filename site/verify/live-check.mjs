@@ -60,15 +60,16 @@ const digestOf = (b) => `sha-256=:${sha256(b).toString("base64")}:`;
 const running = (html) => [...html.matchAll(/<script\b([^>]*)>/gi)].filter((m) => !/\btype\s*=\s*"(application\/ld\+json|speculationrules|application\/json)"/i.test(m[1])).length;
 const hasLink = (h, re) => re.test(String(h.link || ""));
 
-const PAGES = ["/", "/core", "/record", "/about", "/machine", "/ask", "/archive", "/calendar", "/objections", "/press", "/how-it-is-built", "/discuss", "/stats", "/respond", "/adopt"];
+const PAGES = ["/", "/core", "/record", "/about", "/machine", "/ask", "/embed", "/archive", "/calendar", "/objections", "/press", "/how-it-is-built", "/discuss", "/stats", "/respond", "/adopt"];
+const RUNS = { "/ask": 1, "/embed": 2 };   // the two pages with scripts that run, and how many (/how-it-is-built says which)
 let commit = null;
 
-// 1. the pages: HTML, the policy, no cookie, no script that runs but /ask's, the weight line, the Markdown in the Link header
+// 1. the pages: HTML, the policy, no cookie, no script that runs but /ask's and /embed's, the weight line, the Markdown in the Link header
 for (const p of PAGES) {
   await check(`${p}: HTML with its policy, no cookie, its weight, its Markdown linked`, async () => {
     const r = await get(p), csp = String(r.h["content-security-policy"] || "");
     const md = p === "/" ? "/index.md" : `${p}.md`;
-    const scripts = running(r.t), want = p === "/ask" ? 1 : 0;
+    const scripts = running(r.t), want = RUNS[p] || 0;
     const problems = [];
     if (r.s !== 200) problems.push(`status ${r.s}`);
     if (!/^text\/html/.test(r.h["content-type"] || "")) problems.push(`type ${r.h["content-type"]}`);
