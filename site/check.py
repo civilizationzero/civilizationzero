@@ -307,6 +307,23 @@ rel = json.loads((PUBLIC / ".well-known" / "cz-release-1.0.json").read_text("utf
 check(rel["documents"][0]["sha256"] == CORE_SHA and rel["documents"][1]["sha256"] == IR_SHA, "release manifest hashes")
 check(man["signature"]["release_manifest_sha256"] == sha256((PUBLIC / ".well-known" / "cz-release-1.0.json").read_bytes()), "release manifest hash in manifest")
 
+# The translations of the Core (audit B, CZ 1447): each page says what it is in its attributes (lang; dir for a right-to-left language),
+# carries its label before its title — in its own language and in English — and every statement of its JSON form, in order
+for _t in sorted(PUBLIC.glob("core.*.json")):
+    if _t.name == "core.schema.json": continue
+    _l = _t.name[5:-5]; _j = json.loads(_t.read_text("utf-8")); _p = (PUBLIC / f"core.{_l}.html").read_text("utf-8")
+    _rtl = _l.split("-")[0] in ("ar", "fa", "he", "ur", "ps", "sd", "ug", "yi", "dv", "ckb", "syr")
+    check((_j.get("dir") == "rtl") == _rtl and f'<html lang="{_l}"' + (' dir="rtl"' if _rtl else "") + ">" in _p, f"core.{_l}: lang and dir")
+    _a, _b = _p.find('<aside class="tr-status"'), _p.find("<h1>")
+    _lab = _p[_a:_b] if 0 < _a < _b else ""
+    check(f'<p class="src">{esc(_j["label_native"])}</p>' in _lab and f'<strong>{esc(_j["kind"].capitalize())}</strong>' in _lab
+          and (", unreviewed." in _lab) == (not _j.get("reviewed_by")) and 'The English text is canonical: <a href="/core">/core</a>' in _lab,
+          f"core.{_l}.html: the label, in its language and in English, before the title")
+    _at = _b
+    for _s in [("p", _j["preamble"])] + [(k, x) for pr in _j["principles"] for k, xs in (("p", pr["statements"]), ("li", pr.get("ordered", [])), ("p", pr.get("closing", []))) for x in xs] + [("p", x) for x in _j["closing"]["statements"]]:
+        _i = _p.find(f'>{esc(_s[1])}</{_s[0]}>', _at)
+        check(_i > 0, f"core.{_l}.html: a statement of its JSON form is missing or out of order: {_s[1][:40]}")
+        _at = max(_at, _i)
 # 6. vercel.json and the functions exist
 v = json.loads((SITE / "vercel.json").read_text("utf-8"))
 check(any(r.get("source") == "/" and "has" in r for r in v.get("rewrites", [])), "vercel.json: content negotiation for /")
