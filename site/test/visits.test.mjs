@@ -215,7 +215,7 @@ const stats = { first_day: "2026-11-01", visitors_counted_until: "2026-11-02T10:
   pages: [{ key: "/", n: 20 }, { key: "/core", n: 7 }, { key: "(other)", n: 1 }], refs: [{ key: "x.com", n: 3 }, { key: "<b>evil.com", n: 1 }], countries: [{ key: "MY", n: 9 }], automated: [{ key: "google", n: 30 }, { key: "script", n: 50 }] };
 globalThis.fetch = async (url) => new Response(JSON.stringify(String(url).includes("cz_visit_stats") ? stats : null), { status: 200 });
 process.env.SUPABASE_URL = "https://db.example";
-pageFn.OPEN.offered = OFFERED_NOW;   // as this commit has it again, before /stats reads the same file
+pageFn.OPEN.offered = OFFERED_NOW.slice();   // as this commit has it again, before /stats reads the same file
 const page = require(join(SITE, "api/stats.js"));
 // every key the middleware counts under has a name on /stats, and the keys fit the database's rule for a key (cz_count: [a-z0-9_.-], 40)
 for (const k of M.BOT_KINDS) ok(typeof page.BOT_NAMES[k] === "string" && /^[a-z0-9_.-]{1,40}$/.test(k), `/stats names the kind ${k}`);
@@ -237,10 +237,22 @@ ok(o.b.includes('<h2 id="h-entrances">How machines come in</h2>') && o.b.include
 ok(/visitors_counted_until/.test(j.what) && /entrances/.test(j.what), "/stats.json says what the new fields are");
 // before the database has v15 (room/ask-open-v15.sql): no presses to show, and the page says so
 ok(/<p class="src" id="by-purpose">The agents of the AI companies that publish one name per purpose are now counted apart/.test(o.b) && !/id="by-purpose">Since/.test(o.b), "/stats: before the database gives the day of the split, the line names none");
-// ... while /ask offers a link (build.py, ASK_OPEN_LINKS; api/ask-open.json, offered); with none offered and none counted, /stats has no such section (RC 1)
-if (JSON.parse(readFileSync(join(SITE, "api/ask-open.json"), "utf8")).offered.length)
-  ok(o.b.includes('<h2 id="h-ask-open">Opened from /ask in an assistant</h2>') && /<h2 id="h-ask-open">[\s\S]*?<p>None yet\.<\/p>/.test(o.b) && !o.b.includes("counted since <a"), "/stats: the presses' section, empty and undated before the database counts them");
-else ok(!o.b.includes('id="h-ask-open"') && !o.b.includes("Opened from /ask in an assistant") && !o.b.includes("counted since <a"), "/stats: no section for the presses while /ask offers no link and none was counted");
+// ... while /ask offers a link (build.py, ASK_OPEN_LINKS; api/ask-open.json, offered). With none offered and none counted, /stats has no
+// such section, and its first paragraph does not say that presses are counted (reviews A and C of RC 1). Both states are tried,
+// whatever this commit offers: the page reads the list at each request
+const CLAUSE = "; and so are the presses on the links of /ask that open an assistant", offer = (names) => { page.OFFERED.length = 0; page.OFFERED.push(...names); };
+ok(JSON.stringify(page.OFFERED) === JSON.stringify(JSON.parse(readFileSync(join(SITE, "api/ask-open.json"), "utf8")).offered), "/stats reads the links api/ask-open.json offers");
+offer([]); o = await call("/api/stats");
+ok(o.s === 200 && !o.b.includes('id="h-ask-open"') && !o.b.includes("Opened from /ask in an assistant") && !o.b.includes("counted since <a"), "/stats: no section for the presses while /ask offers no link and none was counted");
+ok(!o.b.includes(CLAUSE) && !/press(es)? on the links? of/i.test(o.b) && o.b.includes("the summary for language models, the canonical texts. Counting began on "), "/stats: with no link offered, the first paragraph does not say presses are counted");
+o = await call("/api/stats?f=md"); ok(o.s === 200 && !/presses on the links/.test(o.b), "/stats as Markdown: the same");
+offer(["claude"]); o = await call("/api/stats");
+ok(o.b.includes('<h2 id="h-ask-open">Opened from /ask in an assistant</h2>') && /<h2 id="h-ask-open">[\s\S]*?<p>None yet\.<\/p>/.test(o.b) && !o.b.includes("counted since <a"), "/stats: the presses' section, empty and undated before the database counts them");
+ok(o.b.includes(`the canonical texts${CLAUSE}. Counting began on `), "/stats: with a link offered, the first paragraph says the presses are counted");
+// a link offered, then taken back: its presses of the last 30 days are still shown, and said
+offer([]); stats.ask_open = [{ key: "claude", n: 2 }]; o = await call("/api/stats");
+ok(o.b.includes('<h2 id="h-ask-open">Opened from /ask in an assistant</h2>') && o.b.includes("<td>Open in Claude</td><td class=\"num\">2</td>") && o.b.includes(CLAUSE), "/stats: presses counted while a link was offered stay shown after it is taken back");
+delete stats.ask_open; offer(["chatgpt", "claude", "perplexity"]);
 // the split by purpose (CZ 1447): the new keys named by company and purpose, the old ones as counted together, the day of the split said once
 stats.automated.push({ key: "openai-user", n: 7 }, { key: "openai", n: 62 }, { key: "anthropic-agent", n: 2 }, { key: "perplexity-search", n: 3 }, { key: "<made-up>", n: 1 });
 stats.entrances.push({ path: "/llms.txt", agent: "openai-search", n: 2 });
@@ -255,4 +267,10 @@ ok(o.b.includes("<td>Open in ChatGPT</td><td class=\"num\">5</td>") && o.b.inclu
 ok(!/observator/i.test(o.b), "/stats: the forbidden word, in any case (review 1-2 B)");
 o = await call("/api/stats?f=json"); const j2 = JSON.parse(o.b);
 ok(j2.agents_by_purpose_since === "2026-11-16" && j2.ask_open.length === 3 && /ask_open/.test(j2.what) && /-user: a fetch a person asked for/.test(j2.what), "/stats.json: the split's day, the presses, and what they are");
+offer(OFFERED_NOW);
+// /how-it-is-built says presses are counted only while /ask offers a link (the row of the table, and the paragraph #ask-open)
+{ const built = readFileSync(join(SITE, "public/how-it-is-built.html"), "utf8"), ask = readFileSync(join(SITE, "public/ask.html"), "utf8"), says = /presses on the links of \/ask/.test(built);
+  ok(says === (OFFERED_NOW.length > 0) && built.includes('<p id="ask-open">') === (OFFERED_NOW.length > 0) && /AI agents by purpose (?:and presses on the links of \/ask to an assistant )?are counted too \(\/stats says since when\)/.test(built),
+     `/how-it-is-built says presses are counted exactly while /ask offers a link (offered: ${OFFERED_NOW.length}; says: ${says})`);
+  ok((ask.match(/href="\/ask\/open\//g) || []).length === OFFERED_NOW.length, "/ask has a link for each one offered, and no other"); }
 console.log(`pass ${pass} fail ${fail}`); process.exit(fail ? 1 : 0);

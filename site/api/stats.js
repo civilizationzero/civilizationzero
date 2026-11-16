@@ -32,8 +32,9 @@ const OLD_KEYS = { openai: "OpenAI", anthropic: "Anthropic", perplexity: "Perple
 const own = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
 const botName = (k, since) => own(BOT_NAMES, k) ? BOT_NAMES[k] : own(OLD_KEYS, k)
   ? `${OLD_KEYS[k]}, all agents counted together (until ${since ? CZ.whenText(since) : "the split by purpose"})` : String(k);
-// the links on /ask that open another company's assistant with the short invitation (CZ 1447): presses, by link; the section shows
-// while /ask offers any of them (build.py, ASK_OPEN_LINKS) or presses were counted
+// the links on /ask that open another company's assistant with the short invitation (CZ 1447): presses, by link; the section, and the
+// clause of the first paragraph that names the presses, show while /ask offers any of them (build.py, ASK_OPEN_LINKS) or presses were
+// counted in the last 30 days (a link offered, then taken back). A press is counted only on a link that is offered (middleware.js).
 const OPEN_NAMES = { chatgpt: "Open in ChatGPT", claude: "Open in Claude", perplexity: "Open in Perplexity" };
 const OFFERED = (() => { try { return require("./ask-open.json").offered || []; } catch { return []; } })();
 
@@ -64,7 +65,7 @@ module.exports = async (req, res) => {
   const kindName = (k) => (k === "human" ? "Browsers" : botName(k, since));
   const askOpen = Array.isArray(s.ask_open) ? s.ask_open.filter((a) => a && typeof a === "object") : [];
   const body = `<main><h1>Visits</h1>
-<p>How much this site is read, counted by the server and published here, as everything else is. No cookies, no scripts, no identifiers: for each UTC day the server counts page views by browsers, where they came from (the referring site's domain), and the country code its host gives. Crawlers, link previews and scripts — this site's own checks among them — are counted apart, and so are the ways machines come in: a page as Markdown, the summary for language models, the canonical texts; and so are the presses on the links of /ask that open an assistant. ${s.first_day ? `Counting began on ${CZ.whenHtml(s.first_day)}.` : ""} The same counts as data: <a href="/stats.json">/stats.json</a>.</p>
+<p>How much this site is read, counted by the server and published here, as everything else is. No cookies, no scripts, no identifiers: for each UTC day the server counts page views by browsers, where they came from (the referring site's domain), and the country code its host gives. Crawlers, link previews and scripts — this site's own checks among them — are counted apart, and so are the ways machines come in: a page as Markdown, the summary for language models, the canonical texts${OFFERED.length || askOpen.length ? "; and so are the presses on the links of /ask that open an assistant" : ""}. ${s.first_day ? `Counting began on ${CZ.whenHtml(s.first_day)}.` : ""} The same counts as data: <a href="/stats.json">/stats.json</a>.</p>
 ${until ? `<p id="visitors">Until ${CZ.whenHtml(until)} the server also counted distinct visitors: for the current day only it kept a hash of each address and browser under a salt made for that day, and at the end of the day it kept the number and deleted the hashes and the salt. On ${CZ.whenHtml(untilDay)} the originator stopped it. A count of people needs something about each person, even for one day; a count of pages needs nothing. Since then no address and no description of a browser is kept or counted. The numbers counted until then stay below, in the column of visitors${(days.find((d) => d.day === untilDay) || {}).visitors != null ? "; the last day's is partial" : ""}.</p>` : ""}
 <h2 id="h-days">The last 30 days</h2>
 <p class="src">${n(tot.v)} page views by browsers; ${n(tot.a)} automated requests.${until ? " Visitors: counted until the count stopped, once per day (the same person on two days was two); — since." : " A visitor is counted once per day: the same person on two days is two."}</p>
@@ -91,5 +92,6 @@ ${table(["Link", "Presses"], askOpen.map((a) => `<tr><td>${esc(own(OPEN_NAMES, a
 };
 module.exports.BOT_NAMES = BOT_NAMES;
 module.exports.OPEN_NAMES = OPEN_NAMES;
+module.exports.OFFERED = OFFERED;   // the same list the page reads at each request (test/visits.test.mjs tries the page with links offered and with none)
 module.exports.OLD_KEYS = OLD_KEYS;
 module.exports.botName = botName;
