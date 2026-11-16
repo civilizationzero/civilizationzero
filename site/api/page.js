@@ -163,6 +163,23 @@ function deployBlock(v, sha) {
     : `<a href="${REPO}/blob/main/archive/live-check/latest.json">The result as data</a>`;
   return `${here}\n<p${v.passed === v.total ? "" : ' class="pending"'}>The latest daily check, ${CZ.whenHtml(v.checked_at)}: ${v.passed} of ${v.total} checks passed${against}.${failed} ${run}.</p>`;
 }
+// /ask/open/<name> (vercel.json rewrites it to ?open=<name>): the links of /ask that open another company's assistant with the short
+// invitation filled in (CZ 1447). A redirect, never cached, so that every press reaches the routing middleware, which counts it by the
+// link's name alone (middleware.js) — this function counts nothing and keeps nothing. The addresses are made by site/build.py from the
+// frozen prompt file and checked byte for byte by site/check.py (api/ask-open.json).
+const OPEN = require("./ask-open.json");
+function askOpen(res, name, head) {
+  const to = Object.prototype.hasOwnProperty.call(OPEN.to, name) ? OPEN.to[name] : null;
+  if (!to) return false;
+  res.statusCode = 302;
+  res.setHeader("Location", to);
+  res.setHeader("Cache-Control", "no-store");
+  res.setHeader("X-Robots-Tag", "noindex, nofollow");
+  res.setHeader("Content-Type", "text/plain; charset=utf-8");
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.end(head ? "" : `Found: ${to}\n`);
+  return true;
+}
 const CAL_RE = /<!--cz-cal-->[\s\S]*?<!--\/cz-cal-->/;
 const TIME_RE = /<!--cz-time-->[\s\S]*?<!--\/cz-time-->/;
 module.exports = async (req, res) => {
@@ -171,6 +188,7 @@ module.exports = async (req, res) => {
     return res.end("Method not allowed\n");
   }
   const url = new URL(req.url, "http://x");
+  if (url.searchParams.has("open") && askOpen(res, url.searchParams.get("open"), req.method === "HEAD")) return;   // any other name: not found, below
   const p = url.searchParams.get("p") || "";
   let status = 200, html = PAGES.test(p) ? read(p) : null;
   if (html === null) { status = 404; html = read("404") || "<!doctype html><title>Not found</title><p>Nothing is published at this address.</p>\n"; }
@@ -210,3 +228,4 @@ module.exports.calendarBlock = calendarBlock;
 module.exports.timeBlock = timeBlock;
 module.exports.linkFor = linkFor;
 module.exports.deployBlock = deployBlock;
+module.exports.OPEN = OPEN;

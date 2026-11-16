@@ -42,6 +42,7 @@ class P(HTMLParser):
 
 FUNCTION_ROUTES = {"/", "/sitemap-discussion.xml", "/stats", "/stats.json", "/index.json", "/index.txt", "/api/entries", "/discuss", "/discuss.json", "/discuss.xml", "/respond", "/api/moderation", "/api/cron/daily", "/archive/entries.json",
                    "/adopt", "/adopt.json", "/api/adopt", "/archive/register.json", "/api/calendar", "/calendar.json"}
+FUNCTION_ROUTES |= {f"/ask/open/{k}" for k in json.loads((SITE / "api/ask-open.json").read_text("utf-8"))["to"]}   # /ask's links to the assistants: api/page.js redirects (checked below)
 def resolves(path):
     if path == "/index.md": return True   # every page as Markdown (stage 5): the first page's, and <page>.md for the others (vercel.json, checked below)
     if path.endswith(".md") and not (PUBLIC / path.lstrip("/")).exists(): return resolves(path[:-3])
@@ -354,6 +355,30 @@ _curm = re.search(r'<pre id="prompt-urls">(cz-machine-1\.\d+) ', _cur); check(bo
 check({"source": "/prompts/current.txt", "destination": f"/prompts/{_curv}.txt", "permanent": False} in v["redirects"], f"vercel.json: /prompts/current.txt does not redirect to {_curv}")
 check(_curv == sorted((p_.stem for p_ in (PUBLIC / "prompts").glob("cz-machine-1.*.txt")), key=lambda x: int(x.split(".")[-1]))[-1], "the prompt /ask offers is not the newest published")
 check((PUBLIC / "prompts/current.txt").read_bytes() == (PUBLIC / f"prompts/{_curv}.txt").read_bytes(), "prompts/current.txt is not the current prompt")
+# /ask offers the short invitation first, the long one below it (16 Nov 2026, CZ 1447): each shown and copied byte for byte as its frozen
+# file (the copy button copies the text of its <pre>), each posted under its own version; and the links that open another company's
+# assistant redirect (api/page.js, api/ask-open.json) to that assistant with exactly the short invitation in the query
+import html as _html, urllib.parse as _up
+_short_b = (PUBLIC / "prompts/cz-short-1.0.txt").read_bytes()
+_pre = lambda i: (m.group(1) if (m := re.search(rf'<pre id="{i}">([^<]*)</pre>', _cur)) else None)
+check(_pre("prompt-short") is not None and _html.unescape(_pre("prompt-short")).encode("utf-8") == _short_b, "/ask: the short invitation is not shown byte for byte as prompts/cz-short-1.0.txt")
+check(_pre("prompt-urls") is not None and _html.unescape(_pre("prompt-urls")).encode("utf-8") == (PUBLIC / f"prompts/{_curv}.txt").read_bytes(), f"/ask: the long invitation is not shown byte for byte as prompts/{_curv}.txt")
+check(_cur.index('<pre id="prompt-short">') < _cur.index('<h3 id="h-long">The long invitation</h3>') < _cur.index('<pre id="prompt-urls">'), "/ask: the short invitation first, the long one below it")
+check('<button type="button" class="cta" data-copy="prompt-short">' in _cur and _cur.count('href="/respond?kind=ai&amp;prompt=cz-short-1.0"') == 2 and f'href="/respond?kind=ai&amp;prompt={_curv}"' in _cur, "/ask: the short invitation's copy button and post links, and the long one's post link")
+_open = json.loads((SITE / "api/ask-open.json").read_text("utf-8"))
+_bases = {"chatgpt": "https://chatgpt.com/?q=", "claude": "https://claude.ai/new?q=", "perplexity": "https://www.perplexity.ai/search?q="}
+check(_open.get("prompt") == "cz-short-1.0" and _open.get("sha256") == sha256(_short_b) and set(_open.get("to", {})) <= set(_bases), "api/ask-open.json: the short invitation, and only the three assistants")
+for _k, _u in _open.get("to", {}).items():
+    check(_u.startswith(_bases[_k]) and _up.unquote(_u[len(_bases[_k]):], errors="strict").encode("utf-8") == _short_b and "&" not in _u[len(_bases[_k]):] and "#" not in _u, f"api/ask-open.json: {_k} does not carry exactly the short invitation")
+    check(_cur.count(f'<a href="/ask/open/{_k}" rel="nofollow">') == 1, f"/ask: one link to /ask/open/{_k}, rel=nofollow (not prefetched, not followed)")
+check(len(re.findall(r'href="/ask/open/', _cur)) == len(_open.get("to", {})), "/ask: a link to an assistant that the redirect does not serve")
+check(not _open.get("to") or "These open another company's service with the invitation filled in. Civilization Zero is not affiliated with any of them." in _cur, "/ask: the links to the assistants are not labelled as another company's, not affiliated")
+check({"source": "/ask/open/:name(chatgpt|claude|perplexity)", "destination": "/api/page?open=:name"} in v["rewrites"], "vercel.json: /ask/open/<name> is not routed to the redirect")
+_mw = (SITE / "middleware.js").read_text("utf-8")
+check("const ASK_OPEN = /^\\/ask\\/open\\/(chatgpt|claude|perplexity)$/;" in _mw and "p_name not in ('chatgpt', 'claude', 'perplexity')" in (SITE / "room/ask-open-v15.sql").read_text("utf-8"), "the names of the links to the assistants differ between the middleware and the database")
+check("Disallow: /ask/open/" in (PUBLIC / "robots.txt").read_text("utf-8"), "robots.txt: the redirects to the assistants are not kept from crawlers")
+_split = re.search(r'const SPLIT_SINCE = "(\d{4}-\d\d-\d\d)"', (SITE / "api/stats.js").read_text("utf-8"))
+check(bool(_split) and re.search(rf'since <a class="cz-date" href="[^"]+"><time datetime="{_split.group(1)}">[^<]+</time></a> the agents of the AI companies', (PUBLIC / "how-it-is-built.html").read_text("utf-8")), "/stats and /how-it-is-built give different days for the AI agents' counts by purpose")
 _cite = f'<https://doi.org/{DOI_CONCEPT}>; rel="cite-as"'
 for _src in ("/core", "/record", "/core.(txt|json)", "/record.(txt|json)"):
     check(any(h["source"] == _src and any(x["key"] == "Link" and _cite in x["value"] for x in h["headers"]) for h in v["headers"]), f"vercel.json: {_src} lacks cite-as")

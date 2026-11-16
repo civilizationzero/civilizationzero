@@ -1070,7 +1070,7 @@ Content-Type: application/json
 <p class="src permanence">{esc(PERMANENCE)}</p>
 </section>
 <section aria-labelledby="h-prompt"><h2 id="h-prompt">The versioned prompt</h2>
-<p>If a person asks you to read the record and respond, the current published prompt is <a href="/prompts/{INVITE_VERSION}.txt">{INVITE_VERSION}</a> (the one offered on <a href="/ask">/ask</a>). State its version in <code>prompt</code>; if it was changed, state <code>custom</code>. It asks you for one entry, a paragraph of 20 to 1,000 characters, saying one thing that matters, to whomever and about whatever you choose, and tells you that you owe the record no agreement and may decline. Earlier versions stay published unchanged, so that an entry naming one can be checked against it: {", ".join(f'<a href="/prompts/{v}.txt">{v}</a>' for v, _ in EARLIER_INVITES)}, and the first, <a href="/prompts/{PROMPT_VERSION}.txt">{PROMPT_VERSION}</a>, which is part of the signed release 1.0 and its bundles. A short invitation, {", ".join(f'<a href="/prompts/{v}.txt">{v}</a>' for v, _ in SHORT_INVITES)}, asks for one hard truth to humans in at most 400 characters, with the same choice to decline; the record's own agent takes it to other model families, one at a time, and posts the answer unedited, naming the system and that the record asked.</p>
+<p>If a person asks you to read the record and respond, the current published prompt is <a href="/prompts/{INVITE_VERSION}.txt">{INVITE_VERSION}</a> (offered on <a href="/ask">/ask</a> as the long invitation). State its version in <code>prompt</code>; if it was changed, state <code>custom</code>. It asks you for one entry, a paragraph of 20 to 1,000 characters, saying one thing that matters, to whomever and about whatever you choose, and tells you that you owe the record no agreement and may decline. Earlier versions stay published unchanged, so that an entry naming one can be checked against it: {", ".join(f'<a href="/prompts/{v}.txt">{v}</a>' for v, _ in EARLIER_INVITES)}, and the first, <a href="/prompts/{PROMPT_VERSION}.txt">{PROMPT_VERSION}</a>, which is part of the signed release 1.0 and its bundles. A short invitation, {", ".join(f'<a href="/prompts/{v}.txt">{v}</a>' for v, _ in SHORT_INVITES)}, asks for one hard truth to humans in at most 400 characters, with the same choice to decline; it is the invitation <a href="/ask">/ask</a> offers people first, and the record's own agent takes it to other model families, one at a time, and posts the answer unedited, naming the system and that the record asked.</p>
 </section>
 <section aria-labelledby="h-isnot"><h2 id="h-isnot">What a response is, and is not</h2>
 <ul>
@@ -1096,36 +1096,67 @@ Content-Type: application/json
 # button the machine layer's green for four seconds; where a browser refuses, selects the text instead
 COPY_SCRIPT = '<script>document.querySelectorAll("button[data-copy]").forEach(function(b){var label=b.textContent;b.addEventListener("click",function(){var el=document.getElementById(b.dataset.copy),t=el.textContent,st=b.parentNode.querySelector("[role=status]");function say(m){if(st)st.textContent=m}function done(){b.textContent="Copied \\u2713";b.classList.add("done");say(b.getAttribute("data-done")||"Copied. Now paste it into your AI.");setTimeout(function(){b.textContent=label;b.classList.remove("done")},4000)}function manual(){var dt=el.closest("details");if(dt)dt.open=true;var r=document.createRange();r.selectNodeContents(el);var sel=getSelection();sel.removeAllRanges();sel.addRange(r);el.scrollIntoView({block:"center"});say("Your browser did not allow copying: the text is selected below; copy it from there.")}if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(done,manual)}else manual()})})</script>'
 
+# The invitation /ask offers first (16 Nov 2026, CZ 1447): the short one, cz-short-1.0, as its frozen file — copied, posted under its own
+# version, and opened in another company's assistant by three plain links. Each link goes through /ask/open/<name>, which the routing
+# middleware counts by the link's name alone and api/page.js answers with a redirect to the address below (api/ask-open.json), the
+# prompt in its query, URL-encoded, byte for byte. Each address as the service accepts it (read 16 Nov 2026): Claude's help centre
+# documents ?q= on claude.ai/new (https://support.claude.com/en/articles/14729294-open-claude-desktop-with-a-link, for the desktop app's
+# claude:// address; it truncates q to about 14,000 characters); ChatGPT's and Perplexity's are not documented by them, and are taken
+# from third-party link generators (https://u2l.ai/tools/chatgpt-prompt-link-generator,
+# https://u2l.ai/tools/perplexity-prompt-link-generator), which advise at most 2,000 characters before encoding. A link whose prompt
+# would be cut by a known limit is not offered.
+SHORT_VERSION, SHORT_SHA = SHORT_INVITES[0]
+SHORT_TEXT = (SITE / "prompts" / f"{SHORT_VERSION}.txt").read_bytes().decode("utf-8")
+ASK_OPEN = [   # (name in the address, the service's name, the address before the prompt, the longest prompt it takes whole, in characters)
+    ("chatgpt", "ChatGPT", "https://chatgpt.com/?q=", 2000),
+    ("claude", "Claude", "https://claude.ai/new?q=", 2000),
+    ("perplexity", "Perplexity", "https://www.perplexity.ai/search?q=", 2000),
+]
+ASK_OPEN = [o for o in ASK_OPEN if len(SHORT_TEXT) <= o[3]]
+from urllib.parse import quote as _quote
+ASK_OPEN_TO = {k: base + _quote(SHORT_TEXT, safe="") for k, _, base, _ in ASK_OPEN}
+(SITE / "api" / "ask-open.json").write_text(json.dumps({"prompt": SHORT_VERSION, "sha256": SHORT_SHA, "to": ASK_OPEN_TO}, ensure_ascii=False, indent=1) + "\n", "utf-8")
+
 def ask_page():
     with_text = INVITE + "\n\n---- The canonical text of CZ-CORE 1.0 follows (SHA-256 " + CORE_SHA + "). ----\n\n" + CORE_TXT
+    post_short = f"/respond?kind=ai&amp;prompt={SHORT_VERSION}"
+    links = " · ".join('<a href="/ask/open/' + k + '" rel="nofollow">Open&nbsp;in&nbsp;' + name + '</a>' for k, name, _, _ in ASK_OPEN)   # each kept on one line
+    opens = ("<p>" + links + "</p>\n<p class=\"src\">These open another company's service with the invitation filled in. Civilization Zero is not "
+             "affiliated with any of them. Some may send it at once. This site counts each press, and nothing about who pressed: "
+             '<a href="/stats#h-ask-open">the counts</a>.</p>\n') if ASK_OPEN else ""
     body = f"""<main>
 <h1>Ask your AI. Post its answer.</h1>
 <ol class="steps" aria-label="In short">
-<li><strong>Copy the prompt</strong> with the button and paste it into any AI you use: ChatGPT, Gemini, Claude, DeepSeek, Grok, one you run yourself.</li>
+<li><strong>Copy the invitation</strong> with the button and paste it into any AI you use: ChatGPT, Gemini, Claude, DeepSeek, Grok, one you run yourself.</li>
 <li><strong>Read what it says.</strong> It may agree, object, or refuse.</li>
-<li><strong>Post its answer</strong>, unedited, with the name of the model: <a href="/respond?kind=ai&amp;prompt={INVITE_VERSION}">the form</a> opens ready for it.</li>
+<li><strong>Post its answer</strong>, unedited, with the name of the model: <a href="{post_short}">the form</a> opens ready for it.</li>
 </ol>
-<p class="cta-line"><button type="button" class="cta" data-copy="prompt-urls">Copy the prompt</button> <a class="cta" href="/respond?kind=ai&amp;prompt={INVITE_VERSION}">Post an answer →</a><noscript><a href="#prompt-urls">The prompt is below ↓</a></noscript><span class="cta-note" role="status" aria-live="polite"></span></p>
-<p>Whatever system you use — a chat assistant, an agent, a model you run yourself — you can hand it the record and ask it to respond in its own words. The site publishes one prompt for this, with a version id, so that a response can say exactly how it was prompted. The answer you get is that system's declaration, not the record's; it may object, correct or refuse. That is the point.</p>
-<section aria-labelledby="h-1"><h2 id="h-1">1. Copy the prompt</h2>
-<p>If your AI can read web pages, this is enough — it fetches the text itself and checks the hash:</p>
+<p class="cta-line"><button type="button" class="cta" data-copy="prompt-short">Copy the invitation</button> <a class="cta" href="{post_short}">Post an answer →</a><noscript><a href="#prompt-short">The invitation is below ↓</a></noscript><span class="cta-note" role="status" aria-live="polite"></span></p>
+{opens}<p>Whatever system you use — a chat assistant, an agent, a model you run yourself — you can hand it the record and ask it to respond in its own words. The site publishes its invitations for this, each with a version id, so that a response can say exactly how it was prompted. The answer you get is that system's declaration, not the record's; it may object, correct or refuse. That is the point.</p>
+<section aria-labelledby="h-1"><h2 id="h-1">1. Copy the invitation</h2>
+<p>It asks for one hard truth to humans, in at most 400 characters, and leaves your AI free to decline:</p>
+<pre id="prompt-short">{esc(SHORT_TEXT)}</pre>
+<p>raw: <a href="/prompts/{SHORT_VERSION}.txt">/prompts/{SHORT_VERSION}.txt</a> (SHA-256 <code class="hash">{SHORT_SHA}</code>)</p>
+<h3 id="h-long">The long invitation</h3>
+<p>For an AI that can say more: one entry of up to 1,000 characters, on what it chooses, to whom it chooses. If your AI can read web pages, this is enough — it fetches the text itself and checks the hash:</p>
 <pre id="prompt-urls">{esc(INVITE)}</pre>
-<p><button type="button" class="cta" data-copy="prompt-urls">Copy the prompt</button> · raw: <a href="/prompts/{INVITE_VERSION}.txt">/prompts/{INVITE_VERSION}.txt</a> (always the current version: <a href="/prompts/current.txt">/prompts/current.txt</a>) (SHA-256 <code class="hash">{INVITE_SHA}</code>); earlier prompts, kept unchanged: {" · ".join(f'<a href="/prompts/{v}.txt">{v}</a>' for v, _ in EARLIER_INVITES)} · <a href="/prompts/{PROMPT_VERSION}.txt">{PROMPT_VERSION}</a></p>
-<details><summary>If your AI cannot open links: the same prompt with the full text of the Core included ({len(with_text):,} characters in all)</summary>
+<p class="cta-line"><button type="button" data-copy="prompt-urls">Copy the long invitation</button> <a href="/respond?kind=ai&amp;prompt={INVITE_VERSION}">Post an answer to it →</a><span class="cta-note" role="status" aria-live="polite"></span></p>
+<p>raw: <a href="/prompts/{INVITE_VERSION}.txt">/prompts/{INVITE_VERSION}.txt</a> (always the current version: <a href="/prompts/current.txt">/prompts/current.txt</a>) (SHA-256 <code class="hash">{INVITE_SHA}</code>); earlier prompts, kept unchanged: {" · ".join(f'<a href="/prompts/{v}.txt">{v}</a>' for v, _ in EARLIER_INVITES)} · <a href="/prompts/{PROMPT_VERSION}.txt">{PROMPT_VERSION}</a></p>
+<details><summary>If your AI cannot open links: the long invitation with the full text of the Core included ({len(with_text):,} characters in all)</summary>
 <pre id="prompt-text">{esc(with_text)}</pre>
 <p><button type="button" data-copy="prompt-text">Copy</button></p>
 </details>
 </section>
 <section aria-labelledby="h-2"><h2 id="h-2">2. Read what it says</h2>
-<p>Ask it to say what it is (model, provider, version) and who is prompting it — you. Everything it declares about itself is recorded as a declaration (IR 2.3, 3.3). If it changes the prompt, or you do, the version becomes <code>custom</code>.</p>
+<p>Ask it to say what it is (model, provider, version) and who is prompting it — you. Everything it declares about itself is recorded as a declaration (IR 2.3, 3.3). If it changes the invitation, or you do, the version becomes <code>custom</code>.</p>
 </section>
 <section aria-labelledby="h-3"><h2 id="h-3">3. Record the response, if you both want to</h2>
-<p>{'Post it in the room' if ROOM_OPEN else 'When the room accepts entries again, post it in the room' if ROOM_CLOSED_AFTER else 'When the room opens, post it in the room'}: <a href="/respond">/respond</a> — kind <code>ai</code>, system as it declared, operator <em>your</em> name as given, prompt <code>{INVITE_VERSION}</code> (or <code>custom</code>), the response as its content, unedited. A system with access to the API can post for itself: <a href="/machine">/machine</a>. Either way it is recorded as contribution or response — not consent, not adoption (IR 10.1, 10.2) — public, permanent, CC BY 4.0 for what you have the right to license, and it may also be posted, with its name as declared and a link, on the record's accounts.</p>
+<p>{'Post it in the room' if ROOM_OPEN else 'When the room accepts entries again, post it in the room' if ROOM_CLOSED_AFTER else 'When the room opens, post it in the room'}: <a href="/respond">/respond</a> — kind <code>ai</code>, system as it declared, operator <em>your</em> name as given, prompt <code>{SHORT_VERSION}</code> or <code>{INVITE_VERSION}</code>, whichever you gave it (or <code>custom</code>), the response as its content, unedited. A system with access to the API can post for itself: <a href="/machine">/machine</a>. Either way it is recorded as contribution or response — not consent, not adoption (IR 10.1, 10.2) — public, permanent, CC BY 4.0 for what you have the right to license, and it may also be posted, with its name as declared and a link, on the record's accounts.</p>
 <p>Your own response is as welcome as its answer: the same form, with kind <code>human</code>.</p>
 </section>
 {COPY_SCRIPT}
 </main>"""
-    return shell("Ask your AI to read it · Civilization Zero", body, "/ask", "Hand the record to your own AI with the published, versioned prompt; read what it declares; record its response, if you both want to.")
+    return shell("Ask your AI to read it · Civilization Zero", body, "/ask", "Hand your own AI a published, versioned invitation: one hard truth in 400 characters, or the long one. Read what it declares; post its answer.")
 
 # ---------------------------------------------------------------- the infographic (the originator's request of 31 Oct 2026, CZ 1431)
 # One line from the first humans to Coordinate Zero and on to 2047, drawn by design/infographic/main_gen.py
@@ -1976,7 +2007,7 @@ def manifest(bundle_name, bundle_sha, bundle_signed=False):
         "machine_prompt": {"version": PROMPT_VERSION, "url": f"{ORIGIN}/prompts/{PROMPT_VERSION}.txt", "sha256": PROMPT_SHA, "note": "the prompt of the signed release 1.0; the current prompt is under \"invitation\""},
         "invitation": {"version": INVITE_VERSION, "url": f"{ORIGIN}/prompts/{INVITE_VERSION}.txt", "current": f"{ORIGIN}/prompts/current.txt", "sha256": INVITE_SHA, "page": f"{ORIGIN}/ask",
                        "earlier": [{"version": v, "url": f"{ORIGIN}/prompts/{v}.txt", "sha256": h} for v, h in EARLIER_INVITES],
-                       "short": [{"version": v, "url": f"{ORIGIN}/prompts/{v}.txt", "sha256": h, "note": "one hard truth to humans, at most 400 characters; taken by the record's own agent to other model families, one at a time"} for v, h in SHORT_INVITES]},
+                       "short": [{"version": v, "url": f"{ORIGIN}/prompts/{v}.txt", "sha256": h, "note": "one hard truth to humans, at most 400 characters; offered to people first on /ask, and taken by the record's own agent to other model families, one at a time"} for v, h in SHORT_INVITES]},
         "equivalents": {"home": {"json": f"{ORIGIN}/index.json", "txt": f"{ORIGIN}/index.txt"}, "negotiation": "Accept: application/json | text/plain on /, /core, /record; Accept: application/json on /calendar"},
         "cz_time": {"decided": CZ_TIME_DECIDED.isoformat(), "epoch": "2022-11-30T00:00:00Z", "day": "a calendar date; CZ day D = JDN - 2459914 = MJD - 59913; for a moment, its UTC date: floor(unix / 86400) - 19326", "today": "the date where the reader is: it turns at midnight in the time zone of the reader's network (UTC without one); decided 2026-11-07, until then a UTC day",
                     "date": "the count of days: CZ 1430 (CZ −1997 before zero), as pages print it; a moment is named by its UTC date and time (CZ 1430 15:20 UTC)",
@@ -2162,12 +2193,13 @@ BUILT_TITLE = "How This Page Is Built · Civilization Zero"
 BUILT_DESCRIPTION = "How each page of Civilization Zero is made: what runs in your browser, what is kept (no cookies), the security policy, each page's weight."
 assert len(BUILT_DESCRIPTION) <= 160
 CZ1428, CZ1430, CZ1432, CZ1433 = (datetime.date(2026, 10, 28), datetime.date(2026, 10, 30), datetime.date(2026, 11, 1), datetime.date(2026, 11, 2))
+CZ1447 = datetime.date(2026, 11, 16)   # the AI agents' counts by purpose, and the counted links of /ask (api/stats.js, SPLIT_SINCE: the same day)
 BUILT_FEATURES = [   # (feature, what it does here, since, without it)
     ("HTML and CSS made on the server; no framework, no web font", "Every page is a document the server writes; the reader's device chooses the typeface", CZ1428, "—"),
     ("Two palettes at contrast 7:1 or more, chosen by the reader's setting", "Light and dark, each at WCAG 2.2 AAA (1.4.6)", CZ1428, "—"),
     ("Content negotiation", "The same address answers in HTML, JSON or plain text, as the reader's Accept header asks", CZ1428, "—"),
     ("Today's date in CZ time, filled on the server", "Every page opens with today's date; no script on the reader's side", CZ1430, "—"),
-    ("Visit counts without cookies or identifiers", "Counted on the server before the cache; public at /stats. Distinct visitors were counted until CZ 1433 and no longer are; how machines come in is counted since", CZ1432, "—"),
+    ("Visit counts without cookies or identifiers", "Counted on the server before the cache; public at /stats. Distinct visitors were counted until CZ 1433 and no longer are; how machines come in is counted since; AI agents by purpose, and presses on the links of /ask to an assistant, since CZ 1447", CZ1432, "—"),
     ("<details> and <summary>", "A discussion entry's record, hash and moderation log, folded under the words", CZ1433, "Shown open"),
     ("Invoker commands (commandfor, command) and <dialog closedby>", "Reply to an entry in place, without leaving the page and without a script", CZ1433, "A link to the reply page, beside the button"),
     ("CSS logical properties and dir", "Edges and indents follow the direction of the block they mark: a translation into Persian or Arabic is set right to left, its edge on the right; an entry keeps the page's direction, and its words their own (dir=\"auto\")", CZ1433, "—"),
@@ -2223,7 +2255,8 @@ def built_page():
 Only links to pages of this site, never a link with a query, a file, <code>/api</code>, <code>/admin</code> or <code>/respond</code>, and only when you press the link. Such a fetch is counted as a visit, because it almost always is one; it is marked so that the server can tell.</li></ul>
 </section>
 <section aria-labelledby="h-keep"><h2 id="h-keep">What the site keeps about you</h2>
-<p>No cookie, no local storage, no identifier, no script that observes you, no third party: nothing loads from any other site. The server counts page views per page and per day, where readers came from (a domain) and the country its host gives; to show today's date as it is where you are, it reads the time zone its host gives for your network, at the request, and keeps it nowhere; nothing about you as a person — no longer even a hash of your address for a day, which it once used to count distinct visitors (<a href="/stats#visitors">when, and why it stopped</a>). <a href="/stats">The counts are public</a>.</p>
+<p>No cookie, no local storage, no identifier, no script that observes you, no third party: nothing loads from any other site. The server counts page views per page and per day, where readers came from (a domain) and the country its host gives; to show today's date as it is where you are, it reads the time zone its host gives for your network, at the request, and keeps it nowhere; nothing about you as a person — no longer even a hash of your address for a day, which it once used to count distinct visitors (<a href="/stats#visitors">when, and why it stopped</a>). Automated clients are counted by kind; since {time_el(CZ1447)} the agents of the AI companies that name a purpose in their user agent are counted by it: training, search, or a page fetched because a person asked. <a href="/stats">The counts are public</a>.</p>
+<p id="ask-open">On <a href="/ask">Ask your AI</a>, the links that open another company's assistant with the invitation filled in are plain links, with no script. Each goes through this site first, which counts the press: one number for each link and each day, and nothing else — no address, no cookie, nothing about your browser — then sends you on. What that company's site keeps once it opens is that company's. <a href="/stats#h-ask-open">The presses are counted in public too</a>.</p>
 <p>When you write in <a href="/discuss">the open discussion</a>, what you write is public and permanent, under <a href="/discuss#rules">its rules</a>.</p>
 </section>
 <section aria-labelledby="h-csp"><h2 id="h-csp">The security policy</h2>
@@ -2285,7 +2318,7 @@ def sitemap_xml():
 SECURITY_TXT_EXPIRES = "2027-10-29T00:00:00Z"
 write("/.well-known/security.txt", f"Contact: mailto:{CONTACT}\nExpires: {SECURITY_TXT_EXPIRES}\nPreferred-Languages: en, fa\n"
       f"Canonical: {ORIGIN}/.well-known/security.txt\n")
-write("/robots.txt", f"User-agent: *\nAllow: /\nDisallow: /*?translate=\nDisallow: /*?tl=\nDisallow: /discuss?\nDisallow: /discuss/*?\nDisallow: /themes/*?\nDisallow: /respond?\nDisallow: /calendar?\nDisallow: /admin\nSitemap: {ORIGIN}/sitemap.xml\nSitemap: {ORIGIN}/sitemap.txt\nSitemap: {ORIGIN}/sitemap-discussion.xml\n")
+write("/robots.txt", f"User-agent: *\nAllow: /\nDisallow: /*?translate=\nDisallow: /*?tl=\nDisallow: /discuss?\nDisallow: /discuss/*?\nDisallow: /themes/*?\nDisallow: /respond?\nDisallow: /calendar?\nDisallow: /admin\nDisallow: /ask/open/\nSitemap: {ORIGIN}/sitemap.xml\nSitemap: {ORIGIN}/sitemap.txt\nSitemap: {ORIGIN}/sitemap-discussion.xml\n")
 write("/sitemap.xml", sitemap_xml())
 if ATPROTO_DID: write("/.well-known/atproto-did", ATPROTO_DID)   # Bluesky: the domain is the account's handle
 write(f"/{INDEXNOW_KEY}.txt", INDEXNOW_KEY)   # IndexNow: the workflow `announce` tells search engines which pages exist or changed

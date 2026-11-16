@@ -4,7 +4,8 @@
 // the address), the country code Vercel gives, and whether the client is a browser or which kind of automated client it is. Nothing
 // about the client itself: since CZ 1433 no address and no description of the browser is sent, and no count of distinct visitors is
 // made (v12). And how machines enter (v12): a request for a page as Markdown, for /llms.txt or for a canonical text, counted by
-// address and kind of client. No cookie, no identifier, no script. The counts are public: /stats.
+// address and kind of client. And a press on one of /ask's links to another company's assistant (CZ 1447), counted by the link's name
+// alone. No cookie, no identifier, no script. The counts are public: /stats.
 export const config = {
   runtime: "edge",
   // pages only: no API, no files (a dot followed by a file extension), no archive or well-known paths; and how machines enter (v12):
@@ -13,18 +14,45 @@ export const config = {
             "/(.*\\.md)", "/(llms\\.txt|core\\.txt|record\\.txt)"],
 };
 
-// automated clients, by kind; anything that is not a browser and matches none of these is "script"
+// automated clients, by kind; anything that is not a browser and matches none of these is "script". The first match wins, so a
+// company's named agents come before its catch-all.
+// Since CZ 1447 (16 Nov 2026) the agents of the companies that publish one user-agent token per purpose are counted apart, by purpose:
+// "-training" (collects pages that may train its models), "-search" (indexes pages for its search), "-user" (fetches a page because a
+// person asked it to), and "-other" for any other agent of that company. Until that day each company had one key ("openai",
+// "anthropic", "perplexity", "meta", "duckduckgo"); those counts stay as they were, and /stats names them as counted together. Each
+// token as the company documents it (read on 16 Nov 2026):
+//   OpenAI      GPTBot, OAI-SearchBot, ChatGPT-User (OAI-AdsBot: other)     https://developers.openai.com/api/docs/bots
+//   Anthropic   ClaudeBot, Claude-SearchBot, Claude-User; Claude-Agent, in the user agent of a browser Anthropic hosts that Claude
+//               drives for a person   https://support.claude.com/en/articles/8896518-does-anthropic-crawl-data-from-the-web-and-how-can-site-owners-block-the-crawler
+//               https://support.claude.com/en/articles/18234133-how-do-anthropic-hosted-browsers-identify-themselves-when-they-browse-the-web-on-a-user-s-behalf
+//   Perplexity  PerplexityBot (search; not for training), Perplexity-User       https://docs.perplexity.ai/docs/resources/perplexity-crawlers.md
+//   Mistral     MistralAI-Training, MistralAI-Index, MistralAI-User             https://docs.mistral.ai/robots
+//   Amazon      Amazonbot (its products; may train its models), Amzn-SearchBot, Amzn-User   https://developer.amazon.com/amazonbot
+//   Meta        meta-externalagent (training and indexing), meta-webindexer, meta-externalfetcher; facebookexternalhit (link
+//               previews); meta-externalads and facebookcatalog: other     https://developers.facebook.com/docs/sharing/webmasters/web-crawlers
+//   DuckDuckGo  DuckDuckBot (search), DuckAssistBot (pages fetched for its AI-assisted answers; not for training)
+//               https://duckduckgo.com/duckduckgo-help-pages/results/duckduckbot/  https://duckduckgo.com/duckduckgo-help-pages/results/duckassistbot
+// Google keeps one key: Google-Extended is a robots.txt token, not a client. A user agent is what a client says it is: anyone can send
+// one of these names, so each count is at most the number of requests that agent made.
 const BOTS = [
   [/googlebot|google-inspectiontool|googleother|storebot-google|google-read-aloud|adsbot-google|mediapartners-google|google-site-verification|feedfetcher-google/i, "google"],
-  [/bingbot|bingpreview|msnbot|adidxbot/i, "bing"], [/yandex/i, "yandex"], [/baiduspider/i, "baidu"], [/duckduckbot|duckassistbot/i, "duckduckgo"],
-  [/applebot/i, "apple"], [/claudebot|claude-user|claude-searchbot|anthropic/i, "anthropic"],
-  [/gptbot|chatgpt|oai-searchbot|openai/i, "openai"], [/perplexity/i, "perplexity"], [/bytespider|tiktok/i, "bytedance"],
-  [/meta-externalagent|meta-externalfetcher|meta-webindexer|facebookexternalhit|facebookcatalog/i, "meta"],
+  [/bingbot|bingpreview|msnbot|adidxbot/i, "bing"], [/yandex/i, "yandex"], [/baiduspider/i, "baidu"],
+  [/duckassistbot/i, "duckduckgo-assist"], [/duckduckbot/i, "duckduckgo-search"],
+  [/applebot/i, "apple"],
+  [/claude-user/i, "anthropic-user"], [/claude-agent/i, "anthropic-agent"], [/claude-searchbot/i, "anthropic-search"], [/claudebot/i, "anthropic-training"], [/anthropic/i, "anthropic-other"],
+  [/chatgpt-user/i, "openai-user"], [/oai-searchbot/i, "openai-search"], [/gptbot/i, "openai-training"], [/chatgpt|openai/i, "openai-other"],
+  [/perplexity-user/i, "perplexity-user"], [/perplexitybot/i, "perplexity-search"], [/perplexity/i, "perplexity-other"],
+  [/mistralai-user/i, "mistral-user"], [/mistralai-index/i, "mistral-search"], [/mistralai-training/i, "mistral-training"], [/mistralai/i, "mistral-other"],
+  [/amzn-user/i, "amazon-user"], [/amzn-searchbot/i, "amazon-search"], [/amazonbot/i, "amazon-training"],
+  [/bytespider|tiktok/i, "bytedance"],
+  [/meta-externalfetcher/i, "meta-user"], [/meta-webindexer/i, "meta-search"], [/meta-externalagent/i, "meta-training"], [/facebookexternalhit/i, "meta-preview"],
+  [/meta-externalads|facebookcatalog/i, "meta-other"],
   [/twitterbot|xbot/i, "x"], [/linkedinbot/i, "linkedin"], [/slackbot|discordbot|telegrambot|whatsapp|skypeuripreview|mastodon|bluesky|cardyb|embedly|iframely|redditbot|pinterest/i, "link-preview"],
   [/ahrefs|semrush|mj12bot|dotbot|petalbot|seznam|dataforseo|serpstat|screaming frog/i, "seo"],
   [/archive\.org_bot|ia_archiver|heritrix/i, "archive"],
   [/bot\b|bot\/|crawler|spider|crawl|slurp|fetcher|preview/i, "other-bot"],
 ];
+export const BOT_KINDS = [...new Set(BOTS.map(([, k]) => k)), "script"];   // every key this file counts automated clients under (each has a name on /stats: test/visits.test.mjs)
 const SELF = /^(civilizationzero\.ai|www\.civilizationzero\.ai|civilization-zero[a-z0-9-]*\.vercel\.app)$/i;
 
 export function agentOf(ua) {
@@ -57,13 +85,24 @@ export function entranceKey(pathname) {
   if (/^\/themes\/[a-z0-9-]{2,40}\.md$/.test(l) || PAGES_MD.test(l)) return l;
   return "(other)";
 }
+// the assistants /ask links to (api/ask-open.json, made by build.py, has their addresses); a trailing slash is not one of them, since the
+// site redirects it to the address without, which is then counted once
+const ASK_OPEN = /^\/ask\/open\/(chatgpt|claude|perplexity)$/;
 // what one request contributes: null when it is not counted (not a page view: not GET, a prefetch, or a non-HTML request from a
-// browser); { entrance } for a machine's way in, counted apart, by kind of client only
+// browser); { entrance } for a machine's way in, counted apart, by kind of client only; { open } for a press on a link of /ask to an
+// assistant, by the link's name only
 export function visitOf(request) {
   if (request.method !== "GET") return null;
   const h = request.headers, url = new URL(request.url);
   if (url.pathname === "/discuss/translating") return null;   // the translation progress page updates itself every second or two (CZ 1445): not views
   const purpose = `${h.get("sec-purpose") || ""} ${h.get("purpose") || ""} ${h.get("x-purpose") || ""} ${h.get("x-moz") || ""}`.toLowerCase();
+  // a press on one of /ask's links that open another company's assistant with the short invitation (CZ 1447): /ask/open/<name>, which
+  // api/page.js answers with a redirect. Counted by the link's name only, and only when a browser asks (not a crawler, not a prefetch:
+  // the links are rel="nofollow", which the speculation rules and polite crawlers leave alone); never a page view
+  if (url.pathname === "/ask/open" || url.pathname.startsWith("/ask/open/")) {
+    const m = ASK_OPEN.exec(url.pathname);
+    return m && !purpose.includes("prefetch") && !purpose.includes("prerender") && agentOf(h.get("user-agent") || "") === "human" ? { open: true, p_name: m[1] } : null;
+  }
   const way = entranceKey(url.pathname);
   if (way) return purpose.includes("prefetch") || purpose.includes("prerender") ? null : { entrance: true, p_path: way, p_agent: agentOf(h.get("user-agent") || "") };
   // a prefetch is not a page view — except this site's own speculation rule (stage 5, CZ 1433), tagged "cz", which fetches a page as the
@@ -84,8 +123,8 @@ async function send(v) {
   const base = process.env.SUPABASE_URL, key = process.env.SUPABASE_ANON_KEY, token = process.env.CZ_ADMIN_TOKEN;
   if (!base || !key || !token) return;
   try {
-    const { entrance, ...args } = v;
-    await fetch(`${base}/rest/v1/rpc/${entrance ? "cz_count_entrance" : "cz_count"}`, { method: "POST", headers: { apikey: key, Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+    const { entrance, open, ...args } = v;
+    await fetch(`${base}/rest/v1/rpc/${open ? "cz_count_ask_open" : entrance ? "cz_count_entrance" : "cz_count"}`, { method: "POST", headers: { apikey: key, Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
       body: JSON.stringify({ ...args, p_token: token }), signal: AbortSignal.timeout(4000) });
   } catch {}   // a count that fails is a count lost, never a page that fails
 }

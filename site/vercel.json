@@ -343,6 +343,10 @@
       "destination": "/api/page?p=ask"
     },
     {
+      "source": "/ask/open/:name(chatgpt|claude|perplexity)",
+      "destination": "/api/page?open=:name"
+    },
+    {
       "source": "/machine",
       "destination": "/api/page?p=machine"
     },
