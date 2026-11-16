@@ -7,7 +7,7 @@ The code is MIT and the texts are CC BY 4.0; the repository is public from its f
 - The site: pages, equivalents, headers, accessibility, performance, the build and its checks (`site/`). A change must keep `python3 site/build.py` passing; the check rebuilds the output and fails on any drift from the record.
 - Translations of the Core and the Record, labelled with their mapping to the English text (IR 10.5). Machine translations are labelled as such; human-reviewed translations name their reviewers.
 - Mirrors, deposit, verification tooling, recovery exercises (`/archive`).
-- Objections and errata to the record itself: `record/OBJECTIONS-1.0.md`. Anyone may file one; the originator responds within 60 days; a response does not close an objection. The register is the opening docket of the first scheduled review of the Core (30 November 2031).
+- Objections and errata to the record itself: `record/OBJECTIONS-1.0.md`. Anyone may file one; the originator responds within 60 days; a response does not close an objection. The register is the opening docket of the first scheduled review of the Core (CZ 2048, 9 July 2028).
 - Reviews: adversarial readings of the page, the blueprint or the record, by humans or systems, are archived verbatim with their provenance under `design/test/`.
 
 ## Not changed by pull request
