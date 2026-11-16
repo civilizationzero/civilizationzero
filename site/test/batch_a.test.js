@@ -41,6 +41,16 @@ const pub = (f) => fs.readFileSync(`${SITE}/public/${f}`, "utf8");
   }
   { const m = await call(page, "/api/page?p=about&f=md"); ok(m.headers.link === undefined && m.headers["x-robots-tag"] === "noindex", "about.md: not indexed, no canonical beside the noindex"); }
   ok(/rel="cite-as"/.test(vLink("/core")) && /rel="cite-as"/.test(vLink("/core.(txt|json)")) && /rel="cite-as"/.test(vLink("/record.(txt|json)")), "vercel.json: cite-as on the texts in every form");
+  // audit B (CZ 1447): as Markdown, every translation of the Core keeps its label — in its language and in English — and its preamble,
+  // each once and before §0; the English Core keeps its preamble; a page with neither is as it was
+  for (const f of fs.readdirSync(`${SITE}/public`).filter((x) => /^core\.[A-Za-z-]+\.json$/.test(x) && x !== "core.schema.json")) {
+    const l = f.slice(5, -5), j = JSON.parse(pub(f)), m = (await call(page, `/api/page?p=core.${l}&f=md`)).body, body = m.slice(m.indexOf("\n---\n") + 5);
+    ok(body.trimStart().startsWith(j.label_native) && body.split(j.label_native).length === 2, `core.${l}.md: the label in its language, first and once`);
+    ok(/\*\*Machine translation\*\* — [^\n]*, unreviewed\. The English text is canonical/.test(body), `core.${l}.md: the label in English`);
+    ok(body.split(j.preamble).length === 2 && body.indexOf(j.preamble) < body.indexOf("## §0."), `core.${l}.md: the preamble, once, before §0`);
+  }
+  { const m = (await call(page, "/api/page?p=core&f=md")).body, pre = JSON.parse(pub("core.json")).preamble;
+    ok(m.split(pre).length === 2 && m.indexOf(pre) < m.indexOf("## §0."), "core.md: the preamble, once, before §0"); }
 
   // 4. the colophon: the deployment and the latest check
   process.env.VERCEL_GIT_COMMIT_SHA = "a".repeat(40);
