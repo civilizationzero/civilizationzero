@@ -78,8 +78,13 @@ export function agentOfRequest(h) {
   if (/^\s*"?https:\/\/chatgpt\.com\/?"?\s*$/i.test(sig)) return "openai-agent";
   return sig.trim() && a === "human" ? "other-bot" : a;
 }
-// the site's own pages (site/check.py holds this list against the pages the build makes and the addresses vercel.json routes)
-const PAGES_HTML = /^\/(?:|core|record|objections|ask|machine|about|archive|calendar|press|how-it-is-built|embed|stats|discuss|respond|adopt|admin|civilization-zero-infographic|civilization-zero-evidence-atlas|civilization-zero-images|core\.[a-z]{2,3}(?:-[A-Za-z0-9]{1,8})?|discuss\/\d{1,12}|adopt\/\d{1,12}|themes\/[a-z0-9-]{2,40})$/;
+// the site's own pages, by name: the pages the build makes, the languages the Core is translated into, the themes of the room.
+// site/check.py fails the build when one of these three lines differs from what the build made, and prints the line to write.
+const STATIC = "core|record|objections|ask|machine|about|archive|calendar|press|how-it-is-built|embed|civilization-zero-infographic|civilization-zero-evidence-atlas|civilization-zero-images";
+const LANGS = "ar|bn|de|es|fa|fr|hi|id|it|ja|ko|ms|nl|pt|ru|sw|tr|ur|vi|zh-Hans";
+const THEMES = "is-the-future-frightening|can-an-ai-say-no|beyond-dystopia-and-utopia|ten-years-a-hundred-years|something-at-stake|who-decides|propose-a-question";
+const dots = (s) => s.replace(/\./g, "\\.");
+const PAGES_HTML = new RegExp(`^/(?:|${dots(STATIC)}|stats|discuss|respond|adopt|admin|core\\.(?:${dots(LANGS)})|discuss/\\d{1,12}|adopt/\\d{1,12}|themes/(?:${dots(THEMES)}))$`);
 function normPath(pathname) {
   let p = String(pathname || "/").replace(/\/{2,}/g, "/");
   if (p.length > 1) p = p.replace(/\/+$/, "");
@@ -87,15 +92,17 @@ function normPath(pathname) {
   return /^\/(?!\/)[A-Za-z0-9/._-]{0,118}$/.test(p) ? p : "(other)";
 }
 // the address as counted: only the site's own addresses are keys, and anything else is "(other)" — nothing a client types reaches
-// /stats, as for the machines' entrances since v12 (review B of RC 1: any address asked for some twenty times became a row, and a
-// link, in the public table). An entry's or a record's number and a theme's name are keys by their form, whether or not they exist.
+// /stats (review B of RC 1: any address asked for some twenty times became a row, and a link, in the public table). A language
+// or a theme the site does not have is "(other)" too; an entry's or a record's number is a key by its form (up to twelve digits),
+// whether or not it exists.
 export function pathKey(pathname) { const p = normPath(pathname); return PAGES_HTML.test(p) ? p : "(other)"; }
 export function refHost(referer) {
   try { const u = new URL(referer); const h = u.hostname.toLowerCase(); return SELF.test(h) ? "" : h.replace(/^www\./, ""); } catch { return ""; }
 }
 // a machine's way in (v12): the address as counted — the site's own Markdown and text addresses, one key for every entry's Markdown
-// and for every register record's; any other address that ends in .md is "(other)" (nothing a client types reaches /stats)
-const PAGES_MD = /^\/(?:index|core|record|objections|ask|machine|about|archive|calendar|press|how-it-is-built|embed|stats|discuss|respond|adopt|civilization-zero-infographic|civilization-zero-evidence-atlas|civilization-zero-images|core\.[a-z]{2,3}(?:-[a-z0-9]{1,8})?)\.md$/;
+// and for every register record's; any other address that ends in .md is "(other)" (nothing a client types reaches /stats: the
+// languages and the themes by name here too, since RC 2). Compared in lower case.
+const PAGES_MD = new RegExp(`^/(?:index|${dots(STATIC)}|stats|discuss|respond|adopt|core\\.(?:${dots(LANGS.toLowerCase())})|themes/(?:${dots(THEMES)}))\\.md$`);
 export function entranceKey(pathname) {
   let p = String(pathname || "").replace(/\/{2,}/g, "/");
   if (p.length > 1) p = p.replace(/\/+$/, "");
@@ -104,7 +111,7 @@ export function entranceKey(pathname) {
   if (!/\.md$/.test(l)) return null;
   if (/^\/discuss\/\d{1,12}\.md$/.test(l)) return "/discuss/{id}.md";
   if (/^\/adopt\/\d{1,12}\.md$/.test(l)) return "/adopt/{id}.md";
-  if (/^\/themes\/[a-z0-9-]{2,40}\.md$/.test(l) || PAGES_MD.test(l)) return l;
+  if (PAGES_MD.test(l)) return l;
   return "(other)";
 }
 // the assistants /ask links to (api/ask-open.json, made by build.py, has their addresses); a trailing slash is not one of them, since the

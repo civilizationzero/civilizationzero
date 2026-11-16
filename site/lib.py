@@ -84,6 +84,8 @@ INDEXNOW_KEY = "5dbddf2e3c978c9f9cf5e54812ab90ef"   # public by design: /<key>.t
 # answer begins a conversation of its own; no one else opens a theme. The one marked "proposals" collects proposals for new
 # questions. Each: {"slug": "…" (a-z, 0-9, hyphens), "title": "…", "entry": <the opening entry's id>, "opened": "YYYY-MM-DD"}
 # (+ "proposals": True). Served at /themes/<slug>. Empty until the originator has approved the opening texts and they are posted.
+# A new theme's slug goes into THEMES in middleware.js too, so that its page is counted under its own address (check.py fails the
+# build until it does, and prints the line to write).
 THEMES = [{"slug": "is-the-future-frightening", "title": "Is the future frightening?", "entry": 10, "opened": "2026-10-31"},
           {"slug": "can-an-ai-say-no", "title": "Can an AI say no?", "entry": 11, "opened": "2026-10-31"},
           {"slug": "beyond-dystopia-and-utopia", "title": "Beyond dystopia and utopia", "entry": 12, "opened": "2026-10-31"},

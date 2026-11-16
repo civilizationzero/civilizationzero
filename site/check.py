@@ -406,16 +406,20 @@ check(f"\nexport const ASK_OFFERED = {json.dumps(_open.get('offered', []))};\n" 
 check('(OPEN.offered || []).includes(name) && Object.prototype.hasOwnProperty.call(OPEN.to, name)' in (SITE / "api/page.js").read_text("utf-8"), "api/page.js: a link that is not offered must not be served")
 # page views are keyed only by the site's own addresses (review B of RC 1): the middleware's list holds every page the build makes and
 # every page address vercel.json routes, and nothing a client could make up
-_ph = re.search(r"^const PAGES_HTML = /(.+)/;$", _mw, re.M)
-check(_ph is not None and "export function pathKey(pathname) { const p = normPath(pathname); return PAGES_HTML.test(p) ? p : \"(other)\"; }" in _mw, "middleware.js: page views are not keyed by the list of the site's own pages")
-if _ph is not None:
-    _phre = re.compile(_ph.group(1).replace("\\/", "/"))
-    _own = {"/"} | {"/" + f.name[:-5] for f in PUBLIC.glob("*.html") if f.name not in ("404.html", "index.html")}
-    _own |= {r["source"] for r in v["rewrites"] if ":" not in r["source"] and "." not in r["source"] and not r["source"].startswith("/api/") and r["source"] != "/discuss/translating"}
-    _own |= {"/discuss/1", "/discuss/999999999999", "/adopt/1"} | {"/themes/" + t["slug"] for t in json.loads((SITE / "api/discuss-templates.json").read_text("utf-8")).get("themes", [])}
-    check(len(_own) >= 40 and all(_phre.fullmatch(a) for a in _own), f"middleware.js: PAGES_HTML lacks an address of the site: {sorted(a for a in _own if not _phre.fullmatch(a))}")
-    _not = ["/404", "/index", "/x", "/Core", "/ask/open", "/ask/open/claude", "/discuss/x", "/discuss/1/x", "/themes", "/api/page", "/wp-login.php", "/.env", "//core", "/core/", "/stats.json", "/a" * 30]
-    check(not any(_phre.fullmatch(a) for a in _not), f"middleware.js: PAGES_HTML takes an address that is no page: {[a for a in _not if _phre.fullmatch(a)]}")
+_static = sorted(f.name[:-5] for f in PUBLIC.glob("*.html") if f.name not in ("404.html", "index.html") and not re.fullmatch(r"core\.[^.]+\.html", f.name))
+_langs = sorted(f.name[5:-5] for f in PUBLIC.glob("core.*.html"))
+_themes = [t["slug"] for t in json.loads((SITE / "api/discuss-templates.json").read_text("utf-8")).get("themes", [])]
+_names = lambda line: set((m.group(1).split("|") if (m := re.search(rf'^const {line} = "([^"\n]*)";$', _mw, re.M)) else []))
+for _line, _want in (("STATIC", _static), ("LANGS", _langs), ("THEMES", _themes)):
+    check(len(_want) >= 7 and _names(_line) == set(_want) and all(re.fullmatch(r"[A-Za-z0-9.-]+", x) for x in _want),
+          f'middleware.js: {_line} is not what the build made. Write: const {_line} = "{"|".join(_want)}";')
+check('const PAGES_HTML = new RegExp(`^/(?:|${dots(STATIC)}|stats|discuss|respond|adopt|admin|core\\\\.(?:${dots(LANGS)})|discuss/\\\\d{1,12}|adopt/\\\\d{1,12}|themes/(?:${dots(THEMES)}))$`);' in _mw
+      and 'export function pathKey(pathname) { const p = normPath(pathname); return PAGES_HTML.test(p) ? p : "(other)"; }' in _mw
+      and 'const PAGES_MD = new RegExp(`^/(?:index|${dots(STATIC)}|stats|discuss|respond|adopt|core\\\\.(?:${dots(LANGS.toLowerCase())})|themes/(?:${dots(THEMES)}))\\\\.md$`);' in _mw,
+      "middleware.js: page views and entrances are not keyed by the lists of the site's own pages, languages and themes")
+# the pages the functions serve, which the build does not make as files: each is routed by vercel.json and named in that pattern
+_fn = {r["source"] for r in v["rewrites"] if ":" not in r["source"] and "." not in r["source"] and not r["source"].startswith("/api/") and r["source"] != "/discuss/translating"} - {"/"} - {"/" + x for x in _static}
+check(_fn == {"/stats", "/discuss", "/respond", "/adopt", "/admin"}, f"vercel.json routes a page the middleware's list of pages does not name, or the reverse: {sorted(_fn)}")
 # the day the agents began to be counted by purpose is the database's (v15, agents_by_purpose_since), never written into a page or the
 # code, so that it is right whatever day the change is deployed (review 1-2 A)
 check('(<a href="/stats#by-purpose">since when</a>)' in _built and "SPLIT_SINCE" not in (SITE / "api/stats.js").read_text("utf-8")

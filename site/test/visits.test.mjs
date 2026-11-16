@@ -1,6 +1,6 @@
 // The visit counter (middleware.js) and the public counts (/stats). Run: node site/test/visits.test.mjs
 // middleware.js is loaded as an ES module (Vercel bundles it); the database is stubbed (global fetch). Nothing leaves the machine.
-import { readFileSync, writeFileSync, mkdtempSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdtempSync, readdirSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -53,11 +53,20 @@ for (const [ua, want] of [
 for (const [p, want] of [["/", "/"], ["/core/", "/core"], ["/core.fa", "/core.fa"], ["/discuss/12", "/discuss/12"], ["//core", "/core"], ["/%3Cscript%3E", "(other)"], ["/" + "a".repeat(200), "(other)"], ["/themes/can-an-ai-say-no", "/themes/can-an-ai-say-no"]])
   ok(M.pathKey(p) === want, `path ${p.slice(0, 30)} → ${M.pathKey(p)}`);
 // only the site's own addresses are keys: nothing a client types becomes a row, or a link, on /stats (review B of RC 1)
-for (const p of ["/this-site-is-a-fraud-call-0123456789", "/wp-login.php", "/Core", "/core.md.bak", "/core/x", "/discuss/x", "/discuss/12/x", "/themes", "/themes/A", "/adopt/x", "/404", "/index", "/api", "/ask/open", "/x", "/core.toolong", "/.env"])
+for (const p of ["/this-site-is-a-fraud-call-0123456789", "/wp-login.php", "/Core", "/core.md.bak", "/core/x", "/discuss/x", "/discuss/12/x", "/themes", "/themes/A", "/adopt/x", "/404", "/index", "/api", "/ask/open", "/x", "/core.toolong", "/.env",
+  "/core.zz", "/core.en", "/core.zh", "/core.zh-hans", "/core.FA", "/core.fa-x", "/core.md", "/core.txt", "/themes/this-site-is-a-fraud", "/themes/can-an-ai-say-no-2", "/themes/x1", "/coreXfa", "/discuss/1234567890123"])
   ok(M.pathKey(p) === "(other)", `not an address of the site: ${p} → ${M.pathKey(p)}`);
 for (const p of ["/", "/core", "/record", "/objections", "/ask", "/machine", "/about", "/archive", "/calendar", "/press", "/how-it-is-built", "/embed", "/stats", "/discuss", "/respond", "/adopt", "/admin", "/civilization-zero-infographic",
   "/civilization-zero-evidence-atlas", "/civilization-zero-images", "/core.fa", "/core.zh-Hans", "/discuss/137", "/adopt/1", "/themes/can-an-ai-say-no"])
   ok(M.pathKey(p) === p, `an address of the site is its own key: ${p} → ${M.pathKey(p)}`);
+// by name, not by form: every language the Core has as a page and every theme the room lists is a key, as a page and as Markdown, and no other is
+{ const langs = readdirSync(join(SITE, "public")).map((f) => (/^core\.([^.]+)\.html$/.exec(f) || [])[1]).filter(Boolean), themes = JSON.parse(readFileSync(join(SITE, "api/discuss-templates.json"), "utf8")).themes.map((t) => t.slug);
+  ok(langs.length >= 20 && langs.every((l) => M.pathKey(`/core.${l}`) === `/core.${l}` && M.entranceKey(`/core.${l}.md`) === `/core.${l.toLowerCase()}.md`), `every language of the Core is a key (${langs.length})`);
+  ok(themes.length >= 7 && themes.every((t) => M.pathKey(`/themes/${t}`) === `/themes/${t}` && M.entranceKey(`/themes/${t}.md`) === `/themes/${t}.md`), `every theme of the room is a key (${themes.length})`);
+  const pages = readdirSync(join(SITE, "public")).filter((f) => /\.html$/.test(f) && f !== "404.html").map((f) => "/" + f.slice(0, -5));
+  ok(pages.length >= 34 && pages.every((p) => M.pathKey(p) === p && M.entranceKey(p + ".md") === (p + ".md").toLowerCase()), `every page the build makes is a key, as a page and as Markdown (${pages.length})`); }
+for (const p of ["/themes/this-site-is-a-fraud.md", "/core.zz.md", "/core.xx-abcdefgh.md", "/admin.md", "/404.md", "/made-up.md"])
+  ok(M.entranceKey(p) === "(other)", `not a Markdown address of the site: ${p} → ${M.entranceKey(p)}`);
 for (const [r, want] of [["https://x.com/czrecord/status/1", "x.com"], ["https://www.google.com/", "google.com"], ["https://civilizationzero.ai/core", ""], ["https://www.civilizationzero.ai/", ""], ["https://civilization-zero-abc-sharifmatrix.vercel.app/", ""], ["not a url", ""], ["", ""]])
   ok(M.refHost(r) === want, `referer ${r} → ${M.refHost(r)}`);
 const req = (path, headers = {}, method = "GET") => new Request("https://civilizationzero.ai" + path, { method, headers });
