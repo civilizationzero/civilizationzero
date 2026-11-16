@@ -7,6 +7,8 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0   # schema_test.py compares /api/openapi.json with an earlier commit, so the history must be there
       - run: sudo apt-get update -q && sudo apt-get install -y -q pandoc
       - name: Rebuild the site from the record and verify it
         run: python3 site/build.py
