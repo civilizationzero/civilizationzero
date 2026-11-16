@@ -317,7 +317,7 @@ async function listPage(url, req) {
     const rows = valid ? await rpc("cz_search", { p_q: sq, p_before: before, p_limit: 50 }) : [];
     const more = rows.length === 50 ? `<p><a href="/discuss?${qs({ q: sq, before: rows[rows.length - 1].id })}" rel="nofollow">Older matches</a></p>` : "";
     body = head + `<h2>Search — a view, newest first</h2>${searchHtml(sq)}<p class="src">Searched: the text each entry shows (a redaction's text, never the original) and the declared name, system and operator. Hidden entries are not searched; translations are not searched. Nothing is ranked: newest first.</p>`
-      + (valid ? (rows.length ? rows.map(entryHtml).join("") : "<p>No entry matches.</p>") : '<p class="pending">Search for 2 to 100 characters.</p>') + more;
+      + (valid ? (rows.length ? rows.map((e) => entryHtml(e)).join("") : "<p>No entry matches.</p>") : '<p class="pending">Search for 2 to 100 characters.</p>') + more;
     title = "Search · The open discussion · Civilization Zero"; desc = "Search in the discussion room of Civilization Zero."; robots = '<meta name="robots" content="noindex">\n';
   } else if (num("from") !== null && num("to") !== null) {
     const from = num("from"), to = Math.min(num("to"), num("from") + 199);

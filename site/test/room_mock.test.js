@@ -59,6 +59,11 @@ const srv = http.createServer((q, s) => {
       }
       out = null;
     }
+    else if (name === "cz_search") {   // as the SQL does: 2 to 100 characters, any case, in the text, the name, the system or the operator; hidden never; newest first
+      const q = String(a.p_q || "").trim().toLowerCase(), has = (x) => String(x || "").toLowerCase().includes(q);
+      out = Array.from(q).length < 2 || Array.from(q).length > 100 ? [] : TABLE.filter((e) => !e.hidden && (a.p_before == null || e.id < a.p_before) && (has(e.content) || has(e.author) || has(e.system) || has(e.operator)))
+        .sort((x, y) => y.id - x.id).slice(0, Math.min(Math.max(a.p_limit ?? 50, 1), 100));
+    }
     else if (name === "cz_stats") out = { entries: TABLE.length, hidden: TABLE.filter((e) => e.hidden).length, redacted: 0, today: 0, daily_intake_max: 500, unclassified: 0 };
     s.setHeader("content-type", "application/json"); s.end(JSON.stringify(out));
   });
@@ -307,6 +312,26 @@ srv.listen(0, "127.0.0.1", async () => {
     ok(!r.body.includes("<th>Receipt</th>") && !r.body.includes("recorded by the server)"), "an older entry: no receipt row, no way in");
     r = await call(discuss, "/api/discuss?id=2&f=md");
     ok(r.body.includes(`\nreceipt_sha256: "${"e".repeat(64)}"\n`) && r.body.includes('\nvia: "form"\n'), "the entry's Markdown front matter carries both");
+    // ---------- search with results (review A of RC 1): the page answered 503 whenever an entry matched, since entryHtml was handed
+    // to Array.map, whose second and third arguments (the index, the rows) it took as its own (a class, a translation)
+    TABLE = [entry(1, { content: "A lighthouse keeper writes about the tide." }), entry(2, { content: "Nothing of that kind here, only a harbour." }), entry(3, { content: "The LIGHTHOUSE again, in capitals.", hidden: true }),
+      entry(4, { author: "Lighthouse Reader", content: "The word is in my name, not in my text." }), entry(5, { kind: "ai", system: "lighthouse-1", content: "The word is in the system I declare." })];
+    CALLS = []; r = await call(discuss, "/api/discuss?q=lighthouse");
+    const found = (r.body.match(/<article class="entry[^"]*" id="e(\d+)"/g) || []).map((x) => Number(/e(\d+)"$/.exec(x)[1]));
+    ok(r.status === 200 && found.join() === "5,4,1" && CALLS.some((c) => c.name === "cz_search" && c.args.p_q === "lighthouse" && c.args.p_limit === 50), `a search that finds entries shows them, newest first, never a hidden one (${r.status}; entries ${found.join()})`);
+    ok(r.status === 200 && r.body.includes('<article class="entry k-ai" id="e5" aria-label="Entry #5">') && r.body.includes('<article class="entry" id="e1" aria-label="Entry #1">') && !/<article class="entry[^"]*\d"/.test(r.body) && r.body.includes("A lighthouse keeper writes about the tide.") && /<meta name="robots" content="noindex">/.test(r.body),
+       "each match is a whole entry, with its own class and text; the search view is not indexed");
+    r = await call(discuss, "/api/discuss?q=lighthouse&f=md");
+    ok(r.status === 200 && /markdown/.test(r.headers["content-type"] || "") && r.body.includes("A lighthouse keeper writes about the tide."), `the same search as Markdown (${r.status})`);
+    r = await call(discuss, "/api/discuss?q=zeppelin");
+    ok(r.status === 200 && r.body.includes("<p>No entry matches.</p>") && !/<article class="entry/.test(r.body), "a search that finds nothing says so");
+    CALLS = []; r = await call(discuss, "/api/discuss?q=x");
+    ok(r.status === 200 && r.body.includes("Search for 2 to 100 characters.") && !CALLS.some((c) => c.name === "cz_search"), "one character: not searched, and the page says why");
+    TABLE = Array.from({ length: 60 }, (_, i) => entry(i + 1, { content: `Lighthouse number ${i + 1}, long enough to be valid.` }));
+    r = await call(discuss, "/api/discuss?q=lighthouse");
+    ok(r.status === 200 && (r.body.match(/<article class="entry/g) || []).length === 50 && /<a href="\/discuss\?q=lighthouse&(?:amp;)?before=11" rel="nofollow">Older matches<\/a>/.test(r.body), "fifty matches a page, then a link to the older ones");
+    r = await call(discuss, "/api/discuss?q=lighthouse&before=11");
+    ok(r.status === 200 && (r.body.match(/<article class="entry/g) || []).length === 10 && !r.body.includes("Older matches"), "the older matches, to the end");
   } catch (e) { fail++; console.log("FAIL exception", e.stack); }
   console.error = quiet;
   console.log(`pass ${pass} fail ${fail}`); srv.close(); process.exit(fail ? 1 : 0);
