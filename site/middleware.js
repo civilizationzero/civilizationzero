@@ -32,8 +32,14 @@ export const config = {
 //               previews); meta-externalads and facebookcatalog: other     https://developers.facebook.com/docs/sharing/webmasters/web-crawlers
 //   DuckDuckGo  DuckDuckBot (search), DuckAssistBot (pages fetched for its AI-assisted answers; not for training)
 //               https://duckduckgo.com/duckduckgo-help-pages/results/duckduckbot/  https://duckduckgo.com/duckduckgo-help-pages/results/duckassistbot
+//   OpenAI's ChatGPT agent (its cloud browser) sends an ordinary browser's user agent and names itself by a header instead:
+//   Signature-Agent "https://chatgpt.com", with RFC 9421 signatures (https://help.openai.com/fr-ca/articles/11845367-chatgpt-works-cloud-browser-allowlisting):
+//   counted as "openai-agent", as Claude-Agent is "anthropic-agent" — a browser an AI drives for a person, not a person's page view
+//   (agentOfRequest; review 1-2 C). Any other signed agent with a browser's user agent is an "other-bot".
 // Google keeps one key: Google-Extended is a robots.txt token, not a client. A user agent is what a client says it is: anyone can send
 // one of these names, so each count is at most the number of requests that agent made.
+// Link previews that name other companies' crawlers in their user agents go first: iMessage's ("… facebookexternalhit/1.1 Facebot
+// Twitterbot/1.0") is not Meta's, Telegram's ("TelegramBot (like TwitterBot)") is not X's (review 1-2 C).
 const BOTS = [
   [/googlebot|google-inspectiontool|googleother|storebot-google|google-read-aloud|adsbot-google|mediapartners-google|google-site-verification|feedfetcher-google/i, "google"],
   [/bingbot|bingpreview|msnbot|adidxbot/i, "bing"], [/yandex/i, "yandex"], [/baiduspider/i, "baidu"],
@@ -45,14 +51,15 @@ const BOTS = [
   [/mistralai-user/i, "mistral-user"], [/mistralai-index/i, "mistral-search"], [/mistralai-training/i, "mistral-training"], [/mistralai/i, "mistral-other"],
   [/amzn-user/i, "amazon-user"], [/amzn-searchbot/i, "amazon-search"], [/amazonbot/i, "amazon-training"],
   [/bytespider|tiktok/i, "bytedance"],
+  [/facebot twitterbot|telegrambot/i, "link-preview"],
   [/meta-externalfetcher/i, "meta-user"], [/meta-webindexer/i, "meta-search"], [/meta-externalagent/i, "meta-training"], [/facebookexternalhit/i, "meta-preview"],
   [/meta-externalads|facebookcatalog/i, "meta-other"],
-  [/twitterbot|xbot/i, "x"], [/linkedinbot/i, "linkedin"], [/slackbot|discordbot|telegrambot|whatsapp|skypeuripreview|mastodon|bluesky|cardyb|embedly|iframely|redditbot|pinterest/i, "link-preview"],
+  [/twitterbot|xbot/i, "x"], [/linkedinbot/i, "linkedin"], [/slackbot|discordbot|telegrambot|whatsapp|skypeuripreview|mastodon|bluesky|cardyb|embedly|iframely|redditbot|pinterestbot|pinterest\/0\./i, "link-preview"],   // Pinterest's crawler, not its in-app browser
   [/ahrefs|semrush|mj12bot|dotbot|petalbot|seznam|dataforseo|serpstat|screaming frog/i, "seo"],
   [/archive\.org_bot|ia_archiver|heritrix/i, "archive"],
   [/bot\b|bot\/|crawler|spider|crawl|slurp|fetcher|preview/i, "other-bot"],
 ];
-export const BOT_KINDS = [...new Set(BOTS.map(([, k]) => k)), "script"];   // every key this file counts automated clients under (each has a name on /stats: test/visits.test.mjs)
+export const BOT_KINDS = [...new Set([...BOTS.map(([, k]) => k), "openai-agent", "script"])];   // every key this file counts automated clients under (each has a name on /stats: test/visits.test.mjs)
 const SELF = /^(civilizationzero\.ai|www\.civilizationzero\.ai|civilization-zero[a-z0-9-]*\.vercel\.app)$/i;
 
 export function agentOf(ua) {
@@ -60,7 +67,16 @@ export function agentOf(ua) {
   for (const [re, name] of BOTS) if (re.test(s)) return name;
   if (/headless|phantomjs|playwright|puppeteer|selenium|lighthouse|pagespeed|gtmetrix|pingdom|uptime/i.test(s)) return "script";
   if (/^Mozilla\/5\.0 \(/.test(s) && /(Chrome|Firefox|Safari|Edg|OPR)\//.test(s)) return "human";
+  // a browser inside an app on an iPhone or iPad (Facebook's, Instagram's, LinkedIn's): the system's web view, which names no browser
+  if (/^Mozilla\/5\.0 \((?:iPhone|iPad|iPod);[^)]*\) AppleWebKit\/[\d.]+ \(KHTML, like Gecko\) Mobile\/\w+/.test(s)) return "human";
   return "script";   // curl, wget, python, node, go, java, an empty user agent
+}
+// the kind of client, from the request: its user agent, and the Signature-Agent header an agent that signs its requests sends (RFC 9421,
+// Web Bot Auth), which no browser sends of itself
+export function agentOfRequest(h) {
+  const a = agentOf(h.get("user-agent") || ""), sig = h.get("signature-agent") || "";
+  if (/^\s*"?https:\/\/chatgpt\.com\/?"?\s*$/i.test(sig)) return "openai-agent";
+  return sig.trim() && a === "human" ? "other-bot" : a;
 }
 export function pathKey(pathname) {
   let p = String(pathname || "/").replace(/\/{2,}/g, "/");
@@ -97,19 +113,25 @@ export function visitOf(request) {
   if (url.pathname === "/discuss/translating") return null;   // the translation progress page updates itself every second or two (CZ 1445): not views
   const purpose = `${h.get("sec-purpose") || ""} ${h.get("purpose") || ""} ${h.get("x-purpose") || ""} ${h.get("x-moz") || ""}`.toLowerCase();
   // a press on one of /ask's links that open another company's assistant with the short invitation (CZ 1447): /ask/open/<name>, which
-  // api/page.js answers with a redirect. Counted by the link's name only, and only when a browser asks (not a crawler, not a prefetch:
-  // the links are rel="nofollow", which the speculation rules and polite crawlers leave alone); never a page view
-  if (url.pathname === "/ask/open" || url.pathname.startsWith("/ask/open/")) {
-    const m = ASK_OPEN.exec(url.pathname);
-    return m && !purpose.includes("prefetch") && !purpose.includes("prerender") && agentOf(h.get("user-agent") || "") === "human" ? { open: true, p_name: m[1] } : null;
+  // api/page.js answers with a redirect. Counted by the link's name only, and only when a browser, by its user agent, navigates there
+  // itself: not a crawler, an AI's browser or a script; not a prefetch (the links are rel="nofollow", which the speculation rules and
+  // polite crawlers leave alone); not another site's image, script, frame or fetch aimed at it (Sec-Fetch-Dest and Sec-Fetch-Mode,
+  // when the browser sends them: older ones do not); and not an address that names another "open" in its query, so that what is
+  // counted is where the reader is sent (review 1-2 A and C). No spelling of /ask/open/… is ever a page view: the raw address and the
+  // address as counted, any case, are both tested (review 1-2 C).
+  if (/^\/ask\/open(\/|$)/.test(url.pathname) || /^\/ask\/open(\/|$)/.test(pathKey(url.pathname).toLowerCase())) {
+    const m = ASK_OPEN.exec(url.pathname), dest = h.get("sec-fetch-dest"), mode = h.get("sec-fetch-mode");
+    const navigation = (!dest || dest === "document") && (!mode || mode === "navigate");
+    return m && navigation && !url.searchParams.has("open") && !purpose.includes("prefetch") && !purpose.includes("prerender") && agentOfRequest(h) === "human"
+      ? { open: true, p_name: m[1] } : null;
   }
   const way = entranceKey(url.pathname);
-  if (way) return purpose.includes("prefetch") || purpose.includes("prerender") ? null : { entrance: true, p_path: way, p_agent: agentOf(h.get("user-agent") || "") };
+  if (way) return purpose.includes("prefetch") || purpose.includes("prerender") ? null : { entrance: true, p_path: way, p_agent: agentOfRequest(h) };
   // a prefetch is not a page view — except this site's own speculation rule (stage 5, CZ 1433), tagged "cz", which fetches a page as the
   // reader presses its link (eagerness "conservative"): that is the visit, since the browser will not ask again. Never a prerender.
   const ownPress = /(^|[,\s])"cz"([,\s]|$)/.test(h.get("sec-speculation-tags") || "") && !purpose.includes("prerender");
   if ((purpose.includes("prefetch") || purpose.includes("prerender")) && !ownPress) return null;
-  const ua = h.get("user-agent") || "", agent = agentOf(ua);
+  const agent = agentOfRequest(h);
   if (agent === "human" && !/text\/html|\*\/\*/.test(h.get("accept") || "")) return null;   // a browser asking for JSON is not a page view
   const human = agent === "human";
   return {
@@ -124,8 +146,10 @@ async function send(v) {
   if (!base || !key || !token) return;
   try {
     const { entrance, open, ...args } = v;
-    await fetch(`${base}/rest/v1/rpc/${open ? "cz_count_ask_open" : entrance ? "cz_count_entrance" : "cz_count"}`, { method: "POST", headers: { apikey: key, Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+    const fn = open ? "cz_count_ask_open" : entrance ? "cz_count_entrance" : "cz_count";
+    const r = await fetch(`${base}/rest/v1/rpc/${fn}`, { method: "POST", headers: { apikey: key, Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
       body: JSON.stringify({ ...args, p_token: token }), signal: AbortSignal.timeout(4000) });
+    if (!r.ok) console.error(`count not kept: ${fn} answered ${r.status}`);   // in the host's logs, the function and the status only (review 1-2 C)
   } catch {}   // a count that fails is a count lost, never a page that fails
 }
 export default function middleware(request, context) {

@@ -188,8 +188,11 @@ module.exports = async (req, res) => {
     return res.end("Method not allowed\n");
   }
   const url = new URL(req.url, "http://x");
-  if (url.searchParams.has("open") && askOpen(res, url.searchParams.get("open"), req.method === "HEAD")) return;   // any other name: not found, below
-  const p = url.searchParams.get("p") || "";
+  // a request that names "open" gets the redirect or nothing: exactly one value, one of the names (review 1-2 A), never the page another
+  // parameter names (review 1-2 C); anything else is not found, below
+  const opens = url.searchParams.getAll("open");
+  if (opens.length === 1 && askOpen(res, opens[0], req.method === "HEAD")) return;
+  const p = opens.length ? "" : url.searchParams.get("p") || "";
   let status = 200, html = PAGES.test(p) ? read(p) : null;
   if (html === null) { status = 404; html = read("404") || "<!doctype html><title>Not found</title><p>Nothing is published at this address.</p>\n"; }
   const now = Date.now(), zone = CZ.readerZone(req.headers);   // the reader's date (CZ 1438): their network's time zone, read and kept nowhere

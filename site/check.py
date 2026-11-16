@@ -71,8 +71,9 @@ for f in pages + [pathlib.Path("virtual") / n for n in VIRTUAL]:
     check({"utf-8", "viewport", "description", "icon", "service-desc"} | ({"canonical"} if f.name != "404.html" else set()) <= p.attrs_seen, f"{f.name}: head metadata {p.attrs_seen}")
     for t in p.times:
         check(re.fullmatch(r"\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}(:\d{2})?Z)?|P\d+D", t), f"{f.name}: invalid datetime {t!r}")
-    for bad in ("civilization0.ai", "observator", "N-H", "N-M", "N-F", "__YEAR__", "__ASOF"):
+    for bad in ("civilization0.ai", "N-H", "N-M", "N-F", "__YEAR__", "__ASOF"):
         check(bad not in h, f"{f.name}: forbidden string {bad!r}")
+    check("observator" not in h.lower(), f"{f.name}: forbidden string 'observator', in any case")   # review 1-2 B
     noscript = re.sub(r"<(script|style).*?</\1>", "", h, flags=re.S)
     check("{{" not in noscript and "}}" not in noscript, f"{f.name}: unexpanded braces")
     for m in re.findall(r'<script type="application/ld\+json">(.*?)</script>', h, re.S):
@@ -364,21 +365,29 @@ _pre = lambda i: (m.group(1) if (m := re.search(rf'<pre id="{i}">([^<]*)</pre>',
 check(_pre("prompt-short") is not None and _html.unescape(_pre("prompt-short")).encode("utf-8") == _short_b, "/ask: the short invitation is not shown byte for byte as prompts/cz-short-1.0.txt")
 check(_pre("prompt-urls") is not None and _html.unescape(_pre("prompt-urls")).encode("utf-8") == (PUBLIC / f"prompts/{_curv}.txt").read_bytes(), f"/ask: the long invitation is not shown byte for byte as prompts/{_curv}.txt")
 check(_cur.index('<pre id="prompt-short">') < _cur.index('<h3 id="h-long">The long invitation</h3>') < _cur.index('<pre id="prompt-urls">'), "/ask: the short invitation first, the long one below it")
-check('<button type="button" class="cta" data-copy="prompt-short">' in _cur and _cur.count('href="/respond?kind=ai&amp;prompt=cz-short-1.0"') == 2 and f'href="/respond?kind=ai&amp;prompt={_curv}"' in _cur, "/ask: the short invitation's copy button and post links, and the long one's post link")
+check('<button type="button" class="cta" data-copy="prompt-short">' in _cur and _cur.count('href="/respond?kind=ai&amp;prompt=cz-short-1.0"') == 3 and f'href="/respond?kind=ai&amp;prompt={_curv}"' in _cur, "/ask: the short invitation's copy button and post links, and the long one's post link")
+# each invitation's copy button sits beside its text, not a screen away from it (review 1-2 B)
+check(re.search(r'<pre id="prompt-short">[^<]*</pre>\n<p class="cta-line"><button type="button" data-copy="prompt-short">', _cur) is not None, "/ask: no copy button beside the short invitation")
+check(re.search(r'<h3 id="h-long">The long invitation</h3>\n<p>[^\n]*</p>\n<p class="cta-line"><button type="button" data-copy="prompt-urls">[^\n]*\n<pre id="prompt-urls">', _cur) is not None, "/ask: the long invitation's copy button is not between its heading and its text")
 _open = json.loads((SITE / "api/ask-open.json").read_text("utf-8"))
 _bases = {"chatgpt": "https://chatgpt.com/?q=", "claude": "https://claude.ai/new?q=", "perplexity": "https://www.perplexity.ai/search?q="}
-check(_open.get("prompt") == "cz-short-1.0" and _open.get("sha256") == sha256(_short_b) and set(_open.get("to", {})) <= set(_bases), "api/ask-open.json: the short invitation, and only the three assistants")
+check(_open.get("prompt") == "cz-short-1.0" and _open.get("sha256") == sha256(_short_b) and set(_open.get("to", {})) <= set(_bases) and set(_open.get("offered", [])) <= set(_open.get("to", {})), "api/ask-open.json: the short invitation, and only the three assistants; only served links offered")
 for _k, _u in _open.get("to", {}).items():
     check(_u.startswith(_bases[_k]) and _up.unquote(_u[len(_bases[_k]):], errors="strict").encode("utf-8") == _short_b and "&" not in _u[len(_bases[_k]):] and "#" not in _u, f"api/ask-open.json: {_k} does not carry exactly the short invitation")
-    check(_cur.count(f'<a href="/ask/open/{_k}" rel="nofollow">') == 1, f"/ask: one link to /ask/open/{_k}, rel=nofollow (not prefetched, not followed)")
-check(len(re.findall(r'href="/ask/open/', _cur)) == len(_open.get("to", {})), "/ask: a link to an assistant that the redirect does not serve")
-check(not _open.get("to") or "These open another company's service with the invitation filled in. Civilization Zero is not affiliated with any of them." in _cur, "/ask: the links to the assistants are not labelled as another company's, not affiliated")
+    check(_cur.count(f'<a href="/ask/open/{_k}" rel="nofollow">') == (1 if _k in _open.get("offered", []) else 0), f"/ask: one link to /ask/open/{_k}, rel=nofollow (not prefetched, not followed), only if offered (build.py, ASK_OPEN_LINKS)")
+check(len(re.findall(r'href="/ask/open/', _cur)) == len(_open.get("offered", [])), "/ask: a link to an assistant that is not offered")
+_built = (PUBLIC / "how-it-is-built.html").read_text("utf-8")
+check(not _open.get("offered") or ("These open another company's service with the invitation filled in. Civilization Zero is not affiliated with any of them; "
+      'the site itself is written and built by Claude (Anthropic), as <a href="/about">About</a> says.') in _cur, "/ask: the links to the assistants are not labelled as another company's, not affiliated, and the site as built by Claude")
+check(bool(_open.get("offered")) == ('<p id="ask-open">' in _built), "/how-it-is-built says how the presses are counted exactly while /ask offers the links")
 check({"source": "/ask/open/:name(chatgpt|claude|perplexity)", "destination": "/api/page?open=:name"} in v["rewrites"], "vercel.json: /ask/open/<name> is not routed to the redirect")
 _mw = (SITE / "middleware.js").read_text("utf-8")
 check("const ASK_OPEN = /^\\/ask\\/open\\/(chatgpt|claude|perplexity)$/;" in _mw and "p_name not in ('chatgpt', 'claude', 'perplexity')" in (SITE / "room/ask-open-v15.sql").read_text("utf-8"), "the names of the links to the assistants differ between the middleware and the database")
 check("Disallow: /ask/open/" in (PUBLIC / "robots.txt").read_text("utf-8"), "robots.txt: the redirects to the assistants are not kept from crawlers")
-_split = re.search(r'const SPLIT_SINCE = "(\d{4}-\d\d-\d\d)"', (SITE / "api/stats.js").read_text("utf-8"))
-check(bool(_split) and re.search(rf'since <a class="cz-date" href="[^"]+"><time datetime="{_split.group(1)}">[^<]+</time></a> the agents of the AI companies', (PUBLIC / "how-it-is-built.html").read_text("utf-8")), "/stats and /how-it-is-built give different days for the AI agents' counts by purpose")
+# the day the agents began to be counted by purpose is the database's (v15, agents_by_purpose_since), never written into a page or the
+# code, so that it is right whatever day the change is deployed (review 1-2 A)
+check('(<a href="/stats#by-purpose">since when</a>)' in _built and "SPLIT_SINCE" not in (SITE / "api/stats.js").read_text("utf-8")
+      and "'agents_by_purpose_since', (select min(day) from visit_counts where kind = 'bot'" in (SITE / "room/ask-open-v15.sql").read_text("utf-8"), "the day of the split by purpose is not the database's")
 _cite = f'<https://doi.org/{DOI_CONCEPT}>; rel="cite-as"'
 for _src in ("/core", "/record", "/core.(txt|json)", "/record.(txt|json)"):
     check(any(h["source"] == _src and any(x["key"] == "Link" and _cite in x["value"] for x in h["headers"]) for h in v["headers"]), f"vercel.json: {_src} lacks cite-as")

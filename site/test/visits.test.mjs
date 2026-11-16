@@ -117,6 +117,50 @@ o = await hit("/api/page?open=evil"); ok(o.s === 404 && !o.h.location, "another 
 o = await hit("/api/page?open=__proto__"); ok(o.s === 404 && !o.h.location, "a name from the object's prototype: not found");
 o = await hit("/api/page?open=claude", "POST"); ok(o.s === 405, "POST: refused");
 ok(sent.length === 0, "the redirect itself sends nothing to the database (the middleware counts)");
+// review 1-2 C (adversarial). 1. ChatGPT agent, OpenAI's hosted browser, sends a plain Chrome user agent and is named only by
+// Signature-Agent "https://chatgpt.com" (RFC 9421 signatures; help.openai.com article 11845367): automated, as Claude-Agent is
+const SIGNED = { "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36", accept: "text/html",
+  "signature-agent": '"https://chatgpt.com"', "signature-input": 'sig1=("@authority" "signature-agent");tag="web-bot-auth"', signature: "sig1=:AA==:", "x-vercel-ip-country": "US", referer: "https://chatgpt.com/" };
+v = M.visitOf(req("/core", SIGNED));
+ok(v && v.p_agent === "openai-agent" && v.p_ref === "" && v.p_country === "", "ChatGPT agent (Signature-Agent chatgpt.com) is automated, not a browser " + JSON.stringify(v));
+ok(M.visitOf(req("/ask/open/claude", SIGNED)) === null && M.BOT_KINDS.includes("openai-agent"), "ChatGPT agent's press is not counted, as Claude-Agent's is not");
+// 2. a press is a top-level navigation: another site's <img>, fetch(), script or iframe aimed at /ask/open/<name>, run by its readers' real browsers, is not
+for (const [dest, mode] of [["image", "no-cors"], ["empty", "no-cors"], ["empty", "cors"], ["script", "no-cors"], ["iframe", "navigate"]])
+  ok(M.visitOf(req("/ask/open/claude", { "user-agent": CHROME, accept: "*/*", "sec-fetch-dest": dest, "sec-fetch-mode": mode, "sec-fetch-site": "cross-site", referer: "https://elsewhere.example/" })) === null, `not a press: Sec-Fetch-Dest ${dest}, Sec-Fetch-Mode ${mode}`);
+ok((M.visitOf(req("/ask/open/claude", { "user-agent": CHROME, accept: "text/html", "sec-fetch-dest": "document", "sec-fetch-mode": "navigate", "sec-fetch-site": "same-origin", "sec-fetch-user": "?1" })) || {}).p_name === "claude", "a press: a navigation of the top-level document");
+// 3. no other spelling of /ask/open/<name> becomes a page view (pathKey collapses slashes and decodes, after the prefix test)
+for (const p of ["/ask//open/claude", "//ask/open/claude", "/ask/open%2Fclaude", "/ask/%6Fpen/claude", "/ask%2Fopen%2Fclaude", "/ASK/OPEN/claude"])
+  ok(M.visitOf(req(p, { "user-agent": CHROME, accept: "text/html" })) === null, `never a page view: ${p}`);
+// 4. the redirect has one job: an "open" it does not serve is not found, never the page named by another parameter
+o = await hit("/api/page?open=evil&p=ask"); ok(o.s === 404 && !o.h.location, `open=evil&p=ask: not found, not /ask (${o.s})`);
+// 5. iMessage's link previews are not Meta's, Telegram's are not X's (both name the others' crawlers in their user agents)
+ok(M.agentOf("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_1) AppleWebKit/601.2.4 (KHTML, like Gecko) Version/9.0.1 Safari/601.2.4 facebookexternalhit/1.1 Facebot Twitterbot/1.0") === "link-preview", "iMessage's link preview: a link preview, not Meta's");
+ok(M.agentOf("TelegramBot (like TwitterBot)") === "link-preview", "Telegram's link preview: not X's");
+// 6. a person in an app's browser is a person, so a press there counts (iOS web views carry no "Safari/"; Pinterest's in-app browser is not its crawler)
+for (const ua of ["Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 [FBAN/FBIOS;FBAV/530.0.0.43.109;FBDV/iPhone15,2;FBMD/iPhone;FBSN/iOS;FBSV/18.6;FBSS/3;FBID/phone;FBLC/en_US;FBOP/80]",
+  "Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 Instagram 400.0.0.37.70 (iPhone15,2; iOS 18_6; en_US; en; scale=3.00; 1179x2556; 812345678)",
+  "Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 [LinkedInApp]/9.31.1234",
+  "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/130.0.0.0 Mobile Safari/537.36 [Pinterest/Android]"])
+  ok(M.agentOf(ua) === "human", `a browser in an app: ${ua.slice(-40)} → ${M.agentOf(ua)}`);
+ok(M.agentOf("Mozilla/5.0 (compatible; Pinterestbot/1.0; +http://www.pinterest.com/bot.html)") === "link-preview", "Pinterest's crawler is still a link preview");
+// 7. v15's cz_visit_stats lists every automated key the window can hold: the keys counted now, and the five counted together until the split
+{ const sql = readFileSync(join(SITE, "room/ask-open-v15.sql"), "utf8"), lim = Number((/kind = 'bot' group by key order by 2 desc, 1 limit (\d+)/.exec(sql) || [])[1]);
+  ok(lim >= M.BOT_KINDS.length + 5, `cz_visit_stats lists every automated key: limit ${lim}, keys ${M.BOT_KINDS.length} + 5`); }
+// review 1-2 A: one "open" only, so that what is counted is where the reader is sent; another "open" in the query is neither counted nor followed
+o = await hit("/api/page?open=chatgpt&open=claude"); ok(o.s === 404 && !o.h.location, `two values of open: not found (${o.s})`);
+o = await hit("/api/page?open="); ok(o.s === 404 && !o.h.location, "an empty open: not found");
+ok(M.visitOf(req("/ask/open/claude?open=chatgpt", { "user-agent": CHROME, accept: "text/html" })) === null, "a press whose query names another open is not counted");
+ok((M.visitOf(req("/ask/open/claude?utm_source=x", { "user-agent": CHROME, accept: "text/html" })) || {}).p_name === "claude", "a press with a sharer's tag is counted");
+ok((M.visitOf(req("/ask/open/claude", { "user-agent": CHROME, accept: "text/html" })) || {}).p_name === "claude", "a press from a browser that sends no Sec-Fetch headers (older Safari) is counted");
+// ChatGPT agent's other requests: an entrance by kind, a signed agent of another company is an automated client
+ok(M.visitOf(req("/core.md", SIGNED)).p_agent === "openai-agent", "ChatGPT agent reading Markdown: an entrance by openai-agent");
+ok(M.visitOf(req("/core", { ...SIGNED, "signature-agent": '"https://agent.example"' })).p_agent === "other-bot", "another signed agent with a browser's user agent: an automated client");
+// review 1-2 C: a count the database does not keep leaves a line in the host's logs (the function and the status, nothing else)
+{ const logged = [], err = console.error; console.error = (...a) => logged.push(a.join(" "));
+  globalThis.fetch = async () => new Response('{"code":"PGRST202"}', { status: 404 });
+  waits.length = 0; M.default(req("/ask/open/claude", { "user-agent": CHROME, accept: "text/html" }), ctx); await Promise.all(waits);
+  console.error = err;
+  ok(logged.length === 1 && logged[0] === "count not kept: cz_count_ask_open answered 404", "a lost count is logged: " + JSON.stringify(logged)); }
 // /stats renders the counts (mock database)
 const require = createRequire(import.meta.url);
 process.env.CZ_SALT = "x".repeat(40);
@@ -127,7 +171,12 @@ process.env.SUPABASE_URL = "https://db.example";
 const page = require(join(SITE, "api/stats.js"));
 // every key the middleware counts under has a name on /stats, and the keys fit the database's rule for a key (cz_count: [a-z0-9_.-], 40)
 for (const k of M.BOT_KINDS) ok(typeof page.BOT_NAMES[k] === "string" && /^[a-z0-9_.-]{1,40}$/.test(k), `/stats names the kind ${k}`);
-for (const k of ["openai", "anthropic", "perplexity", "meta", "duckduckgo"]) ok(/counted together \(before CZ 1447\)$/.test(page.BOT_NAMES[k]) && !M.BOT_KINDS.includes(k), `the key of before the split, ${k}, is no longer counted and is named as counted together`);
+// the five company keys of before the split: no longer counted; named as counted together until the day the database gives — "until",
+// since the deploy day holds both kinds (review 1-2 A, B) — or until the split, while it gives none
+for (const k of ["openai", "anthropic", "perplexity", "meta", "duckduckgo"])
+  ok(/counted together \(until CZ 1447\)$/.test(page.botName(k, "2026-11-16")) && /counted together \(until the split by purpose\)$/.test(page.botName(k, null)) && !(k in page.BOT_NAMES) && !M.BOT_KINDS.includes(k),
+    `the key of before the split, ${k}, is no longer counted and is named as counted together until the split`);
+ok(page.botName("__proto__", null) === "__proto__" && page.botName("constructor", "2026-11-16") === "constructor", "a key from the object's prototype is shown as itself");
 const call = (url) => new Promise((resolve) => { const res = { statusCode: 200, h: {}, setHeader(k, v) { this.h[k.toLowerCase()] = v; }, getHeader(k) { return this.h[k.toLowerCase()]; }, end(b) { resolve({ s: this.statusCode, h: this.h, b: String(b || "") }); } }; page({ url, method: "GET", headers: {} }, res); });
 o = await call("/api/stats");
 ok(o.s === 200 && /<h1>Visits<\/h1>/.test(o.b) && o.b.includes('<td class="num">30</td>') && o.b.includes("x.com") && o.b.includes("&lt;b&gt;evil.com") && !o.b.includes("<b>evil.com") && o.b.includes("Scripts and checks") && /s-maxage=300/.test(o.h["cache-control"]), "the page shows the counts, escaped, cached five minutes");
@@ -136,20 +185,23 @@ ok(o.s === 200 && j.days.length === 2 && j.first_day === "2026-11-01" && /withou
 o = await call("/api/stats?x=1"); ok(o.s === 400, "/stats refuses parameters");
 o = await call("/api/stats");
 ok(o.b.includes('<p id="visitors">Until ') && o.b.includes("the originator stopped it") && o.b.includes('5 <span class="src">(until 10:23 UTC)</span>'), "/stats: the visitors' count marked as stopped, the last day partial");
-ok(o.b.includes('<h2 id="h-entrances">How machines come in</h2>') && o.b.includes("<code>/core.md</code></td><td>Anthropic, all agents counted together (before CZ 1447)</td>") && o.b.includes("<td>Browsers</td>") && o.b.includes("<code>&lt;x&gt;</code>"), "/stats: machines' entrances, escaped");
+ok(o.b.includes('<h2 id="h-entrances">How machines come in</h2>') && o.b.includes('<td class="nw"><code>/core.md</code></td><td>Anthropic, all agents counted together (until the split by purpose)</td>') && o.b.includes("<td>Browsers</td>") && o.b.includes("<code>&lt;x&gt;</code>"), "/stats: machines' entrances, escaped");
 ok(/visitors_counted_until/.test(j.what) && /entrances/.test(j.what), "/stats.json says what the new fields are");
 // before the database has v15 (room/ask-open-v15.sql): no presses to show, and the page says so
+ok(/<p class="src" id="by-purpose">The agents of the AI companies that publish one name per purpose are now counted apart/.test(o.b) && !/id="by-purpose">Since/.test(o.b), "/stats: before the database gives the day of the split, the line names none");
 ok(o.b.includes('<h2 id="h-ask-open">Opened from /ask in an assistant</h2>') && /<h2 id="h-ask-open">[\s\S]*?<p>None yet\.<\/p>/.test(o.b) && !o.b.includes("counted since <a"), "/stats: the presses' section, empty and undated before the database counts them");
 // the split by purpose (CZ 1447): the new keys named by company and purpose, the old ones as counted together, the day of the split said once
 stats.automated.push({ key: "openai-user", n: 7 }, { key: "openai", n: 62 }, { key: "anthropic-agent", n: 2 }, { key: "perplexity-search", n: 3 }, { key: "<made-up>", n: 1 });
 stats.entrances.push({ path: "/llms.txt", agent: "openai-search", n: 2 });
-stats.ask_open = [{ key: "chatgpt", n: 5 }, { key: "claude", n: 2 }, { key: "<x>", n: 1 }]; stats.ask_open_since = "2026-11-17";
+stats.ask_open = [{ key: "chatgpt", n: 5 }, { key: "claude", n: 2 }, { key: "<x>", n: 1 }]; stats.ask_open_since = "2026-11-17"; stats.agents_by_purpose_since = "2026-11-16";
 o = await call("/api/stats");
-ok(o.b.includes("<td>OpenAI: asked by a person (ChatGPT-User)</td><td class=\"num\">7</td>") && o.b.includes("<td>OpenAI, all agents counted together (before CZ 1447)</td><td class=\"num\">62</td>")
+ok(o.b.includes("<td>OpenAI: asked by a person (ChatGPT-User)</td><td class=\"num\">7</td>") && o.b.includes("<td>OpenAI, all agents counted together (until CZ 1447)</td><td class=\"num\">62</td>")
    && o.b.includes("<td>Anthropic: a browser Claude drives for a person (Claude-Agent)</td>") && o.b.includes("<td>Perplexity: search (PerplexityBot)</td>") && o.b.includes("<td>&lt;made-up&gt;</td>"), "/stats: the agents by purpose, named; the old keys as counted together; an unknown key escaped");
-ok((o.b.match(/id="by-purpose"/g) || []).length === 1 && /<p class="src" id="by-purpose">Since <a class="cz-date" href="[^"]+"><time datetime="2026-11-16">CZ 1447<\/time><\/a> the agents of the AI companies/.test(o.b) && page.SPLIT_SINCE === "2026-11-16", "/stats: one line dates the split, 16 Nov 2026 (CZ 1447)");
-ok(o.b.includes("<code>/llms.txt</code></td><td>OpenAI: search (OAI-SearchBot)</td>"), "/stats: the entrances name the agents by purpose too");
+ok((o.b.match(/id="by-purpose"/g) || []).length === 1 && /<p class="src" id="by-purpose">Since <a class="cz-date" href="[^"]+"><time datetime="2026-11-16">CZ 1447<\/time><\/a> the agents of the AI companies/.test(o.b) && /Until that day each company's were counted together, except Claude-Agent and ChatGPT agent, counted as page views by browsers; Amazonbot and Amzn-SearchBot, counted as other crawlers; and Amzn-User and Mistral's agents, counted as scripts\./.test(o.b)
+   && /a browser an AI drives for a person[\s\S]*link previews, AI-assisted answers, other agents\./.test(o.b) && /The same day link previews that name other companies' crawlers/.test(o.b), "/stats: one line dates the split, 16 Nov 2026 (CZ 1447)");
+ok(o.b.includes('<td class="nw"><code>/llms.txt</code></td><td>OpenAI: search (OAI-SearchBot)</td>'), "/stats: the entrances name the agents by purpose too");
 ok(o.b.includes("<td>Open in ChatGPT</td><td class=\"num\">5</td>") && o.b.includes("<td>Open in Claude</td><td class=\"num\">2</td>") && o.b.includes("<td>&lt;x&gt;</td>") && /counted since <a class="cz-date" href="[^"]+"><time datetime="2026-11-17">/.test(o.b), "/stats: the presses on /ask's links, by link, escaped, with the day counting began");
+ok(!/observator/i.test(o.b), "/stats: the forbidden word, in any case (review 1-2 B)");
 o = await call("/api/stats?f=json"); const j2 = JSON.parse(o.b);
 ok(j2.agents_by_purpose_since === "2026-11-16" && j2.ask_open.length === 3 && /ask_open/.test(j2.what) && /-user: a fetch a person asked for/.test(j2.what), "/stats.json: the split's day, the presses, and what they are");
 console.log(`pass ${pass} fail ${fail}`); process.exit(fail ? 1 : 0);
