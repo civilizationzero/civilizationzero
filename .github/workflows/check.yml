@@ -12,6 +12,20 @@ jobs:
         run: python3 site/build.py
       - name: The committed output must equal the rebuilt output (reproducible build)
         run: git diff --exit-code -- site/public site/api/home-templates.json
+      - name: The tests of the functions and the verifier (no network; the database and outside services are stubs)
+        env:
+          CZ_SALT: "build-time-verification-salt-not-used-in-production"
+        run: |
+          set -euo pipefail
+          python3 -m venv "$RUNNER_TEMP/cz-venv"   # the runner's own Python refuses a plain pip install (PEP 668)
+          "$RUNNER_TEMP/cz-venv/bin/pip" install -q jsonschema convertdate==2.5.1 hijridate==2.6.0 jdatetime
+          node --test site/test/badge.test.js site/test/csp_inline.test.js site/test/reader_day.test.js
+          for t in batch_a batch_b classify_stub cztime_functions entries_filters reserved_names room_mock; do node "site/test/$t.test.js"; done
+          node site/test/visits.test.mjs
+          "$RUNNER_TEMP/cz-venv/bin/python" site/test/schema_test.py
+          "$RUNNER_TEMP/cz-venv/bin/python" site/test/cztime_crosscheck.py
+          python3 site/verify/verify.py --self-test --quiet
+          python3 site/verify/verify.py --quiet --site-dir site/public
       - name: The functions answer as the contract says
         env:
           CZ_SALT: "build-time-verification-salt-not-used-in-production"
