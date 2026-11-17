@@ -93,7 +93,7 @@ function normPath(pathname) {
 }
 // the address as counted: only the site's own addresses are keys, and anything else is "(other)" — nothing a client types reaches
 // /stats (review B of RC 1: any address asked for some twenty times became a row, and a link, in the public table). A language
-// or a theme the site does not have is "(other)" too; an entry's or a record's number is a key by its form (up to twelve digits),
+// or a theme the site does not have is "(other)" too; an entry's or a record's number is a key by its form (no leading zero, at most six digits),
 // whether or not it exists.
 export function pathKey(pathname) { const p = normPath(pathname); return PAGES_HTML.test(p) ? p : "(other)"; }
 export function refHost(referer) {
