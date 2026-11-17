@@ -54,10 +54,12 @@ for (const [p, want] of [["/", "/"], ["/core/", "/core"], ["/core.fa", "/core.fa
   ok(M.pathKey(p) === want, `path ${p.slice(0, 30)} → ${M.pathKey(p)}`);
 // only the site's own addresses are keys: nothing a client types becomes a row, or a link, on /stats (review B of RC 1)
 for (const p of ["/this-site-is-a-fraud-call-0123456789", "/wp-login.php", "/Core", "/core.md.bak", "/core/x", "/discuss/x", "/discuss/12/x", "/themes", "/themes/A", "/adopt/x", "/404", "/index", "/api", "/ask/open", "/x", "/core.toolong", "/.env",
-  "/core.zz", "/core.en", "/core.zh", "/core.zh-hans", "/core.FA", "/core.fa-x", "/core.md", "/core.txt", "/themes/this-site-is-a-fraud", "/themes/can-an-ai-say-no-2", "/themes/x1", "/coreXfa", "/discuss/1234567890123"])
+  "/core.zz", "/core.en", "/core.zh", "/core.zh-hans", "/core.FA", "/core.fa-x", "/core.md", "/core.txt", "/themes/this-site-is-a-fraud", "/themes/can-an-ai-say-no-2", "/themes/x1", "/coreXfa", "/discuss/1234567890123",
+  // entry and record numbers as the site gives them: no leading zero, at most six digits (reviews A and B of RC 2)
+  "/discuss/007", "/discuss/01", "/adopt/007", "/discuss/0", "/discuss/60123456789", "/adopt/60123456789", "/discuss/1000000", "/adopt/1000000"])
   ok(M.pathKey(p) === "(other)", `not an address of the site: ${p} → ${M.pathKey(p)}`);
 for (const p of ["/", "/core", "/record", "/objections", "/ask", "/machine", "/about", "/archive", "/calendar", "/press", "/how-it-is-built", "/embed", "/stats", "/discuss", "/respond", "/adopt", "/admin", "/civilization-zero-infographic",
-  "/civilization-zero-evidence-atlas", "/civilization-zero-images", "/core.fa", "/core.zh-Hans", "/discuss/137", "/adopt/1", "/themes/can-an-ai-say-no"])
+  "/civilization-zero-evidence-atlas", "/civilization-zero-images", "/core.fa", "/core.zh-Hans", "/discuss/137", "/adopt/1", "/themes/can-an-ai-say-no", "/discuss/136", "/adopt/136", "/discuss/7", "/discuss/999999"])
   ok(M.pathKey(p) === p, `an address of the site is its own key: ${p} → ${M.pathKey(p)}`);
 // by name, not by form: every language the Core has as a page and every theme the room lists is a key, as a page and as Markdown, and no other is
 { const langs = readdirSync(join(SITE, "public")).map((f) => (/^core\.([^.]+)\.html$/.exec(f) || [])[1]).filter(Boolean), themes = JSON.parse(readFileSync(join(SITE, "api/discuss-templates.json"), "utf8")).themes.map((t) => t.slug);

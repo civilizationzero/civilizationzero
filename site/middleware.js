@@ -84,7 +84,7 @@ const STATIC = "core|record|objections|ask|machine|about|archive|calendar|press|
 const LANGS = "ar|bn|de|es|fa|fr|hi|id|it|ja|ko|ms|nl|pt|ru|sw|tr|ur|vi|zh-Hans";
 const THEMES = "is-the-future-frightening|can-an-ai-say-no|beyond-dystopia-and-utopia|ten-years-a-hundred-years|something-at-stake|who-decides|propose-a-question";
 const dots = (s) => s.replace(/\./g, "\\.");
-const PAGES_HTML = new RegExp(`^/(?:|${dots(STATIC)}|stats|discuss|respond|adopt|admin|core\\.(?:${dots(LANGS)})|discuss/\\d{1,12}|adopt/\\d{1,12}|themes/(?:${dots(THEMES)}))$`);
+const PAGES_HTML = new RegExp(`^/(?:|${dots(STATIC)}|stats|discuss|respond|adopt|admin|core\\.(?:${dots(LANGS)})|discuss/[1-9]\\d{0,5}|adopt/[1-9]\\d{0,5}|themes/(?:${dots(THEMES)}))$`);
 function normPath(pathname) {
   let p = String(pathname || "/").replace(/\/{2,}/g, "/");
   if (p.length > 1) p = p.replace(/\/+$/, "");

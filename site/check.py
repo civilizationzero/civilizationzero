@@ -413,7 +413,7 @@ _names = lambda line: set((m.group(1).split("|") if (m := re.search(rf'^const {l
 for _line, _want in (("STATIC", _static), ("LANGS", _langs), ("THEMES", _themes)):
     check(len(_want) >= 7 and _names(_line) == set(_want) and all(re.fullmatch(r"[A-Za-z0-9.-]+", x) for x in _want),
           f'middleware.js: {_line} is not what the build made. Write: const {_line} = "{"|".join(_want)}";')
-check('const PAGES_HTML = new RegExp(`^/(?:|${dots(STATIC)}|stats|discuss|respond|adopt|admin|core\\\\.(?:${dots(LANGS)})|discuss/\\\\d{1,12}|adopt/\\\\d{1,12}|themes/(?:${dots(THEMES)}))$`);' in _mw
+check('const PAGES_HTML = new RegExp(`^/(?:|${dots(STATIC)}|stats|discuss|respond|adopt|admin|core\\\\.(?:${dots(LANGS)})|discuss/[1-9]\\\\d{0,5}|adopt/[1-9]\\\\d{0,5}|themes/(?:${dots(THEMES)}))$`);' in _mw
       and 'export function pathKey(pathname) { const p = normPath(pathname); return PAGES_HTML.test(p) ? p : "(other)"; }' in _mw
       and 'const PAGES_MD = new RegExp(`^/(?:index|${dots(STATIC)}|stats|discuss|respond|adopt|core\\\\.(?:${dots(LANGS.toLowerCase())})|themes/(?:${dots(THEMES)}))\\\\.md$`);' in _mw,
       "middleware.js: page views and entrances are not keyed by the lists of the site's own pages, languages and themes")
