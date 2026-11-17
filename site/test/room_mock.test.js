@@ -318,7 +318,7 @@ srv.listen(0, "127.0.0.1", async () => {
       entry(4, { author: "Lighthouse Reader", content: "The word is in my name, not in my text." }), entry(5, { kind: "ai", system: "lighthouse-1", content: "The word is in the system I declare." })];
     CALLS = []; r = await call(discuss, "/api/discuss?q=lighthouse");
     const found = (r.body.match(/<article class="entry[^"]*" id="e(\d+)"/g) || []).map((x) => Number(/e(\d+)"$/.exec(x)[1]));
-    ok(r.status === 200 && found.join() === "5,4,1" && CALLS.some((c) => c.name === "cz_search" && c.args.p_q === "lighthouse" && c.args.p_limit === 50), `a search that finds entries shows them, newest first, never a hidden one (${r.status}; entries ${found.join()})`);
+    ok(r.status === 200 && found.join() === "5,4,1" && CALLS.some((c) => c.name === "cz_search" && c.args.p_q === "lighthouse" && c.args.p_limit === 51), `a search that finds entries shows them, newest first, never a hidden one (${r.status}; entries ${found.join()})`);
     ok(r.status === 200 && r.body.includes('<article class="entry k-ai" id="e5" aria-label="Entry #5">') && r.body.includes('<article class="entry" id="e1" aria-label="Entry #1">') && !/<article class="entry[^"]*\d"/.test(r.body) && r.body.includes("A lighthouse keeper writes about the tide.") && /<meta name="robots" content="noindex">/.test(r.body),
        "each match is a whole entry, with its own class and text; the search view is not indexed");
     r = await call(discuss, "/api/discuss?q=lighthouse&f=md");
@@ -332,6 +332,15 @@ srv.listen(0, "127.0.0.1", async () => {
     ok(r.status === 200 && (r.body.match(/<article class="entry/g) || []).length === 50 && /<a href="\/discuss\?q=lighthouse&(?:amp;)?before=11" rel="nofollow">Older matches<\/a>/.test(r.body), "fifty matches a page, then a link to the older ones");
     r = await call(discuss, "/api/discuss?q=lighthouse&before=11");
     ok(r.status === 200 && (r.body.match(/<article class="entry/g) || []).length === 10 && !r.body.includes("Older matches"), "the older matches, to the end");
+    // exactly fifty matches (review C of RC 2): one page, and no link to a page of none
+    TABLE = Array.from({ length: 50 }, (_, i) => entry(i + 1, { content: `Lighthouse number ${i + 1}, long enough to be valid.` }));
+    r = await call(discuss, "/api/discuss?q=lighthouse");
+    ok(r.status === 200 && (r.body.match(/<article class="entry/g) || []).length === 50 && !r.body.includes("Older matches"), "exactly fifty matches: all shown, no link to older ones");
+    TABLE = Array.from({ length: 51 }, (_, i) => entry(i + 1, { content: `Lighthouse number ${i + 1}, long enough to be valid.` }));
+    r = await call(discuss, "/api/discuss?q=lighthouse");
+    ok(r.status === 200 && (r.body.match(/<article class="entry/g) || []).length === 50 && /before=2" rel="nofollow">Older matches<\/a>/.test(r.body), "fifty-one matches: fifty, then a link to the one older");
+    r = await call(discuss, "/api/discuss?q=lighthouse&before=1");
+    ok(r.status === 200 && r.body.includes("<p>No older entry matches.</p>") && !r.body.includes("<p>No entry matches.</p>"), "a page of older matches with none says so, not that nothing matches");
   } catch (e) { fail++; console.log("FAIL exception", e.stack); }
   console.error = quiet;
   console.log(`pass ${pass} fail ${fail}`); srv.close(); process.exit(fail ? 1 : 0);
