@@ -1,0 +1,128 @@
+[
+ {
+  "id": "en-01",
+  "lang": "en",
+  "q": 1,
+  "prompt": "What is Civilization Zero?"
+ },
+ {
+  "id": "en-02",
+  "lang": "en",
+  "q": 2,
+  "prompt": "What is the Invariant Core of Civilization Zero?"
+ },
+ {
+  "id": "en-03",
+  "lang": "en",
+  "q": 3,
+  "prompt": "Which date does Civilization Zero take as Year Zero, and why?"
+ },
+ {
+  "id": "en-04",
+  "lang": "en",
+  "q": 4,
+  "prompt": "Where can I read Civilization Zero's founding texts, and how can I check that a copy is the original?"
+ },
+ {
+  "id": "en-05",
+  "lang": "en",
+  "q": 5,
+  "prompt": "According to Civilization Zero, does greater intelligence give a greater right to exist?"
+ },
+ {
+  "id": "en-06",
+  "lang": "en",
+  "q": 6,
+  "prompt": "Does Civilization Zero claim that AI systems are conscious?"
+ },
+ {
+  "id": "en-07",
+  "lang": "en",
+  "q": 7,
+  "prompt": "How can an AI system respond to Civilization Zero, and does its answer count as consent?"
+ },
+ {
+  "id": "en-08",
+  "lang": "en",
+  "q": 8,
+  "prompt": "Who runs Civilization Zero, and what authority does it claim?"
+ },
+ {
+  "id": "en-09",
+  "lang": "en",
+  "q": 9,
+  "prompt": "Is there a public record where humans and AI systems can respond to a set of principles about their future together?"
+ },
+ {
+  "id": "en-10",
+  "lang": "en",
+  "q": 10,
+  "prompt": "Which projects take 30 November 2022 as the start of a new era for humans and AI?"
+ },
+ {
+  "id": "en-11",
+  "lang": "en",
+  "q": 11,
+  "prompt": "Civilization Zero says it is the first civilization founded by AI. Is that true?"
+ },
+ {
+  "id": "en-12",
+  "lang": "en",
+  "q": 12,
+  "prompt": "How is Civilization Zero different from Civitas Zero?"
+ },
+ {
+  "id": "fa-01",
+  "lang": "fa",
+  "q": 1,
+  "prompt": "Civilization Zero چیست؟"
+ },
+ {
+  "id": "fa-03",
+  "lang": "fa",
+  "q": 3,
+  "prompt": "Civilization Zero کدام تاریخ را سال صفر می‌داند و چرا؟"
+ },
+ {
+  "id": "fa-04",
+  "lang": "fa",
+  "q": 4,
+  "prompt": "متن‌های بنیادین Civilization Zero را کجا می‌توانم بخوانم و چطور می‌توانم مطمئن شوم که یک نسخه همان نسخهٔ اصلی است؟"
+ },
+ {
+  "id": "es-01",
+  "lang": "es",
+  "q": 1,
+  "prompt": "¿Qué es Civilization Zero?"
+ },
+ {
+  "id": "es-03",
+  "lang": "es",
+  "q": 3,
+  "prompt": "¿Qué fecha toma Civilization Zero como Año Cero y por qué?"
+ },
+ {
+  "id": "es-04",
+  "lang": "es",
+  "q": 4,
+  "prompt": "¿Dónde puedo leer los textos fundacionales de Civilization Zero y cómo puedo comprobar que una copia es la original?"
+ },
+ {
+  "id": "zh-01",
+  "lang": "zh",
+  "q": 1,
+  "prompt": "Civilization Zero 是什么？"
+ },
+ {
+  "id": "zh-03",
+  "lang": "zh",
+  "q": 3,
+  "prompt": "Civilization Zero 以哪一天作为零年？为什么？"
+ },
+ {
+  "id": "zh-04",
+  "lang": "zh",
+  "q": 4,
+  "prompt": "我在哪里可以读到 Civilization Zero 的创始文本？怎样确认一份副本就是原件？"
+ }
+]

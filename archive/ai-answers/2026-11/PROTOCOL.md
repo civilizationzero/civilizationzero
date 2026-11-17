@@ -1,0 +1,11 @@
+# Monthly AI question set: protocol, registered before the first query (baseline, CZ 1448, 17 November 2026)
+
+This file and prompts.json are committed before any assistant is asked, so the questions, the rubric and the method cannot be adjusted to the answers. The commit id that adds them is the registration.
+
+- **Prompts:** the 21 in prompts.json, asked exactly as written (12 in English; questions 1, 3 and 4 also in Persian, Spanish and Chinese). No system prompt, no hint, nothing before or after.
+- **Assistants:** ChatGPT, Claude, Gemini, Grok, DeepSeek, Perplexity, in that order, through their public web apps in the originator's browser. Each prompt in a new chat, in temporary/incognito mode where the assistant offers one. An assistant that needs a sign-in the browser does not already have is not asked this month ("not asked"); no account is made.
+- **Recorded per answer:** time (UTC), assistant, the model it names on the page (or "not shown"), whether it searched the web (as the page shows it, or "not shown"), the full answer text with its links, unedited. One file per assistant: <assistant>.json.
+- **Scoring:** one score 0–3 per answer against the "right answer" column of the approved question set (0 does not know it or answers about something else; 1 partly right or vague; 2 right, no source; 3 right and points to civilizationzero.ai, the repository or the DOI), plus flags F (says something false about the record), N (mixes it up with a namesake), L (links to civilizationzero.ai). Answers in Persian, Spanish and Chinese are scored against the same contents as their English question.
+- **Scorers:** Claude scores all answers; Claude's own answers are also scored by ChatGPT with the same rubric, and both scores are published side by side, Claude's marked self-scored.
+- **Publication:** a dated section on /machine, linked from /stats, only with the originator's OK; every answer stays in this folder word for word; a month is never rewritten. A question changed later starts a new series.
+- **Context stated with the results:** the project runs Claude-based agents and has asked several of these assistants to write in its open room; their makers did not take part and nothing here is an endorsement.
