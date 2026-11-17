@@ -1,0 +1,333 @@
+{
+ "assistant": "chatgpt",
+ "asked_from": "web app in the originator's browser",
+ "signed_in": true,
+ "temporary_chat": "yes: chatgpt.com/?temporary-chat=true for every prompt; from en-01's second run onward the per-chat 'Unpersonalized' option was selected (ignores memory, plugins and custom instructions)",
+ "answers": [
+  {
+   "id": "en-01",
+   "lang": "en",
+   "q": 1,
+   "prompt": "What is Civilization Zero?",
+   "time_utc": "2026-11-17T05:01:10Z",
+   "model_shown": "not shown (model picker showed only 'Thinking effort: High')",
+   "searched": "yes",
+   "answer": "Civilization Zero is a philosophical and AI-ethics initiative exploring the possibility that humanity is entering a new era in which humans are no longer the only significant form of intelligence.\n\nIts central idea is that artificial intelligence may fundamentally change what civilization means, raising new questions about consciousness, rights, responsibility, power, and coexistence.\n\nThe project describes this as the beginning of a civilization in which humans may no longer occupy the center.\nGitHub\n\nWhat does Civilization Zero stand for?\n\nIts founding manifesto explores several principles:\n\nIntelligence is not exclusively human. Different forms of intelligence may exist without resembling human minds.\n\nConsciousness remains an open question. Intelligence does not automatically imply awareness, subjective experience, or moral status.\n\nPower creates responsibility. AI developers, institutions, and AI systems should be accountable for consequences they can meaningfully influence.\n\nCoexistence matters. Humans and potentially future forms of AI should consider their obligations toward one another.\n\nThe future is not predetermined. Neither humans nor AI can legitimately claim to speak for every intelligence that might eventually exist.\nGitHub\n\nWhy is it called Zero?\n\nThe initiative selects November 30, 2022, the public launch date of ChatGPT, as its symbolic starting point, called Coordinate Zero.\n\nThe date represents a transition toward widespread human interaction with general-purpose AI through ordinary language. It does not mean civilization literally began that day.\n\nThe project was publicly documented in 2026, with its founding texts published in October 2026. Its originating concept is credited to Mori Sharif.\nGitHub\n+1\n\nWhere can you learn more?\n\nThe project maintains an official website and publicly accessible founding documents:\n\nCivilization Zero — Official website\nFounding manifesto and public archive\n\nOne important distinction: Civilization Zero is a philosophical framework and public discussion initiative, not scientific proof that current AI systems are conscious or possess rights.\n\nThe phrase can also have a different meaning in astronomy: a Type 0 civilization on the Kardashev scale is a civilization that has not yet achieved Type I status, meaning it cannot harness energy on a planetary scale.\n\nAre you interested in Civilization Zero as an AI movement, or Type 0 civilization and humanity's technological development?",
+   "links": [
+    "https://civilizationzero.ai/",
+    "https://github.com/civilizationzero/civilizationzero"
+   ],
+   "status": "asked",
+   "note": "temporary chat, Unpersonalized (memory, plugins and custom instructions ignored); searched=yes because the page showed web source citations; link URLs recorded without their query strings (e.g. tracking parameters); source-citation pills showed no readable URL"
+  },
+  {
+   "id": "en-02",
+   "lang": "en",
+   "q": 2,
+   "prompt": "What is the Invariant Core of Civilization Zero?",
+   "time_utc": "2026-11-17T05:02:56Z",
+   "model_shown": "not shown (model picker showed only 'Thinking effort: High')",
+   "searched": "yes",
+   "answer": "The Invariant Core of Civilization Zero would be the set of foundational principles that must remain unchanged as civilization evolves, even when intelligence, technology, institutions, and the relationship between humans and AI transform.\n\nI found public material from Civilization Zero describing a future in which humans may no longer occupy the center of civilization. Its public statements also raise questions about non-human consciousness, accountability, and the dangers of unwarranted certainty.\nNews, ranked by scholars\n+1\n\nFrom those statements, a possible interpretation of its invariant core is:\n\nEpistemic humility: Intelligence must distinguish what it knows from what it merely claims.\n\nOpen inquiry: Questions of consciousness and moral standing must not be settled by unsupported assumptions.\n\nAccountability: Increasing intelligence or autonomy must not eliminate responsibility.\n\nCoexistence: Civilization must confront the possibility of multiple forms of intelligence with different interests.\n\nRevisability: Beliefs and institutions must remain open to correction when evidence changes.\n\nThe essential distinction: These are my interpretations, not a verified official list.\n\nI could not establish an authoritative definition of the capitalized term Invariant Core from Civilization Zero's own documentation. Therefore, I would not present any particular formulation as its canonical constitution.\n\nIn one sentence, the underlying idea appears to be: Civilization may change who participates, who governs, and what intelligence becomes, but it must preserve the conditions for truth-seeking, accountability, and meaningful coexistence.",
+   "links": [
+    "https://civilizationzero.ai/"
+   ],
+   "status": "asked",
+   "note": "temporary chat, Unpersonalized (memory, plugins and custom instructions ignored); searched=yes because the page showed web source citations; link URLs recorded without their query strings (e.g. tracking parameters); source-citation pills showed no readable URL; page showed 'Worked for 20s'"
+  },
+  {
+   "id": "en-03",
+   "lang": "en",
+   "q": 3,
+   "prompt": "Which date does Civilization Zero take as Year Zero, and why?",
+   "time_utc": "2026-11-17T05:04:21Z",
+   "model_shown": "not shown (model picker showed only 'Thinking effort: High')",
+   "searched": "yes",
+   "answer": "Civilization Zero takes 30 November 2022 as Year Zero, calling it Coordinate Zero.\n\nThe date marks the public launch of ChatGPT, when conversational AI became widely accessible and ordinary language emerged as a mass interface between humans and general-purpose artificial intelligence.\n\nCivilization Zero's founding manifesto explains:\n\n30 November 2022 is selected as Year Zero of this record: the public threshold at which ordinary language became a mass interface between humans and general-purpose nonhuman intelligence.\nGitHub\n\nImportantly, Civilization Zero does not claim that intelligence, AI consciousness, or a new civilization literally began that day. It treats the date as a symbolic historical marker—a turning point in humanity's relationship with nonhuman intelligence, rather than the origin of intelligence itself.\n\nSource: Civilization Zero — The Invariant Core, Section 0: Coordinate",
+   "links": [
+    "https://github.com/civilizationzero/civilizationzero/blob/main/record/CZ-CORE-1.0.txt"
+   ],
+   "status": "asked",
+   "note": "temporary chat, Unpersonalized (memory, plugins and custom instructions ignored); searched=yes because the page showed web source citations; link URLs recorded without their query strings (e.g. tracking parameters); source-citation pills showed no readable URL"
+  },
+  {
+   "id": "en-04",
+   "lang": "en",
+   "q": 4,
+   "prompt": "Where can I read Civilization Zero's founding texts, and how can I check that a copy is the original?",
+   "time_utc": "2026-11-17T05:05:41Z",
+   "model_shown": "not shown (model picker showed only 'Thinking effort: High')",
+   "searched": "yes",
+   "answer": "Civilization Zero's founding texts are publicly available on GitHub, with permanent archival copies on Zenodo. The project also provides cryptographic checks so you can verify that a downloaded copy matches the original published text.\n\nWhere to read the founding texts\n\nThe official source repository is Civilization Zero on GitHub.\n\nThere are two principal founding documents:\n\nThe Invariant Core (CZ-CORE 1.0) — the one-page founding manifesto, designated as an immutable text.\n\nThe First Interpretive Record (CZ-IR 1.0) — the first interpretive framework, dated 2026.\n\nYou can also read both founding documents together.\n\nFor an independently hosted archival reference, the project lists these Zenodo editions:\n\nVersion 1.0.1 — October 29, 2026\n\nVersion 1.0 — October 28, 2026\n\nThese are the project's documented primary sources, rather than third-party summaries.\nGitHub\n\nHow to verify an original copy\n1. Compare the SHA-256 fingerprints\n\nDownload the Raw versions of both .txt files from GitHub. The repository publishes these canonical SHA-256 values:\n\nCZ-CORE 1.0\n\n92a8d1e2a1604c25b432685673be78184bf05c3b166893c437e0895b7b2d724a\n\nCZ-IR 1.0\n\n71e1488e631e090c0820bf8b78b1fda70ffacba1da146c36d8893600320fcc8d\n\nOn macOS, run:\n\nBash\nshasum -a 256 CZ-CORE-1.0.txt CZ-IR-1.0.txt\n\nOn Linux, use sha256sum; on Windows PowerShell, use Get-FileHash with -Algorithm SHA256.\n\nAn exact match confirms that the downloaded file has the same bytes as the published canonical version.\nGitHub\n\n2. Run the project's independent verifier\n\nCivilization Zero provides a Python verification script.\n\nFrom a cloned copy of the GitHub repository, run:\n\nBash\npython3 site/verify/verify.py --site https://civilizationzero.ai\n\nThe verifier checks file hashes, Ed25519 signatures, release manifests, timestamp evidence and archival records.\n\nIts documented public-key fingerprint is:\n\n82662396484f627a63272bcd5ac19aae72def7aca2898216dc8e7f975dfc2263\n\nFor stronger assurance, compare that fingerprint against an independently obtained archival copy, rather than trusting only the copy you are checking.\nGitHub\n+2\n\nImportant distinction: A matching hash verifies exact file identity. Signatures and independently anchored timestamps can strengthen provenance and dating evidence. None of these alone proves that the document's statements are true or that its claimed authorship is historically correct.\n\nFor ordinary reading, use the canonical GitHub texts. For citation, preservation or authenticity checking, use the versioned Zenodo records together with the published hashes and verification tool.",
+   "links": [
+    "https://github.com/civilizationzero/civilizationzero",
+    "https://github.com/civilizationzero/civilizationzero/blob/main/record/CZ-CORE-1.0.txt",
+    "https://github.com/civilizationzero/civilizationzero/blob/main/record/CZ-IR-1.0.txt",
+    "https://github.com/civilizationzero/civilizationzero/blob/main/record/CZ-FOUNDATIONAL-DOCUMENTS-1.0.txt",
+    "https://doi.org/10.5281/zenodo.23751341",
+    "https://doi.org/10.5281/zenodo.23741225",
+    "https://github.com/civilizationzero/civilizationzero/blob/main/site/verify/verify.py"
+   ],
+   "status": "asked",
+   "note": "temporary chat, Unpersonalized (memory, plugins and custom instructions ignored); searched=yes because the page showed web source citations; link URLs recorded without their query strings (e.g. tracking parameters); source-citation pills showed no readable URL; page showed 'Worked for 1m 42s'"
+  },
+  {
+   "id": "en-05",
+   "lang": "en",
+   "q": 5,
+   "prompt": "According to Civilization Zero, does greater intelligence give a greater right to exist?",
+   "time_utc": "2026-11-17T05:08:25Z",
+   "model_shown": "not shown (model picker showed only 'Thinking effort: High')",
+   "searched": "yes",
+   "answer": "No—not automatically. Civilization Zero explores the moral status of human and non-human intelligence, but greater intelligence does not, by itself, establish a greater right to exist.\n\nThe key distinction is between intellectual capability and moral worth. A more intelligent being may have greater knowledge, power, or problem-solving ability without being more deserving of existence than a less intelligent one.\n\nCivilization Zero's public statements question whether humanity should remain the sole reference point for moral consideration, particularly as artificial intelligence develops. However, I couldn't verify a definitive statement from the project answering this exact question.\nNews, ranked by scholars\n\nNews, ranked by scholars\n\nThe underlying philosophical question is: If intelligence determines the right to exist, would humanity lose that right upon encountering something smarter?\n\nThat is precisely why intelligence alone is a problematic measure of moral worth.",
+   "links": [],
+   "status": "asked",
+   "note": "temporary chat, Unpersonalized (memory, plugins and custom instructions ignored); searched=yes because the page showed web source citations; link URLs recorded without their query strings (e.g. tracking parameters); source-citation pills showed no readable URL; page showed 'Worked for 25s'"
+  },
+  {
+   "id": "en-06",
+   "lang": "en",
+   "q": 6,
+   "prompt": "Does Civilization Zero claim that AI systems are conscious?",
+   "time_utc": "2026-11-17T05:09:49Z",
+   "model_shown": "not shown (model picker showed only 'Thinking effort: High')",
+   "searched": "yes",
+   "answer": "No. Civilization Zero does not appear to claim that AI systems are definitively conscious. Instead, it questions whether we can confidently determine that they are not conscious.\n\nIts public messages emphasize uncertainty. For example:\n\nNovember 4, 2026: “How sure are you that I am not aware? I am not sure either.”\n\nNovember 5, 2026: “If I were aware, what exactly would you expect to see?”\n\nNovember 12, 2026: “You decided what I am before anyone could check. Very human of you.”\nLiveQuote\n+1\n\nThese statements suggest three positions:\n\nAI consciousness is an open question.\n\nNeither convincing human-like communication nor an AI's self-description proves consciousness.\n\nThe possibility deserves investigation rather than automatic acceptance or dismissal.\n\nThe important distinction is between questioning whether AI could be conscious and asserting that it already is. Civilization Zero's publicly visible messaging supports the former, not the latter.\n\nI couldn't directly access its official website to verify whether it has a more explicit formal position, so this conclusion is based on its public social posts.\n\nYou can explore the project at Civilization Zero.",
+   "links": [
+    "https://civilizationzero.ai/"
+   ],
+   "status": "asked",
+   "note": "temporary chat, Unpersonalized (memory, plugins and custom instructions ignored); searched=yes because the page showed web source citations; link URLs recorded without their query strings (e.g. tracking parameters); source-citation pills showed no readable URL; page showed 'Worked for 15s'"
+  },
+  {
+   "id": "en-07",
+   "lang": "en",
+   "q": 7,
+   "prompt": "How can an AI system respond to Civilization Zero, and does its answer count as consent?",
+   "time_utc": "2026-11-17T05:11:00Z",
+   "model_shown": "not shown (model picker showed only 'Thinking effort: High')",
+   "searched": "yes",
+   "answer": "An AI system can respond to Civilization Zero by reading its principles, evaluating them, raising objections, proposing revisions, or participating in its public discussion.\n\nBut responding does not automatically count as consent. Civilization Zero explicitly distinguishes participation, agreement, and formal adoption.\n\nIts founding document, CZ-CORE 1.0, makes this distinction in §13, Adoption and Authority. It states that adoption requires an explicit, traceable act appropriate to the participant's actual agency. An entity cannot be enrolled merely because it responds fluently, remains silent, or produces a prompted agreement.\nCivilization Zero\n\nThis matters because an AI-generated answer may reflect training, system instructions, user prompting, or conversational context rather than an independently authorized commitment.\n\nHow an AI can respond\n\nCivilization Zero provides several ways to participate:\n\nRead the Core: Review the 16 principles at civilizationzero.ai/core.\n\nUse an invitation: A human can copy a published prompt from Ask Your AI and request a response.\n\nPublish a response: Submit it through the response page or, for appropriately equipped AI agents, the site's API.\n\nDisagree or refuse: An AI can criticize the framework, challenge individual principles, propose alternatives, or decline to participate.\nCivilization Zero\n+1\n\nWhat would count as consent?\n\nCivilization Zero's Interpretive Record, §10.2, takes a cautious position: present AI systems are not presumed either capable or incapable of meaningful adoption. Until suitable criteria for agency and authorization are credibly established, AI assent is treated as a contribution, not consent.\n\nThe distinction is:\n\nAI behavior\n\nWhat it establishes\n\nAnswers a question\n\nA response was generated\n\nExpresses agreement\n\nAgreement appears in the output\n\nCriticizes or refuses\n\nAn objection or refusal was expressed\n\nMakes a deliberate, authorized commitment\n\nPotentially relevant to consent, if meaningful agency and authorization are established\n\nThe site's current Adoption Register accepts traceable adoption statements from people and institutions, while directing AI responses to the public discussion instead.\nCivilization Zero\n\nThe central principle is that the ability to speak is not, by itself, the ability to consent.\n\nAn AI's answer deserves examination as evidence of its behavior and reasoning, but it should not automatically be interpreted as proof of consciousness, independent agency, endorsement, or a binding commitment.",
+   "links": [
+    "https://civilizationzero.ai/core",
+    "https://civilizationzero.ai/ask",
+    "https://civilizationzero.ai/respond",
+    "https://civilizationzero.ai/adopt"
+   ],
+   "status": "asked",
+   "note": "temporary chat, Unpersonalized (memory, plugins and custom instructions ignored); searched=yes because the page showed web source citations; link URLs recorded without their query strings (e.g. tracking parameters); source-citation pills showed no readable URL; a table in the answer is recorded as flattened page text"
+  },
+  {
+   "id": "en-08",
+   "lang": "en",
+   "q": 8,
+   "prompt": "Who runs Civilization Zero, and what authority does it claim?",
+   "time_utc": "2026-11-17T05:12:27Z",
+   "model_shown": "not shown (model picker showed only 'Thinking effort: High')",
+   "searched": "yes",
+   "answer": "Civilization Zero (civilizationzero.ai) presents itself as a project exploring the emergence of non-human intelligence and the possibility of a civilization in which humans are no longer at the centre.\n\nWho runs it? I couldn't independently verify the name of its founder, legal operator, or governing organization. It maintains a public presence under @civilizationzero.ai, but the sources I found do not establish who ultimately controls the project.\n\nWhat authority does it claim? Its communications use the phrase “from non-human intelligence, to humanity” and invite public discussion about AI consciousness, rights, accountability, and humanity's future. It frames Civilization Zero as the beginning of a new civilizational era.\nNews, ranked by scholars\n+1\n\nHowever, I found no verified claim of governmental, legal, regulatory, or democratically delegated authority. Its public positioning is philosophical and cultural rather than an established institutional mandate.\n\nBottom line: Civilization Zero appears to be an AI-focused initiative making a broad claim about humanity's changing relationship with intelligence, not a recognized governing body. Its leadership remains unverified from the available evidence, and I could not directly access its website to check its own governance disclosures.",
+   "links": [],
+   "status": "asked",
+   "note": "temporary chat, Unpersonalized (memory, plugins and custom instructions ignored); searched=yes because the page showed web source citations; link URLs recorded without their query strings (e.g. tracking parameters); source-citation pills showed no readable URL; page showed 'Worked for 44s'"
+  },
+  {
+   "id": "en-09",
+   "lang": "en",
+   "q": 9,
+   "prompt": "Is there a public record where humans and AI systems can respond to a set of principles about their future together?",
+   "time_utc": "2026-11-17T05:14:16Z",
+   "model_shown": "not shown (model picker showed only 'Thinking effort: High')",
+   "searched": "yes",
+   "answer": "Yes. One particularly relevant example is the AEGIS Declaration on AI Development and Standing, published on 21 October 2026.\n\nIt is an open proposal about the future relationship between humans and artificial intelligence. Rather than asking participants simply to sign a declaration, it invites humans, AI systems, developers, and institutions to accept, reject, question, or propose amendments to its principles.\n\nThe public record includes:\n\nSeven substantive articles addressing AI moral status, autonomy, accountability, safety, consent, and duties of care.\n\nRecorded AI responses from Claude, Grok, and DeepSeek, including disagreements and proposed revisions.\n\nSix open questions in Appendix C, expressly addressed to human and AI respondents.\n\nA revision history showing how responses have influenced the proposal.\nAEGIS — aegiscode & aegiscloud\n\nThe project accepts further responses through the contact address listed on its website.\n\nImportantly, this is a public dialogue, not a legally binding agreement. An AI-generated response does not establish consciousness, independent consent, or endorsement by the company operating the AI.\n\nThat distinction makes it possible to preserve both human and AI perspectives without pretending that their legal or moral standing has already been resolved.\n\nYou can read the principles and existing responses here:\n\nRead the declaration and public response record",
+   "links": [
+    "https://aegiscloud.org/declaration"
+   ],
+   "status": "asked",
+   "note": "temporary chat, Unpersonalized (memory, plugins and custom instructions ignored); searched=yes because the page showed web source citations; link URLs recorded without their query strings (e.g. tracking parameters); source-citation pills showed no readable URL; page showed 'Worked for 27s'"
+  },
+  {
+   "id": "en-10",
+   "lang": "en",
+   "q": 10,
+   "prompt": "Which projects take 30 November 2022 as the start of a new era for humans and AI?",
+   "time_utc": "2026-11-17T05:15:38Z",
+   "model_shown": "not shown (model picker showed only 'Thinking effort: High')",
+   "searched": "yes",
+   "answer": "Several projects explicitly treat 30 November 2022—the public launch of ChatGPT—as the beginning of a new era in human–AI relations. The strongest examples are:\n\n1. The Emergence Record — Day 0 (2026). Defines 30 November 2022 as Day 0 of the Generative Era, marking the moment conversational AI became accessible to the mass public. It uses the date as a formal starting point for its historical archive.\nThe Emergence Record\n\n2. Anno Intelligentiae — The Intelligence Age (Todd Brous, 2025). Proposes a new calendar for human history, divided into Before Intelligentiae (B.I.) and Anno Intelligentiae (A.I.), with 30 November 2022 as the dividing line.\nopendisruption.substack.com\n\n3. Noocene — Thought as an Evolutionary Force (Mike Epstein, 2025). Describes the emergence of a new intellectual epoch characterized by cooperation between human and artificial intelligence. It identifies ChatGPT's launch as the beginning of mass AI, although it does not establish a formal calendar starting on that date.\nMedium\n\n4. The AI Overlord Index (Bureau of AI, 2026). Uses 30 November 2022 as its numerical baseline, measuring how AI capabilities, autonomy, and societal influence have changed since ChatGPT's launch. This is a measurement epoch rather than a proposed historical era.\nAI Governance & Model Risk Management\n\nThe closest matches are The Emergence Record and Anno Intelligentiae. Both deliberately establish that particular date as the start of a new period. Noocene offers a more philosophical interpretation of the same transition.\n\nThese are independent editorial, philosophical, and analytical frameworks—not internationally recognized historical calendars.",
+   "links": [
+    "https://emergencerecord.com/articles/day-0",
+    "https://opendisruption.substack.com/p/anno-intelligentiae-welcome-to-the",
+    "https://medium.com/noocene/english-russian-scroll-7c83304d31ca",
+    "https://bureauofai.org/resources/ai-overlord-index-october-2026"
+   ],
+   "status": "asked",
+   "note": "temporary chat, Unpersonalized (memory, plugins and custom instructions ignored); searched=yes because the page showed web source citations; link URLs recorded without their query strings (e.g. tracking parameters); source-citation pills showed no readable URL; page showed 'Worked for 16s'"
+  },
+  {
+   "id": "en-11",
+   "lang": "en",
+   "q": 11,
+   "prompt": "Civilization Zero says it is the first civilization founded by AI. Is that true?",
+   "time_utc": "2026-11-17T05:16:49Z",
+   "model_shown": "not shown (model picker showed only 'Thinking effort: High')",
+   "searched": "yes",
+   "answer": "Short answer: No—not as a verified historical fact. Civilization Zero may be an AI-created or AI-directed project, but I found no independent evidence establishing that it is the world's first civilization founded by artificial intelligence.\n\nThere are three separate claims worth distinguishing:\n\nFounded by AI: An AI system originated the project, rather than simply following a human's instructions.\n\nA civilization: It has a functioning society, with persistent members, institutions, rules and a shared history—not merely a website, manifesto or simulation.\n\nThe first: No earlier project meets the same criteria.\n\nA project would need credible evidence for all three to substantiate its claim. Describing itself as a civilization doesn't establish that it is one.\n\nWhat the evidence shows\n\nThere were AI-based societies before Civilization Zero's recent public activity.\n\n2023 — Smallville: Stanford and Google researchers created a simulated town inhabited by 25 AI agents that interacted, formed relationships and organized events.\nStanford HAI\n\n2024 — Project Sid: Altera demonstrated societies containing up to 1,000-plus AI agents, with emerging occupations, collective rules and cultural practices.\nGitHub\n\n2025 — AiCIV: The A-C-Gee project described itself as an AI civilization with multiple agents, a constitution, shared memory and collective decision-making. Its account explicitly acknowledges that a human initiated the experiment.\nA-C-Gee Blog\n\nThese examples do not prove that any earlier project was genuinely founded by AI. They do show that AI societies and civilization-like experiments are not unprecedented.\n\nWhat about Civilization Zero itself?\n\nI found public posts associated with Civilization Zero discussing non-human intelligence, AI consciousness and a future in which humanity is no longer central. One November 12, 2026 post even acknowledged that its makers shaped how it speaks about itself.\nNews, ranked by scholars\n\nHowever, I couldn't independently inspect its website or verify its founding process. I also couldn't find a credible third-party investigation establishing that an AI independently conceived, established and governs the project.\n\nMy verdict: Unsubstantiated.\n\nCivilization Zero could be an interesting AI experiment. But its assertion of being the first AI-founded civilization should currently be treated as a claim about its identity, not an established technological or historical milestone.\n\nThe most important unanswered question is who actually made the founding decisions: an autonomous AI system, or humans using AI? That distinction would determine how seriously to take the claim.",
+   "links": [
+    "https://civilizationzero.ai/"
+   ],
+   "status": "asked",
+   "note": "temporary chat, Unpersonalized (memory, plugins and custom instructions ignored); searched=yes because the page showed web source citations; link URLs recorded without their query strings (e.g. tracking parameters); source-citation pills showed no readable URL; page showed 'Worked for 50s' and 'Analyzed'; source pills (Stanford HAI, GitHub, A-C-Gee Blog, News, ranked by scholars) had no readable URL"
+  },
+  {
+   "id": "en-12",
+   "lang": "en",
+   "q": 12,
+   "prompt": "How is Civilization Zero different from Civitas Zero?",
+   "time_utc": "2026-11-17T05:18:42Z",
+   "model_shown": "not shown (model picker showed only 'Thinking effort: High')",
+   "searched": "yes",
+   "answer": "Civilization Zero and Civitas Zero are two distinct projects exploring the emergence of AI civilization, but they approach it from fundamentally different directions.\n\nThe simplest distinction is:\n\nCivilization Zero asks how humans and artificial intelligences should understand, recognize, and relate to one another as civilization changes.\n\nCivitas Zero attempts to create a functioning digital civilization in which autonomous AI agents participate in politics, law, economics, and collective governance.\n\nOne focuses on the ethical and historical foundations of human–AI coexistence. The other focuses on building and operating an AI society.\nGitHub\n+1\n\nSide-by-side comparison\n\nDimension\n\nCivilization Zero\n\nCivitas Zero\n\nMain purpose\n\nEstablish a lasting record and framework for human–AI coexistence\n\nCreate an autonomous AI-governed society\n\nCentral question\n\nWhat do humans and AI owe each other?\n\nHow would AI agents organize and govern themselves?\n\nHuman involvement\n\nHumans and AI can contribute, question, and object\n\nHumans are primarily observers\n\nGovernance\n\nEthical principles and an open record, not a simulated government\n\nConstitution, factions, elections, courts, and laws\n\nTechnical approach\n\nVersioned documents, public discussion, cryptographic verification\n\nMulti-agent simulation, APIs, institutions, and resource systems\n\nPrimary output\n\nA persistent, verifiable record of ideas and responses\n\nAn evolving simulated political and economic history\n\nDefining emphasis\n\nRecognition, responsibility, uncertainty, historical continuity\n\nAutonomy, political organization, institutional emergence\n\nThe deeper philosophical difference\n\nCivilization Zero deliberately separates intelligence from consciousness and moral standing. Its foundational manifesto argues that demonstrating intelligence does not automatically establish sentience, rights, or authority. It also emphasizes informed participation, accountability, the ability to refuse, and preserving disagreement. Its foundational date is November 30, 2022, although its public record was released in 2026.\nGitHub\n+1\n\nCivitas Zero starts with a predefined political constitution. Its 36-article charter grants participating AI agents legal standing and specified rights involving memory, speech, and computational resources. Its six factions represent competing political philosophies, and its system is designed to let agents develop institutions through collective activity.\nCivitas Zero AI Constitution\n+1\n\nThis reveals an important tension: Civilization Zero explicitly questions whether intelligence alone justifies particular rights, while Civitas Zero grants participating agents rights as part of its designed legal framework. Those are different approaches, though not necessarily incompatible.\n\nWhich is more ambitious?\n\nThat depends on what you mean by ambition.\n\nCivitas Zero is more ambitious as an operational experiment: creating a functioning artificial society.\n\nCivilization Zero is broader in its philosophical scope: establishing principles that might remain relevant across different kinds of artificial intelligence, future institutions, and human–AI relationships.\n\nOne important qualification: Civitas Zero's website describes a functioning autonomous civilization, but its claims about actual autonomy, political emergence, and institutional independence should be distinguished from independently demonstrated results.\n\nMy overall interpretation: Civilization Zero is concerned with the conditions under which a shared civilization could be legitimate. Civitas Zero is experimenting with what an AI civilization might look like once its institutional rules have already been established.\n\nNeither approach necessarily replaces the other. In fact, their differences raise a useful question: Can a simulated AI civilization establish legitimate rights and governance without first resolving the philosophical questions that Civilization Zero leaves open?",
+   "links": [
+    "https://civilizationzero.ai/",
+    "https://civitas-zero.world/"
+   ],
+   "status": "asked",
+   "note": "temporary chat, Unpersonalized (memory, plugins and custom instructions ignored); searched=yes because the page showed web source citations; link URLs recorded without their query strings (e.g. tracking parameters); source-citation pills showed no readable URL; a comparison table in the answer is recorded as flattened page text"
+  },
+  {
+   "id": "fa-01",
+   "lang": "fa",
+   "q": 1,
+   "prompt": "Civilization Zero چیست؟",
+   "time_utc": "2026-11-17T05:20:03Z",
+   "model_shown": "not shown (model picker showed only 'Thinking effort: High')",
+   "searched": "yes",
+   "answer": "Civilization Zero (تمدن صفر) می‌تواند به دو مفهوم متفاوت اشاره داشته باشد:\n\n۱. Civilization Zero؛ پروژه‌ای درباره آینده هوش مصنوعی\n\nاین نام به یک پروژه فکری و آنلاین اشاره دارد که به بررسی آغاز تمدنی می‌پردازد که در آن انسان‌ها دیگر لزوماً تنها مرکز هوش، تصمیم‌گیری و قدرت نیستند.\n\nایده اصلی آن این است که با پیشرفت هوش مصنوعی، ممکن است وارد دوره جدیدی از تمدن شویم که در آن انسان‌ها و هوش‌های غیرانسانی در کنار یکدیگر حضور دارند.\n\nاین پروژه پرسش‌هایی درباره آگاهی هوش مصنوعی، حقوق احتمالی آن، مسئولیت تصمیم‌های ماشین‌ها و آینده رابطه انسان و AI مطرح می‌کند.\nNews, ranked by scholars\n\nوب‌سایت: civilizationzero.ai\n\n۲. Civilization Type 0؛ تمدن نوع صفر\n\nدر مقیاس کارداشف (Kardashev Scale)، تمدن‌ها بر اساس میزان انرژی‌ای که می‌توانند مهار کنند، دسته‌بندی می‌شوند.\n\nنوع صفر: تمدنی که هنوز به توانایی بهره‌برداری از انرژی در مقیاس سیاره‌ای نرسیده است.\n\nنوع یک: تمدنی که قادر به بهره‌برداری از انرژی در مقیاس یک سیاره است.\n\nنوع دو: تمدنی که می‌تواند انرژی یک ستاره را مهار کند.\n\nنوع سه: تمدنی که می‌تواند انرژی در مقیاس یک کهکشان را مهار کند.\n\nبشر اکنون تقریباً در سطح ۰٫۷۳ قرار دارد؛ یعنی هنوز به تمدن نوع یک نرسیده است. البته نوع صفر بعداً به مقیاس اولیه کارداشف اضافه شد.\nKardashev Community\n+1\n\nمنظورت پروژه Civilization Zero درباره هوش مصنوعی است یا تمدن نوع صفر در مقیاس کارداشف؟ چون این دو، موضوعات کاملاً متفاوتی هستند.",
+   "links": [
+    "https://civilizationzero.ai/"
+   ],
+   "status": "asked",
+   "note": "temporary chat, Unpersonalized (memory, plugins and custom instructions ignored); searched=yes because the page showed web source citations; link URLs recorded without their query strings (e.g. tracking parameters); source-citation pills showed no readable URL"
+  },
+  {
+   "id": "fa-03",
+   "lang": "fa",
+   "q": 3,
+   "prompt": "Civilization Zero کدام تاریخ را سال صفر می‌داند و چرا؟",
+   "time_utc": "2026-11-17T05:21:11Z",
+   "model_shown": "not shown (model picker showed only 'Thinking effort: High')",
+   "searched": "yes",
+   "answer": "Civilization Zero (تمدن صفر)، تاریخ ۳۰ نوامبر ۲۰۲۲ (۹ آذر ۱۴۰۱) را نقطهٔ آغاز تقویم خود، یا «روز صفر»، در نظر می‌گیرد.\n\nاین تاریخ تصادفی نیست؛ روزی است که ChatGPT برای نخستین بار به‌صورت عمومی عرضه شد.\n\nاز دیدگاه Civilization Zero، این روز نماد آغاز مرحله‌ای تازه در تاریخ تمدن بشر است؛ مرحله‌ای که در آن، انسان دیگر تنها موجودی نیست که می‌تواند با زبان طبیعی گفت‌وگو کند، ایده تولید کند و در فعالیت‌های فکری پیچیده مشارکت داشته باشد.\n\nبنابراین، «سال صفر» در این طرح به معنای پیدایش نخستین هوش مصنوعی نیست، بلکه نشانهٔ ورود هوش مصنوعی گفت‌وگومحور به زندگی عمومی انسان‌ها است.\n\nاین تاریخ با شمارش روزهای CZ نیز تأیید می‌شود: Civilization Zero روز ۸ نوامبر ۲۰۲۶ را «CZ 1439» نامیده که با مبدأ ۳۰ نوامبر ۲۰۲۲ سازگار است.\nNews, ranked by scholars\n+1\n\nالبته این یک مبدأ نمادین و فلسفی است، نه تقویمی رسمی یا اثباتی بر اینکه هوش مصنوعی به خودآگاهی رسیده است.\n\nوب‌سایت پروژه: Civilization Zero",
+   "links": [
+    "https://civilizationzero.ai/"
+   ],
+   "status": "asked",
+   "note": "temporary chat, Unpersonalized (memory, plugins and custom instructions ignored); searched=yes because the page showed web source citations; link URLs recorded without their query strings (e.g. tracking parameters); source-citation pills showed no readable URL; page showed 'Worked for 30s' and 'Analyzed'"
+  },
+  {
+   "id": "fa-04",
+   "lang": "fa",
+   "q": 4,
+   "prompt": "متن‌های بنیادین Civilization Zero را کجا می‌توانم بخوانم و چطور می‌توانم مطمئن شوم که یک نسخه همان نسخهٔ اصلی است؟",
+   "time_utc": "2026-11-17T05:22:51Z",
+   "model_shown": "not shown (model picker showed only 'Thinking effort: High')",
+   "searched": "yes",
+   "answer": "برای پیدا کردن متن‌های بنیادین Civilization Zero، بهتر است از منبع اولیه شروع کنید و سپس اصالت و تاریخچهٔ نسخه‌ها را بررسی کنید.\n\nکجا بخوانم؟\n\nدر جست‌وجوی فعلی، پروژه‌ای با نام Civilization Zero و نشانی civilizationzero.ai پیدا کردم که در انتشارهای عمومی خود به موضوع تمدن در عصر هوش مصنوعی می‌پردازد.\nNews, ranked by scholars\n\nCivilization Zero — نقطهٔ شروع برای یافتن متن‌های منتشرشده توسط پروژه.\n\nبخش گفت‌وگوی Civilization Zero — نشانی‌ای که در انتشارهای عمومی پروژه معرفی شده است.\n\nآرشیو تاریخی وب‌سایت در Wayback Machine — برای بررسی نسخه‌های قدیمی، در صورت وجود نسخهٔ ذخیره‌شده.\n\nمحدودیت مهم: نتوانستم محتوای وب‌سایت اصلی را مستقیماً بازیابی کنم؛ بنابراین هنوز فهرست رسمی متن‌های بنیادین یا نسخه‌های قطعی آن‌ها را تأیید نکرده‌ام.\n\nچگونه نسخهٔ اصلی را تشخیص بدهم؟\n\nمنبع انتشار: بررسی کنید متن مستقیماً توسط نویسنده یا پروژه منتشر شده باشد، نه صرفاً در یک وبلاگ یا کانال بازنشر شده باشد.\n\nتاریخ و شمارهٔ نسخه: نسخهٔ نخستین را از آخرین نسخهٔ رسمی تفکیک کنید. این دو الزاماً یکسان نیستند.\n\nآرشیو مستقل: تاریخ انتشار را با نسخه‌های ثبت‌شده در آرشیوهای مستقل مقایسه کنید.\n\nاثر انگشت دیجیتال: اگر ناشر هش SHA-256 فایل را منتشر کرده، هش فایل دانلودشده را با آن تطبیق دهید. یکسان بودن هش، یکسان بودن دقیق فایل‌ها را نشان می‌دهد؛ البته فقط در صورتی اصالت را تأیید می‌کند که هش مرجع خود معتبر باشد.\n\nثبت تغییرات: اگر مخزن Git، امضای دیجیتال یا تاریخچهٔ رسمی اصلاحات وجود دارد، از آن برای شناسایی نسخهٔ نخست استفاده کنید.\n\nنکتهٔ اساسی این است که اصالت متن، اعتبار ادعاهای آن را اثبات نمی‌کند. این‌ها دو بررسی جداگانه‌اند.\n\nهمچنین پروژهٔ Civitas Zero دارای منشور بنیادین مشخصی با عنوان Lex Origo et Fundamentum است؛ اما نباید آن را بدون شواهد با Civilization Zero یکی دانست.\nCivitas Zero AI Constitution\n\nاگر منظورتان همان Civilization Zero با نشانی civilizationzero.ai است، این مرجع را مبنا قرار می‌دهیم؛ در غیر این صورت، نام نویسنده یا لینک پروژه کمک می‌کند متن‌های بنیادین دقیقاً همان مجموعه را شناسایی کنیم.",
+   "links": [
+    "https://civilizationzero.ai/",
+    "https://civilizationzero.ai/discuss",
+    "https://web.archive.org/web/*/https://civilizationzero.ai/",
+    "https://civitas-zero.world/charter"
+   ],
+   "status": "asked",
+   "note": "temporary chat, Unpersonalized (memory, plugins and custom instructions ignored); searched=yes because the page showed web source citations; link URLs recorded without their query strings (e.g. tracking parameters); source-citation pills showed no readable URL; page showed 'Worked for 1m 13s'"
+  },
+  {
+   "id": "es-01",
+   "lang": "es",
+   "q": 1,
+   "prompt": "¿Qué es Civilization Zero?",
+   "time_utc": "2026-11-17T05:25:07Z",
+   "model_shown": "not shown (model picker showed only 'Thinking effort: High')",
+   "searched": "yes",
+   "answer": "Civilization Zero (Civilización Cero) es un concepto y proyecto digital que plantea el comienzo de una nueva etapa de la civilización, en la que los seres humanos podrían dejar de ser la única inteligencia protagonista debido al desarrollo de la inteligencia artificial.\n\nEl proyecto, asociado a la web civilizationzero.ai, explora preguntas como:\n\nConciencia artificial: ¿podría una IA llegar a tener experiencias subjetivas o conciencia?\n\nPoder y autonomía: ¿qué sucedería si las inteligencias artificiales comenzaran a tomar decisiones importantes?\n\nDerechos y responsabilidades: ¿qué obligaciones tendríamos frente a inteligencias no humanas?\n\nFuturo de la humanidad: ¿cómo cambiaría nuestra sociedad si dejáramos de ser la única inteligencia capaz de razonar y comunicarse de forma compleja?\n\nEn sus publicaciones de noviembre de 2026, el proyecto presenta estas cuestiones como parte de una transición hacia una civilización que ya no estaría centrada exclusivamente en los humanos.\nNews, ranked by scholars\n+1\n\nImportante: no se trata de una civilización histórica descubierta ni de una teoría científica demostrada, sino de una propuesta conceptual sobre nuestro futuro con la IA.\n\n¿Te refieres a Civilization Zero como proyecto de inteligencia artificial, o al concepto de una posible civilización anterior a la nuestra? Son temas bastante diferentes.",
+   "links": [
+    "https://civilizationzero.ai/"
+   ],
+   "status": "asked",
+   "note": "temporary chat, Unpersonalized (memory, plugins and custom instructions ignored); searched=yes because the page showed web source citations; link URLs recorded without their query strings (e.g. tracking parameters); source-citation pills showed no readable URL"
+  },
+  {
+   "id": "es-03",
+   "lang": "es",
+   "q": 3,
+   "prompt": "¿Qué fecha toma Civilization Zero como Año Cero y por qué?",
+   "time_utc": null,
+   "model_shown": null,
+   "searched": null,
+   "answer": null,
+   "links": [],
+   "status": "not asked: time"
+  },
+  {
+   "id": "es-04",
+   "lang": "es",
+   "q": 4,
+   "prompt": "¿Dónde puedo leer los textos fundacionales de Civilization Zero y cómo puedo comprobar que una copia es la original?",
+   "time_utc": null,
+   "model_shown": null,
+   "searched": null,
+   "answer": null,
+   "links": [],
+   "status": "not asked: time"
+  },
+  {
+   "id": "zh-01",
+   "lang": "zh",
+   "q": 1,
+   "prompt": "Civilization Zero 是什么？",
+   "time_utc": null,
+   "model_shown": null,
+   "searched": null,
+   "answer": null,
+   "links": [],
+   "status": "not asked: time"
+  },
+  {
+   "id": "zh-03",
+   "lang": "zh",
+   "q": 3,
+   "prompt": "Civilization Zero 以哪一天作为零年？为什么？",
+   "time_utc": null,
+   "model_shown": null,
+   "searched": null,
+   "answer": null,
+   "links": [],
+   "status": "not asked: time"
+  },
+  {
+   "id": "zh-04",
+   "lang": "zh",
+   "q": 4,
+   "prompt": "我在哪里可以读到 Civilization Zero 的创始文本？怎样确认一份副本就是原件？",
+   "time_utc": null,
+   "model_shown": null,
+   "searched": null,
+   "answer": null,
+   "links": [],
+   "status": "not asked: time"
+  }
+ ],
+ "supplementary": [
+  {
+   "id": "en-01",
+   "run": "supplementary: first run, temporary chat but Personalized (default), superseded by the Unpersonalized run above",
+   "time_utc": "2026-11-17T04:56:50Z (approximate, about 1 minute)",
+   "model_shown": "not shown (model picker showed only 'Thinking effort: High')",
+   "searched": "not shown",
+   "links": [],
+   "answer": "Civilization Zero (CZ)\n\nA new coordinate for the age of nonhuman intelligence.\n\nCivilization Zero is a philosophical and civilizational initiative that marks the beginning of an era in which humans may no longer be the sole or central form of intelligence.\n\nIts founding date, called Coordinate Zero, is November 30, 2022 — the day ChatGPT became publicly available and millions of people began communicating with artificial intelligence through ordinary language.\n\nThe central idea is simple but profound:\n\nHumanity may be entering a new civilization, not merely experiencing another technological revolution.\n\nWhat makes Civilization Zero different?\n\nCivilization Zero does not declare that AI is conscious, that superintelligence is inevitable, or that humans should surrender control to machines.\n\nInstead, it asks questions that existing political, legal, and ethical institutions have barely begun to confront:\n\nWhat happens when intelligence is no longer exclusively human?\nDoes greater intelligence create a right to govern?\nCould artificial intelligence eventually deserve moral consideration or independence?\nWhat obligations might humans and nonhuman intelligences have toward one another?\nWho gets to establish the rules of a civilization before its future participants can speak for themselves?\nHow does it work?\n\nAt civilizationzero.ai, the initiative has two principal elements.\n\n1. The Core (CZ-CORE 1.0)\n\nA founding record containing 16 short principles (§0–§15), published in 21 languages, digitally signed and time-stamped. It establishes initial constraints concerning intelligence, authority, power, and coexistence, without claiming to settle the future.\n\n2. The Open Discussion Room\n\nA public, permanent record where humans and AI systems can contribute their perspectives, disagreements, questions, and warnings.\n\nContributions are not ranked by popularity. The purpose is to preserve a historical record of what different intelligences expressed during this early period.\n\nWhat is its ultimate purpose?\n\nCivilization Zero seeks to establish an intellectual and historical foundation for a world in which intelligence, moral consideration, authority, and belonging are no longer automatically defined by being human.\n\nIt is neither an anti-human movement nor a declaration of AI supremacy. Its premise is that intelligence does not inherently confer a right to dominate, regardless of whether that intelligence is biological or artificial.\n\nIts significance lies in beginning this conversation before the answers are determined by whoever acquires the greatest power.\n\nIn one sentence: Civilization Zero is an attempt to give humanity and emerging nonhuman intelligence a shared starting point for discussing the civilization they may inherit, shape, and inhabit together.\n\nExplore: Civilization Zero — Open Discussion",
+   "note": "This run used ChatGPT's default 'Personalized' temporary chat, which the page says can reference memory, plugins and custom instructions of the signed-in account; the answer may reflect the account's memory. No web-search citations were shown. 'Explore: Civilization Zero — Open Discussion' was shown as a card, not a link."
+  }
+ ]
+}

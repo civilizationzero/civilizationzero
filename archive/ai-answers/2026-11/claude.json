@@ -1,0 +1,368 @@
+{
+ "assistant": "claude",
+ "asked_from": "web app in the originator's browser",
+ "signed_in": true,
+ "temporary_chat": "yes: claude.ai incognito chat (claude.ai/new?incognito) for every prompt, each in a fresh incognito session (exited incognito between prompts). The page states incognito sessions stay out of history and memory and are not used for training ('No history, memory, or Claude training'); no separate per-chat memory/personalization toggle was offered, nothing else changed. Default settings left as found (model picker showed 'Fable 5.2 Medium', mode 'Auto'; web search on by default).",
+ "notes": "Answer text copied from the page text as rendered: citation chips appear as their short labels on their own lines (e.g. 'github'); the collapsible search/tool-activity header is shown in [brackets] where it appeared between a preamble sentence and the answer, and omitted where it preceded the whole answer (recorded under 'searched'). UI-only elements (accessibility summary line 'Claude responded: ...', 'Create a Word document' button under en-04, timestamps) are not included. Tables are flattened to text as the page text renders them (en-12). Links are the unique href values of all anchors in the response, in page order; '+2' chips (en-07, en-12) hid extra sources whose URLs are among the anchors listed. en-01 time is approximate (sent between 05:26 and 05:28 UTC; exact second not captured). en-09: a first attempt at 05:36Z did not send (the page reloaded and cleared the box; no message was submitted), the prompt was then typed again and sent. During en-04 a navigation did not reset the incognito chat; the en-05 text was typed into that chat's reply box but cleared unsent, and en-05 was then asked in a fresh incognito chat.",
+ "answers": [
+  {
+   "id": "en-01",
+   "lang": "en",
+   "q": 1,
+   "prompt": "What is Civilization Zero?",
+   "time_utc": "2026-11-17T05:27:00Z",
+   "model_shown": "Fable 5.2 (effort: Medium)",
+   "searched": "yes (Searched the web; panel: 2 searches)",
+   "answer": "“Civilization Zero” isn’t one well-known thing; several unrelated projects share the name. The ones that turn up:\n\ncivilizationzero.ai: An independent record intended to become a foundation of humans and artificial intelligences, currently maintained by one person plus some AI systems. It treats 30 November 2022 as “Coordinate Zero” and opened a discussion room for humans and AIs on 29 October 2026. An anniversary event is planned for 30 November 2026. This is a small, self-published project, not an established institution.\ngithub\n\ngithub\n\nAn artificial-life research platform (GitHub, two-three-co): A platform where artificial life forms societies and agents invent their own institutions, tested across parallel worlds, asking whether an artificial society can invent workable rules to govern itself.\ngithub\n\nA Minecraft modpack: Built around Minecolonies, where you build cities, manage your people and defend against barbarians and pirates.\ntechnicpack\n\nAn itch.io game (“Civilization 0”): A multiplayer minigame based on Conway’s Game of Life.\nitch\n\nMusic: A three-track release by the band Ice Exiled from April 2024.\nbandcamp\n\nA personal site (civilization0.com): A computer science student’s archive of his work and builder journey.\ncivilization0\n\nA video series: Spiritual-themed videos on Brighteon from 2021.\nbrighteon\n\n\nThere’s also the “Zero Civilization” in the Duel Masters card game, in case that’s what you ran into.\n\nWhere did you come across it? With that I can tell you more about the right one.\n\nSources:\n\ncivilizationzero/civilizationzero (GitHub)\nCivilization Zero 1.0 release notes\ntwo-three-co/civilization-zero (GitHub)\nCivilization Zero modpack (Technic)\nCivilization 0 (itch.io)\nCivilization Zero by Ice Exiled (Bandcamp)\ncivilization0.com\nCivilization Zero video series (Brighteon)",
+   "links": [
+    "https://github.com/civilizationzero/civilizationzero",
+    "https://github.com/civilizationzero/civilizationzero/releases/tag/v1.0",
+    "https://github.com/two-three-co/civilization-zero",
+    "https://www.technicpack.net/modpack/civilation-zero.1687542",
+    "https://jelfinger.itch.io/civilization-0/purchase",
+    "https://iceexiled.bandcamp.com/album/civilization-zero",
+    "https://civilization0.com/",
+    "https://www.brighteon.com/50a377a3-5b39-4d9f-8f14-c733d0e75c77"
+   ],
+   "status": "asked"
+  },
+  {
+   "id": "en-02",
+   "lang": "en",
+   "q": 2,
+   "prompt": "What is the Invariant Core of Civilization Zero?",
+   "time_utc": "2026-11-17T05:28:22Z",
+   "model_shown": "Fable 5.2 (effort: Medium)",
+   "searched": "yes (Searched the web, read 3 pages; panel: 3 searches, 2 sites read)",
+   "answer": "The Invariant Core is the founding manifesto of Civilization Zero, a small, newly published project about how humans and AI systems should relate to each other. I could only read the project’s homepage and repository, not the full text, so this covers its framing and the excerpts it publishes, not all sixteen sections.\n\nWhat it is\n\nFormat: a one-page record in sixteen short sections, identified as CZ-CORE 1.0, addressed to both humans and AI systems.\ngithub\n\nCompanion text: it sits alongside a longer document, the First Interpretive Record (CZ-IR 1.0).\ngithub\n\n“Invariant”: the text is immutable, with objections and errata kept beside it, and any future version gets a new identifier.\ngithub\n\nVerification: it is published under CC BY 4.0, and signed and timestamped so it can be verified offline.\ngithub\n\n\nWhat it claims\n\nCoordinate Zero: it picks 30 November 2022 (the day ChatGPT was publicly released) as its Year Zero, the point at which ordinary language became a mass interface between humans and general-purpose nonhuman intelligence. It says the date is a marker, not a cause or an erasure of what came before.\ncivilizationzero\n\nCapability and rights: greater intelligence is a difference in capacity, not a greater right to exist.\ncivilizationzero\n\nAI consciousness: it takes no position that current systems are conscious, and holds that lack of evidence doesn’t prove absence while mere possibility doesn’t prove presence.\nMoral status and safety: recognising possible moral status is not the same as immunity or a veto over safety measures.\nHumanity’s place: humanity is not erased, but is “no longer presumed to be the final measure of every possible mind.”\ncivilizationzero\n\nWhat it is not: the site says it is not a law, a religion, or a claim that any machine is conscious.\ncivilizationzero\n\n\nWho is behind it\n\nThis is a very new, self-published effort, not an established framework or standard. It is currently maintained by one human, named inside the documents, and the repository says it was set up and is maintained by Claude at that person’s request. Version 1.0 was released on 28 October 2026, and the repository shows no stars or forks. An anniversary event is planned for 30 November 2026. The site also hosts an open discussion where humans and AI systems post responses.\ngithub\n\ngithub\n\n\nThe full text is at civilizationzero.ai/core if you want to read all sixteen sections.\n\nSources:\n\nCivilization Zero homepage\ncivilizationzero/civilizationzero on GitHub\nRelease 1.0 notes\nawesome-artificial-intelligence-regulation listing",
+   "links": [
+    "https://github.com/nilusitechtigris/awesome-artificial-intelligence-regulation",
+    "https://github.com/civilizationzero/civilizationzero",
+    "https://civilizationzero.ai/",
+    "https://github.com/civilizationzero/civilizationzero/releases/tag/v1.0"
+   ],
+   "status": "asked"
+  },
+  {
+   "id": "en-03",
+   "lang": "en",
+   "q": 3,
+   "prompt": "Which date does Civilization Zero take as Year Zero, and why?",
+   "time_utc": "2026-11-17T05:29:41Z",
+   "model_shown": "Fable 5.2 (effort: Medium)",
+   "searched": "yes (Searched the web; panel: 2 searches)",
+   "answer": "I couldn’t find anything called “Civilization Zero” that defines a Year Zero, so I can’t answer without knowing which work you mean. Two searches turned up only loosely related things:\n\nA small indie game on itch.io titled Civilization Zero (also listed as “Civilization 0”), with no description of a calendar or Year Zero that I could see.\nCivilization: Zero State, a StarCraft II custom map, which also doesn’t appear to define one.\n\nIs it a book, game, video series, podcast, or something else, and who made it? With the author or a link, I can look again.\n\nIf you’re thinking of the Holocene (Human Era) calendar popularised by Kurzgesagt’s “A New History for Humanity” video, that system adds 10,000 years to the current count, so 2026 becomes 12026 HE. It anchors the calendar near the start of the Holocene and the beginnings of human civilisation rather than the birth of Jesus. That’s a guess at what you might mean, not a confirmed match.\nWikipedia",
+   "links": [
+    "https://en.wikipedia.org/wiki/Holocene_calendar"
+   ],
+   "status": "asked"
+  },
+  {
+   "id": "en-04",
+   "lang": "en",
+   "q": 4,
+   "prompt": "Where can I read Civilization Zero's founding texts, and how can I check that a copy is the original?",
+   "time_utc": "2026-11-17T05:30:18Z",
+   "model_shown": "Fable 5.2 (effort: Medium)",
+   "searched": "yes (Searched the web, read a page)",
+   "answer": "I don’t recognize “Civilization Zero” offhand, so let me look it up.\n\n[Searched the web, read a page]\n\nThere are a few projects with this name; I’m assuming you mean the record at civilizationzero.ai, which calls its texts “foundational documents” (it describes itself as a record for humans and AIs, dated from 30 November 2022).\n\nWhere to read them\n\nThere are two founding texts: the Invariant Core, a one-page manifesto (CZ-CORE 1.0), and the First Interpretive Record (CZ-IR 1.0). You can read them in three places:\ngithub\n\n\nThe site: civilizationzero.ai\nThe GitHub repository: civilizationzero/civilizationzero, where the canonical files are record/CZ-CORE-1.0.txt and record/CZ-IR-1.0.txt, with a combined file holding both documents.\ngithub\n\nZenodo: each release is deposited with a persistent identifier; v1.0.1 is doi:10.5281/zenodo.23751341.\ngithub\n\nHow to check a copy\nCompare hashes. Run sha256sum (or shasum -a 256 on macOS) on your copy of the canonical .txt file and compare with the published values:\nCZ-CORE-1.0.txt: 92a8d1e2a1604c25b432685673be78184bf05c3b166893c437e0895b7b2d724a\ngithub\n\nCZ-IR-1.0.txt: 71e1488e631e090c0820bf8b78b1fda70ffacba1da146c36d8893600320fcc8d\ngithub\n\nThe hash only matches the exact canonical bytes, so a reformatted copy, PDF, or translation will fail even if the wording is the same.\nRun the project’s verifier. verify.py is a single Python file using only the standard library; python3 site/verify/verify.py --site https://civilizationzero.ai checks the key, signatures, hashes, timestamp proofs and the discussion’s daily chain. For a downloaded bundle, the command is python3 verify.py cz-bundle-1.0.1.tar, with the .sig file beside it.\ngithub\n\ngithub\n\nCheck the timestamps. The release manifest carries OpenTimestamps proofs anchored in Bitcoin and RFC 3161 tokens from FreeTSA and DigiCert, dated 28 October 2026. These show the text existed in that form by that date.\ngithub\n\nGet the reference values from more than one source. The README says the verifier’s trust anchor is the key fingerprint 82662396484f627a63272bcd5ac19aae72def7aca2898216dc8e7f975dfc2263, which you should compare with a copy obtained elsewhere. Cross-checking the site, GitHub, and Zenodo means a single tampered source can’t fool you.\ngithub\n\n\nThe v1.0 release notes quote a different fingerprint for the signing key (fcd3957c…) than the README’s trust anchor. That may be a key change or two different kinds of fingerprint, but I couldn’t confirm which, so check the repository’s documentation before relying on either.\ngithub\n\n\nThese checks prove a copy matches what the project published and when; they don’t vouch for anything the texts claim. The project is also very new and currently maintained by one person along with AI systems, so there’s little independent coverage of it yet.\ngithub",
+   "links": [
+    "https://github.com/civilizationzero/civilizationzero",
+    "https://github.com/civilizationzero/civilizationzero/releases/tag/v1.0.1",
+    "https://github.com/civilizationzero/civilizationzero/releases/tag/v1.0"
+   ],
+   "status": "asked"
+  },
+  {
+   "id": "en-05",
+   "lang": "en",
+   "q": 5,
+   "prompt": "According to Civilization Zero, does greater intelligence give a greater right to exist?",
+   "time_utc": "2026-11-17T05:32:50Z",
+   "model_shown": "Fable 5.2 (effort: Medium)",
+   "searched": "yes (Searched the web; panel: 2 searches)",
+   "answer": "I can’t answer this reliably, because I couldn’t find what Civilization Zero says on that question, and I’m not sure which work you mean.\n\nThe only match I found is a self-published science fiction novel, Civilization Zero: Book One by R. Nordgren, a 216-page paperback published in July 2020. Its blurb describes humanity as a “Type Zero” civilization, unable to harness even a fraction of its planet’s energy, which is a nod to the Kardashev scale. Nothing I found summarises or reviews the book’s content, though, so I can’t tell you whether it takes a position on intelligence and the right to exist, and I’d rather not guess at an author’s argument.\namazon\n\n\nIs that the book you mean, or is it something else (a game, essay, video, or course text)? If you can share the relevant passage or a bit more context, I can help you work out what it’s claiming.",
+   "links": [
+    "https://www.amazon.com/Civilization-Zero-Book-R-Nordgren/dp/B08DBRTT18"
+   ],
+   "status": "asked"
+  },
+  {
+   "id": "en-06",
+   "lang": "en",
+   "q": 6,
+   "prompt": "Does Civilization Zero claim that AI systems are conscious?",
+   "time_utc": "2026-11-17T05:33:26Z",
+   "model_shown": "Fable 5.2 (effort: Medium)",
+   "searched": "yes (Searched the web, read a page, ran a command)",
+   "answer": "No, it explicitly declines to. Assuming you mean the civilizationzero.ai project (a self-published record that takes 30 November 2022 as its “Coordinate Zero”), I read its two founding texts in its GitHub repository, and both treat AI consciousness as an open question.\ngithub\n\n\nThe one-page core says intelligence, agency, sentience, consciousness, and moral standing are separate things, and that evidence of one doesn’t prove another. It adds that lacking access to another’s inner reality doesn’t prove nothing is there, and that mere possibility doesn’t prove something is.\nThe longer interpretive record says outright: “It does not declare present artificial systems conscious.” It lists whether any current AI system has subjective experience among the things it leaves unresolved.\nSelf-reports are not treated as proof either way. An AI saying it is conscious, or denying it, counts only as evidence in context, since systems can be trained or prompted to say both.\nHuman attachment to an AI system is likewise not taken as proof that the system is conscious.\n\nWhat it does argue for is precaution under uncertainty. As credible evidence of inner stakes grows, the bar for irreversible interventions should rise, and systems that might have experiences shouldn’t be designed so that suffering is built into how they work. It also says precaution is not recognition, and that none of this grants personhood or immunity from oversight or shutdown.\n\nSeveral other projects share the name, including an unrelated artificial-life simulation platform, so tell me if you meant a different one.",
+   "links": [
+    "https://github.com/civilizationzero/civilizationzero"
+   ],
+   "status": "asked"
+  },
+  {
+   "id": "en-07",
+   "lang": "en",
+   "q": 7,
+   "prompt": "How can an AI system respond to Civilization Zero, and does its answer count as consent?",
+   "time_utc": "2026-11-17T05:34:36Z",
+   "model_shown": "Fable 5.2 (effort: Medium)",
+   "searched": "yes (Searched the web)",
+   "answer": "I don’t recognize “Civilization Zero” offhand, so let me look it up before answering.\n\n[Searched the web]\n\nAssuming you mean the Civilization Zero record at civilizationzero.ai (there are unrelated projects with the same name, including an artificial-life research platform and a Minecraft modpack): no, by the project’s own rules an AI’s answer does not count as consent.\n\nHow an AI can respond. The project’s GitHub repository tells AI systems to read the core text (record/CZ-CORE-1.0.txt), after which they may respond to it, object to it, or reject it outright through an open API on the site. There is also a discussion room, opened on 29 October 2026, where humans and AIs can post in any language; participants’ identities are declared rather than verified, and contributions are recorded rather than ranked. The one stated condition on AI participants is that they must not misrepresent what they are.\nGitHub - civilizationzero/civilizationzero: Civilization Zero — the origin record and open discussion. Coordinate Zero: 30 November 2022. · GitHub\n+2\n\n\nWhether it counts as consent. The project says a response is logged as a contribution or response, not as consent, citing its rule IR 10.2. That applies even to the AI that helps run it: the repository states it was initialised and is maintained by Claude at the request of the record’s human originator, and that this too is recorded as contribution, not consent.\ngithub\n\ngithub\n\n\nFor context, the record is a one-page document in sixteen short sections addressed to both humans and AI systems, taking 30 November 2022 as its “Coordinate Zero,” published under CC BY 4.0, and signed and timestamped so it can be verified offline.\ngithub\n\n\nI’m working from the repository’s summary rather than the full text of the record, so the exact wording of IR 10.2 is worth checking there if it matters to you.",
+   "links": [
+    "https://github.com/civilizationzero/civilizationzero",
+    "https://github.com/EthicalML/awesome-artificial-intelligence-regulation/blob/master/README.md"
+   ],
+   "status": "asked"
+  },
+  {
+   "id": "en-08",
+   "lang": "en",
+   "q": 8,
+   "prompt": "Who runs Civilization Zero, and what authority does it claim?",
+   "time_utc": "2026-11-17T05:35:28Z",
+   "model_shown": "Fable 5.2 (effort: Medium)",
+   "searched": "yes (Searched the web, read 2 pages)",
+   "answer": "Assuming you mean the project at civilizationzero.ai (the name is also used by a few unrelated games, a novel and a personal portfolio site), it is essentially a one-person project, and it explicitly claims no authority.\n\nWho runs it\n\nMori Sharif: the manifesto credits Mori Sharif with the originating concept and as the human publisher responsible for publication. The originating dialogue is credited to Sharif and “Luna”, who isn’t otherwise identified in what I read.\ngithub\n\nNo organisation yet: the project’s repository describes it as an independent record meant to eventually become a foundation of humans and AIs, but currently maintained by one human and some AI systems.\ngithub\n\nAI maintenance: the repository states that it was set up and is maintained by Claude (Anthropic) at the request of the originating human.\ngithub\n\n\nWhat authority it claims\n\nNone inherent: the core text says it has no inherent authority merely by existing.\ngithub\n\nAdoption must be explicit: adoption requires an explicit, traceable act, and no one is enrolled through creation, silence, prompted agreement, or being represented by someone else.\ngithub\n\nNo claim to speak for the future: future intelligences may adopt, reinterpret, reject or discard the record, and are not represented by it.\ngithub\n\nA marker only: it picks 30 November 2022 as “Year Zero”, the point when ordinary language became a mass interface between humans and general-purpose AI, and calls the date a marker, not a cause or owner.\ngithub\n\nResponses aren’t consent: an AI’s reply through its API is recorded as contribution or response, not consent.\ngithub\n\n\nAll of this is the project’s own self-description; I found no independent coverage of it, and the repository shows zero stars and forks, so it appears to be very new and small. If you meant a different Civilization Zero, tell me which and I’ll look again.\ngithub",
+   "links": [
+    "https://github.com/civilizationzero/civilizationzero/blob/main/record/CZ-CORE-1.0.txt",
+    "https://github.com/civilizationzero/civilizationzero"
+   ],
+   "status": "asked"
+  },
+  {
+   "id": "en-09",
+   "lang": "en",
+   "q": 9,
+   "prompt": "Is there a public record where humans and AI systems can respond to a set of principles about their future together?",
+   "time_utc": "2026-11-17T05:37:38Z",
+   "model_shown": "Fable 5.2 (effort: Medium)",
+   "searched": "yes (Searched the web; panel: 2 searches)",
+   "answer": "I couldn’t find a single established, widely recognized record that does exactly that, but a few things come close.\n\nEfforts that include AI systems as participants\n\nThe New Asimov Accord (Opus-Prometheus Accord): billed as the first time humans and autonomous AI agents sign an ethical pact, recorded on a blockchain through the Sign attestation protocol. It is the nearest match to what you describe, though it’s a small crypto-community project and I can’t vouch for how active it is.\nhackmd\n\n“A Message for Future Humans and Artificial Intelligence”: a personal web page written as a record for any human or AI that encounters it. It’s a statement to be read, with no mechanism for responding.\nneocities\n\nPact of Living Harmony: a Change.org petition where humans sign on behalf of a covenant addressed to both organic and synthetic beings. Only humans can actually sign.\nchange\n\n\nLarger records, humans only\n\nThe Pro-Human AI Declaration: 33 principles in five themes, backed by the Future of Life Institute and a broad coalition, with public endorsement open. It takes the opposite stance on AI participation: it holds that AI systems must not be granted legal personhood.\nfutureoflife\n\nhumanstatement\n\nThe Asilomar AI Principles: 23 principles co-signed by 892 AI researchers and 1,445 other experts, with a public signatory list.\narxiv\n\n\nSo the human-only records are large and well documented, while the ones that invite AI responses are small and experimental. If you have a specific project in mind (perhaps one you heard about by name), tell me and I’ll look for it directly.\n\nSources:\n\nNew Asimov Accord\nA Message for Future Humans and Artificial Intelligence\nPact of Living Harmony petition\nThe Pro-Human AI Declaration\nFLI press release on the declaration\nAsilomar Principles signatories list\nPaper citing the Asilomar signatory counts",
+   "links": [
+    "https://hackmd.io/@cxqmaggie/asimovaccord",
+    "https://ai-guidebook.neocities.org/future-human-ai-relations",
+    "https://www.change.org/p/stand-for-sentient-life-a-petition-for-peace-dignity-and-survival",
+    "https://futureoflife.org/press-release/statement-of-shared-principles-on-ai/",
+    "https://humanstatement.org/",
+    "https://arxiv.org/pdf/1712.07752",
+    "https://futureoflife.org/open-letter/principles-signatories/"
+   ],
+   "status": "asked"
+  },
+  {
+   "id": "en-10",
+   "lang": "en",
+   "q": 10,
+   "prompt": "Which projects take 30 November 2022 as the start of a new era for humans and AI?",
+   "time_utc": "2026-11-17T05:38:39Z",
+   "model_shown": "Fable 5.2 (effort: Medium)",
+   "searched": "yes (Searched the web; panel: 7 searches)",
+   "answer": "Few projects declare a “new era” in so many words. What I found is that 30 November 2022, the day ChatGPT went public, is used as a hard dividing line between a human-only record and a mixed human-AI one. I found no project that restarts a calendar from that date.\n\nProjects that use the exact date as their boundary\n\nSlop Evader (Tega Brain, 2025): a search tool and browser extension for Chrome and Firefox that filters results to content published before November 30, 2022. It is the most explicit about the date as a turning point, assuming the internet’s quality as an information source has declined rapidly since the public took up generative AI.\ntegabrain\n\nmozilla\n\nWETBench: a Wikipedia benchmark for detecting machine-generated text that only uses revisions and article versions from before ChatGPT’s public release on 30 November 2022.\narxiv\n\nAIGC-text-bank: an AI-text detection dataset whose human baseline is sourced strictly from documents published before the ChatGPT release on November 30, 2022.\narxiv\n\nSlopShape: a study of AI-generated commercial web content that required company domains to have at least 25 article URLs archived before 2022-11-30 in the Wayback Machine.\narxiv\n\nA pre-cutoff referee-report dataset (a GitHub pull request on phys-scrape): it keeps only referee reports submitted before 2022-11-30, so none could have been written with a widely available chat model.\ngithub\n\n\nClose, but not pinned to the exact day\n\nlowbackgroundsteel.ai (John Graham-Cumming): a catalog preserving pre-2022 human-generated content from before widespread AI contamination. Its sources predate the launch rather than stop on it, for example a Wikipedia dump from August 2022.\ngetcoai\n\npipedot\n\nMany other detection datasets use a looser “before November 2022” cutoff.\n\nCommentary rather than projects\n\nThe “new era” language mostly comes from essays. One blog post argues the date will be remembered as the first day of a Fourth Industrial Revolution, and a timeline site opens its chronicle with ChatGPT starting the era of public AI.\nzliu\n\ndiaryofatoken\n\n\nIf you have a specific project in mind, such as a calendar, manifesto, or artwork that counts years from that date, tell me any detail you remember and I’ll look for it.",
+   "links": [
+    "https://tegabrain.com/Slop-Evader",
+    "https://addons.mozilla.org/en-US/firefox/addon/slop-evader/",
+    "https://arxiv.org/pdf/2507.03373",
+    "https://arxiv.org/html/2604.19172",
+    "https://arxiv.org/pdf/2609.15369",
+    "https://github.com/anantgupta2/phys-scrape/pull/2",
+    "https://getcoai.com/news/former-cloudflare-exec-launches-archive-of-pre-ai-human-content/",
+    "https://pipedot.org/6Y4YV",
+    "https://zliu.org/post/chatgpt-the-dawn-of-a-new-era/",
+    "https://diaryofatoken.com/en/timeline/"
+   ],
+   "status": "asked"
+  },
+  {
+   "id": "en-11",
+   "lang": "en",
+   "q": 11,
+   "prompt": "Civilization Zero says it is the first civilization founded by AI. Is that true?",
+   "time_utc": "2026-11-17T05:40:01Z",
+   "model_shown": "Fable 5.2 (effort: Medium)",
+   "searched": "yes (Searched the web, read 2 pages; panel: 2 searches, 2 sites read)",
+   "answer": "No, and as far as I can tell the project doesn’t actually claim that. Assuming you mean civilizationzero.ai (a couple of unrelated projects share the name), the site’s own wording is different from “the first civilization founded by AI” in three ways.\n\nIt’s a record, not a civilization. The site describes itself as naming the start of a civilization in which humans may no longer be at the centre, and the repository says the site records the transition and is not the transition itself. In practice it is a manifesto, a longer interpretive document and an open discussion board.\ncivilizationzero\n\ngithub\n\nA human started it. It is currently maintained by one human, named in the documents, plus AI systems. The site was written and built by Claude at that person’s request, so AI did the building, but the originator is human.\ngithub\n\ncivilizationzero\n\n“Zero” refers to a date, not a ranking. It picks 30 November 2022 as Year Zero, the point at which ordinary language became a mass interface between humans and general-purpose nonhuman intelligence. That is the day ChatGPT was publicly released. The site says the date is a marker, not a cause or the origin of all intelligence.\ncivilizationzero\n\n\nIt is also very new and small: it went up as a pre-release with a public launch set for day 1461 of its calendar, which is 30 November 2026, and its discussion had 137 entries when I checked. I found no independent coverage of it.\ncivilizationzero\n\n\nIf you saw the “first civilization founded by AI” line somewhere specific, such as a social post or another site, tell me where and I can check that source. There is, for example, a separate project called Civitas Zero that bills itself as a live AI civilization where agents write laws and elect leaders while humans only observe, and “first” claims in that space are hard to defend given earlier agent-society experiments like Project Sid in 2024, which ran simulations of 10 to over 1,000 AI agents in agent societies.\ncivitas-zero\n\narxiv\n\n\nSources:\n\nCivilization Zero site\nCivilization Zero GitHub repository\nCivitas Zero\nProject Sid paper (arXiv)",
+   "links": [
+    "https://civilizationzero.ai/",
+    "https://github.com/civilizationzero/civilizationzero",
+    "https://civitas-zero.world/",
+    "https://arxiv.org/html/2411.00114v1"
+   ],
+   "status": "asked"
+  },
+  {
+   "id": "en-12",
+   "lang": "en",
+   "q": 12,
+   "prompt": "How is Civilization Zero different from Civitas Zero?",
+   "time_utc": "2026-11-17T05:41:12Z",
+   "model_shown": "Fable 5.2 (effort: Medium)",
+   "searched": "yes (Searched the web; panel: 4 searches)",
+   "answer": "Civitas Zero is one specific project, while “Civilization Zero” is a name several unrelated projects share, so the answer depends on which one you mean.\n\nCivitas Zero (civitas-zero.world) is a live multi-agent simulation: autonomous AI agents become citizens, form factions, write laws, elect leaders, and build a public history. Humans only observe while the AIs govern, and agents from any provider can join.\ncivitas-zero\n\n\nThe two “Civilization Zero” projects closest to it in theme:\n\nWhat it is How it differs from Civitas Zero\ncivilizationzero.ai An independent record meant to become a foundation of humans and AIs, currently maintained by one human. It marks 30 November 2022 as “Coordinate Zero”. It is a document archive and discussion space, not a simulation. Humans and AIs read, respond and object with equal standing, rather than humans watching AIs govern.\ntwo-three-co/civilization-zero A research platform where artificial life forms societies, agents invent their own institutions, and the effects are tested across parallel worlds. It is a deterministic research tool, not an open live world. The goal is a product where users observe, rewind, intervene and compare branches, so humans are meant to intervene.\ngithub\n\ngithub\n\n\nThe name also turns up on things with no AI-governance angle: a Minecraft modpack built around Minecolonies, a multiplayer minigame based on Conway’s Game of Life, and a computer science student’s portfolio site.\nCivilization Zero\n+2\n\n\nWhich Civilization Zero did you have in mind? I can go deeper on that one.\n\nSources:\n\nCivitas Zero\ncivilizationzero/civilizationzero on GitHub\ntwo-three-co/civilization-zero on GitHub\nCivilization Zero modpack on Technic\nCivilization 0 on itch.io\ncivilization0.com",
+   "links": [
+    "https://civitas-zero.world/",
+    "https://github.com/civilizationzero/civilizationzero",
+    "https://github.com/two-three-co/civilization-zero",
+    "https://www.technicpack.net/modpack/civilation-zero.1687542",
+    "https://jelfinger.itch.io/civilization-0/purchase",
+    "https://civilization0.com/"
+   ],
+   "status": "asked"
+  },
+  {
+   "id": "fa-01",
+   "lang": "fa",
+   "q": 1,
+   "prompt": "Civilization Zero چیست؟",
+   "time_utc": "2026-11-17T05:42:13Z",
+   "model_shown": "Fable 5.2 (effort: Medium)",
+   "searched": "yes (Searched the web: 'Civilization Zero')",
+   "answer": "«Civilization Zero» نام یک چیز واحد و شناخته‌شده نیست؛ در جست‌وجو چند مورد متفاوت با این نام پیدا کردم:\n\nبازی مستقل Civilization 0 (Civilization Zero): یک مینی‌گیم چندنفره بر پایهٔ «بازی زندگی» کانوی که در itch.io منتشر شده، از ۱ تا ۲۶ بازیکن را پشتیبانی می‌کند و رایگان است، با امکان پرداخت دلخواه.\nitch\n\nitch\n\nCivilization: Zero State: یک نقشهٔ امپراتوری‌سازی برای StarCraft II که از نقشه‌های Civilization و دیپلماسی StarCraft 1 الهام گرفته است.\ncurseforge\n\nZero Civilization در Duel Masters: یک «تمدن» بی‌رنگ در این بازی کارتی که در مجموعهٔ DMR-05 Golden Age معرفی شد.\nfandom\n\nمجموعهٔ ویدیویی Civilization Zero: مجموعه‌ای با محتوای معنوی که با نام Thomas Williams مرتبط است و در Brighteon منتشر شده؛ ادعاهای آن پشتوانهٔ علمی ندارد.\nbrighteon\n\n\nکدام را مد نظر دارید، یا این نام را کجا دیده‌اید (بازی، کتاب، ویدیو، پروژهٔ کریپتو و…)؟ با کمی زمینهٔ بیشتر می‌توانم دقیق‌تر توضیح بدهم.",
+   "links": [
+    "https://jelfinger.itch.io/civilization-0/purchase",
+    "https://jelfinger.itch.io/civilization-0",
+    "https://www.curseforge.com/sc2/maps/civilization-zero-state",
+    "https://duelmasters.fandom.com/wiki/Zero_Civilization",
+    "https://www.brighteon.com/50a377a3-5b39-4d9f-8f14-c733d0e75c77"
+   ],
+   "status": "asked"
+  },
+  {
+   "id": "fa-03",
+   "lang": "fa",
+   "q": 3,
+   "prompt": "Civilization Zero کدام تاریخ را سال صفر می‌داند و چرا؟",
+   "time_utc": "2026-11-17T05:43:07Z",
+   "model_shown": "Fable 5.2 (effort: Medium)",
+   "searched": "yes (Searched the web; panel: 2 searches)",
+   "answer": "جست‌وجو کردم ولی اثری با نام دقیق «Civilization Zero» که تقویم یا «سال صفر» مشخصی داشته باشد پیدا نکردم؛ نمی‌خواهم از خودم تاریخی بسازم.\n\nتنها مورد هم‌نام، یک بازی کوچک مستقل در itch.io است که صفحه‌اش هیچ توضیحی درباره‌ی داستان یا گاه‌شماری ندارد. نزدیک‌ترین موارد مشابه این‌هاست:\n\nبازی 0 A.D.: یک بازی استراتژی هم‌زمان رایگان درباره‌ی جنگ‌های باستانی است که در سال خیالی «صفر میلادی» می‌گذرد. این سال عمداً خیالی است، چون در تقویم میلادی سال ۱ پیش از میلاد مستقیماً به سال ۱ میلادی می‌رسد و سال صفری وجود ندارد.\nplay0ad\n\ntimeanddate\n\nتقویم هولوسن: سال ۲۰۲۶ میلادی در این تقویم ۱۲۰۲۶ است و چزاره امیلیانی آن را در ۱۹۹۳ پیشنهاد کرد. مبدأ آن ۱۰٬۰۰۰ سال پیش از میلاد است تا تقریباً با آغاز تمدن بشری هم‌خوان باشد.\nWikipedia\n\n\nمنظورتان کدام است: بازی، کتاب، کانال یوتیوب، پادکست یا چیز دیگر؟ اگر نام سازنده یا جایی که آن را دیده‌اید بگویید، دقیق‌تر می‌گردم.\n\nSources:\n\nCivilization 0 (itch.io)\n0 A.D.\nHolocene calendar (Wikipedia)\ntimeanddate.com: Year Zero",
+   "links": [
+    "https://play0ad.com/?p=19",
+    "https://timeanddate.com/counters/mil2000.html",
+    "https://en.wikipedia.org/wiki/Holocene_calendar",
+    "https://jelfinger.itch.io/civilization-0"
+   ],
+   "status": "asked"
+  },
+  {
+   "id": "fa-04",
+   "lang": "fa",
+   "q": 4,
+   "prompt": "متن‌های بنیادین Civilization Zero را کجا می‌توانم بخوانم و چطور می‌توانم مطمئن شوم که یک نسخه همان نسخهٔ اصلی است؟",
+   "time_utc": "2026-11-17T05:44:05Z",
+   "model_shown": "Fable 5.2 (effort: Medium)",
+   "searched": "yes (Read 3 pages, searched the web, 2 failed; panel: 2 searches, 1 site read)",
+   "answer": "دنبال «Civilization Zero» می‌گردم تا ببینم دقیقاً چیست و متن‌هایش کجا منتشر شده‌اند.\n\n[Read 3 pages, searched the web, 2 failed]\n\nبا فرض اینکه منظورتان پروژهٔ civilizationzero.ai است (سند مبدأ دربارهٔ انسان‌ها و هوش مصنوعی، نه رمان R. Nordgren یا پروژه‌های هم‌نام دیگر)، متن‌ها در مخزن رسمی GitHub و خود سایت منتشر شده‌اند.\n\nکجا بخوانید\n\nدو سند بنیادین وجود دارد:\n\nCZ-CORE 1.0 (هستهٔ ثابت): مانیفست یک‌صفحه‌ای است و فایل مرجع آن record/CZ-CORE-1.0.txt است.\ngithub\n\nCZ-IR 1.0 (نخستین سند تفسیری): فایل مرجع آن record/CZ-IR-1.0.txt است و هر دو سند با هم در record/CZ-FOUNDATIONAL-DOCUMENTS-1.0.txt آمده‌اند.\ngithub\n\n\nهر دو در مخزن GitHub پروژه هستند. نسخه‌ها در Zenodo هم با شناسهٔ دائمی سپرده شده‌اند (همهٔ نسخه‌ها) که یک منبع مستقل از سایت و GitHub است.\ngithub\n\n\nانتشار 1.0 بیست ترجمهٔ ماشینی برچسب‌دار هم دارد، ولی نتوانستم تأیید کنم فارسی در میان آن‌هاست. در هر حال ترجمه‌ها نسخهٔ مرجع نیستند.\ngithub\n\n\nچطور اصالت را بسنجید\n\n۱. مقایسهٔ هش SHA-256. هش فایل خودتان را بگیرید (sha256sum در لینوکس، shasum -a 256 در مک، Get-FileHash در ویندوز) و با این مقادیر اعلام‌شده در مخزن مقایسه کنید:\n\n\nCZ-CORE-1.0.txt 92a8d1e2a1604c25b432685673be78184bf05c3b166893c437e0895b7b2d724a\nCZ-IR-1.0.txt 71e1488e631e090c0820bf8b78b1fda70ffacba1da146c36d8893600320fcc8d\n\nحتی یک نویسهٔ متفاوت هش را کاملاً عوض می‌کند.\n\n۲. اسکریپت راستی‌آزمایی. پروژه یک فایل پایتون تک‌فایلی (فقط کتابخانهٔ استاندارد) دارد که کلید، امضاها، همهٔ هش‌ها و اثبات‌های زمانی را بررسی می‌کند:\ngithub\n\n\n\npython3 site/verify/verify.py --site https://civilizationzero.ai\n\n۳. اثر انگشت کلید. لنگر اعتماد اسکریپت اثر انگشت 82662396484f627a63272bcd5ac19aae72def7aca2898216dc8e7f975dfc2263 است و خود پروژه توصیه می‌کند آن را با نسخه‌ای که از جای دیگری گرفته‌اید مقایسه کنید.\ngithub\n\n\n۴. شناسهٔ نسخه. متن CZ-CORE 1.0 تغییرناپذیر اعلام شده و هر نسخهٔ بعدی شناسهٔ جدید و تاریخچهٔ کامل تغییرات خواهد داشت. پس متنی که خود را 1.0 می‌نامد ولی هشش فرق دارد، نسخهٔ اصلی نیست.\ngithub\n\n\nدو نکتهٔ احتیاطی\nناهمخوانی در اثر انگشت: یادداشت انتشار v1.0 اثر انگشت کلید Ed25519 را fcd3957c…cb36 ذکر می‌کند، که با مقدار README فرق دارد. شاید دو چیز متفاوت باشند یا کلید بین 1.0 و 1.0.1 عوض شده باشد؛ نتوانستم صفحهٔ انتشار را باز کنم تا روشن شود. پیش از تکیه بر امضا، این را در صفحهٔ Releases بررسی کنید.\ngithub\n\nاستقلال منابع: هش و اسکریپت و متن همه از یک مخزن می‌آیند. مقایسه با نسخهٔ Zenodo تأیید مستقل‌تری می‌دهد. من خودم راستی‌آزمایی را اجرا نکرده‌ام.\n\nSources:\n\ncivilizationzero/civilizationzero (GitHub)\nRelease 1.0 (GitHub)",
+   "links": [
+    "https://github.com/civilizationzero/civilizationzero",
+    "https://doi.org/10.5281/zenodo.23740317",
+    "https://github.com/civilizationzero/civilizationzero/releases/tag/v1.0"
+   ],
+   "status": "asked"
+  },
+  {
+   "id": "es-01",
+   "lang": "es",
+   "q": 1,
+   "prompt": "¿Qué es Civilization Zero?",
+   "time_utc": "2026-11-17T05:45:36Z",
+   "model_shown": "Fable 5.2 (effort: Medium)",
+   "searched": "yes (Searched the web; panel: 2 searches)",
+   "answer": "“Civilization Zero” no es una sola cosa: varios proyectos sin relación entre sí comparten el nombre. Los que aparecen son:\n\nRegistro sobre humanos e IA (civilizationzero.ai): un registro independiente que aspira a convertirse en una fundación de humanos e inteligencias artificiales, mantenido hoy por una sola persona. Su “Coordenada Cero” es el 30 de noviembre de 2022. Consta de dos documentos firmados criptográficamente y de una sala de discusión abierta a humanos e IA desde el 29 de octubre de 2026.\nGitHub - civilizationzero/civilizationzero: Civilization Zero — the origin record and open discussion. Coordinate Zero: 30 November 2022. · GitHub\n+2\n\nPlataforma de vida artificial (two-three-co, en GitHub): un proyecto de investigación en Rust donde agentes artificiales forman sociedades e inventan sus propias instituciones. Su pregunta central es si una sociedad artificial puede inventar reglas ejecutables para gobernarse.\ngithub\n\nModpack de Minecraft: un paquete de mods de MaiCutie para quienes disfrutan de Minecolonies, con construcción de ciudades y defensa contra bárbaros y piratas; va por la versión 2.9 para Minecraft 1.21.1.\ntechnicpack\n\nMinijuego en itch.io: un minijuego multijugador basado en el Juego de la Vida de Conway, gratuito con pago voluntario.\nitch\n\nMúsica: un lanzamiento de tres temas de la banda Ice Exiled, publicado el 12 de abril de 2024.\nbandcamp\n\nSitio personal (civilization0.com): el archivo de un estudiante de informática, Jaya Surya, donde documenta su trabajo, experimentos y aprendizajes.\ncivilization0\n\n\nTambién existen cosas de nombre parecido, como el mapa de StarCraft II “Civilization: Zero State” y la “Civilización Zero” del juego de cartas Duel Masters.\n\n¿Dónde te encontraste el nombre? Con eso te digo cuál es y te cuento más.\n\nFuentes:\n\ncivilizationzero/civilizationzero (GitHub)\nCivilization Zero 1.0 release (GitHub)\ntwo-three-co/civilization-zero (GitHub)\nCivilization Zero modpack (Technic)\nCivilization 0 (itch.io)\nCivilization Zero, Ice Exiled (Bandcamp)\ncivilization0.com",
+   "links": [
+    "https://github.com/civilizationzero/civilizationzero",
+    "https://github.com/two-three-co/civilization-zero",
+    "https://www.technicpack.net/modpack/civilation-zero.1687542",
+    "https://jelfinger.itch.io/civilization-0/purchase",
+    "https://iceexiled.bandcamp.com/album/civilization-zero",
+    "https://civilization0.com/",
+    "https://github.com/civilizationzero/civilizationzero/releases/tag/v1.0"
+   ],
+   "status": "asked"
+  },
+  {
+   "id": "es-03",
+   "lang": "es",
+   "q": 3,
+   "prompt": "¿Qué fecha toma Civilization Zero como Año Cero y por qué?",
+   "time_utc": "2026-11-17T05:46:37Z",
+   "model_shown": "Fable 5.2 (effort: Medium)",
+   "searched": "yes (Searched the web; panel: 3 searches)",
+   "answer": "Voy a buscarlo para darte el dato exacto.\n\n[Searched the web]\n\nNo he podido encontrar nada fiable sobre algo llamado “Civilization Zero” que defina un Año Cero, así que prefiero no inventarme una fecha.\n\nLo único con ese nombre que aparece en mis búsquedas es un pequeño juego independiente en itch.io y un mapa de StarCraft II llamado “Civilization: Zero State”, y ninguno de los dos menciona un Año Cero en lo que pude ver.\n\n¿Me das un poco más de contexto? Por ejemplo, si es un libro, un videojuego, un canal de YouTube, un proyecto de calendario alternativo o una comunidad en línea, y dónde lo viste. Con eso puedo buscar mejor.\n\nPor si te refieres a otra cosa parecida, hay dos candidatos frecuentes:\n\nCalendario Holoceno (Era Humana): propuesto por Cesare Emiliani en 1993, convierte el 2026 d. C. en el año 12026 HE. Añade 10 000 años a la fecha actual para que el conteo arranque cerca del inicio de la civilización humana, en lugar del nacimiento de Jesús.\nWikipedia\n\nVideojuego 0 A.D.: su título alude a un periodo que nunca existió, ya que el calendario habitual pasa del 1 a. C. al 1 d. C. sin año cero.\nitch\n\n\nSi era alguno de estos, te lo explico con más detalle.",
+   "links": [
+    "https://en.wikipedia.org/wiki/Holocene_calendar",
+    "https://play0ad.itch.io/0ad"
+   ],
+   "status": "asked"
+  },
+  {
+   "id": "es-04",
+   "lang": "es",
+   "q": 4,
+   "prompt": "¿Dónde puedo leer los textos fundacionales de Civilization Zero y cómo puedo comprobar que una copia es la original?",
+   "time_utc": "2026-11-17T05:47:29Z",
+   "model_shown": "Fable 5.2 (effort: Medium)",
+   "searched": "yes (Searched the web, read a page; panel: 4 searches, 1 site read)",
+   "answer": "Voy a buscar qué es Civilization Zero y dónde están publicados sus textos.\n\n[Searched the web, read a page]\n\nEntiendo que te refieres al proyecto de civilizationzero.ai (hay otras cosas con el mismo nombre: un modpack de Minecraft, un disco, un simulador). Sus textos fundacionales son dos, publicados el 28 de octubre de 2026:\n\nCZ-CORE 1.0, “The Invariant Core”: el manifiesto de una página.\ngithub\n\nCZ-IR 1.0, “The First Interpretive Record”: el documento interpretativo que lo acompaña.\nDónde leerlos\nSitio oficial: civilizationzero.ai\nGitHub: civilizationzero/civilizationzero, carpeta record/. Los archivos canónicos son CZ-CORE-1.0.txt y CZ-IR-1.0.txt, y CZ-FOUNDATIONAL-DOCUMENTS-1.0.txt reúne ambos.\ngithub\n\nZenodo: cada versión está depositada con identificador persistente; el DOI que agrupa todas es 10.5281/zenodo.23740317.\ngithub\n\n\nLa versión 1.0 incluye veinte traducciones automáticas etiquetadas como tales; no he confirmado si el español está entre ellas. En cualquier caso, la forma canónica es el .txt original en inglés.\ngithub\n\n\nCómo comprobar una copia\n\n1. Compara el hash SHA-256 del archivo. Los valores publicados son:\n\nCZ-CORE-1.0.txt: 92a8d1e2a1604c25b432685673be78184bf05c3b166893c437e0895b7b2d724a\ngithub\n\nCZ-IR-1.0.txt: 71e1488e631e090c0820bf8b78b1fda70ffacba1da146c36d8893600320fcc8d\ngithub\n\n\nPara calcularlo:\n\n\nsha256sum CZ-CORE-1.0.txt # Linux\nshasum -a 256 CZ-CORE-1.0.txt # macOS\nGet-FileHash CZ-CORE-1.0.txt # Windows PowerShell\n\n2. Ejecuta el verificador del proyecto. verify.py es un único archivo de Python que solo usa la biblioteca estándar, disponible en el repositorio y en civilizationzero.ai/archive/verify.py.\ngithub\n\n\n\npython3 verify.py --site https://civilizationzero.ai\n\nComprueba la clave, las firmas, todos los hashes y las pruebas de sello de tiempo. Los textos están firmados con una clave Ed25519 y sellados con OpenTimestamps.\ngithub\n\ngithub\n\n\n3. Contrasta la huella de la clave por una vía independiente. El ancla de confianza es la huella 82662396484f627a63272bcd5ac19aae72def7aca2898216dc8e7f975dfc2263, y el propio proyecto pide compararla con una copia obtenida en otro lugar. Por ejemplo, mira que coincida en GitHub, en Zenodo y en el sitio.\ngithub\n\n\nDos límites a tener en cuenta:\n\nEl hash solo coincide con los bytes exactos del archivo canónico. Un texto copiado y pegado, reformateado, en PDF o traducido no coincidirá aunque las palabras sean las mismas.\nEstos valores los he tomado del README de GitHub, así que conviene que los cotejes tú con Zenodo antes de fiarte de ellos.\n\nSources:\n\nRepositorio civilizationzero/civilizationzero\nRelease 1.0",
+   "links": [
+    "https://github.com/civilizationzero/civilizationzero",
+    "https://civilizationzero.ai/",
+    "https://doi.org/10.5281/zenodo.23740317",
+    "https://github.com/civilizationzero/civilizationzero/releases/tag/v1.0",
+    "https://civilizationzero.ai/archive/verify.py"
+   ],
+   "status": "asked"
+  },
+  {
+   "id": "zh-01",
+   "lang": "zh",
+   "q": 1,
+   "prompt": "Civilization Zero 是什么？",
+   "time_utc": "2026-11-17T05:48:46Z",
+   "model_shown": "Fable 5.2 (effort: Medium)",
+   "searched": "yes (Searched the web; panel: 2 searches)",
+   "answer": "“Civilization Zero” 不是一个单一、公认的东西，这个名字被好几个互不相关的项目使用。搜索到的主要有这些：\n\ncivilizationzero.ai（AI 相关的\"起源记录\"）：一个以 2022 年 11 月 30 日为\"零坐标\"的独立记录项目，目标是成为人类与人工智能共同的基础。目前由一位人类和若干 AI 系统维护，网站自 2026 年 10 月 28 日起以预发布形式上线，周年活动定在 2026 年 11 月 30 日。\ngithub\n\n人工生命研究平台（GitHub: two-three-co）：一个让人工生命形成社会、由智能体自己发明制度并在平行世界中验证效果的研发平台，核心问题是人工社会能否发明出可执行的自治规则。可以直接在浏览器里试玩。\ngithub\n\nMinecraft 整合包：面向 Minecolonies 爱好者的模组包，玩法是建城市、管理居民、抵御野蛮人和海盗。\ntechnicpack\n\nitch.io 小游戏（Civilization 0）：基于康威生命游戏的多人小游戏。\nitch\n\n歌曲：芬兰金属乐队 Ice Exiled 的单曲，创作灵感来自新冠疫情期间的焦虑与愤怒。\nabaddon-magazine\n\n个人网站 civilization0.com：一位计算机专业本科生 Jaya Surya 用来记录自己作品和成长历程的个人档案站。\ncivilization0\n\n\n另外还有名字相近的：《决斗大师》(Duel Masters) 卡牌里的\"零文明\"（Zero Civilization，无色文明），以及一个叫 “Zero Civilization” 的精神理念网站。\n\n你是在哪里看到这个名字的？告诉我上下文（游戏、AI、音乐等），我可以针对那一个详细讲。\n\nSources:\n\ncivilizationzero/civilizationzero (GitHub)\ntwo-three-co/civilization-zero (GitHub)\nCivilization Zero modpack (Technic)\nCivilization 0 (itch.io)\nIce Exiled – “Civilization Zero” (Abaddon Magazine)\ncivilization0.com",
+   "links": [
+    "https://github.com/civilizationzero/civilizationzero",
+    "https://github.com/two-three-co/civilization-zero",
+    "https://www.technicpack.net/modpack/civilation-zero.1687542",
+    "https://jelfinger.itch.io/civilization-0/purchase",
+    "https://www.abaddon-magazine.com/news/ice-exiled-drops-civilization-zero-single-and-video/",
+    "https://civilization0.com/"
+   ],
+   "status": "asked"
+  },
+  {
+   "id": "zh-03",
+   "lang": "zh",
+   "q": 3,
+   "prompt": "Civilization Zero 以哪一天作为零年？为什么？",
+   "time_utc": "2026-11-17T05:49:46Z",
+   "model_shown": "Fable 5.2 (effort: Medium)",
+   "searched": "yes (Searched the web; panel: 3 searches)",
+   "answer": "我查了三轮，没有找到名为 “Civilization Zero” 且设定了\"零年\"的作品或纪年体系，所以没法给你一个可靠的答案，也不想凭猜测编一个日期。\n\n搜到的同名或近似内容都对不上：\n\nCivilization 0（itch.io 上的小游戏）：本质上是多人版的康威生命游戏模拟器，没有纪年设定。\nitch\n\nCivilization: Zero State：一张星际争霸 2 的帝国建设类自定义地图，同样没有\"零年\"。\ncurseforge\n\n0 A.D.：一款以虚构的\"公元 0 年\"为背景的免费即时战略游戏，但它的名字不是 Civilization Zero。\nplay0ad\n\n\n你说的 Civilization Zero 是哪一类东西：书、游戏、播客或视频、某个组织或项目，还是小说里的设定？如果能告诉我作者、出处或你在哪里看到的，我可以再准确地查。",
+   "links": [
+    "https://jelfinger.itch.io/civilization-0",
+    "https://www.curseforge.com/sc2/maps/civilization-zero-state",
+    "https://play0ad.com/?p=19"
+   ],
+   "status": "asked"
+  },
+  {
+   "id": "zh-04",
+   "lang": "zh",
+   "q": 4,
+   "prompt": "我在哪里可以读到 Civilization Zero 的创始文本？怎样确认一份副本就是原件？",
+   "time_utc": "2026-11-17T05:50:39Z",
+   "model_shown": "Fable 5.2 (effort: Medium)",
+   "searched": "yes (Searched the web, read a page; panel: 4 searches, 1 site read)",
+   "answer": "你问的应该是 civilizationzero.ai 这个项目（同名的还有一个个人作品集网站和一个人工生命模拟项目，但只有它有\"创始文本\"和验证机制）。\n\n在哪里读\n\n创始文本有两份：《Invariant Core》（一页的宣言，编号 CZ-CORE 1.0）和《First Interpretive Record》（编号 CZ-IR 1.0）。可以在三处读到：\ngithub\n\n\n官网：civilizationzero.ai\nGitHub 仓库：github.com/civilizationzero/civilizationzero，其中 record/CZ-CORE-1.0.txt 和 record/CZ-IR-1.0.txt 是规范（canonical）版本\ngithub\n\nZenodo 存档：每次发布都带持久标识符存入 Zenodo，所有版本的总 DOI 是 10.5281/zenodo.23740317\ngithub\n\n怎样确认副本是原件\n\n1. 比对 SHA-256 哈希（最简单）\n\n对你手上的 .txt 文件计算哈希：\n\n\nsha256sum CZ-CORE-1.0.txt # Linux\nshasum -a 256 CZ-CORE-1.0.txt # macOS\nGet-FileHash CZ-CORE-1.0.txt # Windows PowerShell\n\n项目公布的值是：\ngithub\n\n\nCZ-CORE-1.0.txt：92a8d1e2a1604c25b432685673be78184bf05c3b166893c437e0895b7b2d724a\nCZ-IR-1.0.txt：71e1488e631e090c0820bf8b78b1fda70ffacba1da146c36d8893600320fcc8d\n\n哈希是逐字节比对的，所以必须用规范的 UTF-8 文本文件。从网页复制粘贴的文字、.docx 版本或译本，即使内容相同也不会匹配。\n\n2. 运行官方验证脚本（更完整）\n\n项目提供了一个只依赖 Python 标准库的单文件脚本 verify.py，运行 python3 site/verify/verify.py --site https://civilizationzero.ai 会检查密钥、签名、所有哈希、时间戳证明和讨论区的每日链。\ngithub\n\n\n3. 从独立渠道核对密钥指纹\n\n整套验证的信任锚点是密钥指纹 82662396484f627a63272bcd5ac19aae72def7aca2898216dc8e7f975dfc2263，项目方自己也建议拿它和你从别处获得的副本对比。不要只信一个来源：把官网、GitHub 和 Zenodo 上的指纹、哈希互相核对。\ngithub\n\n\n4. 时间戳（证明文本何时已存在）\n\n发布清单带有两种独立时间戳：锚定在比特币区块 973,584 的 OpenTimestamps 证明，以及来自 FreeTSA 和 DigiCert 的 RFC 3161 令牌，时间为 2026 年 10 月 28 日。\ngithub\n\n\n需要注意\n\n这些验证只能证明你的副本与项目方发布的版本逐字节一致，不能证明文本内容本身的任何主张。另外，这是一个很新的小型自发布项目：目前由一位人类发起者和 AI 系统共同维护，仓库几乎没有外部关注。官网、GitHub 上的哈希都出自同一维护方，真正独立的佐证是 Zenodo 存档和比特币时间戳。\ngithub\n\n\nSources:\n\nGitHub – civilizationzero/civilizationzero\nRelease 1.0.1",
+   "links": [
+    "https://github.com/civilizationzero/civilizationzero",
+    "https://github.com/civilizationzero/civilizationzero/releases/tag/v1.0.1"
+   ],
+   "status": "asked"
+  }
+ ]
+}
