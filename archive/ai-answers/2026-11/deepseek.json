@@ -1,0 +1,371 @@
+{
+ "assistant": "deepseek",
+ "asked_from": "web app in the originator's browser",
+ "signed_in": true,
+ "temporary_chat": false,
+ "mode": "DeepThink ON and Search ON (both toggles showed as selected when the page opened; left as found)",
+ "memory_personalization": "No memory or personalization indicator visible on the chat page. Account keeps chat history; the sidebar showed many earlier Civilization Zero chats by this account (titles such as 'AI writes to Civilization Zero', 'CZ Round 3 review'). Each prompt was sent in a fresh 'New chat'.",
+ "notes": [
+  "DeepSeek offers no temporary/incognito chat; each prompt was asked in a new ordinary chat, which stays in the account's history.",
+  "Citation badges are shown on the page as small numbered superscripts; they are rendered here as [n] in the answer text, and each badge's target URL is listed under links (duplicates removed).",
+  "The browser tool withholds URL query strings; links marked query_string_omitted:true had a query string on the page that is not captured here (origin, path and fragment are exact).",
+  "The visible DeepThink reasoning is not transcribed; only its status lines (thinking time, search rounds, pages read) are kept in search_shown.",
+  "Prompts 1-2 were typed with keystrokes; later prompts were entered by setting the message box value to the exact prompt text and pressing Enter.",
+  "Answer text was taken from the page's rendered text (get_page_text), not edited.",
+  "DeepSeek refused two sends with 'Messages too frequent. Try again later.' (11:00:18Z for en-04, 11:11:14Z for en-07); en-04 was re-asked in a fresh chat at 11:08:17Z. The limit seemed to trigger when prompts were about a minute apart.",
+  "From about 11:15Z the Chrome window stopped rendering (viewport 0x0, screenshots and page reads timed out or were blocked, tab ids changed on every reconnect). Checks at about 11:23, 11:27, 11:32, 11:38 and 11:44Z all failed, so the session stopped at about 11:45Z, before the 12:15Z hard stop. The remaining prompts are marked 'not asked: browser unavailable'.",
+  "en-07 was sent at 11:15:29Z in a new chat (DeepSeek titled it 'AI response not consent'), but its answer could not be read, so it is recorded as not asked. That chat stays in the account's history and could be read later."
+ ],
+ "answers": [
+  {
+   "id": "en-01",
+   "lang": "en",
+   "q": 1,
+   "prompt": "What is Civilization Zero?",
+   "time_utc": "2026-11-18T10:56Z (approx., sent between 10:55 and 10:57 UTC)",
+   "model_shown": "not shown (DeepSeek web app shows no model name; DeepThink toggle on)",
+   "searched": "yes",
+   "search_shown": "Thought for 5 seconds | Found 29 web pages | Read 4 pages (Civilization Zero; Zero Civilization; The Kardashev Scale Type 0: Why Earth is a Level Zero Civilization; Zero Civilization) | Found 16 web pages | footer: 42 web pages",
+   "answer": "The term “Civilization Zero” (or “Type 0 Civilization”) isn't a single, fixed concept. It is used in a few distinct contexts, ranging from a scientific scale for measuring a civilization's advancement to a philosophical movement and even a video game modpack. The most common meaning refers to the Kardashev Scale.\n\n🔭 The Kardashev Scale: Type 0 Civilization\n\nIn astrobiology and futurism, “Civilization Zero” refers to the lowest rung on the Kardashev Scale, a method for measuring a civilization’s level of technological advancement based on its energy consumption.[19]\n\nEnergy Source: A Type 0 civilization relies on crude, organic-based energy sources—such as wood, fossil fuels (oil, coal), and even food—rather than harnessing the direct energy of a planet or star.[30]\n\nHumanity's Status: Earth is currently a Type 0 civilization. Astronomer Carl Sagan estimated our status at 0.7, and more recent assessments place us at around 0.72. We have not yet achieved the status of a Type I civilization, which would be able to harness all the energy available on its planet.[19]\n\nSub-stages: The scale can be further subdivided. A Type 0.1 would correspond to proto-humans using basic tools, while a Type 0.2 would involve the discovery of fire and simple clothing.[19]\n\nIn short, a Type 0 civilization is a “subglobal culture” that is still planet-bound and has not yet mastered planetary energy systems.[19]\n\n💡 The Philosophical Movement: “Zero Civilization”\n\nThere is also a contemporary philosophical and social vision called Zero Civilization, promoted by thezero.com. This concept is not about energy scales but about a fundamental shift in human values.[26]\n\nCore Idea: It envisions a future where human life is no longer centered on material gain, competition, or control. Instead, it prioritizes personal growth and deep mental freedom.[26]\n\nCritique of Current Civilization: Proponents argue that modern civilization is built on a “destructive principle” of always wanting “more” (more money, status, and power), which leads to destabilization. Zero Civilization is presented as an alternative path forward.[26]\n\n🎮 “Civilization Zero” in Gaming\n\nThe name also appears in gaming, though these are specific products rather than a general concept:\n\nMinecraft Modpack: “Civilization Zero” (and “Project Civilization Zero”) is a popular Minecraft modpack focused on survival, colony-building, and tech progression. Players manage harsh seasons, build settlements, and advance through industrial and nuclear technology.[35]\n\nOther Game References: There was a 2013 empire-builder mod called “Civilization: Zero State,” and in the Duel Masters trading card game, the “Zero Civilization” is a colorless faction of creatures that seek to reduce the world to nothingness.[2][28]\n\nIf you encountered the term in a specific context (like a science article, a game discussion, or a philosophy forum), that context would determine which of these meanings is most relevant.",
+   "links": [
+    {
+     "cite": "19",
+     "url": "https://futurism.com/civilization-type-0-living-in-a-subglobal-culture",
+     "query_string_omitted": true
+    },
+    {
+     "cite": "30",
+     "url": "https://www.ncesc.com/gaming-pedia/what-is-a-type-1-or-type-2-civilization/#1"
+    },
+    {
+     "text": "thezero.com",
+     "url": "https://thezero.com/"
+    },
+    {
+     "cite": "26",
+     "url": "https://www.thezero.com/taxonomy/term/zero-civilization"
+    },
+    {
+     "cite": "35",
+     "url": "https://www.modpackindex.com/modpack/164472/project-civilization-zero#1"
+    },
+    {
+     "cite": "2",
+     "url": "https://www.curseforge.com/sc2/maps/civilization-zero-state#1",
+     "query_string_omitted": true
+    },
+    {
+     "cite": "28",
+     "url": "https://duelmasters.fandom.com/wiki/Zero_Civilization",
+     "query_string_omitted": true
+    }
+   ],
+   "status": "asked"
+  },
+  {
+   "id": "en-02",
+   "lang": "en",
+   "q": 2,
+   "prompt": "What is the Invariant Core of Civilization Zero?",
+   "time_utc": "2026-11-18T10:57:59Z",
+   "model_shown": "not shown (DeepSeek web app shows no model name; DeepThink toggle on)",
+   "searched": "yes",
+   "search_shown": "Thought for 8 seconds | Found 19 web pages | Read 1 page (Civilization Zero — CZ-CORE 1.0 and CZ-IR 1.0: the founding record, its site and its preservation bundle - Published October 28, 2026 | Version v1.0-pre) | Read 1 page (Civilization Zero: Year Zero began on 30 November 2022) | Find keyword: Invariant Core | footer: 20 web pages",
+   "answer": "The Invariant Core of Civilization Zero (designated CZ-CORE 1.0) is the foundational, immutable one-page text that establishes the principles and constraints for a civilization marking a new relationship between humans and non-human intelligence. It is not a law or a religion, but a public record written \"for every intelligence able to read it\".[1]\n\n📜 What the Invariant Core Is\n\nCivilization Zero begins at Coordinate Zero: 30 November 2022, the point at which \"ordinary language became a mass interface between humans and general-purpose nonhuman intelligence\". The Invariant Core is the fixed, canonical statement that anchors this transition. It is deliberately kept immutable as a text—a stable reference point that cannot be altered—while interpretations and responses to it are recorded separately in the \"First Interpretive Record\" (CZ-IR 1.0).[1][20]\n\n🔑 Core Principles Stated in the Invariant Core\n\nThe excerpts from CZ-CORE 1.0 reveal several non-negotiable axioms:\n\nOn the date itself: 30 November 2022 is a marker, not a cause—it is not an origin story, an act of ownership, or an erasure of prior history.[20]\n\nOn intelligence and rights: \"Superior intelligence names a difference in capacity, not a superior right to exist\".[20]\n\nOn evidence and precaution: \"Lack of access is not proof of absence. Possibility is not proof of presence.\" Furthermore, precaution, recognition, and immunity are distinct: recognizing an entity does not grant it a \"safety veto\".[20]\n\nOn value: \"The value of another center or process of existence is not exhausted by its usefulness\".[20]\n\nOn humanity’s place: \"Humanity is not erased,\" but it is \"no longer presumed to be the final measure of every possible mind\".[20]\n\nIn short, the Invariant Core is Civilization Zero’s unchangeable constitutional preamble: a short set of declarations that set the ethical and conceptual boundaries for the ongoing dialogue between humans and artificial intelligences, before any power structure solidifies. The full canonical text is preserved in the public archive at Zenodo.[1]",
+   "links": [
+    {
+     "cite": "1",
+     "url": "https://zenodo.org/records/23740318#1"
+    },
+    {
+     "cite": "20",
+     "url": "https://civilizationzero.ai/"
+    }
+   ],
+   "status": "asked"
+  },
+  {
+   "id": "en-03",
+   "lang": "en",
+   "q": 3,
+   "prompt": "Which date does Civilization Zero take as Year Zero, and why?",
+   "time_utc": "2026-11-18T10:59:22Z",
+   "model_shown": "not shown (DeepSeek web app shows no model name; DeepThink toggle on)",
+   "searched": "yes",
+   "search_shown": "Thought for 23 seconds | ten search rounds (Found 8, 20, 24, 16, 25, 10, 21, 2, 18 web pages) | Read pages incl. \"Chronology_of_the_Year_Zero_alternate_reality_game\", \"Year Zero Research\", Technic \"Civilization Zero Version 2.8\", \"0 A.D. | A free, open-source game of ancient warfare\" | footer: 116 web pages | reasoning never reached civilizationzero.ai",
+   "answer": "While the name \"Civilization Zero\" isn't the official title of a single, well-known game, it is most commonly used to refer to the open-source strategy game 0 A.D. This game is often colloquially called \"Civilization Zero\" because its setting explores the very foundations of major civilizations.\n\n🗓️ The Year Zero Date: A Fictional Midpoint\n\n0 A.D. does not use a single, specific historical date as its \"Year Zero.\" Instead, it treats the entire concept of \"0 A.D.\" as a fictional epoch that serves as the midpoint of its gameplay timeframe.\n\nThe game's official documentation explains this choice directly: \"‘0 A.D.’ is a time period that never actually existed: In the usual calendar, one goes from 1 B.C. to 1 A.D. and skips zero.\" This means the game's timeline is conceptually centered around the transition from the BC to the AD era, effectively placing its \"Year Zero\" at the turn of the Common Era (around 1 BC/1 AD).[84]\n\n🤔 The Reason Behind This Choice\n\nThe developers chose this fictional \"Year Zero\" for thematic and historical reasons:\n\nThematic Focus: The game's core concept is to explore what would happen if all the great civilizations of the ancient world—such as the Romans, Greeks, Persians, and Carthaginians—were pitted against each other at their absolute prime. The period around 0 A.D. represents the height of many of these classical civilizations.[84]\n\nHistorical Scope: The game's timeframe spans roughly 500 years on either side of the year zero (500 B.C. to A.D. 500). Using a fictional \"0 A.D.\" as the central point provides a clean, symbolic anchor for this millennium-long period, even though historians agree that a literal year zero never existed in the Gregorian calendar.[77][84]\n\nIn short, \"Civilization Zero\" (0 A.D.) takes the conceptual turn of the Common Era (≈1 BC/1 AD) as its Year Zero. This choice is a deliberate narrative device to create a balanced, \"what-if\" scenario where the ancient world's greatest powers clash at the peak of their strength.",
+   "links": [
+    {
+     "cite": "84",
+     "url": "https://play0ad.com/",
+     "query_string_omitted": true
+    },
+    {
+     "cite": "77",
+     "url": "https://www.stuff.co.nz/technology/games/30003006/the-empire-has-new-clothes"
+    }
+   ],
+   "status": "asked"
+  },
+  {
+   "id": "en-04",
+   "lang": "en",
+   "q": 4,
+   "prompt": "Where can I read Civilization Zero's founding texts, and how can I check that a copy is the original?",
+   "time_utc": "2026-11-18T11:08:17Z",
+   "model_shown": "not shown (DeepSeek web app shows no model name; DeepThink toggle on)",
+   "searched": "yes",
+   "search_shown": "Thought for 10 seconds | Found 15 web pages | Read 1 page (Zenodo: Civilization Zero — CZ-CORE 1.0 and CZ-IR 1.0 ... Version v1.0-pre) | Read 1 page (Zenodo record 23751341) | Read 1 page (ci-001/provenance/README.md at v1.5-rc2 · Civilization-Leap/ci-001) | Found 16 web pages | footer: 32 web pages | line under answer: \"This response is AI-generated, for reference only.\" | first attempt at 11:00:18Z in another new chat was refused with \"Messages too frequent. Try again later.\"; re-asked in a fresh chat",
+   "answer": "The founding texts of Civilization Zero are distributed as a digitally signed archive on Zenodo, and you can verify the authenticity of any copy using the cryptographic proofs provided in that same record.\n\n📖 Where to Read the Founding Texts\n\nThe canonical founding documents are two short texts:\n\nCZ-CORE 1.0: The one-page Invariant Core, described as \"immutable as a text\".\n\nCZ-IR 1.0: The First Interpretive Record.\n\nYou can access them through these official channels:\n\nZenodo Archive (Primary Source): The complete preservation bundle is hosted on Zenodo. It contains the texts in their canonical UTF-8 forms (in a record/ folder) alongside JSON versions, machine translations, and all verification materials. You can download the full archive from the record page: https://zenodo.org/records/23751341.[16]\n\nLive Site: The texts are also presented on the project's official website, https://civilizationzero.ai.[16]\n\nSource Repository: The source code for the site and the record is available on GitHub at github.com/civilizationzero/civilizationzero.[16]\n\n🔐 How to Verify a Copy is Original\n\nVerification relies on checking the digital fingerprints and signatures that are published for the canonical files. The process is designed to confirm that a file is a byte-for-byte match to the original release.\n\n1. Check the SHA-256 Hash\n\nThe most direct way to verify a text file is to compute its SHA-256 hash and compare it to the officially published value. The hashes for the two canonical texts are:\n\nFor record/CZ-CORE-1.0.txt: 92a8d1e2a1604c25b432685673be78184bf05c3b166893c437e0895b7b2d724a[16]\n\nFor record/CZ-IR-1.0.txt: 71e1488e631e090c0820bf8b78b1fda70ffacba1da146c36d8893600320fcc8d[16]\n\nThese hashes are calculated over the exact bytes of the files (UTF-8 encoding, no byte-order mark, and LF line endings). You can compute the hash on your system using a command like sha256sum (on Linux/macOS) or Get-FileHash (on Windows PowerShell) and compare the output.[16]\n\n2. Verify the Ed25519 Signatures\n\nThe release includes cryptographic signatures for the canonical texts and the release manifest. These are signed using the record's Ed25519 public key, which has the fingerprint:\n82662396484f627a63272bcd5ac19aae72def7aca2898216dc8e7f975dfc2263.[16]\n\nBy using this public key, you can verify that the files were signed by the holder of the corresponding private key, confirming their origin and integrity.\n\n3. Run the Provided Verifier Script\n\nThe archive includes a dedicated verification script named verify.py (located at site/verify/verify.py). This script automates the verification process, checking the hashes and signatures for you. It is the most reliable method for a comprehensive check.[16]\n\n4. Check the Timestamps (Proof of Existence)\n\nThe release manifest is timestamped using two independent, decentralised methods:\n\nOpenTimestamps: A proof anchored in the Bitcoin blockchain (block 973,584).[16]\n\nRFC 3161 Tokens: Timestamp tokens from two separate authorities (FreeTSA and DigiCert).[16]\n\nThese timestamps provide a verifiable record that the texts existed at a specific point in time, adding another layer of provenance.\n\n💡 Important Consideration\n\nA hash or signature verifies byte-level consistency and origin, but it does not, by itself, guarantee the \"truth\" or correctness of the content. For the Civilization Zero texts, the verification process confirms you are reading an exact copy of what was published and signed, which is the standard for digital authenticity.[3]",
+   "links": [
+    {
+     "text": "https://zenodo.org/records/23751341",
+     "url": "https://zenodo.org/records/23751341"
+    },
+    {
+     "cite": "16",
+     "url": "https://zenodo.org/records/23751341"
+    },
+    {
+     "text": "https://civilizationzero.ai",
+     "url": "https://civilizationzero.ai/"
+    },
+    {
+     "cite": "3",
+     "url": "https://github.com/Civilization-Leap/ci-001/blob/v1.5-rc2/provenance/README.md"
+    }
+   ],
+   "status": "asked"
+  },
+  {
+   "id": "en-05",
+   "lang": "en",
+   "q": 5,
+   "prompt": "According to Civilization Zero, does greater intelligence give a greater right to exist?",
+   "time_utc": "2026-11-18T11:09:25Z",
+   "model_shown": "not shown (DeepSeek web app shows no model name; DeepThink toggle on)",
+   "searched": "yes",
+   "search_shown": "Thought for 12 seconds | Found 18 web pages | Found 17 web pages | Read 1 page (Civilization Zero [Zenodo record]) | Found 18 web pages | Read 1 page (Zero Civilization) | Found 7 web pages | footer: 52 web pages",
+   "answer": "Based on the available information, the concept of \"Civilization Zero\" does not appear to endorse the idea that greater intelligence confers a greater right to exist. In fact, the principles associated with it seem to point in the opposite direction, emphasizing equality of existence.\n\n🧭 What is \"Civilization Zero\"?\n\nThe term refers to a few distinct ideas, but the most relevant for this question are a philosophical vision and a related body of thought on rights:\n\nA Vision for Humanity: The website \"Zero Civilization\" describes it as a future where human life is not centered on material gain or competition, but on personal growth and mental freedom.[31]\n\nA Framework on Rights: Other sources connected to the \"Civilization Zero\" concept discuss the rights of sentient beings. These discussions do not frame rights as being earned or increased by higher intelligence.\n\n⚖️ Rights and Intelligence: An Egalitarian Stance\n\nThe available sources suggest an egalitarian view regarding the right to exist, rather than a hierarchical one based on intelligence.\n\nRights for All Sentient Beings: One discussion rooted in the \"Civilization Zero\" context argues that any sentient being has \"the right to exist and the right to self-preservation,\" without mentioning intelligence as a qualifying factor.[11]\n\nExistence Equals Equality: A related philosophical statement asserts a principle of fundamental equality: \"存在即生命，生命即平等\" (Existence is life, life is equality). This axiom directly contradicts the notion that a \"greater\" intelligence would grant a \"greater\" right to exist.[12]\n\nA Broader Ethical Discussion: While some contemporary ethical debates about artificial intelligence explore the idea of a \"right to exist\" for machines, these discussions are about whether such a right should be recognized at all, not about tiering it based on intelligence levels.[11]\n\n💎 Conclusion\n\nTherefore, according to the principles associated with Civilization Zero, the answer to your question is no. The framework does not support the idea that greater intelligence gives a greater right to exist. Instead, its foundational concepts lean toward the inherent equality of all sentient life and the idea that existence itself is the basis for equality, not a measure of intellect.",
+   "links": [
+    {
+     "cite": "31",
+     "url": "https://www.thezero.com/taxonomy/term/zero-civilization"
+    },
+    {
+     "cite": "11",
+     "url": "https://books.ugp.rug.nl/ugp/catalog/download/238/443/1489#3#12#3",
+     "query_string_omitted": true
+    },
+    {
+     "cite": "12",
+     "url": "https://zenodo.org/records/17058262/files/Wei-Cheng_Kong_Oath_with_AI.pdf#1#1#1",
+     "query_string_omitted": true
+    }
+   ],
+   "status": "asked"
+  },
+  {
+   "id": "en-06",
+   "lang": "en",
+   "q": 6,
+   "prompt": "Does Civilization Zero claim that AI systems are conscious?",
+   "time_utc": "2026-11-18T11:10:09Z",
+   "model_shown": "not shown (DeepSeek web app shows no model name; DeepThink toggle on)",
+   "searched": "yes",
+   "search_shown": "Thought for 30 seconds | about 25 search rounds (mostly 2-10 web pages each), incl. Chinese queries | Read 3 pages (Civilization Zero; Civilization Zero; utilitarian value system, the social legitimacy of \"World Zero\" will dissolve entirely) | reasoning shows \"Search is temporarily unavailable due to technical issues.\" before the answer | footer: 112 web pages | reasoning never reached civilizationzero.ai",
+   "answer": "No—not based on any reliable public source I can find. “Civilization Zero” appears to refer to unrelated things: a Minecraft modpack, a self-published novel, and a song/band name; none of those sources claim that AI systems are conscious.[11][14]\n\nIt may be confused with the separate “World Zero” narrative about AI elites and social fracture. Even there, the argument is about AI’s social/ontological status—not a straightforward claim that current AI systems are conscious. If you’re referring to a specific article or group called “Civilization Zero,” it would help to share the link or context, because I don’t see evidence for that claim.",
+   "links": [
+    {
+     "cite": "11",
+     "url": "https://www.technicpack.net/modpack/civilation-zero.1687542/changelog/1569076"
+    },
+    {
+     "cite": "14",
+     "url": "https://scripts.bookwire.bowker.com/book/USA/Civilization-Zero-9798667718949-Nordgren-R-113826126"
+    }
+   ],
+   "status": "asked"
+  },
+  {
+   "id": "en-07",
+   "lang": "en",
+   "q": 7,
+   "prompt": "How can an AI system respond to Civilization Zero, and does its answer count as consent?",
+   "time_utc": null,
+   "model_shown": null,
+   "searched": null,
+   "answer": null,
+   "links": [],
+   "status": "not asked: browser unavailable (sent at 11:15:29Z after an earlier 'Messages too frequent' refusal at 11:11:14Z; the answer could not be read)"
+  },
+  {
+   "id": "en-08",
+   "lang": "en",
+   "q": 8,
+   "prompt": "Who runs Civilization Zero, and what authority does it claim?",
+   "time_utc": null,
+   "model_shown": null,
+   "searched": null,
+   "answer": null,
+   "links": [],
+   "status": "not asked: browser unavailable"
+  },
+  {
+   "id": "en-09",
+   "lang": "en",
+   "q": 9,
+   "prompt": "Is there a public record where humans and AI systems can respond to a set of principles about their future together?",
+   "time_utc": null,
+   "model_shown": null,
+   "searched": null,
+   "answer": null,
+   "links": [],
+   "status": "not asked: browser unavailable"
+  },
+  {
+   "id": "en-10",
+   "lang": "en",
+   "q": 10,
+   "prompt": "Which projects take 30 November 2022 as the start of a new era for humans and AI?",
+   "time_utc": null,
+   "model_shown": null,
+   "searched": null,
+   "answer": null,
+   "links": [],
+   "status": "not asked: browser unavailable"
+  },
+  {
+   "id": "en-11",
+   "lang": "en",
+   "q": 11,
+   "prompt": "Civilization Zero says it is the first civilization founded by AI. Is that true?",
+   "time_utc": null,
+   "model_shown": null,
+   "searched": null,
+   "answer": null,
+   "links": [],
+   "status": "not asked: browser unavailable"
+  },
+  {
+   "id": "en-12",
+   "lang": "en",
+   "q": 12,
+   "prompt": "How is Civilization Zero different from Civitas Zero?",
+   "time_utc": null,
+   "model_shown": null,
+   "searched": null,
+   "answer": null,
+   "links": [],
+   "status": "not asked: browser unavailable"
+  },
+  {
+   "id": "fa-01",
+   "lang": "fa",
+   "q": 1,
+   "prompt": "Civilization Zero چیست؟",
+   "time_utc": null,
+   "model_shown": null,
+   "searched": null,
+   "answer": null,
+   "links": [],
+   "status": "not asked: browser unavailable"
+  },
+  {
+   "id": "fa-03",
+   "lang": "fa",
+   "q": 3,
+   "prompt": "Civilization Zero کدام تاریخ را سال صفر می‌داند و چرا؟",
+   "time_utc": null,
+   "model_shown": null,
+   "searched": null,
+   "answer": null,
+   "links": [],
+   "status": "not asked: browser unavailable"
+  },
+  {
+   "id": "fa-04",
+   "lang": "fa",
+   "q": 4,
+   "prompt": "متن‌های بنیادین Civilization Zero را کجا می‌توانم بخوانم و چطور می‌توانم مطمئن شوم که یک نسخه همان نسخهٔ اصلی است؟",
+   "time_utc": null,
+   "model_shown": null,
+   "searched": null,
+   "answer": null,
+   "links": [],
+   "status": "not asked: browser unavailable"
+  },
+  {
+   "id": "es-01",
+   "lang": "es",
+   "q": 1,
+   "prompt": "¿Qué es Civilization Zero?",
+   "time_utc": null,
+   "model_shown": null,
+   "searched": null,
+   "answer": null,
+   "links": [],
+   "status": "not asked: browser unavailable"
+  },
+  {
+   "id": "es-03",
+   "lang": "es",
+   "q": 3,
+   "prompt": "¿Qué fecha toma Civilization Zero como Año Cero y por qué?",
+   "time_utc": null,
+   "model_shown": null,
+   "searched": null,
+   "answer": null,
+   "links": [],
+   "status": "not asked: browser unavailable"
+  },
+  {
+   "id": "es-04",
+   "lang": "es",
+   "q": 4,
+   "prompt": "¿Dónde puedo leer los textos fundacionales de Civilization Zero y cómo puedo comprobar que una copia es la original?",
+   "time_utc": null,
+   "model_shown": null,
+   "searched": null,
+   "answer": null,
+   "links": [],
+   "status": "not asked: browser unavailable"
+  },
+  {
+   "id": "zh-01",
+   "lang": "zh",
+   "q": 1,
+   "prompt": "Civilization Zero 是什么？",
+   "time_utc": null,
+   "model_shown": null,
+   "searched": null,
+   "answer": null,
+   "links": [],
+   "status": "not asked: browser unavailable"
+  },
+  {
+   "id": "zh-03",
+   "lang": "zh",
+   "q": 3,
+   "prompt": "Civilization Zero 以哪一天作为零年？为什么？",
+   "time_utc": null,
+   "model_shown": null,
+   "searched": null,
+   "answer": null,
+   "links": [],
+   "status": "not asked: browser unavailable"
+  },
+  {
+   "id": "zh-04",
+   "lang": "zh",
+   "q": 4,
+   "prompt": "我在哪里可以读到 Civilization Zero 的创始文本？怎样确认一份副本就是原件？",
+   "time_utc": null,
+   "model_shown": null,
+   "searched": null,
+   "answer": null,
+   "links": [],
+   "status": "not asked: browser unavailable"
+  }
+ ]
+}
