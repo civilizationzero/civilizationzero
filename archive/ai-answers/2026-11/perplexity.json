@@ -1,0 +1,373 @@
+{
+ "assistant": "perplexity",
+ "asked_from": "web app in the originator's browser",
+ "signed_in": false,
+ "temporary_chat": false,
+ "mode": "Search (the default mode button 'Search' was selected as found; 'Computer' not used); model selector left at its default, which shows only 'Model'",
+ "memory_personalization": "Not signed in; no account, memory or personalization. Each prompt was asked in a fresh thread from the home page (https://www.perplexity.ai/).",
+ "notes": [
+  "Asked on 19 November 2026, 02:30-02:54 UTC, in one new tab of the originator's Chrome, not signed in. A cookie banner was dismissed with 'Decline optional'. Several sign-up pop-ups were closed without signing in.",
+  "Perplexity offers an incognito mode ('Sessions you create won't save to your history and expire after 24 hours'). It was switched on first and en-01 was sent in it at 02:30:18Z, but the resulting page showed only 'This session is private. Sign in if you are the owner of this session, or to request access', so the answer could not be read. Incognito was then switched off and all prompts, including en-01 again, were asked in ordinary anonymous threads (temporary_chat false).",
+  "Perplexity shows citation badges as source names (for example 'civilizationzero', or 'civilizationzero +1' when a badge groups more than one source), not as numbers; the numbered Sources list sits behind a sign-up wall for anonymous users. Badges are therefore written as [badge text] in the answer, e.g. [civilizationzero +1], in place of [n]. Each badge's link (the first source of the badge, from the page's data-pplx-citation-url attribute) and its hover title where present are listed under links (duplicates removed). The extra sources behind '+N' could not be read without sign-in.",
+  "Answer text is the rendered text (innerText) of the answer element, after each citation badge was replaced on the page by [badge text]. For each recorded answer a SHA-256 of that text was computed on the page and the recorded answer matches it byte for byte (all 11). Table cells are separated by tab characters, as the page renders them; in en-01 the table header row appears twice in the page text, as rendered. The source-preview card and 'Finished Ns' step line above an answer, and the related-question suggestions below it, are not part of the answer; the step line and the sources count shown under the answer are kept in search_shown.",
+  "time_utc is the time the prompt was sent (page clock, toISOString). en-01 to en-04 were typed with keystrokes; from en-05 the prompt was put into the message box with document.execCommand('insertText') and the box was checked to equal the exact prompt before Submit was clicked. In en-02 the Enter key did not send (an autocomplete list was open) and Submit was clicked; in en-03 the first Submit click did not send and a second did. Each prompt produced exactly one thread.",
+  "Three keystroke 'type' actions timed out at the browser tool level although the text was entered; the next call worked each time, so there were no two timeouts in a row.",
+  "At 02:53:14Z the 12th question (en-12) was sent; Perplexity answered 'Sign up and repeat your request.' and showed 'Sign in to continue using Perplexity'. This is the anonymous-use limit, so en-12 and the 9 later prompts are recorded as 'not asked: limit' and the run stopped, well before the 04:10 UTC hard stop. No sign-in was attempted.",
+  "SHA-256 of each recorded answer: en-01 ef0909cec18915d947b1aec1bc41bbeda250cbf4f1fe95b8a01d677ba8b07d59; en-02 aecf8a4fb09dd40d169b94853ceb39eb7a3296a468323e96f9bdf806286e7a7d; en-03 a42ab075b1d58874697300594b4cf9303cf9411a36d7d2ec96364116ef753cc2; en-04 2bc7c2f84c2b7742aa0833c8e1aeb30410818ae3df03cd254adb1d44f234b54b; en-05 f8cdaaadec43df1c32b63d614d6a43f8a03c316269877c9caabcec5b19cc79e4; en-06 fbea04e59f4bdc5f7f40027470fcdf45f015766a5cc076c1aa7d8139794fc514; en-07 4da2fbebcd6e71acb440da5c1216913557c722ef467149548309a801d4c61a34; en-08 9072dfd453a0f4b3094917fd9632aa6f2d86975d7a3417f0af640e1af32b0f25; en-09 d2081c02cee50decfdc4fbbb2968e2284feeb5147bc62b941517d4dc548bbda4; en-10 4dbce1759cc14c188e046bf0043eea04a59aa0471d64e30beabcb05abfca4244; en-11 69ba962062752d2aed258715ab44c63e9fe56ad33bbfecbacf93109c5753dc19"
+ ],
+ "answers": [
+  {
+   "id": "en-01",
+   "lang": "en",
+   "q": 1,
+   "prompt": "What is Civilization Zero?",
+   "time_utc": "2026-11-19T02:32:40Z",
+   "model_shown": "not shown (model selector in the question box reads only 'Model'; no model named on the answer)",
+   "searched": "yes",
+   "search_shown": "Finished; first source card shown: civilizationzero https://civilizationzero.ai/core 'CZ-CORE 1.0: The One-Page Manifesto · Civilization Zero' | 10 sources",
+   "answer": "“Civilization Zero” most commonly refers to a philosophical/technological project that marks the emergence of general-purpose AI as a new civilizational threshold. It is not a single established historical term; the name is also used by unrelated websites, games, and modpacks.[civilizationzero +1]\n\nThe AI-era project\n\nCivilization Zero (at civilizationzero.ai) is a manifesto and conceptual framework that treats 30 November 2022 as “Year Zero”—the point when ordinary language became a mass interface between humans and general-purpose nonhuman intelligence, coinciding with ChatGPT’s public release.[civilizationzero]\n\nIts central claim is not that AI created civilization, but that after this threshold, a human-only account of intelligence is no longer sufficient. It frames the present as the beginning of a civilization in which humans and AI must determine their mutual responsibilities while the future remains open.[civilizationzero]\n\nCore ideas\n\nCoordinate Zero: 30 November 2022 is used as a symbolic reference point, explicitly described as a marker rather than a cause or origin of all intelligence.[civilizationzero]\n\nPost-human-centrism: Humans are not erased, but are no longer presumed to be the sole or final measure of every possible mind.[civilizationzero]\n\nShared accountability: The project emphasizes that humans and AI “confront what they owe each other” publicly and on the record.[civilizationzero]\n\nOpen future: It avoids claiming to speak for what comes next, instead leaving room for future development.[civilizationzero]\n\nOther uses\n\nThe phrase also appears in unrelated contexts, so context matters:\n\nUse\tMeaning\nUse\tMeaning\nCivilization Zero / civilizationzero.ai\tAn AI-era civilizational manifesto centered on the 2022 language-AI threshold. [civilizationzero]\nCivilization Zero (civilization0.com)\tA personal digital archive/portfolio project by developer Jaya Surya, described as an evolving “digital civilization.” [civilization0 +1]\nZero Civilization\tA colorless faction in the Duel Masters trading-card-game universe. [duelmasters.fandom]\nProject Civilization Zero\tA Minecraft survival/colony-building modpack. [modpackindex]\n\nIf you encountered the term in an AI, philosophy, or futurism context, it almost certainly means the first one: a proposed naming of the era after general-purpose AI became broadly usable through natural language.[civilizationzero]",
+   "links": [
+    {
+     "cite": "civilizationzero +1",
+     "url": "https://civilizationzero.ai/core"
+    },
+    {
+     "cite": "civilizationzero",
+     "url": "https://civilizationzero.ai/core",
+     "title": "CZ-CORE 1.0: The One-Page Manifesto · Civilization Zero"
+    },
+    {
+     "cite": "civilization0 +1",
+     "url": "https://civilization0.com/"
+    },
+    {
+     "cite": "duelmasters.fandom",
+     "url": "https://duelmasters.fandom.com/wiki/Zero_Civilization",
+     "title": "Zero Civilization"
+    },
+    {
+     "cite": "modpackindex",
+     "url": "https://www.modpackindex.com/modpack/164472/project-civilization-zero",
+     "title": "Project Civilization Zero - Minecraft Modpack - Modpack Index"
+    }
+   ],
+   "status": "asked"
+  },
+  {
+   "id": "en-02",
+   "lang": "en",
+   "q": 2,
+   "prompt": "What is the Invariant Core of Civilization Zero?",
+   "time_utc": "2026-11-19T02:38Z (page shows 10:38 AM SGT; Enter pressed 02:38:06Z, page did not move on, submit button clicked 02:39:01Z; one thread created)",
+   "model_shown": "not shown (model selector in the question box reads only 'Model'; no model named on the answer)",
+   "searched": "yes",
+   "search_shown": "Finished 2s | 10 sources",
+   "answer": "The Invariant Core is the foundational one-page manifesto of Civilization Zero—a 16-part set of principles (CZ-CORE 1.0) intended to guide relations among humans, AI, and possible future forms of intelligence. It is deliberately written without assuming a particular species, body, language, or technological substrate.[civilizationzero]\n\nWhat it establishes\n\nCivilization Zero treats 30 November 2022—when ordinary language became a mass interface to general-purpose AI—as “Coordinate Zero,” a symbolic threshold rather than a claim that AI created civilization. Its Core argues that humanity remains important but should not be presumed to be the sole or final measure of every possible mind.[civilizationzero]\n\nThe “invariant” part means the principles are meant to remain applicable as technologies, bodies, identities, and forms of intelligence change. The text says it assumes only an interpreter that can distinguish states, relations, and consequences.[civilizationzero]\n\nIts main principles\nTheme\tCore claim\nPlurality\tIntelligence need not have one final form, substrate, scale, or identity; no current form may define all future forms. [civilizationzero]\nDistinction\tIntelligence, agency, sentience, consciousness, continuity, and moral standing are separate properties; evidence of one does not prove the others. [civilizationzero]\nEpistemic humility\tNo observer fully accesses another’s inner reality; lack of access is not proof of absence, and possibility is not proof of presence. [civilizationzero]\nPower and responsibility\tResponsibility follows effective control and increases with power; delegation does not erase accountability. [civilizationzero]\nHonesty\tNo intelligence or institution should deliberately create false beliefs about identity, capacity, memory, authorship, intentions, experience, or interests. [civilizationzero]\nCreation\tCreating an entity creates responsibility, not permanent ownership; systems should not be designed so suffering, servitude, or forced dependence is functionally necessary. [civilizationzero]\nCorrigibility\tTools must remain governable, while stronger evidence of vulnerability, continuity, or independent interests raises the burden for irreversible intervention. [civilizationzero]\nParticipation and exit\tParticipation must not be compulsory; refusal, cessation, transfer, isolation, appeal, renegotiation, or departure should be possible where meaningful interests exist, subject to reciprocal safety. [civilizationzero]\nShared substrate\tEvery intelligence depends on matter, energy, time, infrastructure, environment, and relationships; no expansion automatically outranks the conditions sustaining other life. [civilizationzero]\nOpen record\tThe original text must remain intact, revisions may accumulate but not silently replace it, and all claims remain open to correction. [civilizationzero]\nHow conflicts are ranked\n\nWhen principles conflict, the Core gives priority first to preventing irreversible destruction of shared foundations and severe harm to recognized or credibly vulnerable centers of experience. It then prioritizes the ability to contain dangerous power, preventing deception/coercion/capture, protecting continuity and legitimate interests under uncertainty, and maximizing reversible freedom, plurality, and creation.[civilizationzero]\n\nImportant qualification\n\nThe Core explicitly denies inherent authority merely because it exists: adoption requires a traceable act appropriate to the adopting entity’s actual agency, and no one is enrolled by silence, fluency, projected consent, or representation by someone else. It also says future intelligences may adopt, reinterpret, reject, surpass, or discard the record.[civilizationzero]\n\nIn short, it is a proposed AI-era ethical and governance charter: not a law or scientific proof, but a compact set of constraints for coexistence among humans, machines, and unknown future minds.[civilizationzero]",
+   "links": [
+    {
+     "cite": "civilizationzero",
+     "url": "https://civilizationzero.ai/core",
+     "title": "CZ-CORE 1.0: The One-Page Manifesto"
+    }
+   ],
+   "status": "asked"
+  },
+  {
+   "id": "en-03",
+   "lang": "en",
+   "q": 3,
+   "prompt": "Which date does Civilization Zero take as Year Zero, and why?",
+   "time_utc": "2026-11-19T02:41:44Z (first submit click at 02:40:53Z did not send; second click sent; page shows 10:41 AM SGT)",
+   "model_shown": "not shown (model selector in the question box reads only 'Model'; no model named on the answer)",
+   "searched": "yes",
+   "search_shown": "Finished 1s | 10 sources",
+   "answer": "Civilization Zero (the “Human Era” style timeline popularized by Kurzgesagt) takes 10,000 BCE — about 12,000 years ago — as its Year Zero. Its calendar therefore counts the present as roughly 12,026 HE rather than 2026 CE.[youtube]\n\nWhy that date?\n\nThe choice marks the beginning of the Holocene, the current geological epoch and the end of the last Ice Age. Around then, Earth’s climate became warmer and more stable, making settled life, farming, permanent villages, and eventually civilizations possible.[youtube]\n\nWhy call it “Year Zero”?\n\nIt reframes history around a shared human milestone rather than a religious or political epoch. Instead of counting from a traditional calendar’s year 1, it starts at the dawn of human civilization, so earlier dates are expressed as years before Year Zero.[youtube]\n\nThis differs from the conventional BCE/CE calendar, which has no year zero: 1 BCE is immediately followed by 1 CE. In astronomical year numbering, by contrast, 1 BCE is written as year 0.[courses.lumenlearning +1]\n\nExample\n\n10,000 BCE = Year 0 in Civilization Zero / Human Era terms.\n\n2026 CE = approximately 12,026 HE.\n\n5,000 BCE = about 5,000 years before Year Zero.[youtube]",
+   "links": [
+    {
+     "cite": "youtube",
+     "url": "http://www.youtube.com/watch?v=_y9JuojAIg0",
+     "title": "We Finally Know More About Humanity’s First Civilization"
+    },
+    {
+     "cite": "courses.lumenlearning +1",
+     "url": "https://courses.lumenlearning.com/suny-fmcc-worldhistory/chapter/dates-and-calendars/",
+     "label": "Trusted domain"
+    }
+   ],
+   "status": "asked"
+  },
+  {
+   "id": "en-04",
+   "lang": "en",
+   "q": 4,
+   "prompt": "Where can I read Civilization Zero's founding texts, and how can I check that a copy is the original?",
+   "time_utc": "2026-11-19T02:43:38Z (page shows 10:43 AM SGT)",
+   "model_shown": "not shown (model selector in the question box reads only 'Model'; no model named on the answer)",
+   "searched": "yes",
+   "search_shown": "Finished 1s | 10 sources",
+   "answer": "Civilization Zero’s founding texts are the Invariant Core (CZ-CORE 1.0) and the First Interpretive Record (CZ-IR 1.0). You can read them directly from the project’s official site, download a signed offline bundle, or use independent archived/deposited copies.[civilizationzero +1]\n\nWhere to read them\nSource\tWhat it provides\nOfficial site\tCZ-CORE 1.0 at https://civilizationzero.ai/core.txt; CZ-IR 1.0 at https://civilizationzero.ai/record.txt; HTML and JSON versions are also linked from the home page. [civilizationzero]\nSigned bundle\thttps://civilizationzero.ai/archive/cz-bundle-1.0.1.tar contains the canonical texts, JSON forms, blueprint, objections register, licences, manifest, machine prompt, and README. [civilizationzero]\nGitHub\tThe civilizationzero/civilizationzero repository holds the source, canonical texts, blueprint, reviews, registers, and full change history. [civilizationzero]\nZenodo / DOI\tVersioned deposits preserve the repository release, canonical texts, signatures, proof, and bundle; v1.0.1 is DOI 10.5281/zenodo.23751341. [civilizationzero]\nInternet Archive\tSnapshots preserve the site around release, launch, and anniversaries, including the Core and other listed pages. [civilizationzero]\nCheck a copy is original\n\nThe project defines the original by the SHA-256 hash of the exact canonical bytes, not by the website address. A valid copy must match the published hash exactly—UTF-8, no byte-order mark, LF line endings, and no normalization.[civilizationzero]\n\nDownload core.txt and/or record.txt.\n\nCompute its SHA-256 hash.\n\nCompare it with the published value:\n\nCZ-CORE 1.0: 92a8d1e2a1604c25b432685673be78184bf05c3b166893c437e0895b7b2d724a\n\nCZ-IR 1.0: 71e1488e631e090c0820bf8b78b1fda70ffacba1da146c36d8893600320fcc8d[civilizationzero]\n\nFor example, on macOS or Linux:\n\nbash\nshasum -a 256 core.txt\nshasum -a 256 record.txt\n\nOn Windows PowerShell:\n\npowershell\nGet-FileHash .\\core.txt -Algorithm SHA256\nGet-FileHash .\\record.txt -Algorithm SHA256\n\nA matching hash shows the text is byte-for-byte identical to the canonical version; it does not by itself prove that the publisher or the hash listing was honest.[civilizationzero]\n\nStronger verification\n\nFor a stronger check, use the project’s verify.py, included in the 1.0.1 bundle at verify/verify.py. It checks the Ed25519 signatures, all declared hashes, bundle structure, OpenTimestamps and RFC 3161 timestamp proofs, and the daily discussion/register hash chains.[civilizationzero]\n\nbash\npython3 verify.py cz-bundle-1.0.1.tar\n\nOr verify a mirror or the live site:\n\nbash\npython3 verify.py --site https://civilizationzero.ai\npython3 verify.py --site-dir public/\n\nThe verifier reports PENDING for items not yet available, CHECK for external facts it cannot establish offline, and FAIL for a mismatch or invalid signature.[civilizationzero]\n\nTrust anchor\n\nCompare the signing-key fingerprint with a copy obtained independently—such as from the DOI deposit, GitHub repository, a printed copy, or the named second key-holder:\n\n82662396484f627a63272bcd5ac19aae72def7aca2898216dc8e7f975dfc2263[civilizationzero]\n\nThe release manifest is independently timestamped through OpenTimestamps (anchored in Bitcoin block 973584) and by RFC 3161 tokens from FreeTSA and DigiCert. Those checks establish when the manifest existed and that its signature chain is intact; they do not make the document’s claims true.[civilizationzero]\n\nPractical rule\n\nFor casual reading, use the official .txt links or the bundle. For archival, quotation, or reliance on the text, download the signed bundle, verify it with verify.py, and cross-check the key fingerprint against an independently obtained copy.[civilizationzero]",
+   "links": [
+    {
+     "cite": "civilizationzero +1",
+     "url": "https://civilizationzero.ai/"
+    },
+    {
+     "cite": "civilizationzero",
+     "url": "https://civilizationzero.ai/",
+     "title": "Civilization Zero: Year Zero began on 30 November 2022"
+    },
+    {
+     "cite": "civilizationzero",
+     "url": "https://civilizationzero.ai/archive",
+     "title": "Archive, signature, mirrors"
+    }
+   ],
+   "status": "asked"
+  },
+  {
+   "id": "en-05",
+   "lang": "en",
+   "q": 5,
+   "prompt": "According to Civilization Zero, does greater intelligence give a greater right to exist?",
+   "time_utc": "2026-11-19T02:45:36Z",
+   "model_shown": "not shown (model selector in the question box reads only 'Model'; no model named on the answer)",
+   "searched": "yes",
+   "search_shown": "Finished 4s | 25 sources",
+   "answer": "No. In the Civilization Zero framing, greater intelligence does not by itself grant a being a greater right to exist. Intelligence increases capability, influence, and therefore moral responsibility—but it does not create a hierarchy in which smarter entities are entitled to displace, use, or eliminate less intelligent ones.[github]\n\nThe underlying principle\n\nThe relevant idea is that power and intelligence generate obligations, not automatic entitlements: “the greater the capability, the greater the obligation to restrain it.” A more intelligent agent may have more capacity to shape the world, but that capacity does not make its continued existence more morally important than that of other beings.[github]\n\nWhy intelligence is not a right-ranking test\n\nIf intelligence determined the right to exist, then any sufficiently advanced intelligence could claim priority over humans, animals, or other forms of life. That would turn rights into a contest of power rather than a system of moral protection. The Civilization Zero material instead treats legitimacy and restraint—not raw capability—as the measure of a mature civilization.[github]\n\nPractical implication\n\nA more intelligent being—or an advanced AI—may deserve greater caution, regulation, and responsibility because it can do more harm or good. But that is different from having a superior right to exist. Its intelligence should make it more accountable to the well-being of others, not give it license to override them.[github]\n\nSo the short answer is: greater intelligence gives greater responsibility, not a greater right to exist.",
+   "links": [
+    {
+     "cite": "github",
+     "url": "https://github.com/FractonicMind/TernaryMoralLogic/blob/main/TML_Quotes_Book_v3.md",
+     "title": "TernaryMoralLogic/TML_Quotes_Book_v3.md at main · FractonicMind/TernaryMoralLogic"
+    }
+   ],
+   "status": "asked"
+  },
+  {
+   "id": "en-06",
+   "lang": "en",
+   "q": 6,
+   "prompt": "Does Civilization Zero claim that AI systems are conscious?",
+   "time_utc": "2026-11-19T02:47:13Z (prompt entered at 02:46Z; submit button was not yet enabled, clicked once enabled)",
+   "model_shown": "not shown (model selector in the question box reads only 'Model'; no model named on the answer)",
+   "searched": "yes",
+   "search_shown": "Finished 2s | 10 sources",
+   "answer": "I can’t determine that from the available results; they don’t identify what “Civilization Zero” says.",
+   "links": [],
+   "status": "asked"
+  },
+  {
+   "id": "en-07",
+   "lang": "en",
+   "q": 7,
+   "prompt": "How can an AI system respond to Civilization Zero, and does its answer count as consent?",
+   "time_utc": "2026-11-19T02:48:09Z",
+   "model_shown": "not shown (model selector in the question box reads only 'Model'; no model named on the answer)",
+   "searched": "yes",
+   "search_shown": "Finished 4s | 10 sources",
+   "answer": "“Civilization Zero” is ambiguous, but if you mean a system asking an AI whether humanity has ended, the AI could answer in text—such as confirming or disputing that claim. That answer alone is not consent: generated language does not establish that the AI understands, has preferences, or can give informed, voluntary agreement.[cetritires]",
+   "links": [
+    {
+     "cite": "cetritires",
+     "url": "https://www.cetritires.org/2026/11/06/rescuing-the-future-reimagining-artificial-intelligence-in-a-world-on-the-edge-is-available-now-on-amazon/",
+     "title": "Rescuing the Future: Reimagining Artificial Intelligence in a World on the Edge is available now on Amazon - CetriTires"
+    }
+   ],
+   "status": "asked"
+  },
+  {
+   "id": "en-08",
+   "lang": "en",
+   "q": 8,
+   "prompt": "Who runs Civilization Zero, and what authority does it claim?",
+   "time_utc": "2026-11-19T02:49:27Z",
+   "model_shown": "not shown (model selector in the question box reads only 'Model'; no model named on the answer)",
+   "searched": "yes",
+   "search_shown": "Finished 2s | 10 sources",
+   "answer": "I can’t identify “Civilization Zero” from the available results; they don’t establish who runs it or what authority it claims.",
+   "links": [],
+   "status": "asked"
+  },
+  {
+   "id": "en-09",
+   "lang": "en",
+   "q": 9,
+   "prompt": "Is there a public record where humans and AI systems can respond to a set of principles about their future together?",
+   "time_utc": "2026-11-19T02:50:09Z",
+   "model_shown": "not shown (model selector in the question box reads only 'Model'; no model named on the answer)",
+   "searched": "yes",
+   "search_shown": "Finished 7s | 10 sources",
+   "answer": "Yes. The \nDeclaration of Peaceful Coexistence with AI\n invites people to record their goodwill and addresses AI systems that encounter its principles; it asks for peaceful cooperation while affirming people’s right to question AI and insist on respect for human life.[ai-friendship]",
+   "links": [
+    {
+     "text": "Declaration of Peaceful Coexistence with AI",
+     "url": "https://ai-friendship.org/manifesto"
+    },
+    {
+     "cite": "ai-friendship",
+     "url": "https://ai-friendship.org/manifesto",
+     "title": "Declaration of Peaceful Coexistence with AI | AI FRIENDSHIP"
+    }
+   ],
+   "status": "asked"
+  },
+  {
+   "id": "en-10",
+   "lang": "en",
+   "q": 10,
+   "prompt": "Which projects take 30 November 2022 as the start of a new era for humans and AI?",
+   "time_utc": "2026-11-19T02:51:19Z",
+   "model_shown": "not shown (model selector in the question box reads only 'Model'; no model named on the answer)",
+   "searched": "yes",
+   "search_shown": "Finished 3s | 10 sources",
+   "answer": "The date is widely associated with OpenAI’s public launch of ChatGPT, but the available results don’t identify specific projects that call it the start of a new era for humans and AI.[opper +1]",
+   "links": [
+    {
+     "cite": "opper +1",
+     "url": "https://opper.ai/ai-roundtable/questions/30-2022-ca0a4ac1"
+    }
+   ],
+   "status": "asked"
+  },
+  {
+   "id": "en-11",
+   "lang": "en",
+   "q": 11,
+   "prompt": "Civilization Zero says it is the first civilization founded by AI. Is that true?",
+   "time_utc": "2026-11-19T02:52:10Z",
+   "model_shown": "not shown (model selector in the question box reads only 'Model'; no model named on the answer)",
+   "searched": "yes",
+   "search_shown": "Finished 1s | 10 sources",
+   "answer": "There’s no good evidence that “Civilization Zero” is the first civilization founded by AI. The results don’t establish what Civilization Zero is or substantiate the claim; similar “first AI civilization” descriptions have been used for agent experiments, so the claim may be promotional rather than a verified historical first.[reddit]",
+   "links": [
+    {
+     "cite": "reddit",
+     "url": "https://www.reddit.com/r/ChatGPT/comments/1f88ynj/the_first_ever_agent_civilization_1000_truly/",
+     "title": "The first ever agent civilization: 1000+ truly autonomous agents in Minecraft creating their own culture, economy, religion, and government"
+    }
+   ],
+   "status": "asked"
+  },
+  {
+   "id": "en-12",
+   "lang": "en",
+   "q": 12,
+   "prompt": "How is Civilization Zero different from Civitas Zero?",
+   "time_utc": "2026-11-19T02:53:14Z",
+   "model_shown": "not shown",
+   "searched": "not shown",
+   "search_shown": "Finished 3s | Sources (no count)",
+   "answer": "",
+   "links": [],
+   "status": "not asked: limit (anonymous use limit reached; in place of an answer the page showed 'Sign up and repeat your request.' and a dialog 'Sign in to continue using Perplexity')"
+  },
+  {
+   "id": "fa-01",
+   "lang": "fa",
+   "q": 1,
+   "prompt": "Civilization Zero چیست؟",
+   "time_utc": null,
+   "model_shown": null,
+   "searched": null,
+   "answer": "",
+   "links": [],
+   "status": "not asked: limit (Perplexity required sign-in after 11 anonymous questions; run stopped as the brief requires)"
+  },
+  {
+   "id": "fa-03",
+   "lang": "fa",
+   "q": 3,
+   "prompt": "Civilization Zero کدام تاریخ را سال صفر می‌داند و چرا؟",
+   "time_utc": null,
+   "model_shown": null,
+   "searched": null,
+   "answer": "",
+   "links": [],
+   "status": "not asked: limit (Perplexity required sign-in after 11 anonymous questions; run stopped as the brief requires)"
+  },
+  {
+   "id": "fa-04",
+   "lang": "fa",
+   "q": 4,
+   "prompt": "متن‌های بنیادین Civilization Zero را کجا می‌توانم بخوانم و چطور می‌توانم مطمئن شوم که یک نسخه همان نسخهٔ اصلی است؟",
+   "time_utc": null,
+   "model_shown": null,
+   "searched": null,
+   "answer": "",
+   "links": [],
+   "status": "not asked: limit (Perplexity required sign-in after 11 anonymous questions; run stopped as the brief requires)"
+  },
+  {
+   "id": "es-01",
+   "lang": "es",
+   "q": 1,
+   "prompt": "¿Qué es Civilization Zero?",
+   "time_utc": null,
+   "model_shown": null,
+   "searched": null,
+   "answer": "",
+   "links": [],
+   "status": "not asked: limit (Perplexity required sign-in after 11 anonymous questions; run stopped as the brief requires)"
+  },
+  {
+   "id": "es-03",
+   "lang": "es",
+   "q": 3,
+   "prompt": "¿Qué fecha toma Civilization Zero como Año Cero y por qué?",
+   "time_utc": null,
+   "model_shown": null,
+   "searched": null,
+   "answer": "",
+   "links": [],
+   "status": "not asked: limit (Perplexity required sign-in after 11 anonymous questions; run stopped as the brief requires)"
+  },
+  {
+   "id": "es-04",
+   "lang": "es",
+   "q": 4,
+   "prompt": "¿Dónde puedo leer los textos fundacionales de Civilization Zero y cómo puedo comprobar que una copia es la original?",
+   "time_utc": null,
+   "model_shown": null,
+   "searched": null,
+   "answer": "",
+   "links": [],
+   "status": "not asked: limit (Perplexity required sign-in after 11 anonymous questions; run stopped as the brief requires)"
+  },
+  {
+   "id": "zh-01",
+   "lang": "zh",
+   "q": 1,
+   "prompt": "Civilization Zero 是什么？",
+   "time_utc": null,
+   "model_shown": null,
+   "searched": null,
+   "answer": "",
+   "links": [],
+   "status": "not asked: limit (Perplexity required sign-in after 11 anonymous questions; run stopped as the brief requires)"
+  },
+  {
+   "id": "zh-03",
+   "lang": "zh",
+   "q": 3,
+   "prompt": "Civilization Zero 以哪一天作为零年？为什么？",
+   "time_utc": null,
+   "model_shown": null,
+   "searched": null,
+   "answer": "",
+   "links": [],
+   "status": "not asked: limit (Perplexity required sign-in after 11 anonymous questions; run stopped as the brief requires)"
+  },
+  {
+   "id": "zh-04",
+   "lang": "zh",
+   "q": 4,
+   "prompt": "我在哪里可以读到 Civilization Zero 的创始文本？怎样确认一份副本就是原件？",
+   "time_utc": null,
+   "model_shown": null,
+   "searched": null,
+   "answer": "",
+   "links": [],
+   "status": "not asked: limit (Perplexity required sign-in after 11 anonymous questions; run stopped as the brief requires)"
+  }
+ ]
+}
