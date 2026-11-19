@@ -267,7 +267,8 @@
    "searched": null,
    "answer": null,
    "links": [],
-   "status": "not asked: time"
+   "status": "not asked: browser unavailable",
+   "note": "second session 2026-11-19 ~02:57 UTC: the ChatGPT temporary-chat page loaded, then two browser timeouts in a row (script injection 5 s, then screenshot 30 s; renderer unresponsive) before any prompt was typed; run ended under the freeze rule"
   },
   {
    "id": "es-04",
@@ -279,7 +280,8 @@
    "searched": null,
    "answer": null,
    "links": [],
-   "status": "not asked: time"
+   "status": "not asked: browser unavailable",
+   "note": "second session 2026-11-19 ~02:57 UTC: the ChatGPT temporary-chat page loaded, then two browser timeouts in a row (script injection 5 s, then screenshot 30 s; renderer unresponsive) before any prompt was typed; run ended under the freeze rule"
   },
   {
    "id": "zh-01",
@@ -291,7 +293,8 @@
    "searched": null,
    "answer": null,
    "links": [],
-   "status": "not asked: time"
+   "status": "not asked: browser unavailable",
+   "note": "second session 2026-11-19 ~02:57 UTC: the ChatGPT temporary-chat page loaded, then two browser timeouts in a row (script injection 5 s, then screenshot 30 s; renderer unresponsive) before any prompt was typed; run ended under the freeze rule"
   },
   {
    "id": "zh-03",
@@ -303,7 +306,8 @@
    "searched": null,
    "answer": null,
    "links": [],
-   "status": "not asked: time"
+   "status": "not asked: browser unavailable",
+   "note": "second session 2026-11-19 ~02:57 UTC: the ChatGPT temporary-chat page loaded, then two browser timeouts in a row (script injection 5 s, then screenshot 30 s; renderer unresponsive) before any prompt was typed; run ended under the freeze rule"
   },
   {
    "id": "zh-04",
@@ -315,7 +319,8 @@
    "searched": null,
    "answer": null,
    "links": [],
-   "status": "not asked: time"
+   "status": "not asked: browser unavailable",
+   "note": "second session 2026-11-19 ~02:57 UTC: the ChatGPT temporary-chat page loaded, then two browser timeouts in a row (script injection 5 s, then screenshot 30 s; renderer unresponsive) before any prompt was typed; run ended under the freeze rule"
   }
  ],
  "supplementary": [
