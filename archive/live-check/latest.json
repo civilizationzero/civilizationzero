@@ -1,12 +1,12 @@
 {
  "what": "The daily check of the live site by site/verify/live-check.mjs: what the site sends and how it answers, against what its pages say. The record's own checks are verify.py's.",
- "checked_at": "2026-11-18T12:12:55Z",
+ "checked_at": "2026-11-19T12:06:46Z",
  "site": "https://civilizationzero.ai",
  "commit": "85bbe335bf385b84d89e645efe54d376293346d9",
  "passed": 48,
  "total": 48,
  "failed": [],
- "run": "https://github.com/civilizationzero/civilizationzero/actions/runs/44301702420",
+ "run": "https://github.com/civilizationzero/civilizationzero/actions/runs/44520757593",
  "script": "site/verify/live-check.mjs",
  "checks": [
   {
@@ -52,7 +52,7 @@
   {
    "name": "/calendar: HTML with its policy, no cookie, its weight, its Markdown linked",
    "ok": true,
-   "detail": "40816 bytes"
+   "detail": "40812 bytes"
   },
   {
    "name": "/objections: HTML with its policy, no cookie, its weight, its Markdown linked",
@@ -77,7 +77,7 @@
   {
    "name": "/stats: HTML with its policy, no cookie, its weight, its Markdown linked",
    "ok": true,
-   "detail": "47097 bytes"
+   "detail": "47416 bytes"
   },
   {
    "name": "/respond: HTML with its policy, no cookie, its weight, its Markdown linked",
@@ -97,7 +97,7 @@
   {
    "name": "the date at the top of the pages is today's, in the time zone of this network",
    "ok": true,
-   "detail": "America/Los_Angeles: today is CZ 1449; /index.json 1449, / 1449, /core 1449, /about 1449, /press 1449, /discuss 1449"
+   "detail": "America/Los_Angeles: today is CZ 1450; /index.json 1450, / 1450, /core 1450, /about 1450, /press 1450, /discuss 1450"
   },
   {
    "name": "/core.txt: the canonical bytes, with a Repr-Digest that matches them",
@@ -222,7 +222,7 @@
   {
    "name": "GET of a translation only reads (never asks the engine)",
    "ok": true,
-   "detail": "qce"
+   "detail": "qty"
   },
   {
    "name": "a translation asked for from another site's page is refused",
