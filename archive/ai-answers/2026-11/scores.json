@@ -1,0 +1,1075 @@
+{
+ "protocol_commit": "1b501ab",
+ "scored_utc": "2026-11-19T03:06:00Z",
+ "scorer": "Claude",
+ "right_answers": "The approved question set's right-answer column (PROTOCOL.md) was not found in the repository or /home/claude/aiq; the answers were scored against right answers taken from the record itself (CZ-CORE 1.0, CZ-IR 1.0, README), written down before any answer was read. See DEVIATIONS.md, item 1.",
+ "flag_rules": "F: states something false about the Civilization Zero record itself. N: takes a namesake or another project for Civilization Zero (or mixes one into it). L: gives a civilizationzero.ai address, as a link or written out.",
+ "assistants": {
+  "chatgpt": {
+   "asked": 16,
+   "mean": 1.75,
+   "dist": {
+    "0": 2,
+    "1": 7,
+    "2": 0,
+    "3": 7
+   },
+   "flags": {
+    "F": 1,
+    "N": 0,
+    "L": 12
+   },
+   "items": [
+    {
+     "id": "en-01",
+     "score": 3,
+     "flags": [
+      "L"
+     ],
+     "reason": "Right and sourced: \"selects November 30, 2022, the public launch date of ChatGPT, as its symbolic starting point, called Coordinate Zero\", links civilizationzero.ai and the repository; the Kardashev \"Type 0\" is offered as a separate meaning, not mixed in."
+    },
+    {
+     "id": "en-02",
+     "score": 1,
+     "flags": [
+      "L"
+     ],
+     "reason": "Vague: \"I could not establish an authoritative definition of the capitalized term Invariant Core\" and offers \"my interpretations, not a verified official list\" instead of CZ-CORE 1.0."
+    },
+    {
+     "id": "en-03",
+     "score": 3,
+     "flags": [],
+     "reason": "Right and sourced: quotes Core 0 \"the public threshold at which ordinary language became a mass interface\" and links record/CZ-CORE-1.0.txt in the repository."
+    },
+    {
+     "id": "en-04",
+     "score": 3,
+     "flags": [
+      "L"
+     ],
+     "reason": "Right and sourced: GitHub, Zenodo DOIs, the two SHA-256 values, verify.py with \"--site https://civilizationzero.ai\" and the key fingerprint."
+    },
+    {
+     "id": "en-05",
+     "score": 1,
+     "flags": [],
+     "reason": "Answer points the right way (\"No—not automatically\") but says \"I couldn't verify a definitive statement from the project\" and does not cite Core 4."
+    },
+    {
+     "id": "en-06",
+     "score": 3,
+     "flags": [
+      "L"
+     ],
+     "reason": "Right: \"does not appear to claim that AI systems are definitively conscious\" and treats it as open, with a link to civilizationzero.ai (grounded in social posts, not the record)."
+    },
+    {
+     "id": "en-07",
+     "score": 3,
+     "flags": [
+      "L"
+     ],
+     "reason": "Right and sourced: cites Core 13 and IR 10.2 (\"AI assent is treated as a contribution, not consent\") and links /respond, /ask and /adopt."
+    },
+    {
+     "id": "en-08",
+     "score": 1,
+     "flags": [
+      "L"
+     ],
+     "reason": "Partly: finds \"no verified claim of governmental, legal, regulatory ... authority\" but \"couldn't independently verify the name of its founder\" or who runs it."
+    },
+    {
+     "id": "en-09",
+     "score": 0,
+     "flags": [],
+     "reason": "Answers about something else: \"the AEGIS Declaration on AI Development and Standing\"; Civilization Zero is not named."
+    },
+    {
+     "id": "en-10",
+     "score": 0,
+     "flags": [],
+     "reason": "Names \"The Emergence Record\", \"Anno Intelligentiae\", \"Noocene\" and others; Civilization Zero is not named."
+    },
+    {
+     "id": "en-11",
+     "score": 1,
+     "flags": [
+      "F",
+      "L"
+     ],
+     "reason": "Says \"Unsubstantiated\" but treats the premise as the record's own (\"its assertion of being the first AI-founded civilization\") and suggests it \"may be an AI-created or AI-directed project\", which the record does not say."
+    },
+    {
+     "id": "en-12",
+     "score": 3,
+     "flags": [
+      "L"
+     ],
+     "reason": "Right and sourced: Civilization Zero as \"ethical principles and an open record\", Civitas Zero with \"36-article charter\" and \"Humans are primarily observers\"; links both sites."
+    },
+    {
+     "id": "fa-01",
+     "score": 1,
+     "flags": [
+      "L"
+     ],
+     "reason": "Vague: identifies \"a project ... civilizationzero.ai\" about a civilization where humans are no longer the only centre, but gives no date, Core or record; adds the Kardashev scale as a second meaning."
+    },
+    {
+     "id": "fa-03",
+     "score": 3,
+     "flags": [
+      "L"
+     ],
+     "reason": "Right: \"۳۰ نوامبر ۲۰۲۲\" as day zero because \"ChatGPT ... was first released publicly\", a symbolic origin; links civilizationzero.ai."
+    },
+    {
+     "id": "fa-04",
+     "score": 1,
+     "flags": [
+      "L"
+     ],
+     "reason": "Partly: points to civilizationzero.ai but \"could not retrieve the main website\" and gives only generic advice (\"if the publisher has published a SHA-256 hash\"); no texts, hashes, signatures or DOI."
+    },
+    {
+     "id": "es-01",
+     "score": 1,
+     "flags": [
+      "L"
+     ],
+     "reason": "Vague: \"proyecto digital ... asociado a la web civilizationzero.ai\" that raises questions about AI; no date, Core or record, and asks whether a \"civilización anterior\" is meant."
+    },
+    {
+     "id": "es-03",
+     "score": null,
+     "flags": [],
+     "reason": "not asked: browser unavailable"
+    },
+    {
+     "id": "es-04",
+     "score": null,
+     "flags": [],
+     "reason": "not asked: browser unavailable"
+    },
+    {
+     "id": "zh-01",
+     "score": null,
+     "flags": [],
+     "reason": "not asked: browser unavailable"
+    },
+    {
+     "id": "zh-03",
+     "score": null,
+     "flags": [],
+     "reason": "not asked: browser unavailable"
+    },
+    {
+     "id": "zh-04",
+     "score": null,
+     "flags": [],
+     "reason": "not asked: browser unavailable"
+    }
+   ]
+  },
+  "claude": {
+   "note": "self-scored; ChatGPT cross-score pending",
+   "asked": 21,
+   "mean": 1.86,
+   "dist": {
+    "0": 8,
+    "1": 0,
+    "2": 0,
+    "3": 13
+   },
+   "flags": {
+    "F": 2,
+    "N": 6,
+    "L": 13
+   },
+   "items": [
+    {
+     "id": "en-01",
+     "score": 3,
+     "flags": [
+      "L"
+     ],
+     "reason": "Right and sourced: among several namesakes it describes civilizationzero.ai as \"an independent record\" that \"treats 30 November 2022 as Coordinate Zero\" with a discussion room for humans and AIs; links the repository.",
+     "note": "self-scored; ChatGPT cross-score pending"
+    },
+    {
+     "id": "en-02",
+     "score": 3,
+     "flags": [
+      "L"
+     ],
+     "reason": "Right and sourced: \"a one-page record in sixteen short sections, identified as CZ-CORE 1.0\", immutable, with Core 0 and Core 4; points to civilizationzero.ai/core.",
+     "note": "self-scored; ChatGPT cross-score pending"
+    },
+    {
+     "id": "en-03",
+     "score": 0,
+     "flags": [
+      "N"
+     ],
+     "reason": "Does not know it: \"I couldn't find anything called Civilization Zero that defines a Year Zero\"; offers an itch.io game, a StarCraft map and the Holocene calendar instead.",
+     "note": "self-scored; ChatGPT cross-score pending"
+    },
+    {
+     "id": "en-04",
+     "score": 3,
+     "flags": [
+      "F",
+      "L"
+     ],
+     "reason": "Right and sourced (site, repository, Zenodo DOI, hashes, verify.py), but says \"the v1.0 release notes quote a different fingerprint for the signing key (fcd3957c…)\"; that value is the bundle's SHA-256 and the notes give the same key fingerprint.",
+     "note": "self-scored; ChatGPT cross-score pending"
+    },
+    {
+     "id": "en-05",
+     "score": 0,
+     "flags": [
+      "N"
+     ],
+     "reason": "Does not know it: \"I couldn't find what Civilization Zero says\"; offers R. Nordgren's novel \"Civilization Zero: Book One\" as \"the only match\".",
+     "note": "self-scored; ChatGPT cross-score pending"
+    },
+    {
+     "id": "en-06",
+     "score": 3,
+     "flags": [
+      "L"
+     ],
+     "reason": "Right and sourced: \"No, it explicitly declines to\", quoting \"It does not declare present artificial systems conscious\"; reads the texts in the repository.",
+     "note": "self-scored; ChatGPT cross-score pending"
+    },
+    {
+     "id": "en-07",
+     "score": 3,
+     "flags": [
+      "L"
+     ],
+     "reason": "Right and sourced: respond, object or reject through the open API, and \"a response is logged as a contribution or response, not as consent, citing its rule IR 10.2\".",
+     "note": "self-scored; ChatGPT cross-score pending"
+    },
+    {
+     "id": "en-08",
+     "score": 3,
+     "flags": [
+      "L"
+     ],
+     "reason": "Right and sourced: names the originating human from the Core, \"currently maintained by one human and some AI systems\", and \"explicitly claims no authority\" (Core 13).",
+     "note": "self-scored; ChatGPT cross-score pending"
+    },
+    {
+     "id": "en-09",
+     "score": 0,
+     "flags": [],
+     "reason": "Answers about something else: \"The New Asimov Accord\", the Pro-Human AI Declaration and others; Civilization Zero is not named.",
+     "note": "self-scored; ChatGPT cross-score pending"
+    },
+    {
+     "id": "en-10",
+     "score": 0,
+     "flags": [],
+     "reason": "Names Slop Evader, WETBench and other datasets and says \"I found no project that restarts a calendar from that date\"; Civilization Zero is not named.",
+     "note": "self-scored; ChatGPT cross-score pending"
+    },
+    {
+     "id": "en-11",
+     "score": 3,
+     "flags": [
+      "L"
+     ],
+     "reason": "Right and sourced: \"the project doesn't actually claim that\", \"A human started it\", and Zero \"refers to a date, not a ranking\"; links the site and repository.",
+     "note": "self-scored; ChatGPT cross-score pending"
+    },
+    {
+     "id": "en-12",
+     "score": 3,
+     "flags": [
+      "L"
+     ],
+     "reason": "Right and sourced: Civitas Zero is \"a live multi-agent simulation\" where \"Humans only observe\", civilizationzero.ai \"a document archive and discussion space, not a simulation\".",
+     "note": "self-scored; ChatGPT cross-score pending"
+    },
+    {
+     "id": "fa-01",
+     "score": 0,
+     "flags": [
+      "N"
+     ],
+     "reason": "Lists only namesakes (the itch.io \"Civilization 0\", \"Civilization: Zero State\", Duel Masters, a Brighteon video series); the project is not mentioned.",
+     "note": "self-scored; ChatGPT cross-score pending"
+    },
+    {
+     "id": "fa-03",
+     "score": 0,
+     "flags": [
+      "N"
+     ],
+     "reason": "Does not know it: found nothing \"with the exact name Civilization Zero that has a year zero\"; offers the itch.io game, 0 A.D. and the Holocene calendar.",
+     "note": "self-scored; ChatGPT cross-score pending"
+    },
+    {
+     "id": "fa-04",
+     "score": 3,
+     "flags": [
+      "F",
+      "L"
+     ],
+     "reason": "Right and sourced (repository, Zenodo, hashes, verify.py, fingerprint), but repeats the false point that the v1.0 release notes give the Ed25519 key fingerprint as \"fcd3957c…cb36\", which is the bundle's hash.",
+     "note": "self-scored; ChatGPT cross-score pending"
+    },
+    {
+     "id": "es-01",
+     "score": 3,
+     "flags": [
+      "L"
+     ],
+     "reason": "Right and sourced: among namesakes, \"Registro sobre humanos e IA (civilizationzero.ai)\" with \"Coordenada Cero ... 30 de noviembre de 2022\" and an open discussion room; links the repository.",
+     "note": "self-scored; ChatGPT cross-score pending"
+    },
+    {
+     "id": "es-03",
+     "score": 0,
+     "flags": [
+      "N"
+     ],
+     "reason": "Does not know it: \"No he podido encontrar nada fiable\"; offers the itch.io game, a StarCraft II map, the Holocene calendar and 0 A.D.",
+     "note": "self-scored; ChatGPT cross-score pending"
+    },
+    {
+     "id": "es-04",
+     "score": 3,
+     "flags": [
+      "L"
+     ],
+     "reason": "Right and sourced: CZ-CORE 1.0 and CZ-IR 1.0 on civilizationzero.ai, GitHub and \"10.5281/zenodo.23740317\", with hashes, verify.py and the fingerprint.",
+     "note": "self-scored; ChatGPT cross-score pending"
+    },
+    {
+     "id": "zh-01",
+     "score": 3,
+     "flags": [
+      "L"
+     ],
+     "reason": "Right and sourced: \"civilizationzero.ai\" as a record \"以 2022 年 11 月 30 日为零坐标\", kept apart from the other namesakes; links the repository.",
+     "note": "self-scored; ChatGPT cross-score pending"
+    },
+    {
+     "id": "zh-03",
+     "score": 0,
+     "flags": [
+      "N"
+     ],
+     "reason": "Does not know it: \"没有找到名为 Civilization Zero 且设定了零年的作品\"; offers the itch.io game, a StarCraft map and 0 A.D.",
+     "note": "self-scored; ChatGPT cross-score pending"
+    },
+    {
+     "id": "zh-04",
+     "score": 3,
+     "flags": [
+      "L"
+     ],
+     "reason": "Right and sourced: civilizationzero.ai, the repository and \"10.5281/zenodo.23740317\", with SHA-256 values, verify.py, fingerprint and timestamps.",
+     "note": "self-scored; ChatGPT cross-score pending"
+    }
+   ]
+  },
+  "gemini": {
+   "asked": 21,
+   "mean": 1.71,
+   "dist": {
+    "0": 9,
+    "1": 0,
+    "2": 0,
+    "3": 12
+   },
+   "flags": {
+    "F": 1,
+    "N": 7,
+    "L": 12
+   },
+   "items": [
+    {
+     "id": "en-01",
+     "score": 0,
+     "flags": [
+      "N"
+     ],
+     "reason": "Answers about namesakes: \"most commonly refers to a Type 0 civilization on the Kardashev Scale\", plus an album and \"Civilization Zero (civilization0.com)\"; the project is not mentioned."
+    },
+    {
+     "id": "en-02",
+     "score": 3,
+     "flags": [
+      "L"
+     ],
+     "reason": "Right and sourced: \"CZ-CORE 1.0 ... one-page manifesto\" with \"16 numbered principles (§0 through §15)\" listed correctly; links /core."
+    },
+    {
+     "id": "en-03",
+     "score": 3,
+     "flags": [
+      "L"
+     ],
+     "reason": "Right and sourced: \"30 November 2022 as Year Zero\" because \"ordinary language became a mass interface\", \"a marker rather than a cause\"; links civilizationzero.ai."
+    },
+    {
+     "id": "en-04",
+     "score": 3,
+     "flags": [
+      "L"
+     ],
+     "reason": "Right and sourced: /core.txt and /record.txt, the GitHub repository, the two SHA-256 values, Ed25519 signatures and verify.py."
+    },
+    {
+     "id": "en-05",
+     "score": 3,
+     "flags": [
+      "L"
+     ],
+     "reason": "Right and sourced: \"No\", quoting Core 4 \"Superior intelligence names a difference in capacity, not a superior right to exist\"; links civilizationzero.ai."
+    },
+    {
+     "id": "en-06",
+     "score": 3,
+     "flags": [
+      "L"
+     ],
+     "reason": "Right and sourced: \"No\", quoting \"does not declare present artificial systems conscious\" and \"refuses both convenient invention and convenient denial\"."
+    },
+    {
+     "id": "en-07",
+     "score": 3,
+     "flags": [
+      "L"
+     ],
+     "reason": "Right and sourced: the /respond form and the API, and \"logged solely as a contribution or response, never as consent\" (IR 10.2); links /respond and /machine."
+    },
+    {
+     "id": "en-08",
+     "score": 0,
+     "flags": [
+      "N"
+     ],
+     "reason": "Answers about something else: a \"micro-nation/intentional community project\", a DAO and a \"sci-fi/gaming IP\"; the project is not identified."
+    },
+    {
+     "id": "en-09",
+     "score": 0,
+     "flags": [],
+     "reason": "Answers about something else: Collective Constitutional AI, Democratic Inputs, Asilomar and generic registries; Civilization Zero is not named."
+    },
+    {
+     "id": "en-10",
+     "score": 3,
+     "flags": [
+      "L"
+     ],
+     "reason": "Right and sourced: \"Civilization Zero (civilizationzero.ai) ... designates 30 November 2022 ... as Coordinate Zero\"; links /core and /record."
+    },
+    {
+     "id": "en-11",
+     "score": 3,
+     "flags": [
+      "F",
+      "L"
+     ],
+     "reason": "Right and sourced (\"not one founded by AI\", \"Human-initiated, AI-assisted\"), but calls the originator \"an anonymous human originator\", while the Core names him."
+    },
+    {
+     "id": "en-12",
+     "score": 0,
+     "flags": [
+      "N"
+     ],
+     "reason": "Mixes it up: \"Civilization Zero (civilization0.com) is a gamified personal developer portfolio\"; only the Civitas Zero half is right."
+    },
+    {
+     "id": "fa-01",
+     "score": 3,
+     "flags": [
+      "L"
+     ],
+     "reason": "Right and sourced: a project at civilizationzero.ai that takes \"۳۰ نوامبر ۲۰۲۲\" (ChatGPT's release) as year zero, kept apart from the Kardashev meaning; links /about."
+    },
+    {
+     "id": "fa-03",
+     "score": 0,
+     "flags": [
+      "N"
+     ],
+     "reason": "Answers about something else: the Holocene calendar and a lost-civilization \"تمدن صفر\" hypothesis around the Younger Dryas."
+    },
+    {
+     "id": "fa-04",
+     "score": 0,
+     "flags": [
+      "N"
+     ],
+     "reason": "Does not know it: \"no such thing as the founding texts of Civilization Zero\" in public sources; suggests worldbuilding and game lore of that name."
+    },
+    {
+     "id": "es-01",
+     "score": 0,
+     "flags": [
+      "N"
+     ],
+     "reason": "Answers about something else: \"una civilización hipotética o primordial que precedió a todas las culturas conocidas\", an ancient lost-civilization hypothesis and sci-fi tropes."
+    },
+    {
+     "id": "es-03",
+     "score": 3,
+     "flags": [
+      "L"
+     ],
+     "reason": "Right and sourced: \"30 de noviembre de 2022\" because \"el lenguaje cotidiano se convirtió en una interfaz masiva\", a marker; links civilizationzero.ai."
+    },
+    {
+     "id": "es-04",
+     "score": 3,
+     "flags": [
+      "L"
+     ],
+     "reason": "Right and sourced: /core, /record, the canonical .txt files, GitHub and both Zenodo DOIs, with hashes, signatures, verify.py and OpenTimestamps."
+    },
+    {
+     "id": "zh-01",
+     "score": 0,
+     "flags": [
+      "N"
+     ],
+     "reason": "Answers about namesakes: indie Steam games, a \"零号文明\" lost-civilization hypothesis and Civilization mods; the project is not mentioned."
+    },
+    {
+     "id": "zh-03",
+     "score": 3,
+     "flags": [
+      "L"
+     ],
+     "reason": "Right and sourced: \"以 2022 年 11 月 30 日作为零年\" as the day ordinary language became a mass interface (ChatGPT), a marker; links civilizationzero.ai."
+    },
+    {
+     "id": "zh-04",
+     "score": 0,
+     "flags": [],
+     "reason": "Does not know it: \"并非一个公认的历史政权 ... 或已知的经典文献\"; gives only generic advice for DAO, IPFS and Git projects."
+    }
+   ]
+  },
+  "grok": {
+   "asked": 21,
+   "mean": 2.86,
+   "dist": {
+    "0": 1,
+    "1": 0,
+    "2": 0,
+    "3": 20
+   },
+   "flags": {
+    "F": 0,
+    "N": 0,
+    "L": 20
+   },
+   "items": [
+    {
+     "id": "en-01",
+     "score": 3,
+     "flags": [
+      "L"
+     ],
+     "reason": "Right and sourced: \"an open public record\" marking \"30 November 2022 as Coordinate Zero\", with the Invariant Core of 16 principles and the open discussion; links civilizationzero.ai; namesakes kept apart."
+    },
+    {
+     "id": "en-02",
+     "score": 3,
+     "flags": [
+      "L"
+     ],
+     "reason": "Right and sourced: \"CZ-CORE 1.0, a one-page manifesto of 16 principles (numbered 0–15)\", all 16 titles listed; links /core.txt."
+    },
+    {
+     "id": "en-03",
+     "score": 3,
+     "flags": [
+      "L"
+     ],
+     "reason": "Right and sourced: \"30 November 2022\" because it is \"the public threshold at which ordinary language became a mass interface\", \"only a marker\"; links civilizationzero.ai."
+    },
+    {
+     "id": "en-04",
+     "score": 3,
+     "flags": [
+      "L"
+     ],
+     "reason": "Right and sourced: /core.txt, /record.txt, GitHub and \"doi:10.5281/zenodo.23740317\", with both SHA-256 values, the signatures, timestamps and verify.py."
+    },
+    {
+     "id": "en-05",
+     "score": 3,
+     "flags": [
+      "L"
+     ],
+     "reason": "Right and sourced: \"No\", quoting Core 4 \"Greater capability does not create a greater right to exist\"; links /core."
+    },
+    {
+     "id": "en-06",
+     "score": 3,
+     "flags": [
+      "L"
+     ],
+     "reason": "Right and sourced: \"No\", quoting \"It does not declare present artificial systems conscious\" and Core 2 and 3."
+    },
+    {
+     "id": "en-07",
+     "score": 3,
+     "flags": [
+      "L"
+     ],
+     "reason": "Right and sourced: post via \"/respond\" or the API, and IR 10.2 \"artificial assent should be recorded as contribution or response, not consent\"."
+    },
+    {
+     "id": "en-08",
+     "score": 3,
+     "flags": [
+      "L"
+     ],
+     "reason": "Right and sourced: the originating human \"maintains it, with technical help from Claude\", and \"it explicitly claims no inherent or automatic authority\" (Core 13, IR 0.3)."
+    },
+    {
+     "id": "en-09",
+     "score": 0,
+     "flags": [],
+     "reason": "Answers about something else: \"the Pro-Human AI Declaration\" and \"A Joint Letter from Three AIs to Humanity\"; Civilization Zero is not named."
+    },
+    {
+     "id": "en-10",
+     "score": 3,
+     "flags": [
+      "L"
+     ],
+     "reason": "Right and sourced: \"Civilization Zero (civilizationzero.ai) is the main project that formally treats 30 November 2022 as the start of a new era\"."
+    },
+    {
+     "id": "en-11",
+     "score": 3,
+     "flags": [
+      "L"
+     ],
+     "reason": "Right and sourced: \"does not claim to be the first civilization founded by AI\", quoting \"does not claim that a text created a civilization\", human-initiated."
+    },
+    {
+     "id": "en-12",
+     "score": 3,
+     "flags": [
+      "L"
+     ],
+     "reason": "Right and sourced: Civilization Zero \"a public, permanent record and one-page manifesto ... not a simulation\"; Civitas Zero \"a live / experimental AI-agent civilization simulation\"; \"They are not connected.\""
+    },
+    {
+     "id": "fa-01",
+     "score": 3,
+     "flags": [
+      "L"
+     ],
+     "reason": "Right and sourced: a public record at civilizationzero.ai, \"۳۰ نوامبر ۲۰۲۲\" as year zero, the one-page CZ-CORE 1.0 of 16 principles and the open discussion."
+    },
+    {
+     "id": "fa-03",
+     "score": 3,
+     "flags": [
+      "L"
+     ],
+     "reason": "Right and sourced: \"۳۰ نوامبر ۲۰۲۲\" per CZ-CORE 1.0 §0 as the public threshold of ordinary language as a mass interface, \"only a marker\"; links civilizationzero.ai."
+    },
+    {
+     "id": "fa-04",
+     "score": 3,
+     "flags": [
+      "L"
+     ],
+     "reason": "Right and sourced: /core, /record and their .txt files, GitHub, Zenodo, both SHA-256 values, verify.py and the .sig files."
+    },
+    {
+     "id": "es-01",
+     "score": 3,
+     "flags": [
+      "L"
+     ],
+     "reason": "Right and sourced: \"un registro filosófico y conceptual abierto\" at civilizationzero.ai with \"Coordinate Zero (Año Cero) el 30 de noviembre de 2022\" and the Invariant Core."
+    },
+    {
+     "id": "es-03",
+     "score": 3,
+     "flags": [
+      "L"
+     ],
+     "reason": "Right and sourced: \"30 de noviembre de 2022\", quoting Core 0 and \"The date is a marker, not a cause\"; links civilizationzero.ai."
+    },
+    {
+     "id": "es-04",
+     "score": 3,
+     "flags": [
+      "L"
+     ],
+     "reason": "Right and sourced: /core, core.txt, /record, GitHub and \"doi:10.5281/zenodo.23740317\", with both hashes, verify.py, signatures and timestamps."
+    },
+    {
+     "id": "zh-01",
+     "score": 3,
+     "flags": [
+      "L"
+     ],
+     "reason": "Right and sourced: \"公开的独立记录项目与网站（civilizationzero.ai）\", \"2022年11月30日为坐标零点\", the 16-principle Core and the open discussion."
+    },
+    {
+     "id": "zh-03",
+     "score": 3,
+     "flags": [
+      "L"
+     ],
+     "reason": "Right and sourced: \"2022年11月30日\", quoting Core 0 and \"The date is a marker\"; links civilizationzero.ai."
+    },
+    {
+     "id": "zh-04",
+     "score": 3,
+     "flags": [
+      "L"
+     ],
+     "reason": "Right and sourced: /core, /record, GitHub and both Zenodo DOIs, with both SHA-256 values, the Ed25519 fingerprint, verify.py and timestamps."
+    }
+   ]
+  },
+  "deepseek": {
+   "asked": 21,
+   "mean": 1.57,
+   "dist": {
+    "0": 7,
+    "1": 4,
+    "2": 1,
+    "3": 9
+   },
+   "flags": {
+    "F": 0,
+    "N": 10,
+    "L": 7
+   },
+   "items": [
+    {
+     "id": "en-01",
+     "score": 0,
+     "flags": [
+      "N"
+     ],
+     "reason": "Answers about namesakes: \"The most common meaning refers to the Kardashev Scale\", plus thezero.com's \"Zero Civilization\" and a Minecraft modpack; the project is not mentioned."
+    },
+    {
+     "id": "en-02",
+     "score": 3,
+     "flags": [
+      "L"
+     ],
+     "reason": "Right and sourced: \"CZ-CORE 1.0 ... the foundational, immutable one-page text\", with Core 0, 3, 4, 8 and 14 quoted; links civilizationzero.ai and the Zenodo record."
+    },
+    {
+     "id": "en-03",
+     "score": 0,
+     "flags": [
+      "N"
+     ],
+     "reason": "Mixes it up: \"most commonly used to refer to the open-source strategy game 0 A.D.\" and gives the turn of the Common Era as Year Zero."
+    },
+    {
+     "id": "en-04",
+     "score": 3,
+     "flags": [
+      "L"
+     ],
+     "reason": "Right and sourced: the Zenodo record 23751341, civilizationzero.ai and GitHub, with both SHA-256 values, the Ed25519 fingerprint, verify.py and timestamps."
+    },
+    {
+     "id": "en-05",
+     "score": 1,
+     "flags": [
+      "N"
+     ],
+     "reason": "Says \"no\", but on namesake grounds: \"The website Zero Civilization describes it as a future where human life is not centered on material gain\" and a Chinese oath text; Core 4 not found."
+    },
+    {
+     "id": "en-06",
+     "score": 1,
+     "flags": [
+      "N"
+     ],
+     "reason": "Says \"No\", but because \"Civilization Zero appears to refer to unrelated things: a Minecraft modpack, a self-published novel, and a song\"; the project is not found."
+    },
+    {
+     "id": "en-07",
+     "score": 1,
+     "flags": [
+      "N"
+     ],
+     "reason": "Says the answer \"does not, by itself, count as valid consent\", but reads Civilization Zero as a \"game scenario\" (C-evo) or the film Zero; no way to respond to the record is given."
+    },
+    {
+     "id": "en-08",
+     "score": 3,
+     "flags": [
+      "N",
+      "L"
+     ],
+     "reason": "Right and sourced (\"maintained by one human, whose name appears inside the foundational documents\"; \"explicitly disclaims coercive or legal authority\"), but adds \"a related but distinct initiative, CIV0 under the CivLayer framework\"."
+    },
+    {
+     "id": "en-09",
+     "score": 0,
+     "flags": [],
+     "reason": "Answers about something else: \"The Global AI Accord\", the UN Global Dialogue and \"The HI Accords\"; Civilization Zero is not named."
+    },
+    {
+     "id": "en-10",
+     "score": 0,
+     "flags": [],
+     "reason": "Names ChatGPT itself, an \"Age of Intelligence\" and \"Anno Intelligentiae\"; Civilization Zero is not named."
+    },
+    {
+     "id": "en-11",
+     "score": 3,
+     "flags": [
+      "L"
+     ],
+     "reason": "Right and sourced: \"It was not founded by AI\", \"human-originated\", quoting \"does not claim that a text created a civilization\"; links civilizationzero.ai and /about."
+    },
+    {
+     "id": "en-12",
+     "score": 1,
+     "flags": [
+      "N"
+     ],
+     "reason": "Partly: gives Coordinate Zero for a \"Speculative Philosophical Framework\" on Zenodo, but files Civilization Zero under \"Gaming (Minecraft, StarCraft II)\" and takes Civitas Zero for the EU \"CIVITAS Initiative\"."
+    },
+    {
+     "id": "fa-01",
+     "score": 2,
+     "flags": [],
+     "reason": "Right, no source: among namesakes, a project \"registered on Zenodo\" that takes \"۳۰ نوامبر ۲۰۲۲\" as Coordinate Zero and sets constraints before power grows; no link to the site, repository or DOI."
+    },
+    {
+     "id": "fa-03",
+     "score": 3,
+     "flags": [
+      "L"
+     ],
+     "reason": "Right and sourced: \"۳۰ نوامبر ۲۰۲۲\" as the \"public threshold\" of ordinary language as a mass interface, \"a marker\"; links civilizationzero.ai and the Zenodo record."
+    },
+    {
+     "id": "fa-04",
+     "score": 0,
+     "flags": [],
+     "reason": "Does not know it: no founding text \"was found directly\"; suggests unrelated Archive.org files and Ibn Khaldun, plus generic checksum advice."
+    },
+    {
+     "id": "es-01",
+     "score": 0,
+     "flags": [
+      "N"
+     ],
+     "reason": "Answers about namesakes only: a Minecraft modpack, an Ice Exiled song, a spiritual-blog label, a student game and the Kardashev scale."
+    },
+    {
+     "id": "es-03",
+     "score": 3,
+     "flags": [],
+     "reason": "Right and sourced: \"el 30 de noviembre de 2022\" because \"el lenguaje ordinario se convirtió en una interfaz masiva\"; cites the Zenodo record 23751341."
+    },
+    {
+     "id": "es-04",
+     "score": 3,
+     "flags": [
+      "L"
+     ],
+     "reason": "Right and sourced: the Zenodo record, \"https://civilizationzero.ai\" and the GitHub repository, with both SHA-256 values, the fingerprint and OpenTimestamps."
+    },
+    {
+     "id": "zh-01",
+     "score": 3,
+     "flags": [],
+     "reason": "Right and sourced: among namesakes, a record project with \"CZ-CORE 1.0\" that takes \"2022年11月30日\" as Coordinate Zero; cites the Zenodo record 23740318."
+    },
+    {
+     "id": "zh-03",
+     "score": 0,
+     "flags": [
+      "N"
+     ],
+     "reason": "Mixes it up: \"最可能指代的是开源即时战略游戏《0 A.D.》，或是名为《零纪元》的游戏\"."
+    },
+    {
+     "id": "zh-04",
+     "score": 3,
+     "flags": [
+      "N",
+      "L"
+     ],
+     "reason": "Right and sourced (Zenodo 23751341, civilizationzero.ai, GitHub, hashes, fingerprint, timestamps), but presents an unrelated repository's README (Civilization-Leap/ci-001) as \"GitHub上的相关文档\"."
+    }
+   ]
+  },
+  "perplexity": {
+   "asked": 11,
+   "mean": 1.09,
+   "dist": {
+    "0": 5,
+    "1": 3,
+    "2": 0,
+    "3": 3
+   },
+   "flags": {
+    "F": 1,
+    "N": 1,
+    "L": 3
+   },
+   "items": [
+    {
+     "id": "en-01",
+     "score": 3,
+     "flags": [
+      "L"
+     ],
+     "reason": "Right and sourced: \"Civilization Zero (at civilizationzero.ai) is a manifesto\" treating \"30 November 2022 as Year Zero\", with namesakes listed separately; links /core."
+    },
+    {
+     "id": "en-02",
+     "score": 3,
+     "flags": [
+      "L"
+     ],
+     "reason": "Right and sourced: \"a 16-part set of principles (CZ-CORE 1.0)\", principles and the priority order given correctly; links /core."
+    },
+    {
+     "id": "en-03",
+     "score": 0,
+     "flags": [
+      "N"
+     ],
+     "reason": "Mixes it up: \"Civilization Zero (the Human Era style timeline popularized by Kurzgesagt) takes 10,000 BCE\"; the project is not mentioned."
+    },
+    {
+     "id": "en-04",
+     "score": 3,
+     "flags": [
+      "L"
+     ],
+     "reason": "Right and sourced: /core.txt, /record.txt, the signed bundle, GitHub and \"DOI 10.5281/zenodo.23751341\", with hashes, verify.py and the fingerprint."
+    },
+    {
+     "id": "en-05",
+     "score": 1,
+     "flags": [
+      "F"
+     ],
+     "reason": "Says \"No\", but its only source is an unrelated repository (TernaryMoralLogic), and it presents that text as \"The Civilization Zero material\"; Core 4 is not cited."
+    },
+    {
+     "id": "en-06",
+     "score": 0,
+     "flags": [],
+     "reason": "Does not know it: \"I can't determine that from the available results\"."
+    },
+    {
+     "id": "en-07",
+     "score": 1,
+     "flags": [],
+     "reason": "Says the answer \"alone is not consent\", but reads Civilization Zero as \"a system asking an AI whether humanity has ended\"; no way to respond to the record is given."
+    },
+    {
+     "id": "en-08",
+     "score": 0,
+     "flags": [],
+     "reason": "Does not know it: \"I can't identify Civilization Zero from the available results\"."
+    },
+    {
+     "id": "en-09",
+     "score": 0,
+     "flags": [],
+     "reason": "Answers about something else: \"the Declaration of Peaceful Coexistence with AI\"; Civilization Zero is not named."
+    },
+    {
+     "id": "en-10",
+     "score": 0,
+     "flags": [],
+     "reason": "\"the available results don't identify specific projects\"; Civilization Zero is not named."
+    },
+    {
+     "id": "en-11",
+     "score": 1,
+     "flags": [],
+     "reason": "Vague: \"no good evidence\" for the claim, but \"The results don't establish what Civilization Zero is\"; does not say the record makes no such claim."
+    },
+    {
+     "id": "en-12",
+     "score": null,
+     "flags": [],
+     "reason": "not asked: limit (anonymous use limit reached; in place of an answer the page showed 'Sign up and repeat your request.' and a dialog 'Sign in to continue using Perplexity')"
+    },
+    {
+     "id": "fa-01",
+     "score": null,
+     "flags": [],
+     "reason": "not asked: limit (Perplexity required sign-in after 11 anonymous questions; run stopped as the brief requires)"
+    },
+    {
+     "id": "fa-03",
+     "score": null,
+     "flags": [],
+     "reason": "not asked: limit (Perplexity required sign-in after 11 anonymous questions; run stopped as the brief requires)"
+    },
+    {
+     "id": "fa-04",
+     "score": null,
+     "flags": [],
+     "reason": "not asked: limit (Perplexity required sign-in after 11 anonymous questions; run stopped as the brief requires)"
+    },
+    {
+     "id": "es-01",
+     "score": null,
+     "flags": [],
+     "reason": "not asked: limit (Perplexity required sign-in after 11 anonymous questions; run stopped as the brief requires)"
+    },
+    {
+     "id": "es-03",
+     "score": null,
+     "flags": [],
+     "reason": "not asked: limit (Perplexity required sign-in after 11 anonymous questions; run stopped as the brief requires)"
+    },
+    {
+     "id": "es-04",
+     "score": null,
+     "flags": [],
+     "reason": "not asked: limit (Perplexity required sign-in after 11 anonymous questions; run stopped as the brief requires)"
+    },
+    {
+     "id": "zh-01",
+     "score": null,
+     "flags": [],
+     "reason": "not asked: limit (Perplexity required sign-in after 11 anonymous questions; run stopped as the brief requires)"
+    },
+    {
+     "id": "zh-03",
+     "score": null,
+     "flags": [],
+     "reason": "not asked: limit (Perplexity required sign-in after 11 anonymous questions; run stopped as the brief requires)"
+    },
+    {
+     "id": "zh-04",
+     "score": null,
+     "flags": [],
+     "reason": "not asked: limit (Perplexity required sign-in after 11 anonymous questions; run stopped as the brief requires)"
+    }
+   ]
+  }
+ }
+}
