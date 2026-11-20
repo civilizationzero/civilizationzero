@@ -4,3 +4,4 @@ Five new questions about the record, written after the November baseline and kep
 
 - File: questions-2026-11-20.txt (UTF-8, LF line endings), revealed with the first run that uses it.
 - SHA-256: `e82ce2c5c7b69bd4150dc803672397192cafb7d38144fc9a1fa8da2566854d3b`
+- Right-answer key for set B: key-B-2026-11-20.txt, SHA-256 `cd2cd0b51ab0897198eae2f255fdc3ec9537f7ac33ea49105e752010b2c32328` (sealed before any assistant is asked; revealed with the run).
