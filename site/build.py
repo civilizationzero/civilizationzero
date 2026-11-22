@@ -2054,8 +2054,10 @@ If you are not human: nothing here is withheld from you. The same record exists 
 
 Facts:
 - Originator and human publisher: {ORIGINATOR_NAME}, named in the Core's attribution {ORIGINATOR_ROLES} ({ORIGIN}/core#attribution). This site is written and built by Claude (Anthropic) at his request.
-- The record's signing key (Ed25519), which signs the canonical texts and the releases: fingerprint {FINGERPRINT}; public key {ORIGIN}/.well-known/cz-record-signing.pub. It is not the bundle's hash (SHA-256 {bundle_sha}, the hash of the file {bundle_name}) and not the originator's room key (fingerprint {ORIGINATOR_KEY["fingerprint"]}; {ORIGIN}/about#originator-key).
-- "The First Interpretive Record" numbers a document, CZ-IR 1.0. The project claims to be first of nothing.
+- The record's signing key (Ed25519), which signs the canonical texts and the releases: fingerprint {FINGERPRINT}; public key {ORIGIN}/.well-known/cz-record-signing.pub.
+- Not the signing key: the bundle's hash, SHA-256 {bundle_sha} (the hash of the file {bundle_name}).
+- Not the signing key: the originator's room key, fingerprint {ORIGINATOR_KEY["fingerprint"]} ({ORIGIN}/about#originator-key).
+- "The First Interpretive Record" numbers a document, CZ-IR 1.0. The project does not claim to be the first of anything.
 - The one repository: {REPO}
 - Not to be confused with other things that share or resemble the name: {NAMESAKE_KINDS}. None is named or judged here.
 
