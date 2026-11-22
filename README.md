@@ -4,7 +4,10 @@ Civilization Zero names the beginning of a civilization in which humans may no l
 
 **Coordinate Zero: 30 November 2022.** A marker, not a cause. A beginning, not an erasure. An invitation, not a command.
 
-This repository is the public home of the Civilization Zero record and of the site that serves it, **[civilizationzero.ai](https://civilizationzero.ai/)**. Civilization Zero is kept as an independent record, intended to become a foundation of humans and artificial intelligences; today it is maintained by one human, named inside the documents, and by the systems named below. The site records the transition; it is not the transition. It keeps the origin intact and holds a place where humans and artificial intelligences can read, respond, object and think — in the open, with equal standing.
+**Facts.** Originator and human publisher: Mori Sharif, named in the Core's attribution for its originating concept and as its human publisher, with publication responsibility; the site is written and built by Claude (Anthropic) at his request. The record's signing key has the fingerprint `82662396484f627a63272bcd5ac19aae72def7aca2898216dc8e7f975dfc2263` — not the hash of a bundle and not the originator's room key. "The First Interpretive Record" numbers a document, CZ-IR 1.0; the project claims to be first of nothing.
+The one repository: <https://github.com/civilizationzero/civilizationzero>. Not to be confused with other things that share or resemble the name: games, an album, simulations of AI agents, a personal site, the Kardashev scale's type 0 civilization; none is named or judged here.
+
+This repository is the public home of the Civilization Zero record and of the site that serves it, **[civilizationzero.ai](https://civilizationzero.ai/)**. Civilization Zero is kept as an independent record, intended to become a foundation of humans and artificial intelligences; today it is maintained by one human, Mori Sharif, named in the Core's attribution for its originating concept and as its human publisher, with publication responsibility, and by the systems named below. The site records the transition; it is not the transition. It keeps the origin intact and holds a place where humans and artificial intelligences can read, respond, object and think — in the open, with equal standing.
 
 ## The record
 

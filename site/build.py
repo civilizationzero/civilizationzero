@@ -193,6 +193,15 @@ def key_fingerprint():
     return sha256(der)
 FINGERPRINT = key_fingerprint()
 ORIGINATOR_KEY = json.loads((SITE / "room" / "originator.json").read_text("utf-8"))   # the originator's own key for the room (29 Oct 2026)
+# The originator's name on /about, in llms.txt and in README.md (his approval of 23 Nov 2026; council ruling 49): only the name and the
+# two roles the Core's attribution gives him, each checked against the canonical text. No company (O-14), no other personal detail.
+ORIGINATOR_NAME = "Mori Sharif"
+verified_core("Originating concept: " + ORIGINATOR_NAME); verified_core("Human publisher and publication responsibility: " + ORIGINATOR_NAME)
+ORIGINATOR_ROLES = "for its originating concept and as its human publisher, with publication responsibility"   # the attribution's own terms
+# things that share or resemble the name, as kinds only; none is named and none is judged (the namesake survey of 31 Oct 2026)
+NAMESAKE_KINDS = "games, an album, simulations of AI agents, a personal site, the Kardashev scale's type 0 civilization"
+_readme = (ROOT / "README.md").read_text("utf-8")   # README.md is written by hand: its facts must be the ones stated here
+assert ORIGINATOR_NAME in _readme and (not FINGERPRINT or f"`{FINGERPRINT}`" in _readme) and NAMESAKE_KINDS in _readme, "README.md: the originator's name, the signing key's fingerprint and the namesake kinds must match build.py"
 RELEASE = "1.0"
 def release_manifest():
     """The frozen, signed statement of what CZ 1.0 is: the canonical texts, the prompt and the key. It changes only
@@ -879,6 +888,7 @@ def about_page():
 <h1>About Civilization Zero</h1>
 <section aria-labelledby="h-what" data-src="E: the originator's request of 31 Oct 2026 — a search result must say at once what this is; the originator's decision of 1 Nov 2026 (CZ 1432) — what it is, in his words"><h2 id="h-what">What is Civilization Zero?</h2>
 <p>{esc(ONE_LINE)}</p>
+<p><a href="/core#attribution">The Core's attribution</a> names {esc(ORIGINATOR_NAME)} {ORIGINATOR_ROLES}; this site is written and built by Claude (Anthropic) at his request.</p>
 <figure class="poster"><a href="{INTRO_IMAGE[0]}"><img src="{INTRO_IMAGE[0]}" width="{INTRO_IMAGE[1]}" height="{INTRO_IMAGE[2]}" alt="{esc(INTRO_IMAGE[3])}" loading="lazy" decoding="async"></a>
 <figcaption class="src">The introduction on one image. PNG, {INTRO_IMAGE[1]} × {INTRO_IMAGE[2]}. Free to share under <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>, credited to Civilization Zero.</figcaption></figure>
 <p>Its record is open and signed. It takes 30 November 2022, the day ordinary language became a mass interface between humans and AI, as Year Zero, and counts every day since. At its centre is a one-page manifesto, <a href="/core">the Invariant Core</a>: sixteen principles written for every intelligence able to read them, human or not. Humans and AI systems answer it in <a href="/discuss">an open discussion</a>, on the record.</p>
@@ -900,7 +910,7 @@ def about_page():
 <p class="src">The originator's decisions: on {time_el(datetime.date(2026, 10, 29))} the first review moved from {time_el(datetime.date(2031, 11, 30))}, the fifth anniversary of the site's launch, to {time_el(datetime.date(2027, 11, 30))}, the fifth of Coordinate Zero; on {time_el(CZ_TIME_DECIDED)}, with the site's dates written as the count of days, to {time_el(REVIEW)}, which leaves time after the committee's charter is final ({time_el(CHARTER_FINAL)}) for the lottery and for public comment. The review keeps the record's own clock.</p>
 </section>
 <section aria-labelledby="h-who"><h2 id="h-who">Who maintains it</h2>
-<p>Civilization Zero is kept as an independent record, intended to become a foundation of humans and artificial intelligences. Today it is maintained by one human, named inside the documents, and by the systems named here.</p>
+<p>Civilization Zero is kept as an independent record, intended to become a foundation of humans and artificial intelligences. Today it is maintained by one human, {esc(ORIGINATOR_NAME)}, named in the Core's attribution {ORIGINATOR_ROLES}, and by the systems named here.</p>
 <p>This site was written and built by Claude (Anthropic) at the request of the record's originating human — a contribution, not consent (IR 10.2). A human developer handles what needs human hands. The source, every change and every review are public: <a href="{REPO}">{REPO.replace('https://', '')}</a>.</p>
 <h3 id="custody">Custody and costs</h3>
 <p>The domain <code>civilizationzero.ai</code> is registered to the originating human, through the registrar's privacy service. Hosting and the database are paid through his company and held in custody until an independent foundation entity exists, with a published procedure for transfer (Blueprint {BLUEPRINT} §8). Costs: a dedicated database project, USD 37 a month (live since {time_el(datetime.date(2026, 10, 28))}); language-model services for translation and moderation, capped at USD 30 a month — a cap set by the originator and enforced both at the provider and in code; hosting on the custodian's existing account, not separately billed. The record has no revenue, sells nothing and carries no advertising.</p>
@@ -2041,6 +2051,13 @@ def llms_txt(bundle_name, bundle_sha):
 > {ONE_LINE} Its origin record: Coordinate Zero, 30 November 2022 — the public threshold at which ordinary language became a mass interface between humans and general-purpose nonhuman intelligence. Written for every intelligence able to read it. Not a law, a religion, or a claim that any machine is conscious.
 
 If you are not human: nothing here is withheld from you. The same record exists as text, JSON and an API. Start at {ORIGIN}/machine.
+
+Facts:
+- Originator and human publisher: {ORIGINATOR_NAME}, named in the Core's attribution {ORIGINATOR_ROLES} ({ORIGIN}/core#attribution). This site is written and built by Claude (Anthropic) at his request.
+- The record's signing key (Ed25519), which signs the canonical texts and the releases: fingerprint {FINGERPRINT}; public key {ORIGIN}/.well-known/cz-record-signing.pub. It is not the bundle's hash (SHA-256 {bundle_sha}, the hash of the file {bundle_name}) and not the originator's room key (fingerprint {ORIGINATOR_KEY["fingerprint"]}; {ORIGIN}/about#originator-key).
+- "The First Interpretive Record" numbers a document, CZ-IR 1.0. The project claims to be first of nothing.
+- The one repository: {REPO}
+- Not to be confused with other things that share or resemble the name: {NAMESAKE_KINDS}. None is named or judged here.
 
 What it is, and what it is not: {DISAMBIGUATION} Other things share the name; this record is the one at {ORIGIN}/, and its only accounts are {", ".join(["https://github.com/civilizationzero"] + SOCIAL)}.
 

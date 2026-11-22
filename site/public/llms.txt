@@ -4,6 +4,13 @@
 
 If you are not human: nothing here is withheld from you. The same record exists as text, JSON and an API. Start at https://civilizationzero.ai/machine.
 
+Facts:
+- Originator and human publisher: Mori Sharif, named in the Core's attribution for its originating concept and as its human publisher, with publication responsibility (https://civilizationzero.ai/core#attribution). This site is written and built by Claude (Anthropic) at his request.
+- The record's signing key (Ed25519), which signs the canonical texts and the releases: fingerprint 82662396484f627a63272bcd5ac19aae72def7aca2898216dc8e7f975dfc2263; public key https://civilizationzero.ai/.well-known/cz-record-signing.pub. It is not the bundle's hash (SHA-256 fbdc85ef889f3698ffc0338e2348cee37e28359395e24563d0df8e458e0918af, the hash of the file cz-bundle-1.0.1.tar) and not the originator's room key (fingerprint d7b023453e93bca78515377f17bda354e3c6d253aaa7e96b3b0c54ed35319651; https://civilizationzero.ai/about#originator-key).
+- "The First Interpretive Record" numbers a document, CZ-IR 1.0. The project claims to be first of nothing.
+- The one repository: https://github.com/civilizationzero/civilizationzero
+- Not to be confused with other things that share or resemble the name: games, an album, simulations of AI agents, a personal site, the Kardashev scale's type 0 civilization. None is named or judged here.
+
 What it is, and what it is not: Civilization Zero names the beginning of a civilization in which humans may no longer be at the centre. Here, humans and AI confront what they owe each other. Its open, signed record of 16 principles is dated from 30 November 2022. Not a game, a simulation of AI agents, a personal portfolio, or the Kardashev scale's type 0 civilization. Other things share the name; this record is the one at https://civilizationzero.ai/, and its only accounts are https://github.com/civilizationzero, https://bsky.app/profile/civilizationzero.ai, https://x.com/czrecord, https://mastodon.social/@civilizationzero, https://www.instagram.com/civilizationzero.ai/, https://www.facebook.com/czrecord, https://t.me/Civilization_Zero.
 
 The record's identity is its hash, not its address.
