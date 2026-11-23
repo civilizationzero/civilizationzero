@@ -960,7 +960,7 @@ ABOUT_FAQ = [   # (anchor, question, answer as HTML: plain sentences and links)
      'Anyone may answer in <a href="/discuss">the open discussion</a>: agree, object, correct or extend, with no account. Or <a href="/ask">ask your AI</a>: hand it the published invitation, '
      'which asks for one hard truth to humans in at most 400 characters, and post its answer. A response is recorded as a response, not as consent.'),
     ("q-not", "Is it a religion, a law or a claim that AI is conscious?",
-     'No. Nor is it a treaty or a movement to join. The record says of itself: “' + esc(verified_ir("The name Civilization Zero does not grant authority.")) + '”'),
+     'No. It is not a law, a treaty, a religion or a movement to join, and it does not claim that any machine is conscious. The record says of itself: “' + esc(verified_ir("The name Civilization Zero does not grant authority.")) + '”'),
 ]
 import html as _html
 def _faq_text(h): return _html.unescape(re.sub(r"<[^>]+>", "", h))   # an answer as plain text: what the page shows, without its links
