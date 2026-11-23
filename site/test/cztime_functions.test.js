@@ -1,5 +1,5 @@
-// CZ time: api/page.js, api/calendar.js and the room's dates, called directly (no network). Every static page gets today's date at
-// the top with links to the two converters (no form there); /calendar converts dates in each calendar's own script, and times through
+// CZ time: api/page.js, api/calendar.js and the room's dates, called directly (no network). Every static page gets today's day in
+// its head, in the first page's words (rc-12: no converter link and no form there); /calendar converts dates in each calendar's own script, and times through
 // time zones; what is typed is echoed escaped; the JSON API; dates are the day count. Run: node site/test/cztime_functions.test.js
 process.env.CZ_SALT = "x".repeat(40);
 const SITE = require("path").resolve(__dirname, "..");
@@ -22,11 +22,11 @@ const ok = (c, m) => { if (c) pass++; else { fail++; console.log("FAIL", m); } }
   for (const p of ["core", "core.fa", "core.ar", "core.zh-Hans", "record", "objections", "ask", "machine", "about", "archive", "calendar"]) {
     const r = await call(page, `/api/page?p=${p}`);
     ok(r.status === 200, p + " status " + r.status);
-    const bar = (/<aside class="cz-now"[\s\S]*?<\/aside>/.exec(r.body) || [""])[0];
-    ok(bar.includes(`<a class="cz-stamp" href="/calendar" aria-describedby="cz-why"><time datetime="${CZ.isoDate(...CZ.toGregorian(today))}">CZ ${today}</time></a>`), p + " live date");
-    ok(!bar.includes("<form") && bar.includes('href="/calendar#convert"') && bar.includes('href="/calendar#time"')
-       && bar.includes(`<p class="cz-why" id="cz-why">Day ${today} since Coordinate Zero, <span class="nw">30 November 2022</span></p>`) && !/\b[Yy]ears?\b|UTC/.test(text(bar)), p + " the bar: links, the reason (the day count only), no form");
-    ok(!r.body.includes("__CZ_") && !r.body.includes('<a class="cz-stamp" href="https://civilizationzero.ai/calendar">CZ time</a>'), p + " placeholders or fallback left");
+    const bar = (/<div class="cz-now"[\s\S]*?<\/div>/.exec(r.body) || [""])[0];
+    ok(bar === `<div class="cz-now" data-nosnippet><a href="/calendar">CZ calendar</a> · <time class="d" datetime="${CZ.isoDate(...CZ.toGregorian(today))}">Day <data value="${today}">${today.toLocaleString("en-US")}</data></time></div>`, p + " live day, in the first page's words");
+    ok(!bar.includes("<form") && !bar.includes("calendar#") && !/\b[Yy]ears?\b|UTC/.test(text(bar)) && r.body.includes(`</a>${bar}</div><nav class="site" aria-label="Site">`)
+       && (r.body.match(/<div class="cz-now"/g) || []).length === 1, p + " the head's day: once, at the end of the head's first row, the day count only, no form");
+    ok(!r.body.includes("__CZ_") && !r.body.includes('<a href="https://civilizationzero.ai/calendar">CZ calendar</a>'), p + " placeholders or fallback left");
     ok(/s-maxage=\d+/.test(r.headers["cache-control"]), p + " cache");
     ok(!/CZ[+−]\d+:\d{3}/.test(text(r.body).replace(/year and day[^.]*\./gi, "")) || p === "calendar", p + " no year:day stamp printed as a date");
     if (p === "calendar") ok(r.body.includes('id="cal-d"') && r.body.includes('id="tim-d"') && r.body.includes('id="tim-z"') && r.body.includes("Today is"), "calendar: both converters and today");

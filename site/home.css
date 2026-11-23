@@ -228,9 +228,10 @@ footer .src{font-size:1em}
 .foot a{display:inline-block;padding-block:var(--e-8)}
 
 /* 10 MOTION. E: one movement as the page opens (the figure turns from the day before to today); after that nothing moves unless the
-   reader moves it: the figure by a day at a press, the line between the readings at a door; between pages the site's own fade. H: none of it for a reader who asks for less motion (2.3.3). */
+   reader moves it: the figure by a day at a press, the line between the readings at a door; between pages the site's own fade, and the mark travels to its place on the next page. H: none of it for a reader who asks for less motion (2.3.3). */
 @media(prefers-reduced-motion:no-preference){
 @view-transition{navigation:auto}
+.name svg{view-transition-name:cz-mark}
 .page{transition:--open .8409s cubic-bezier(.6,0,.2,1)}
 .col{transition:visibility 0s .8409s}
 .page:not(:has(#human:target)) .col.n,.page:not(:has(#not-human:target)) .col.h{transition-delay:0s}

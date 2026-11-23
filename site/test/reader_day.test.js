@@ -18,7 +18,8 @@ function call(handler, url, headers = {}, method = "GET") {
   });
 }
 const Z = (z) => ({ "x-vercel-ip-timezone": z });
-const barDay = (html) => Number((/<a class="cz-stamp" href="\/calendar" aria-describedby="cz-why"><time datetime="[^"]+">CZ (−?\d+)<\/time><\/a>/.exec(html) || [])[1]?.replace("−", "-"));
+// the day in the head of every page but the first (rc-12): the first page's words, the count as a number in <data value>
+const barDay = (html) => Number((/<div class="cz-now" data-nosnippet><a href="\/calendar">CZ calendar<\/a> · <time class="d" datetime="[^"]+">Day <data value="(-?\d+)">/.exec(html) || [])[1]);
 const sMax = (cc) => Number((/s-maxage=(\d+)/.exec(String(cc)) || [])[1]);
 // two zones 25 hours apart: their dates are never the same
 const EAST = "Pacific/Kiritimati", WEST = "Pacific/Pago_Pago";
@@ -82,7 +83,7 @@ test("static pages: the bar shows the reader's date, Vary names the zone, the ca
     assert.equal(barDay(w.body), CZ.todayIn(now, WEST), `${p}: west`);
     assert.equal(barDay(u.body), CZ.dayOf(now), `${p}: no zone, the UTC date`);
     assert.notEqual(barDay(e.body), barDay(w.body), `${p}: 25 hours apart, never the same date`);
-    assert.ok(e.body.includes(`Day ${CZ.todayIn(now, EAST)} since Coordinate Zero`), `${p}: the line under the date`);
+    assert.ok(e.body.includes(`">Day <data value="${CZ.todayIn(now, EAST)}">${CZ.todayIn(now, EAST).toLocaleString("en-US")}</data></time></div>`), `${p}: the day as the first page writes it, "Day 1,455"`);
     for (const r of [e, w, u]) assert.equal(r.headers.vary, "Accept, X-Vercel-IP-Timezone", `${p}: vary`);
     assert.ok(sMax(e.headers["cache-control"]) <= CZ.secondsToNextLocalDay(now, EAST) && sMax(w.headers["cache-control"]) <= CZ.secondsToNextLocalDay(now, WEST), `${p}: cache to local midnight`);
   }

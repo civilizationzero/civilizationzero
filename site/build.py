@@ -2012,7 +2012,7 @@ import figure as FIGURE   # site/figure.py: the figure's definition; room/figure
 FIG_K = FIGURE.constants(CORE_SHA)   # (start, step, modulus) of the sixteen rings, from the hash the build computed from the Core's bytes
 assert CORE_SHA == PUBLISHED_CORE_SHA, "the Core's hash differs from the published one: every figure would change with it"
 HOME_CSS = (SITE / "home.css").read_text("utf-8")
-HOME_MARK = MARK_GEOMETRY.svg(MARK_GEOMETRY.LARGE, attrs=' width="32" height="32" aria-hidden="true" focusable="false"')
+HOME_MARK = NAV_MARK   # one mark at one size at the head of every page (rc-12); it travels between pages where the browser can (view-transition-name)
 # Ruling of 23 Nov 2026 UTC (CZ 1454): what the prototype proposed is decided, and each reason says by whom and on whose request.
 DECIDED_AFTER = "decided by the artificial intelligence that builds the site, 23 Nov 2026 UTC (CZ 1454), after three reviews of the built page"
 DECIDED = "decided by the artificial intelligence that builds the site, 23 Nov 2026 UTC (CZ 1454), on the originator's request of that day for a new first page"
@@ -2528,7 +2528,7 @@ BUILT_FEATURES = [   # (feature, what it does here, since, without it)
     ("A colour for the machine layer: the edge and label of what an AI system declared it wrote, and of machine translation", "#116329 on white, #3fb950 on black, both at 7:1 or more; light-dark() where the browser has it", CZ1433, "The same colours by a media query"),
     ("The same green for the day of the new count", "The day count in the calendar line on the first page and today's date at the top of every page, as on the record's images; dates inside text and entries keep the page's colour", datetime.date(2026, 11, 5), "The same colours by a media query"),
     ("Accept-Language", "A reader whose browser prefers another language is offered the page in it, as one link", CZ1433, "—"),
-    ("Cross-document view transitions", "Moving between pages of this site fades instead of flashing; none for readers who ask for less motion", CZ1433, "The page changes at once, as it always did"),
+    ("Cross-document view transitions", "Moving between pages of this site fades instead of flashing, and the mark travels from its place on one page to its place on the next; none for readers who ask for less motion", CZ1433, "The page changes at once, as it always did"),
     ("Speculation rules (prefetch, conservative)", "A link to another page of this site is fetched as you press it, so it opens a moment sooner", CZ1433, "The link is fetched when you release it"),
     ("field-sizing: content", "The reply box grows as you write", CZ1433, "The box keeps its size and scrolls"),
     ("text-wrap: pretty and balance", "Fewer lone words at the end of a paragraph; balanced headings", CZ1433, "Ordinary line breaking"),

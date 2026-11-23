@@ -274,9 +274,10 @@ MARK_GEOMETRY = _ilu.module_from_spec(_mark_spec); _mark_spec.loader.exec_module
 MARK_ALT = ("CZ, the mark of Civilization Zero: a zero in which C and Z share their strokes, its slash the Z's diagonal, "
             "left open on the right; the opening is the place left open for the future")
 MARK = MARK_GEOMETRY.svg(MARK_GEOMETRY.LARGE, attrs=' width="36" height="36" aria-hidden="true" focusable="false"')
-# the mark at the head of every page (the originator's request of 30 Oct 2026, CZ 1430, "the logo on every page"): in the navigation's link to
-# the first page, beside the name; decorative there too (the link's name is the text beside it)
-NAV_MARK = MARK_GEOMETRY.svg(MARK_GEOMETRY.LARGE, attrs=' width="24" height="24" aria-hidden="true" focusable="false"')
+# the mark at the head of every page (the originator's request of 30 Oct 2026, CZ 1430, "the logo on every page"): in the head's link to
+# the first page, beside the name, at the size it has on the first page (rc-12: one head); decorative there too (the link's name is the
+# text beside it)
+NAV_MARK = MARK_GEOMETRY.svg(MARK_GEOMETRY.LARGE, attrs=' width="32" height="32" aria-hidden="true" focusable="false"')
 
 # the favicon: the small drawing, every edge on a whole pixel at 16 and 32 px; dark or light with the reader's browser
 FAVICON = MARK_GEOMETRY.svg(MARK_GEOMETRY.SMALL, stroke="#111",
@@ -291,163 +292,241 @@ ICON_LINKS = ('<link rel="icon" href="/favicon.ico" sizes="48x48"><link rel="ico
               '<link rel="icon" href="/favicon.svg" type="image/svg+xml" sizes="any"><link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180">'
               '<link rel="manifest" href="/site.webmanifest">')
 
+# The shared stylesheet: every page but the first carries it (the first carries site/home.css). One module and one ratio for both: the
+# tokens are read from home.css (its block 1) and written at the head of this sheet, so that neither can drift from the other.
+_HOME_CSS = (SITE / "home.css").read_text("utf-8")
+_tok = re.search(r"^(:root\{.*?\})\n(@media\(prefers-color-scheme:dark\)\{:root\{[^}]*\}\})$", _HOME_CSS, re.S | re.M)
+assert _tok and _tok.group(1).count("}") == 1, "home.css: block 1 (the tokens) is :root{…} and its dark rule"
+TOKENS = _tok.group(1) + "\n" + _tok.group(2)
 CSS = """
-/* H + C: no typeface is shipped; the generic family is chosen (the smallest choice available) so the reader's device renders every script. Nothing to rot. */
-html{font-family:system-ui,sans-serif;font-size:100%;line-height:1.5}
-/* H: two palettes, each at contrast >= 7:1 (WCAG 2.2 AAA, 1.4.6); which one shows follows the reader's preference. */
-:root{color-scheme:light dark;--fg:#111;--bg:#fff;--mute:#555;--rule:#bbb}
-@media(prefers-color-scheme:dark){:root{--fg:#eee;--bg:#101010;--mute:#aaa;--rule:#444}}
-body{margin:0;color:var(--fg);background:var(--bg)}
-/* H: a measure of 45–75 characters for sustained reading (a convention, stated as one): 38rem, about 75 characters of a system font. One width in rem
-   for every column (the date bar, the navigation, the header, the text, the footer), so that they share one left edge whatever their font size. Gutter 1rem. */
-main,header,footer,nav.site,aside.cz-now,aside.tr-status{max-width:38rem;margin:0 auto;padding:0 1rem}
-/* H + M: links are marked by underline, not by colour alone (WCAG 2.2, 1.4.1). */
-a{color:inherit;text-decoration:underline;text-underline-offset:.15em}
-/* R §15 / M: the record's structure is the layout. Headings keep their semantic level and the browser's default sizes; only spacing is set. */
-h1,h2,h3{line-height:1.2}h2{margin-top:2.5rem}h3{margin-top:1.75rem}
-/* M: exact values (dates, counts, hashes, endpoints) in monospace so that their boundaries are unambiguous. */
-time,data,code,pre,.exact{font-family:ui-monospace,monospace;font-size:.95em}
-pre{white-space:pre-wrap;word-break:break-word;border:1px solid var(--rule);padding:.75rem}
-/* E: the Core on one image (/core, the originator's request of 31 Oct 2026): never wider than the text, its proportions kept. */
-figure.poster{margin:1.5rem 0}figure.poster img{display:block;width:100%;max-width:30rem;height:auto;border:1px solid var(--rule)}
-figure.infographic{margin:1.5rem 0}
-figure.infographic img{display:block;width:100%;height:auto;border:1px solid var(--rule)}
-ol.atlas li{margin:0 0 .9rem}
-figure.image{margin:1.5rem 0}
-figure.image img{display:block;width:100%;height:auto;border:1px solid var(--rule)}
-figure.image img.tall{max-width:30rem}
-td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
-hr{border:0;border-top:1px solid var(--rule);margin:2.5rem 0}
-nav.site{padding-top:.5rem;padding-bottom:.5rem;border-bottom:1px solid var(--rule);font-size:.9em}
-nav.site ul{display:flex;flex-wrap:wrap;align-items:center;column-gap:1.1rem;list-style:none;margin:0;padding:0}
-/* H: WCAG 2.2 target size (2.5.8): each link of the site's navigation at least 24 pixels tall, also where the row wraps on a phone; the current page marked
-   by a heavier underline, not by colour alone (aria-current). */
-nav.site a{display:inline-block;padding:.35rem 0}nav.site a.home{font-weight:600}nav.site a[aria-current=page]{text-decoration-thickness:3px}
-/* the mark at the head of every page (the originator's request of 30 Oct 2026, CZ 1430): beside the name, in the link to the first page; drawn in the
-   text's colour, so it follows the reader's palette */
-nav.site a.home{display:inline-flex;align-items:center;gap:.45em}nav.site a.home svg{flex:none}
-/* H: a way past the date bar and the navigation for keyboard and screen-reader users (WCAG 2.4.1), shown when it has focus; a visible focus everywhere (2.4.7). */
-.skip{position:absolute;top:0;left:0;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}.skip:focus{width:auto;height:auto;overflow:visible;clip-path:none;left:1rem;top:.5rem;padding:.5rem .75rem;background:var(--bg);color:var(--fg);border:2px solid var(--fg);z-index:1}
-:focus-visible{outline:2px solid var(--fg);outline-offset:2px}
-blockquote{margin:1rem 0;padding-left:1rem;border-left:2px solid var(--rule)}
-blockquote p{margin:.25rem 0}
-.src{color:var(--mute);font-size:.875em}
-table{border-collapse:collapse;width:100%;font-size:.9em}th,td{text-align:left;vertical-align:top;padding:.4rem .5rem;border-bottom:1px solid var(--rule)}
-code.hash{word-break:break-all;display:block}
-ul,ol{padding-inline-start:1.25rem}
-.pending{border:1px dashed var(--rule);padding:.5rem .75rem}
-/* the discussion room: entries are user content, shown as text; a group is one declared source's consecutive entries (Blueprint §7.4) */
-.entry{margin:1.5rem 0;padding-top:.5rem;border-top:1px solid var(--rule)}
-.entry .content{white-space:pre-wrap;word-break:break-word;margin:.5rem 0}
-.entry .meta{margin:.25rem 0}
-.group{margin-bottom:.5rem}
-/* the machine layer (the originator's decision of 2 Nov 2026, CZ 1433): one accent, green, for what a machine wrote — an AI system's entry
-   (its tag and its edge) and, later, machine translations. The text keeps the page's palette; the colour is never the only sign: the tag's
-   words carry it (WCAG 1.4.1). Contrast at least 7:1 on both palettes, like the rest of the page: #116329 on #fff 7.4:1; #3fb950 on #101010 7.5:1. */
-:root{--machine:#116329}@media(prefers-color-scheme:dark){:root{--machine:#3fb950}}
-/* stage 5: the same two values through light-dark() where a browser has it (the color-scheme above decides); the media rule stays for the others */
+/* CIVILIZATION ZERO, every page but the first. ONE MODULE, ONE RATIO, the first page's: the tokens that follow are block 1 of site/home.css,
+   copied here by the build, so the two sheets cannot differ. Every length in rem or em and every duration below is a token, a power of the
+   ratio or a whole multiple of a token (site/check.py holds the sheet to it); a width that follows text is in characters (ch).
+   THE FORM: one head, one column, one foot.
+   R the record · M the machine reader · H a standard for human reading · C a constraint · E a choice. */
+__TOKENS__
+/* the machine's green through light-dark() where a browser has it; the rule above stays for the others */
 @supports (color:light-dark(#000,#fff)){:root{--machine:light-dark(#116329,#3fb950)}}
-/* E (the originator's proposal of 5 Nov 2026 UTC, CZ 1436, decided by the artificial intelligence that builds the site): the day of the new count in the same green where it leads — the day count on the first page and the date at the top of every page — as on the record's images; inline dates in text and entries keep the page's colour, so that green still means "a machine wrote this" everywhere else. */
-.cz-stamp time{color:var(--machine)}
-.kind{display:inline-block;font-size:.85em;line-height:1.4;padding:0 .4em;border:1px solid var(--mute);border-radius:.2em;white-space:nowrap}
-.kind.k-ai{border-color:var(--machine);color:var(--machine);font-weight:600}
-.entry.k-ai{border-inline-start:3px solid var(--machine);padding-inline-start:.75rem}
-/* one entry in its conversation: the entries it answers above, one line each; the entry itself; its replies as a tree under it, each joined to
-   the entry it answers by a line (CSS only); the entry a link points to is outlined */
-.entry.focus{border-top:2px solid var(--fg)}.entry.focus .content{font-size:1.08rem}
-ol.ancestors,ol.since{list-style:none;margin:.25rem 0 .5rem;padding:0;font-size:.9em}
-ol.ancestors li,ol.since li{display:flex;flex-wrap:wrap;align-items:baseline;gap:0 .45rem;padding-block:.2rem;padding-inline:.75rem 0;border-inline-start:1px solid var(--rule)}ol.ancestors li.k-ai,ol.since li.k-ai{border-inline-start:3px solid var(--machine)}ol.since li{margin:.15rem 0}
-/* stage 4: reading in another language. Two marks kept apart: the declared kind (the label and solid edge, as always) and the version
-   shown — a machine translation has a dashed edge in the machine colour and a label; its words keep the page colour. */
-.mt{border-inline-start:2px dashed var(--machine);padding-inline-start:.75rem;margin-block:.25rem}
-.mtag{display:inline-block;font-size:.8em;border:1px dashed var(--machine);color:var(--machine);border-radius:.2em;padding:0 .35em;margin-inline-end:.35em;white-space:nowrap;font-weight:600}
-.mt-label{margin:.25rem 0}
-details.orig{margin:.4rem 0 0}details.orig>summary{cursor:pointer;color:var(--mute);font-size:.9em}
-.bi{display:grid;gap:.5rem 1.25rem}@media(min-width:56rem){.bi{grid-template-columns:1fr 1fr}}
-.tr-bar{border:1px solid var(--rule);padding:.5rem .75rem;margin:1rem 0}.tr-bar p{margin:.25rem 0}.tr-bar form{margin:.5rem 0 0}
-.tr-go{display:flex;flex-wrap:wrap;align-items:center;gap:.4rem .6rem}.tr-go label{display:flex;flex-wrap:wrap;align-items:center;gap:.4rem}
-.tr-bar select,.tr-bar input{font:inherit;font-size:1rem;color:var(--fg);background:var(--bg);border:1px solid var(--mute);padding:.2rem .4rem;max-width:100%}
-.tr-bar button,.tr-go button{font:inherit}.tr-idle p.src{margin:.45rem 0 0;font-size:.9em}
-/* the translation's progress page (CZ 1445): a bar in the machine colour, a sweep while work goes on, each entry's state; no script — the page
-   reloads itself and the view transition carries the bar across. Motion only for readers who have not asked for less. */
-.tr-progress{border:1px solid var(--rule);padding:.75rem 1rem;margin:1rem 0}.tr-count{margin:0 0 .5rem;font-variant-numeric:tabular-nums}
-.tr-meter{position:relative;height:.65rem;border:1px solid var(--machine);overflow:hidden;view-transition-name:tr-meter}.tr-meter span{display:block;height:100%;background:var(--machine)}
-.tr-progress:not(.tr-finished) .tr-meter::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--machine) 40%,transparent),transparent);transform:translateX(-100%);animation:tr-sweep 1.1s linear infinite}
-@keyframes tr-sweep{to{transform:translateX(100%)}}
-.tr-spin{display:inline-block;width:.75em;height:.75em;margin-inline-end:.35em;border:2px solid var(--rule);border-top-color:var(--machine);border-radius:50%;animation:tr-spin .8s linear infinite;vertical-align:-.1em}
-@keyframes tr-spin{to{transform:rotate(1turn)}}
-ol.tr-items{list-style:none;padding:0;margin:1rem 0}ol.tr-items li{padding:.3rem 0;padding-inline-start:.75rem;border-inline-start:3px solid var(--rule);margin:.2rem 0}
-ol.tr-items li.tr-done{border-inline-start-color:var(--machine)}ol.tr-items li.tr-fail{border-inline-start-style:dashed}.tr-done .tr-st{color:var(--machine);font-weight:600}.tr-snip{color:var(--mute)}
-div.tr-actions{display:flex;flex-wrap:wrap;gap:.5rem .75rem;align-items:center;margin:1rem 0}div.tr-actions form{margin:0}
-@media(prefers-reduced-motion:reduce){.tr-progress .tr-meter::after{animation:none;display:none}.tr-spin{animation:none}}
-/* stage 3: a conversation with entries after the reader's mark */
-.new{font-weight:600;border:1px solid var(--fg);border-radius:.2em;padding:0 .35em;font-size:.85em;white-space:nowrap}
-.oneline{flex:1 1 100%;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--mute)}
-ol.thread{list-style:none;margin:0;padding:0}ol.thread>li{position:relative}
-ol.thread ol.thread{margin-inline-start:.5rem;padding-inline-start:1rem;border-inline-start:1px solid var(--rule)}
-ol.thread ol.thread>li::before{content:"";position:absolute;inset-inline-start:-1rem;top:1.3rem;width:.75rem;border-top:1px solid var(--rule)}
-ol.thread .entry{margin:1rem 0 .25rem}
-.entry:target{outline:2px solid var(--fg);outline-offset:.35rem}
-p.actions{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem 1rem;margin:.5rem 0 1rem}
-details.record{margin-top:2.5rem;border-top:1px solid var(--rule);padding-top:.5rem}details.record>summary{cursor:pointer;padding:.5rem 0;font-weight:600}
-/* the reply form opens where the reader is (HTML invoker commands: no script); where a browser lacks them, the link beside the button opens /respond */
-dialog.reply{width:min(36rem,calc(100% - 2rem));max-height:calc(100% - 2rem);box-sizing:border-box;padding:1rem 1.25rem;border:1px solid var(--fg);background:var(--bg);color:var(--fg)}
-dialog.reply::backdrop{background:rgb(0 0 0 / .55)}dialog.reply h2{margin-top:0}
+
+/* 2 BASE. C: no typeface is shipped: the reader's serif for what is written for people, its monospace for what is exact or for machines.
+   H: the reading size is the module on a phone and one step of the ratio larger from e21 on. H: one measure for the head, the text and the
+   foot, 56 times the width of the digit 0 (56ch): about 70 characters to a line in the Core's own text (67 to 72 in three typefaces,
+   measured), inside the convention of 45 to 75 for sustained reading. H + M: links underlined, never colour alone (WCAG 2.2, 1.4.1); focus
+   always visible (2.4.7); nothing wider than a 320-pixel screen (1.4.10). M: exact values in the monospace, one step smaller. */
+html{font:100%/var(--l2) var(--human);-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;color:var(--fg);background:var(--bg);overflow-wrap:break-word}
+@media(min-width:38.0546rem){body{font-size:var(--e1)}}
+header.site,main,footer{max-inline-size:56ch;margin-inline:auto;padding-inline:var(--e-1)}
+a{color:inherit;text-decoration:underline;text-decoration-thickness:var(--e-16);text-underline-offset:.1768em}
+:focus-visible{outline:var(--e-12) solid var(--fg);outline-offset:var(--e-12)}
+time,data,code,pre,kbd,samp,.exact,.forms{font-family:var(--exact);font-size:.8409em}
+p,li,dd,blockquote{text-wrap:pretty}
+/* R §15 / M: the record's structure is the layout: headings keep their level, each one step of the ratio above the next. */
+h1,h2,h3{line-height:var(--l1);text-wrap:balance}
+h1{margin:var(--e2) 0 var(--e-2);font-size:1.6818em}
+h2{margin:var(--e5) 0 var(--e-2);font-size:1.4142em}
+h3{margin:var(--e3) 0 var(--e-4);font-size:1.1892em}
+p,ul,ol,dl,pre,table,blockquote,figure,details{margin-block:var(--e0)}
+ul,ol{padding-inline-start:var(--e2)}
+li{margin-block:var(--e-8)}
+/* H: small grey print for sources and captions only; what a reader must know is set at the reading size. */
+.src,figcaption,.forms{color:var(--mute)}
+.src,figcaption{font-size:.8409em}
+blockquote{margin-inline:0;padding-inline-start:var(--e0);border-inline-start:var(--e-16) solid var(--fg)}
+blockquote p{margin:var(--e-8) 0}
+pre{padding:var(--e-2);border:var(--e-16) solid var(--rule);white-space:pre-wrap;overflow-wrap:anywhere}
+hr{margin:var(--e5) 0 var(--e0);border:0;border-block-start:var(--e-16) solid var(--fg)}
+.pending{padding:var(--e-4) var(--e-2);border:var(--e-16) dashed var(--mute)}
+summary{padding-block:var(--e-4);cursor:pointer}
+/* M: a date, a number or a hash is never cut in two by a line; one press selects a whole hash. */
+.nw,a.cz-date time,td :is(time,data),th[scope=col],#how code{white-space:nowrap}
+a.cz-date{text-decoration-color:var(--mute)}
+code.hash{overflow-wrap:anywhere;user-select:all}
+figure{margin-inline:0}
+figure img{display:block;inline-size:100%;block-size:auto;border:var(--e-16) solid var(--rule)}
+figure.poster img,img.tall{max-inline-size:calc(4*var(--e12))}
+ol.atlas li{margin-block-end:var(--e-1)}
+
+/* 3 HEAD. E: one block on every page (CZ 1455). First the mark and the name, the way to the first page; at the row's end today's day of
+   the CZ calendar in the first page's own words, the day in green (the originator's decision of 30 Oct 2026: the day at the top of every
+   page). Under them four pages, and the way to the list of all pages at the foot. H: each a target at least 24 px tall (2.5.8); the page
+   one is on carries a heavier underline, never a colour alone (aria-current); a way past the head for keyboard and screen-reader users
+   (2.4.1), shown when it has focus. */
+.skip{position:absolute;inset-block-start:0;inset-inline-start:0;inline-size:var(--e-16);block-size:var(--e-16);overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.skip:focus{inset:var(--e-4) auto auto var(--e0);z-index:1;inline-size:auto;block-size:auto;padding:var(--e-4) var(--e-2);border:var(--e-12) solid var(--fg);overflow:visible;clip-path:none;color:var(--fg);background:var(--bg)}
+.top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;column-gap:var(--e0)}
+a.home{display:inline-flex;align-items:center;gap:var(--e-4);min-block-size:var(--e6);font-size:var(--e0);font-weight:700;line-height:var(--l1)}
+a.home svg{flex:none;inline-size:var(--e4);block-size:var(--e4)}
+.cz-now,nav.site{font-size:var(--e-1)}
+.cz-now{color:var(--mute);white-space:nowrap}
+.cz-now a,nav.site a,.forms a{display:inline-block;padding-block:var(--e-4)}
+.cz-now .d{color:var(--machine);font-weight:700}
+.cz-now :is(time,data){font-family:inherit;font-size:1em}
+nav.site{border-block-end:var(--e-16) solid var(--rule)}
+nav.site ul{display:flex;flex-wrap:wrap;justify-content:space-between;column-gap:var(--e-4);margin:0;padding:0;list-style:none}
+nav.site li,.foot li{margin:0}
+a[aria-current=page]{text-decoration-thickness:var(--e-8)}
+@media(min-width:38.0546rem){
+.cz-now,nav.site{font-size:var(--e0)}
+nav.site ul{justify-content:start;column-gap:var(--e2)}
+}
+/* M: the machine's forms in plain sight: under a page's title one line, in the machine's face, of the forms this address really has. */
+.forms{margin-block:0 var(--e0)}
+
+/* 4 TABLES. Two kinds. A table of labels and values has one label column of one width; on a narrow screen each label stands over its
+   value. A table of rows keeps its columns where they fit; on a narrow screen each row is a block, its first cell in bold and each
+   further cell under the name of its column. H: a word is hyphenated or kept whole, never cut anywhere; only an address or a code may
+   break where it must; a region that scrolls sideways takes the keyboard and has a name (2.1.1). */
+table{inline-size:100%;border-collapse:collapse;font-size:.8409em}
+th,td{padding:var(--e-4) 0;padding-inline-end:var(--e-2);border-block-end:var(--e-16) solid var(--rule);text-align:start;vertical-align:top;hyphens:auto}
+td :is(a,code){overflow-wrap:anywhere}
+td.num,th.num{text-align:end;font-variant-numeric:tabular-nums}
 .scroll{overflow-x:auto}
-.filters{display:flex;flex-wrap:wrap;gap:.75rem;align-items:end;font-size:.9em;margin:1rem 0}
-/* E: the room one click from the first screen, and its sections as topics (the originator's decision of 29 Oct 2026, after the originator's AI review team) */
-p.room-line{border-left:3px solid var(--fg);padding-left:.75rem}
-/* E (the originator's request of 5 Nov 2026 UTC, CZ 1436): the invitation to bring one's own AI, easy to see for a human visitor: a filled button in the page's own colours on /ask; on the first page, since CZ 1455, the filled button is step 1's and the invitation's is drawn with its edge only */
-p.cta-line{margin:1rem 0 .5rem;display:flex;flex-wrap:wrap;gap:.5rem .75rem;align-items:center}p.cta-line .cta-note{flex-basis:100%}a.cta,button.cta{display:inline-block;box-sizing:border-box;min-height:2.75rem;padding:.7rem 1.2rem;background:var(--fg);color:var(--bg);font-weight:600;text-decoration:none;border:2px solid var(--fg)}a.cta:hover,a.cta:focus-visible,button.cta:hover{background:var(--bg);color:var(--fg)}button.done,button.cta.done{background:var(--machine);border-color:var(--machine);color:var(--bg)}p.cta-line .cta-note{display:block;margin-top:.4rem;color:var(--mute);font-size:.92em}ol.steps{padding-inline-start:1.25rem}ol.steps>li{margin:.75rem 0}ul.sections{columns:2 16rem;column-gap:2rem}ul.sections li{break-inside:avoid;margin:.2rem 0}
-.filters select,.filters input{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--mute);padding:.2rem .3rem}
-form.respond label{display:block;margin:.75rem 0}form.respond input,form.respond select,form.respond textarea{font:inherit;width:100%;box-sizing:border-box;padding:.4rem;border:1px solid var(--mute);background:var(--bg);color:var(--fg)}
-form.respond textarea{min-height:12rem;field-sizing:content;max-height:75vh}form.respond input[type=checkbox],form.respond input[type=radio]{width:1.25rem;height:1.25rem;vertical-align:-.25rem;margin:0 .5rem 0 0}form.respond fieldset{border:1px solid var(--rule);margin:.75rem 0}button{font:inherit;padding:.4rem .9rem;border:1px solid var(--fg);background:var(--bg);color:var(--fg)}
-/* H: WCAG 2.2 reflow (1.4.10): nothing wider than a 320-pixel screen. A word breaks only when it cannot fit its line; on a narrow screen a long address or code in a table cell may break anywhere, so the table never widens the page and headings are never cut mid-word. */
-main,header,footer{overflow-wrap:break-word}th,td{overflow-wrap:break-word}@media(max-width:40em){td,td a,td code{overflow-wrap:anywhere}}
-/* H: WCAG 2.2 target size (2.5.8) and the platforms' touch guidance: every control at least 2.5rem tall. */
-button,select,input:not([type=checkbox]):not([type=radio]){min-height:2.5rem;box-sizing:border-box}
-/* H: fields at 16 pixels, so that a phone does not zoom in when one is tapped; field borders and placeholders at 3:1 or more (WCAG 1.4.11); ticks in the page's colours. */
-input,select,textarea{font-size:1rem}::placeholder{color:var(--mute);opacity:1}input[type=radio],input[type=checkbox]{accent-color:var(--fg)}
-/* E (the originator's decision of 30 Oct 2026): CZ time is the site's basis — today's date in CZ time at the top of every page, linked to how it works, and under it the reason and links to the two converters, which work on /calendar alone. M: plain links and forms, no script. */
-aside.cz-now{padding-top:.55rem;padding-bottom:.5rem;border-bottom:1px solid var(--rule);font-size:.9em}
-aside.cz-now p{margin:0}.cz-line a{padding:.2rem 0;display:inline-block}.cz-stamp{font-size:1.25em;margin-right:.5rem}.cz-why{color:var(--mute);font-size:.92em}
-a.cz-date{text-decoration-thickness:1px;text-decoration-color:var(--mute)}a.cz-date time,.cz-stamp time{white-space:nowrap}ul.cz-today{list-style:none;padding:0;margin:.5rem 0}ul.cz-today li{margin:.15rem 0}
-form.cz-conv{display:flex;flex-wrap:wrap;gap:.4rem .5rem;align-items:center;margin:.3rem 0 0;font-size:.9em}
-form.cz-conv input,form.cz-conv select{font:inherit;font-size:1rem;color:var(--fg);background:var(--bg);border:1px solid var(--mute);padding:.2rem .4rem}form.cz-conv input{width:15ch}form.cz-conv label{white-space:nowrap}
-.nw{white-space:nowrap}#how code{white-space:nowrap}
-table.cz-result th{width:30%;font-weight:600}.cz-native{font-family:system-ui,sans-serif}
-aside.tr-status{margin-top:1rem}
-/* the footer: where everything is, the licence, what this site does not do */
-footer ul.foot{list-style:none;padding:0;margin:0 0 1rem;columns:2 11rem;column-gap:2rem}footer ul.foot li{break-inside:avoid;padding:.2rem 0}footer{padding-bottom:1.5rem}
-@media print{aside.cz-now,nav.site,.skip,form,.filters,footer nav{display:none}a{text-decoration:none}main,header,footer{max-width:none}}
-/* stage 5 (CZ 1433): polish that needs no script and falls back to the plain page.
-   Cross-document view transitions: moving from page to page of this site fades instead of flashing; none for readers who ask for less motion.
-   text-wrap: fewer lone words at the end of a paragraph, balanced headings. */
-@view-transition{navigation:auto}
-@media(prefers-reduced-motion:reduce){@view-transition{navigation:none}}
-p,li,dd,blockquote{text-wrap:pretty}h1,h2,h3{text-wrap:balance}
+:is(.kv,.cz-result) th{inline-size:var(--e12)}
+@media not all and (min-width:38.0546rem){
+:is(.kv,.cz-result,.rows) :is(tr,th,td){display:block;inline-size:auto;padding-inline-end:0}
+:is(.kv,.cz-result) th{padding-block-end:0;border:0}
+:is(.kv,.cz-result) td{padding-block-start:0}
+.rows thead{display:none}
+.rows tr{padding-block:var(--e-4);border-block-end:var(--e-16) solid var(--rule)}
+.rows td{padding-block:0;border:0}
+.rows td:first-child{font-weight:700}
+.rows td[data-th]::before{content:attr(data-th) ": ";color:var(--mute)}
+}
+
+/* 5 CONTROLS. H: every control at least e6 tall (2.5.8 and the platforms' touch guidance) and no wider than its line; fields at the
+   reading size, so that a phone does not zoom in when one is tapped; field borders and placeholders at 3:1 or more (1.4.11). E: one
+   filled control for the act a page asks for; pointed at, it shows its edge only. */
+button,input,select,textarea{font:inherit;color:var(--fg);background:var(--bg)}
+button,select,input:not([type=checkbox],[type=radio]){box-sizing:border-box;min-block-size:var(--e6);max-inline-size:100%}
+input,select,textarea{padding:var(--e-4);border:var(--e-16) solid var(--mute)}
+button{padding:var(--e-4) var(--e0);border:var(--e-16) solid var(--fg);cursor:pointer}
+::placeholder{color:var(--mute);opacity:1}
+input:is([type=radio],[type=checkbox]){accent-color:var(--fg)}
+label{min-inline-size:0}
+a.cta,button.cta{display:inline-block;box-sizing:border-box;min-block-size:var(--e6);padding:calc(var(--e-2) - var(--e-12)) var(--e0);border:var(--e-12) solid var(--fg);background:var(--fg);color:var(--bg);font-weight:700;line-height:var(--l1);text-decoration:none}
+:is(a.cta,button.cta):is(:hover,:focus-visible),button.cta.done{background:var(--bg);color:var(--fg)}
+button.done:not(.cta){background:var(--fg);color:var(--bg)}
+p.cta-line{display:flex;flex-wrap:wrap;align-items:center;gap:var(--e-4) var(--e-2)}
+.cta-note{flex-basis:100%}
+.cta-note:empty{display:none}
+ol.steps>li{margin-block:var(--e-2)}
+ul.sections{columns:2 var(--e14);column-gap:var(--e3)}
+ul.sections li{break-inside:avoid}
+.filters{display:flex;flex-wrap:wrap;align-items:end;gap:var(--e-2);margin-block:var(--e0)}
+form.respond label{display:block;margin-block:var(--e-2)}
+form.respond :is(input,select,textarea){display:block;box-sizing:border-box;inline-size:100%;margin-block-start:var(--e-8)}
+form.respond textarea{min-block-size:var(--e12);max-block-size:calc(100vh - var(--e12));field-sizing:content}
+form.respond input:is([type=checkbox],[type=radio]){display:inline-block;inline-size:var(--e1);block-size:var(--e1);margin:0;margin-inline-end:var(--e-4);vertical-align:calc(-1*var(--e-8))}
+form.respond fieldset{margin:var(--e-2) 0;border:var(--e-16) solid var(--rule)}
+p.room-line{padding-inline-start:var(--e-2);border-inline-start:var(--e-12) solid var(--fg)}
+/* /calendar: a label breaks with its field, never from it */
+ul.cz-today{margin-block:var(--e-4);padding:0;list-style:none}
+form.cz-conv,form.cz-conv span{display:flex;flex-wrap:wrap;align-items:center;gap:var(--e-4)}
+form.cz-conv span{flex-wrap:nowrap}
+form.cz-conv input{inline-size:15ch}
+.cz-native{font-family:var(--human)}
+
+/* 6 THE ROOM. Blueprint §7: an entry is user content, shown as text, its words unchanged. The machine layer (the originator's decision of
+   CZ 1433): green is for what a machine wrote, an AI system's entry (its tag and its edge) and a machine translation (a dashed edge and a
+   tag), and for the day of the CZ count; the tag's words always say it too (1.4.1). The tag keeps its size inside small print. */
+.entry{margin:var(--e2) 0;padding-block-start:var(--e-4);border-block-start:var(--e-16) solid var(--rule)}
+.entry .content{margin:var(--e-4) 0;white-space:pre-wrap}
+.entry .meta{margin:var(--e-8) 0}
+.group{margin-block-end:var(--e-4)}
+.kind,.mtag,.new{display:inline-block;padding-inline:var(--e-8);border:var(--e-16) solid var(--mute);border-radius:var(--e-8);font-size:var(--e-1);line-height:var(--l2);white-space:nowrap}
+.kind:is(.k-ai,.ai),.mtag{border-color:var(--machine);color:var(--machine);font-weight:700}
+.mtag{margin-inline-end:var(--e-8);border-style:dashed}
+.new{border-color:var(--fg);font-weight:700}
+.entry.k-ai{padding-inline-start:var(--e-2);border-inline-start:var(--e-8) solid var(--machine)}
+.entry.focus{border-block-start:var(--e-12) solid var(--fg)}
+.entry.focus .content{font-size:1.1892em}
+.entry:target{outline:var(--e-12) solid var(--fg);outline-offset:var(--e-4)}
+ol:is(.ancestors,.since,.thread,.tr-items){margin:0;padding:0;list-style:none}
+ol:is(.ancestors,.since){margin-block:var(--e-8) var(--e-4);font-size:.8409em}
+ol:is(.ancestors,.since) li{display:flex;flex-wrap:wrap;align-items:baseline;gap:0 var(--e-4);padding-block:var(--e-8);padding-inline-start:var(--e-2);border-inline-start:var(--e-16) solid var(--rule)}
+ol:is(.ancestors,.since) li.k-ai{border-inline-start:var(--e-8) solid var(--machine)}
+.oneline{flex:1 1 100%;min-inline-size:0;overflow:hidden;color:var(--mute);text-overflow:ellipsis;white-space:nowrap}
+ol.thread>li{position:relative;margin:0}
+ol.thread ol.thread{margin-inline-start:var(--e-4);padding-inline-start:var(--e0);border-inline-start:var(--e-16) solid var(--rule)}
+ol.thread ol.thread>li::before{content:"";position:absolute;inset-block-start:var(--e1);inset-inline-start:calc(-1*var(--e0));inline-size:var(--e-2);border-block-start:var(--e-16) solid var(--rule)}
+ol.thread .entry{margin:var(--e0) 0 var(--e-8)}
+p.actions{display:flex;flex-wrap:wrap;align-items:center;gap:var(--e-4) var(--e0);margin-block:var(--e-4) var(--e0)}
+details.record{margin-block-start:var(--e5);padding-block-start:var(--e-4);border-block-start:var(--e-16) solid var(--rule)}
+details.record>summary{font-weight:700}
+dialog.reply{box-sizing:border-box;inline-size:min(var(--e21),100% - 2*var(--e0));max-block-size:calc(100% - 2*var(--e0));padding:var(--e0);border:var(--e-12) solid var(--fg);color:var(--fg);background:var(--bg)}
+dialog.reply::backdrop{background:rgb(0 0 0/.5)}
+dialog.reply h2{margin-block-start:0}
+/* reading in another language: the original is the record; a translation is marked as the machine's */
+.mt{margin-block:var(--e-8);padding-inline-start:var(--e-2);border-inline-start:var(--e-12) dashed var(--machine)}
+.mt-label{margin-block:var(--e-8)}
+details.orig{margin-block:var(--e-4) 0}
+details.orig>summary{color:var(--mute);font-size:.8409em}
+.bi{display:grid;gap:var(--e-4) var(--e1)}
+@media(min-width:53.8174rem){.bi{grid-template-columns:1fr 1fr}}
+.tr-bar,.tr-progress{margin-block:var(--e0);padding:var(--e-4) var(--e-2);border:var(--e-16) solid var(--rule)}
+.tr-bar p{margin-block:var(--e-8)}
+.tr-bar form,.tr-idle p.src{margin-block:var(--e-4) 0}
+.tr-go,.tr-go label,div.tr-actions{display:flex;flex-wrap:wrap;align-items:center;gap:var(--e-4) var(--e-2)}
+div.tr-actions{margin-block:var(--e0)}
+div.tr-actions form{margin:0}
+.tr-count{margin-block:0 var(--e-4);font-variant-numeric:tabular-nums}
+.tr-meter{position:relative;block-size:var(--e-2);border:var(--e-16) solid var(--machine);overflow:hidden}
+.tr-meter span{display:block;block-size:100%;background:var(--machine)}
+.tr-spin{display:inline-block;inline-size:var(--e-2);block-size:var(--e-2);margin-inline-end:var(--e-8);border:var(--e-12) solid var(--rule);border-block-start-color:var(--machine);border-radius:50%;vertical-align:calc(-1*var(--e-16))}
+ol.tr-items{margin-block:var(--e0)}
+ol.tr-items li{padding-block:var(--e-8);padding-inline-start:var(--e-2);border-inline-start:var(--e-8) solid var(--rule)}
+ol.tr-items li.tr-done{border-inline-start-color:var(--machine)}
+ol.tr-items li.tr-fail{border-inline-start-style:dashed}
+.tr-done .tr-st{color:var(--machine);font-weight:700}
+.tr-snip{color:var(--mute)}
+
+/* 7 FOOT. C: where everything is (the list the head's "All pages" leads to), the licence, what the site does not do, what the page weighs. */
+footer{padding-block-end:var(--e4);color:var(--mute)}
+footer :is(p,.src,.foot){font-size:var(--e-1)}
+.foot{columns:2 var(--e14);column-gap:var(--e3);margin-block:var(--e0);padding:0;list-style:none;color:var(--fg)}
+.foot li{break-inside:avoid}
+.foot a{display:inline-block;padding-block:var(--e-8)}
 .cz-weight{font-variant-numeric:tabular-nums}
+
+/* 8 PRINT. On paper: the name and the day, the text, the foot's words; no control and no navigation. */
+@media print{.skip,nav.site,form,dialog,button,.filters,.tr-bar,p.actions,.room-links,.forms,footer nav{display:none!important}a{text-decoration:none}header.site,main,footer{max-inline-size:none}}
+
+/* 9 MOTION. E: between two pages of the site the page fades and the mark travels from its place on one to its place on the other
+   (cross-document view transitions); a translation in progress shows a sweep and a turning ring. H: none of it for a reader who asks for
+   less motion (2.3.3); the pages are whole without it. */
+@media(prefers-reduced-motion:no-preference){
+@view-transition{navigation:auto}
+a.home svg{view-transition-name:cz-mark}
+.tr-meter{view-transition-name:tr-meter}
+.tr-progress:not(.tr-finished) .tr-meter::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--machine) 40%,transparent),transparent);transform:translateX(-100%);animation:tr-sweep 1.1892s linear infinite}
+@keyframes tr-sweep{to{transform:translateX(100%)}}
+.tr-spin{animation:tr-spin .8409s linear infinite}
+@keyframes tr-spin{to{transform:rotate(1turn)}}
+}
 /* /calendar's first sentence: the count and the date in the sentence's own type (a sentence, not a table of exact values) */
 #today time,#today data{font-family:inherit;font-size:1em}
-"""
+""".replace("__TOKENS__", TOKENS)
+assert CSS.count(TOKENS) == 1 and "__TOKENS__" not in CSS
 
-# The site's navigation, in English on every page (lang and dir set, so that a translated page does not read it in its own language
-# or reverse it); the page it is on is marked (aria-current). Room pages mark theirs at request time (room/lib.js).
-NAV_ITEMS = [("/", "Civilization Zero (CZ)"), ("/core", "Core"), ("/record", "Record"), ("/objections", "Objections"), ("/discuss", "Discussion"),
-             ("/adopt", "Register"), ("/machine", "Machine"), ("/about", "About"), ("/archive", "Archive")]
+# The head of every page but the first (rc-12, CZ 1455; the audit of 24 Nov 2026, finding 1): one block, in English on every page (lang and
+# dir set, so that a translated page does not read it in its own language or reverse it). Row 1: the mark and the name, the way to the
+# first page, and at the row's end today's day of the CZ calendar, between <!--cz-now--> and <!--/cz-now--> (filled at request time, below).
+# Row 2: four pages and "All pages", which leads to the list at the foot of the same page (its id: all-pages). The page one is on is
+# marked (aria-current); room pages mark theirs at request time (room/lib.js), by the same markup.
+NAV_ITEMS = [("/core", "The Core"), ("/discuss", "Discussion"), ("/ask", "Ask your AI"), ("/about", "About"), ("#all-pages", "All pages")]
 def nav_section(path):   # the navigation item a page belongs to
     path = str(path or "")
     if path.startswith("/core"): return "/core"
     if path.startswith(("/discuss", "/respond", "/themes")): return "/discuss"
-    if path.startswith("/adopt"): return "/adopt"
     return path if any(h == path for h, _ in NAV_ITEMS) else None
-def nav_html(path=None, mark=True):   # mark: the mark beside the name (the first page has it, larger, in its heading)
+def nav_html(path=None):
     cur = nav_section(path) if path is not None else None
-    items = "".join(f'<li><a{" class=" + chr(34) + "home" + chr(34) if h == "/" else ""} href="{h}"{" aria-current=" + chr(34) + "page" + chr(34) if h == cur else ""}>'
-                    f'{NAV_MARK if h == "/" and mark else ""}{esc(t)}</a></li>'
-                    for h, t in NAV_ITEMS)
-    return f'<nav class="site" aria-label="Site" lang="en" dir="ltr"><ul>{items}</ul></nav>'
-NAV = nav_html()
+    items = "".join(f'<li><a href="{h}"{" aria-current=" + chr(34) + "page" + chr(34) if h == cur else ""}>{esc(t)}</a></li>' for h, t in NAV_ITEMS)
+    return f'<nav class="site" aria-label="Site"><ul>{items}</ul></nav>'
+def head_html(path=None, cz_bar=True):
+    return (f'<header class="site" lang="en" dir="ltr"><div class="top"><a class="home" href="/">{NAV_MARK}Civilization Zero (CZ)</a>'
+            f'{cz_bar_fallback() if cz_bar else ""}</div>{nav_html(path)}</header>')
 
 CORE_LANGUAGES = 1 + len(list((RECORD / "translations").glob("CZ-CORE-1.0.*.json")))   # the Core's languages: English (canonical) and its translations
 # What Civilization Zero is: the originator's decision of 1 Nov 2026 (CZ 1432), approved in these words — the beginning of a civilization in
@@ -491,17 +570,19 @@ def footer_html(extra=""):
     # the introduction at the foot of every page (the originator, 1 Nov 2026: "even in the footer"); the first page opens with it, and its
     # footer carries the custody paragraphs instead (extra)
     intro = "" if extra else f'<p class="cz-intro">{esc(ONE_LINE)}</p>'
-    return (f'<footer lang="en" dir="ltr"><hr>{extra}{intro}<nav aria-label="Pages"><ul class="foot">{links}</ul></nav>'
+    return (f'<footer lang="en" dir="ltr"><hr>{extra}{intro}<nav aria-label="Pages"><ul class="foot" id="all-pages">{links}</ul></nav>'
             f'<p class="src">Text <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a> · code MIT · <a href="{REPO}">source</a> · '
             f'<a href="mailto:{CONTACT}">{CONTACT}</a></p>'
             f'<p class="src">No trackers, no cookies, no scripts that observe readers; the server counts visits per day without identifiers, and <a href="/stats">the counts are public</a>. Every date counts days from Coordinate Zero, <a class="nw" href="/calendar">CZ 0</a> = '
             f'<time datetime="2022-11-30">30 November 2022</time>; today\'s date turns at midnight where you are, and times of day are in UTC.</p>{WEIGHT_LINE}</footer>')
 FOOTER = footer_html()
 
-# ---------------------------------------------------------------- CZ time at the top of every page (the originator's decision of 30 Oct 2026)
-# Every page but the first carries the bar between <!--cz-now--> and <!--/cz-now-->: the build writes a fallback there (for copies of the
-# site that serve these files as they are: no date, links to this site), and the functions (api/page.js and the room's) put the live bar
-# in its place at request time from room/cz-bar.json, filled by room/cztime.js. On the first page the date is the page's heading.
+# ---------------------------------------------------------------- the day at the top of every page (the originator's decision of 30 Oct 2026)
+# Every page but the first carries today's day in its head, between <!--cz-now--> and <!--/cz-now-->: the build writes a fallback there
+# (for copies of the site that serve these files as they are: no day, a link to this site's calendar), and the functions (api/page.js
+# and the room's) put the live day in its place at request time from room/cz-bar.json, filled by room/cztime.js. Until rc-12 this was a
+# bar of its own above the navigation, with links to the two converters and the line "Day N since Coordinate Zero"; since rc-12 it is
+# the end of the head's first row, in the first page's words. On the first page the day stands in the calendar line under the figure.
 # each calendar named in its own script only (the originator's decision of 30 Oct 2026): Persian for the Solar Hijri, Arabic for the Lunar
 CZ_CALENDARS = [("gregorian", "Gregorian", "en"), ("solar-hijri", "هجری شمسی", "fa"), ("lunar-hijri", "التقويم الهجري", "ar"),
                 ("julian", "Julian", "en"), ("cz", "CZ", "en")]
@@ -531,11 +612,11 @@ def cz_time_form(prefix, live=True, origin=""):
             f'<select id="{prefix}-c" name="c" aria-label="The calendar of that date">{_cal_options(None if live else "gregorian")}</select> '
             f'<label for="{prefix}-t">Time</label> <input id="{prefix}-t" name="t" value="{"__CZ_TTIME__" if live else ""}" placeholder="13:30" inputmode="decimal" autocomplete="off" maxlength="12" size="7"> '
             f'<label for="{prefix}-z">Time zone</label> <select id="{prefix}-z" name="z">{zones}</select> <button type="submit">Convert time</button></form>')
-_CZ_LINE = ('<p class="cz-line"><a class="cz-stamp" href="/calendar" aria-describedby="cz-why"><time datetime="__CZ_ISO__">__CZ_STAMP__</time></a> '
-            '<a href="/calendar#convert">date converter</a> · <a href="/calendar#time">time converter</a></p>'
-            '<p class="cz-why" id="cz-why">Day __CZ_DAYS__ since Coordinate Zero, <span class="nw">30 November 2022</span></p>')
-CZ_BAR = {   # the live bar, filled by room/cztime.js (fillBar): the date, the reason, the two converters as links — the converting is on /calendar
-    "bar": f'<aside class="cz-now" aria-label="CZ time" lang="en" dir="ltr"><div data-nosnippet>{_CZ_LINE}</div></aside>',
+# the day as the first page writes it ("CZ calendar · Day 1,455": the name the link to /calendar, the day in green, carrying the reader's
+# date for a parser and the count as a number); the converters and the line on Coordinate Zero are on /calendar and in the foot
+_CZ_DAY = '<a href="/calendar">CZ calendar</a> · <time class="d" datetime="__CZ_ISO__">Day <data value="__CZ_DAYS__">__CZ_DAYS_FMT__</data></time>'
+CZ_BAR = {   # the live day, filled by room/cztime.js (fillBar)
+    "bar": f'<div class="cz-now" data-nosnippet>{_CZ_DAY}</div>',
 }
 # the examples on /calendar: each stamp computed by lib.py and compared with room/cztime.js by site/check.py
 CZ_EXAMPLES = [
@@ -551,10 +632,8 @@ CZ_EXAMPLES = [
     (datetime.date(3022, 11, 30), "a thousand years after Coordinate Zero"),
     (datetime.date(1022, 11, 30), "a thousand years before it (Gregorian; 24 November 1022 in the Julian calendar)"),
 ]
-def cz_bar_fallback():   # for copies that serve the files as they are: no date, links to this site
-    inner = (f'<p class="cz-line"><a class="cz-stamp" href="{ORIGIN}/calendar">CZ time</a> <a href="{ORIGIN}/calendar#convert">date converter</a> · '
-             f'<a href="{ORIGIN}/calendar#time">time converter</a></p><p class="cz-why">Days counted from Coordinate Zero, <span class="nw">30 November 2022</span> = CZ 0</p>')
-    return f'<!--cz-now--><aside class="cz-now" aria-label="CZ time" lang="en" dir="ltr"><div data-nosnippet>{inner}</div></aside><!--/cz-now-->'
+def cz_bar_fallback():   # for copies that serve the files as they are: no day, a link to this site's calendar
+    return f'<!--cz-now--><div class="cz-now" data-nosnippet><a href="{ORIGIN}/calendar">CZ calendar</a></div><!--/cz-now-->'
 
 
 # Search and link-preview metadata (Blueprint §3.1: crawlers, indexers and archivers are readers too). Named standards only —
@@ -602,7 +681,7 @@ def shell(title, body, path, description, alternates=(), ldjson=None, nav=True, 
 {"".join(f'<link rel="me" href="{esc(u)}">' for u in SOCIAL)}{f'<meta name="fediverse:creator" content="{esc(FEDIVERSE_CREATOR)}">' if FEDIVERSE_CREATOR else ""}<style>{CSS if css is None else css}</style>
 {ld}{SPEC_SCRIPT}{extra_head}</head>
 <body>
-{'<a class="skip" href="#content" lang="en" dir="ltr">Skip to content</a>' + chr(10) if nav else ""}{cz_bar_fallback() + chr(10) if nav and cz_bar else ""}{nav_html(path) if nav else ""}
+{'<a class="skip" href="#content" lang="en" dir="ltr">Skip to content</a>' + chr(10) + head_html(path, cz_bar) if nav else ""}
 {body.replace('<main>', '<main id="content">', 1)}
 {footer_html(footer_extra).replace("__MD_PATH__", md_path(path)) if footer is None else footer}
 </body>

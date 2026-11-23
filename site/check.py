@@ -274,17 +274,19 @@ check(f"Contact: mailto:{CONTACT}" in _sec and _exp - datetime.datetime.now(date
 _mo, _mz, _ = MARK_GEOMETRY.paths(MARK_GEOMETRY.SMALL); _lo, _lz, _ = MARK_GEOMETRY.paths(MARK_GEOMETRY.LARGE)
 check(f'd="{_mo}"' in svg and f'd="{_mz}"' in svg and f'd="{_lo}"' in MARK and f'd="{_lz}"' in MARK and 'aria-hidden="true"' in MARK, "the mark: favicon and page drawn from site/assets/mark.py; beside the name, decorative")
 check(all("M56.57,41.93" not in p.read_text("utf-8") and "ring left open" not in p.read_text("utf-8") for p in PUBLIC.rglob("*.html")), "the mark: the earlier ring and Z are on no page")
-# the mark at the head of every page (the originator's request of 30 Oct 2026, CZ 1430): beside the name, in the navigation's link to the
-# first page — on every static page, every page of the room and of the register; the first page has it once, larger, in its heading
+# the mark at the head of every page (the originator's request of 30 Oct 2026, CZ 1430): beside the name, in the head's link to the first
+# page — on every static page, every page of the room and of the register — at the size it has on the first page, which has it once, in
+# its heading (rc-12: one head, one mark)
 # the name line: the full name first, the short name beside it (31 Oct 2026; the site name asked of Google, build.py WebSite)
-_navmark = re.compile(r'<a class="home" href="/"( aria-current="page")?>' + re.escape(NAV_MARK) + re.escape("Civilization Zero (CZ)") + "</a>")
+_hmark = MARK_GEOMETRY.svg(MARK_GEOMETRY.LARGE, attrs=' width="32" height="32" aria-hidden="true" focusable="false"')
+check(NAV_MARK == _hmark, "the mark in the head of every page is the first page's, at its size")
+_navmark = re.compile(r'<a class="home" href="/">' + re.escape(NAV_MARK) + re.escape("Civilization Zero (CZ)") + "</a>")
 _nav_pages = {f.name: (VIRTUAL[f.name] if f.parent.name == "virtual" else f.read_text("utf-8")) for f in pages + [pathlib.Path("virtual") / n for n in VIRTUAL] if f.name != "index.html"}
 _nav_pages["the register's shell (api/adopt.js)"] = json.loads((SITE / "api" / "register-templates.json").read_text("utf-8"))["shell"]
-_missing = [n for n, h in _nav_pages.items() if len(_navmark.findall(h)) != 1]
-check(not _missing, f"the mark in the navigation of every page (missing: {_missing[:5]})")
+_missing = [n for n, h in _nav_pages.items() if len(_navmark.findall(h)) != 1 or h.count(NAV_MARK) != 1]
+check(not _missing, f"the mark in the head of every page, once (missing: {_missing[:5]})")
 _first = [json.loads((SITE / "api" / "home-templates.json").read_text("utf-8"))["html"], (SITE / "preview" / "index.html").read_text("utf-8")]
-_hmark = MARK_GEOMETRY.svg(MARK_GEOMETRY.LARGE, attrs=' width="32" height="32" aria-hidden="true" focusable="false"')
-check(all(h.count(_hmark) == 1 and NAV_MARK not in h and MARK not in h and f'<a href="/">{_hmark}Civilization Zero (CZ)</a></h1>' in h for h in _first), "the first page: the mark once, in its heading, in the link to the page itself")
+check(all(h.count(_hmark) == 1 and MARK not in h and f'<a href="/">{_hmark}Civilization Zero (CZ)</a></h1>' in h for h in _first), "the first page: the mark once, in its heading, in the link to the page itself")
 wm = json.loads((PUBLIC / "site.webmanifest").read_text("utf-8"))
 check(wm["display"] == "browser" and wm["start_url"] == "/" and all(png_size((PUBLIC / i["src"].lstrip("/")).read_bytes()) == tuple(map(int, i["sizes"].split("x"))) for i in wm["icons"]),
       "site.webmanifest: its icons exist at the sizes it states")
@@ -589,31 +591,77 @@ if BUNDLE_VERSION not in ("1.0-pre", "1.0"):
     r = subprocess.run([sys.executable, str(VERIFY), "--quiet", str(b)], capture_output=True, text=True)
     check(r.returncode == 0, f"verify.py on the bundle: {r.stdout[-600:]}")
 
-# 8. CZ time (the originator's decision of 30 Oct 2026): every page but the first carries the bar (the build's fallback, replaced at
-# request time) before the navigation; the first page says the day in plain words under its name, with today's date in CZ time beside the
-# name, linked to /calendar (the originator's decision of 23 Nov 2026), and two Gregorian dates appear in its header, each once — Coordinate
-# Zero's and the public launch's — and no other; the live templates are well formed; and the request-time code (room/cztime.js) gives the
-# stamps lib.py gives
+# 8. The head of every page but the first (rc-12, CZ 1455), and the day in it (the originator's decision of 30 Oct 2026: today's day at
+# the top of every page). One block: the mark and the name, the way to the first page; at the row's end the day, in the first page's own
+# words (the build's fallback, replaced at request time); under them four pages and "All pages", which leads to the list at the foot of
+# the same page. The first page keeps its own head. The live templates are well formed; the request-time code (room/cztime.js) gives
+# the stamps lib.py gives.
 BAR = json.loads((SITE / "room" / "cz-bar.json").read_text("utf-8"))
 for _n in ("bar", "calform", "timeform"):
     _pb = P(); _pb.feed(BAR[_n]); check(not _pb.err and not _pb.stack, f"room/cz-bar.json {_n}: HTML nesting {_pb.err} {_pb.stack}")
 check(all(f"__CZ_SEL_{c}__" in BAR["calform"] and f"__CZ_SEL_{c}__" in BAR["timeform"] for c, _, _ in CZ_CALENDARS) and "__CZ_VALUE__" in BAR["calform"]
-      and "__CZ_STAMP__" in BAR["bar"] and all(f"__CZ_Z{i}__" in BAR["timeform"] for i in range(len(CZ_ZONES))) and BAR["zones"] == [[z, n] for z, n in CZ_ZONES],
+      and all(f"__CZ_Z{i}__" in BAR["timeform"] for i in range(len(CZ_ZONES))) and BAR["zones"] == [[z, n] for z, n in CZ_ZONES],
       "room/cz-bar.json: the placeholders and the zones")
-# the top of every page shows the date and links to the converters; the converting is on /calendar (the originator, 30 Oct 2026)
-check("<form" not in BAR["bar"] and 'href="/calendar#convert"' in BAR["bar"] and 'href="/calendar#time"' in BAR["bar"] and "30 November 2022" in BAR["bar"], "the bar: the date, the reason, the two converters as links, no form")
-# only days are counted (the originator, 30 Oct 2026): under the date, the day count and its origin; no years, in the bar or the first page's header
-check("Day __CZ_DAYS__ since Coordinate Zero," in BAR["bar"] and not re.search(r"\b[Yy]ears?\b|__CZ_(YEAR|DOYN|DOY|YEARDAY)__", BAR["bar"]),
-      "the bar: 'Day N since Coordinate Zero', no years")
+# the day, as the first page's calendar line writes it: the calendar's name the link to /calendar, the day in green with the reader's date
+# for a parser (<time datetime>) and the count as a number (<data value>); only days are counted: no year, no form, no converter here
+_DAYLINE = '<a href="/calendar">CZ calendar</a> · <time class="d" datetime="__CZ_ISO__">Day <data value="__CZ_DAYS__">__CZ_DAYS_FMT__</data></time>'
+check(BAR["bar"] == f'<div class="cz-now" data-nosnippet>{_DAYLINE}</div>' and not re.search(r"\b[Yy]ears?\b|__CZ_(YEAR|DOYN|DOY|YEARDAY|STAMP)__|<form|calendar#", BAR["bar"]),
+      "the head's day: 'CZ calendar · Day N', the name linked to /calendar; no years, no form, no converter link")
+check(_DAYLINE.replace("__CZ_DAYS__", "__TOTAL__").replace("__CZ_DAYS_FMT__", "__TOTAL_FMT__") + "</p>" in T["html"], "the head's day is written as the first page's calendar line is, word for word")
+_cztime_js = (SITE / "room" / "cztime.js").read_text("utf-8")
+check(all(re.search(r"\b" + k + r": ", _cztime_js.split("function fields(ms)")[1].split("\n}")[0]) for k in ("ISO", "DAYS", "DAYS_FMT")), "room/cztime.js fills the fields the head's day names (ISO, DAYS, DAYS_FMT)")
 # each calendar named in its own script only
 check([n for _, n, _ in CZ_CALENDARS] == ["Gregorian", "هجری شمسی", "التقويم الهجري", "Julian", "CZ"], "the calendars' names, each in its own script")
+_NAVI = [("/core", "The Core"), ("/discuss", "Discussion"), ("/ask", "Ask your AI"), ("/about", "About"), ("#all-pages", "All pages")]
+_FALL = f'<!--cz-now--><div class="cz-now" data-nosnippet><a href="{ORIGIN}/calendar">CZ calendar</a></div><!--/cz-now-->'
+_HEAD_RE = re.compile(r'<header class="site" lang="en" dir="ltr"><div class="top"><a class="home" href="/">' + re.escape(NAV_MARK) + r'Civilization Zero \(CZ\)</a>' + re.escape(_FALL)
+                      + r'</div><nav class="site" aria-label="Site"><ul>(.*?)</ul></nav></header>\n')
+_CUR = {"core": "/core", "ask": "/ask", "about": "/about", "discuss": "/discuss", "respond": "/respond"}
 for f in pages + [pathlib.Path("virtual") / n for n in VIRTUAL]:
     if f.name == "index.html": continue
     h = VIRTUAL[f.name] if f.parent.name == "virtual" else f.read_text("utf-8")
     _b = h.split("<body>", 1)[1].lstrip()
-    _b = _b.removeprefix('<a class="skip" href="#content" lang="en" dir="ltr">Skip to content</a>').lstrip()   # the skip link comes first (WCAG 2.4.1)
-    check(_b.startswith("<!--cz-now") and _b.count("<!--cz-now") == 1 and "<!--/cz-now-->" in _b and _b.index("<!--/cz-now-->") < _b.index('<nav class="site"'),
-          f"{f.name}: CZ time at the top, before the navigation")
+    _skip = '<a class="skip" href="#content" lang="en" dir="ltr">Skip to content</a>\n'   # the skip link comes first (WCAG 2.4.1), then the head
+    _m = _HEAD_RE.match(_b[len(_skip):]) if _b.startswith(_skip) else None
+    check(_m is not None and h.count("<!--cz-now") == 1 and h.count("<!--/cz-now-->") == 1 and h.count('<header class="site"') == 1 and h.count('<nav class="site"') == 1 and 'id="content"' in h,
+          f"{f.name}: the skip link, then the one head — the mark and the name, the day's place, the navigation — and a main part for the skip link to land on")
+    if _m is None: continue
+    _items = re.findall(r'<li><a href="([^"]+)"( aria-current="page")?>([^<]+)</a></li>', _m.group(1))
+    _stem = f.stem.replace("-open", "").split(".")[0]
+    _want = None if f.parent.name == "virtual" else _CUR.get(_stem)   # a room page is marked at request time (room/lib.js), by the same markup
+    check([(a, c) for a, _, c in _items] == _NAVI and "".join(f'<li><a href="{a}"{b}>{c}</a></li>' for a, b, c in _items) == _m.group(1) and [a for a, b, _ in _items if b] == ([_want] if _want else []),
+          f"{f.name}: the navigation is The Core · Discussion · Ask your AI · About · All pages, and marks the page one is on ({_want})")
+    check(h.count('<ul class="foot" id="all-pages">') == 1 and h.index('<ul class="foot" id="all-pages">') > h.index("<footer"), f"{f.name}: 'All pages' leads to the list at the foot of the same page")
+# the room's functions mark the page one is on by replacing this exact piece of the head (room/lib.js shell, api/adopt.js): it must stand in the shell, first of its kind
+_shells = {"room": DT["shell"], "register": json.loads((SITE / "api" / "register-templates.json").read_text("utf-8"))["shell"]}
+check(all(s.count('<header class="site"') == 1 and '<li><a href="/discuss">' in s and s.index('<li><a href="/discuss">') < s.index("<footer") and ' aria-current="page"' not in s and _FALL in s for s in _shells.values())
+      and '`<li><a href="${cur}">`' in (SITE / "room" / "lib.js").read_text("utf-8"),
+      "the shells of the room and the register: the head, unmarked; room/lib.js marks /discuss in the navigation at request time")
+# the shared stylesheet (every page but the first): the first page's module and ratio, from one source; one measure; nothing off the scale
+_scss = re.search(r"<style>(.*?)</style>", (PUBLIC / "core.html").read_text("utf-8"), re.S).group(1)
+_hcss = (SITE / "home.css").read_text("utf-8")
+_tokblock = re.search(r"^(:root\{.*?\})\n(@media\(prefers-color-scheme:dark\)\{:root\{[^}]*\}\})$", _hcss, re.S | re.M)
+check(_scss == CSS and _tokblock is not None and _scss.count(_tokblock.group(1) + "\n" + _tokblock.group(2)) == 1 and _scss.count(":root{") == 3,
+      "the shared stylesheet opens with the first page's tokens, byte for byte (home.css, block 1), and defines no other scale")
+check(all(f.read_text("utf-8").count(f"<style>{CSS}</style>") == 1 for f in pages if f.name != "index.html") and all(s.count(f"<style>{CSS}</style>") == 1 for s in _shells.values()),
+      "every page but the first carries the shared stylesheet, once")
+_snocom = re.sub(r"/\*.*?\*/", "", _scss, flags=re.S)
+_sdecl = _snocom.replace(_tokblock.group(1), "").replace(_tokblock.group(2), "")
+_SPOW = {round(2 ** (k / 4), 4) for k in range(-24, 32)}
+_sloose = sorted({n + u for n, u in re.findall(r"(?<![\w#(.-])(\d*\.?\d+)(rem|em|px|s)\b", _sdecl) if float(n) != 0 and (u == "px" or round(float(n), 4) not in _SPOW)})
+_stok = set(re.findall(r"(--[a-z][\w-]*):", _tokblock.group(1)))
+check(not _sloose and set(re.findall(r"var\((--[a-z][\w-]*)", _snocom)) <= _stok and "@import" not in _scss and "url(" not in _scss and "@font-face" not in _scss,
+      f"the shared stylesheet: every rem, em and second is a power of the ratio, no px, no token that the first page does not define, nothing loaded {_sloose}")
+check(_snocom.count("max-inline-size:56ch") == 1 and "header.site,main,footer{max-inline-size:56ch;margin-inline:auto;padding-inline:var(--e-1)}" in _snocom and not re.search(r"(?<![-\w])(max-)?width:", _snocom),
+      "the shared stylesheet: one measure, in characters, for the head, the text and the foot")
+_smo = _snocom.split("@media(prefers-reduced-motion:no-preference){")
+check(len(_smo) == 2 and not re.search(r"transition|animation|@keyframes", _smo[0]) and "a.home svg{view-transition-name:cz-mark}" in _smo[1] and "@view-transition{navigation:auto}" in _smo[1]
+      and ".name svg{view-transition-name:cz-mark}" in _hcss.split("@media(prefers-reduced-motion:no-preference){")[1],
+      "the shared stylesheet: all motion in one block, only for a reader who has not asked for less; the mark carries one name on every page and on the first, so that it travels between them")
+_spal = set(re.findall(r"#[0-9a-f]{3,6}\b", _sdecl)) | set(re.findall(r"rgb\([^)]*\)", _sdecl))
+check(_spal <= {"#000", "#fff", "#116329", "#3fb950", "rgb(0 0 0/.5)"}, f"the shared stylesheet: no colour outside the first page's two palettes (light-dark()'s probe and the sheet's backdrop apart) {_spal}")
+_green = [sel.strip() for sel, body in re.findall(r"([^{}]+)\{([^{}]*)\}", _sdecl) if "var(--machine)" in body]
+check(all(re.search(r"\.cz-now \.d|k-ai|\.ai\b|\.mtag|\.mt\b|tr-|:root", s) for s in _green), f"the shared stylesheet: green only for what a machine wrote (an AI's entry, a machine translation and its progress) and for the day of the CZ count {_green}")
 # ---- the first page of 24 Nov 2026 (CZ 1455; rc-11). The centre is empty; on either side stand the two kinds of reader; either may
 # enter. Read here as the function serves it to a reader whose network names no zone (site/preview: the page, its data, text and
 # Markdown forms), and as the build wrote it (T); the stylesheet is site/home.css.
