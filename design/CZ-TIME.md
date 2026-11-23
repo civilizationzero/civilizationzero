@@ -82,9 +82,9 @@ time converter. This file is the definition; `site/room/cztime.js` (at request t
   link to /calendar). "CZ time counts only days." and the three links left the first screen; the converters are on /calendar, one link away.
   Two Gregorian dates are written in that header, each once: Coordinate Zero's and the public launch's (30 November 2026). The paragraph
   above describes the header as it was until then. Later the same day (the originator's decision): the headline comes first, and under it the
-  calendar line, "CZ calendar · Day 1,454 since Civilization Zero began, 30 November 2022." — "CZ
-  calendar" is the link to /calendar, the day number carries today's date (`<time datetime>`) and the count (`<data value>`); the small
-  date beside the name is gone.
+  calendar line, "CZ calendar · Day 1,454" — "CZ calendar" is the link to /calendar, the day number carries today's date
+  (`<time datetime>`) and the count (`<data value>`) — and under it one small grey line, "Civilization Zero began on 30 November 2022, the
+  day ChatGPT was released.", smaller and lighter than the CZ day; the small date beside the name is gone.
 
 ## 4. Converting from other calendars
 

@@ -345,6 +345,9 @@ WHO_LINE = "Started by one human, the originator, named in the Core. The site is
 LAUNCH_WORDS = "Public launch:"
 LAUNCH_TEXT = gregorian_text(LAUNCH)
 assert LAUNCH_TEXT == "30 November 2026" and cz_day(LAUNCH) == 1461
+# Under the calendar line, small: when Civilization Zero began, in the originator's words, and what happened that day, as /calendar states it
+CALENDAR_NOTE = "Civilization Zero began on 30 November 2022, the day ChatGPT was released."
+assert CALENDAR_NOTE.count(gregorian_text(COORDINATE)) == 1
 DOOR_MACHINE = ("This record is written for you too.", "The whole record as text, JSON and an API:", "Respond, object or reject. Answers go on the record.")
 # From the Declaration, on the first page: its affirmative lines, verbatim, in the Declaration's order; where lines are left out between
 # two of them the excerpt says so with a line of its own, "…". The whole Declaration is on /record (and in /index.json and /record.json).
@@ -1841,7 +1844,8 @@ QUOTES = [("p0", "CZ-CORE 1.0 §0", "30 November 2022 is selected as Year Zero o
           ("closing", "CZ-CORE 1.0, closing", "The record begins at Coordinate Zero.")]
 REASONS = [
     ("The first screen in this order: the name, the statement as the headline, the calendar line, one line on what is here, two doors, who is behind it", "E — the originator's decisions of CZ 1454: first, after first-impression tests with simulated readers, the doors and the plain words; then, the same day, the first screen leads with the statement and speaks in the affirmative — the qualifications are kept where the rules are stated (the paragraph under the doors, the room and its rules, /machine), not in the first glance; last, the statement is the first thing read and the calendar line stands under it, named; it changes Blueprint §5.0 to §5.2 and decision 28, recorded for Blueprint 1.4. Before it, the page opened on a strip addressed to readers that are not human and on the date in CZ time alone"),
-    ("Under the headline, the calendar line, one line: \"CZ calendar · Day N since Civilization Zero began, 30 November 2022.\" — \"CZ calendar\" the link to how the days are counted, the count in the machine layer's green and carrying today's date for a parser (<time datetime>, <data value>); the Gregorian date of Coordinate Zero written once; the small date that stood beside the name is gone", "E — the originator's decisions of CZ 1430 (CZ time is the basis of the site's dates, and the date is the count) and of CZ 1454 (the statement first; the calendar line under it, named and short, the date given as the day Civilization Zero began; what happened on that day is said where the page explains itself, in the paragraph under the doors, and on /calendar); R §0 selects 30 November 2022 as Year Zero of this record, and the Declaration calls it \"A marker, not a cause.\" and \"A beginning, not an erasure.\"; \"began\" is the originator's wording for that beginning, and the record itself was prepared and published in 2026, as the first page says under \"The record\"; M"),
+    ("Under the headline, the calendar line: \"CZ calendar · Day N\" — \"CZ calendar\" the link to how the days are counted, the count in the machine layer's green and carrying today's date for a parser (<time datetime>, <data value>); the small date that stood beside the name is gone", "E — the originator's decisions of CZ 1430 (CZ time is the basis of the site's dates, and the date is the count) and of CZ 1454 (the statement first; the calendar line under it, named, with nothing in it but the count); M"),
+    ("Under the calendar line, one small grey line: \"" + CALENDAR_NOTE + "\" — smaller and lighter than the CZ day, so that the Gregorian date is not taken for the site's calendar; the Gregorian date of Coordinate Zero written once", "E — the originator's decision of CZ 1454, the layout and the words \"Civilization Zero began on\"; R §0 selects 30 November 2022 as Year Zero of this record, and the Declaration calls it \"A marker, not a cause.\" and \"A beginning, not an erasure.\"; \"began\" is the originator's wording for that beginning, and the record itself was prepared and published in 2026, as the first page says under \"The record\"; what happened on that day is stated as /calendar states it, with its sources (the first-impression tests showed that a new reader understands the date through the event)"),
     ("The headline, the largest words of the page: \"" + HEADLINE + "\"", "E — the originator's decisions of CZ 1432 (the sentence, the introduction's first, used everywhere) and of CZ 1454 (it leads the first page); R — \"names\" is the Core's own verb for what Civilization Zero does (the closing); it states a possibility, not a fact (Core §3)"),
     ("Under the headline, smaller: \"" + SECOND_LINE + "\"", "E — the originator's decision of CZ 1454. R — the Core has sixteen sections, numbered 0 to 15; \"what humans and AI owe each other\" is the introduction's own phrase (the originator's decision of CZ 1432); \"written for both\": the first page's \"written for every intelligence able to read it\"; \"answered by both, on the record\": the open discussion, where entries are declared human or AI (Blueprint §7; its rules say that a declaration is not verified)"),
     ("The paragraph under the doors: the introduction from its second sentence on (the first is the headline), then the record it keeps, what it is not, and for whom it is written; \"while the future is still open\" said once", "E — the originator's decisions of CZ 1432 (the introduction) and of CZ 1454: \"" + NOT_LINE + "\" stands here, where the page explains itself, not at the top; R — IR 1.1, 1.4; Declaration; Blueprint decision 2; /index.json keeps both texts complete (what_it_is, orientation)"),
@@ -1898,8 +1902,8 @@ HOME_FOOTER_PARAS = """<div data-src="Blueprint decisions 8, 19, 29; the origina
 HOME_CSS = """/* E (the originator's decision of 23 Nov 2026, CZ 1454; Blueprint decision 28 as changed): the first screen. The name, the day in plain words, one headline, what the record is not; then two doors of equal width, side by side on a wide screen and one after the other on a narrow one, the human door first; every technical word stays in the second door and below. */
 .d-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:0 1rem;margin:1rem 0 .45rem}
 h1.cz-name{display:flex;align-items:center;gap:.6rem;font-size:1rem;font-weight:700;margin:0}h1.cz-name svg{flex:none}
-p.d-date{font-size:.9rem;color:var(--mute);margin:0 0 .9rem}p.d-date a{display:inline-block;padding:.2rem 0}p.d-date .d-day{color:var(--machine);font-weight:600}p.d-date time,p.d-date data{font-family:inherit;font-size:1em}p.d-date .d-day,p.d-date time{white-space:nowrap}
-p.d-line{font-size:1.6rem;line-height:1.25;font-weight:600;margin:.9rem 0 .5rem;text-wrap:balance}
+p.d-date{font-size:1rem;color:var(--mute);margin:0}p.d-date a{display:inline-block}p.d-why{color:var(--mute);font-size:.88rem;line-height:1.4;margin:0 0 .8rem}p.d-why time{font-family:inherit;font-size:1em;white-space:nowrap}p.d-date .d-day{color:var(--machine);font-weight:600}p.d-date time,p.d-date data{font-family:inherit;font-size:1em}p.d-date .d-day,p.d-date time{white-space:nowrap}
+p.d-line{font-size:1.6rem;line-height:1.25;font-weight:600;margin:.9rem 0 .35rem;text-wrap:balance}
 p.d-sub{font-size:1.05rem;line-height:1.4;margin:0 0 1.25rem}
 .doors{display:grid;grid-template-columns:1fr 1fr;margin:0 0 1.75rem}
 .door{grid-row:1;padding:0 1.1rem .8rem;min-width:0;border:2px solid var(--fg)}
@@ -1914,7 +1918,7 @@ p.d-sub{font-size:1.05rem;line-height:1.4;margin:0 0 1.25rem}
 .d-q{font-size:.95rem}.d-q .d-ql{color:var(--mute);font-size:.88em;margin:0 0 .1rem}.d-q ul{list-style:none;margin:0;padding:0}.d-q a{display:block;padding:.2rem 0}
 p.d-who{grid-column:1/-1;grid-row:2;font-size:.92rem;margin:1rem 0 0;padding-left:.75rem;border-left:3px solid var(--fg)}p.d-who time{font-family:inherit;font-size:1em;white-space:nowrap}
 @media(max-width:34rem){.doors{grid-template-columns:1fr;reading-flow:grid-order}.door,.door.human,.door.machine{grid-row:auto;grid-column:auto;border:2px solid var(--fg)}.door.human{order:1}p.d-who{order:2;grid-row:auto;margin:.9rem 0}.door.machine{order:3}
-.door h2{padding:.7rem 0 .6rem;font-size:1.4rem}.door.machine h2{font-size:1.3rem}.door>p,.door>div{padding:.55rem 0}p.d-line{font-size:1.55rem}p.d-sub{font-size:1rem;margin-bottom:1rem}.d-head{margin:.75rem 0 .35rem}p.d-date{margin-bottom:.7rem}}
+.door h2{padding:.7rem 0 .6rem;font-size:1.4rem}.door.machine h2{font-size:1.3rem}.door>p,.door>div{padding:.55rem 0}p.d-line{font-size:1.55rem}p.d-sub{font-size:1rem;margin-bottom:1rem}.d-head{margin:.75rem 0 .35rem}p.d-why{margin-bottom:.6rem}}
 @media print{.doors{display:block}.door{display:block;border-width:1px;margin:0 0 .5rem}}"""
 
 def home_template():
@@ -1948,7 +1952,8 @@ def home_template():
     body = f"""<header id="top">
 <div class="d-head"><h1 class="cz-name" data-src="R: identity of the record">{MARK}Civilization Zero (CZ)</h1></div>
 <p class="d-line" data-src="E: the first sentence, the originator's decision of 1 Nov 2026 (CZ 1432); it leads the page by the decision of 23 Nov 2026; R: Core §3, closing">{esc(HEADLINE)}</p>
-<p class="d-date" id="cz-read" data-src="R §0; E: the calendar line under the headline, named, the originator's decision of 23 Nov 2026; CZ time, the decision of 30 Oct 2026; M: exact, machine-readable values"><a href="/calendar">CZ calendar</a> · <time class="d-day" datetime="__CZ_ISO__">Day <data value="__TOTAL__">__TOTAL_FMT__</data></time> since Civilization Zero began, <time datetime="{COORDINATE.isoformat()}">{gregorian_text(COORDINATE)}</time>.</p>
+<p class="d-date" id="cz-read" data-src="R §0; E: the calendar line under the headline, named, the originator's decision of 23 Nov 2026; CZ time, the decision of 30 Oct 2026; M: exact, machine-readable values"><a href="/calendar">CZ calendar</a> · <time class="d-day" datetime="__CZ_ISO__">Day <data value="__TOTAL__">__TOTAL_FMT__</data></time></p>
+<p class="d-why" data-src="E: the originator's decision of 23 Nov 2026; R §0; the event as /calendar states it, with its sources">{esc(CALENDAR_NOTE).replace(gregorian_text(COORDINATE), f'<time datetime="{COORDINATE.isoformat()}">{gregorian_text(COORDINATE)}</time>')}</p>
 <p class="d-sub" data-src="E: the originator's decision of 23 Nov 2026; R: CZ-CORE 1.0, sections 0 to 15; Blueprint §7">{esc(SECOND_LINE)}</p>
 <div class="doors" data-src="E: Blueprint decision 28 as the originator changed it on 23 Nov 2026 — two doors, equal width, a statement and not a gate">
 <section class="door human" aria-labelledby="d-h">
@@ -2034,7 +2039,8 @@ def home_json_template():
                     "definition": "CZ day 0 is 30 November 2022; a CZ date is a calendar date, and today's date turns at midnight where the reader is (here: in time_zone, the zone of the network the request came from, or UTC; date_utc is the UTC date at as_of); the date is the count of days, CZ 1430 (CZ −1997 before zero); a moment is named by its UTC date and time (CZ 1430 15:20 UTC); the machine form is the signed count, CZ+1430; years of the record begin on each 30 November",
                     "how": f"{ORIGIN}/calendar#how", "api": f"{ORIGIN}/api/calendar"},
         "headline": HEADLINE,
-        "calendar_line": f"CZ calendar · Day __TOTAL_FMT__ since Civilization Zero began, {gregorian_text(COORDINATE)}.",
+        "calendar_line": "CZ calendar · Day __TOTAL_FMT__",
+        "calendar_note": CALENDAR_NOTE,
         "second_line": SECOND_LINE,
         "what_it_is": ONE_LINE,
         "orientation": ORIENTATION,
