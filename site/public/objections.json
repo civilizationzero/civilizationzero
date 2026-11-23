@@ -3,7 +3,7 @@
   "opened": "2026-10-28",
   "html": "https://civilizationzero.ai/objections",
   "source": "https://github.com/civilizationzero/civilizationzero/blob/main/record/OBJECTIONS-1.0.md",
-  "source_sha256": "b562b14d4036f8ed2437644fb4939e444c3207c8c0d0dee6c921d331afe0ae46",
+  "source_sha256": "2ae6acf3cb7120b7c6852de5ff0d4b7bfcc1aff9ced2e7027f98d2d8827f9b0a",
   "history": "https://github.com/civilizationzero/civilizationzero/commits/main/record/OBJECTIONS-1.0.md",
   "role": "the opening docket of the first scheduled review of the Core, 2028-07-09 (CZ 2048); the 1.0 texts do not change",
   "rules": {
@@ -171,7 +171,7 @@
       "raised_by": "Claude",
       "verified": "Judgement",
       "state": "open",
-      "status": "open; the third is addressed on /about (custody and costs stated; the originator decided on 28 Oct 2026 that the paying company is described but not named in the site's voice)"
+      "status": "open; the third is addressed on /about (custody and costs stated; the originator decided on 28 Oct 2026 that the paying company is described but not named in the site's voice; on 23 Nov 2026 the originator decided that /about says who bears the cost, the originator, and no longer mentions a company)"
     },
     {
       "id": "O-15",
