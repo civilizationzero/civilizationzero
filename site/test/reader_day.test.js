@@ -151,7 +151,7 @@ test("the first page: its heading is the reader's date; its data form names the 
   const now = Date.now();
   const h = await call(home, "/", { ...Z(EAST), accept: "text/html" });
   // the calendar line under the headline (23 Nov 2026): the day number carries the reader's date for a parser, and is the reader's day
-  const dE = CZ.todayIn(now, EAST), dW = CZ.todayIn(now, WEST), cal = (d) => `<a href="/calendar">CZ calendar</a> · <time class="d-day" datetime="${CZ.isoDate(...CZ.toGregorian(d))}">Day <data value="${d}">${d.toLocaleString("en-US")}</data></time></p>\n<p class="d-why"`;
+  const dE = CZ.todayIn(now, EAST), dW = CZ.todayIn(now, WEST), cal = (d) => `<a href="/calendar">CZ calendar</a> · <time class="d" datetime="${CZ.isoDate(...CZ.toGregorian(d))}">Day <data value="${d}">${d.toLocaleString("en-US")}</data></time></p>\n<p class="zero m"`;
   assert.ok(h.body.includes(cal(dE)), "the calendar line, the reader's day");
   assert.ok((await call(home, "/", { ...Z(WEST), accept: "text/html" })).body.includes(cal(dW)) && dE !== dW, "another zone, another day");
   const NOTE = "Day 0: 30 November 2022, the day ChatGPT was released.", line = (d) => `CZ calendar · Day ${d.toLocaleString("en-US")}`;
@@ -159,7 +159,7 @@ test("the first page: its heading is the reader's date; its data form names the 
   assert.ok((await call(home, "/index.md?f=md", Z(EAST))).body.includes(`[CZ calendar](https://civilizationzero.ai/calendar) · Day ${dE.toLocaleString("en-US")}\n\n${NOTE}\n`), "Markdown form: the two lines, in this order");
   assert.equal(JSON.parse((await call(home, "/?f=json", Z(EAST))).body).calendar_line, line(dE), "data form");
   assert.equal(JSON.parse((await call(home, "/?f=json", Z(EAST))).body).calendar_note, NOTE, "data form, the second line");
-  assert.ok(h.body.includes('<p class="d-why"') && h.body.includes('>Day 0: <time datetime="2022-11-30">30 November 2022</time>, the day ChatGPT was released.</p>\n<p class="d-sub"'), "the page: the small line under the calendar line, before the second line");
+  assert.ok(h.body.includes('<p class="zero m"') && h.body.includes('>Day 0: <time datetime="2022-11-30">30 November 2022</time>, the day ChatGPT was released.</p>\n<p class="say m l"'), "the page: the small line under the calendar line, before the line on the figure");
   assert.ok(!/<time datetime="[^"]+">CZ \d+<\/time><\/a><\/div>/.test(h.body) && !h.body.includes("d-stamp"), "the small date beside the name is gone");
   assert.equal(h.headers.vary, "Accept, X-Vercel-IP-Timezone");
   const j = JSON.parse((await call(home, "/?f=json", Z(WEST))).body);
@@ -172,9 +172,9 @@ test("the first page: its heading is the reader's date; its data form names the 
 // before that day and after it, in every form, wherever the reader is. It never becomes "Public since …": the site was public before its launch.
 test("the first page: the launch sentence is the same before and after the launch day", async (t) => {
   const home = require("../api/home.js"), T = require("../api/home-templates.json");
-  assert.deepEqual(Object.keys(T).sort(), ["html", "json", "txt"]);
+  assert.deepEqual(Object.keys(T).sort(), ["figure", "html", "json", "txt"]);   // the three forms, and the Core's hash for the day's figure (24 Nov 2026)
   const LINE = "The site is written, built and run day to day by an artificial intelligence. Public launch: 30 November 2026.";
-  const text = (b) => b.replace(/<[^>]+>/g, "");
+  const text = (b) => b.replace(/<[^>]+>/g, "");   // the page's words without its markup ("the Core" is a link there since 24 Nov 2026)
   const forms = async (zone) => ({ html: text((await call(home, "/", { ...Z(zone), accept: "text/html" })).body), txt: (await call(home, "/?f=txt", Z(zone))).body,
     json: JSON.parse((await call(home, "/?f=json", Z(zone))).body).who, md: (await call(home, "/index.md?f=md", Z(zone))).body });
   const same = (o, when) => { for (const [k, b] of Object.entries(o)) { assert.ok(b.includes(LINE), `${k}, ${when}: the sentence`); assert.ok(!b.includes("Public since") && !b.includes("__LAUNCH"), `${k}, ${when}: nothing else`); } };

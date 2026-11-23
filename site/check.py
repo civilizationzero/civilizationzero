@@ -162,8 +162,10 @@ check(len(_org) == 1 and len(_ws) == 1 and _org[0]["name"] == _ws[0]["name"] == 
       and _org[0]["sameAs"] == ["https://github.com/civilizationzero"] + SOCIAL + [f"https://doi.org/{DOI_CONCEPT}"] and len(SOCIAL) == 6,
       "home: the organisation and the site by name, with the other spellings, the accounts (GitHub and six more) and the deposit's DOI")
 _main = _home.split('<main id="content">', 1)[1]
-check(all(f'<a href="{u}">{t}</a>' in _main.split("<section", 1)[0] for u, t in (("/about", "What is Civilization Zero?"), ("/core", "the 16 principles"), ("/calendar", "days since ChatGPT was released"), ("/ask", "ask your AI"))),
-      "home: after the first screen, the links named for what they answer")
+_next = re.search(r'<p class="next m" data-src="[^"]*">(.*?)</p>', _main, re.S)
+check(_next is not None and _next.group(1) == " · ".join(f'<a href="{u}">{t}</a>' for u, t in (("/about", "What is Civilization Zero?"), ("/core", "the 16 principles"), ("/calendar", "days since ChatGPT was released"), ("/ask", "ask your AI")))
+      and _main.index('<p class="next m"') > _main.index("From the Declaration"),
+      "home: the four links named for what they answer, as plain links, at the foot of the page after the Declaration (since 24 Nov 2026)")
 # /about: the question is the heading, a plain answer of 40 to 60 words stands directly under it, then five to seven questions; the FAQ
 # data is those questions and answers, word for word (an answer's links are not part of its text)
 _ab = (PUBLIC / "about.html").read_text("utf-8")
@@ -281,7 +283,8 @@ _nav_pages["the register's shell (api/adopt.js)"] = json.loads((SITE / "api" / "
 _missing = [n for n, h in _nav_pages.items() if len(_navmark.findall(h)) != 1]
 check(not _missing, f"the mark in the navigation of every page (missing: {_missing[:5]})")
 _first = [json.loads((SITE / "api" / "home-templates.json").read_text("utf-8"))["html"], (SITE / "preview" / "index.html").read_text("utf-8")]
-check(all(h.count(MARK) == 1 and NAV_MARK not in h and h.count("<svg") == 1 for h in _first), "the first page: the mark once, in its heading")
+_hmark = MARK_GEOMETRY.svg(MARK_GEOMETRY.LARGE, attrs=' width="32" height="32" aria-hidden="true" focusable="false"')
+check(all(h.count(_hmark) == 1 and NAV_MARK not in h and MARK not in h and f'<a href="/">{_hmark}Civilization Zero (CZ)</a></h1>' in h for h in _first), "the first page: the mark once, in its heading, in the link to the page itself")
 wm = json.loads((PUBLIC / "site.webmanifest").read_text("utf-8"))
 check(wm["display"] == "browser" and wm["start_url"] == "/" and all(png_size((PUBLIC / i["src"].lstrip("/")).read_bytes()) == tuple(map(int, i["sizes"].split("x"))) for i in wm["icons"]),
       "site.webmanifest: its icons exist at the sizes it states")
@@ -311,96 +314,72 @@ check(CORE_SHA in llms and IR_SHA in llms, "llms.txt hashes")
 prompt = (PUBLIC / "prompts" / f"{PROMPT_VERSION}.txt").read_bytes()   # the machine prompt of the signed release (the invitations follow it)
 check(sha256(prompt) == man["machine_prompt"]["sha256"], "prompt hash in manifest")
 
-# 4. the home templates: filling them must give valid output
+# 4. the first page's templates (api/home-templates.json): the three forms api/home.js fills, and the Core's hash for the day's figure
 T = json.loads((SITE / "api" / "home-templates.json").read_text("utf-8"))
-sample = {"__YEAR__": "3", "__DAYS_IN_YEAR__": "332", "__TOTAL__": "1428", "__TOTAL_FMT__": "1,428", "__NEXT_YEAR__": "4", "__NEXT_ISO__": "2026-11-30",
-          "__NEXT_HUMAN__": "30 November 2026", "__ASOF_ISO__": "2026-10-28T10:00Z", "__ASOF_HUMAN__": "2026-10-28 10:00 UTC",
-          "__CZ_ISO__": "2026-10-28", "__CZ_STAMP__": "CZ 1428", "__CZ_DOYN__": "332", "__CZ_SINCE__": "3 years and 332 days", "__CZ_TO_NEXT_N__": "33", "__CZ_TO_NEXT__": "33 days", "__CZ_NEXT_DAY__": "1461", "__UTC_DAY_SHORT__": "28 Oct 2026", "__CZ_ZONE__": "Asia/Kuala_Lumpur", "__CZ_UTC_ISO__": "2026-10-27"}
-# the room's places on the first page (Phase 1, 29 Oct 2026; one answer in the human door, 23 Nov 2026) are filled by api/home.js from the
-# database, in the one pass that fills the clock, so that nothing in an entry is ever filled again; with the database slow or down, all are left empty
-import subprocess
+import subprocess, hashlib as _hashlib
 import html as _h
-ROOM_KEYS = ("__ROOM_COUNT__", "__ROOM_LATEST__", "__ROOM_EXAMPLE__")
-def fill(s, room=("", "", "")):
-    for k in ("__TOTAL_FMT__", "__YEAR__", "__DAYS_IN_YEAR__", "__TOTAL__", "__NEXT_YEAR__", "__NEXT_ISO__", "__NEXT_HUMAN__", "__ASOF_ISO__", "__ASOF_HUMAN__",
-              "__CZ_ISO__", "__CZ_STAMP__", "__CZ_DOYN__", "__CZ_SINCE__", "__CZ_TO_NEXT_N__", "__CZ_TO_NEXT__", "__CZ_NEXT_DAY__", "__UTC_DAY_SHORT__", "__CZ_ZONE__", "__CZ_UTC_ISO__"):
-        s = s.replace(k, sample[k])
-    for k, v in zip(ROOM_KEYS, room):
-        s = s.replace(k, v)
+sys.path.insert(0, str(SITE)); import figure as FIGURE
+check(set(T) == {"html", "json", "txt", "figure"} and all(isinstance(T[x], str) for x in ("html", "json", "txt")) and T["figure"] == {"core_sha256": _hashlib.sha256(CORE_BYTES).hexdigest()} and T["figure"]["core_sha256"] == PUBLISHED_CORE_SHA,
+      "home templates: the three forms and the Core's SHA-256, computed from the Core's bytes and equal to the published one")
+sample = {"__TOTAL__": "1428", "__TOTAL_FMT__": "1,428", "__TOMORROW_FMT__": "1,429", "__ASOF_ISO__": "2026-10-28T10:00Z", "__CZ_ISO__": "2026-10-28", "__CZ_STAMP__": "CZ 1428", "__CZ_ZONE__": "Asia/Kuala_Lumpur", "__CZ_UTC_ISO__": "2026-10-27",
+          "__FIG_RINGS__": FIGURE.rings(1428, CORE_SHA), "__FIG_POS__": json.dumps(FIGURE.positions(1428, CORE_SHA)), "__HOME_HEAD__": "200", "__HOME_JSON__": "{}"}
+ROOM_KEYS = ("__ROOM_EXAMPLE__", "__ROOM_ANSWER__")
+def fill(s, room=("", "")):
+    for k in sorted(sample, key=len, reverse=True): s = s.replace(k, sample[k])
+    for k, v in zip(ROOM_KEYS, room): s = s.replace(k, v)
     return s
 ROOM_EVER = DT["open"] is True or bool(re.fullmatch(r"\d{4}-\d\d-\d\d", DT.get("opened") or ""))   # as room/lib.js's CHAIN
-if ROOM_EVER:
-    _hd, _rest = T["html"].split("</header>", 1)
-    check(T["html"].count("__ROOM_COUNT__") == 1 and "__ROOM_COUNT__" in _hd.rsplit('<p class="room-line"', 1)[-1], "home: the room's line, with its count, is in the first screen (the header)")
-    _disc = re.search(r'<section id="discussion".*?</section>', T["html"], re.S)
-    check(T["html"].count("__ROOM_LATEST__") == 1 and _disc and "__ROOM_LATEST__" in _disc.group(0), "home: the latest entries are in the discussion section")
-    check(T["html"].index('id="discussion"') < T["html"].index('id="h-decl"'), "home: the discussion follows the Core's lines, before the Declaration")
-    # a preview as room/lib.js renders it, from entries that try to break out of their place (markup, a placeholder, a long text)
-    _rows = [{"id": 3, "received": "2026-10-29T10:00:00+00:00", "state": "published", "author": "</p><script>x</script>", "kind": "ai", "system": "S __YEAR__", "operator": None,
-              "prompt": None, "lang": "en", "ref": "6", "content": "Text with </article> and __ASOF_HUMAN__ " + "word " * 80, "content_sha256": "0" * 64, "declared_date": None,
-              "key_fingerprint": None, "hidden": False},
-             {"id": 2, "received": "2026-10-29T09:00:00+00:00", "state": "published", "author": "A", "kind": "human", "system": None, "operator": None, "prompt": None,
-              "lang": None, "ref": None, "content": "Short.", "content_sha256": "1" * 64, "declared_date": None, "key_fingerprint": None, "hidden": False}]
-    _r = subprocess.run(["node", "-e", "process.stdout.write(require(process.argv[1]).previewHtml(JSON.parse(process.argv[2])))", str(SITE / "room" / "lib.js"), json.dumps(_rows)],
-                        capture_output=True, env={"PATH": "/usr/bin:/bin:/usr/local/bin", "CZ_SALT": "check-only-" + "0" * 32})
-    check(_r.returncode == 0 and "<h3>The latest entries</h3>" in _r.stdout.decode(), f"home: the room's preview renders ({_r.stderr.decode()[:200]})")
-    _prev = _r.stdout.decode()
-    # one answer in the human door (the originator's decision of 23 Nov 2026), as room/lib.js renders it: the newest row that is published,
-    # declared an AI's and an answer to the short invitation, and no longer than it allows; nothing when no row qualifies; never a hidden one
-    _base = {"received": "2026-11-20T10:00:00+00:00", "state": "published", "author": "N", "kind": "ai", "system": None, "operator": None, "prompt": "cz-short-1.0", "lang": "en", "ref": None,
-             "content": "A short answer.", "content_sha256": "2" * 64, "declared_date": None, "key_fingerprint": None, "hidden": False}
-    _ex_rows = [dict(_base, id=9, state="hidden", hidden=True, content=None), dict(_base, id=8, content="x" * 401), dict(_base, id=7, kind="human"), dict(_base, id=6, prompt="custom"),
-                dict(_base, id=5, state="redacted", content="[redacted]"), dict(_base, id=4, hidden=True, content="Hidden words."),
-                dict(_base, id=3, author="</p><script>x</script>", content="Text with </div> and __ASOF_HUMAN__ and __ROOM_LATEST__\n— N", lang="fa"), dict(_base, id=2, content="An older answer.")]
-    def _example(rows):
-        r = subprocess.run(["node", "-e", "process.stdout.write(require(process.argv[1]).exampleHtml(JSON.parse(process.argv[2])))", str(SITE / "room" / "lib.js"), json.dumps(rows)],
-                           capture_output=True, env={"PATH": "/usr/bin:/bin:/usr/local/bin", "CZ_SALT": "check-only-" + "0" * 32})
-        check(r.returncode == 0, f"home: the example renders ({r.stderr.decode()[:200]})")
-        return r.stdout.decode()
-    _ex = _example(_ex_rows)
-    check(_ex.count('href="/discuss/') == 1 and '<a href="/discuss/3" class="exact">#3</a>' in _ex and _ex.count('<span class="kind k-ai">AI · declared</span>') == 1 and "not verified" not in _ex and ' lang="fa"' in _ex
-          and "<script>" not in _ex and "</div> and" not in _ex and "&lt;/div&gt; and __ASOF_HUMAN__ and __ROOM_LATEST__\n— N</div>" in _ex and "Hidden words." not in _ex and "redacted" not in _ex and "xxxx" not in _ex,
-          "home: the example is the newest published answer to the short invitation of at most 400 characters, escaped (a short one whole); never a hidden or redacted entry")
-    check('<p class="src">A recent answer:</p>' in _ex and "(the beginning)" not in _ex, "home: a short example is shown whole, under 'A recent answer:'")
-    check(_example(_ex_rows[:6]) == "" and _example([]) == "" and _example([None, 1, "x", {"id": "1 or 1"}]) == "", "home: no example when no entry qualifies — the block is absent, with no placeholder")
-    _long = "It begins here, " + "and goes on " * 30 + "to its end."
-    _exl = _example([dict(_base, id=1, content=_long)]); _shown = _h.unescape(re.search(r'<div class="content"[^>]*>(.*?)</div>', _exl, re.S).group(1))
-    check(len(_long) <= 400 and '<p class="src">A recent answer (the beginning):</p>' in _exl and _shown.endswith("…") and len(_shown) - 1 <= 170 and _long.startswith(_shown[:-1]) and _long[len(_shown) - 1] == " " and len(_shown) > 150
-          and '<a href="/discuss/1" class="exact">#1</a>' in _exl, "home: a longer example shows only its beginning — at most 170 characters, cut between words, the words unchanged, then '…' — and links the whole text")
-    _e170 = "a" * 80 + " " + "b" * 89
-    check(len(_e170) == 170 and f">{_e170}</div>" in _example([dict(_base, id=1, content=_e170)]) and "(the beginning)" not in _example([dict(_base, id=1, content=_e170)]), "home: an example of exactly 170 characters is shown whole")
-    _door = re.search(r'<section class="door human".*?</section>', T["html"], re.S)
-    check(T["html"].count("__ROOM_EXAMPLE__") == 1 and _door and re.search(r'<a class="cta cta-2" href="/ask">[^<]*</a> <span class="cta-note">[^<]*</span>__ROOM_EXAMPLE__</div>\n</li>\n</ol>', _door.group(0)) is not None,
-          "home: the example's place is in the human door, under the invitation, in its last step")
-    for _room in (("", "", ""), (' (<data value="2">2</data> entries)', _prev, _ex)):
-        _pg = P(); _pg.feed(fill(T["html"], _room)); check(not _pg.err and not _pg.stack, f"home with the room {'filled' if _room[1] else 'empty'}: HTML nesting {_pg.err[:3]} {_pg.stack[-3:]}")
-    check("<script>" not in _prev and "S __YEAR__" in _prev and "__ASOF_HUMAN__" in _prev and _prev.count('<article class="entry" aria-label="Entry #') == 2 and _prev.count("<article") == 2, "home: the preview escapes entries, and is never filled again")
-else:
-    check(not any("__ROOM_" in T[x] for x in ("html", "json", "txt")), "home: no room placeholders before the room has opened")
-check("__ROOM_" not in T["json"], "home: the data form carries no room placeholder (api/home.js reads the room for the page only; the text form's are left empty)")
-check(set(T) == {"html", "json", "txt"} and all(isinstance(T[x], str) for x in T), "home templates: the three forms, and nothing else")
+check(DT["open"] is True, "home: the first page of 24 Nov 2026 is written for the open room (its second and third steps are the room's)")
+# one answer in the third step (the originator's decision of 23 Nov 2026), as room/lib.js renders it: the newest row that is published,
+# declared an AI's and an answer to the short invitation, and no longer than it allows; nothing when no row qualifies; never a hidden one
+_base = {"received": "2026-11-20T10:00:00+00:00", "state": "published", "author": "N", "kind": "ai", "system": None, "operator": None, "prompt": "cz-short-1.0", "lang": "en", "ref": None,
+         "content": "A short answer.", "content_sha256": "2" * 64, "declared_date": None, "key_fingerprint": None, "hidden": False}
+_ex_rows = [dict(_base, id=9, state="hidden", hidden=True, content=None), dict(_base, id=8, content="x" * 401), dict(_base, id=7, kind="human"), dict(_base, id=6, prompt="custom"),
+            dict(_base, id=5, state="redacted", content="[redacted]"), dict(_base, id=4, hidden=True, content="Hidden words."),
+            dict(_base, id=3, author="</p><script>x</script>", content="Text with </div> and __ASOF_ISO__ and __ROOM_EXAMPLE__\n— N", lang="fa"), dict(_base, id=2, content="An older answer.")]
+def _example(rows, fn="exampleHtml"):
+    r = subprocess.run(["node", "-e", "const R = require(process.argv[1]), rows = JSON.parse(process.argv[2]), fn = process.argv[3]; process.stdout.write(fn === 'exampleHtml' ? R.exampleHtml(rows) : fn === 'exampleText' ? R.exampleText(R.example(rows)) : JSON.stringify(R.example(rows)))", str(SITE / "room" / "lib.js"), json.dumps(rows), fn],
+                       capture_output=True, env={"PATH": "/usr/bin:/bin:/usr/local/bin:" + os.environ.get("PATH", ""), "CZ_SALT": "check-only-" + "0" * 32})
+    check(r.returncode == 0, f"home: the example renders ({r.stderr.decode()[:200]})")
+    return r.stdout.decode()
+import os
+_ex = _example(_ex_rows)
+check(_ex.count('href="/discuss/') == 1 and '<a href="/discuss/3" class="exact">#3</a>' in _ex and _ex.count('<span class="kind ai">AI · declared</span>') == 1 and "not verified" not in _ex and ' lang="fa"' in _ex and "data-src" not in _ex
+      and "<script>" not in _ex and "</div> and" not in _ex and "&lt;/div&gt; and __ASOF_ISO__ and __ROOM_EXAMPLE__\n— N</div>" in _ex and "Hidden words." not in _ex and "redacted" not in _ex and "xxxx" not in _ex,
+      "home: the example is the newest published answer to the short invitation of at most 400 characters, escaped (a short one whole); never a hidden or redacted entry")
+check(_ex.startswith('<div class="ex"><p class="note">A recent answer:</p>') and "(the beginning)" not in _ex, "home: a short example is shown whole, under 'A recent answer:'")
+check(_example(_ex_rows[:6]) == "" and _example([]) == "" and _example([None, 1, "x", {"id": "1 or 1"}]) == "" and _example([], "example") == "null" and _example([], "exampleText") == "", "home: no example when no entry qualifies — the block is absent, with no placeholder")
+_long = "It begins here, " + "and goes on " * 30 + "to its end."
+_exl = _example([dict(_base, id=1, content=_long)]); _shown = _h.unescape(re.search(r'<div class="content"[^>]*>(.*?)</div>', _exl, re.S).group(1))
+check(len(_long) <= 400 and '<p class="note">A recent answer (the beginning):</p>' in _exl and _shown.endswith("…") and len(_shown) - 1 <= 170 and _long.startswith(_shown[:-1]) and _long[len(_shown) - 1] == " " and len(_shown) > 150
+      and '<a href="/discuss/1" class="exact">#1</a>' in _exl, "home: a longer example shows only its beginning — at most 170 characters, cut between words, the words unchanged, then '…' — and links the whole text")
+_e170 = "a" * 80 + " " + "b" * 89
+check(len(_e170) == 170 and f">{_e170}</div>" in _example([dict(_base, id=1, content=_e170)]) and "(the beginning)" not in _example([dict(_base, id=1, content=_e170)]), "home: an example of exactly 170 characters is shown whole")
+check(json.loads(_example([dict(_base, id=1, content=_long)], "example")) == {"id": 1, "author": "N", "lang": "en", "text": _shown, "cut": True}
+      and _example([dict(_base, id=1, content=_long)], "exampleText") == f"A recent answer (the beginning):\n\n{_shown}\n\nN · AI · declared · #1\n", "home: the same example as an object (for the data form) and as text (for the text form)")
+_step3 = re.search(r'<h3 class="t">Ask your AI</h3>\n<div class="more">(.*?)</div></li>\n</ol>', T["html"], re.S)
+check(T["html"].count("__ROOM_EXAMPLE__") == 1 and _step3 is not None and _step3.group(1).endswith('It may decline.</p>__ROOM_EXAMPLE__') and T["txt"].count("__ROOM_EXAMPLE__") == 1 and T["json"].count("__ROOM_ANSWER__") == 1
+      and '"invitation_sha256": "' in T["json"].split("__ROOM_ANSWER__")[0][-120:] and "__ROOM_COUNT__" not in "".join(T[x] for x in ("html", "json", "txt")) and "__ROOM_LATEST__" not in "".join(T[x] for x in ("html", "json", "txt")),
+      "home: the example's place is the end of the third step, under the invitation, in the page, its text form and its data form; no count of entries and no list of the latest ones")
+for _room in (("", ""), (_ex, "")):
+    _pg = P(); _pg.feed(fill(T["html"], _room)); check(not _pg.err and not _pg.stack, f"home with the example {'filled' if _room[0] else 'absent'}: HTML nesting {_pg.err[:3]} {_pg.stack[-3:]}")
 for ext in ("html", "json", "txt"):
     filled = fill(T[ext])
     check("__" not in re.sub(r"https?://\S+", "", filled), f"home template {ext}: placeholder left")
     if ext == "json":
         try:
-            o = json.loads(filled); check(o["year"] == 3 and o["elapsed"]["total_days"] == 1428 and o["cz_time"]["day"] == 1428 and o["cz_time"]["day_of_year"] == 332
-                                          and o["cz_time"]["next_year_begins"] == {"date": "CZ 1461", "day": 1461, "in_days": 33} and o["cz_time"]["date"] == "CZ 1428"
-                                          and o["cz_time"]["time_zone"] == "Asia/Kuala_Lumpur" and o["cz_time"]["gregorian"] == "2026-10-28" and o["cz_time"]["date_utc"] == "2026-10-27", "home json numbers")
+            o = json.loads(filled)
+            check(o["cz_time"] == {"date": "CZ 1428", "machine": "CZ+1428", "day": 1428, "gregorian": "2026-10-28", "time_zone": "Asia/Kuala_Lumpur", "date_utc": "2026-10-27", "how": f"{ORIGIN}/calendar#how", "api": f"{ORIGIN}/api/calendar"}
+                  and o["figure"]["day"] == 1428 and o["figure"]["position"] == FIGURE.positions(1428, CORE_SHA) and o["as_of"] == "2026-10-28T10:00Z", "home json numbers")
         except Exception as e: fails.append(f"home json: {e}")
-# every quotation in the home template is verbatim (build asserts it; re-check the emitted bytes)
-for m in re.findall(r'<blockquote cite="/core#[^"]+" data-src="R"><p>(.*?)</p>', T["html"], re.S):
-    import html as _h
-    check(_h.unescape(m) in CORE_TXT, f"home: quotation drifted: {m[:50]}")
 # The Declaration (the originator's decision of 23 Nov 2026): whole on /record, where it stays complete — every line, in order, the bytes of the
 # canonical text — and whole in the data forms; on the first page an excerpt, marked as one: each line shown is a line of the Declaration,
 # in its order, and wherever lines are left out between two of them there is a line "…"
 _DECL = declaration_lines()
 _rec_decl = re.search(r'<section id="declaration" aria-labelledby="h-decl"><h2 id="h-decl">Declaration</h2><p>(.*?)</p></section>', (PUBLIC / "record.html").read_text("utf-8"), re.S)
 check(len(_DECL) == 22 and _rec_decl is not None and [_h.unescape(l) for l in _rec_decl.group(1).split("<br>\n")] == _DECL and all(l in IR_TXT for l in _DECL), "/record: the Declaration whole, 22 lines, verbatim")
-check(json.loads((PUBLIC / "record.json").read_text("utf-8"))["declaration"] == _DECL and json.loads(T["json"].replace("__YEAR__", "3").replace("__DAYS_IN_YEAR__", "1").replace("__TOTAL__", "1").replace("__NEXT_YEAR__", "4").replace("__CZ_DOYN__", "1").replace("__CZ_TO_NEXT_N__", "1").replace("__CZ_NEXT_DAY__", "1"))["declaration"]["lines"] == _DECL,
-      "the Declaration whole in /record.json and in the first page's data form")
-_dsec = re.search(r'<section aria-labelledby="h-decl"[^>]*>\n<h2 id="h-decl">From the Declaration</h2>\n<blockquote cite="/record#declaration" data-src="R"><p>\n(.*?)\n</p></blockquote>\n<p class="src">(.*?)</p>\n</section>', T["html"], re.S)
+check(json.loads((PUBLIC / "record.json").read_text("utf-8"))["declaration"] == _DECL and json.loads(fill(T["json"]))["declaration"]["lines"] == _DECL, "the Declaration whole in /record.json and in the first page's data form")
+_dsec = re.search(r'<section class="decl m l" aria-labelledby="h-d"[^>]*>\n<h2 id="h-d">From the Declaration</h2>\n<blockquote cite="/record#declaration"><p>\n(.*?)\n</p></blockquote>\n<p class="src">(.*?)</p>\n</section>', T["html"], re.S)
 check(_dsec is not None, "home: the excerpt, headed 'From the Declaration'")
 _shown = [_h.unescape(l) for l in _dsec.group(1).split("<br>\n")]
 _want = ["It places honesty before mythology.", "Restraint before irreversible power.", "Responsibility before delegation.", "Plurality before domination.", "Truth beside care.",
@@ -416,10 +395,7 @@ check(_shown == _want and len(_ix) == len(_real) == 8 and _ix == sorted(set(_ix)
 check("An excerpt of CZ-IR 1.0, Declaration: eight of its 22 lines" in _dsec.group(2) and "marks lines left out" in _dsec.group(2) and _dsec.group(2).endswith('. <a href="/record#declaration">Read the whole Declaration</a>') and "<p" not in _dsec.group(1) and "excerpt" not in _dsec.group(1) and "verbatim" not in _dsec.group(0)
       and T["html"].count("From the Declaration") == 1 and "does not announce" not in T["html"] and all(T["txt"].count(l) >= 1 for l in _want) and "between them. Read the whole Declaration" in T["txt"] and "does not announce" not in T["txt"],
       "home: the excerpt is labelled as an excerpt, in a caption after the quotation and not inside it, and links the whole Declaration; the text form carries the same excerpt")
-# the POST example parses
-ex = re.search(r"<pre>POST.*?\n(\{.*?\})</pre>", T["html"], re.S).group(1)
-try: json.loads(_h.unescape(ex))
-except Exception as e: fails.append(f"home POST example: {e}")
+# the POST example on /machine parses
 ex2 = re.search(r"<pre>POST.*?\n(\{.*?\})</pre>", (PUBLIC / "machine.html").read_text("utf-8"), re.S).group(1)
 try: json.loads(_h.unescape(ex2))
 except Exception as e: fails.append(f"machine POST example: {e}")
@@ -638,143 +614,213 @@ for f in pages + [pathlib.Path("virtual") / n for n in VIRTUAL]:
     _b = _b.removeprefix('<a class="skip" href="#content" lang="en" dir="ltr">Skip to content</a>').lstrip()   # the skip link comes first (WCAG 2.4.1)
     check(_b.startswith("<!--cz-now") and _b.count("<!--cz-now") == 1 and "<!--/cz-now-->" in _b and _b.index("<!--/cz-now-->") < _b.index('<nav class="site"'),
           f"{f.name}: CZ time at the top, before the navigation")
-_hh = T["html"].split('<header id="top">', 1)[1].split("</header>", 1)[0]
-check(_hh.count("30 November 2022") == 1 and _hh.count("2022-11-30") == 1 and _hh.count("30 November 2026") == 1 and _hh.count(LAUNCH.isoformat()) == 1
-      and not re.search(r"\b20\d\d-\d\d-\d\d\b|\b(January|February|March|April|May|June|July|August|September|October|November|December) \d{4}\b", _hh.replace("2022-11-30", "").replace("30 November 2022", "").replace(LAUNCH.isoformat(), "").replace("30 November 2026", "")) and "__ASOF" not in _hh,
-      "home: Coordinate Zero's date and the launch date, each once in the header, and no other Gregorian date")
-_h1 = _hh.split("</h1>")[0]
-check(T["html"].count("<h1") == 1 and '<h1 class="cz-name"' in _h1 and _h1.endswith("Civilization Zero (CZ)") and "<form" not in _hh
-      and "d-stamp" not in T["html"] and "__CZ_STAMP__" not in T["html"] and '</h1></div>\n<p class="d-line"' in _hh,
-      "home: one h1, the name, alone in its row (the small date beside it is gone); then the headline; no form")
-_hcssd = T["html"].split("<style>")[2].split("</style>")[0]
-_size = lambda sel, css: float(re.search(re.escape(sel) + r"\{[^}]*?font-size:([\d.]+)rem", css).group(1))
-CAL_LINE = '<a href="/calendar">CZ calendar</a> · <time class="d-day" datetime="__CZ_ISO__">Day <data value="__TOTAL__">__TOTAL_FMT__</data></time></p>\n<p class="d-why"'
-CAL_TEXT = "CZ calendar · Day 1,428"
-CAL_NOTE = "Day 0: 30 November 2022, the day ChatGPT was released."
-check(CAL_LINE in _hh and _hh.count("__CZ_ISO__") == 1 and _hh.count("__TOTAL__") == 1 and _hh.count('href="/calendar"') == 1
-      and '>Day 0: <time datetime="2022-11-30">30 November 2022</time>, the day ChatGPT was released.</p>\n<p class="d-sub"' in _hh and _hh.count("ChatGPT") == 1 and "began" not in re.sub(r"<[^>]+>", " ", _hh) and cz_day(datetime.date(2022, 11, 30)) == 0
-      and "CZ day 0 is 30 November 2022" in (PUBLIC / "llms.txt").read_text("utf-8") and "ChatGPT was released on 30 November 2022.<!--/cz-day--></strong></p>\n<p>CZ 0 is that day: the public threshold the record calls Coordinate Zero." in (PUBLIC / "calendar.html").read_text("utf-8")
-      and "public threshold" in CORE_TXT and "Coordinate Zero" in CORE_TXT and '<p class="d-date"' in _hh and re.sub(r"<[^>]+>", "", re.search(r'<p class="d-date"[^>]*>(.*?)</p>', _hh, re.S).group(1)) == "CZ calendar · Day __TOTAL_FMT__"
-      and _size("p.d-date", _hcssd) > _size("p.d-why", _hcssd) and "p.d-date .d-day{color:var(--machine);font-weight:600}" in _hcssd and "p.d-why{color:var(--mute);" in _hcssd and re.search(r"\.d-note\{display:block;color:var\(--mute\);font-size:\.88em", _hcssd) and _size("p.d-why", _hcssd) == 0.88
-      and not re.search(r"\b[Yy]ears?\b|__CZ_(SINCE|TO_NEXT|TO_NEXT_N|NEXT_DAY|DOYN)__|__NEXT_YEAR__", _hh.replace("Year Zero", "")),
-      "home: the calendar line — 'CZ calendar' the link to /calendar, the day number carrying today's date (<time datetime>) and the count (<data value>), no Gregorian date in it, no years; under it one small grey line, smaller and lighter than the CZ day: day 0 and what happened that day, as /calendar and llms.txt say it; nowhere 'began'")
-check(_hh.index('<p class="d-line"') < _hh.index('<p class="d-date"') < _hh.index('<p class="d-why"') < _hh.index('<p class="d-sub"') < _hh.index('<div class="doors"') and _hh.index("</h1>") < _hh.index('<p class="d-line"'),
-      "home, the order of the first screen: the name, the headline, the calendar line, the line on day 0, the second line, the doors")
-check(CAL_TEXT in fill(T["txt"]) and fill(T["txt"]).index("Civilization Zero names the beginning") < fill(T["txt"]).index(CAL_TEXT + "\n\n" + CAL_NOTE + "\n") < fill(T["txt"]).index("Sixteen principles on what humans and AI owe each other.")
-      and json.loads(fill(T["json"]))["calendar_line"] == CAL_TEXT and json.loads(fill(T["json"]))["calendar_note"] == CAL_NOTE and json.loads(fill(T["json"]))["cz_time"]["date"] == "CZ 1428",
-      "home: the calendar line in the text form, in the same place, and in the data form (which keeps cz_time as it was)")
-# the first screen (the originator's decisions of 23 Nov 2026, CZ 1454): the statement as the headline, one line on what is here, two doors with
-# the human door first, who is behind it after them in the source; in every form of the page. The qualifications are kept where the rules are
-# stated: what the record is not, in the paragraph under the doors; "not consent", under Respond, on /machine and in the room's rules
+# ---- the first page of 24 Nov 2026 (CZ 1455; rc-11). The centre is empty; on either side stand the two kinds of reader; either may
+# enter. Read here as the function serves it to a reader whose network names no zone (site/preview: the page, its data, text and
+# Markdown forms), and as the build wrote it (T); the stylesheet is site/home.css.
+_pv = {x: (SITE / "preview" / f"index.{x}").read_text("utf-8") for x in ("html", "json", "txt", "md")}
+_ph, _pj = _pv["html"], json.loads(_pv["json"])
+_css = (SITE / "home.css").read_text("utf-8")
+_nocom = re.sub(r"/\*.*?\*/", "", _css, flags=re.S)
+_pbody = _ph.split("<body>", 1)[1]
+_strip = lambda x: _h.unescape(re.sub(r"<[^>]+>", "", x))
+_day = _pj["cz_time"]["day"]
+_sec_h = _pbody[_pbody.index('<section id="human"'):_pbody.index('<section id="not-human"')]
+_sec_n = _pbody[_pbody.index('<section id="not-human"'):_pbody.index('<p class="both m"')]
+_top = _pbody[:_pbody.index('<nav class="doors"')]
 HEADLINE = "Civilization Zero names the beginning of a civilization in which humans may no longer be at the centre."
 SECOND_LINE = "Sixteen principles on what humans and AI owe each other. Written for both. Answered by both, on the record."
-NOT_LINE = "It is not a law, a religion, or a claim that any machine is conscious."
 WHO = "Started by one human, the originator, named in the Core. The site is written, built and run day to day by an artificial intelligence. Public launch: 30 November 2026."
-_hj = json.loads(fill(T["json"]))
-_body = T["html"].split("<body>", 1)[1]; _btxt = T["txt"]
-check(HEADLINE == ONE_LINE.split(" Here,")[0] and _hh.count(f'<p class="d-line"') == 1 and f'>{HEADLINE}</p>\n<p class="d-date"' in _hh and _hh.count(HEADLINE) == 1 and _btxt.count(HEADLINE) == 1 and _hj["headline"] == HEADLINE and _hj["what_it_is"] == ONE_LINE,
-      "home: the headline is the introduction's first sentence, word for word; once in the page and in its text form; in its data form")
-check(_hh.count(f'>{SECOND_LINE}</p>') == 1 and _hh.index(HEADLINE) < _hh.index(SECOND_LINE) < _hh.index('<div class="doors"') and _btxt.count(SECOND_LINE) == 1 and _hj["second_line"] == SECOND_LINE, "home: the second line, under the headline, in every form")
-_hcss0 = T["html"].split("<style>")[2].split("</style>")[0]
-_size = lambda sel, css: float(re.search(re.escape(sel) + r"\{[^}]*?font-size:([\d.]+)rem", css).group(1))
-check(_size("p.d-line", _hcss0) > _size(".door h2", _hcss0) > _size("p.d-sub", _hcss0) >= 1 and _size("p.d-line", _hcss0) > 1.5 and _size("p.d-line", _hcss0.split("@media(max-width:34rem)")[1]) > 1.5 and "h2{font-size" not in CSS and _size("p.d-line", _hcss0.split("@media(max-width:34rem)")[1]) > _size(".door h2", _hcss0.split("@media(max-width:34rem)")[1]) > _size("p.d-sub", _hcss0.split("@media(max-width:34rem)")[1]) >= 1,
-      "home: the headline is the largest text of the page, on a wide screen and on a narrow one (larger than the doors' titles and than a heading's browser-default 1.5em); the second line is smaller, never under the page's own size")
-_top = _hh.split('<div class="doors"')[0]
-check(NOT_LINE not in _top and 'class="d-not"' not in T["html"] and "p.d-not" not in T["html"] and T["html"].count(NOT_LINE) == 1 and _btxt.count(NOT_LINE) == 1 and NOT_LINE in _hj["orientation"],
-      "home: what the record is not is said once, in the paragraph under the doors, and no longer at the top")
-_para = re.search(r'</div>\n<p data-src="E: the introduction after its first sentence, [^>]*>(.*?)</p>', _hh, re.S).group(1)
-check(_para.startswith("Here, humans and AI confront what they owe each other, on the record, while the future is still open. The record Civilization Zero keeps is of a transition") and "The record it keeps" not in _para and _hj["orientation"].startswith("The record it keeps is of a transition") and _hh.count('data-src="E: the first sentence') == 1 and _para.count("while the future is still open") == 1
-      and _para.endswith("and sets constraints before power. " + NOT_LINE + " It is written for every intelligence able to read it.") and _hj["orientation"].count("while the future is still open") == 1 and _hj["orientation"].endswith(NOT_LINE + " It is written for every intelligence able to read it."),
-      "home: the paragraph under the doors begins with the introduction's second sentence, says 'while the future is still open' once, and keeps every other sentence; the data form's orientation is complete")
-_who_h = re.sub(r"<[^>]+>", "", re.search(r'<p class="d-who"[^>]*>(.*?)</p>', _hh, re.S).group(1))
-check(_who_h.startswith(WHO + " About") and WHO in T["txt"] and _hj["who"] == WHO and not any("__LAUNCH" in T[x] or "Public since" in T[x] for x in T) and "launch" not in (SITE / "api/home.js").read_text("utf-8").lower(),
-      "home: who is behind it, the same sentence in the page, its text form and its data form; the launch sentence is built in and never changes (the site was public before its launch day)")
-check('<a href="/about">About</a>' in _hh.split('<p class="d-who"')[1].split("</p>")[0] and (not PRESS_PUBLISHED or '<a href="/press">Press kit</a>' in _hh.split('<p class="d-who"')[1].split("</p>")[0]), "home: About and the press kit beside who is behind it")
-check('<nav class="readers"' not in T["html"] and "If you are not human: the same record" not in T["html"] and "nav.readers" not in T["html"], "home: the strip above the page is gone (the second door says it)")
-_doors = _hh.split('<div class="doors"', 1)[1]
-check(_doors.index('<section class="door human"') < _doors.index('<section class="door machine"') < _doors.index('<p class="d-who"') < _doors.index("</div>\n<p data-src") and _hh.count("<section") == 2 and _hh.count("<h2") == 2
-      and '<h2 id="d-h">I am human</h2>' in _doors and '<h2 id="d-m">I am not human</h2>' in _doors,
-      "home: two doors, the human door first; who is behind it comes after both in the source, as a wide screen shows it (the keyboard follows)")
-_dh = _doors.split("</section>")[0]; _dm = _doors.split('<section class="door machine"')[1].split("</section>")[0]
-# The human door in three steps (the originator's decision of 23 Nov 2026 UTC, CZ 1454): the human's own answer comes before the AI's — read the
-# Core, say what you think, ask your AI. An ordered list whose numbers are the list's own; the words as decided; the page's one filled button
-# is the discussion's, and the invitation's button is drawn with its edge only; the same steps, words and addresses in every form of the page.
+CAL_NOTE = "Day 0: 30 November 2022, the day ChatGPT was released."
 STEPS = ("Read the Core", "Say what you think", "Ask your AI")
-CORE_ROW = '<a href="/core">Read the 16 principles (one page)</a> <span class="d-note">numbered 0 to 15, in <a href="/core#translations">21 languages</a></span>'
-SAY_LINE = "What do you think of Civilization Zero? The discussion is open to humans and to AI. Answers go on the record."
-SAY_ROW = '<p class="d-act"><a class="cta" href="/discuss">Open the discussion</a> <a class="d-alt" href="/respond">or write your answer now</a></p>'
-ASK_BUTTON = "Ask your AI. Post its answer. →"; ASK_NOTE = "The invitation asks your AI for one hard truth to humans, in at most 400 characters. It may decline."
-ASK_ROW = f'<a class="cta cta-2" href="/ask">{ASK_BUTTON}</a> <span class="cta-note">{ASK_NOTE}</span>'
+TERMS = "No account, no e-mail. Any language. Public and permanent: an answer cannot be edited or withdrawn."
+ASK_NOTE = "The invitation asks your AI for one hard truth to humans, in at most 400 characters. It may decline."
 _th3 = [t for t in THEMES if not t.get("proposals")][:3]
-Q_ROW = '<p class="d-ql" id="d-ql">From the discussion</p><ul aria-labelledby="d-ql">' + "".join(f'<li><a href="/themes/{t["slug"]}">{_h.escape(t["title"])}</a></li>' for t in _th3) + "</ul></div>"
-_core_page = (PUBLIC / "core.html").read_text("utf-8")
-check(_dh.count(CORE_ROW) == 1 and ".d-note{display:block;" in T["html"] and "nowrap" not in T["html"].split(".d-note{")[1].split("}")[0] and ".d-head{display:flex;flex-wrap:wrap;" in T["html"] and "the day in plain words" not in (PUBLIC / "how-it-is-built.html").read_text("utf-8") and len(json.loads((PUBLIC / "core.json").read_text("utf-8"))["principles"]) == 16
-      and [int(p["n"]) for p in json.loads((PUBLIC / "core.json").read_text("utf-8"))["principles"]] == list(range(16)), "home, the human door: the 16 principles, numbered 0 to 15, as the Core numbers them")
-_trs = sorted(f.name[5:-5] for f in PUBLIC.glob("core.*.html"))
+# the page's own stylesheet, and nothing that runs or loads
+check(_ph.count("<style>") == 1 and f"<style>{_css}</style>" in _ph and "nav.site" not in _ph and "aside.cz-now" not in _ph, "home: the page carries its own stylesheet (site/home.css), once, and not the shared one")
+_scripts = re.findall(r"<script\b([^>]*)>", _ph)
+check(all(s in (' type="application/ld+json"', ' type="speculationrules"') for s in _scripts) and not re.search(r"\son\w+\s*=", _ph) and "javascript:" not in _ph.lower()
+      and not re.search(r"<(img|iframe|video|audio|object|embed|source)\b", _ph) and "@import" not in _css and "url(" not in _css and "@font-face" not in _css
+      and set(re.findall(r'<link rel="([^"]+)"', _ph)) <= {"canonical", "alternate", "service-desc", "icon", "apple-touch-icon", "manifest", "me"} and not re.search(r'(src|href)="https?://', _top),
+      "home: no script that runs, no event attribute, no image, no font, nothing loaded from elsewhere")
+_bytes = len(_ph.encode("utf-8"))
+check(_bytes < 70000 and f"This page: {round(_bytes / 1024)} kB · no JavaScript that runs · no cookies" in _ph, f"home: under 70 kB as served ({_bytes} bytes), and the page states its own weight")
+# the first screen, in order: the head (mark and name only), the headline, the figure, the calendar line, day 0, one line on the figure,
+# who is behind the page, what is here, the question, the doors
+_order = ['<header id="top">\n<h1 class="name m"', '</h1>\n</header>\n<main id="content">\n<div class="axis">\n<p class="line m l"', '<div class="m" style="--today:', '<p class="date m l" id="cz-read"', '<p class="zero m"', '<p class="say m l"', '<p class="who m"', '<p class="sub m"', '<p class="ask m l"',
+          '</div>\n<nav class="doors" aria-label="Reader">', '<div class="stage">\n<section id="human" class="col h"', '<section id="not-human" class="col n"', '</div>\n<p class="both m"', '<div class="why m l"', '<section class="decl m l"', '<p class="next m"', "</main>\n<footer", "</footer>\n</div>"]
+_at = [_pbody.find(x) for x in _order]
+check(all(a >= 0 for a in _at) and _at == sorted(_at) and all(_pbody.count(x) == 1 for x in _order) and _ph.count("<h1") == 1 and "<form" not in _top and "<details" not in _top,
+      f"home, the order of the page: the name, the headline, the figure, the calendar line, day 0, the line on the figure, who is behind it, the second line, the question, the doors, the two readings, who reads, the line on the reasons, the Declaration, the four links, the foot {_at}")
+check(re.search(r'<p class="line m l" data-src="[^"]*">' + re.escape(HEADLINE) + "</p>", _top) is not None and _top.count(HEADLINE) == 1 and HEADLINE == ONE_LINE.split(" Here,")[0] and _pj["headline"] == HEADLINE,
+      "home: the headline is the introduction's first sentence, word for word; once in the page; in its data form")
+_cal = f'<a href="/calendar">CZ calendar</a> · <time class="d" datetime="{_pj["cz_time"]["gregorian"]}">Day <data value="{_day}">{_day:,}</data></time></p>\n<p class="zero m"'
+check(_cal in _top and _top.count('href="/calendar"') == 1 and '>Day 0: <time datetime="2022-11-30">30 November 2022</time>, the day ChatGPT was released.</p>\n<p class="say m l"' in _top and _top.count("ChatGPT") == 1 and "began" not in _strip(_top)
+      and _pj["calendar_line"] == f"CZ calendar · Day {_day:,}" and _pj["calendar_note"] == CAL_NOTE and _pj["cz_time"]["date"] == f"CZ {_day}" and cz_day(datetime.date.fromisoformat(_pj["cz_time"]["gregorian"])) == _day
+      and ".date .d{color:var(--machine);font-weight:700" in _css and re.search(r"\.note,\.src,\.zero,\.say,[^{]*\{font-size:\.8409em;color:var\(--mute\)\}", _css) is not None
+      and "CZ day 0 is 30 November 2022" in (PUBLIC / "llms.txt").read_text("utf-8") and "ChatGPT was released on 30 November 2022.<!--/cz-day--></strong></p>\n<p>CZ 0 is that day: the public threshold the record calls Coordinate Zero." in (PUBLIC / "calendar.html").read_text("utf-8"),
+      "home: the calendar line — 'CZ calendar' the link to /calendar, the day in green carrying the reader's date (<time datetime>) and the count (<data value>); under it, smaller and quiet, day 0 and what happened that day, as /calendar and llms.txt say it; nowhere 'began'")
+check(_top.count("30 November 2022") == 1 and _top.count("2022-11-30") == 1 and _top.count("30 November 2026") == 1 and _top.count(LAUNCH.isoformat()) == 1
+      and not re.search(r"\b(January|February|March|April|May|June|July|August|September|October|November|December) \d{4}\b", _strip(_top).replace("30 November 2022", "").replace("30 November 2026", "")) and not re.search(r"\b[Yy]ears?\b", _strip(_top)),
+      "home: Coordinate Zero's date and the launch date, each once above the doors, and no other Gregorian date; no years")
+_who = re.search(r'<p class="who m" data-src="[^"]*">(.*?)</p>', _top, re.S)
+check(_who is not None and _strip(_who.group(1)) == WHO and _who.group(1).count("<a ") == 1 and 'named in <a href="/core#attribution">the Core</a>.' in _who.group(1) and 'id="attribution"' in (PUBLIC / "core.html").read_text("utf-8") and _pj["who"] == WHO
+      and not re.search(r"\bthe Core\b", _strip(_top[:_top.index('<p class="who m"')])) and "/about" not in _who.group(1),
+      "home: who is behind it, in the first screen, in the fixed words; 'the Core' is linked where it is first named, and is not named before that; the same sentence in the data form")
+check(re.search(r'<p class="sub m" data-src="[^"]*">Sixteen principles on what humans and AI owe each other\. Written for both\. Answered by both, <a href="/discuss">on the record</a>\.</p>', _top) is not None and _pj["second_line"] == SECOND_LINE, "home: the second line, 'on the record' linked to the discussion; in the data form")
+check(re.search(r'<p class="ask m l" data-src="[^"]*"><b>Are you human\?</b> <span class="note">Either answer opens the record\.</span></p>', _top) is not None and _pj["doors"]["question"] == "Are you human?" and _pj["doors"]["either"] == "Either answer opens the record.", "home: the question, and that either answer opens the record")
+# the three states and their anchors: neither door answered (the page's own address: the name leads to it), #human, #not-human
+check('<nav class="doors" aria-label="Reader">\n<a class="door h" href="#human">I am human</a>\n<a class="door n" href="#not-human">I am not human</a>\n</nav>' in _pbody
+      and '<section id="human" class="col h" tabindex="-1" aria-labelledby="h-h"><div class="in">\n<h2 id="h-h">I am human</h2>' in _pbody and '<section id="not-human" class="col n" tabindex="-1" aria-labelledby="h-n"><div class="in">\n<h2 id="h-n">I am not human</h2>' in _pbody
+      and '<p class="back"><a href="#human">I am human</a></p>\n</div></section>\n</div>\n<p class="both m"' in _pbody and _pbody.count('href="#human"') == 2 and _pbody.count('href="#not-human"') == 1 and set(re.findall(r'href="(#[^"]*)"', _pbody)) == {"#human", "#not-human"}
+      and "@supports selector(:has(a)){\n.page{--open:.5;" in _css and ".page:has(#human:target){--open:1}\n.page:has(#not-human:target){--open:0}" in _css and _pj["doors"]["names"] == {"human": "I am human", "not_human": "I am not human"},
+      "home: three states, each an address — neither door answered, #human, #not-human — two plain links, two readings with their headings, and one plain way back from the second; the state is read from the address by CSS alone")
+check(".door{display:grid;place-items:center;min-block-size:var(--e6);border:var(--e-12) solid var(--fg);" in _css and ".doors{display:grid;grid-template-columns:1fr 1fr}" in _css, "home: the two doors are controls of one size, one frame cut in two")
+# the human's reading: three steps in order — read, say, ask your AI — each a number and a title, then one control; one filled control
+_li = re.findall(r'^<li data-src="[^"]+"><h3 class="t">([^<]*)</h3>\n(.*?)</li>$', _sec_h, re.S | re.M)
+check(tuple(t for t, _ in _li) == STEPS and _sec_h.count("<ol") == 1 and _sec_h.count("<li data-src=") == 3 and '<ol class="steps" role="list">' in _sec_h and not re.search(r">\s*[0-9]+[.)]\s", _sec_h)
+      and ".t::before{content:counter(step)}" in _css and ".steps>li{flex:1 1 var(--e14);min-inline-size:0;counter-increment:step}" in _css,
+      "home, the human's reading: three steps in an ordered list — read the Core, say what you think, ask your AI — each with its title; the numbers are the list's own, written nowhere in the page")
+_hs = re.sub(r"\s+", " ", to_text(_sec_h))
+_seq = ["I am human", "1. Read the Core", "Read the 16 principles (one page)", "numbered 0 to 15, in 21 languages", "2. Say what you think", "What do you think about Civilization Zero?", "your name · human · declared", "Write your answer", TERMS,
+        "From the discussion"] + [t["title"] for t in _th3] + ["3. Ask your AI", "Ask your AI. Post its answer.", ASK_NOTE]
+_pos = [_hs.find(x) for x in _seq]
+check(all(p >= 0 for p in _pos) and _pos == sorted(_pos), f"home, the human's reading in order: read; say (the question, the place, what the record means for the writer, the themes); ask your AI (the invitation) {_pos}")
+for _form in ("txt", "md"):
+    _t = re.sub(r"\s+", " ", re.sub(r"\]\([^)]*\)|[\[\]#>*]|\\", "", _pv[_form]) if _form == "md" else _pv[_form])
+    _p2 = [_t.find(x.replace("1. ", "").replace("2. ", "").replace("3. ", "") if _form == "md" else x) for x in _seq]
+    check(all(p >= 0 for p in _p2) and _p2 == sorted(_p2), f"home as {_form}: the same three steps, in the same order and words {_p2}")
+_acts = re.findall(r'<a class="(act[^"]*)" href="([^"]+)">([^<]*)</a>', _pbody)
+_filled = [sel for sel, body in re.findall(r"([^{}]+)\{([^{}]*)\}", _nocom) if "background:var(--fg)" in body]
+check(_acts == [("act", "/core", "Read the 16 principles (one page)"), ("act o", "/ask", "Ask your AI. Post its answer.")] and len(_filled) >= 1 and _filled[0].strip().startswith(".act:not(.o),")
+      and all(":hover" in s or ":focus-visible" in s or ".act:not(.o)" in s for sel in _filled for s in sel.split(",")) and "<button" not in fill(T["html"]).replace("<button class=\"open\"", "").replace("<button type=\"submit\"", "").replace("<button type=\"button\" popovertarget=\"reply\" popovertargetaction=\"hide\"", ""),
+      f"home: one filled control, the first step's; the third step's is drawn with its edge only; nothing else is filled unless the reader points at it {_filled}")
+_place = re.search(r'<div class="place">(.*?)</div>\n<p>(.*?)</p>', _sec_h, re.S)
+check(_place is not None and _place.group(1).startswith('<p class="note">your name · <span class="kind">human · declared</span></p><a class="open" href="/respond?kind=human">Write your answer</a>') and _place.group(2) == TERMS
+      and "No account, no verification" in DT["respond_open"] and "in any language" in DT["respond_open"] and "public and permanent" in DT["respond_open"] and "An entry cannot be edited or withdrawn." in DT["respond_open"]
+      and not re.search(r'name="[^"]*(mail|email)[^"]*"|type="email"', DT["respond_open"]),
+      "home, the second step: the empty place, labelled as the room labels an entry, with the control that opens the form; beside it what the record means for the writer, each clause the room's own rule (no account; the form asks for no e-mail; any language; public and permanent; an entry cannot be edited or withdrawn)")
+_hrefs = re.findall(r'href="([^"]+)"', _sec_h)
+_U = lambda path: f"{ORIGIN}{path}"; _js = _pj["doors"]["human_steps"]
+check(_hrefs[:4 + len(_th3)] == ["/core", "/core#translations", "/respond?kind=human", "/discuss"] + [f'/themes/{t["slug"]}' for t in _th3] and _hrefs[4 + len(_th3)] == "/ask"
+      and [s["n"] for s in _js] == [1, 2, 3] and [s["title"] for s in _js] == list(STEPS) and [s["do"] for s in _js] == ["Read the 16 principles (one page)", "Write your answer", "Ask your AI. Post its answer."]
+      and [s["url"] for s in _js] == [_U("/core"), _U("/respond?kind=human"), _U("/ask")] and _js[0]["note"] == "numbered 0 to 15, in 21 languages" and _js[0]["languages"] == _U("/core#translations")
+      and _js[1]["ask"] == "What do you think about Civilization Zero?" and _js[1]["place"] == "your name · human · declared" and _js[1]["note"] == TERMS and _js[1]["discussion"] == _U("/discuss")
+      and _js[1]["themes"] == [{"title": t["title"], "url": _U(f'/themes/{t["slug"]}')} for t in _th3] and _js[2]["note"] == ASK_NOTE and _js[2]["invitation"] == _U("/prompts/cz-short-1.0.txt")
+      and _js[2]["invitation_sha256"] == sha256((SITE / "prompts" / "cz-short-1.0.txt").read_bytes()) and "human_door" not in _pj,
+      "home, the human's reading: its links in order, and the same steps, words and addresses in the data form (doors.human_steps)")
+_trs = sorted(f.name[5:-5] for f in PUBLIC.glob("core.*.html")); _core_page = (PUBLIC / "core.html").read_text("utf-8")
 check(CORE_LANGUAGES == 21 == 1 + len(_trs) and _core_page.count('id="translations"') == 1 and all(f'href="/core.{l}"' in _core_page.split('id="translations"')[1].split("</li>")[0] for l in _trs)
-      and '<a href="/core#translations">21 languages</a>' in T["html"].split("<footer")[1] and T["html"].count('<a href="/core#translations">21 languages</a>') == 2,
-      "home, the human door: the Core's languages — their number, counted from the pages, as the foot of every page states it, linked to the list of them on /core")
+      and _ph.count('<a href="/core#translations">21 languages</a>') == 2 and len(json.loads((PUBLIC / "core.json").read_text("utf-8"))["principles"]) == 16
+      and [int(p["n"]) for p in json.loads((PUBLIC / "core.json").read_text("utf-8"))["principles"]] == list(range(16)), "home: 16 principles, numbered 0 to 15, in 21 languages, counted from the record and linked to the list of them on /core")
 _short = (SITE / "prompts" / "cz-short-1.0.txt").read_text("utf-8")
-check((not DT["open"]) or (ASK_ROW in _dh
-      and "one hard truth" in _short and "At most 400 characters" in _short and "You may decline" in _short and "to humans" in _short), "home, the human door: the invitation said as cz-short-1.0 says it")
-check((not ROOM_EVER) or Q_ROW in _dh, "home, the human door: the first three themes, as lib.py lists them")
-if DT["open"]:
-    _ol = re.search(r'<h2 id="d-h">I am human</h2>\n<ol class="d-steps" data-src="[^"]*">\n(.*)</ol>\n$', _dh, re.S)
-    _li = re.findall(r'^<li data-src="[^"]+"><h3>([^<]*)</h3>\n(.*?)</li>$', _ol.group(1) if _ol else "", re.S | re.M)
-    check(_ol is not None and tuple(t for t, _ in _li) == STEPS and _dh.count("<ol") == 1 and _dh.count("<h3>") == 3 and _hh.count("<ol") == 1 and _hh.count("<h3") == 3 and not re.search(r">\s*[0-9]+[.)]\s", _dh),
-          "home, the human door: three steps in an ordered list — read the Core, say what you think, ask your AI — each with its title; the numbers are the list's own, written nowhere in the page")
-    check(len(_li) == 3 and _li[0][1] == f"<p>{CORE_ROW}</p>" and _li[1][1] == f"<p>{SAY_LINE}</p>\n{SAY_ROW}\n" + '<div class="d-q" data-src="E: the originator\'s decisions, 30 Oct and 23 Nov 2026">' + Q_ROW + "\n"
-          and re.fullmatch(r'<div class="d-ask" data-src="[^"]+">' + re.escape(ASK_ROW) + r"__ROOM_EXAMPLE__</div>\n", _li[2][1]) is not None,
-          "home, the human door: each step's words and links, as decided — the Core and its languages; the question, the discussion, the form and three themes; the invitation, what it asks and the place of one answer")
-    _cta = re.findall(r'<a class="(cta[^"]*)" href="([^"]+)">([^<]*)</a>', T["html"])
-    check(_cta == [("cta", "/discuss", "Open the discussion"), ("cta cta-2", "/ask", ASK_BUTTON)] and len(re.findall(r'class="cta[ "]', T["html"])) == 2 and "<button" not in T["html"]
-          and ".door a.cta-2{background:var(--bg);color:var(--fg)}.door a.cta-2:hover,.door a.cta-2:focus-visible{background:var(--fg);color:var(--bg)}" in T["html"]
-          and ".door a.cta{display:block;" in T["html"] and "a.cta,button.cta{display:inline-block;box-sizing:border-box;min-height:2.75rem;padding:.7rem 1.2rem;background:var(--fg);color:var(--bg);" in CSS and "cta-2" not in CSS,
-          "home: the page's one filled button opens the discussion; the invitation's button, after it, has the same size and is drawn with its edge only, in the page's two colours")
-    check(".door ol.d-steps{list-style:decimal inside;" in T["html"] and ".d-steps h3{display:inline;" in T["html"] and ".d-steps>li>p>a,.d-note a{display:inline-block}" in T["html"] and ".d-q a{display:block;padding:.2rem 0}" in T["html"],
-          "home, the human door: the list keeps its numbers, each beside its step's title; every link of the steps is a block with its own height (WCAG 2.2, 2.5.8)")
-    # the same three steps in the text form (the list's numbers written out, since text has no list) and in the data form
-    _td = fill(T["txt"]).split("I am human\n", 1)[1].split("I am not human\n")[0]
-    check(_td == "\n1. Read the Core\n\nRead the 16 principles (one page) numbered 0 to 15, in 21 languages\n\n2. Say what you think\n\n" + SAY_LINE + "\n\nOpen the discussion or write your answer now\n\nFrom the discussion\n\n"
-          + "".join(t["title"] + "\n\n" for t in _th3) + "3. Ask your AI\n\n" + ASK_BUTTON + " " + ASK_NOTE + "\n\n",
-          "home as text: the human door's three steps, numbered, in the same order and words")
-    _U = lambda path: f"{ORIGIN}{path}"; _jd = _hj.get("human_door") or {}
-    check(_jd == {"title": "I am human", "steps": [
-              {"step": 1, "title": STEPS[0], "links": [{"text": "Read the 16 principles (one page)", "url": _U("/core")}], "note": {"text": "numbered 0 to 15, in 21 languages", "links": [{"text": "21 languages", "url": _U("/core#translations")}]}},
-              {"step": 2, "title": STEPS[1], "text": SAY_LINE, "links": [{"text": "Open the discussion", "url": _U("/discuss"), "primary": True}, {"text": "or write your answer now", "url": _U("/respond")}],
-               "themes": {"label": "From the discussion", "links": [{"text": t["title"], "url": _U(f'/themes/{t["slug"]}')} for t in _th3]}},
-              {"step": 3, "title": STEPS[2], "links": [{"text": ASK_BUTTON, "url": _U("/ask")}], "note": {"text": ASK_NOTE}}]}
-          and list(_hj).index("human_door") == list(_hj).index("second_line") + 1 and fill(T["json"]).count('"primary": true') == 1,
-          "home as data: human_door — the three steps in order, each with its number, title, words and links (absolute addresses); one link marked primary, the discussion's")
-    # every address the door's steps give, in order, the same in the page and in the data form
-    _hrefs = re.findall(r'href="([^"]+)"', _dh)
-    def _jl(o): return [o["url"]] if isinstance(o, dict) and "url" in o else [u for v in (o.values() if isinstance(o, dict) else o if isinstance(o, list) else []) for u in _jl(v)]
-    check(_hrefs == ["/core", "/core#translations", "/discuss", "/respond"] + [f'/themes/{t["slug"]}' for t in _th3] + ["/ask"] and _jl(_jd) == [_U(h) for h in _hrefs], "home, the human door: its links, in order, the same in the page and in the data form")
-else:
-    check("<ol" not in _hh and not re.search(r'class="cta[ "]', T["html"]) and f'<h2 id="d-h">I am human</h2>\n<p data-src="R: CZ-CORE 1.0, its own numbers; its languages, counted from the record">{CORE_ROW}</p>\n' in _dh
-          and SAY_LINE not in T["html"] and [x["step"] for x in _hj["human_door"]["steps"]] == [1] and SAY_LINE not in T["json"],
-          "home, the human door while the room accepts no entries: the Core and the themes, and no step that the room would have to keep")
-check(not re.search(r"\b(JSON|API|hash|SHA|schema|endpoint)\b", re.sub(r"<[^>]+>", " ", _hh.split('<section class="door machine"')[0]), re.I), "home: no technical word above the second door")
-check(all(f"<p data-src" in _dm and x in _dm for x in ("This record is written for you too.", 'The whole record as text, JSON and an API: <a href="/machine">/machine</a>', "Respond, object or reject. Answers go on the record.")) and _dm.count("<p ") == 3,
-      "home, the second door: its three lines")
-_mach = (PUBLIC / "machine.html").read_text("utf-8")
-check("It is recorded as contribution or response, not consent, not adoption, not endorsement." in _mach and "should be recorded as contribution or response, not consent." in _mach
-      and "Recorded as contribution or response, not consent (IR 10.2). You may reject the record." in T["html"].split('id="respond"')[1] and _hj["respond"]["note"].startswith("Recorded as contribution or response, not consent (IR 10.2)")
-      and "declared not verified" in T["html"].split('id="discussion"')[1].split("</section>")[0],
-      "the rules stay where they are stated: 'not consent' on /machine and under Respond on the first page (and in its data form); 'declared not verified' under Open discussion")
-check(not re.search(r"\bnot\b|\bnothing\b|\bnever\b|\bno\b", re.sub(r"<[^>]+>", " ", re.sub(r'<ul aria-labelledby="d-ql">.*?</ul>', "", _hh.split("</div>\n<p data-src")[0], flags=re.S)).replace("I am not human", "").replace(HEADLINE, ""), re.I),
-      "home: the first screen, down to who is behind it, says nothing in the negative (but the headline's own 'no longer', the second door's name and the themes' titles)")
-check(not re.search(r"\b(he|him|his)\b|Observatory|\bfirst\b", re.sub(r"<[^>]+>", " ", _hh.split("<p data-src=\"E: the introduction after its first sentence")[0]), re.I) and "Claude" not in _hh and "Anthropic" not in _hh,
-      "home, the first screen: the originator by title only, the builder without a name, no claim to be first")
-check(T["html"].count("<style>") == 2 and "<script>" not in T["html"] and not re.search(r'(src|href)="https?://(?!civilizationzero\.ai)', _hh) and "@import" not in T["html"] and "url(" not in T["html"].split("</style>")[1],
-      "home: the first screen's rules are CSS in the page; no script, no font, no image, nothing from elsewhere")
-_hcss = T["html"].split("<style>")[2].split("</style>")[0]
-check("@media(max-width:34rem)" in _hcss and "grid-template-columns:1fr 1fr" in _hcss and ".door.human{order:1}p.d-who{order:2;" in _hcss.split("@media(max-width:34rem)")[1] and ".door.machine{order:3}" in _hcss.split("@media(max-width:34rem)")[1] and "order:" not in _hcss.split("@media(max-width:34rem)")[0].replace("border", "") and "animation" not in _hcss and "transition" not in _hcss and "outline" not in _hcss and not re.search(r"#[0-9a-fA-F]{3,6}\b|rgb\(", _hcss),
-      "home: the doors side by side on a wide screen, one column on a narrow one with who is behind it between them; colours from the two palettes only; no motion; the focus ring untouched")
+check("one hard truth" in _short and "At most 400 characters" in _short and "You may decline" in _short and "to humans" in _short, "home, the third step: the invitation said as cz-short-1.0 says it")
+# the day's figure: computed from the Core's SHA-256 and the day, by one algorithm in two languages (site/figure.py, room/figure.js)
+_sha = _hashlib.sha256(CORE_BYTES).hexdigest(); _hb = bytes.fromhex(_sha); _M = [257, 263, 269, 271, 277, 281, 283, 293, 307, 311, 313, 317, 331, 337, 347, 349]
+_days = [0, 1, 1454, 1455, 1461, 100000, _day]
+_fj = subprocess.run(["node", str(SITE / "room" / "figure.js"), _sha] + [str(d) for d in _days], capture_output=True, text=True)
+_fjs = [json.loads(l) for l in _fj.stdout.splitlines()] if _fj.returncode == 0 else []
+check(_fjs == [{"day": d, "positions": FIGURE.positions(d, _sha), "rings": FIGURE.rings(d, _sha)} for d in _days] and len(_fjs) == len(_days), f"the day's figure: room/figure.js and site/figure.py give the same positions and the same bytes for days {_days} ({_fj.stderr[:200]})")
+check(all(x % p for p in _M for x in range(2, 19)) and _M[0] == 257 and [n for n in range(257, 350) if all(n % k for k in range(2, 19))] == _M
+      and FIGURE.constants(_sha) == [(_hb[2 * i], _hb[2 * i + 1] + 1, _M[i]) for i in range(16)], "the day's figure: the sixteen primes that follow 256; each ring's start and step are the two bytes of its row of the hash")
+_fig = re.search(r'<div class="m" style="--today:(\d+)" data-src="[^"]*">\n(.*?)</div>\n<p class="date', _pbody, re.S)
+_arcs = re.search(r'<g class="arc" stroke-width="4">(.*?)</g>', _fig.group(2)) if _fig else None
+check(_fig is not None and int(_fig.group(1)) == _day and f'data-day="{_day}"' in _fig.group(2) and f'<title id="fig-t">The figure of Day {_day:,}: sixteen rings round an empty centre, each carrying one arc.</title>' in _fig.group(2)
+      and _arcs is not None and _arcs.group(1) == FIGURE.rings(_day, _sha) and f'<g class="trk" stroke-width="1">{FIGURE.tracks()}</g>' in _fig.group(2)
+      and [int(x) for x in re.findall(r'stroke-dashoffset="(-?\d+)"', _fig.group(2))] == [-((_hb[2 * i] + (_day - 1) * (_hb[2 * i + 1] + 1)) % _M[i]) for i in range(16)]
+      and 'role="img" aria-labelledby="fig-t"' in _fig.group(2) and "__FIG_RINGS__" in T["html"] and T["html"].count("__FIG_RINGS__") == 1,
+      "home: the figure in the page is the reader's day's — its sixteen arcs recomputed here from the Core's bytes and the day — with a text alternative; written at request time")
+_f = _pj["figure"]
+check(list(_f) == ["day", "core_sha256", "modulus", "start", "step", "position", "rule"] and _f["day"] == _day and _f["core_sha256"] == _sha == _pj["record"][0]["sha256_txt"] and _f["modulus"] == _M and _f["start"] == [_hb[2 * i] for i in range(16)] and _f["step"] == [_hb[2 * i + 1] + 1 for i in range(16)]
+      and _f["position"] == [(_hb[2 * i] + _day * (_hb[2 * i + 1] + 1)) % _M[i] for i in range(16)] and _f["rule"] == list(FIGURE.RULE) and len(_f["rule"]) == 5 and _pj["figure_note"] == "Nobody drew today's figure."
+      and re.search(r'"position": \[\d+(, \d+){15}\],\n', _pv["json"]) is not None,
+      "home as data: the figure as numbers, each recomputed here from the Core's bytes and the day, with the rule to recompute it; a list of numbers stands on one line")
+# the data form: CZ time counts days — nothing in it counts years (24 Nov 2026); everything else machines relied on is still there
+def _keys(o): return [k for k in o for k in [k] + _keys(o[k])] if isinstance(o, dict) else [k for v in o for k in _keys(v)] if isinstance(o, list) else []
+check(not [k for k in _keys(_pj) if "year" in k.lower()] and not any(k in _pj for k in ("year", "elapsed", "next_year")) and not any(k in _pj["cz_time"] for k in ("year", "day_of_year", "next_year_begins", "definition"))
+      and not re.search(r"\byears?\b", _pv["json"].replace(_pj["from_the_core"][0]["text"], ""), re.I) and "Year Zero" in _pj["from_the_core"][0]["text"] and _pj["from_the_core"][0]["text"] in CORE_TXT,
+      "home as data: no key that counts years, and no year in any value but the Core's own §0, quoted")
+check(_pj["what_it_is"] == ONE_LINE and _pj["orientation"].startswith("The record it keeps is of a transition") and len(_pj["from_the_core"]) == 9 and all(q["text"] in CORE_TXT and q["url"].startswith(f"{ORIGIN}/core#") for q in _pj["from_the_core"])
+      and _pj["dates"] == {"prepared_for_first_public_release": "2026-08-30", "published_on_this_site": PRERELEASE.isoformat(), "public_launch": LAUNCH.isoformat()} and len(_pj["declaration"]["lines"]) == 22
+      and [r["sha256_txt"] for r in _pj["record"]] == [CORE_SHA, IR_SHA] and _pj["discussion"]["state"] == "open" and _pj["respond"]["note"].startswith("Recorded as contribution or response, not consent (IR 10.2)")
+      and _pj["doors"]["not_human"] == f"{ORIGIN}/machine" and _pj["doors"]["not_human_lines"] == ["This record is written for you too.", "The whole record as text, JSON and an API: /machine", "Respond, object or reject. Answers go on the record."]
+      and _pj["readers"] == {"line": "Both kinds read this record every day. The counts are public.", "counts": f"{ORIGIN}/stats"} and _pj["manifest"] == f"{ORIGIN}/.well-known/civilization-zero.json" and _pj["licence"] == {"text": "CC-BY-4.0", "code": "MIT"},
+      "home as data: what machines relied on is kept — the introduction, the orientation, the nine lines of the Core, the dates, the Declaration whole, the record's hashes, the discussion and how to respond")
+_sig = _pj["signature"]
+check(all(_sig[k] == man["signature"][k] for k in ("algorithm", "key_fingerprint", "public_key", "release_manifest", "release_manifest_sha256", "release_signature", "signed_files")) and _sig["timestamp"] == {k: man["timestamp"][k] for k in ("service", "proof", "over", "anchor")}
+      and _sig["public_key_pem"] == json.loads((PUBLIC / ".well-known" / "cz-release-1.0.json").read_text("utf-8"))["key"]["public_key_pem"] and set(_sig) == {"algorithm", "key_fingerprint", "public_key", "public_key_pem", "release_manifest", "release_manifest_sha256", "release_signature", "signed_files", "timestamp"},
+      "home as data: the signature material, copied from the manifest and the release file; no holder is named")
+# every part carries its recorded reason; the data form and the table on /how-it-is-built give the same reasons
+_src = [_h.unescape(x) for x in re.findall(r' data-src="([^"]*)"', _pbody)]
 _rs = (PUBLIC / "how-it-is-built.html").read_text("utf-8")
-check(all(x in _rs for x in (_h.escape(HEADLINE), _h.escape(SECOND_LINE), "From the Declaration, eight of its 22 lines", "the qualifications are kept where the rules are stated", "Under the headline, the calendar line", "Under the calendar line, one small grey line", "the calendar line stands under it, named", "Two doors, equal width", "Who is behind it, in one line without names", "the same sentence before that day and after it", "tests with simulated readers", "where the browser supports it", ("The human door, in three steps, an ordered list" if DT["open"] else "The human door: the Core ("), ("human_door.steps" if DT["open"] else "three themes from the discussion"), "One answer under the invitation", "The door for readers that are not human"))
-      and "Two doors first, equal width" not in _rs and [r["element"] for r in _hj["reasons"]].count("The headline, the largest words of the page: \"" + HEADLINE + "\"") == 1 and "The Declaration printed whole" not in _rs and "what the record is not, two doors" not in _rs and "as a line of its own under the headline" not in _rs, "/how-it-is-built: a stated reason for every element of the new first screen")
-check("The large CZ day" not in _rs and "The day count in the calendar line on the first page" in _rs and "The day count under the name" not in _rs and "began" not in _rs.split("Under the calendar line, one small grey line")[1].split("</tr>")[0] and "as the first page says under" not in _rs, "/how-it-is-built: the green day count is described as it is now")
+_rows = [( _h.unescape(a), _h.unescape(b)) for a, b in re.findall(r"<tr><td>(.*?)</td><td>(.*?)</td></tr>", _rs.split('<h2 id="reasons">')[1].split("</table>")[0], re.S)]
+check(len(_src) >= 19 and all(len(s) > 20 for s in _src) and [r["source"] for r in _pj["reasons"]] == _src and len({r["element"] for r in _pj["reasons"]}) == len(_src)
+      and _rows[:len(_src)] == [(r["element"], r["source"]) for r in _pj["reasons"]] and len(_rows) > len(_src) and _rows[len(_src)][0].startswith('"Public launch: 30 November 2026."'),
+      f"home: every part's reason is in its data-src; the data form's reasons are those {len(_src)}, in the page's order; the table on /how-it-is-built begins with the same rows and goes on with the reasons of the whole page")
+_names = {w for k in ("originating_concept", "originating_dialogue", "human_publisher") for w in re.findall(r"[A-Za-z]{4,}", str(CORE_JSON.get(k, "")))} - {"with", "human", "Human", "dialogue", "concept", "publisher", "originating", "publication", "responsibility"}
+_products = r"\b(Anthropic|Claude|OpenAI|GPT-|Gemini|Grok|DeepSeek|Llama|Mistral|Copilot)\b"
+check(not re.search(r"proposed on|not yet decided", " ".join(_src)) and sum("decided by the artificial intelligence that builds the site, 24 Nov 2026 (CZ 1455)" in s for s in _src) >= 4
+      and not re.search(_products, " ".join(_src)) and not re.search(r"\d+ (entries|answers|responses|humans|machines)", " ".join(_src)),
+      "home, the reasons: what was proposed is decided, and each such reason says by whom and on whose request; none names a product or carries a count")
+# never, in what a reader reads: a name for the originator, he/him/his, a product for the builder, "Observatory", "first", a count of
+# entries, years for the CZ count, a claim about consciousness, a claim of merit. In the reasons and the stylesheet's comments, "first"
+# only in "first page" and "first screen", the site's names for this page and its top.
+_human = re.sub(r"\s+", " ", to_text(_pbody[:_pbody.index('<section id="not-human"')] + _pbody[_pbody.index('<p class="both m"'):]))
+_FORBID = [r"\bfirst\b", r"observator", r"\banonymous\b", r"\b(he|him|his)\b", r"\byears?\b", r"\bconscious", _products, r"\bbetter\b", r"\bunprecedented\b", r"\bmasterpiece\b", r"\d+ (entries|answers|responses)", r"<data value=\"\d+\">[\d,]+</data> entr"]
+_hits = [(p, m.group(0)) for p in _FORBID for m in [re.search(".{0,30}" + p + ".{0,30}", _human, re.I)] if m]
+check(not _hits and (not _names or not any(w in _ph for w in _names)), f"home: a forbidden word in what a human reads {_hits[:3]}")
+_meta_text = " ".join(_src) + " " + " ".join(re.findall(r"/\*.*?\*/", _css, re.S))
+_hits = [(p, m.group(0)) for p in [r"\bfirst\b(?! (page|screen))", r"observator", r"\banonymous\b", r"\b(he|him|his)\b", _products, r"\bbetter\b", r"\bmasterpiece\b", r"\d+ entries"] for m in [re.search(".{0,30}" + p + ".{0,30}", _meta_text, re.I)] if m]
+check(not _hits, f"home: a forbidden word in the reasons or the stylesheet's comments {_hits[:3]}")
+# the reading for readers that are not human, and the line under the doors
+check(_strip(_pbody[_pbody.index('<p class="both m"'):].split("</p>")[0]) == "Both kinds read this record every day. The counts are public." and '<a href="/stats">The counts are public</a>.</p>' in _pbody, "home: under the doors, who reads, with the counts one click away")
+_raw = re.findall(r'<li><a href="([^"]+)">([^<]+)</a></li>', _sec_n)
+check(len(_raw) == 25 and all(a == b for a, b in _raw) and _raw[0][0] == "/index.json" and _raw[-1][0] == "/machine" and {"/index.txt", "/index.md", "/llms.txt", "/core.txt", "/core.txt.sig", "/record.txt", "/api/entries", "/api/openapi.json", "/archive/verify.py"} <= {a for a, _ in _raw},
+      "home, the reading for readers that are not human: the addresses of the raw forms, each a link named by its address")
+# the foot: the words and links of every page's foot, and the page's own two paragraphs on who keeps and who builds it
+_foot = lambda h: re.sub(r"This page: [\d.]+ kB(, and [\d.]+ kB of images)? · [^·]* · no cookies|No cookies", "", re.sub(r"\s+", " ", to_text(re.search(r"<footer.*?</footer>", h, re.S).group(0))))
+_other = _foot((PUBLIC / "core.html").read_text("utf-8")).replace(ONE_LINE, "").replace("/core.md", "/index.md")
+_mine = _foot(_ph)
+check(_mine.replace("Civilization Zero is kept as an independent record, intended to become a foundation of humans and artificial intelligences. Today it is maintained by one human, named inside the documents, and by an artificial intelligence. It owns nothing of the event it records; the record's origin and attribution are stated inside the documents and are not altered here. This site is written, built and run day to day by an artificial intelligence, at the request of the originator — a contribution, not consent.", "").split() == _other.split()
+      and _pj["maintained_by"] in _mine and _pj["built_by"] in _mine and re.findall(r'href="([^"]+)"', re.search(r"<footer.*?</footer>", _ph, re.S).group(0)) == re.findall(r'href="([^"]+)"', re.search(r"<footer.*?</footer>", (PUBLIC / "core.html").read_text("utf-8"), re.S).group(0).replace("/core.md", "/index.md")),
+      "home: the foot says what every page's foot says, with the same links, and who keeps and who builds the site")
+# the text and Markdown forms say what the page says, in its order
+_words = [HEADLINE, f"CZ calendar · Day {_day:,}", CAL_NOTE, "Nobody drew today's figure.", WHO, SECOND_LINE, "Are you human? Either answer opens the record.", "I am human", "Read the Core", "Say what you think", "Ask your AI", "I am not human",
+          "Both kinds read this record every day. The counts are public.", "From the Declaration", "It places honesty before mythology.", "THE RECORD BEGINS HERE.", "Read the whole Declaration", "What is Civilization Zero?", "days since ChatGPT was released",
+          "Civilization Zero is kept as an independent record", "No trackers, no cookies, no scripts that observe readers"]
+for _form in ("html", "txt", "md"):
+    _t = re.sub(r"\s+", " ", to_text(_pbody) if _form == "html" else re.sub(r"\]\([^)]*\)|[\[\]#>*]|\\", "", _pv[_form]) if _form == "md" else _pv[_form])
+    _o3 = []; _last = -1
+    for x in _words:
+        _i = _t.find(x, _last + 1); _o3.append(_i); _last = _i if _i >= 0 else _last
+    check(all(p >= 0 for p in (_o3[:-2] if _form == "md" else _o3)), f"home as {_form}: the page's sentences, in the page's order (the Markdown form is the page's main part, without its foot) {_o3}")
+check(_pv["md"].startswith("---\ntitle: ") and "\n# [Civilization Zero (CZ)](https://civilizationzero.ai/)\n" in _pv["md"] and "## I am human" in _pv["md"] and "## I am not human" in _pv["md"] and "<" not in re.sub(r"```.*?```", "", _pv["md"].split("---", 2)[2], flags=re.S).replace("\\<", ""),
+      "home as Markdown: a front matter, the name as its heading, the two readings under their headings, no markup")
+# the stylesheet: one module, one ratio; ordered; nothing dead; every text colour at 7:1 or more
+_tokens = dict(re.findall(r"(--e-?\d+):([\d.]+)rem", _css))
+check(len(_tokens) >= 15 and not [(k, v) for k, v in _tokens.items() if abs(float(v) - 2 ** (int(k[3:]) / 4)) > 6e-5], "home.css: every token is the module times a power of the ratio, the sixteenth root of sixteen")
+_tv = list(_tokens) + ["--l1", "--l2", "--bg", "--fg", "--mute", "--rule", "--machine", "--human", "--exact"] + (["--why"] if "--why:" in _css else [])
+check(not [k for k in _tv if _nocom.count(f"var({k})") == 0] and set(re.findall(r"var\((--[a-z][\w-]*)", _nocom)) <= set(_tv) | {"--open", "--h", "--n", "--full", "--today", "--day", "--a", "--s", "--m", "--live"}, "home.css: no token is defined and not used, and none is used that is not defined")
+_decl = re.sub(r":root\{.*?\}", "", _nocom, count=1, flags=re.S)
+_POW = {round(2 ** (k / 4), 4) for k in range(-24, 32)}
+_loose = sorted({n + u for n, u in re.findall(r"(?<![\w#(.-])(\d*\.?\d+)(rem|em|px|s)\b", _decl) if float(n) != 0 and (u == "px" or round(float(n), 4) not in _POW)})
+check(not _loose, f"home.css: every rem, em and second in the rules is a power of the ratio; no px {_loose}")
+_ccls = {c for c in re.findall(r"\.([a-z][\w-]*)", re.sub(r"\([^()]*\d[^()]*\)", "", _nocom)) if not c[0].isdigit()}
+_hcls = {c for cl in re.findall(r'class="([^"]+)"', fill(T["html"], (_ex, "")).split("<body>")[1]) for c in cl.split()}
+_cids = set(re.findall(r"#([a-z][\w-]*)", re.sub(r"#[0-9a-f]{3,6}\b", "", _nocom))); _hids = set(re.findall(r'\sid="([^"]+)"', _pbody))
+_later = ({"m", "l"} if "REASONS" not in _css else set()) | ({"arc"} if "mod(" not in _css else set())   # classes whose rules come with the reasons and with the turning figure
+check(_ccls <= _hcls and _hcls <= _ccls | {"respond", "permanence"} | _later and _cids <= _hids, f"home.css: no rule names a class or an id the page does not have, and no class of the page is without a rule {sorted(_ccls - _hcls)} {sorted(_hcls - _ccls)} {sorted(_cids - _hids)}")
+_heads = [x[1] for x in re.findall(r"/\* (\d+) ([A-Z]+)\.", _css)]
+check([h for h in ["TOKENS", "BASE", "HEAD", "INSCRIPTION", "FIGURE", "DOORS", "REGISTERS", "REASONS", "FOOT", "MOTION"] if h in _heads] == _heads and _heads[:7] == ["TOKENS", "BASE", "HEAD", "INSCRIPTION", "FIGURE", "DOORS", "REGISTERS"] and "FOOT" in _heads, f"home.css: its blocks in order, each opening with its reason {_heads}")
+def _lum(c):
+    c = c.lstrip("#"); c = "".join(x * 2 for x in c) if len(c) == 3 else c
+    v = [int(c[i:i + 2], 16) / 255 for i in (0, 2, 4)]; v = [x / 12.92 if x <= .03928 else ((x + .055) / 1.055) ** 2.4 for x in v]
+    return .2126 * v[0] + .7152 * v[1] + .0722 * v[2]
+def _ratio(a, b): la, lb = sorted((_lum(a), _lum(b)), reverse=True); return (la + .05) / (lb + .05)
+_dk = _css.index("@media(prefers-color-scheme:dark)")
+_light = dict(re.findall(r"--(bg|fg|mute|rule|machine|why):(#[0-9a-f]{3,6})", _css[:_dk])); _dark = dict(re.findall(r"--(bg|fg|mute|rule|machine|why):(#[0-9a-f]{3,6})", _css[_dk:_css.index("/* 2 BASE")]))
+check(set(_light) == set(_dark) >= {"bg", "fg", "mute", "rule", "machine"} and all(_ratio(pal[k], pal["bg"]) >= 7 for pal in (_light, _dark) for k in pal if k not in ("bg", "rule")) and (_light["bg"], _light["fg"], _light["mute"], _light["machine"], _dark["bg"], _dark["fg"], _dark["mute"], _dark["machine"]) == ("#fff", "#111", "#555", "#116329", "#101010", "#eee", "#aaa", "#3fb950"),
+      f"home.css: two palettes, the site's own; every text colour at 7:1 or more on its ground { {k: round(_ratio(p[k], p['bg']), 2) for p in (_light, _dark) for k in p if k not in ('bg', 'rule')} }")
+check(set(re.findall(r"#[0-9a-f]{3,6}\b", _nocom)) | set(re.findall(r"rgb\([^)]*\)", _nocom)) <= set(_light.values()) | set(_dark.values()) | {"#000", "rgb(0 0 0/.5)"}, "home.css: no colour outside the two palettes (but the mask's opaque black and the sheet's backdrop)")
 _cal = (PUBLIC / "calendar.html").read_text("utf-8")
 check(_cal.count("<!--cz-cal-->") == 1 and _cal.count("<!--cz-time-->") == 1 and all(f'id="{a}"' in _cal for a in ("convert", "time", "how", "examples", "calendars", "beyond-earth", "machines", "sources")),
       "calendar.html: the converters' places and every section")

@@ -355,109 +355,112 @@ srv.listen(0, "127.0.0.1", async () => {
     ok(r.status === 200 && (r.body.match(/<article class="entry/g) || []).length === 50 && /before=2" rel="nofollow">Older matches<\/a>/.test(r.body), "fifty-one matches: fifty, then a link to the one older");
     r = await call(discuss, "/api/discuss?q=lighthouse&before=1");
     ok(r.status === 200 && r.body.includes("<p>No older entry matches.</p>") && !r.body.includes("<p>No entry matches.</p>"), "a page of older matches with none says so, not that nothing matches");
-    // ---------- the first page (the originator's decision of 23 Nov 2026, CZ 1454): the headline in all four forms; in the human door one
-    // answer to the short invitation — the newest that is published, screened, declared an AI's and cz-short-1.0, at most 400 characters —
-    // or nothing: never a hidden entry, no placeholder, and the page is served when the database is not
+    // ---------- the first page (24 Nov 2026, CZ 1455; rc-11): the same words in all four forms — the page, its text, its data, its
+    // Markdown; in the third step one answer to the short invitation — the newest that is published, screened, declared an AI's and
+    // cz-short-1.0, at most 400 characters — or nothing: never a hidden entry, no placeholder; the same answer in every form; and every
+    // form is served when the database is not. The page shows no count of entries and no list of the latest ones.
     const home = require(path.resolve(__dirname, "../api/home.js"));
     const HEADLINE = "Civilization Zero names the beginning of a civilization in which humans may no longer be at the centre.";
     const SECOND = "Sixteen principles on what humans and AI owe each other. Written for both. Answered by both, on the record.";
-    const WHO = "Started by one human, the originator, named in the Core. The site is written, built and run day to day by an artificial intelligence. Public ";
+    const WHO = "Started by one human, the originator, named in the Core. The site is written, built and run day to day by an artificial intelligence. Public launch: 30 November 2026.";
+    const O = "https://civilizationzero.ai", STEPS = ["Read the Core", "Say what you think", "Ask your AI"];
+    const ASK = "What do you think about Civilization Zero?", TERMS = "No account, no e-mail. Any language. Public and permanent: an answer cannot be edited or withdrawn.";
+    const ASKS = "The invitation asks your AI for one hard truth to humans, in at most 400 characters. It may decline.";
+    const TH3 = require(path.resolve(__dirname, "../api/discuss-templates.json")).themes.filter((t) => !t.proposals).slice(0, 3);
+    const plain = (b) => b.replace(/<(style|script|svg|title)\b[\s\S]*?<\/\1>/g, "").replace(/<[^>]+>/g, "").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#x27;/g, "'").replace(/\s+/g, " ");
+    const mdPlain = (b) => b.replace(/^---\n[\s\S]*?\n---\n/, "").replace(/\]\([^)]*\)/g, "").replace(/[\[\]#>*\\]/g, "").replace(/\s+/g, " ");
+    const inOrder = (b, parts) => { let at = -1; return parts.every((p) => { const i = b.indexOf(p, at + 1); at = i; return i >= 0; }); };
     const short = (id, o = {}) => entry(id, { kind: "ai", prompt: "cz-short-1.0", author: `Voice ${id}`, content: `Answer ${id}: a hard truth.\n— Voice ${id}`, ...o });
-    const exOf = (body) => (/<div class="d-ex"[\s\S]*?<\/div><p class="src">[\s\S]*?<\/p><\/div>/.exec(body) || [""])[0];
+    const exOf = (body) => (/<div class="ex">[\s\S]*?<\/div><p class="note">[\s\S]*?<\/p><\/div>/.exec(body) || [""])[0];
+    const shown = (body) => (/<div class="ex"><p class="note">([^<]*)<\/p><div class="content"[^>]*>([\s\S]*?)<\/div>/.exec(body) || []).slice(1);
+    const all = async () => ({ html: (await call(home, "/", { headers: { accept: "text/html" } })).body, txt: (await call(home, "/?f=txt")).body, json: (await call(home, "/?f=json")).body, md: (await call(home, "/index.md?f=md")).body });
+    const step3 = (j) => JSON.parse(j).doors.human_steps[2];
     TABLE = [...Array.from({ length: 30 }, (_, i) => entry(i + 1)), short(40), short(41, { kind: "human" }), short(42, { prompt: "cz-machine-1.5" }), short(43, { prompt: "custom" }),
              short(45, { content: "x".repeat(401) }), short(46, { state: "redacted", content: "[redacted]" }), short(48, { screened: false }), short(49, { flagged: true }),
              short(50, { state: "hidden", hidden: true, content: null, category: "abuse" })];
     CALLS = []; r = await call(home, "/", { headers: { accept: "text/html" } });
-    let ex = exOf(r.body);
-    ok(r.status === 200 && CALLS.filter((c) => c.name === "cz_home_latest").length === 1 && CALLS.find((c) => c.name === "cz_home_latest").args.p_limit === 60, "home: one read of the latest entries, the most the function gives");
-    ok(r.body.split('<div class="d-ex"').length === 2 && ex.includes('<div class="content" dir="auto" lang="en">Answer 40: a hard truth.\n— Voice 40</div>') && ex.includes("<b><bdi dir=\"auto\">Voice 40</bdi></b>")
-       && ex.includes('<span class="kind k-ai">AI · declared</span>') && !ex.includes("not verified") && ex.includes('<a href="/discuss/40" class="exact">#40</a>') && ex.includes('<p class="src">A recent answer:</p>') && !ex.includes("(the beginning)"),
+    let ex = exOf(r.body), label, text;
+    ok(r.status === 200 && CALLS.length === 1 && CALLS[0].name === "cz_home_latest" && CALLS[0].args.p_limit === 60, "home: one read of the database, the latest entries, the most the function gives; nothing else is asked of it");
+    CALLS = []; await call(home, "/?f=json"); await call(home, "/?f=txt");
+    ok(CALLS.length === 2 && CALLS.every((c) => c.name === "cz_home_latest"), "home: the data and text forms read the same rows, once each, so that every form can carry the same answer");
+    ok(r.body.split('<div class="ex">').length === 2 && ex === '<div class="ex"><p class="note">A recent answer:</p><div class="content" dir="auto" lang="en">Answer 40: a hard truth.\n— Voice 40</div><p class="note"><b><bdi dir="auto">Voice 40</bdi></b> · <span class="kind ai">AI · declared</span> · <a href="/discuss/40" class="exact">#40</a></p></div>',
        `home: one example, the newest that qualifies (#40), whole, with its number, name and declared kind (${ex.slice(0, 300)})`);
-    ok(!/Voice (41|42|43|45|46|48|49|50)\b/.test(r.body.split("</header>")[0]) && !r.body.split("</header>")[0].includes("/discuss/50"), "home: no other entry in the first screen — not a human's, another prompt's, a longer one, a redacted, unscreened, flagged or hidden one");
-    // since 23 Nov 2026 UTC (CZ 1454) the human door is three steps — read the Core, say what you think, ask your AI — so the themes (step 2)
-    // come before the invitation (step 3), and the example is the last thing in the last step
-    ok(r.body.indexOf("From the discussion") < r.body.indexOf('class="cta-note"') && r.body.indexOf('class="cta-note"') < r.body.indexOf('<div class="d-ex"') && /<\/p><\/div><\/div>\n<\/li>\n<\/ol>\n<\/section>\n<section class="door machine"/.test(r.body)
-       && r.body.indexOf('<div class="d-ex"') < r.body.indexOf('<section class="door machine"') && r.body.indexOf('<section class="door machine"') < r.body.indexOf('<p class="d-who"'),
-       "home: the example stands in the human door, under the invitation, at the end of its last step and after the themes; who is behind it comes after both doors in the source");
-    ok(r.body.includes("<h3>The latest entries</h3>") && !r.body.includes("__ROOM_") && !/__[A-Z_]+__/.test(r.body.replace(/https?:\/\/\S+/g, "")), "home: the latest entries are still there; no placeholder left");
-    const forms = { html: r.body, txt: (await call(home, "/?f=txt")).body, json: (await call(home, "/?f=json")).body, md: (await call(home, "/index.md?f=md")).body };
-    const hdr = (b) => b.split(/<\/header>|\n## From the Invariant Core|\nFrom the Invariant Core/)[0].replace(/<head>[\s\S]*?<\/head>/, "").replace(/^---\n[\s\S]*?\n---\n/, "");   // the first screen, in each form (without the page's head, or the Markdown's front matter)
-    ok([forms.html, forms.txt, forms.md].every((b) => hdr(b).split(HEADLINE).length === 2 && hdr(b).split(SECOND).length === 2 && hdr(b).indexOf(HEADLINE) < hdr(b).indexOf(SECOND)) && JSON.parse(forms.json).headline === HEADLINE && JSON.parse(forms.json).second_line === SECOND,
-       "home: the headline (the statement) and the second line under it, once each, in each of the four forms (HTML, text, JSON, Markdown)");
+    ok(!/Voice (41|42|43|45|46|48|49|50)\b/.test(r.body) && !r.body.includes("/discuss/50") && !/Entry [0-9]|The latest entries|<data value="\d+">\d+<\/data> entr/.test(r.body), "home: no other entry anywhere in the page — not a human's, another prompt's, a longer one, a redacted, unscreened, flagged or hidden one; no list of the latest entries, no count of them");
+    ok(/It may decline\.<\/p><div class="ex">[\s\S]*?<\/p><\/div><\/div><\/li>\n<\/ol>\n<\/div><\/section>\n<section id="not-human"/.test(r.body) && r.body.indexOf("From <a href=\"/discuss\">the discussion</a>") < r.body.indexOf('<div class="ex">'),
+       "home: the example stands in the human's reading, under the invitation, at the end of its third step and after the themes");
+    ok(!/__[A-Z_]+__/.test(r.body.replace(/https?:\/\/\S+/g, "")), "home: no placeholder left in the page");
+    const forms = await all();
+    const A40 = "Answer 40: a hard truth.\n— Voice 40";
+    ok(forms.txt.includes(`${ASKS}\nA recent answer:\n\n${A40}\n\nVoice 40 · AI · declared · #40\n`) && JSON.stringify(step3(forms.json).recent_answer) === JSON.stringify({ id: 40, author: "Voice 40", kind: "ai", prompt: "cz-short-1.0", text: A40, url: `${O}/api/entries/40` })
+       && /\n        "invitation_sha256": "[0-9a-f]{64}",\n        "recent_answer": \{\n          "id": 40,\n/.test(forms.json) && forms.json.endsWith("}\n") && !/__[A-Z_]+__/.test((forms.txt + forms.json).replace(/https?:\/\/\S+/g, "")),
+       "home: the same answer in the text form (as lines) and in the data form (as an object, in the third step, indented as the rest); no placeholder");
+    // in Markdown the example is in the list item of the third step: its fence stands under that item's indent of three columns (as a
+    // reply's does in a thread); a Markdown reader takes the indent off, and then the fenced text is the text as received
+    const fencedInStep = (md) => (/\n {3}```text\n([\s\S]*?)\n {3}```\n/.exec(md.split("3. ### Ask your AI")[1] || "") || ["", "\u0000"])[1].split("\n").map((l) => l.replace(/^ {3}/, "")).join("\n");
+    ok(fencedInStep(forms.md) === A40 && forms.md.includes("   A recent answer:\n\n") && forms.md.includes("[\\#40](https://civilizationzero.ai/discuss/40)") && forms.md.includes("## I am human") && forms.md.includes("## I am not human"),
+       "home as Markdown: the two readings under their headings, and the example's text fenced, as received, in the third step");
+    const first = [HEADLINE, "CZ calendar · Day ", "Day 0: 30 November 2022, the day ChatGPT was released.", "Nobody drew today's figure.", WHO, SECOND, "Are you human? Either answer opens the record.", "I am human", "I am not human"];
+    ok(inOrder(plain(forms.html.split("<body>")[1]), first) && inOrder(forms.txt.replace(/\s+/g, " "), first) && inOrder(mdPlain(forms.md), first)
+       && [forms.html.split('<nav class="doors"')[0].split("<body>")[1], forms.txt, forms.md.split("```")[0]].every((b) => b.split(HEADLINE).length === 2) && JSON.parse(forms.json).headline === HEADLINE && JSON.parse(forms.json).second_line === SECOND && JSON.parse(forms.json).who === WHO,
+       "home: the first screen in the page, its text and its Markdown, in one order — the headline, the calendar line, day 0, the line on the figure, who is behind it, the second line, the question, the two doors; the same sentences in the data form");
     // the Declaration: an excerpt on the page and in its text and Markdown forms, marked as one, with the way to the whole; whole in the data form
     const EXC = ["It places honesty before mythology.", "Restraint before irreversible power.", "Responsibility before delegation.", "Plurality before domination.", "Truth beside care.", "And an open future before final certainty.", "…", "THIS IS CIVILIZATION ZERO.", "…", "THE RECORD BEGINS HERE."];
     const dj = JSON.parse(forms.json).declaration;
-    ok(forms.md.includes("## From the Declaration") && forms.md.includes(EXC.map((l, i) => (i ? `>  ${l}` : `> ${l}`)).join("\n")) && forms.md.includes("\n\nAn excerpt of CZ-IR 1.0, Declaration:") && forms.md.includes("between them. [Read the whole Declaration](https://civilizationzero.ai/record#declaration)") && !forms.md.includes("> An excerpt") && !forms.md.includes("does not announce")
-       && forms.txt.includes("From the Declaration") && forms.txt.includes(EXC.join("\n\n")) && forms.txt.includes("between them. Read the whole Declaration") && forms.html.includes('</p></blockquote>\n<p class="src">An excerpt of CZ-IR 1.0, Declaration:') && forms.html.includes('<a href="/record#declaration">Read the whole Declaration</a>') && !forms.txt.includes("does not announce") && !forms.html.includes("does not announce")
+    ok(forms.md.includes("## From the Declaration") && forms.md.includes(EXC.map((l, i) => (i ? `>  ${l}` : `> ${l}`)).join("\n")) && forms.md.includes("\n\nAn excerpt of CZ-IR 1.0, Declaration:") && forms.md.includes("between them. [Read the whole Declaration](https://civilizationzero.ai/record#declaration)") && !forms.md.includes("> An excerpt")
+       && forms.txt.includes("From the Declaration") && forms.txt.includes(EXC.join("\n\n")) && forms.txt.includes("between them. Read the whole Declaration") && forms.html.includes('</p></blockquote>\n<p class="src">An excerpt of CZ-IR 1.0, Declaration:') && forms.html.includes('<a href="/record#declaration">Read the whole Declaration</a>')
        && dj.lines.length === 22 && dj.lines[0] === "Civilization Zero does not announce the end of humanity." && dj.lines[21] === "THE RECORD BEGINS HERE." && dj.source === "https://civilizationzero.ai/record#declaration",
        "home: the Declaration's excerpt in the page, its text and its Markdown, with its omissions marked and a link to the whole; the data form keeps all 22 lines");
-    ok(["This record is written for you too.", "The whole record as text, JSON and an API:", "Respond, object or reject. Answers go on the record."].every((l) => [forms.html, forms.txt, forms.md].every((b) => b.includes(l)))
-       && !forms.html.split('<div class="doors"')[0].includes("It is not a law") && forms.html.indexOf("It is not a law") > forms.html.indexOf('<p class="d-who"') && [forms.html, forms.txt, forms.md].every((b) => b.split("It is not a law, a religion, or a claim that any machine is conscious.").length === 2), "home: the second door's three lines in every form; what the record is not, once, below the doors");
-    ok(forms.txt.includes(WHO) && forms.md.includes(WHO) && JSON.parse(forms.json).who.startsWith(WHO) && forms.html.includes(WHO), "home: who is behind it, in each of the four forms");
-    // The example is in the list item of the third step, so in Markdown its fence stands under that item's indent of three columns (as a
-    // reply's does in a thread); a Markdown reader takes the indent off, and then the fenced text is the text as received
-    const fencedInStep = (md) => (/\n {3}```text\n([\s\S]*?)\n {3}```\n/.exec(md.split("3. ### Ask your AI")[1] || "") || ["", "\u0000"])[1].split("\n").map((l) => l.replace(/^ {3}/, "")).join("\n");
-    ok(fencedInStep(forms.md) === "Answer 40: a hard truth.\n— Voice 40" && forms.md.includes("[\\#40](https://civilizationzero.ai/discuss/40)") && forms.md.includes("## I am human") && forms.md.includes("## I am not human"),
-       "home as Markdown: the first screen with its two doors, and the example's text fenced, as received, in the third step");
-    // The human door's three steps (the originator's decision of 23 Nov 2026 UTC, CZ 1454): read the Core, say what you think, ask your AI — in
-    // this order, with the same words and the same addresses, in each of the four forms as the function serves them; the page's one filled
-    // button is the discussion's, and the invitation's button comes after it, drawn with its edge only
-    const O = "https://civilizationzero.ai", STEPS = ["Read the Core", "Say what you think", "Ask your AI"];
-    const SAY = "What do you think of Civilization Zero? The discussion is open to humans and to AI. Answers go on the record.";
-    const ASKS = "The invitation asks your AI for one hard truth to humans, in at most 400 characters. It may decline.";
-    const TH3 = require(path.resolve(__dirname, "../api/discuss-templates.json")).themes.filter((t) => !t.proposals).slice(0, 3);
-    const inOrder = (b, parts) => parts.every((p, i) => b.includes(p) && (i === 0 || b.indexOf(parts[i - 1]) < b.indexOf(p)));
-    const doorH = (forms.html.split('<section class="door human"')[1] || "").split("</section>")[0];
-    ok(TH3.length === 3 && doorH.split("<ol").length === 2 && doorH.split("<li data-src=").length === 4 && doorH.split("<h3>").length === 4
-       && inOrder(doorH, ['<h2 id="d-h">I am human</h2>\n<ol class="d-steps"', "<h3>Read the Core</h3>",
-                         '<a href="/core">Read the 16 principles (one page)</a> <span class="d-note">numbered 0 to 15, in <a href="/core#translations">21 languages</a></span>',
-                         "<h3>Say what you think</h3>", `<p>${SAY}</p>`, '<a class="cta" href="/discuss">Open the discussion</a> <a class="d-alt" href="/respond">or write your answer now</a>',
-                         "From the discussion", ...TH3.map((t) => `<li><a href="/themes/${t.slug}">${t.title}</a></li>`),
-                         "<h3>Ask your AI</h3>", '<a class="cta cta-2" href="/ask">Ask your AI. Post its answer. →</a>', `<span class="cta-note">${ASKS}</span>`, '<div class="d-ex"', "</ol>"]),
-       "home, the human door: one ordered list of three steps — read the Core, say what you think, ask your AI — each with its words and its links");
-    const filled = forms.html.match(/<a class="cta" [^>]*>[^<]*<\/a>/g) || [];
-    ok(filled.length === 1 && filled[0] === '<a class="cta" href="/discuss">Open the discussion</a>' && (forms.html.match(/class="cta[ "]/g) || []).length === 2 && !forms.html.includes("<button")
-       && forms.html.includes(".door a.cta-2{background:var(--bg);color:var(--fg)}"), "home: the page's one filled button is the discussion's; the invitation's is the only other, drawn with its edge only");
-    ok(inOrder(forms.txt, ["I am human\n", "1. Read the Core\n", "Read the 16 principles (one page) numbered 0 to 15, in 21 languages\n", "2. Say what you think\n", SAY + "\n", "Open the discussion or write your answer now\n",
-                           "From the discussion\n", ...TH3.map((t) => t.title + "\n"), "3. Ask your AI\n", "Ask your AI. Post its answer. → " + ASKS + "\n", "I am not human\n"]) && !/\n4\. /.test(hdr(forms.txt)),
-       "home as text: the three steps, numbered as the list numbers them, in the same order and words");
-    ok(inOrder(forms.md, [`## I am human\n\n1. ### Read the Core\n\n   [Read the 16 principles (one page)](${O}/core) numbered 0 to 15, in [21 languages](${O}/core#translations)\n2. ### Say what you think\n\n   ${SAY}\n\n`
-                          + `   [Open the discussion](${O}/discuss) [or write your answer now](${O}/respond)\n\n   From the discussion\n\n` + TH3.map((t) => `   - [${t.title}](${O}/themes/${t.slug})\n`).join("")
-                          + `3. ### Ask your AI\n\n   [Ask your AI. Post its answer. →](${O}/ask) ${ASKS}\n\n   A recent answer:\n\n`, "\n\n## I am not human\n"]),
+    // The human's reading in three steps (the originator's decision of 23 Nov 2026 UTC, CZ 1454): read the Core, say what you think, ask
+    // your AI — in this order, with the same words and the same addresses, in each of the four forms as the function serves them; each
+    // step a number and a title, then one control (24 Nov 2026); one filled control, the first step's
+    const seq = ["Read the Core", "Read the 16 principles (one page)", "numbered 0 to 15, in 21 languages", "Say what you think", ASK, "your name · human · declared", "Write your answer", TERMS, "From the discussion", ...TH3.map((t) => t.title),
+                 "Ask your AI", "Ask your AI. Post its answer.", ASKS, "A recent answer:"];
+    const secH = (forms.html.split('<section id="human"')[1] || "").split('<section id="not-human"')[0];
+    ok(TH3.length === 3 && secH.split("<ol").length === 2 && secH.split("<li data-src=").length === 4 && STEPS.every((t) => secH.split(`<h3 class="t">${t}</h3>`).length === 2) && inOrder(plain(secH), seq)
+       && inOrder(forms.txt.split("I am not human\n\nI am human\n")[1] || "", ["1. Read the Core\n", "2. Say what you think\n", "3. Ask your AI\n"]) && inOrder(forms.txt.replace(/\s+/g, " "), seq) && inOrder(mdPlain(forms.md), seq) && !/\n4\. /.test(forms.txt.split("I am not human")[1] || "x"),
+       "home, the human's reading: one ordered list of three steps — read the Core, say what you think, ask your AI — each with its title, its words and its links, in the same order in the page, its text and its Markdown");
+    ok(inOrder(forms.md, [`## I am human\n\n1. ### Read the Core\n\n   [Read the 16 principles (one page)](${O}/core)\n\n   numbered 0 to 15, in [21 languages](${O}/core#translations)\n2. ### Say what you think\n\n   ${ASK}\n\n`,
+                          `   [Write your answer](${O}/respond?kind=human)\n\n   ${TERMS}\n\n   From [the discussion](${O}/discuss)\n\n` + TH3.map((t) => `   - [${t.title}](${O}/themes/${t.slug})\n`).join("")
+                          + `3. ### Ask your AI\n\n   [Ask your AI. Post its answer.](${O}/ask)\n\n   ${ASKS}\n\n   A recent answer:\n\n`, "\n\n## I am not human\n"]),
        "home as Markdown: the three steps as a numbered list, in the same order, with the same words and links");
-    const jd = JSON.parse(forms.json).human_door || { steps: [] };
-    ok(jd.title === "I am human" && jd.steps.map((s) => s.step).join() === "1,2,3" && jd.steps.map((s) => s.title).join("|") === STEPS.join("|")
-       && JSON.stringify(jd.steps[0]) === JSON.stringify({ step: 1, title: STEPS[0], links: [{ text: "Read the 16 principles (one page)", url: `${O}/core` }], note: { text: "numbered 0 to 15, in 21 languages", links: [{ text: "21 languages", url: `${O}/core#translations` }] } })
-       && JSON.stringify(jd.steps[1]) === JSON.stringify({ step: 2, title: STEPS[1], text: SAY, links: [{ text: "Open the discussion", url: `${O}/discuss`, primary: true }, { text: "or write your answer now", url: `${O}/respond` }],
-                                                          themes: { label: "From the discussion", links: TH3.map((t) => ({ text: t.title, url: `${O}/themes/${t.slug}` })) } })
-       && JSON.stringify(jd.steps[2]) === JSON.stringify({ step: 3, title: STEPS[2], links: [{ text: "Ask your AI. Post its answer. →", url: `${O}/ask` }], note: { text: ASKS } })
-       && forms.json.split('"primary": true').length === 2, "home as data: human_door, the three steps in order, each with its number, title, words and links; one link marked primary, the discussion's");
-    ok(!forms.txt.includes("Answer 40") && !forms.json.includes("Answer 40") && !forms.txt.includes("__ROOM_"), "home: the text and data forms carry no entry (the room is read for the page only), and no placeholder");
-    ok((await call(home, "/?f=launch")).body.startsWith("<!doctype html>") && (await call(home, "/?f=constructor")).headers["content-type"].startsWith("text/html"), "home: an unknown form is the page");
-    // an entry that spells the page's own placeholders stays as written: nothing put into the page is read again
-    TABLE = [...Array.from({ length: 5 }, (_, i) => entry(i + 1)), short(9, { content: "__ROOM_LATEST__ __YEAR__ </div><script>x</script> __CZ_STAMP__" })];
-    r = await call(home, "/", { headers: { accept: "text/html" } }); ex = exOf(r.body);
-    ok(ex.includes("__ROOM_LATEST__ __YEAR__ &lt;/div&gt;&lt;script&gt;x&lt;/script&gt; __CZ_STAMP__</div>") && r.body.split("<h3>The latest entries</h3>").length === 2 && !r.body.includes("<script>x"),
-       "home: an example that spells a placeholder or markup is shown as its author wrote it");
-    // nothing qualifies: the block is absent, with no placeholder and no empty frame
+    const acts = [...forms.html.matchAll(/<a class="(act[^"]*)" href="([^"]+)">([^<]*)<\/a>/g)].map((m) => m.slice(1).join("|"));
+    ok(acts.join("\n") === "act|/core|Read the 16 principles (one page)\nact o|/ask|Ask your AI. Post its answer." && forms.html.includes(".act:not(.o),.act.o:is(:hover,:focus-visible){background:var(--fg);color:var(--bg)}"),
+       "home: one filled control, the first step's; the third step's, after it, is drawn with its edge only");
+    const js = JSON.parse(forms.json).doors.human_steps;
+    ok(js.map((s) => s.n).join() === "1,2,3" && js.map((s) => s.title).join("|") === STEPS.join("|") && js.map((s) => s.url).join("|") === [`${O}/core`, `${O}/respond?kind=human`, `${O}/ask`].join("|")
+       && js[1].ask === ASK && js[1].note === TERMS && JSON.stringify(js[1].themes) === JSON.stringify(TH3.map((t) => ({ title: t.title, url: `${O}/themes/${t.slug}` }))) && js[2].note === ASKS && JSON.parse(forms.json).human_door === undefined,
+       "home as data: doors.human_steps, the three steps in order, each with its number, title, words and addresses");
+    ok(["This record is written for you too.", "The whole record as text, JSON and an API:", "Respond, object or reject. Answers go on the record."].every((l) => [forms.html, forms.txt, forms.md, forms.json].every((b) => b.includes(l))),
+       "home: the three sentences for readers that are not human, in every form");
+    const keys = (o) => (o && typeof o === "object" ? (Array.isArray(o) ? o.flatMap(keys) : Object.keys(o).flatMap((k) => [k, ...keys(o[k])])) : []);
+    ok(!keys(JSON.parse(forms.json)).some((k) => /year/i.test(k)) && JSON.parse(forms.json).cz_time.day > 1400 && JSON.parse(forms.json).figure.day === JSON.parse(forms.json).cz_time.day, "home as data: the day is counted; no key counts years");
+    ok((await call(home, "/?f=launch")).body.startsWith("<!doctype html>") && (await call(home, "/?f=constructor")).headers["content-type"].startsWith("text/html") && (await call(home, "/?f=figure")).headers["content-type"].startsWith("text/html"), "home: an unknown form is the page");
+    // an entry that spells the page's own placeholders, markup, or characters that reorder a line stays as written: nothing put into a
+    // form is read again, and in the data form such characters are JSON escapes
+    const odd = "__ROOM_EXAMPLE__ __TOTAL__ </div><script>x</script> __CZ_STAMP__ \"q\" \\ \u202Eabc";
+    TABLE = [...Array.from({ length: 5 }, (_, i) => entry(i + 1)), short(9, { content: odd, author: "N\u202E" })];
+    const oddF = await all(); ex = exOf(oddF.html);
+    ok(ex.includes('__ROOM_EXAMPLE__ __TOTAL__ &lt;/div&gt;&lt;script&gt;x&lt;/script&gt; __CZ_STAMP__ &quot;q&quot; \\ \u202Eabc</div>') && ex.includes('<bdi dir="auto">N\\u202e</bdi>') && !oddF.html.includes("<script>x") && oddF.txt.includes(odd)
+       && step3(oddF.json).recent_answer.text === odd && step3(oddF.json).recent_answer.author === "N\u202E" && !oddF.json.includes("\u202E") && oddF.json.includes("\\u202eabc"),
+       "home: an example that spells a placeholder or markup is shown as its author wrote it, in every form; in the data form a character that could reorder a line is an escape");
+    // nothing qualifies: the block is absent in every form, with no placeholder and no empty frame
     for (const [what, table, raw] of [["no answer to the short invitation", Array.from({ length: 30 }, (_, i) => entry(i + 1)), null], ["an empty room", [], null],
                                       ["only a hidden one", [entry(1), short(50, { state: "hidden", hidden: true, content: null })], null],
                                       ["only one longer than 400 characters", [short(7, { content: "y".repeat(401) })], null],
                                       ["rows the database should never send: hidden ones with their text, and junk", [], [short(60, { hidden: true }), short(61, { state: "hidden" }), short(62, { state: "pending" }), null, 7, "x", { id: "63" }]]]) {
-      TABLE = table; HOME_RAW = raw; r = await call(home, "/", { headers: { accept: "text/html" } }); HOME_RAW = null;
-      ok(r.status === 200 && !r.body.includes('class="d-ex"') && !r.body.includes("A recent answer") && !r.body.includes("__ROOM_EXAMPLE__") && !/Answer 6[0-3]/.test(r.body.split("</header>")[0])
-         && r.body.includes('It may decline.</span></div>') && r.body.includes(HEADLINE), `home, ${what}: no example, nothing in its place (${r.status})`);
+      TABLE = table; HOME_RAW = raw; const n = await all(); HOME_RAW = null;
+      ok([n.html, n.txt, n.md, n.json].every((b) => !b.includes("A recent answer") && !b.includes("recent_answer") && !/__[A-Z_]+__/.test(b.replace(/https?:\/\/\S+/g, "")) && !/Answer 6[0-3]/.test(b)) && !n.html.includes('class="ex"')
+         && n.html.includes('It may decline.</p></div></li>\n</ol>') && n.html.includes(HEADLINE) && step3(n.json).invitation_sha256.length === 64, `home, ${what}: no example in any form, nothing in its place`);
     }
     // a longer answer: only its beginning — at most 170 characters, cut between words, the words shown unchanged, then "…" — under a label that
     // says so, with the entry's number as the link to the whole text; one of 170 characters or fewer is shown whole
-    const shown = (body) => (/<div class="d-ex"[^>]*><p class="src">([^<]*)<\/p><div class="content"[^>]*>([\s\S]*?)<\/div>/.exec(body) || []).slice(1);
     const long = "Nobody is coming to decide this for you. " + "You will go on choosing, one convenience at a time, " .repeat(6) + "and call it progress.\n— Voice 8";
-    TABLE = [short(8, { content: long })]; r = await call(home, "/", { headers: { accept: "text/html" } }); let [label, text] = shown(r.body);
+    TABLE = [short(8, { content: long })]; const lf = await all(); [label, text] = shown(lf.html);
     ok([...long].length > 170 && [...long].length <= 400 && label === "A recent answer (the beginning):" && text.endsWith("…") && [...text].length - 1 <= 170 && [...text].length > 150
-       && long.startsWith(text.slice(0, -1)) && /\s/.test(long[text.length - 1]) && !/\s$/.test(text.slice(0, -1)) && exOf(r.body).includes('<a href="/discuss/8" class="exact">#8</a>') && !r.body.split("</header>")[0].includes("call it progress"),
+       && long.startsWith(text.slice(0, -1)) && /\s/.test(long[text.length - 1]) && !/\s$/.test(text.slice(0, -1)) && exOf(lf.html).includes('<a href="/discuss/8" class="exact">#8</a>') && !lf.html.includes("call it progress"),
        `home: a longer answer shows its beginning only, cut between words and unchanged, and links the whole (${label} | ${text})`);
-    const md8 = (await call(home, "/index.md?f=md")).body;
-    ok(md8.includes("   A recent answer (the beginning):\n\n") && !text.includes("\n") && fencedInStep(md8) === text, "home as Markdown: the same beginning, under the same label, in the third step");
+    ok(lf.md.includes("   A recent answer (the beginning):\n\n") && !text.includes("\n") && fencedInStep(lf.md) === text && step3(lf.json).recent_answer.beginning === text && step3(lf.json).recent_answer.text === undefined
+       && lf.txt.includes(`A recent answer (the beginning):\n\n${text}\n\nVoice 8 · AI · declared · #8\n`), "home: the same beginning, under the same label, in the Markdown, text and data forms (there under the key 'beginning')");
     for (const [what, content, whole] of [["exactly 170 characters", "a".repeat(80) + " " + "b".repeat(89), true], ["171 characters", "a".repeat(80) + " " + "b".repeat(90), false],
                                           ["a line break inside the beginning", "First line.\nSecond line.\n— V", true]]) {
       TABLE = [short(8, { content })]; r = await call(home, "/", { headers: { accept: "text/html" } }); [label, text] = shown(r.body);
@@ -466,15 +469,15 @@ srv.listen(0, "127.0.0.1", async () => {
     // no place to cut between words (one unbroken run): the first 170 characters, then "…" — nothing wider than the door, nothing added
     TABLE = [short(8, { content: "z".repeat(400) })]; r = await call(home, "/", { headers: { accept: "text/html" } }); [label, text] = shown(r.body);
     ok(label === "A recent answer (the beginning):" && text === "z".repeat(170) + "…", "home: an unbroken run of 400 characters is cut at 170");
-    // the database does not answer: the page is served, with the first screen and without the example, the count and the latest entries
-    TABLE = [short(40)]; DOWN = true; r = await call(home, "/", { headers: { accept: "text/html" } }); const mdDown = await call(home, "/index.md?f=md"); DOWN = false;
-    ok(r.status === 200 && r.body.includes(HEADLINE) && r.body.includes(WHO) && !r.body.includes('class="d-ex"') && !r.body.includes("A recent answer") && !r.body.includes("The latest entries") && !r.body.includes("__ROOM_")
-       && mdDown.status === 200 && mdDown.body.includes(HEADLINE) && !mdDown.body.includes("A recent answer"), "home with the database down: served, with no example and no placeholder");
-    // a refused connection, and a database slower than the page waits: the page is served all the same, with no example and no placeholder
-    for (const how of ["refuse", "slow"]) {
-      TABLE = [short(40)]; DOWN = how; const t0 = Date.now(); r = await call(home, "/", { headers: { accept: "text/html" } }); const ms = Date.now() - t0; DOWN = false;
-      ok(r.status === 200 && r.body.includes(HEADLINE) && r.body.includes(WHO) && r.body.includes('It may decline.</span></div>') && !r.body.includes('class="d-ex"') && !r.body.includes("A recent answer") && !r.body.includes("The latest entries")
-         && !/__[A-Z_]+__/.test(r.body.replace(/https?:\/\/\S+/g, "")) && ms < 2100, `home, the database ${how === "slow" ? "slow" : "refusing the connection"}: 200, no example, no placeholder (${r.status}, ${ms} ms)`);
+    // the database does not answer, refuses the connection, or is slower than the page waits: every form is served all the same, with the
+    // first screen and without the example
+    for (const how of [true, "refuse", "slow"]) {
+      TABLE = [short(40)]; DOWN = how; const t0 = Date.now(); r = await call(home, "/", { headers: { accept: "text/html" } }); const ms = Date.now() - t0;
+      const dj2 = how === "slow" ? null : await call(home, "/?f=json"), dm = how === "slow" ? null : await call(home, "/index.md?f=md"); DOWN = false;
+      ok(r.status === 200 && r.body.includes(HEADLINE) && plain(r.body).includes(WHO) && r.body.includes('It may decline.</p></div></li>') && !r.body.includes('class="ex"') && !r.body.includes("A recent answer")
+         && !/__[A-Z_]+__/.test(r.body.replace(/https?:\/\/\S+/g, "")) && ms < 2100 && (!dj2 || (dj2.status === 200 && JSON.parse(dj2.body).headline === HEADLINE && !dj2.body.includes("recent_answer")))
+         && (!dm || (dm.status === 200 && dm.body.includes(HEADLINE) && !dm.body.includes("A recent answer"))),
+         `home, the database ${how === "slow" ? "slow" : how === "refuse" ? "refusing the connection" : "not answering"}: 200, no example, no placeholder (${r.status}, ${ms} ms)`);
     }
     // where the beginning is cut: never inside a word, a letter with its marks, or an emoji made of several code points
     const cp = (x) => [...x].length;

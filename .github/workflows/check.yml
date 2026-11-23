@@ -22,7 +22,7 @@ jobs:
           set -euo pipefail
           python3 -m venv "$RUNNER_TEMP/cz-venv"   # the runner's own Python refuses a plain pip install (PEP 668)
           "$RUNNER_TEMP/cz-venv/bin/pip" install -q jsonschema convertdate==2.5.1 hijridate==2.6.0 jdatetime
-          node --test site/test/badge.test.js site/test/csp_inline.test.js site/test/reader_day.test.js
+          node --test site/test/badge.test.js site/test/csp_inline.test.js site/test/reader_day.test.js site/test/home.test.js
           for t in batch_a batch_b classify_stub cztime_functions entries_filters reserved_names room_mock; do node "site/test/$t.test.js"; done
           node site/test/visits.test.mjs
           "$RUNNER_TEMP/cz-venv/bin/python" site/test/schema_test.py
@@ -38,8 +38,8 @@ jobs:
           const open=require("./api/discuss-templates.json").open;
           const run=(fn,req)=>new Promise(r=>{const res={h:{},setHeader(k,v){this.h[k]=v},end(b){r({status:this.statusCode,h:this.h,body:b})}};fn(Object.assign({socket:{remoteAddress:"127.0.0.1"},on(){}},req),res)});
           (async()=>{
-            let r=await run(h,{url:"/",headers:{accept:"application/json"}}); const o=JSON.parse(r.body); if(!(o.year>=3)) throw "home json";
-            r=await run(h,{url:"/",headers:{accept:"text/html"}}); if(!r.body.includes("<h1")||r.body.includes("__YEAR__")) throw "home html";
+            let r=await run(h,{url:"/",headers:{accept:"application/json"}}); const o=JSON.parse(r.body); if(!(Number.isInteger(o.cz_time.day)&&o.cz_time.day>=1454&&o.figure.day===o.cz_time.day)||"year" in o||"year" in o.cz_time) throw "home json";   // CZ time counts days: the day, and no year (24 Nov 2026)
+            r=await run(h,{url:"/",headers:{accept:"text/html"}}); if(!r.body.includes("<h1")||/__[A-Z_]+__/.test(r.body.replace(/https?:\/\/\S+/g,""))) throw "home html";
             if(open){
               // open room, no database reachable here: an empty POST is refused as invalid before any storage; a GET fails closed (503) and records nothing
               r=await run(e,{url:"/api/entries",method:"POST",headers:{}}); if(r.status!==400||JSON.parse(r.body).state!=="not accepted") throw "entries POST (open)";

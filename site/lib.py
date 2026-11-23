@@ -563,7 +563,8 @@ def cz_bar_fallback():   # for copies that serve the files as they are: no date,
 GOOGLE_SITE_VERIFICATION = "Hf73qd5zTa6JZ_-O6QM0JBYPSqxOdIM-M33lsIGihhg"   # Google Search Console ("HTML tag" method), property https://civilizationzero.ai/, added by the originator on 29 Oct 2026; keep it, or the property loses its verification
 OG_IMAGE = ("/civilization-zero.png", 1200, 630, "The mark CZ, a zero in which C and Z share their strokes, and the words: Civilization Zero names the beginning of a civilization in which humans may no longer be at the centre. Coordinate Zero, 30 November 2022.")
 
-def shell(title, body, path, description, alternates=(), ldjson=None, nav=True, extra_head="", hreflangs=(), og_type="website", robots=None, crumbs=True, cz_bar=True, footer_extra="", crumb=None, og_image=None):
+def shell(title, body, path, description, alternates=(), ldjson=None, nav=True, extra_head="", hreflangs=(), og_type="website", robots=None, crumbs=True, cz_bar=True, footer_extra="", crumb=None, og_image=None, css=None, footer=None):
+    # css, footer: a page that carries its own stylesheet and its own foot (the first page, since 24 Nov 2026); every other page takes the shared ones
     assert "Year Zero" not in title and (path == "__PATH__" or "Year Zero" not in description), f"{path}: the site counts days; \"Year Zero\" is the Core's phrase, quoted as the Core's and never a title or a description"
     ogi = og_image or OG_IMAGE
     alt = "".join(f'<link rel="alternate" type="{t}" href="{h}" title="{esc(n)}">' for t, h, n in alternates)
@@ -598,12 +599,12 @@ def shell(title, body, path, description, alternates=(), ldjson=None, nav=True, 
 {alt}{hl}<link rel="alternate" type="text/markdown" href="{md_path(path)}" title="This page as Markdown"><link rel="service-desc" type="application/vnd.oai.openapi+json" href="/api/openapi.json">
 {og}<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)"><meta name="theme-color" content="#101010" media="(prefers-color-scheme: dark)">
 {ICON_LINKS}<meta name="apple-mobile-web-app-title" content="Civilization Zero">
-{"".join(f'<link rel="me" href="{esc(u)}">' for u in SOCIAL)}{f'<meta name="fediverse:creator" content="{esc(FEDIVERSE_CREATOR)}">' if FEDIVERSE_CREATOR else ""}<style>{CSS}</style>
+{"".join(f'<link rel="me" href="{esc(u)}">' for u in SOCIAL)}{f'<meta name="fediverse:creator" content="{esc(FEDIVERSE_CREATOR)}">' if FEDIVERSE_CREATOR else ""}<style>{CSS if css is None else css}</style>
 {ld}{SPEC_SCRIPT}{extra_head}</head>
 <body>
 {'<a class="skip" href="#content" lang="en" dir="ltr">Skip to content</a>' + chr(10) if nav else ""}{cz_bar_fallback() + chr(10) if nav and cz_bar else ""}{nav_html(path) if nav else ""}
 {body.replace('<main>', '<main id="content">', 1)}
-{footer_html(footer_extra).replace("__MD_PATH__", md_path(path))}
+{footer_html(footer_extra).replace("__MD_PATH__", md_path(path)) if footer is None else footer}
 </body>
 </html>
 """
@@ -614,10 +615,17 @@ from html.parser import HTMLParser
 
 class _Text(HTMLParser):
     BLOCK = {"p", "h1", "h2", "h3", "li", "tr", "blockquote", "section", "header", "footer", "nav", "pre", "div", "details", "summary", "table"}
+    SKIP = ("style", "script", "title", "svg", "head", "form", "dialog", "button")   # a form, the sheet a button opens and a control are no text
+    VOID = {"br", "meta", "link", "img", "hr", "input", "source", "path", "col", "wbr", "circle"}
     def __init__(self):
-        super().__init__(); self.out = []; self.skip = 0; self.cell = False; self.lists = []; self.num = ""
+        super().__init__(); self.out = []; self.skip = 0; self.cell = False; self.lists = []; self.num = ""; self.hid = []
     def handle_starttag(self, t, a):
-        if t in ("style", "script", "title", "svg", "head", "form"): self.skip += 1   # a form (the converter) is no text
+        # an element the markup marks hidden (shown only where a browser can do what it says) is no text either; self.hid holds, for each
+        # open element, whether it was the one that began a hidden part
+        if t not in self.VOID:
+            h = any(k == "hidden" for k, _ in a); self.hid.append(h); self.skip += h
+        if t in self.SKIP: self.skip += 1
+        if self.skip: return
         if t == "br": self.out.append("\n")
         if t in self.BLOCK: self.out.append("\n")
         if t in ("td", "th"): self.cell = True
@@ -625,7 +633,10 @@ class _Text(HTMLParser):
         if t in ("ol", "ul"): self.lists.append(0 if t == "ol" else None)
         if t == "li" and self.lists and self.lists[-1] is not None: self.lists[-1] += 1; self.num = f"{self.lists[-1]}. "
     def handle_endtag(self, t):
-        if t in ("style", "script", "title", "svg", "head", "form"): self.skip -= 1
+        was = self.skip
+        if t in self.SKIP: self.skip -= 1
+        if t not in self.VOID and self.hid: self.skip -= self.hid.pop()
+        if was: return
         if t in self.BLOCK: self.out.append("\n")
         if t in ("td", "th"): self.out.append("  ")
         if t in ("ol", "ul") and self.lists: self.lists.pop()

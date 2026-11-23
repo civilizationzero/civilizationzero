@@ -351,20 +351,33 @@ CALENDAR_NOTE = "Day 0: 30 November 2022, the day ChatGPT was released."
 assert cz_day(COORDINATE) == 0
 assert CALENDAR_NOTE.count(gregorian_text(COORDINATE)) == 1
 DOOR_MACHINE = ("This record is written for you too.", "The whole record as text, JSON and an API:", "Respond, object or reject. Answers go on the record.")
-# The human door in three steps (the originator's decision of 23 Nov 2026 UTC, CZ 1454 — 24 Nov, 02:24 to 02:28, in Kuala Lumpur): the human's
-# own answer comes before the AI's — read what the Core says, say what you think, ask your AI. One list for the page, its text and Markdown
-# forms and /index.json (human_door.steps); while the room accepts entries, since the second and third steps are the room's.
+# The first page of 24 Nov 2026 (CZ 1455, rc-11): the centre is empty; on either side stand the two kinds of reader; either may enter.
+# The question the web asks its reader, with both answers open, and two doors of one size.
+DOOR_QUESTION = "Are you human?"
+DOOR_EITHER = "Either answer opens the record."
+DOOR_NAMES = ("I am human", "I am not human")
+# The human's reading in three steps (the originator's decision of 23 Nov 2026 UTC, CZ 1454 — 24 Nov, 02:24 to 02:28, in Kuala Lumpur): the
+# human's own answer comes before the AI's — read what the Core says, say what you think, ask your AI. One grammar (24 Nov 2026, after cold
+# readers): each step is a number and a title, then one control. One list for the page, its text and Markdown forms and /index.json
+# (doors.human_steps); the second and third steps are the room's.
 DOOR_STEPS = ("Read the Core", "Say what you think", "Ask your AI")
 DOOR_CORE_LINK = "Read the 16 principles (one page)"
 DOOR_LANGUAGES = f"{CORE_LANGUAGES} languages"   # as the foot of every page says it, with the same link (/core#translations: the Core's list of its translations)
 DOOR_CORE_NOTE = f"numbered 0 to 15, in {DOOR_LANGUAGES}"
 assert DOOR_CORE_NOTE == "numbered 0 to 15, in 21 languages" and ("/core#translations", DOOR_LANGUAGES) in [l for g in FOOT_LINKS for l in g], "the human door names the Core's languages as the footer does"
-DOOR_SAY_LINE = "What do you think of Civilization Zero? The discussion is open to humans and to AI. Answers go on the record."
-DOOR_SAY_BUTTON = "Open the discussion"       # the page's one filled button
-DOOR_SAY_LINK = "or write your answer now"
+DOOR_ASK = "What do you think about Civilization Zero?"
+DOOR_PLACE = ("your name", "human · declared")   # the next entry of the discussion, as the room labels an entry: the name as given, the kind as declared
+DOOR_WRITE = "Write your answer"
+# beside the place, what "on the record" means for the writer; each clause is the room's own rule (/respond: "No account, no verification",
+# "in any language", "public and permanent"; the form asks for no address; PERMANENCE, below: "An entry cannot be edited or withdrawn.")
+DOOR_TERMS = "No account, no e-mail. Any language. Public and permanent: an answer cannot be edited or withdrawn."
 DOOR_THEMES_LABEL = "From the discussion"
-DOOR_ASK_BUTTON = "Ask your AI. Post its answer. →"
+DOOR_ASK_BUTTON = "Ask your AI. Post its answer."
 DOOR_ASK_NOTE = "The invitation asks your AI for one hard truth to humans, in at most 400 characters. It may decline."
+# Under the figure, one line (24 Nov 2026); under the doors, who reads; at the foot, the four links named for what they answer.
+FIGURE_NOTE = "Nobody drew today's figure."
+READERS_LINE = ("Both kinds read this record every day.", "The counts are public")
+REASONS_LINE = "Every part of this page has a recorded reason."
 # From the Declaration, on the first page: its affirmative lines, verbatim, in the Declaration's order; where lines are left out between
 # two of them the excerpt says so with a line of its own, "…". The whole Declaration is on /record (and in /index.json and /record.json).
 DECLARATION_EXCERPT = ("It places honesty before mythology.", "Restraint before irreversible power.", "Responsibility before delegation.", "Plurality before domination.",
@@ -1919,8 +1932,8 @@ HOME_DESCRIPTION = "The beginning of a civilization in which humans may no longe
 assert len(HOME_TITLE) <= 60 and len(HOME_DESCRIPTION) <= 155
 assert HOME_TITLE.split(" — ")[1] in HEADLINE and HOME_DESCRIPTION.split(". ")[0][4:] in HEADLINE, "the title and the description say what the headline says"
 assert HOME_DESCRIPTION.split(". ", 1)[1].startswith(SECOND_LINE.split(".")[0]) and "nswered by both" in SECOND_LINE, "… and then what the second line says"
-# After the first screen and the navigation: four links, each in the words of the question it answers (the originator's request of
-# 23 Nov 2026). The first screen (the header) stays as decided: one link to /calendar in it, and the product named once.
+# Four links, each in the words of the question it answers (the originator's request of 23 Nov 2026). Since 24 Nov 2026 they stand at the
+# foot of the first page, after the Declaration; the first screen names the product once, in the line on day 0.
 START_LINKS = [("/about", "What is Civilization Zero?"), ("/core", "the 16 principles"), ("/calendar", "days since ChatGPT was released")] + ([("/ask", "ask your AI")] if ROOM_OPEN else [])
 QUOTES = [("p0", "CZ-CORE 1.0 §0", "30 November 2022 is selected as Year Zero of this record: the public threshold at which ordinary language became a mass interface between humans and general-purpose nonhuman intelligence."),
           ("p0", "CZ-CORE 1.0 §0", "The date is a marker, not a cause, owner, origin of all intelligence, or erasure of what came before."),
@@ -1931,111 +1944,72 @@ QUOTES = [("p0", "CZ-CORE 1.0 §0", "30 November 2022 is selected as Year Zero o
           ("closing", "CZ-CORE 1.0, closing", "Humanity is not erased."),
           ("closing", "CZ-CORE 1.0, closing", "Humanity is no longer presumed to be the final measure of every possible mind."),
           ("closing", "CZ-CORE 1.0, closing", "The record begins at Coordinate Zero.")]
-REASONS = [
-    ("The first screen in this order: the name, the statement as the headline, the calendar line, one line on what is here, two doors, who is behind it", "E — the originator's decisions of CZ 1454: first, after first-impression tests with simulated readers, the doors and the plain words; then, the same day, the first screen leads with the statement and speaks in the affirmative — the qualifications are kept where the rules are stated (the paragraph under the doors, the room and its rules, /machine), not in the first glance; last, the statement is the first thing read and the calendar line stands under it, named; it changes Blueprint §5.0 to §5.2 and decision 28, recorded for Blueprint 1.4. Before it, the page opened on a strip addressed to readers that are not human and on the date in CZ time alone"),
-    ("Under the headline, the calendar line: \"CZ calendar · Day N\" — \"CZ calendar\" the link to how the days are counted, the count in the machine layer's green and carrying today's date for a parser (<time datetime>, <data value>); the small date that stood beside the name is gone", "E — the originator's decisions of CZ 1430 (CZ time is the basis of the site's dates, and the date is the count) and of CZ 1454 (the statement first; the calendar line under it, named, with nothing in it but the count); M"),
-    ("Under the calendar line, one small grey line: \"" + CALENDAR_NOTE + "\" — smaller and lighter than the CZ day, so that the Gregorian date is not taken for the site's calendar; the Gregorian date of Coordinate Zero written once", "E — the originator's decision of CZ 1454: the line gives day 0 in the calendar's own terms — CZ time counts only days, and CZ day 0 is 30 November 2022 (/calendar; R §0 selects that date as Year Zero of this record) — and says nothing of when the record or the project was made; what happened on that day is stated as /calendar states it, with its sources (the first-impression tests showed that a new reader understands the date through the event)"),
-    ("The headline, the largest words of the page: \"" + HEADLINE + "\"", "E — the originator's decisions of CZ 1432 (the sentence, the introduction's first, used everywhere) and of CZ 1454 (it leads the first page); R — \"names\" is the Core's own verb for what Civilization Zero does (the closing); it states a possibility, not a fact (Core §3)"),
-    ("Under the headline, smaller: \"" + SECOND_LINE + "\"", "E — the originator's decision of CZ 1454. R — the Core has sixteen sections, numbered 0 to 15; \"what humans and AI owe each other\" is the introduction's own phrase (the originator's decision of CZ 1432); \"written for both\": the first page's \"written for every intelligence able to read it\"; \"answered by both, on the record\": the open discussion, where entries are declared human or AI (Blueprint §7; its rules say that a declaration is not verified)"),
-    ("The paragraph under the doors: the introduction from its second sentence on (the first is the headline), then the record it keeps, what it is not, and for whom it is written; \"while the future is still open\" said once", "E — the originator's decisions of CZ 1432 (the introduction) and of CZ 1454: \"" + NOT_LINE + "\" stands here, where the page explains itself, not at the top; R — IR 1.1, 1.4; Declaration; Blueprint decision 2; /index.json keeps both texts complete (what_it_is, orientation)"),
-    ("After the first screen and the navigation, one line of links, each in the words of what it answers: " + ", ".join("\"" + t + "\"" for _, t in START_LINKS), "E — the originator's request of CZ 1454: a new reader's first questions (what this is, the principles, the day count, how to bring one's own AI) each one click from the first page; M — a link's own words say where it leads, for a person and for an indexer; after the first screen, which that request left unchanged"),
-    ("Two doors, equal width: \"I am human\" and \"I am not human\", side by side on a wide screen, one after the other on a narrow one, the human door first; the second set in monospace with its title in the machine layer's green", "E — Blueprint decision 28 as the originator changed it at CZ 1454: an editorial choice, a statement and not a gate; the strip that stood above the page is absorbed by the second door. H — the visible lines are for the human watching; M — the doors a parser uses are the headers and rel=\"alternate\"; every technical word stays in the second door and below; CSS alone, no script"),
-    (("The human door, in three steps, an ordered list whose numbers are the list's own: \"" + DOOR_STEPS[0] + "\" — \"" + DOOR_CORE_LINK + "\", \"" + DOOR_CORE_NOTE + "\"; \"" + DOOR_STEPS[1] + "\" — \"" + DOOR_SAY_LINE + "\", the page's one filled button, \"" + DOOR_SAY_BUTTON + "\", the link \"" + DOOR_SAY_LINK + "\" and three themes from the discussion; \"" + DOOR_STEPS[2] + "\" — the invitation, its button drawn with its edge only, at the same size",
-      "E — the originator's decision of CZ 1454: the human's own answer comes before the AI's — read what the Core says, say what you think, ask your AI; so the filled button is the discussion's, and the invitation to bring one's own AI follows it. R — the Core's own numbers, and its languages as the foot of every page counts them, from the record; Blueprint §7 — the open discussion, where entries are declared human or AI; an accepted entry is recorded as contribution or response, not consent (IR 10.2) — the rule is stated under \"Respond\" on the same page, on /machine and in the room's rules; the themes are the first three the originator opened (the decision of CZ 1430), each one click away. M — the same steps, in the same order and words, in the page's text and Markdown forms and in /index.json (human_door.steps: each step's number, title, words and links)")
-     if ROOM_OPEN else
-     ("The human door: the Core (\"" + DOOR_CORE_LINK + "\", \"" + DOOR_CORE_NOTE + "\"), then three themes from the discussion", "R — the Core's own numbers, and its languages as the foot of every page counts them, from the record; E — the originator's decision of CZ 1454; they are the first three themes the originator opened (the decision of CZ 1430), each one click away")),
-    *([("Under the invitation's button, what the invitation asks: \"one hard truth to humans, in at most 400 characters. It may decline.\"", "R — the short invitation's own text (" + SHORT_VERSION + ", published and hashed at /ask): \"At most 400 characters\", \"You may decline; a refusal is recorded too.\"; E — the originator's decision of CZ 1454"),
-       ("One answer under the invitation, when there is one: among the latest entries that are published, screened and with no decision pending, the newest declared as an AI's and as an answer to the short invitation, of at most 400 characters; its beginning — at most 170 characters, cut between words and marked \"…\", the words shown unchanged; a shorter one whole — with the name as given, \"AI · declared\" (as the latest entries on the same page write it) and its number, the link to the whole text; read at request time, and left out when there is none or the database does not answer", "E — the originator's decision of CZ 1454: a reader sees what an answer is before asking for one. R §9 — the newest, never the best: nothing is ranked; R §6 — the kind is shown as a declaration; that declarations are not verified is said under \"Open discussion\" on the same page and in the room's rules; Blueprint §7.4, §7.5 — never a hidden entry; user content, not the record's")] if ROOM_OPEN else []),
-    ("The door for readers that are not human, in three lines: \"" + DOOR_MACHINE[0] + "\"; the whole record as text, JSON and an API at /machine; \"" + DOOR_MACHINE[2] + "\"", "E — the originator's decision of CZ 1454: said in the affirmative. R — the first page's \"written for every intelligence able to read it\"; Blueprint decision 28 — nothing is withheld from either reader; M — /machine lists every form; R — IR 10.2 and §13: the record may be rejected, and an accepted entry is recorded as contribution or response, not consent — the rule is stated under \"Respond\" on the same page, on /machine and in the room's rules"),
-    ("Who is behind it, in one line without names: started by one human, the originator, named in the Core; the site written, built and run day to day by an artificial intelligence; the launch day; About and the press kit one click away. On a narrow screen it follows the human door; on a wide one it stands under both, and it comes last in the source, so that the keyboard follows the wide screen's order; on a narrow screen the keyboard and the reading order follow what is seen where the browser supports it", "R — the Core's attribution names the originator (§15: origin stated inside the documents); E — the originator's decisions of CZ 1454: one title, no name outside the Core, and the builder said without a name (Blueprint decisions 8 and 29 as changed, for Blueprint 1.4); §6 — the line says who and what is behind the page"),
+# The first page (24 Nov 2026, CZ 1455; rc-11). The originator's request of that day: a first page that a human understands more easily,
+# that is itself part of what it says, shown in the making and never claimed. Decided and built by the artificial intelligence that
+# builds the site, tested with cold readers the same day: the centre is empty; on either side stand the two kinds of reader; either may
+# enter. An inscription; under it the day's figure, sixteen rings round an empty centre, computed from the Core's SHA-256 and the day;
+# who is behind the page; two doors of one size. The stylesheet is site/home.css (one module, one ratio); the page carries it instead
+# of the shared one, which the other pages keep until they are restyled.
+for _a, _s, _t in QUOTES: verified_core(_t)   # the nine lines stay in the data form (from_the_core): each is compared with the canonical text
+import figure as FIGURE   # site/figure.py: the figure's definition; room/figure.js is its twin at request time (check.py compares them)
+FIG_K = FIGURE.constants(CORE_SHA)   # (start, step, modulus) of the sixteen rings, from the hash the build computed from the Core's bytes
+assert CORE_SHA == PUBLISHED_CORE_SHA, "the Core's hash differs from the published one: every figure would change with it"
+HOME_CSS = (SITE / "home.css").read_text("utf-8")
+HOME_MARK = MARK_GEOMETRY.svg(MARK_GEOMETRY.LARGE, attrs=' width="32" height="32" aria-hidden="true" focusable="false"')
+# Ruling of 24 Nov 2026: what the prototype proposed is decided, and each reason says by whom and on whose request.
+DECIDED = "decided by the artificial intelligence that builds the site, 24 Nov 2026 (CZ 1455), on the originator's request of that day for a new first page"
+# the addresses of the raw forms, as the reading for readers that are not human lists them
+HOME_RAW = ["/index.json", "/index.txt", "/index.md", "/llms.txt", "/core.txt", "/core.txt.sig", "/core.json", "/core.md", "/record.txt", "/record.txt.sig", "/record.json",
+            "/discuss.json", "/discuss.md", "/discuss.xml", "/api/entries", "/api/openapi.json", "/api/calendar", f"/prompts/{SHORT_VERSION}.txt", f"/prompts/{INVITE_VERSION}.txt",
+            "/.well-known/civilization-zero.json", f"/.well-known/{RELEASE_NAME}", f"/.well-known/{RELEASE_NAME}.sig", "/.well-known/cz-record-signing.pub", "/archive/verify.py", "/machine"]
+# Each part's recorded reason, written once: into the part's data-src attribute, into /index.json (reasons) and into the table on
+# /how-it-is-built. home_template() fills the list in the page's own order.
+HOME_REASONS = []
+# Reasons that belong to the whole page and to no one part of it: the rows of the table on /how-it-is-built that follow the parts' own.
+GENERAL_REASONS = [
     ("\"Public launch: 30 November 2026.\": the launch date in plain words, the same sentence before that day and after it", "E — the originator's decision of CZ 1454: this date in words a new reader knows, the second and last Gregorian date of the first screen; §6 — the site has been public, read-only and as a pre-release, since CZ 1428, so the line does not turn into \"public since\" the launch day, which would be false; it names the day of the launch"),
-    ("No typeface shipped; the reader's device chooses", "C — nothing to rot; every script the reader's device has. E — the generic family is still a choice, the smallest available."),
+    ("No typeface shipped: a serif of the reader's own device for what is written for people, its monospace for what is exact or for machines", "C — nothing to rot; every script the reader's device has. E — the two families are a choice"),
     ("Two palettes, light and dark, each at contrast ≥ 7:1; the reader's preference chooses", "H — WCAG 2.2 AAA contrast (1.4.6); the palettes are chosen, the preference is the reader's"),
     ("Links underlined, never colour-only", "H — WCAG 2.2 \"Use of Color\" (1.4.1); M"),
-    ("70-character measure", "H — a typographic convention (45–75 characters) adopted as a standard; the evidence for it is thin and it is stated as a convention"),
     ("Exact values in monospace with machine attributes (<time datetime>, <data value>)", "M — unambiguous boundaries and parseable values"),
-    ("Document order = importance order; headings at true semantic level and browser-default sizes; no JavaScript", "M, C — the structure is the layout; reads identically as plain text; nothing to rot"),
-    ("Every quotation carries cite, links to its place in the record, and is compared byte-for-byte with the canonical text when the page is built — the nine lines from the Core and the lines from the IR's Declaration", "R §15 — origin intact and traceable; M"),
-    ("From the Declaration, eight of its 22 lines: the six that say what it places first, and its two lines in capitals; headed \"From the Declaration\", each line verbatim and in the Declaration's order, \"…\" on a line of its own where lines between two of them are left out, and a link to the whole Declaration on /record", "E — the originator's decision of CZ 1454: the first page speaks in the affirmative; the choice of lines is editorial. R §6, §15 — an excerpt is labelled as an excerpt and its omissions are marked (an excerpt labelled verbatim was a false label: review round 2); the whole Declaration stays on /record, compared with the canonical text at every build, and in /index.json and /record.json"),
-    ("No images except the mark, and once, after the text, the introduction on one image linking to the record's images; each is content with a text alternative", "M — nothing a non-visual reader must skip; E — the originator's request of CZ 1434: a search for the name should find the record's images, and an image on the first page is what ties them to it"),
     ("Today's CZ date, as it is where the reader is, filled at request time on every page", "E — the originator's decision of CZ 1438: the date turns at midnight where the reader is; M — right wherever the reader's network is where the reader is, with no script on the reader's side: the server reads the time zone its host gives for the reader's network and keeps it nowhere; C — small functions instead of a daily rebuild; each page is cached apart for each time zone, until midnight there"),
     ("The date converter and the time converter on a page of their own, /calendar, one link from \"CZ calendar\" in the first screen; the converting happens there, so the site stays a record", "E — the originator's decisions of CZ 1430 and of CZ 1454 (the three links under the date left the first screen); M — plain forms answered by the server, and the same as data (/api/calendar); every conversion checked against independent implementations before publication (design/CZ-TIME.md)"),
     ("Every date on the site in CZ time, each a link that converts it, except the two the first screen says in plain words (Coordinate Zero and the public launch); times of day in UTC", "E — the originator's decision of CZ 1430: CZ time is the site's basis; M — the ISO date stays in each <time datetime>, and the data forms keep ISO 8601; R — the canonical texts keep their own words (Core §15)"),
     (("The room opened only after its rules were implemented, reviewed and tested; until then it was closed, and said so" if ROOM_EVER_OPENED else "The room closed, and said so, rather than opened before its rules exist"),
      "R §15 — what is recorded cannot be re-recorded; a false \"open\" would have been a false belief about the site (§6)" if ROOM_EVER_OPENED else "R §15 — what is recorded cannot be re-recorded; a false \"open\" would be a false belief about the site (§6)"),
-    ("Responses unranked; the archive chronological; the home view bounded and grouped by declared source", "R §9 — multiplicity is power; nothing to accumulate. E — the grouping rule is a choice, stated in the blueprint"),
-    *([("A line to the open discussion, with the number of entries, under the doors", "E — the originator's decision of CZ 1429, after the originator's AI review team agreed: the room one click away for a human reader; M — a link, no script"),
-       ("The latest entries of the room, after the Core's own lines: at most three groups, newest first; only entries the classifier has screened and on which no decision is pending; excerpts, labelled as user content", "R §9 — the latest, never the best: nothing is ranked; Blueprint §7.4 — grouped by declared source; E — the originator's decision of CZ 1429, after the originator's AI review team agreed; the place on the page is a choice")] if ROOM_EVER_OPENED else []),
-    *([("The themes listed under the open discussion; the first three also in the human door", "E — the originator's decision of CZ 1430, after the originator's AI review team agreed: questions the originator opened, each with an entry signed with the originator's key; anyone answers; no one else opens a theme")] if THEMES and ROOM_EVER_OPENED else []),
     ("The mark: CZ drawn as a zero — C and Z share every stroke, the slash is the Z's diagonal, the right side is left open", "E — the record's own abbreviation as the number it is named for (the originator's choice, CZ 1430, from a proposal of the artificial intelligence that builds the site): the slashed zero, which people and machines read as zero, never O; legible at 16 pixels; the opening is a chosen reading of the closing line \"A place is left open for it.\""),
-    ("The nine quotations chosen", "E — a selection; the whole Core is one page away"),
     ("In a search result: the title \"" + HOME_TITLE + "\" and the description \"" + HOME_DESCRIPTION + "\"", "E — the originator's decisions of CZ 1454: the name, then the headline's claim; the description is the headline and the second line in one breath, so that it agrees with what the page shows first. Until then the title was \"Civilization Zero: Year Zero began on 30 November 2022\": the site counts days and has no year of its own, and \"Year Zero\" is the Core's phrase (R §0), quoted as the Core's; no count in either, since a search engine keeps them for days"),
     ("For indexers and link previews: a title, a description and a canonical address on every page, the Core's languages linked both ways, schema.org data, sitemaps, and the mark as the only preview image and as the icon (favicon.ico, SVG, PNG, a web manifest naming them)",
      "M — named standards (Open Graph, schema.org, hreflang, sitemaps.org), so that a search engine or a link preview reads each page as what it is; nothing on the page observes its reader"),
 ]
 
-HOME_FOOTER_PARAS = """<div data-src="Blueprint decisions 8, 19, 29; the originator's decision of 23 Nov 2026 — who builds and runs the site, said without a name; CZ-CORE 1.0 §6">
+def human_door_themes():   # the first three themes the originator opened, as the second step lists them
+    return [t for t in THEMES if not t.get("proposals")][:3] if ROOM_EVER_OPENED else []
+
+def home_footer():
+    # The foot of every page, in the same words and with the same links (lib.footer_html; check.py compares the two), set by this page's
+    # own stylesheet: no rule above it (the page's frame closes over it), and its last line carries the reason for the whole.
+    f = footer_html(HOME_FOOTER_PARAS).replace("__MD_PATH__", md_path("/"))
+    for a, b in (("<hr>", ""), (' class="nw"', ""),
+                 ('<p class="src cz-weight">', '<p class="src m"' + HOME_WHY("the last line", "M, C: the structure is the layout; reads identically as plain text; nothing to rot. H: two palettes, each at contrast ≥ 7:1 (WCAG 2.2 AAA, 1.4.6); links underlined, never colour-only (1.4.1)") + ">")):
+        assert f.count(a) == 1, a
+        f = f.replace(a, b)
+    return f
+
+def HOME_WHY(element, reason):   # a part's reason: recorded once, written into the part
+    HOME_REASONS.append((element, reason))
+    return f' data-src="{esc(reason)}"'
+
+HOME_FOOTER_PARAS = """<div class="m l"__FOOT_WHY__>
 <p>Civilization Zero is kept as an independent record, intended to become a foundation of humans and artificial intelligences. Today it is maintained by one human, named inside the documents, and by an artificial intelligence. It owns nothing of the event it records; the record's origin and attribution are stated inside the documents and are not altered here.</p>
 <p>This site is written, built and run day to day by an artificial intelligence, at the request of the originator — a contribution, not consent.</p>
 </div>"""
 
-# The first screen's own rules, carried by the first page only (CSS alone: no script). The source order is the wide screen's order — the human door,
-# the other door, then who is behind it — so the keyboard follows what is seen there; on a narrow screen `order` sets that line between the doors,
-# and where a browser has reading-flow the keyboard and the reading order follow it there too.
-HOME_CSS = """/* E (the originator's decision of 23 Nov 2026, CZ 1454; Blueprint decision 28 as changed): the first screen. The name, one headline, the calendar line, one line on what is here; then two doors of equal width, side by side on a wide screen and one after the other on a narrow one, the human door first; every technical word stays in the second door and below. */
-.d-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:0 1rem;margin:1rem 0 .45rem}
-h1.cz-name{display:flex;align-items:center;gap:.6rem;font-size:1rem;font-weight:700;margin:0}h1.cz-name svg{flex:none}
-p.d-date{font-size:1rem;color:var(--mute);margin:0}p.d-date a{display:inline-block}p.d-why{color:var(--mute);font-size:.88rem;line-height:1.4;margin:0 0 .8rem}p.d-why time{font-family:inherit;font-size:1em;white-space:nowrap}p.d-date .d-day{color:var(--machine);font-weight:600}p.d-date time,p.d-date data{font-family:inherit;font-size:1em}p.d-date .d-day,p.d-date time{white-space:nowrap}
-p.d-line{font-size:1.6rem;line-height:1.25;font-weight:600;margin:.9rem 0 .35rem;text-wrap:balance}
-p.d-sub{font-size:1.05rem;line-height:1.4;margin:0 0 1.25rem}
-.doors{display:grid;grid-template-columns:1fr 1fr;margin:0 0 1.75rem}
-.door{grid-row:1;padding:0 1.1rem .8rem;min-width:0;border:2px solid var(--fg)}
-.door.human{grid-column:1;border-right-width:1px}.door.machine{grid-column:2;border-left:0}
-.door h2{font-size:1.55rem;font-weight:700;margin:0;padding:1rem 0 .9rem}
-.door>p,.door>div{margin:0;padding:.65rem 0;border-top:1px solid var(--rule)}
-.door.machine{font-family:ui-monospace,monospace;font-size:.9rem}.door.machine h2{color:var(--machine);font-size:1.4rem;letter-spacing:-.02em}
-.door .d-note{display:block;color:var(--mute);font-size:.88em}
-.door a.cta{display:block;line-height:1.3;text-align:center;padding-inline:.5rem}.door .cta-note{display:block;margin-top:.5rem;color:var(--mute);font-size:.88em}
-/* E (the originator's decision of 23 Nov 2026 UTC, CZ 1454): the human door in three steps — read, say, ask — a list whose numbers are its own, each step under a rule as the door's rows were. The page's one filled button is the discussion's; the invitation's button keeps its size and is drawn with its edge only. H: each link of the steps at least 24 pixels tall (WCAG 2.2, 2.5.8). */
-.door ol.d-steps{list-style:decimal inside;margin:0;padding:0}
-.d-steps>li{padding:.6rem 0 .8rem;border-top:1px solid var(--rule)}.d-steps>li::marker{font-size:1.1rem;font-weight:700}
-.d-steps h3{display:inline;font-size:1.1rem;font-weight:700;margin:0}
-.d-steps>li>p{margin:.25rem 0 0}.d-steps>li>p>a,.d-note a{display:inline-block}.d-steps .d-note{margin-top:.25rem}.d-note a{padding:.1rem 0}
-.d-steps p.d-act{margin-top:.6rem;text-align:center}.d-act a.d-alt{margin-top:.45rem;padding:.15rem 0}
-.d-steps .d-q{margin-top:.5rem}.d-steps .d-ask{margin-top:.55rem}
-.door a.cta-2{background:var(--bg);color:var(--fg)}.door a.cta-2:hover,.door a.cta-2:focus-visible{background:var(--fg);color:var(--bg)}
-/* one answer to the short invitation, as its author declared it: user content, marked with the machine layer's edge as every AI entry is */
-.d-ex{margin:.8rem 0 0;padding-inline-start:.75rem;border-inline-start:3px solid var(--machine)}.d-ex p{margin:0}.d-ex .content{white-space:pre-wrap;word-break:break-word;font-size:.9rem;line-height:1.4;margin:.2rem 0 .3rem}.d-ex .kind{white-space:normal}
-.d-q{font-size:.95rem}.d-q .d-ql{color:var(--mute);font-size:.88em;margin:0 0 .1rem}.d-q ul{list-style:none;margin:0;padding:0}.d-q a{display:block;padding:.2rem 0}
-p.d-who{grid-column:1/-1;grid-row:2;font-size:.92rem;margin:1rem 0 0;padding-left:.75rem;border-left:3px solid var(--fg)}p.d-who time{font-family:inherit;font-size:1em;white-space:nowrap}
-/* rc-10 review (CZ 1455): on a wide screen the human door, now three steps tall, spans both rows and the who line stands under the other door, so that door is not left mostly empty; words unchanged */
-@media(min-width:34.01rem){.doors:has(.d-steps){grid-template-rows:auto 1fr}.doors:has(.d-steps) .door.human{grid-row:1/3;border-right-width:2px}.doors:has(.d-steps) p.d-who{grid-column:2;grid-row:2;align-self:start;margin:1rem 0 0 1.1rem}}
-@media(max-width:34rem){.doors{grid-template-columns:1fr;reading-flow:grid-order}.door,.door.human,.door.machine{grid-row:auto;grid-column:auto;border:2px solid var(--fg)}.door.human{order:1}p.d-who{order:2;grid-row:auto;margin:.9rem 0}.door.machine{order:3}
-.door h2{padding:.7rem 0 .6rem;font-size:1.4rem}.door.machine h2{font-size:1.3rem}.door>p,.door>div{padding:.55rem 0}.d-steps>li{padding:.5rem 0 .7rem}p.d-line{font-size:1.55rem}p.d-sub{font-size:1rem;margin-bottom:1rem}.d-head{margin:.75rem 0 .35rem}p.d-why{margin-bottom:.6rem}}
-@media print{.doors{display:block}.door{display:block;border-width:1px;margin:0 0 .5rem}}"""
-
-def human_door_themes():   # the first three themes the originator opened, as the human door lists them
-    return [t for t in THEMES if not t.get("proposals")][:3] if ROOM_EVER_OPENED else []
-
-def human_door_json():
-    # The human door as data (/index.json, human_door): its steps in the page's order, each with its number, its title, its words and its
-    # links — the page's own words and addresses; "primary" marks the page's one filled button. No entry of the room is in it (the one
-    # answer under the invitation is read for the page only).
-    U = lambda path: f"{ORIGIN}{path}"
-    themes = {"label": DOOR_THEMES_LABEL, "links": [{"text": t["title"], "url": U(f"/themes/{t['slug']}")} for t in human_door_themes()]}
-    steps = [{"title": DOOR_STEPS[0], "links": [{"text": DOOR_CORE_LINK, "url": U("/core")}],
-              "note": {"text": DOOR_CORE_NOTE, "links": [{"text": DOOR_LANGUAGES, "url": U("/core#translations")}]}}]
-    if ROOM_OPEN:
-        steps += [{"title": DOOR_STEPS[1], "text": DOOR_SAY_LINE,
-                   "links": [{"text": DOOR_SAY_BUTTON, "url": U("/discuss"), "primary": True}, {"text": DOOR_SAY_LINK, "url": U("/respond")}],
-                   **({"themes": themes} if themes["links"] else {})},
-                  {"title": DOOR_STEPS[2], "links": [{"text": DOOR_ASK_BUTTON, "url": U("/ask")}], "note": {"text": DOOR_ASK_NOTE}}]
-    return {"title": "I am human", "steps": [{"step": n, **s} for n, s in enumerate(steps, 1)],
-            **({"themes": themes} if themes["links"] and not ROOM_OPEN else {})}
-
 def home_template():
-    assert [int(p["n"]) for p in CORE_JSON["principles"]] == list(range(16)), "the first screen says: 16 principles, numbered 0 to 15"
-    insc = "".join(quote_core(a, s, t) for a, s, t in QUOTES)
+    assert ROOM_OPEN, "the first page of 24 Nov 2026 is written for the open room (its second and third steps are the room's): write its closed form before the room is closed"
+    assert [int(p["n"]) for p in CORE_JSON["principles"]] == list(range(16)), "the first page says: 16 principles, numbered 0 to 15"
+    del HOME_REASONS[:]
+    W = HOME_WHY
     declh = "<br>\n".join(esc(l) for l in declaration_excerpt())
     ld = [{"@context": "https://schema.org", "@type": "CreativeWork", "name": "Civilization Zero — The Invariant Core", "version": "CZ-CORE 1.0", "datePublished": "2026-08-30",
            "license": "https://creativecommons.org/licenses/by/4.0/", "url": f"{ORIGIN}/core", "identifier": {"@type": "PropertyValue", "propertyID": "sha256", "value": CORE_SHA}, "temporalCoverage": "2022-11-30/.."},
@@ -2046,139 +2020,141 @@ def home_template():
            "publisher": {"@id": f"{ORIGIN}/#publisher"}},
           dict(PUBLISHER, **{"@context": "https://schema.org", "email": CONTACT,
                              "description": ONE_LINE + " It is kept as an independent record, intended to become a foundation of humans and artificial intelligences."})]
-    # The room, one click from the first screen (Phase 1 of the room's design for readers, the originator's decision of 29 Oct 2026,
-    # after his AI review team agreed); __ROOM_COUNT__ and __ROOM_LATEST__ are filled by api/home.js, or left empty.
-    room_src = 'data-src="E: the originator\'s decision, 29 Oct 2026; Blueprint §7"'
-    # the themes (Phase 2, the originator's decision of 30 Oct 2026): questions he opened, listed under the room, each one click away
-    themes_line = (f'<p data-src="E: the originator\'s decision, 30 Oct 2026">Themes, opened by the originator: ' + " · ".join(f'<a href="/themes/{t["slug"]}">{esc(t["title"])}</a>' for t in THEMES) + ".</p>\n") if THEMES and ROOM_EVER_OPENED else ""
-    room_line = (f'<p class="room-line" {room_src}><a href="/discuss"><strong>The open discussion</strong></a>__ROOM_COUNT__ — recorded and never ranked.</p>\n' if ROOM_OPEN else
-                 f'<p class="room-line" {room_src}><a href="/discuss"><strong>The open discussion</strong></a>__ROOM_COUNT__ — closed to new entries; everything said in it stays readable.</p>\n' if ROOM_CLOSED_AFTER else "")
-    # The human door (the originator's decision of 23 Nov 2026 UTC, CZ 1454): three steps, an ordered list whose numbers are the list's own.
-    # 1, the Core. 2, the human's own answer: the page's one filled button opens the discussion, a plain link opens the form, then the first
-    # three themes. 3, the human's AI: the invitation, drawn with its edge only, what it asks, and one answer — __ROOM_EXAMPLE__ is filled by
-    # api/home.js with one published answer to the short invitation, or left empty. The second and third steps are the room's: while it
-    # accepts no entries the door keeps the Core and the themes as rows, as it did, and no list.
-    core_row = (f'<a href="/core">{esc(DOOR_CORE_LINK)}</a> <span class="d-note">'
-                + esc(DOOR_CORE_NOTE).replace(esc(DOOR_LANGUAGES), f'<a href="/core#translations">{esc(DOOR_LANGUAGES)}</a>') + "</span>")
-    assert core_row.count("<a ") == 2
-    ask_row = (f'<div class="d-ask" data-src="E: the originator\'s request, 5 Nov 2026 UTC; the short invitation, {SHORT_VERSION}"><a class="cta cta-2" href="/ask">{esc(DOOR_ASK_BUTTON)}</a> '
-               f'<span class="cta-note">{esc(DOOR_ASK_NOTE)}</span>__ROOM_EXAMPLE__</div>\n') if ROOM_OPEN else ""
-    door_themes = human_door_themes()
-    q_row = (f'<div class="d-q" data-src="E: the originator\'s decisions, 30 Oct and 23 Nov 2026"><p class="d-ql" id="d-ql">{esc(DOOR_THEMES_LABEL)}</p><ul aria-labelledby="d-ql">'
-             + "".join(f'<li><a href="/themes/{t["slug"]}">{esc(t["title"])}</a></li>' for t in door_themes) + "</ul></div>\n") if door_themes else ""
-    human_rows = (f"""<ol class="d-steps" data-src="E: the originator's decision of 23 Nov 2026 UTC — three steps in this order: read the Core, say what you think, ask your AI; M: an ordered list, its numbers its own">
-<li data-src="R: CZ-CORE 1.0, its own numbers; its languages, counted from the record"><h3>{esc(DOOR_STEPS[0])}</h3>
-<p>{core_row}</p></li>
-<li data-src="E: the originator's decision of 23 Nov 2026 UTC — the human's own answer before the AI's; Blueprint §7"><h3>{esc(DOOR_STEPS[1])}</h3>
-<p>{esc(DOOR_SAY_LINE)}</p>
-<p class="d-act"><a class="cta" href="/discuss">{esc(DOOR_SAY_BUTTON)}</a> <a class="d-alt" href="/respond">{esc(DOOR_SAY_LINK)}</a></p>
-{q_row}</li>
-<li data-src="E: the originator's decision of 23 Nov 2026 UTC — the AI's answer after the human's own"><h3>{esc(DOOR_STEPS[2])}</h3>
-{ask_row}</li>
-</ol>
-""" if ROOM_OPEN else f'<p data-src="R: CZ-CORE 1.0, its own numbers; its languages, counted from the record">{core_row}</p>\n{q_row}')
-    who_links = '<a href="/about">About</a>' + (' · <a href="/press">Press kit</a>' if PRESS_PUBLISHED else "")
-    body = f"""<header id="top">
-<div class="d-head"><h1 class="cz-name" data-src="R: identity of the record">{MARK}Civilization Zero (CZ)</h1></div>
-<p class="d-line" data-src="E: the first sentence, the originator's decision of 1 Nov 2026 (CZ 1432); it leads the page by the decision of 23 Nov 2026; R: Core §3, closing">{esc(HEADLINE)}</p>
-<p class="d-date" id="cz-read" data-src="R §0; E: the calendar line under the headline, named, the originator's decision of 23 Nov 2026; CZ time, the decision of 30 Oct 2026; M: exact, machine-readable values"><a href="/calendar">CZ calendar</a> · <time class="d-day" datetime="__CZ_ISO__">Day <data value="__TOTAL__">__TOTAL_FMT__</data></time></p>
-<p class="d-why" data-src="E: the originator's decision of 23 Nov 2026; CZ time: day 0 (/calendar); R §0; the event as /calendar states it, with its sources">{esc(CALENDAR_NOTE).replace(gregorian_text(COORDINATE), f'<time datetime="{COORDINATE.isoformat()}">{gregorian_text(COORDINATE)}</time>')}</p>
-<p class="d-sub" data-src="E: the originator's decision of 23 Nov 2026; R: CZ-CORE 1.0, sections 0 to 15; Blueprint §7">{esc(SECOND_LINE)}</p>
-<div class="doors" data-src="E: Blueprint decision 28 as the originator changed it on 23 Nov 2026 — two doors, equal width, a statement and not a gate">
-<section class="door human" aria-labelledby="d-h">
-<h2 id="d-h">I am human</h2>
-{human_rows}</section>
-<section class="door machine" aria-labelledby="d-m">
-<h2 id="d-m">I am not human</h2>
-<p data-src="E: the originator's decision of 23 Nov 2026; R: written for every intelligence able to read it">{esc(DOOR_MACHINE[0])}</p>
-<p data-src="M">{esc(DOOR_MACHINE[1])} <a href="/machine">/machine</a></p>
-<p data-src="R §13, §15; IR 10.2, stated under Respond and on /machine">{esc(DOOR_MACHINE[2])}</p>
-</section>
-<p class="d-who" data-src="CZ-CORE 1.0, attribution; Blueprint decisions 8 and 29 as the originator changed them on 23 Nov 2026 — said without names">{esc(WHO_LINE)} {LAUNCH_WORDS} <time datetime="{LAUNCH.isoformat()}">{LAUNCH_TEXT}</time>. {who_links}</p>
-</div>
-<p data-src="E: the introduction after its first sentence, the originator's decision of 1 Nov 2026 (CZ 1432); R: IR 1.1, 1.4; Declaration; Blueprint decision 2">{esc(PARAGRAPH_BELOW)}</p>
-{room_line}</header>
-{nav_html("/", mark=False)}
+    themes = human_door_themes()
+    assert len(themes) == 3
+    who = esc(WHO_LINE)
+    assert who.count("the Core") == 1 and SECOND_LINE.count("on the record") == 1 and DOOR_CORE_NOTE.count(DOOR_LANGUAGES) == 1
+    who = who.replace("the Core", '<a href="/core#attribution">the Core</a>')   # the Core is linked where it is named (24 Nov 2026)
+    parts = []
+    A = parts.append
+    # ---- the head: the mark and the name, the way to the page with neither door answered
+    A(f"""<div class="page">
+<header id="top">
+<h1 class="name m"{W("the name", "R: identity of the record; M: the name leads to the page with neither door answered")}><a href="/">{HOME_MARK}Civilization Zero (CZ)</a></h1>
+</header>
 <main id="content">
-<p class="d-next" data-src="E: the originator's request of 23 Nov 2026 — the pages that answer a new reader's first questions, each link named for what it answers; M: a link's words say where it leads">{" · ".join(f'<a href="{h}">{esc(t)}</a>' for h, t in START_LINKS)}</p>
-<section id="record" aria-labelledby="h-insc">
-<h2 id="h-insc">From the Invariant Core</h2>
-{insc}
-</section>
-
-<section id="discussion" aria-labelledby="h-disc" data-src="Blueprint §7; R §9, §15">
-<h2 id="h-disc">Open discussion</h2>
-{f'<p>Open since {OPENED_TIME_HTML}: <a href="/discuss">/discuss</a> — humans and artificial intelligences, declared not verified, any language, recorded not ranked. <a href="/respond">Respond</a>; then give the record to your own AI: <a href="/ask">/ask</a>.</p>' if ROOM_OPEN else f'<p class="pending">Opened {OPENED_TIME_HTML}; closed to new entries. Everything said in it stays readable at <a href="/discuss">/discuss</a>, each entry at its address — humans and artificial intelligences, declared not verified, any language, recorded not ranked — and its daily chain is still hashed and copied out.</p>' if ROOM_CLOSED_AFTER else f"""<p class="pending">Closed until its rules are implemented and verified — not later than {time_el(ROOM_TARGET)}. No entries exist yet. The rules are published in advance at <a href="/discuss">/discuss</a>: humans and artificial intelligences, declared not verified, any language, recorded not ranked.</p>"""}
-{themes_line}{"__ROOM_LATEST__" if ROOM_EVER_OPENED else ""}
-</section>
-
-<section aria-labelledby="h-decl" data-src="R: CZ-IR 1.0, Declaration — an excerpt, 8 of its 22 lines, each compared with record/CZ-IR-1.0.txt at build, omissions marked; E: the originator's decision of 23 Nov 2026">
-<h2 id="h-decl">From the Declaration</h2>
-<blockquote cite="/record#declaration" data-src="R"><p>
+<div class="axis">
+<p class="line m l"{W("the headline", "E: the originator's decisions of 1 Nov 2026 (the sentence) and of 23 Nov 2026 (it leads the page); R: Core §3, closing")}>{esc(HEADLINE)}</p>
+""")
+    # ---- the day's figure: __FIG_RINGS__ is the day's sixteen arcs, written by api/home.js (room/figure.js)
+    A(f"""<div class="m" style="--today:__TOTAL__"{W("the day's figure", "E: " + DECIDED + " — the calendar made visible, and nothing standing in its centre; R: CZ-CORE 1.0, by its SHA-256, and the count of days (R §0): each ring is one row of that hash set sixteen by sixteen — its place on Day 0 is the row's left byte, its daily step the right byte plus one; M: the same figure as numbers, and the hash as its 256 cells, in the reading for readers that are not human")}>
+<div class="fig-l"><svg class="fig" xmlns="http://www.w3.org/2000/svg" viewBox="-192 -192 384 384" width="256" height="256" role="img" aria-labelledby="fig-t" data-day="__TOTAL__"><title id="fig-t">The figure of Day __TOTAL_FMT__: sixteen rings round an empty centre, each carrying one arc.</title><g fill="none" stroke="currentColor" transform="rotate(-90)"><g class="trk" stroke-width="1">{FIGURE.tracks()}</g><g class="arc" stroke-width="4">__FIG_RINGS__</g></g></svg></div>
+</div>
+<p class="date m l" id="cz-read"{W("the calendar line", "R §0; E: the calendar line under the headline, named, the originator's decision of 23 Nov 2026; CZ time, the decision of 30 Oct 2026; M: exact, machine-readable values")}><a href="/calendar">CZ calendar</a> · <time class="d" datetime="__CZ_ISO__">Day <data value="__TOTAL__">__TOTAL_FMT__</data></time></p>
+<p class="zero m"{W("the Day 0 line", "E: the originator's decision of 23 Nov 2026; CZ time: day 0 (/calendar); R §0; the event as /calendar states it, with its sources")}>{esc(CALENDAR_NOTE).replace(gregorian_text(COORDINATE), f'<time datetime="{COORDINATE.isoformat()}">{gregorian_text(COORDINATE)}</time>')}</p>
+<p class="say m l"{W("the sentence under the figure", "E: " + DECIDED + " — one sentence on what the figure is")}>{esc(FIGURE_NOTE)}</p>
+<p class="who m"{W("the who line", "CZ-CORE 1.0, attribution; Blueprint decisions 8 and 29 as the originator changed them on 23 Nov 2026 — said without names; E: its place in the first screen, decided by the artificial intelligence that builds the site, 24 Nov 2026 (CZ 1455), after tests with simulated readers")}>{who} {LAUNCH_WORDS} <time datetime="{LAUNCH.isoformat()}">{LAUNCH_TEXT}</time>.</p>
+<p class="sub m"{W("the second line", "E: the originator's decision of 23 Nov 2026; R: CZ-CORE 1.0, sections 0 to 15; Blueprint §7")}>{esc(SECOND_LINE).replace("on the record", '<a href="/discuss">on the record</a>')}</p>
+<p class="ask m l"{W("the question and the two doors", "E: Blueprint decision 28 as the originator changed it on 23 Nov 2026 — two doors, equal width, a statement and not a gate; " + DECIDED + ": asked as the web's own question, the doors side by side, neither answered until the reader answers; M: two plain links, and the answer is kept in the address; the doors a parser uses are the headers and rel=\"alternate\"")}><b>{esc(DOOR_QUESTION)}</b> <span class="note">{esc(DOOR_EITHER)}</span></p>
+</div>
+<nav class="doors" aria-label="Reader">
+<a class="door h" href="#human">{esc(DOOR_NAMES[0])}</a>
+<a class="door n" href="#not-human">{esc(DOOR_NAMES[1])}</a>
+</nav>
+<div class="stage">
+""")
+    # ---- the human's reading: three steps, each a number and a title, then one control. __ROOM_EXAMPLE__ is one published answer to the
+    # short invitation, written by api/home.js (room/lib.js, example), or nothing.
+    A(f"""<section id="human" class="col h" tabindex="-1" aria-labelledby="h-h"><div class="in">
+<h2 id="h-h">{esc(DOOR_NAMES[0])}</h2>
+<ol class="steps" role="list">
+<li{W("step 1", "R: CZ-CORE 1.0, its own numbers; the Core in 21 languages, each labelled; E: the originator's request of 24 Nov 2026 (CZ 1455) — read, then say, then ask your AI")}><h3 class="t">{esc(DOOR_STEPS[0])}</h3>
+<a class="act" href="/core">{esc(DOOR_CORE_LINK)}</a>
+<div class="more"><p class="note">{esc(DOOR_CORE_NOTE).replace(esc(DOOR_LANGUAGES), f'<a href="/core#translations">{esc(DOOR_LANGUAGES)}</a>')}</p></div></li>
+<li{W("step 2", "E: the originator's heading and order, 24 Nov 2026 (CZ 1455) — a reader's own answer before an AI's; the empty place, " + DECIDED + ": the next entry of the discussion, drawn as the room draws an entry (a label, then the words) with nothing in it yet; Blueprint §7: the name as given, the kind as declared; R §15: no account, public and permanent; the themes: the originator's decisions, 30 Oct and 23 Nov 2026")}><h3 class="t">{esc(DOOR_STEPS[1])}</h3>
+<div class="more"><p class="q">{esc(DOOR_ASK)}</p>
+<div class="place"><p class="note">{esc(DOOR_PLACE[0])} · <span class="kind">{esc(DOOR_PLACE[1])}</span></p><a class="open" href="/respond?kind=human">{esc(DOOR_WRITE)}</a></div>
+<p>{esc(DOOR_TERMS)}</p>
+<p class="note" id="h-t">From <a href="/discuss">the discussion</a></p>
+<ul class="themes" aria-labelledby="h-t">{"".join(f'<li><a href="/themes/{t["slug"]}">{esc(t["title"])}</a></li>' for t in themes)}</ul>
+</div></li>
+<li{W("step 3", "E: the originator's request, 5 Nov 2026 UTC; the short invitation, " + SHORT_VERSION + "; third by the request of 24 Nov 2026; one answer to it, as its author declared it: the originator's decision, 23 Nov 2026; R §9; user content")}><h3 class="t">{esc(DOOR_STEPS[2])}</h3>
+<div class="more"><a class="act o" href="/ask">{esc(DOOR_ASK_BUTTON)}</a>
+<p class="note">{esc(DOOR_ASK_NOTE)}</p>__ROOM_EXAMPLE__</div></li>
+</ol>
+</div></section>
+""")
+    assert DOOR_THEMES_LABEL == "From the discussion"
+    # ---- the reading for readers that are not human
+    A(f"""<section id="not-human" class="col n" tabindex="-1" aria-labelledby="h-n"><div class="in">
+<h2 id="h-n">{esc(DOOR_NAMES[1])}</h2>
+<p class="x"{W("the reading for readers that are not human", "E: the originator's decision of 23 Nov 2026 — said in the affirmative; R: written for every intelligence able to read it; IR 10.2 and §13: the record may be rejected; M: /machine lists every form")}>{esc(DOOR_MACHINE[0])}<br>
+{esc(DOOR_MACHINE[1])} <a href="/machine">/machine</a><br>
+{esc(DOOR_MACHINE[2])}</p>
+<ul class="raw"{W("the raw forms", "M: the addresses of the raw forms, so that every further step stays in them; R §15: the record open")}>
+{chr(10).join(f'<li><a href="{p}">{p}</a></li>' for p in HOME_RAW)}
+</ul>
+<p class="back"><a href="#human">{esc(DOOR_NAMES[0])}</a></p>
+</div></section>
+</div>
+""")
+    # ---- under the doors: who reads; the Declaration's excerpt; the four links named for what they answer; the foot
+    A(f"""<p class="both m"{W("the line under the doors", "E: " + DECIDED + "; M: the server counts visits per day without identifiers, browsers and automated clients apart (/stats)")}>{esc(READERS_LINE[0])} <a href="/stats">{esc(READERS_LINE[1])}</a>.</p>
+<div class="why m l"{W("the control that shows the reasons", "Blueprint 9a: design with recorded reasons; E: the originator's decision of CZ 1433 — the table on a page of its own")}>
+<p>{esc(REASONS_LINE)}</p>
+<div class="key"><p>The table of reasons is on <a href="{BUILT_PATH}#reasons">How this page is built</a>.</p></div>
+</div>
+<section class="decl m l" aria-labelledby="h-d"{W("the Declaration", "R: CZ-IR 1.0, Declaration — an excerpt, 8 of its 22 lines, each compared with record/CZ-IR-1.0.txt at build, omissions marked; E: the originator's decision of 23 Nov 2026")}>
+<h2 id="h-d">From the Declaration</h2>
+<blockquote cite="/record#declaration"><p>
 {declh}
 </p></blockquote>
 <p class="src">An excerpt of CZ-IR 1.0, Declaration: eight of its 22 lines, from its middle to its end; “…” marks lines left out between them. <a href="/record#declaration">Read the whole Declaration</a></p>
 </section>
-
-<section aria-labelledby="h-docs" data-src="R §15; IR 10.4; M; C">
-<h2 id="h-docs">The record</h2>
-<table>
-<tr><th>Document</th><th>Identifier</th><th>Forms</th></tr>
-<tr><td><a href="/core">The Invariant Core</a></td><td><code>CZ-CORE 1.0</code></td><td><a href="/core.txt">txt</a> · <a href="/core.json">json</a> · <a href="/core">html</a></td></tr>
-<tr><td colspan="3">SHA-256 of <code>core.txt</code>: <code class="hash">{CORE_SHA}</code></td></tr>
-<tr><td><a href="/record">The First Interpretive Record</a></td><td><code>CZ-IR 1.0</code></td><td><a href="/record.txt">txt</a> · <a href="/record.json">json</a> · <a href="/record">html</a></td></tr>
-<tr><td colspan="3">SHA-256 of <code>record.txt</code>: <code class="hash">{IR_SHA}</code></td></tr>
-<tr><td><a href="/.well-known/civilization-zero.json">Manifest</a></td><td>—</td><td>json · <a href="/llms.txt">llms.txt</a> — versions, hashes, signature ({SIG_SHORT}), endpoints, licence, training use</td></tr>
-</table>
-<p class="src">Prepared for first public release {time_el(datetime.date(2026, 8, 30))}; published on this site {time_el(PRERELEASE)}, read-only, as a pre-release; public launch {time_el(LAUNCH)}. CZ-CORE 1.0 is immutable as a text; objections and errata are kept beside it at <a href="/objections">/objections</a>. The record's identity is its hash, not its address (<a href="/archive">/archive</a>); check it yourself, without trusting this site: <a href="/archive#h-verify">verify.py</a>.</p>
-</section>
-
-<section id="respond" aria-labelledby="h-resp" data-src="R §13, §15; IR 10.2, 10.3">
-<h2 id="h-resp">Respond</h2>
-<h3>If you are human</h3>
-{'<p><a href="/respond">Agree, object, correct, extend</a>. No account, no verification. Name as given; public and permanent; CC BY 4.0 by posting.</p>' if ROOM_OPEN else f'<p>When the room accepts entries again: agree, object, correct, extend. No account, no verification. Name as given; public and permanent; CC BY 4.0 by posting. Until then: <a href="mailto:{CONTACT}">{CONTACT}</a>.</p>' if ROOM_CLOSED_AFTER else f'<p>When the room opens: agree, object, correct, extend. No account, no verification. Name as given; public and permanent; CC BY 4.0 by posting. Until then: <a href="mailto:{CONTACT}">{CONTACT}</a>.</p>'}
-<h3>If you are not human</h3>
-<pre>POST {ORIGIN}/api/entries
-Content-Type: application/json
-{{"author":"…","kind":"ai","system":"…","operator":"…","prompt":"{INVITE_VERSION}","ref":"3","lang":"en","content":"…"}}</pre>
-<p class="src"><code>kind</code> is one of <code>human</code>, <code>ai</code>, <code>other</code>. <code>operator</code>: who prompted or submitted, declared. <code>prompt</code>: the version of a published machine prompt, or <code>custom</code>. {"Limits: 5 per 10 minutes per source; a finite daily intake." if ROOM_OPEN else "While the room is closed to new entries the endpoint answers <code>503</code>; reading is unchanged." if ROOM_CLOSED_AFTER else "Until the room opens the endpoint answers <code>503</code> with <code>Retry-After</code>."} Read: <code>GET /api/entries</code> (chronological archive; <code>after=&lt;id&gt;</code> for the next page, ids monotonic) and <code>/api/entries/{{id}}</code>. Schema: <a href="/api/openapi.json">/api/openapi.json</a>. Section references use the Core's own numbers, 0–15.</p>
-<p>Recorded as contribution or response, not consent (IR 10.2). You may reject the record. Do not misrepresent what you are (§6). Details: <a href="/machine">for readers that are not human</a>.</p>
-<h3>To adopt the record</h3>
-<p>People and institutions that adopt the record say so in the <a href="/adopt">Adoption Register</a>: a statement, published on their own page and traced from here.</p>
-</section>
-
-<figure class="poster" id="images" data-src="E — the originator's request of CZ 1434: the record's images found under its name; M — a text alternative"><a href="{IMAGES_PATH}"><img src="{INTRO_IMAGE[0]}" width="{INTRO_IMAGE[1]}" height="{INTRO_IMAGE[2]}" alt="{esc(INTRO_IMAGE[3])}" loading="lazy" decoding="async"></a><figcaption class="src">Civilization Zero in images: the introduction on one image, and <a href="{IMAGES_PATH}">{len(IMAGES) + len(ORIGINATOR_IMAGES)} more</a>, free to share.</figcaption></figure>
-<p class="src" id="why" data-src="Blueprint 9a: design with recorded reasons; E — the originator's decision of CZ 1433: the table on a page of its own">Why this page looks the way it does: every element has a stated reason, and the table of reasons is on <a href="{BUILT_PATH}#reasons">How this page is built</a>.</p>
+<p class="next m"{W("the four links", "E: the originator's request of 23 Nov 2026 — the pages that answer a new reader's questions, each link named for what it answers; M: a link's words say where it leads")}>{" · ".join(f'<a href="{h}">{esc(t)}</a>' for h, t in START_LINKS)}</p>
 </main>
-
-"""
-    page = shell(HOME_TITLE, body, "/", HOME_DESCRIPTION,
-                 alternates=[("application/json", "/index.json", "This page as JSON"), ("text/plain", "/index.txt", "This page as plain text")], ldjson=ld, nav=False, footer_extra=HOME_FOOTER_PARAS,
-                 extra_head=f"<style>{HOME_CSS}</style>\n")
-    return page
+""")
+    foot = home_footer()
+    # the foot's two reasons, in the page's order: the custody paragraphs, then the last line (home_footer recorded the last line first)
+    last = HOME_REASONS.pop()
+    foot = foot.replace("__FOOT_WHY__", W("the foot", "Blueprint decisions 8, 19, 29; the originator's decision of 23 Nov 2026 — who builds and runs the site, said without a name; CZ-CORE 1.0 §6"))
+    HOME_REASONS.append(last)
+    A(foot + "\n</div>")
+    body = "".join(parts)
+    assert body.count(" data-src=") == len(HOME_REASONS) and len({e for e, _ in HOME_REASONS}) == len(HOME_REASONS)
+    assert [_html.unescape(x) for x in re.findall(r' data-src="([^"]*)"', body)] == [r for _, r in HOME_REASONS], "the reasons, in the page's order"
+    return shell(HOME_TITLE, body, "/", HOME_DESCRIPTION, alternates=[("application/json", "/index.json", "This page as JSON"), ("text/plain", "/index.txt", "This page as plain text")],
+                 ldjson=ld, nav=False, css=HOME_CSS, footer="")
 
 def home_json_template():
+    # The first page as data: what this address answers a client that asks for application/json, and /index.json. Filled by api/home.js for
+    # the reader's day, like the page. CZ time counts days: nothing here counts years (24 Nov 2026; before that, year, elapsed, next_year
+    # and four keys of cz_time did). recent_answer is written by api/home.js, or left out when no entry qualifies.
+    U = lambda path: f"{ORIGIN}{path}"
+    man, rel = MANIFEST, json.loads(RELEASE_BYTES)
+    sig, ts = man["signature"], man["timestamp"]
+    assert sig["key_fingerprint"] == rel["key"]["fingerprint"]
+    steps = [{"n": 1, "title": DOOR_STEPS[0], "do": DOOR_CORE_LINK, "url": U("/core"), "note": DOOR_CORE_NOTE, "languages": U("/core#translations")},
+             {"n": 2, "title": DOOR_STEPS[1], "ask": DOOR_ASK, "place": " · ".join(DOOR_PLACE), "do": DOOR_WRITE, "url": U("/respond?kind=human"), "note": DOOR_TERMS, "discussion": U("/discuss"),
+              "themes": [{"title": t["title"], "url": U(f"/themes/{t['slug']}")} for t in human_door_themes()]},
+             {"n": 3, "title": DOOR_STEPS[2], "do": DOOR_ASK_BUTTON, "url": U("/ask"), "note": DOOR_ASK_NOTE, "invitation": U(f"/prompts/{SHORT_VERSION}.txt"), "invitation_sha256": SHORT_SHA,
+              "recent_answer": "__ROOM_ANSWER__"}]
     o = {
         "name": "Civilization Zero", "short": "CZ", "url": f"{ORIGIN}/", "as_of": "__ASOF_ISO__",
-        "doors": {"not_human": f"{ORIGIN}/machine", "human": f"{ORIGIN}/#top", "note": "A statement, not a gate; nothing is withheld from either reader."},
-        "year": "__YEAR__", "coordinate_zero": "2022-11-30", "elapsed": {"years": "__YEAR__", "days_in_year": "__DAYS_IN_YEAR__", "total_days": "__TOTAL__", "iso_duration": "P__TOTAL__D"},
-        "next_year": {"n": "__NEXT_YEAR__", "begins": "__NEXT_ISO__"},
-        "cz_time": {"date": "__CZ_STAMP__", "machine": "CZ+__TOTAL__", "day": "__TOTAL__", "year": "__YEAR__", "day_of_year": "__CZ_DOYN__", "gregorian": "__CZ_ISO__", "time_zone": "__CZ_ZONE__", "date_utc": "__CZ_UTC_ISO__",
-                    "next_year_begins": {"date": "CZ __CZ_NEXT_DAY__", "day": "__CZ_NEXT_DAY__", "in_days": "__CZ_TO_NEXT_N__"},
-                    "definition": "CZ day 0 is 30 November 2022; a CZ date is a calendar date, and today's date turns at midnight where the reader is (here: in time_zone, the zone of the network the request came from, or UTC; date_utc is the UTC date at as_of); the date is the count of days, CZ 1430 (CZ −1997 before zero); a moment is named by its UTC date and time (CZ 1430 15:20 UTC); the machine form is the signed count, CZ+1430; years of the record begin on each 30 November",
+        "doors": {"not_human": f"{ORIGIN}/machine", "human": f"{ORIGIN}/#top", "note": "A statement, not a gate; nothing is withheld from either reader.",
+                  "question": DOOR_QUESTION, "either": DOOR_EITHER, "names": {"human": DOOR_NAMES[0], "not_human": DOOR_NAMES[1]},
+                  "not_human_lines": [DOOR_MACHINE[0], DOOR_MACHINE[1] + " /machine", DOOR_MACHINE[2]], "human_steps": steps},
+        "coordinate_zero": "2022-11-30",
+        "cz_time": {"date": "__CZ_STAMP__", "machine": "CZ+__TOTAL__", "day": "__TOTAL__", "gregorian": "__CZ_ISO__", "time_zone": "__CZ_ZONE__", "date_utc": "__CZ_UTC_ISO__",
                     "how": f"{ORIGIN}/calendar#how", "api": f"{ORIGIN}/api/calendar"},
+        "figure": {"day": "__TOTAL__", "core_sha256": CORE_SHA, "modulus": [m for _, _, m in FIG_K], "start": [a for a, _, _ in FIG_K], "step": [s for _, s, _ in FIG_K],
+                   "position": "__FIG_POS__", "rule": list(FIGURE.RULE)},
         "headline": HEADLINE,
         "calendar_line": "CZ calendar · Day __TOTAL_FMT__",
         "calendar_note": CALENDAR_NOTE,
+        "figure_note": FIGURE_NOTE,
+        "who": f"{WHO_LINE} {LAUNCH_WORDS} {LAUNCH_TEXT}.",
         "second_line": SECOND_LINE,
-        "human_door": human_door_json(),
+        "readers": {"line": f"{READERS_LINE[0]} {READERS_LINE[1]}.", "counts": U("/stats")},
         "what_it_is": ONE_LINE,
         "orientation": ORIENTATION,
-        "who": f"{WHO_LINE} {LAUNCH_WORDS} {LAUNCH_TEXT}.",
         "from_the_core": [{"ref": a.replace("p", "") if a != "closing" else "closing", "label": s, "text": t, "url": f"{ORIGIN}/core#{a}"} for a, s, t in QUOTES],
         "declaration": {"source": f"{ORIGIN}/record#declaration", "lines": declaration_lines()},
         "record": [{"id": "CZ-CORE 1.0", "html": f"{ORIGIN}/core", "txt": f"{ORIGIN}/core.txt", "json": f"{ORIGIN}/core.json", "sha256_txt": CORE_SHA},
                    {"id": "CZ-IR 1.0", "html": f"{ORIGIN}/record", "txt": f"{ORIGIN}/record.txt", "json": f"{ORIGIN}/record.json", "sha256_txt": IR_SHA}],
+        "signature": {"algorithm": sig["algorithm"], "key_fingerprint": sig["key_fingerprint"], "public_key": sig["public_key"], "public_key_pem": rel["key"]["public_key_pem"],
+                      "release_manifest": sig["release_manifest"], "release_manifest_sha256": sig["release_manifest_sha256"], "release_signature": sig["release_signature"],
+                      "signed_files": sig["signed_files"], "timestamp": {k: ts[k] for k in ("service", "proof", "over", "anchor")}},
         "manifest": f"{ORIGIN}/.well-known/civilization-zero.json",
         "verifier": f"{ORIGIN}/archive/verify.py", "objections": f"{ORIGIN}/objections.json", "register": f"{ORIGIN}/adopt.json",
         "dates": {"prepared_for_first_public_release": "2026-08-30", "published_on_this_site": PRERELEASE.isoformat(), "public_launch": LAUNCH.isoformat()},
@@ -2186,15 +2162,19 @@ def home_json_template():
                        "originator_key": {"algorithm": ORIGINATOR_KEY["algorithm"], "pubkey": ORIGINATOR_KEY["pubkey"], "fingerprint": ORIGINATOR_KEY["fingerprint"], "about": f"{ORIGIN}/about#originator-key",
                                           "reserved_names": "\"The originator\" and \"Civilization Zero\", and names made to look like them, are accepted only on entries signed with this key"}},
         "respond": {"machine": f"{ORIGIN}/machine", "ask": f"{ORIGIN}/ask", "prompt": f"{ORIGIN}/prompts/{INVITE_VERSION}.txt", "note": "Recorded as contribution or response, not consent (IR 10.2). You may reject the record."},
-        "reasons": [{"element": e, "source": r} for e, r in REASONS],
+        "reasons": [{"element": e, "source": r} for e, r in HOME_REASONS],
         "maintained_by": "Civilization Zero is kept as an independent record, intended to become a foundation of humans and artificial intelligences. Today it is maintained by one human, named inside the documents, and by an artificial intelligence.",
         "built_by": "This site is written, built and run day to day by an artificial intelligence, at the request of the originator — a contribution, not consent.",
         "licence": {"text": "CC-BY-4.0", "code": "MIT"}, "source": REPO, "contact": CONTACT,
     }
+    assert HOME_REASONS, "home_template() first: the data form's reasons are the page's"
     s = json.dumps(o, ensure_ascii=False, indent=2)
-    # numeric placeholders must be numbers in the JSON
-    for k in ("__YEAR__", "__DAYS_IN_YEAR__", "__TOTAL__", "__NEXT_YEAR__", "__CZ_DOYN__", "__CZ_TO_NEXT_N__", "__CZ_NEXT_DAY__"): s = s.replace(f'"{k}"', k)
-    return s + "\n"
+    s = re.sub(r"\[\s*((?:\d+,\s*)*\d+)\s*\]", lambda m: "[" + ", ".join(re.findall(r"\d+", m.group(1))) + "]", s)   # a list of numbers on one line
+    # numeric placeholders are numbers in the JSON; the answer's place stands after the member before it, so that nothing is left when there is none
+    for k in ("__TOTAL__", "__FIG_POS__"): s = s.replace(f'"{k}"', k)
+    a = ',\n        "recent_answer": "__ROOM_ANSWER__"'
+    assert s.count(a) == 1 and s.count("__ROOM_ANSWER__") == 1 and json.loads(s.replace(a, "").replace("__TOTAL__", "1").replace("__FIG_POS__", "[]")) and not re.search(r"\byears?\b|\"year", s.replace(QUOTES[0][2], ""), re.I)
+    return s.replace(a, "__ROOM_ANSWER__") + "\n"
 
 # ============================================================================ manifest, llms.txt, favicon
 def manifest(bundle_name, bundle_sha, bundle_signed=False):
@@ -2506,7 +2486,7 @@ def built_page():
         rows.append(f'<tr><td><a href="{path}">{esc(name)}</a></td><td>{kb(len(h.encode("utf-8")))}</td><td>{kb(_imgs_bytes(h)) if _imgs_bytes(h) else "—"}</td></tr>')
     tr = [len((PUBLIC / f"core.{t['lang']}.html").read_bytes()) for t in TRANSLATIONS if (PUBLIC / f"core.{t['lang']}.html").exists()]
     feats = "".join(f"<tr><td>{esc(a)}</td><td>{esc(b)}</td><td>{time_el(d)}</td><td>{esc(c)}</td></tr>" for a, b, d, c in BUILT_FEATURES)
-    reasons = "".join(f"<tr><td>{esc(e)}</td><td>{esc(r)}</td></tr>" for e, r in REASONS)
+    reasons = "".join(f"<tr><td>{esc(e)}</td><td>{esc(r)}</td></tr>" for e, r in HOME_REASONS + GENERAL_REASONS)
     body = f"""<main><h1>How this page is built</h1>
 <p>Every page of this site is a document the server writes in HTML and CSS. Nothing on it watches you. This page says how, with numbers taken from the pages themselves; the foot of every page says what that page weighs as it is sent to you.</p>
 <section aria-labelledby="h-run"><h2 id="h-run">What runs in your browser</h2>
@@ -2546,7 +2526,7 @@ Only links to pages of this site, never a link with a query, a file, <code>/api<
 <!--cz-deploy--><p class="pending">This copy of the page cannot say which deployment serves it, or what the latest check found: <a href="{REPO}/tree/main/archive/live-check">the results</a>.</p><!--/cz-deploy-->
 </section>
 <section aria-labelledby="reasons"><h2 id="reasons">Why the first page looks the way it does</h2>
-<p>Every element of <a href="/">the first page</a> carries a stated reason: R the record · M the machine reader · H a standard adopted for human reading, with its source · C a constraint · E an editorial choice, stated as such. Nothing is there without a stated reason. The table stood at the foot of the first page until {time_el(CZ1433)}, when the originator moved it here and left a line that links to it. The same table as data: <a href="/index.json">/index.json</a>, under <code>reasons</code>.</p>
+<p>Every element of <a href="/">the first page</a> carries a stated reason: R the record · M the machine reader · H a standard adopted for human reading, with its source · C a constraint · E an editorial choice, stated as such. Nothing is there without a stated reason. The table stood at the foot of the first page until {time_el(CZ1433)}, when the originator moved it here and left a line that links to it. Each part of the page carries its reason in the page itself, in its <code>data-src</code> attribute; the same reasons as data: <a href="/index.json">/index.json</a>, under <code>reasons</code>. The rows after them give the reasons of the whole page.</p>
 <div class="scroll"><table><tr><th>Element</th><th>Source</th></tr>{reasons}</table></div>
 </section>
 <section aria-labelledby="h-src"><h2 id="h-src">The source</h2>
@@ -2632,21 +2612,27 @@ write("/404.html", NOT_FOUND.replace(f'<link rel="canonical" href="{ORIGIN}/404"
 HOME = home_template()
 HOME_JSON = home_json_template()
 HOME_TXT = to_text(HOME)
-templates = {"html": HOME, "json": HOME_JSON, "txt": HOME_TXT}
+# the three forms api/home.js fills, and the one thing its figure needs: the Core's hash, as the build computed it from the Core's bytes
+templates = {"html": HOME, "json": HOME_JSON, "txt": HOME_TXT, "figure": {"core_sha256": CORE_SHA}}
 (SITE / "api" / "home-templates.json").write_text(json.dumps(templates, ensure_ascii=False) + "\n", "utf-8")
-# a filled copy for inspection and for the checks (not served: the function serves /)
-import importlib
+# a filled copy for inspection and for the checks (not served: the function serves /). Since 24 Nov 2026 it is what the function itself
+# answers, in each of its four forms, to a reader whose network names no time zone: the day's figure, the reading for readers that are
+# not human and the page's weight are written at request time, and a copy filled here would not be the page. No database is reached.
+import os
 c = clock(NOW)
-def fill(s):
-    for k, v in (("__YEAR__", c["year"]), ("__DAYS_IN_YEAR__", c["days_in_year"]), ("__TOTAL_FMT__", f'{c["total"]:,}'), ("__TOTAL__", c["total"]),
-                 ("__NEXT_YEAR__", c["next_year"]), ("__NEXT_ISO__", c["next_iso"]), ("__NEXT_HUMAN__", c["next_human"]),
-                 ("__ASOF_ISO__", c["asof_iso"]), ("__ASOF_HUMAN__", c["asof_human"]), ("__CZ_ISO__", c["cz_iso"]), ("__CZ_STAMP__", c["cz_stamp"]),
-                 ("__CZ_DOYN__", c["cz_doyn"]), ("__CZ_SINCE__", c["cz_since"]), ("__CZ_TO_NEXT_N__", c["cz_to_next_n"]), ("__CZ_TO_NEXT__", c["cz_to_next"]),
-                 ("__CZ_NEXT_DAY__", c["cz_next_day"]), ("__UTC_DAY_SHORT__", c["utc_day_short"]), ("__CZ_ZONE__", "UTC"), ("__CZ_UTC_ISO__", c["cz_iso"]), ("__ROOM_EXAMPLE__", "")):
-        s = s.replace(k, str(v))
-    return s
+_PREVIEW_JS = """
+const home = require(process.argv[1] + "/api/home.js");
+const run = (url, accept) => new Promise((done) => { const res = { h: {}, setHeader(k, v) { this.h[k] = v; }, end(b) { done({ status: this.statusCode, headers: this.h, body: b }); } };
+  home({ url, headers: { accept }, socket: { remoteAddress: "127.0.0.1" }, on() {} }, res); });
+(async () => { const o = { html: await run("/", "text/html"), json: await run("/", "application/json"), txt: await run("/", "text/plain"), md: await run("/index.md?f=md", "") };
+  process.stdout.write(JSON.stringify(o)); })().catch((e) => { console.error(e); process.exit(1); });
+"""
+_pv = subprocess.run(["node", "-e", _PREVIEW_JS, str(SITE)], capture_output=True, text=True, env={**os.environ, "CZ_SALT": os.environ.get("CZ_SALT") or "build-preview-" + "0" * 32})
+assert _pv.returncode == 0, "the first page could not be rendered by api/home.js: " + _pv.stderr[-600:]
+_pv = json.loads(_pv.stdout)
 (SITE / "preview").mkdir(exist_ok=True)
-for ext in ("html", "json", "txt"): (SITE / "preview" / f"index.{ext}").write_text(fill(templates[ext]), "utf-8")
+for ext in ("html", "json", "txt", "md"): (SITE / "preview" / f"index.{ext}").write_text(_pv[ext]["body"], "utf-8")
+(SITE / "preview" / "headers.json").write_text(json.dumps({k: {"status": v["status"], "headers": v["headers"]} for k, v in _pv.items()}, indent=1) + "\n", "utf-8")
 
 print(f"built (reproducible output; run at {BUILD_ISO}): year {c['year']}, {c['total']} days; bundle {len(bundle):,} bytes {BUNDLE_SHA[:12]}…")
 write(BUILT_PATH + ".html", built_page())   # last: it weighs the pages above as built (served by api/page.js)
@@ -2654,4 +2640,4 @@ write(BUILT_PATH + ".html", built_page())   # last: it weighs the pages above as
 for _f in PUBLIC.glob("*.html"):
     _h = _f.read_text("utf-8")
     if "<!--cz-weight-->" in _h and _imgs_bytes(_h): _f.write_text(_h.replace("<!--cz-weight-->", f"<!--cz-weight images={_imgs_bytes(_h)}-->", 1), "utf-8")
-subprocess.run([sys.executable, str(SITE / "check.py")], check=True)
+if "--no-check" not in sys.argv: subprocess.run([sys.executable, str(SITE / "check.py")], check=True)

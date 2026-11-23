@@ -693,18 +693,27 @@ function beginning(s, n = EXAMPLE_MAX) {
   }
   return { text: (out || cps.slice(0, n).join("")) + "…", cut: true };   // by code points only where there is no Segmenter (or one character alone is longer than the limit)
 }
-function exampleHtml(rows) {
+function example(rows) {
   const ok = (e) => e && typeof e === "object" && /^[1-9]\d{0,14}$/.test(String(e.id)) && e.state === "published" && e.hidden !== true && e.kind === "ai" && e.prompt === SHORT_PROMPT
     && typeof e.content === "string" && e.content.trim() !== "" && clen(e.content) <= SHORT_MAX && typeof e.author === "string" && e.author.trim() !== "";
   const e = (Array.isArray(rows) ? rows : []).filter(ok).sort((a, b) => Number(b.id) - Number(a.id))[0];
-  if (!e) return "";
-  const lang = e.lang && LANG_RE.test(e.lang) ? ` lang="${esc(e.lang)}"` : "", b = beginning(e.content);
-  return `<div class="d-ex" data-src="E: the originator's decision, 23 Nov 2026; R §9; user content"><p class="src">${b.cut ? "A recent answer (the beginning):" : "A recent answer:"}</p><div class="content" dir="auto"${lang}>${esc(b.text)}</div>`
-    + `<p class="src"><b>${decl(e.author)}</b> · <span class="kind k-ai">AI · declared</span> · <a href="/discuss/${e.id}" class="exact">#${e.id}</a></p></div>`;
+  if (!e) return null;
+  const b = beginning(e.content);
+  return { id: Number(e.id), author: e.author, lang: e.lang && LANG_RE.test(e.lang) ? e.lang : null, text: b.text, cut: b.cut };
 }
+// The same answer in the page's three kinds of form (24 Nov 2026, CZ 1455): in the page, marked as every AI entry is, by the machine
+// layer's edge and its declared kind in words; in the text form, as lines; in the data form (api/home.js), as an object.
+const exampleLabel = (x) => (x.cut ? "A recent answer (the beginning):" : "A recent answer:");
+function exampleHtmlOf(x) {
+  if (!x) return "";
+  return `<div class="ex"><p class="note">${exampleLabel(x)}</p><div class="content" dir="auto"${x.lang ? ` lang="${esc(x.lang)}"` : ""}>${esc(x.text)}</div>`
+    + `<p class="note"><b>${decl(x.author)}</b> · <span class="kind ai">AI · declared</span> · <a href="/discuss/${x.id}" class="exact">#${x.id}</a></p></div>`;
+}
+const exampleText = (x) => (x ? `${exampleLabel(x)}\n\n${x.text}\n\n${visible(x.author)} · AI · declared · #${x.id}\n` : "");
+const exampleHtml = (rows) => exampleHtmlOf(example(rows));
 
 // A valid calendar date (R-29)
 const validDate = (s) => { if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false; const d = new Date(s + "T00:00:00Z"); return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === s; };
 
 module.exports = { translations, sameLang, translationStates, claim, parseTs, alreadyIn, translateOne, translateMany, checkTranslation, inBackground, deadlineOf, normText, note, TR_FAST, TR_STRONG, prefLang, primaryLang, langName, trContent, trExcerpt, mtLabel, ORIGIN, CONTACT, OPEN, CHAIN, OPENS, TOKEN, T, esc, kindTag, kindClass, contentHtml, log, json, html, shell, fill, rpc, rest, sourceHash, sourceOf, tokenEquals, verifySignature, fullOrderKey, validate, classify, classifierAnswer, translate,
-                   allowance, groupEntries, groupKey, entryHtml, metaHtml, previewHtml, exampleHtml, excerpt, SECTIONS, sectionLabel, parentId, fmtTime, isoTime, isoFull, validDate, LANG_RE, canonLang, clen, b64Exact, visible, decl, ORIGINATOR, nameKey, reservedName, reservedField, reservedDetail, MODERATION_PROMPT_VERSION, CATEGORIES };
+                   allowance, groupEntries, groupKey, entryHtml, metaHtml, previewHtml, example, exampleHtml, exampleHtmlOf, exampleText, excerpt, SECTIONS, sectionLabel, parentId, fmtTime, isoTime, isoFull, validDate, LANG_RE, canonLang, clen, b64Exact, visible, decl, ORIGINATOR, nameKey, reservedName, reservedField, reservedDetail, MODERATION_PROMPT_VERSION, CATEGORIES };
