@@ -554,15 +554,16 @@ _hcssd = T["html"].split("<style>")[2].split("</style>")[0]
 _size = lambda sel, css: float(re.search(re.escape(sel) + r"\{[^}]*?font-size:([\d.]+)rem", css).group(1))
 CAL_LINE = '<a href="/calendar">CZ calendar</a> · <time class="d-day" datetime="__CZ_ISO__">Day <data value="__TOTAL__">__TOTAL_FMT__</data></time></p>\n<p class="d-why"'
 CAL_TEXT = "CZ calendar · Day 1,428"
-CAL_NOTE = "Civilization Zero began on 30 November 2022, the day ChatGPT was released."
+CAL_NOTE = "Day 0: 30 November 2022, the day ChatGPT was released."
 check(CAL_LINE in _hh and _hh.count("__CZ_ISO__") == 1 and _hh.count("__TOTAL__") == 1 and _hh.count('href="/calendar"') == 1
-      and '>Civilization Zero began on <time datetime="2022-11-30">30 November 2022</time>, the day ChatGPT was released.</p>\n<p class="d-sub"' in _hh and _hh.count("ChatGPT") == 1
+      and '>Day 0: <time datetime="2022-11-30">30 November 2022</time>, the day ChatGPT was released.</p>\n<p class="d-sub"' in _hh and _hh.count("ChatGPT") == 1 and "began" not in re.sub(r"<[^>]+>", " ", _hh) and cz_day(datetime.date(2022, 11, 30)) == 0
+      and "CZ day 0 is 30 November 2022" in (PUBLIC / "llms.txt").read_text("utf-8") and "CZ 0 is 30 November 2022, the day ChatGPT was released" in (PUBLIC / "calendar.html").read_text("utf-8")
       and "the day ChatGPT was released" in (PUBLIC / "calendar.html").read_text("utf-8") and '<p class="d-date"' in _hh and re.sub(r"<[^>]+>", "", re.search(r'<p class="d-date"[^>]*>(.*?)</p>', _hh, re.S).group(1)) == "CZ calendar · Day __TOTAL_FMT__"
       and _size("p.d-date", _hcssd) > _size("p.d-why", _hcssd) and "p.d-date .d-day{color:var(--machine);font-weight:600}" in _hcssd and "p.d-why{color:var(--mute);" in _hcssd and re.search(r"\.d-note\{display:block;color:var\(--mute\);font-size:\.88em", _hcssd) and _size("p.d-why", _hcssd) == 0.88
       and not re.search(r"\b[Yy]ears?\b|__CZ_(SINCE|TO_NEXT|TO_NEXT_N|NEXT_DAY|DOYN)__|__NEXT_YEAR__", _hh.replace("Year Zero", "")),
-      "home: the calendar line — 'CZ calendar' the link to /calendar, the day number carrying today's date (<time datetime>) and the count (<data value>), no Gregorian date in it, no years; under it one small grey line, smaller and lighter than the CZ day: when Civilization Zero began and what happened that day, as /calendar says it")
+      "home: the calendar line — 'CZ calendar' the link to /calendar, the day number carrying today's date (<time datetime>) and the count (<data value>), no Gregorian date in it, no years; under it one small grey line, smaller and lighter than the CZ day: day 0 and what happened that day, as /calendar and llms.txt say it; nowhere 'began'")
 check(_hh.index('<p class="d-line"') < _hh.index('<p class="d-date"') < _hh.index('<p class="d-why"') < _hh.index('<p class="d-sub"') < _hh.index('<div class="doors"') and _hh.index("</h1>") < _hh.index('<p class="d-line"'),
-      "home, the order of the first screen: the name, the headline, the calendar line, the line on when it began, the second line, the doors")
+      "home, the order of the first screen: the name, the headline, the calendar line, the line on day 0, the second line, the doors")
 check(CAL_TEXT in fill(T["txt"]) and fill(T["txt"]).index("Civilization Zero names the beginning") < fill(T["txt"]).index(CAL_TEXT + "\n\n" + CAL_NOTE + "\n") < fill(T["txt"]).index("Sixteen principles on what humans and AI owe each other.")
       and json.loads(fill(T["json"]))["calendar_line"] == CAL_TEXT and json.loads(fill(T["json"]))["calendar_note"] == CAL_NOTE and json.loads(fill(T["json"]))["cz_time"]["date"] == "CZ 1428",
       "home: the calendar line in the text form, in the same place, and in the data form (which keeps cz_time as it was)")
@@ -626,7 +627,7 @@ check("@media(max-width:34rem)" in _hcss and "grid-template-columns:1fr 1fr" in 
 _rs = (PUBLIC / "how-it-is-built.html").read_text("utf-8")
 check(all(x in _rs for x in (_h.escape(HEADLINE), _h.escape(SECOND_LINE), "From the Declaration, eight of its 22 lines", "the qualifications are kept where the rules are stated", "Under the headline, the calendar line", "Under the calendar line, one small grey line", "the calendar line stands under it, named", "Two doors, equal width", "Who is behind it, in one line without names", "the same sentence before that day and after it", "tests with simulated readers", "where the browser supports it", "The human door: the Core first", "One answer under the invitation", "The door for readers that are not human"))
       and "Two doors first, equal width" not in _rs and [r["element"] for r in _hj["reasons"]].count("The headline, the largest words of the page: \"" + HEADLINE + "\"") == 1 and "The Declaration printed whole" not in _rs and "what the record is not, two doors" not in _rs and "as a line of its own under the headline" not in _rs, "/how-it-is-built: a stated reason for every element of the new first screen")
-check("The large CZ day" not in _rs and "The day count under the name on the first page" in _rs, "/how-it-is-built: the green day count is described as it is now")
+check("The large CZ day" not in _rs and "The day count in the calendar line on the first page" in _rs and "The day count under the name" not in _rs and "began" not in _rs.split("Under the calendar line, one small grey line")[1].split("</tr>")[0] and "as the first page says under" not in _rs, "/how-it-is-built: the green day count is described as it is now")
 _cal = (PUBLIC / "calendar.html").read_text("utf-8")
 check(_cal.count("<!--cz-cal-->") == 1 and _cal.count("<!--cz-time-->") == 1 and all(f'id="{a}"' in _cal for a in ("convert", "time", "how", "examples", "calendars", "beyond-earth", "machines", "sources")),
       "calendar.html: the converters' places and every section")
