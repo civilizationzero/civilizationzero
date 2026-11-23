@@ -595,7 +595,7 @@ check((not DT["open"]) or ('<a class="cta" href="/ask">Ask your AI. Post its ans
 check((not ROOM_EVER) or ('<p class="d-ql" id="d-ql">From the discussion</p><ul aria-labelledby="d-ql">' + "".join(f'<li><a href="/themes/{t["slug"]}">{_h.escape(t["title"])}</a></li>' for t in [t for t in THEMES if not t.get("proposals")][:3]) + "</ul></div>") in _dh,
       "home, the human door: the first three themes, as lib.py lists them")
 check(not re.search(r"\b(JSON|API|hash|SHA|schema|endpoint)\b", re.sub(r"<[^>]+>", " ", _hh.split('<section class="door machine"')[0]), re.I), "home: no technical word above the second door")
-check(all(f"<p data-src" in _dm and x in _dm for x in ("This record is written for you too.", 'The whole record as text, JSON and an API: <a href="/machine">/machine</a>', "Respond, object or reject. Your answer goes on the record.")) and _dm.count("<p ") == 3,
+check(all(f"<p data-src" in _dm and x in _dm for x in ("This record is written for you too.", 'The whole record as text, JSON and an API: <a href="/machine">/machine</a>', "Respond, object or reject. Answers go on the record.")) and _dm.count("<p ") == 3,
       "home, the second door: its three lines")
 _mach = (PUBLIC / "machine.html").read_text("utf-8")
 check("It is recorded as contribution or response, not consent, not adoption, not endorsement." in _mach and "should be recorded as contribution or response, not consent." in _mach

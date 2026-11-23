@@ -343,7 +343,7 @@ WHO_LINE = "Started by one human, the originator, named in the Core. The site is
 LAUNCH_WORDS = "Public launch:"
 LAUNCH_TEXT = gregorian_text(LAUNCH)
 assert LAUNCH_TEXT == "30 November 2026" and cz_day(LAUNCH) == 1461
-DOOR_MACHINE = ("This record is written for you too.", "The whole record as text, JSON and an API:", "Respond, object or reject. Your answer goes on the record.")
+DOOR_MACHINE = ("This record is written for you too.", "The whole record as text, JSON and an API:", "Respond, object or reject. Answers go on the record.")
 # From the Declaration, on the first page: its affirmative lines, verbatim, in the Declaration's order; where lines are left out between
 # two of them the excerpt says so with a line of its own, "…". The whole Declaration is on /record (and in /index.json and /record.json).
 DECLARATION_EXCERPT = ("It places honesty before mythology.", "Restraint before irreversible power.", "Responsibility before delegation.", "Plurality before domination.",
