@@ -147,29 +147,22 @@ test("the first page: its heading is the reader's date; its data form names the 
   assert.equal(j.cz_time.gregorian, CZ.isoDate(...CZ.toGregorian(CZ.todayIn(now, WEST))));
 });
 
-// The first screen says when the record is launched (the originator's decision of 23 Nov 2026): "Public launch: 30 November 2026." until
-// that day, "Public since 30 November 2026." from that day on — by the reader's own date, as the day count beside it, in every form.
-test("the first page: the launch sentence turns on the launch day, where the reader is", async (t) => {
+// The first screen names the launch day (the originator's decision of 23 Nov 2026): "Public launch: 30 November 2026." — the same sentence
+// before that day and after it, in every form, wherever the reader is. It never becomes "Public since …": the site was public before its launch.
+test("the first page: the launch sentence is the same before and after the launch day", async (t) => {
   const home = require("../api/home.js"), T = require("../api/home-templates.json");
-  assert.deepEqual(T.launch, { day: 1461, before: "Public launch:", since: "Public since" });
-  assert.equal(CZ.isoDate(...CZ.toGregorian(T.launch.day)), "2026-11-30");
-  const words = (local) => home.clock(new Date(local), local)["__LAUNCH_WORDS__"];
-  assert.equal(words(Date.UTC(2026, 10, 23, 12)), "Public launch:");
-  assert.equal(words(Date.UTC(2026, 10, 29, 23, 59, 59)), "Public launch:", "the last second before the day");
-  assert.equal(words(Date.UTC(2026, 10, 30, 0, 0, 0)), "Public since", "the first second of the day");
-  assert.equal(words(Date.UTC(2031, 0, 1)), "Public since");
-  const BEFORE = "The site is written, built and run day to day by an artificial intelligence. Public launch: 30 November 2026.", SINCE = "The site is written, built and run day to day by an artificial intelligence. Public since 30 November 2026.";
+  assert.deepEqual(Object.keys(T).sort(), ["html", "json", "txt"]);
+  const LINE = "The site is written, built and run day to day by an artificial intelligence. Public launch: 30 November 2026.";
   const text = (b) => b.replace(/<[^>]+>/g, "");
   const forms = async (zone) => ({ html: text((await call(home, "/", { ...Z(zone), accept: "text/html" })).body), txt: (await call(home, "/?f=txt", Z(zone))).body,
     json: JSON.parse((await call(home, "/?f=json", Z(zone))).body).who, md: (await call(home, "/index.md?f=md", Z(zone))).body });
-  const all = (o, has, not) => { for (const [k, b] of Object.entries(o)) { assert.ok(b.includes(has), `${k}: ${has}`); assert.ok(!b.includes(not), `${k}: not ${not}`); } };
+  const same = (o, when) => { for (const [k, b] of Object.entries(o)) { assert.ok(b.includes(LINE), `${k}, ${when}: the sentence`); assert.ok(!b.includes("Public since") && !b.includes("__LAUNCH"), `${k}, ${when}: nothing else`); } };
+  t.mock.timers.enable({ apis: ["Date"], now: Date.UTC(2026, 10, 23, 12, 0, 0) });
+  same(await forms("UTC"), "a week before");
   // 29 Nov 2026, 12:00 UTC: already 30 November in Kiritimati (UTC+14), still 29 November in Pago Pago (UTC−11)
-  t.mock.timers.enable({ apis: ["Date"], now: Date.UTC(2026, 10, 29, 12, 0, 0) });
-  all(await forms(WEST), BEFORE, "Public since");
-  all(await forms(EAST), SINCE, "Public launch:");
-  t.mock.timers.setTime(Date.UTC(2026, 10, 28, 12, 0, 0)); all(await forms(EAST), BEFORE, "Public since");
-  t.mock.timers.setTime(Date.UTC(2026, 10, 30, 12, 0, 0)); all(await forms(WEST), SINCE, "Public launch:"); all(await forms(EAST), SINCE, "Public launch:");
-  t.mock.timers.setTime(Date.UTC(2027, 5, 1, 12, 0, 0)); all(await forms("UTC"), SINCE, "Public launch:");
+  t.mock.timers.setTime(Date.UTC(2026, 10, 29, 12, 0, 0)); same(await forms(WEST), "the day before, there"); same(await forms(EAST), "the launch day, there");
+  t.mock.timers.setTime(Date.UTC(2026, 10, 30, 12, 0, 0)); same(await forms(WEST), "the launch day"); same(await forms(EAST), "the day after, there");
+  t.mock.timers.setTime(Date.UTC(2027, 5, 1, 12, 0, 0)); same(await forms("UTC"), "half a year after");
   t.mock.timers.reset();
 });
 

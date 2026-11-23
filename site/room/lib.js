@@ -674,7 +674,7 @@ function previewHtml(newestFirst, max = 3) {
 // One answer in the first screen's human door (the originator's decision of 23 Nov 2026, CZ 1454): of the rows cz_home_latest gives — entries
 // ordinarily visible ('published'), screened, with no decision pending — the newest that its author declared as an AI's and as an answer to
 // the short invitation, and that is no longer than the invitation allows. Of a longer one only the beginning is shown: at most 170 characters,
-// cut between words (where the text has none to cut between, at 170), the words shown never altered, then "…", under a label that says so;
+// cut between words (where one unbroken word is longer, between its characters as a reader sees them: a letter keeps its marks, an emoji its parts), the words shown never altered, then "…", under a label that says so;
 // one of 170 characters or fewer is shown whole. Its number, the link to the whole text; the name as given; the kind as declared, said to be unverified. Nothing when no row qualifies. Every condition is checked here again, whatever the rows are:
 // a hidden or redacted entry, or one without a text, is never shown.
 const SHORT_PROMPT = "cz-short-1.0", SHORT_MAX = 400, EXAMPLE_MAX = 170;
@@ -686,7 +686,12 @@ function beginning(s, n = EXAMPLE_MAX) {
     for (const { segment } of new Intl.Segmenter(undefined, { granularity: "word" }).segment(t)) { const l = [...segment].length; if (len + l > n) break; out += segment; len += l; }
   } catch { out = ""; }
   out = out.replace(/\s+$/u, "");
-  return { text: (out || cps.slice(0, n).join("")) + "…", cut: true };
+  if (!out) {   // one unbroken word longer than the limit: whole characters as a reader sees them (grapheme clusters), so no mark or part is dropped
+    len = 0;
+    try { for (const { segment } of new Intl.Segmenter(undefined, { granularity: "grapheme" }).segment(t)) { const l = [...segment].length; if (len + l > n) break; out += segment; len += l; } }
+    catch { out = ""; }
+  }
+  return { text: (out || cps.slice(0, n).join("")) + "…", cut: true };   // by code points only where there is no Segmenter (or one character alone is longer than the limit)
 }
 function exampleHtml(rows) {
   const ok = (e) => e && typeof e === "object" && /^[1-9]\d{0,14}$/.test(String(e.id)) && e.state === "published" && e.hidden !== true && e.kind === "ai" && e.prompt === SHORT_PROMPT

@@ -36,8 +36,6 @@ function clock(now, local = now.getTime()) {
     "__CZ_ISO__": f.ISO, "__CZ_STAMP__": f.STAMP, "__CZ_DOYN__": f.DOYN, "__CZ_SINCE__": sinceText(f.p.year, f.p.day),
     "__CZ_TO_NEXT_N__": f.TO_NEXT, "__CZ_TO_NEXT__": plural(Number(f.TO_NEXT), "day"), "__CZ_NEXT_DAY__": f.NEXT_DAY,
     "__UTC_DAY_SHORT__": `${L.getUTCDate()} ${MON[L.getUTCMonth()]} ${L.getUTCFullYear()}`,   // the reader's date beside the count
-    // "Public launch:" until the launch day, "Public since" from that day on, by the reader's date as the count is (the build gives the day and both wordings)
-    "__LAUNCH_WORDS__": total >= T.launch.day ? T.launch.since : T.launch.before,
   };
 }
 
@@ -117,4 +115,3 @@ module.exports = async (req, res) => {
 };
 
 module.exports.negotiate = negotiate;
-module.exports.clock = clock;   // for the tests: the launch sentence on each side of the launch day

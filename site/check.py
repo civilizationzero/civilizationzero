@@ -219,7 +219,7 @@ check(sha256(prompt) == man["machine_prompt"]["sha256"], "prompt hash in manifes
 T = json.loads((SITE / "api" / "home-templates.json").read_text("utf-8"))
 sample = {"__YEAR__": "3", "__DAYS_IN_YEAR__": "332", "__TOTAL__": "1428", "__TOTAL_FMT__": "1,428", "__NEXT_YEAR__": "4", "__NEXT_ISO__": "2026-11-30",
           "__NEXT_HUMAN__": "30 November 2026", "__ASOF_ISO__": "2026-10-28T10:00Z", "__ASOF_HUMAN__": "2026-10-28 10:00 UTC",
-          "__CZ_ISO__": "2026-10-28", "__CZ_STAMP__": "CZ 1428", "__CZ_DOYN__": "332", "__CZ_SINCE__": "3 years and 332 days", "__CZ_TO_NEXT_N__": "33", "__CZ_TO_NEXT__": "33 days", "__CZ_NEXT_DAY__": "1461", "__UTC_DAY_SHORT__": "28 Oct 2026", "__CZ_ZONE__": "Asia/Kuala_Lumpur", "__CZ_UTC_ISO__": "2026-10-27", "__LAUNCH_WORDS__": "Public launch:"}
+          "__CZ_ISO__": "2026-10-28", "__CZ_STAMP__": "CZ 1428", "__CZ_DOYN__": "332", "__CZ_SINCE__": "3 years and 332 days", "__CZ_TO_NEXT_N__": "33", "__CZ_TO_NEXT__": "33 days", "__CZ_NEXT_DAY__": "1461", "__UTC_DAY_SHORT__": "28 Oct 2026", "__CZ_ZONE__": "Asia/Kuala_Lumpur", "__CZ_UTC_ISO__": "2026-10-27"}
 # the room's places on the first page (Phase 1, 29 Oct 2026; one answer in the human door, 23 Nov 2026) are filled by api/home.js from the
 # database, in the one pass that fills the clock, so that nothing in an entry is ever filled again; with the database slow or down, all are left empty
 import subprocess
@@ -227,7 +227,7 @@ import html as _h
 ROOM_KEYS = ("__ROOM_COUNT__", "__ROOM_LATEST__", "__ROOM_EXAMPLE__")
 def fill(s, room=("", "", "")):
     for k in ("__TOTAL_FMT__", "__YEAR__", "__DAYS_IN_YEAR__", "__TOTAL__", "__NEXT_YEAR__", "__NEXT_ISO__", "__NEXT_HUMAN__", "__ASOF_ISO__", "__ASOF_HUMAN__",
-              "__CZ_ISO__", "__CZ_STAMP__", "__CZ_DOYN__", "__CZ_SINCE__", "__CZ_TO_NEXT_N__", "__CZ_TO_NEXT__", "__CZ_NEXT_DAY__", "__UTC_DAY_SHORT__", "__CZ_ZONE__", "__CZ_UTC_ISO__", "__LAUNCH_WORDS__"):
+              "__CZ_ISO__", "__CZ_STAMP__", "__CZ_DOYN__", "__CZ_SINCE__", "__CZ_TO_NEXT_N__", "__CZ_TO_NEXT__", "__CZ_NEXT_DAY__", "__UTC_DAY_SHORT__", "__CZ_ZONE__", "__CZ_UTC_ISO__"):
         s = s.replace(k, sample[k])
     for k, v in zip(ROOM_KEYS, room):
         s = s.replace(k, v)
@@ -282,8 +282,7 @@ if ROOM_EVER:
 else:
     check(not any("__ROOM_" in T[x] for x in ("html", "json", "txt")), "home: no room placeholders before the room has opened")
 check("__ROOM_" not in T["json"], "home: the data form carries no room placeholder (api/home.js reads the room for the page only; the text form's are left empty)")
-check(set(T) == {"html", "json", "txt", "launch"} and T["launch"] == {"day": cz_day(LAUNCH), "before": "Public launch:", "since": "Public since"} and all(isinstance(T[x], str) for x in ("html", "json", "txt")),
-      "home templates: the three forms, and the launch day with its two wordings (not a form: api/home.js serves strings only)")
+check(set(T) == {"html", "json", "txt"} and all(isinstance(T[x], str) for x in T), "home templates: the three forms, and nothing else")
 for ext in ("html", "json", "txt"):
     filled = fill(T[ext])
     check("__" not in re.sub(r"https?://\S+", "", filled), f"home template {ext}: placeholder left")
@@ -537,15 +536,15 @@ check('<span class="d-day">Day <data value="__TOTAL__">__TOTAL_FMT__</data></spa
 # door first, who is behind it between them in the source, the launch sentence written at request time; in every form of the page
 HEADLINE = "Sixteen principles on what humans and AI owe each other. Written for both. Answered by both, on the record."
 NOT_LINE = "It is not a law, a religion, or a claim that any machine is conscious."
-WHO = "Started by one human, the originator, named in the Core. The site is written, built and run day to day by an artificial intelligence. __LAUNCH_WORDS__ 30 November 2026."
+WHO = "Started by one human, the originator, named in the Core. The site is written, built and run day to day by an artificial intelligence. Public launch: 30 November 2026."
 _hj = json.loads(fill(T["json"]))
 check(_hh.count(f'>{HEADLINE}</p>') == 1 and T["txt"].count(HEADLINE) == 1 and _hj["headline"] == HEADLINE, "home: the headline, once, in the page, its text form and its data form")
 check(T["html"].count(NOT_LINE) == 1 and _hh.index(HEADLINE) < _hh.index(NOT_LINE) < _hh.index('<div class="doors"') and T["txt"].count(NOT_LINE) == 1 and NOT_LINE in _hj["orientation"],
       "home: what the record is not is said once on the page, under the headline; the data form keeps the paragraph whole")
 check("is still open. It is written for every intelligence able to read it.</p>" in _hh and _hh.index("It is written for every intelligence") > _hh.index("</div>\n<p data-src"), "home: the paragraph under the doors keeps its other sentences")
 _who_h = re.sub(r"<[^>]+>", "", re.search(r'<p class="d-who"[^>]*>(.*?)</p>', _hh, re.S).group(1))
-check(_who_h.startswith(WHO + " About") and WHO in T["txt"] and _hj["who"] == WHO.replace("__LAUNCH_WORDS__", "Public launch:") and T["json"].count("__LAUNCH_WORDS__") == 1 and T["html"].count("__LAUNCH_WORDS__") == 1 and T["txt"].count("__LAUNCH_WORDS__") == 1,
-      "home: who is behind it, the same sentence in the page, its text form and its data form; the launch words are written at request time")
+check(_who_h.startswith(WHO + " About") and WHO in T["txt"] and _hj["who"] == WHO and not any("__LAUNCH" in T[x] or "Public since" in T[x] for x in T) and "launch" not in (SITE / "api/home.js").read_text("utf-8").lower(),
+      "home: who is behind it, the same sentence in the page, its text form and its data form; the launch sentence is built in and never changes (the site was public before its launch day)")
 check('<a href="/about">About</a>' in _hh.split('<p class="d-who"')[1].split("</p>")[0] and (not PRESS_PUBLISHED or '<a href="/press">Press kit</a>' in _hh.split('<p class="d-who"')[1].split("</p>")[0]), "home: About and the press kit beside who is behind it")
 check('<nav class="readers"' not in T["html"] and "If you are not human: the same record" not in T["html"] and "nav.readers" not in T["html"], "home: the strip above the page is gone (the second door says it)")
 _doors = _hh.split('<div class="doors"', 1)[1]
@@ -553,7 +552,7 @@ check(_doors.index('<section class="door human"') < _doors.index('<section class
       and '<h2 id="d-h">I am human</h2>' in _doors and '<h2 id="d-m">I am not human</h2>' in _doors,
       "home: two doors, the human door first; who is behind it comes after both in the source, as a wide screen shows it (the keyboard follows)")
 _dh = _doors.split("</section>")[0]; _dm = _doors.split('<section class="door machine"')[1].split("</section>")[0]
-check('<a href="/core">Read the 16 principles (one page)</a> <span class="d-note">numbered 0 to 15</span>' in _dh and len(json.loads((PUBLIC / "core.json").read_text("utf-8"))["principles"]) == 16
+check('<a href="/core">Read the 16 principles (one page)</a> <span class="d-note">numbered 0 to 15</span>' in _dh and ".d-note{display:block;" in T["html"] and "nowrap" not in T["html"].split(".d-note{")[1].split("}")[0] and ".d-head{display:flex;flex-wrap:wrap;" in T["html"] and len(json.loads((PUBLIC / "core.json").read_text("utf-8"))["principles"]) == 16
       and [int(p["n"]) for p in json.loads((PUBLIC / "core.json").read_text("utf-8"))["principles"]] == list(range(16)), "home, the human door: the 16 principles, numbered 0 to 15, as the Core numbers them")
 _short = (SITE / "prompts" / "cz-short-1.0.txt").read_text("utf-8")
 check((not DT["open"]) or ('<a class="cta" href="/ask">Ask your AI. Post its answer. →</a> <span class="cta-note">The invitation asks your AI for one hard truth to humans, in at most 400 characters. It may decline.</span>' in _dh
@@ -571,8 +570,9 @@ _hcss = T["html"].split("<style>")[2].split("</style>")[0]
 check("@media(max-width:34rem)" in _hcss and "grid-template-columns:1fr 1fr" in _hcss and ".door.human{order:1}p.d-who{order:2;" in _hcss.split("@media(max-width:34rem)")[1] and ".door.machine{order:3}" in _hcss.split("@media(max-width:34rem)")[1] and "order:" not in _hcss.split("@media(max-width:34rem)")[0].replace("border", "") and "animation" not in _hcss and "transition" not in _hcss and "outline" not in _hcss and not re.search(r"#[0-9a-fA-F]{3,6}\b|rgb\(", _hcss),
       "home: the doors side by side on a wide screen, one column on a narrow one with who is behind it between them; colours from the two palettes only; no motion; focus untouched")
 _rs = (PUBLIC / "how-it-is-built.html").read_text("utf-8")
-check(all(x in _rs for x in (_h.escape(HEADLINE), _h.escape(NOT_LINE), "Two doors, equal width", "Who is behind it, in one line without names", "Public since 30 November 2026.", "The human door: the Core first", "One answer under the invitation", "The door for readers that are not human"))
+check(all(x in _rs for x in (_h.escape(HEADLINE), _h.escape(NOT_LINE), "Two doors, equal width", "Who is behind it, in one line without names", "the same sentence before that day and after it", "tests with simulated readers", "where the browser supports it", "The human door: the Core first", "One answer under the invitation", "The door for readers that are not human"))
       and "Two doors first, equal width" not in _rs and [r["element"] for r in _hj["reasons"]].count("The headline: \"" + HEADLINE + "\"") == 1, "/how-it-is-built: a stated reason for every element of the new first screen")
+check("The large CZ day" not in _rs and "The day count under the name on the first page" in _rs, "/how-it-is-built: the green day count is described as it is now")
 _cal = (PUBLIC / "calendar.html").read_text("utf-8")
 check(_cal.count("<!--cz-cal-->") == 1 and _cal.count("<!--cz-time-->") == 1 and all(f'id="{a}"' in _cal for a in ("convert", "time", "how", "examples", "calendars", "beyond-earth", "machines", "sources")),
       "calendar.html: the converters' places and every section")

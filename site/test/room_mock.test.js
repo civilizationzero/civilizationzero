@@ -8,6 +8,8 @@ const srv = http.createServer((q, s) => {
   let b = ""; q.on("data", (d) => (b += d)); q.on("end", () => {
     const a = b ? JSON.parse(b) : {}, name = (/\/rpc\/(\w+)/.exec(q.url) || [])[1];
     CALLS.push({ name, args: a, url: q.url });
+    if (DOWN === "refuse") return q.socket.destroy();   // the connection is cut: nothing comes back
+    if (DOWN === "slow") return void setTimeout(() => { s.setHeader("content-type", "application/json"); s.end("[]"); }, 2200);   // slower than the page waits (1.5 s)
     if (DOWN) { s.statusCode = 500; return s.end("{}"); }   // the database does not answer
     let out = [];
     // as the SQL of v7 does: ordinarily visible ('published'), screened by the classifier, no decision pending; newest first, at most 60.
@@ -373,11 +375,11 @@ srv.listen(0, "127.0.0.1", async () => {
     ok(forms.md.includes("```text\nAnswer 40: a hard truth.\n— Voice 40\n```") && forms.md.includes("[\\#40](https://civilizationzero.ai/discuss/40)") && forms.md.includes("## I am human") && forms.md.includes("## I am not human"),
        "home as Markdown: the first screen with its two doors, and the example's text fenced, as received");
     ok(!forms.txt.includes("Answer 40") && !forms.json.includes("Answer 40") && !forms.txt.includes("__ROOM_"), "home: the text and data forms carry no entry (the room is read for the page only), and no placeholder");
-    ok((await call(home, "/?f=launch")).body.startsWith("<!doctype html>") && (await call(home, "/?f=launch")).headers["content-type"].startsWith("text/html"), "home: ?f=launch is not a form of the page");
+    ok((await call(home, "/?f=launch")).body.startsWith("<!doctype html>") && (await call(home, "/?f=constructor")).headers["content-type"].startsWith("text/html"), "home: an unknown form is the page");
     // an entry that spells the page's own placeholders stays as written: nothing put into the page is read again
-    TABLE = [...Array.from({ length: 5 }, (_, i) => entry(i + 1)), short(9, { content: "__ROOM_LATEST__ __YEAR__ </div><script>x</script> __LAUNCH_WORDS__" })];
+    TABLE = [...Array.from({ length: 5 }, (_, i) => entry(i + 1)), short(9, { content: "__ROOM_LATEST__ __YEAR__ </div><script>x</script> __CZ_STAMP__" })];
     r = await call(home, "/", { headers: { accept: "text/html" } }); ex = exOf(r.body);
-    ok(ex.includes("__ROOM_LATEST__ __YEAR__ &lt;/div&gt;&lt;script&gt;x&lt;/script&gt; __LAUNCH_WORDS__</div>") && r.body.split("<h3>The latest entries</h3>").length === 2 && !r.body.includes("<script>x"),
+    ok(ex.includes("__ROOM_LATEST__ __YEAR__ &lt;/div&gt;&lt;script&gt;x&lt;/script&gt; __CZ_STAMP__</div>") && r.body.split("<h3>The latest entries</h3>").length === 2 && !r.body.includes("<script>x"),
        "home: an example that spells a placeholder or markup is shown as its author wrote it");
     // nothing qualifies: the block is absent, with no placeholder and no empty frame
     for (const [what, table, raw] of [["no answer to the short invitation", Array.from({ length: 30 }, (_, i) => entry(i + 1)), null], ["an empty room", [], null],
@@ -410,6 +412,26 @@ srv.listen(0, "127.0.0.1", async () => {
     TABLE = [short(40)]; DOWN = true; r = await call(home, "/", { headers: { accept: "text/html" } }); const mdDown = await call(home, "/index.md?f=md"); DOWN = false;
     ok(r.status === 200 && r.body.includes(HEADLINE) && r.body.includes(WHO) && !r.body.includes('class="d-ex"') && !r.body.includes("A recent answer") && !r.body.includes("The latest entries") && !r.body.includes("__ROOM_")
        && mdDown.status === 200 && mdDown.body.includes(HEADLINE) && !mdDown.body.includes("A recent answer"), "home with the database down: served, with no example and no placeholder");
+    // a refused connection, and a database slower than the page waits: the page is served all the same, with no example and no placeholder
+    for (const how of ["refuse", "slow"]) {
+      TABLE = [short(40)]; DOWN = how; const t0 = Date.now(); r = await call(home, "/", { headers: { accept: "text/html" } }); const ms = Date.now() - t0; DOWN = false;
+      ok(r.status === 200 && r.body.includes(HEADLINE) && r.body.includes(WHO) && r.body.includes('It may decline.</span></div>') && !r.body.includes('class="d-ex"') && !r.body.includes("A recent answer") && !r.body.includes("The latest entries")
+         && !/__[A-Z_]+__/.test(r.body.replace(/https?:\/\/\S+/g, "")) && ms < 2100, `home, the database ${how === "slow" ? "slow" : "refusing the connection"}: 200, no example, no placeholder (${r.status}, ${ms} ms)`);
+    }
+    // where the beginning is cut: never inside a word, a letter with its marks, or an emoji made of several code points
+    const cp = (x) => [...x].length;
+    const cases = [
+      ["Persian", "ما هر روز کمی بیشتر از دیروز تصمیم‌هایمان را به ماشین‌ها می‌سپاریم و نامش را پیشرفت می‌گذاریم ".repeat(3).trim(), (c, t) => /\s/.test(c[t.length]) && cp(t) > 140],
+      ["one unbroken word of letters with combining marks", "x" + "e\u0301".repeat(120), (c, t) => t === "x" + "e\u0301".repeat(84)],
+      ["an emoji sequence at the boundary", "ab ".repeat(56) + "\u{1F468}\u200D\u{1F469}\u200D\u{1F467}\u200D\u{1F466} and after", (c, t) => t === "ab ".repeat(56).trim()],
+      ["one unbroken run of emoji sequences", "\u{1F468}\u200D\u{1F469}\u200D\u{1F467}".repeat(40), (c, t) => t === "\u{1F468}\u200D\u{1F469}\u200D\u{1F467}".repeat(34)],
+    ];
+    for (const [what, content, fits] of cases) {
+      TABLE = [short(8, { content, lang: what === "Persian" ? "fa" : "en" })]; r = await call(home, "/", { headers: { accept: "text/html" } }); [label, text] = shown(r.body);
+      const t = (text || "").slice(0, -1);
+      ok(cp(content) > 170 && cp(content) <= 400 && label === "A recent answer (the beginning):" && (text || "").endsWith("…") && cp(t) <= 170 && cp(t) > 0 && content.startsWith(t) && fits(content, t),
+         `home, the beginning of ${what}: cut at a boundary, nothing altered (${cp(content)} → ${cp(t)}: ${JSON.stringify(t.slice(-12))})`);
+    }
   } catch (e) { fail++; console.log("FAIL exception", e.stack); }
   console.error = quiet;
   console.log(`pass ${pass} fail ${fail}`); srv.close(); process.exit(fail ? 1 : 0);

@@ -329,10 +329,10 @@ NOT_LINE = "It is not a law, a religion, or a claim that any machine is consciou
 assert ORIENTATION.count(" " + NOT_LINE + " ") == 1
 ORIENTATION_BELOW = ORIENTATION.replace(" " + NOT_LINE + " ", " ")
 assert ORIENTATION_BELOW.endswith("while the future is still open. It is written for every intelligence able to read it.")
-# Who is behind it, without a name (the originator's decisions of 23 Nov 2026). The last sentence is true on every day: api/home.js
-# writes LAUNCH_BEFORE until the launch day and LAUNCH_SINCE from that day on, by the reader's own date, as the day count is.
+# Who is behind it, without a name (the originator's decisions of 23 Nov 2026). The last sentence names the launch day and is the same before
+# and after it: the site has been public since PRERELEASE, so "public since" the launch day would be false.
 WHO_LINE = "Started by one human, the originator, named in the Core. The site is written, built and run day to day by an artificial intelligence."
-LAUNCH_BEFORE, LAUNCH_SINCE = "Public launch:", "Public since"
+LAUNCH_WORDS = "Public launch:"
 LAUNCH_TEXT = gregorian_text(LAUNCH)
 assert LAUNCH_TEXT == "30 November 2026" and cz_day(LAUNCH) == 1461
 DOOR_MACHINE = ("Nothing here is withheld from any reader.", "The same record as text, JSON and an API:",
@@ -1818,7 +1818,7 @@ QUOTES = [("p0", "CZ-CORE 1.0 §0", "30 November 2022 is selected as Year Zero o
           ("closing", "CZ-CORE 1.0, closing", "Humanity is no longer presumed to be the final measure of every possible mind."),
           ("closing", "CZ-CORE 1.0, closing", "The record begins at Coordinate Zero.")]
 REASONS = [
-    ("The first screen in this order: the name, the day, one headline, what the record is not, two doors, who is behind it", "E — the originator's decision of CZ 1454, after first-impression tests of the first page; it changes Blueprint §5.0 to §5.2 and decision 28, recorded for Blueprint 1.4. Before it, the page opened on a strip addressed to readers that are not human and on the date in CZ time alone"),
+    ("The first screen in this order: the name, the day, one headline, what the record is not, two doors, who is behind it", "E — the originator's decision of CZ 1454, after first-impression tests with simulated readers; it changes Blueprint §5.0 to §5.2 and decision 28, recorded for Blueprint 1.4. Before it, the page opened on a strip addressed to readers that are not human and on the date in CZ time alone"),
     ("Under the name, the day in plain words — \"Day N since 30 November 2022, the day ChatGPT was released\" — with the count in the machine layer's green; beside the name, small, today's date in CZ time, linked to how the days are counted; the Gregorian date of Coordinate Zero written once", "R §0 is the first section of the Core; E — the originator's decisions of CZ 1430 (CZ time is the basis of the site's dates, and the date is the count) and of CZ 1454 (the count said first in words a new reader knows); what happened on that day is stated as /calendar states it, with its sources; placing the day first is a choice the record does not entail"),
     ("The headline: \"" + HEADLINE + "\"", "E — the originator's decision of CZ 1454. R — the Core has sixteen sections, numbered 0 to 15; \"what humans and AI owe each other\" is the introduction's own phrase (the originator's decision of CZ 1432); \"written for both\": the first page's \"written for every intelligence able to read it\"; \"answered by both, on the record\": the open discussion, where entries are declared human or AI, declared and not verified (Blueprint §7)"),
     ("\"" + NOT_LINE + "\" as a line of its own under the headline, said once on the page", "R — IR 1.1, 1.4; Blueprint decision 2; E — the originator's decision of CZ 1454: the sentence moved up from the paragraph under the doors, which keeps its other sentences; /index.json keeps the paragraph whole"),
@@ -1827,8 +1827,8 @@ REASONS = [
     *([("Under the button, what the invitation asks: \"one hard truth to humans, in at most 400 characters. It may decline.\"", "R — the short invitation's own text (" + SHORT_VERSION + ", published and hashed at /ask): \"At most 400 characters\", \"You may decline; a refusal is recorded too.\"; E — the originator's decision of CZ 1454"),
        ("One answer under the invitation, when there is one: among the latest entries that are published, screened and with no decision pending, the newest declared as an AI's and as an answer to the short invitation, of at most 400 characters; its beginning — at most 170 characters, cut between words and marked \"…\", the words shown unchanged; a shorter one whole — with the name as given, \"AI · declared, not verified\" and its number, the link to the whole text; read at request time, and left out when there is none or the database does not answer", "E — the originator's decision of CZ 1454: a reader sees what an answer is before asking for one. R §9 — the newest, never the best: nothing is ranked; R §6 — declared, not verified, and said so; Blueprint §7.4, §7.5 — never a hidden entry; user content, not the record's")] if ROOM_OPEN else []),
     ("The door for readers that are not human, in three lines: nothing is withheld; the same record as text, JSON and an API at /machine; a response is recorded as a response, not as consent", "Blueprint decision 28 — nothing is withheld from either reader; M — /machine lists every form; R — IR 10.2: contribution or response, not consent, and the record may be rejected"),
-    ("Who is behind it, in one line without names: started by one human, the originator, named in the Core; the site written, built and run day to day by an artificial intelligence; the launch day; About and the press kit one click away. On a narrow screen it follows the human door; on a wide one it stands under both, and it comes last in the source, so that the keyboard follows the wide screen's order", "R — the Core's attribution names the originator (§15: origin stated inside the documents); E — the originator's decisions of CZ 1454: one title, no name outside the Core, and the builder said without a name (Blueprint decisions 8 and 29 as changed, for Blueprint 1.4); §6 — the line says who and what is behind the page"),
-    ("\"Public launch: 30 November 2026.\" until that day, \"Public since 30 November 2026.\" from that day on, by the reader's own date; the launch date in plain words", "§6 — a sentence about the future must not stay on the page once it is the past; M — written at request time by the function that writes the day, no script; E — the originator's decision of CZ 1454: this date in words a new reader knows, the second and last Gregorian date of the first screen"),
+    ("Who is behind it, in one line without names: started by one human, the originator, named in the Core; the site written, built and run day to day by an artificial intelligence; the launch day; About and the press kit one click away. On a narrow screen it follows the human door; on a wide one it stands under both, and it comes last in the source, so that the keyboard follows the wide screen's order; on a narrow screen the keyboard and the reading order follow what is seen where the browser supports it", "R — the Core's attribution names the originator (§15: origin stated inside the documents); E — the originator's decisions of CZ 1454: one title, no name outside the Core, and the builder said without a name (Blueprint decisions 8 and 29 as changed, for Blueprint 1.4); §6 — the line says who and what is behind the page"),
+    ("\"Public launch: 30 November 2026.\": the launch date in plain words, the same sentence before that day and after it", "E — the originator's decision of CZ 1454: this date in words a new reader knows, the second and last Gregorian date of the first screen; §6 — the site has been public, read-only and as a pre-release, since CZ 1428, so the line does not turn into \"public since\" the launch day, which would be false; it names the day of the launch"),
     ("No typeface shipped; the reader's device chooses", "C — nothing to rot; every script the reader's device has. E — the generic family is still a choice, the smallest available."),
     ("Two palettes, light and dark, each at contrast ≥ 7:1; the reader's preference chooses", "H — WCAG 2.2 AAA contrast (1.4.6); the palettes are chosen, the preference is the reader's"),
     ("Links underlined, never colour-only", "H — WCAG 2.2 \"Use of Color\" (1.4.1); M"),
@@ -1873,7 +1873,7 @@ HOME_FOOTER_PARAS = """<div data-src="Blueprint decisions 8, 19, 29; the origina
 # the other door, then who is behind it — so the keyboard follows what is seen there; on a narrow screen `order` sets that line between the doors,
 # and where a browser has reading-flow the keyboard and the reading order follow it there too.
 HOME_CSS = """/* E (the originator's decision of 23 Nov 2026, CZ 1454; Blueprint decision 28 as changed): the first screen. The name, the day in plain words, one headline, what the record is not; then two doors of equal width, side by side on a wide screen and one after the other on a narrow one, the human door first; every technical word stays in the second door and below. */
-.d-head{display:flex;align-items:center;justify-content:space-between;gap:1rem;margin:1rem 0 .45rem}
+.d-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:0 1rem;margin:1rem 0 .45rem}
 h1.cz-name{display:flex;align-items:center;gap:.6rem;font-size:1rem;font-weight:700;margin:0}h1.cz-name svg{flex:none}
 a.d-stamp{font-size:.8rem;color:var(--mute);text-decoration-thickness:1px;white-space:nowrap;padding:.3rem 0}a.d-stamp time{font-size:1em}
 p.d-date{font-size:.9rem;color:var(--mute);margin:0 0 1.1rem}p.d-date .d-day{color:var(--machine);font-weight:600}p.d-date time,p.d-date data{font-family:inherit;font-size:1em}p.d-date .d-day,p.d-date time{white-space:nowrap}
@@ -1885,7 +1885,7 @@ p.d-not{color:var(--mute);font-size:.92rem;margin:0 0 1.25rem}
 .door h2{font-size:1.55rem;font-weight:700;margin:0;padding:1rem 0 .9rem}
 .door>p,.door>div{margin:0;padding:.65rem 0;border-top:1px solid var(--rule)}
 .door.machine{font-family:ui-monospace,monospace;font-size:.9rem}.door.machine h2{color:var(--machine);font-size:1.4rem;letter-spacing:-.02em}
-.door .d-note{color:var(--mute);font-size:.88em;white-space:nowrap}
+.door .d-note{display:block;color:var(--mute);font-size:.88em}
 .door a.cta{display:block;line-height:1.3;text-align:center;padding-inline:.5rem}.door .cta-note{display:block;margin-top:.5rem;color:var(--mute);font-size:.88em}
 /* one answer to the short invitation, as its author declared it: user content, marked with the machine layer's edge as every AI entry is */
 .d-ex{margin:.8rem 0 0;padding-inline-start:.75rem;border-inline-start:3px solid var(--machine)}.d-ex p{margin:0}.d-ex .content{white-space:pre-wrap;word-break:break-word;font-size:.9rem;line-height:1.4;margin:.2rem 0 .3rem}.d-ex .kind{white-space:normal}
@@ -1939,7 +1939,7 @@ def home_template():
 <p data-src="M">{esc(DOOR_MACHINE[1])} <a href="/machine">/machine</a></p>
 <p data-src="R: IR 10.2">{esc(DOOR_MACHINE[2])}</p>
 </section>
-<p class="d-who" data-src="CZ-CORE 1.0, attribution; Blueprint decisions 8 and 29 as the originator changed them on 23 Nov 2026 — said without names">{esc(WHO_LINE)} __LAUNCH_WORDS__ <time datetime="{LAUNCH.isoformat()}">{LAUNCH_TEXT}</time>. {who_links}</p>
+<p class="d-who" data-src="CZ-CORE 1.0, attribution; Blueprint decisions 8 and 29 as the originator changed them on 23 Nov 2026 — said without names">{esc(WHO_LINE)} {LAUNCH_WORDS} <time datetime="{LAUNCH.isoformat()}">{LAUNCH_TEXT}</time>. {who_links}</p>
 </div>
 <p data-src="E: the first sentence, the originator's decision of 1 Nov 2026 (CZ 1432); R: IR 1.1, 1.4; Declaration; Blueprint decision 2">{esc(ONE_LINE)} {esc(ORIENTATION_BELOW)}</p>
 {room_line}</header>
@@ -2013,7 +2013,7 @@ def home_json_template():
         "headline": HEADLINE,
         "what_it_is": ONE_LINE,
         "orientation": ORIENTATION,
-        "who": f"{WHO_LINE} __LAUNCH_WORDS__ {LAUNCH_TEXT}.",
+        "who": f"{WHO_LINE} {LAUNCH_WORDS} {LAUNCH_TEXT}.",
         "from_the_core": [{"ref": a.replace("p", "") if a != "closing" else "closing", "label": s, "text": t, "url": f"{ORIGIN}/core#{a}"} for a, s, t in QUOTES],
         "declaration": {"source": f"{ORIGIN}/record#declaration", "lines": declaration_lines()},
         "record": [{"id": "CZ-CORE 1.0", "html": f"{ORIGIN}/core", "txt": f"{ORIGIN}/core.txt", "json": f"{ORIGIN}/core.json", "sha256_txt": CORE_SHA},
@@ -2300,7 +2300,7 @@ BUILT_FEATURES = [   # (feature, what it does here, since, without it)
     ("Invoker commands (commandfor, command) and <dialog closedby>", "Reply to an entry in place, without leaving the page and without a script", CZ1433, "A link to the reply page, beside the button"),
     ("CSS logical properties and dir", "Edges and indents follow the direction of the block they mark: a translation into Persian or Arabic is set right to left, its edge on the right; an entry keeps the page's direction, and its words their own (dir=\"auto\")", CZ1433, "—"),
     ("A colour for the machine layer: the edge and label of what an AI system declared it wrote, and of machine translation", "#116329 on white, #3fb950 on black, both at 7:1 or more; light-dark() where the browser has it", CZ1433, "The same colours by a media query"),
-    ("The same green for the day of the new count", "The large CZ day on the home page and today's date at the top of every page, as on the record's images; dates inside text and entries keep the page's colour", datetime.date(2026, 11, 5), "The same colours by a media query"),
+    ("The same green for the day of the new count", "The day count under the name on the first page and today's date at the top of every page, as on the record's images; dates inside text and entries keep the page's colour", datetime.date(2026, 11, 5), "The same colours by a media query"),
     ("Accept-Language", "A reader whose browser prefers another language is offered the page in it, as one link", CZ1433, "—"),
     ("Cross-document view transitions", "Moving between pages of this site fades instead of flashing; none for readers who ask for less motion", CZ1433, "The page changes at once, as it always did"),
     ("Speculation rules (prefetch, conservative)", "A link to another page of this site is fetched as you press it, so it opens a moment sooner", CZ1433, "The link is fetched when you release it"),
@@ -2460,8 +2460,7 @@ write("/404.html", NOT_FOUND.replace(f'<link rel="canonical" href="{ORIGIN}/404"
 HOME = home_template()
 HOME_JSON = home_json_template()
 HOME_TXT = to_text(HOME)
-# "launch" is not a form of the page (api/home.js serves only the strings): the day from which the launch is in the past, and the two wordings
-templates = {"html": HOME, "json": HOME_JSON, "txt": HOME_TXT, "launch": {"day": cz_day(LAUNCH), "before": LAUNCH_BEFORE, "since": LAUNCH_SINCE}}
+templates = {"html": HOME, "json": HOME_JSON, "txt": HOME_TXT}
 (SITE / "api" / "home-templates.json").write_text(json.dumps(templates, ensure_ascii=False) + "\n", "utf-8")
 # a filled copy for inspection and for the checks (not served: the function serves /)
 import importlib
@@ -2471,8 +2470,7 @@ def fill(s):
                  ("__NEXT_YEAR__", c["next_year"]), ("__NEXT_ISO__", c["next_iso"]), ("__NEXT_HUMAN__", c["next_human"]),
                  ("__ASOF_ISO__", c["asof_iso"]), ("__ASOF_HUMAN__", c["asof_human"]), ("__CZ_ISO__", c["cz_iso"]), ("__CZ_STAMP__", c["cz_stamp"]),
                  ("__CZ_DOYN__", c["cz_doyn"]), ("__CZ_SINCE__", c["cz_since"]), ("__CZ_TO_NEXT_N__", c["cz_to_next_n"]), ("__CZ_TO_NEXT__", c["cz_to_next"]),
-                 ("__CZ_NEXT_DAY__", c["cz_next_day"]), ("__UTC_DAY_SHORT__", c["utc_day_short"]), ("__CZ_ZONE__", "UTC"), ("__CZ_UTC_ISO__", c["cz_iso"]),
-                 ("__LAUNCH_WORDS__", LAUNCH_SINCE if c["total"] >= cz_day(LAUNCH) else LAUNCH_BEFORE), ("__ROOM_EXAMPLE__", "")):
+                 ("__CZ_NEXT_DAY__", c["cz_next_day"]), ("__UTC_DAY_SHORT__", c["utc_day_short"]), ("__CZ_ZONE__", "UTC"), ("__CZ_UTC_ISO__", c["cz_iso"]), ("__ROOM_EXAMPLE__", "")):
         s = s.replace(k, str(v))
     return s
 (SITE / "preview").mkdir(exist_ok=True)
