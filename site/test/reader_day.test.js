@@ -151,7 +151,7 @@ test("the first page: its heading is the reader's date; its data form names the 
   const now = Date.now();
   const h = await call(home, "/", { ...Z(EAST), accept: "text/html" });
   // the calendar line under the headline (23 Nov 2026): the day number carries the reader's date for a parser, and is the reader's day
-  const dE = CZ.todayIn(now, EAST), dW = CZ.todayIn(now, WEST), cal = (d) => `<a href="/calendar">CZ calendar</a> · <time class="d" datetime="${CZ.isoDate(...CZ.toGregorian(d))}">Day <data value="${d}">${d.toLocaleString("en-US")}</data></time></p>\n<p class="zero m"`;
+  const dE = CZ.todayIn(now, EAST), dW = CZ.todayIn(now, WEST), cal = (d) => `<a href="/calendar">CZ calendar</a> · <time class="d" datetime="${CZ.isoDate(...CZ.toGregorian(d))}">Day <data value="${d}">${d.toLocaleString("en-US")}</data></time></p>\n<p class="zero"`;
   assert.ok(h.body.includes(cal(dE)), "the calendar line, the reader's day");
   assert.ok((await call(home, "/", { ...Z(WEST), accept: "text/html" })).body.includes(cal(dW)) && dE !== dW, "another zone, another day");
   const NOTE = "Day 0: 30 November 2022, the day ChatGPT was released.", line = (d) => `CZ calendar · Day ${d.toLocaleString("en-US")}`;
@@ -159,7 +159,7 @@ test("the first page: its heading is the reader's date; its data form names the 
   assert.ok((await call(home, "/index.md?f=md", Z(EAST))).body.includes(`[CZ calendar](https://civilizationzero.ai/calendar) · Day ${dE.toLocaleString("en-US")}\n\n${NOTE}\n`), "Markdown form: the two lines, in this order");
   assert.equal(JSON.parse((await call(home, "/?f=json", Z(EAST))).body).calendar_line, line(dE), "data form");
   assert.equal(JSON.parse((await call(home, "/?f=json", Z(EAST))).body).calendar_note, NOTE, "data form, the second line");
-  assert.ok(h.body.includes('<p class="zero m"') && h.body.includes('>Day 0: <time datetime="2022-11-30">30 November 2022</time>, the day ChatGPT was released.</p>\n<p class="say m l"'), "the page: the small line under the calendar line, before the line on the figure");
+  assert.ok(h.body.includes('<p class="zero"') && h.body.includes('>Day 0: <time datetime="2022-11-30">30 November 2022</time>, the day ChatGPT was released.</p>\n<p class="say"'), "the page: the small line under the calendar line, before the line on the figure");
   assert.ok(!/<time datetime="[^"]+">CZ \d+<\/time><\/a><\/div>/.test(h.body) && !h.body.includes("d-stamp"), "the small date beside the name is gone");
   assert.equal(h.headers.vary, "Accept, X-Vercel-IP-Timezone");
   const j = JSON.parse((await call(home, "/?f=json", Z(WEST))).body);

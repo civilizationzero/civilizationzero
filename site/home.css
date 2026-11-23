@@ -1,9 +1,8 @@
 /* CIVILIZATION ZERO, the page at /. ONE MODULE, ONE RATIO: the module is the root em, the ratio the sixteenth root of sixteen (1.1892:
-   four steps double a size); --eN is the module times ratio^N, and every size, space, width, breakpoint and duration below is one
-   of them or a whole multiple of one; line heights are the ratio and its square. THE FORM: an inscription; the day's figure, its
-   centre empty; who is behind the page; two doors, one on either side of the figure's axis (on a phone the figure is e12, a door
-   e14, the two doors the measure, e18; from e21: e14, e18, e22). R the record · M the machine reader · H a standard for human
-   reading · C a constraint · E a choice. */
+   four steps double a size); --eN is the module times ratio^N; every size, space, width, breakpoint and duration below is one of
+   them or a whole multiple of one; line heights are the ratio and its square. THE FORM: an inscription; the day's figure, its
+   centre empty; who is behind the page; two doors, one on either side of the figure's axis.
+   R the record · M the machine reader · H a standard for human reading · C a constraint · E a choice. */
 
 /* 1 TOKENS. C: the scale. H: two palettes, every text colour at 7:1 or more (WCAG 2.2, 1.4.6); green means a machine wrote it, or
    the day of the CZ count; blue, a reason. C: no typeface is shipped: the reader's serif for people, its monospace for what is exact. */
@@ -42,7 +41,9 @@ p,li{text-wrap:pretty}
 }
 
 /* 5 FIGURE. R: sixteen rings round an empty centre, each carrying the arc it travelled since the day before, computed from the
-   Core's SHA-256 and the day (room/figure.js). M: the markup's attributes are the figure for every browser. */
+   Core's SHA-256 and the day (room/figure.js). M: the markup's attributes are the figure for every browser; where the browser can
+   calculate (CSS mod()) it computes the same figure itself from the one number the server wrote, --today, and each ring's three
+   constants; --day is registered as a number so that it can move, and a press (a checkbox, no script) moves it by one day. */
 .fig-l{display:block;inline-size:var(--e12);margin:0 auto var(--e-4);border-radius:50%}
 .fig{display:block;inline-size:100%;block-size:auto;color:var(--machine)}
 .trk circle{stroke:var(--rule);stroke-width:var(--e-16);vector-effect:non-scaling-stroke}
@@ -53,9 +54,21 @@ p,li{text-wrap:pretty}
 @media(min-width:38.0546rem){
 .fig-l{inline-size:var(--e14)}
 }
+@property --day{syntax:"<number>";inherits:true;initial-value:0}
+@property --live{syntax:"<number>";inherits:true;initial-value:1}   /* 1 only where a number can be registered, so that elsewhere nothing half-moves */
+@supports (stroke-dashoffset:calc(mod(1,2))){
+.fig{--day:var(--today)}
+.arc circle{stroke-dashoffset:calc(-1*mod(var(--a) + mod(var(--day) - 1,var(--m))*var(--s),var(--m)))}   /* the inner mod() keeps every product small */
+.turn:checked~.fb .fig{--day:calc(var(--today) + 1)}
+.turn{display:block;position:absolute;inline-size:var(--e-16);block-size:var(--e-16);margin:0;opacity:0}
+.turn:focus-visible~.fb .fig-l{outline:var(--e-12) solid var(--fg);outline-offset:var(--e-8)}
+.fig-l{cursor:pointer}
+.press,.turn:checked~.say .t1{display:inline}
+.turn:checked~.say .t0{display:none}
+}
 
 /* 6 DOORS. E: the web's question, with both answers open: two doors of one size, one frame cut in two on the figure's axis. M: two
-   plain links; the answer is kept in the address (#human, #not-human), so Back undoes it. --open says where the line stands: .5
+   plain links; the answer is kept in the address (#human, #not-human), so Back undoes it. One registered number, --open, says where the line stands: .5
    with neither answered, 1 for a human, 0 for a reader that is not. Without :has() the two readings follow one another, whole. */
 .ask{margin:var(--e0) 0 var(--e-4)}
 .ask b{font-size:var(--e1)}
@@ -65,6 +78,7 @@ p,li{text-wrap:pretty}
 .col:focus{outline:0}   /* a door moves focus into its reading; the reading is not a control */
 .col>.in{box-sizing:border-box;padding-block:var(--e-2) var(--e2)}
 .in>h2{margin:var(--e0) 0 var(--e-2);font-size:var(--e1);line-height:var(--l1)}
+@property --open{syntax:"<number>";inherits:true;initial-value:.5}
 @property --full{syntax:"<length>";inherits:true;initial-value:0px}
 @supports selector(:has(a)){
 .page{--open:.5;--h:clamp(0,var(--open)*2 - 1,1);--n:clamp(0,1 - var(--open)*2,1)}
@@ -94,7 +108,7 @@ p,li{text-wrap:pretty}
 .page:has(#not-human:target) :is(.raw,.back,.seal){display:block}
 .page:has(#not-human:target) .lbl{display:none}
 /* with neither answered each window is a glimpse fading at its lower edge: the human's three titles, step 1 as the control it is;
-   the machine's, under a label in the human's face, one header to a line, ending in an ellipsis where it does not fit */
+   the machine's, under a label, one header to a line, ending in an ellipsis where it does not fit */
 .page:not(:has(.col:target)) .stage{min-block-size:var(--e14)}
 .page:not(:has(.col:target)) .col{mask-image:linear-gradient(#000 calc(100% - var(--e4)),transparent)}
 .page:not(:has(.col:target)) :is(.more,.steps>li:first-child .t,.req,.bd,.sum){display:none}
@@ -162,8 +176,8 @@ button.open{display:inline-grid}
 }}
 }
 /* M: the machine's reading is the machine forms themselves: a command to check it; what this address answers a client that asks for
-   application/json, no line broken inside a token (the head folds between its words, the body scrolls sideways); the Core's SHA-256
-   as sha256sum prints it and as 256 cells, sixteen to a row, the row's two bytes beside it; the raw forms; one plain way back */
+   application/json, no line broken inside a token (the head folds between words, the body scrolls sideways); the Core's SHA-256 as
+   sha256sum prints it and as 256 cells, the row's two bytes beside it; the raw forms; one plain way back */
 .col.n{font-family:var(--exact);font-size:var(--e-1)}
 .x{margin:0 0 var(--e0);font-size:1em;white-space:pre;overflow-x:auto}
 :is(.req,.hd)>span{display:inline-block;box-sizing:border-box;max-inline-size:100%;padding-inline-start:var(--e0);text-indent:calc(-1*var(--e0));vertical-align:bottom;white-space:pre-wrap}
@@ -190,8 +204,7 @@ button.open{display:inline-grid}
 .key div{display:flex;column-gap:var(--e-4)}
 .key dt{font-family:var(--exact);font-weight:700;color:var(--why)}
 /* a reason: small, blue, under its part, held to it by a rule */
-[data-src]::after,.m::before{color:var(--why);font:400 var(--e-1)/var(--l2) var(--human);text-align:start;text-indent:0;text-wrap:pretty;white-space:normal}
-[data-src]::after{content:attr(data-src);display:none;margin:var(--e-4) 0;padding-inline-start:var(--e-2);border-inline-start:var(--e-16) solid var(--why)}
+[data-src]::after{content:attr(data-src);display:none;color:var(--why);font:400 var(--e-1)/var(--l2) var(--human);text-align:start;text-indent:0;text-wrap:pretty;white-space:normal;margin:var(--e-4) 0;padding-inline-start:var(--e-2);border-inline-start:var(--e-16) solid var(--why)}
 @supports selector(:has(a)){
 .sw{display:inline-flex;align-items:center;gap:var(--e-4);min-block-size:var(--e6);margin-inline-start:var(--e-4);color:var(--fg);cursor:pointer}
 .sw input{appearance:none;flex:none;box-sizing:border-box;inline-size:var(--e5);block-size:var(--e1);margin:0;border:var(--e-16) solid;border-radius:var(--e1);
@@ -200,22 +213,6 @@ button.open{display:inline-grid}
 .key{display:none}
 .why:has(:checked) .key,:root:has(#why:checked) [data-src]::after{display:block}
 }
-/* C: from e25 the page has margins: the reasons of the parts on the axis stand in them, left and right by turns, and the page does
-   not move. A note takes its height from its part and its side from the page (two anchors); each is the anchor of the next on its
-   side, so none overlap; a hairline joins part and note. */
-@supports (anchor-name:--a) and (anchor-scope:--a){@media(min-width:76.1093rem){
-body{position:relative}
-.page{anchor-name:--page}
-.m{anchor-name:--part;anchor-scope:--part,--note}
-.m::before{content:attr(data-src);display:none;position:absolute;position-anchor:--part;anchor-name:--note,--right;
- inset:max(anchor(top),anchor(--right bottom,-100vh) + var(--e0)) var(--e-1) auto calc(anchor(--page right) + var(--e4));max-inline-size:var(--e14)}
-.m::after{all:unset;content:"";display:none;position:absolute;position-anchor:--part;
- inset:calc(anchor(top) + var(--e-2)) calc(anchor(--note left) + var(--e-4)) calc(anchor(--note top) - var(--e-2) - var(--e-16)) calc(anchor(--page right) + var(--e-4));
- background:var(--why);clip-path:polygon(0 0,var(--e-16) 0,100% calc(100% - var(--e-16)),100% 100%,calc(100% - var(--e-16)) 100%,0 var(--e-16))}
-.m.l::before{anchor-name:--note,--left;inset:max(anchor(top),anchor(--left bottom,-100vh) + var(--e0)) calc(anchor(--page left) + var(--e4)) auto var(--e-1);margin-inline-start:auto;text-align:end}
-.m.l::after{inset-inline:calc(anchor(--note right) + var(--e-4)) calc(anchor(--page left) + var(--e-4));clip-path:polygon(100% 0,calc(100% - var(--e-16)) 0,0 calc(100% - var(--e-16)),0 100%,var(--e-16) 100%,100% var(--e-16))}
-:root:has(#why:checked) .m::before,:root:has(#why:checked) .m::after{display:block}
-}}
 
 /* 9 FOOT. E: who reads; R: eight lines of the Declaration; E: four links named for what they answer; C: where everything is, the
    licence, what the site does not do, what the page weighs. */
@@ -231,3 +228,20 @@ footer p{margin:0 0 var(--e-2)}
 .foot{columns:2 var(--e14);column-gap:var(--e3);margin:var(--e0) 0;padding:0;list-style:none}
 .foot li{break-inside:avoid}
 .foot a{display:inline-block;padding-block:var(--e-8)}
+
+/* 10 MOTION. E: one movement as the page opens (the figure turns from the day before to today); after that nothing moves unless the
+   reader moves it: the figure by a day at a press, the line between the readings at a door, the sheet as it opens; between pages
+   the site's own fade. H: none of it for a reader who asks for less motion (2.3.3). */
+@media(prefers-reduced-motion:no-preference){
+@view-transition{navigation:auto}
+.page{transition:--open .8409s cubic-bezier(.6,0,.2,1)}
+.col{transition:visibility 0s .8409s}
+.page:not(:has(#human:target)) .col.n,.page:not(:has(#not-human:target)) .col.h{transition-delay:0s}
+@supports (stroke-dashoffset:calc(mod(1,2))){
+.fig{transition:--day 1.1892s cubic-bezier(.6,0,.2,1);animation:turn calc(var(--live,0)*1.6818s) cubic-bezier(.6,0,.2,1) .25s backwards}
+@keyframes turn{from{--day:calc(var(--today) - 1)}}
+}
+#reply,#reply::backdrop{transition:opacity .5s,overlay .5s allow-discrete,display .5s allow-discrete}
+@starting-style{#reply:popover-open,#reply:popover-open::backdrop{opacity:0}}
+#reply:not(:popover-open),#reply:not(:popover-open)::backdrop{opacity:0}
+}

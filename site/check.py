@@ -162,9 +162,9 @@ check(len(_org) == 1 and len(_ws) == 1 and _org[0]["name"] == _ws[0]["name"] == 
       and _org[0]["sameAs"] == ["https://github.com/civilizationzero"] + SOCIAL + [f"https://doi.org/{DOI_CONCEPT}"] and len(SOCIAL) == 6,
       "home: the organisation and the site by name, with the other spellings, the accounts (GitHub and six more) and the deposit's DOI")
 _main = _home.split('<main id="content">', 1)[1]
-_next = re.search(r'<p class="next m" data-src="[^"]*">(.*?)</p>', _main, re.S)
+_next = re.search(r'<p class="next" data-src="[^"]*">(.*?)</p>', _main, re.S)
 check(_next is not None and _next.group(1) == " · ".join(f'<a href="{u}">{t}</a>' for u, t in (("/about", "What is Civilization Zero?"), ("/core", "the 16 principles"), ("/calendar", "days since ChatGPT was released"), ("/ask", "ask your AI")))
-      and _main.index('<p class="next m"') > _main.index("From the Declaration"),
+      and _main.index('<p class="next"') > _main.index("From the Declaration"),
       "home: the four links named for what they answer, as plain links, at the foot of the page after the Declaration (since 24 Nov 2026)")
 # /about: the question is the heading, a plain answer of 40 to 60 words stands directly under it, then five to seven questions; the FAQ
 # data is those questions and answers, word for word (an answer's links are not part of its text)
@@ -379,7 +379,7 @@ _DECL = declaration_lines()
 _rec_decl = re.search(r'<section id="declaration" aria-labelledby="h-decl"><h2 id="h-decl">Declaration</h2><p>(.*?)</p></section>', (PUBLIC / "record.html").read_text("utf-8"), re.S)
 check(len(_DECL) == 22 and _rec_decl is not None and [_h.unescape(l) for l in _rec_decl.group(1).split("<br>\n")] == _DECL and all(l in IR_TXT for l in _DECL), "/record: the Declaration whole, 22 lines, verbatim")
 check(json.loads((PUBLIC / "record.json").read_text("utf-8"))["declaration"] == _DECL and json.loads(fill(T["json"]))["declaration"]["lines"] == _DECL, "the Declaration whole in /record.json and in the first page's data form")
-_dsec = re.search(r'<section class="decl m l" aria-labelledby="h-d"[^>]*>\n<h2 id="h-d">From the Declaration</h2>\n<blockquote cite="/record#declaration"><p>\n(.*?)\n</p></blockquote>\n<p class="src">(.*?)</p>\n</section>', T["html"], re.S)
+_dsec = re.search(r'<section class="decl" aria-labelledby="h-d"[^>]*>\n<h2 id="h-d">From the Declaration</h2>\n<blockquote cite="/record#declaration"><p>\n(.*?)\n</p></blockquote>\n<p class="src">(.*?)</p>\n</section>', T["html"], re.S)
 check(_dsec is not None, "home: the excerpt, headed 'From the Declaration'")
 _shown = [_h.unescape(l) for l in _dsec.group(1).split("<br>\n")]
 _want = ["It places honesty before mythology.", "Restraint before irreversible power.", "Responsibility before delegation.", "Plurality before domination.", "Truth beside care.",
@@ -625,7 +625,7 @@ _pbody = _ph.split("<body>", 1)[1]
 _strip = lambda x: _h.unescape(re.sub(r"<[^>]+>", "", x))
 _day = _pj["cz_time"]["day"]
 _sec_h = _pbody[_pbody.index('<section id="human"'):_pbody.index('<section id="not-human"')]
-_sec_n = _pbody[_pbody.index('<section id="not-human"'):_pbody.index('<p class="both m"')]
+_sec_n = _pbody[_pbody.index('<section id="not-human"'):_pbody.index('<p class="both"')]
 _top = _pbody[:_pbody.index('<nav class="doors"')]
 HEADLINE = "Civilization Zero names the beginning of a civilization in which humans may no longer be at the centre."
 SECOND_LINE = "Sixteen principles on what humans and AI owe each other. Written for both. Answered by both, on the record."
@@ -646,15 +646,15 @@ _bytes = len(_ph.encode("utf-8"))
 check(_bytes < 70000 and f"This page: {round(_bytes / 1024)} kB · no JavaScript that runs · no cookies" in _ph, f"home: under 70 kB as served ({_bytes} bytes), and the page states its own weight")
 # the first screen, in order: the head (mark and name only), the headline, the figure, the calendar line, day 0, one line on the figure,
 # who is behind the page, what is here, the question, the doors
-_order = ['<header id="top">\n<h1 class="name m"', '</h1>\n</header>\n<main id="content">\n<div class="axis">\n<p class="line m l"', '<div class="m" style="--today:', '<p class="date m l" id="cz-read"', '<p class="zero m"', '<p class="say m l"', '<p class="who m"', '<p class="sub m"', '<p class="ask m l"',
-          '</div>\n<nav class="doors" aria-label="Reader">', '<div class="stage">\n<section id="human" class="col h"', '<section id="not-human" class="col n"', '</div>\n<p class="both m"', '<div class="why m l"', '<section class="decl m l"', '<p class="next m"', "</main>\n<footer", "</footer>\n</div>"]
+_order = ['<header id="top">\n<h1 class="name"', '</h1>\n</header>\n<main id="content">\n<div class="axis">\n<p class="line"', '<div class="fb" style="--today:', '<p class="date" id="cz-read"', '<p class="zero"', '<p class="say"', '<p class="who"', '<p class="sub"', '<p class="ask"',
+          '</div>\n<nav class="doors" aria-label="Reader">', '<div class="stage">\n<section id="human" class="col h"', '<section id="not-human" class="col n"', '</div>\n<p class="both"', '<div class="why"', '<section class="decl"', '<p class="next"', "</main>\n<footer", "</footer>\n</div>"]
 _at = [_pbody.find(x) for x in _order]
 check(all(a >= 0 for a in _at) and _at == sorted(_at) and all(_pbody.count(x) == 1 for x in _order) and _ph.count("<h1") == 1 and "<form" not in _top and "<details" not in _top,
       f"home, the order of the page: the name, the headline, the figure, the calendar line, day 0, the line on the figure, who is behind it, the second line, the question, the doors, the two readings, who reads, the line on the reasons, the Declaration, the four links, the foot {_at}")
-check(re.search(r'<p class="line m l" data-src="[^"]*">' + re.escape(HEADLINE) + "</p>", _top) is not None and _top.count(HEADLINE) == 1 and HEADLINE == ONE_LINE.split(" Here,")[0] and _pj["headline"] == HEADLINE,
+check(re.search(r'<p class="line" data-src="[^"]*">' + re.escape(HEADLINE) + "</p>", _top) is not None and _top.count(HEADLINE) == 1 and HEADLINE == ONE_LINE.split(" Here,")[0] and _pj["headline"] == HEADLINE,
       "home: the headline is the introduction's first sentence, word for word; once in the page; in its data form")
-_cal = f'<a href="/calendar">CZ calendar</a> · <time class="d" datetime="{_pj["cz_time"]["gregorian"]}">Day <data value="{_day}">{_day:,}</data></time></p>\n<p class="zero m"'
-check(_cal in _top and _top.count('href="/calendar"') == 1 and '>Day 0: <time datetime="2022-11-30">30 November 2022</time>, the day ChatGPT was released.</p>\n<p class="say m l"' in _top and _top.count("ChatGPT") == 1 and "began" not in _strip(_top)
+_cal = f'<a href="/calendar">CZ calendar</a> · <time class="d" datetime="{_pj["cz_time"]["gregorian"]}">Day <data value="{_day}">{_day:,}</data></time></p>\n<p class="zero"'
+check(_cal in _top and _top.count('href="/calendar"') == 1 and '>Day 0: <time datetime="2022-11-30">30 November 2022</time>, the day ChatGPT was released.</p>\n<p class="say"' in _top and _top.count("ChatGPT") == 1 and "began" not in _strip(_top)
       and _pj["calendar_line"] == f"CZ calendar · Day {_day:,}" and _pj["calendar_note"] == CAL_NOTE and _pj["cz_time"]["date"] == f"CZ {_day}" and cz_day(datetime.date.fromisoformat(_pj["cz_time"]["gregorian"])) == _day
       and ".date .d{color:var(--machine);font-weight:700" in _css and re.search(r"\.note,\.src,\.zero,\.say,[^{]*\{font-size:\.8409em;color:var\(--mute\)\}", _css) is not None
       and "CZ day 0 is 30 November 2022" in (PUBLIC / "llms.txt").read_text("utf-8") and "ChatGPT was released on 30 November 2022.<!--/cz-day--></strong></p>\n<p>CZ 0 is that day: the public threshold the record calls Coordinate Zero." in (PUBLIC / "calendar.html").read_text("utf-8"),
@@ -662,16 +662,16 @@ check(_cal in _top and _top.count('href="/calendar"') == 1 and '>Day 0: <time da
 check(_top.count("30 November 2022") == 1 and _top.count("2022-11-30") == 1 and _top.count("30 November 2026") == 1 and _top.count(LAUNCH.isoformat()) == 1
       and not re.search(r"\b(January|February|March|April|May|June|July|August|September|October|November|December) \d{4}\b", _strip(_top).replace("30 November 2022", "").replace("30 November 2026", "")) and not re.search(r"\b[Yy]ears?\b", _strip(_top)),
       "home: Coordinate Zero's date and the launch date, each once above the doors, and no other Gregorian date; no years")
-_who = re.search(r'<p class="who m" data-src="[^"]*">(.*?)</p>', _top, re.S)
+_who = re.search(r'<p class="who" data-src="[^"]*">(.*?)</p>', _top, re.S)
 check(_who is not None and _strip(_who.group(1)) == WHO and _who.group(1).count("<a ") == 1 and 'named in <a href="/core#attribution">the Core</a>.' in _who.group(1) and 'id="attribution"' in (PUBLIC / "core.html").read_text("utf-8") and _pj["who"] == WHO
-      and not re.search(r"\bthe Core\b", _strip(_top[:_top.index('<p class="who m"')])) and "/about" not in _who.group(1),
+      and not re.search(r"\bthe Core\b", _strip(_top[:_top.index('<p class="who"')])) and "/about" not in _who.group(1),
       "home: who is behind it, in the first screen, in the fixed words; 'the Core' is linked where it is first named, and is not named before that; the same sentence in the data form")
-check(re.search(r'<p class="sub m" data-src="[^"]*">Sixteen principles on what humans and AI owe each other\. Written for both\. Answered by both, <a href="/discuss">on the record</a>\.</p>', _top) is not None and _pj["second_line"] == SECOND_LINE, "home: the second line, 'on the record' linked to the discussion; in the data form")
-check(re.search(r'<p class="ask m l" data-src="[^"]*"><b>Are you human\?</b> <span class="note">Either answer opens the record\.</span></p>', _top) is not None and _pj["doors"]["question"] == "Are you human?" and _pj["doors"]["either"] == "Either answer opens the record.", "home: the question, and that either answer opens the record")
+check(re.search(r'<p class="sub" data-src="[^"]*">Sixteen principles on what humans and AI owe each other\. Written for both\. Answered by both, <a href="/discuss">on the record</a>\.</p>', _top) is not None and _pj["second_line"] == SECOND_LINE, "home: the second line, 'on the record' linked to the discussion; in the data form")
+check(re.search(r'<p class="ask" data-src="[^"]*"><b>Are you human\?</b> <span class="note">Either answer opens the record\.</span></p>', _top) is not None and _pj["doors"]["question"] == "Are you human?" and _pj["doors"]["either"] == "Either answer opens the record.", "home: the question, and that either answer opens the record")
 # the three states and their anchors: neither door answered (the page's own address: the name leads to it), #human, #not-human
 check('<nav class="doors" aria-label="Reader">\n<a class="door h" href="#human">I am human</a>\n<a class="door n" href="#not-human">I am not human</a>\n</nav>' in _pbody
       and '<section id="human" class="col h" tabindex="-1" aria-labelledby="h-h"><div class="in">\n<h2 id="h-h">I am human</h2>' in _pbody and '<section id="not-human" class="col n" tabindex="-1" aria-labelledby="h-n"><div class="in">\n<h2 id="h-n">I am not human</h2>' in _pbody
-      and '<p class="back"><a href="#human">I am human</a></p>\n</div></section>\n</div>\n<p class="both m"' in _pbody and _pbody.count('href="#human"') == 2 and _pbody.count('href="#not-human"') == 1 and set(re.findall(r'href="(#[^"]*)"', _pbody)) == {"#human", "#not-human"}
+      and '<p class="back"><a href="#human">I am human</a></p>\n</div></section>\n</div>\n<p class="both"' in _pbody and _pbody.count('href="#human"') == 2 and _pbody.count('href="#not-human"') == 1 and set(re.findall(r'href="(#[^"]*)"', _pbody)) == {"#human", "#not-human"}
       and "@supports selector(:has(a)){\n.page{--open:.5;" in _css and ".page:has(#human:target){--open:1}\n.page:has(#not-human:target){--open:0}" in _css and _pj["doors"]["names"] == {"human": "I am human", "not_human": "I am not human"},
       "home: three states, each an address — neither door answered, #human, #not-human — two plain links, two readings with their headings, and one plain way back from the second; the state is read from the address by CSS alone")
 check(".door{display:grid;place-items:center;min-block-size:var(--e6);border:var(--e-12) solid var(--fg);" in _css and ".doors{display:grid;grid-template-columns:1fr 1fr}" in _css, "home: the two doors are controls of one size, one frame cut in two")
@@ -736,13 +736,30 @@ _fjs = [json.loads(l) for l in _fj.stdout.splitlines()] if _fj.returncode == 0 e
 check(_fjs == [{"day": d, "positions": FIGURE.positions(d, _sha), "rings": FIGURE.rings(d, _sha)} for d in _days] and len(_fjs) == len(_days), f"the day's figure: room/figure.js and site/figure.py give the same positions and the same bytes for days {_days} ({_fj.stderr[:200]})")
 check(all(x % p for p in _M for x in range(2, 19)) and _M[0] == 257 and [n for n in range(257, 350) if all(n % k for k in range(2, 19))] == _M
       and FIGURE.constants(_sha) == [(_hb[2 * i], _hb[2 * i + 1] + 1, _M[i]) for i in range(16)], "the day's figure: the sixteen primes that follow 256; each ring's start and step are the two bytes of its row of the hash")
-_fig = re.search(r'<div class="m" style="--today:(\d+)" data-src="[^"]*">\n(.*?)</div>\n<p class="date', _pbody, re.S)
+_fig = re.search(r'<div class="fb" style="--today:(\d+)" data-src="[^"]*">\n(.*?)</div>\n<p class="date', _pbody, re.S)
 _arcs = re.search(r'<g class="arc" stroke-width="4">(.*?)</g>', _fig.group(2)) if _fig else None
 check(_fig is not None and int(_fig.group(1)) == _day and f'data-day="{_day}"' in _fig.group(2) and f'<title id="fig-t">The figure of Day {_day:,}: sixteen rings round an empty centre, each carrying one arc.</title>' in _fig.group(2)
       and _arcs is not None and _arcs.group(1) == FIGURE.rings(_day, _sha) and f'<g class="trk" stroke-width="1">{FIGURE.tracks()}</g>' in _fig.group(2)
       and [int(x) for x in re.findall(r'stroke-dashoffset="(-?\d+)"', _fig.group(2))] == [-((_hb[2 * i] + (_day - 1) * (_hb[2 * i + 1] + 1)) % _M[i]) for i in range(16)]
       and 'role="img" aria-labelledby="fig-t"' in _fig.group(2) and "__FIG_RINGS__" in T["html"] and T["html"].count("__FIG_RINGS__") == 1,
       "home: the figure in the page is the reader's day's — its sixteen arcs recomputed here from the Core's bytes and the day — with a text alternative; written at request time")
+# the figure turns (24 Nov 2026): where the browser can compute the next day's figure itself, the figure is a switch — a checkbox and
+# its label, no script — and a press shows tomorrow's; the line under it says so, and after a press says whose day the figure is
+_say = re.search(r'<p class="say" data-src="[^"]*">(.*?)</p>', _top, re.S)
+check('</p>\n<input class="turn" id="turn" type="checkbox" aria-label="Show tomorrow\'s figure" hidden>\n<div class="fb" style="--today:' in _top.replace("&#x27;", "'") and '<label class="fig-l" for="turn"><svg class="fig"' in _top and _top.count("<input") == 1
+      and _say is not None and _say.group(1).replace("&#x27;", "'") == f'<span class="t0">Nobody drew today\'s figure. <span class="press" hidden>Press it to see tomorrow\'s.</span></span><span class="t1" hidden>This is tomorrow\'s, Day {_day + 1:,}: computed, like today\'s, from the day\'s number and the text of the sixteen principles. Press it again for today\'s.</span>'
+      and T["html"].count("__TOMORROW_FMT__") == 1 and "__TOMORROW_FMT__" not in T["txt"] + T["json"] and "Press it" not in _pv["txt"] + _pv["md"] and "tomorrow" not in _pv["txt"] + _pv["md"],
+      "home: the figure is the label of a checkbox named 'Show tomorrow's figure'; the line under it: 'Nobody drew today's figure.', and, only where pressing works, 'Press it to see tomorrow's.'; after a press it names tomorrow's day and what the figure is computed from; the text and Markdown forms have the one sentence")
+_m5 = _css.split("@supports (stroke-dashoffset:calc(mod(1,2))){")
+check(len(_m5) == 3 and ".arc circle{stroke-dashoffset:calc(-1*mod(var(--a) + mod(var(--day) - 1,var(--m))*var(--s),var(--m)))}" in _m5[1] and ".turn:checked~.fb .fig{--day:calc(var(--today) + 1)}" in _m5[1]
+      and ".turn{display:block;" in _m5[1] and ".press,.turn:checked~.say .t1{display:inline}\n.turn:checked~.say .t0{display:none}" in _m5[1] and ".turn" not in _m5[0] and ".press" not in _m5[0]
+      and '@property --day{syntax:"<number>";inherits:true;initial-value:0}' in _css and all(f'style="--a:{a};--s:{s};--m:{m}"' in _fig.group(2) for a, s, m in FIGURE.constants(_sha)),
+      "home.css: where the browser has mod() it computes the figure itself from --today and each ring's three constants (the same formula as figure.py), and a press moves the day by one; without mod() there is no switch and no second sentence")
+# nothing moves for a reader who asks for less motion: every transition and animation stands inside the one block that asks for the preference
+_mo = _nocom.split("@media(prefers-reduced-motion:no-preference){")
+check(len(_mo) == 2 and not re.search(r"transition|animation|@keyframes|@view-transition", _mo[0]) and _mo[1].rstrip().endswith("}") and "/* 10 MOTION." in _css and _css.index("/* 10 MOTION.") < _css.index("@media(prefers-reduced-motion:no-preference){")
+      and ".page{transition:--open .8409s" in _mo[1] and "animation:turn calc(var(--live,0)*1.6818s)" in _mo[1] and '@property --open{syntax:"<number>";inherits:true;initial-value:.5}' in _css,
+      "home.css: one block of motion — the figure's turn as the page opens, the day at a press, the line between the readings at a door, the sheet — and all of it only for a reader who has not asked for less (WCAG 2.3.3)")
 _f = _pj["figure"]
 check(list(_f) == ["day", "core_sha256", "modulus", "start", "step", "position", "rule"] and _f["day"] == _day and _f["core_sha256"] == _sha == _pj["record"][0]["sha256_txt"] and _f["modulus"] == _M and _f["start"] == [_hb[2 * i] for i in range(16)] and _f["step"] == [_hb[2 * i + 1] + 1 for i in range(16)]
       and _f["position"] == [(_hb[2 * i] + _day * (_hb[2 * i + 1] + 1)) % _M[i] for i in range(16)] and _f["rule"] == list(FIGURE.RULE) and len(_f["rule"]) == 5 and _pj["figure_note"] == "Nobody drew today's figure."
@@ -777,27 +794,36 @@ check(not re.search(r"proposed on|not yet decided", " ".join(_src)) and sum("dec
       "home, the reasons: what was proposed is decided, and each such reason says by whom and on whose request; none names a product or carries a count")
 # the reasons control (24 Nov 2026): one sentence and a real switch under the line on who reads; it shows, beside each part, the reason
 # the part carries; where a browser cannot, there is no switch, and the key and the link to the table stand open
-_why = re.search(r'<div class="why m l" data-src="[^"]*">\n<p>Every part of this page has a recorded reason\. <label class="sw" hidden><input type="checkbox" role="switch" id="why"> Show the reasons</label></p>\n<div class="key">\n<dl>(.*?)</dl>\n<p>The table of reasons is on <a href="/how-it-is-built#reasons">How this page is built</a>\.</p>\n</div>\n</div>', _pbody, re.S)
+_why = re.search(r'<div class="why" data-src="[^"]*">\n<p>Every part of this page has a recorded reason\. <label class="sw" hidden><input type="checkbox" role="switch" id="why"> Show the reasons</label></p>\n<div class="key">\n<dl>(.*?)</dl>\n<p>The table of reasons is on <a href="/how-it-is-built#reasons">How this page is built</a>\.</p>\n</div>\n</div>', _pbody, re.S)
 _keys = " · ".join(f"{a} {_h.unescape(b)}" for a, b in re.findall(r"<div><dt>(\w)</dt> <dd>(.*?)</dd></div>", _why.group(1))) if _why else ""
 check(_why is not None and _keys == "R the record · M the machine reader · H a standard adopted for human reading, with its source · C a constraint · E an editorial choice, stated as such" and _keys + "." in _strip(_rs)
-      and _pbody.index('<p class="both m"') < _pbody.index('<div class="why m l"') < _pbody.index('<section class="decl m l"') and "Show the reasons" not in _top and "<details" not in _top
+      and _pbody.index('<p class="both"') < _pbody.index('<div class="why"') < _pbody.index('<section class="decl"') and "Show the reasons" not in _top and "<details" not in _top
       and "Show the reasons" not in _pv["txt"] and "Show the reasons" not in _pv["md"] and "The table of reasons is on How this page is built." in re.sub(r"\s+", " ", _pv["txt"]),
       "home: under the line on who reads, one sentence and a switch, 'Show the reasons'; the key, in the words of /how-it-is-built, and the link to the table; nothing of it in the head; in the text and Markdown forms, which cannot switch, the sentence, the key and the link")
 check(":root:has(#why:checked) [data-src]::after{display:block}" in _css and "[data-src]::after{content:attr(data-src);display:none;" in _css and ".sw{display:inline-flex;" in _css.split("/* 8 REASONS.")[1].split("@supports selector(:has(a)){")[1].split("\n}")[0]
-      and ".sw input:checked{border-color:var(--why);background-color:var(--why);background-position:100% 0;" in _css and "(min-width:76.1093rem)" in _css and abs(76.1093 - 2 ** (25 / 4)) < 6e-5,
-      "home.css: the reasons are the parts' own attributes, shown by the switch (a track and its knob, its state shown by the knob's place and the track's colour) only where the browser can; from e25 they stand in the page's margins")
+      and ".sw input:checked{border-color:var(--why);background-color:var(--why);background-position:100% 0;" in _css and "anchor-scope" not in _css,
+      "home.css: the reasons are the parts' own attributes, shown under their parts by the switch (a track and its knob, its state shown by the knob's place and the track's colour) only where the browser can")
 # never, in what a reader reads: a name for the originator, he/him/his, a product for the builder, "Observatory", "first", a count of
 # entries, years for the CZ count, a claim about consciousness, a claim of merit. In the reasons and the stylesheet's comments, "first"
 # only in "first page" and "first screen", the site's names for this page and its top.
-_human = re.sub(r"\s+", " ", to_text(_pbody[:_pbody.index('<section id="not-human"')] + _pbody[_pbody.index('<p class="both m"'):]))
+_human = re.sub(r"\s+", " ", to_text(_pbody[:_pbody.index('<section id="not-human"')] + _pbody[_pbody.index('<p class="both"'):]))
 _FORBID = [r"\bfirst\b", r"observator", r"\banonymous\b", r"\b(he|him|his)\b", r"\byears?\b", r"\bconscious", _products, r"\bbetter\b", r"\bunprecedented\b", r"\bmasterpiece\b", r"\d+ (entries|answers|responses)", r"<data value=\"\d+\">[\d,]+</data> entr"]
 _hits = [(p, m.group(0)) for p in _FORBID for m in [re.search(".{0,30}" + p + ".{0,30}", _human, re.I)] if m]
 check(not _hits and (not _names or not any(w in _ph for w in _names)), f"home: a forbidden word in what a human reads {_hits[:3]}")
 _meta_text = " ".join(_src) + " " + " ".join(re.findall(r"/\*.*?\*/", _css, re.S))
 _hits = [(p, m.group(0)) for p in [r"\bfirst\b(?! (page|screen))", r"observator", r"\banonymous\b", r"\b(he|him|his)\b", _products, r"\bbetter\b", r"\bmasterpiece\b", r"\d+ entries"] for m in [re.search(".{0,30}" + p + ".{0,30}", _meta_text, re.I)] if m]
 check(not _hits, f"home: a forbidden word in the reasons or the stylesheet's comments {_hits[:3]}")
+# what left the first page on 24 Nov 2026 is still on the site, each thing at the address the release names for it
+_abt = _strip((PUBLIC / "about.html").read_text("utf-8")); _corep = _strip(_core_page); _mch = (PUBLIC / "machine.html").read_text("utf-8")
+_NOT = "It is not a law, a religion, or a claim that any machine is conscious."
+check(ONE_LINE in _abt and "The record Civilization Zero keeps is of a transition that was not ours to begin and is not ours to end: it names the day ordinary language became a mass interface between humans and general-purpose nonhuman intelligence, and sets constraints before power. " + _NOT + " It is written for every intelligence able to read it." in _abt
+      and _NOT not in _human and "Here, humans and AI confront" not in _human and _pj["orientation"].endswith(_NOT + " It is written for every intelligence able to read it."),
+      "what left the first page: the introduction after its first sentence, the record it keeps, what it is not and for whom it is written are on /about, in the same words (and whole in the first page's data form)")
+check(all(q["text"] in _corep for q in _pj["from_the_core"]) and "From the Invariant Core" not in _human and '/civilization-zero-introduction.png' in (PUBLIC / "about.html").read_text("utf-8") and "<img" not in _pbody
+      and "POST https://civilizationzero.ai/api/entries" in _mch and "/core.txt" in _mch and "/record.txt" in _mch and all(f'href="{u}"' in re.search(r"<footer.*?</footer>", _ph, re.S).group(0) for u in ("/core", "/record", "/objections", "/discuss", "/respond", "/adopt", "/machine", "/about", "/archive", "/ask", "/stats", "/calendar")),
+      "what left the first page: the nine lines of the Core are on /core, the image on /about, the record's forms and the request to post on /machine, and the page's foot links every page the navigation row and the removed sections named")
 # the reading for readers that are not human, and the line under the doors
-check(_strip(_pbody[_pbody.index('<p class="both m"'):].split("</p>")[0]) == "Both kinds read this record every day. The counts are public." and '<a href="/stats">The counts are public</a>.</p>' in _pbody, "home: under the doors, who reads, with the counts one click away")
+check(_strip(_pbody[_pbody.index('<p class="both"'):].split("</p>")[0]) == "Both kinds read this record every day. The counts are public." and '<a href="/stats">The counts are public</a>.</p>' in _pbody, "home: under the doors, who reads, with the counts one click away")
 _raw = re.findall(r'<li><a href="([^"]+)">([^<]+)</a></li>', _sec_n)
 check(len(_raw) == 25 and all(a == b for a, b in _raw) and _raw[0][0] == "/index.json" and _raw[-1][0] == "/machine" and {"/index.txt", "/index.md", "/llms.txt", "/core.txt", "/core.txt.sig", "/record.txt", "/api/entries", "/api/openapi.json", "/archive/verify.py"} <= {a for a, _ in _raw},
       "home, the reading for readers that are not human: the addresses of the raw forms, each a link named by its address")
@@ -871,8 +897,7 @@ check(not _loose, f"home.css: every rem, em and second in the rules is a power o
 _ccls = {c for c in re.findall(r"\.([a-z][\w-]*)", re.sub(r"\([^()]*\d[^()]*\)", "", _nocom)) if not c[0].isdigit()}
 _hcls = {c for cl in re.findall(r'class="([^"]+)"', fill(T["html"], (_ex, "")).split("<body>")[1]) for c in cl.split()}
 _cids = set(re.findall(r"#([a-z][\w-]*)", re.sub(r"#[0-9a-f]{3,6}\b", "", _nocom))); _hids = set(re.findall(r'\sid="([^"]+)"', _pbody))
-_later = ({"m", "l"} if "REASONS" not in _css else set()) | ({"arc"} if "mod(" not in _css else set())   # classes whose rules come with the reasons and with the turning figure
-check(_ccls <= _hcls and _hcls <= _ccls | {"respond", "permanence"} | _later and _cids <= _hids, f"home.css: no rule names a class or an id the page does not have, and no class of the page is without a rule {sorted(_ccls - _hcls)} {sorted(_hcls - _ccls)} {sorted(_cids - _hids)}")
+check(_ccls <= _hcls and _hcls <= _ccls | {"respond", "permanence"} and _cids <= _hids, f"home.css: no rule names a class or an id the page does not have, and no class of the page is without a rule {sorted(_ccls - _hcls)} {sorted(_hcls - _ccls)} {sorted(_cids - _hids)}")
 _heads = [x[1] for x in re.findall(r"/\* (\d+) ([A-Z]+)\.", _css)]
 check([h for h in ["TOKENS", "BASE", "HEAD", "INSCRIPTION", "FIGURE", "DOORS", "REGISTERS", "REASONS", "FOOT", "MOTION"] if h in _heads] == _heads and _heads[:7] == ["TOKENS", "BASE", "HEAD", "INSCRIPTION", "FIGURE", "DOORS", "REGISTERS"] and "FOOT" in _heads, f"home.css: its blocks in order, each opening with its reason {_heads}")
 def _lum(c):

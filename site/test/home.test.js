@@ -52,6 +52,16 @@ test("the day's figure in the page and in the data form is the reader's day's", 
   assert.ok(!/__[A-Z_]+__/.test((await page()).replace(/https?:\/\/\S+/g, "")), "no placeholder left");
 });
 
+test("the figure's switch and its line: today's at rest; after a press, tomorrow's day, named for the reader's zone", async () => {
+  for (const zone of [EAST, WEST]) {
+    const d = CZ.todayIn(Date.now(), zone), b = unesc(await page(zone));
+    assert.ok(b.includes('<input class="turn" id="turn" type="checkbox" aria-label="Show tomorrow\'s figure" hidden>') && b.includes('<label class="fig-l" for="turn"><svg class="fig"'), "a checkbox and its label, the figure; hidden unless the browser can compute the next day");
+    assert.ok(b.includes(`<span class="t0">Nobody drew today's figure. <span class="press" hidden>Press it to see tomorrow's.</span></span><span class="t1" hidden>This is tomorrow's, Day ${(d + 1).toLocaleString("en-US")}: computed, like today's, from the day's number and the text of the sixteen principles. Press it again for today's.</span>`), `${zone}: the line, and the line after a press`);
+  }
+  const txt = (await call("/?f=txt")).body, j = await data();
+  assert.ok(txt.includes("Nobody drew today's figure.\n") && !/Press it|tomorrow/.test(txt) && j.figure_note === "Nobody drew today's figure.", "a form that cannot be pressed has the one sentence");
+});
+
 test("three states, each an address: neither door answered, #human, #not-human", async () => {
   const b = await page();
   assert.ok(b.includes('<nav class="doors" aria-label="Reader">\n<a class="door h" href="#human">I am human</a>\n<a class="door n" href="#not-human">I am not human</a>\n</nav>'), "two doors, two plain links");
@@ -60,7 +70,7 @@ test("three states, each an address: neither door answered, #human, #not-human",
   assert.ok(b.indexOf('<section id="human"') < b.indexOf('<section id="not-human"') && b.includes('<p class="back"><a href="#human">I am human</a></p>'), "one plain way back at the end of the second reading");
   assert.equal((b.match(/ id="(human|not-human)"/g) || []).length, 2);
   assert.deepEqual([...new Set([...b.matchAll(/href="(#[^"]*)"/g)].map((m) => m[1]))].sort(), ["#human", "#not-human"], "no other in-page address");
-  assert.ok(/<h1 class="name m"[^>]*><a href="\/">/.test(b), "the name leads to the page with neither door answered");
+  assert.ok(/<h1 class="name"[^>]*><a href="\/">/.test(b), "the name leads to the page with neither door answered");
   const css = b.split("<style>")[1].split("</style>")[0];
   assert.ok(css.includes("@supports selector(:has(a)){\n.page{--open:.5;") && css.includes(".page:has(#human:target){--open:1}\n.page:has(#not-human:target){--open:0}"), "the state is read from the address by CSS alone");
   assert.ok(!/<script(?![^>]*type="(application\/ld\+json|speculationrules)")/.test(b) && !/\son[a-z]+\s*=/.test(b.split("<body>")[1]), "no script that runs, no event attribute");
@@ -137,7 +147,7 @@ test("the Core's SHA-256 unrolled: the 256 cells and the bytes beside the rows a
 
 test("no forbidden word in what a human reads, in the reasons, or in the names of the page's parts", async () => {
   const b = await page(), body = b.split("<body>")[1];
-  const human = text(body.slice(0, body.indexOf('<section id="not-human"')) + body.slice(body.indexOf('<p class="both m"')));
+  const human = text(body.slice(0, body.indexOf('<section id="not-human"')) + body.slice(body.indexOf('<p class="both"')));
   for (const re of [/\bfirst\b/i, /observator/i, /\banonymous\b/i, /\b(he|him|his)\b/i, /\byears?\b/i, /\bconscious/i, /\b(Anthropic|Claude|OpenAI|GPT-|Gemini|Grok|DeepSeek)\b/, /\bbetter\b/i, /\bunprecedented\b/i, /\bmasterpiece\b/i, /\d+ (entries|answers|responses)/i])
     assert.ok(!re.test(human), `${re}: ${(re.exec(human) || [""])[0]} … ${human.slice(Math.max(0, (re.exec(human) || { index: 0 }).index - 40), (re.exec(human) || { index: 0 }).index + 40)}`);
   const reasons = [...body.matchAll(/ data-src="([^"]*)"/g)].map((m) => unesc(m[1]));
@@ -154,7 +164,7 @@ test("no forbidden word in what a human reads, in the reasons, or in the names o
 test("the reasons control: a sentence and a switch under the line on who reads; the reasons are the parts' own attributes", async () => {
   const b = await page(), body = b.split("<body>")[1], css = b.split("<style>")[1].split("</style>")[0];
   assert.ok(body.includes('<p>Every part of this page has a recorded reason. <label class="sw" hidden><input type="checkbox" role="switch" id="why"> Show the reasons</label></p>'), "a checkbox with the role of a switch, named by its label; hidden unless the browser can show the reasons");
-  assert.ok(body.indexOf('<p class="both m"') < body.indexOf('<div class="why m l"') && body.indexOf('<div class="why m l"') < body.indexOf('<section class="decl m l"') && !body.slice(0, body.indexOf('<nav class="doors"')).includes("reasons"), "under the line on who reads, not in the head");
+  assert.ok(body.indexOf('<p class="both"') < body.indexOf('<div class="why"') && body.indexOf('<div class="why"') < body.indexOf('<section class="decl"') && !body.slice(0, body.indexOf('<nav class="doors"')).includes("reasons"), "under the line on who reads, not in the head");
   assert.ok(body.includes('<p>The table of reasons is on <a href="/how-it-is-built#reasons">How this page is built</a>.</p>'), "the accessible source is linked");
   assert.ok(css.includes("[data-src]::after{content:attr(data-src);display:none;") && css.includes(":root:has(#why:checked) [data-src]::after{display:block}"), "CSS shows each part's own data-src when the switch is on; no script");
   assert.equal((body.match(/ id="why"/g) || []).length, 1);

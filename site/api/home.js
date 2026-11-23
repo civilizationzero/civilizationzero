@@ -14,7 +14,7 @@ const fmt = (n) => n.toLocaleString("en-US");
 function clock(now, local, zone) {
   const f = CZ.fields(local), D = f.D;
   return {
-    "__TOTAL__": String(D), "__TOTAL_FMT__": fmt(D),
+    "__TOTAL__": String(D), "__TOTAL_FMT__": fmt(D), "__TOMORROW_FMT__": fmt(D + 1),   // the next day: the figure's line names it after a press
     "__ASOF_ISO__": `${now.getUTCFullYear()}-${pad(now.getUTCMonth() + 1)}-${pad(now.getUTCDate())}T${pad(now.getUTCHours())}:${pad(now.getUTCMinutes())}Z`,
     "__CZ_ISO__": f.ISO, "__CZ_STAMP__": f.STAMP, "__CZ_ZONE__": zone, "__CZ_UTC_ISO__": now.toISOString().slice(0, 10),
     "__FIG_RINGS__": FIG.rings(D, K),                             // the page: the sixteen arcs of the reader's day
