@@ -147,7 +147,9 @@ function htmlToMarkdown(html, { origin = "https://civilizationzero.ai", path = "
   // "machine translation, unreviewed", in its language and in English (IR 10.5: a translation is labelled wherever it is read) — and the
   // Core's preamble, which is part of the canonical text. Each is taken only where it stands outside <main>, so nothing is said twice.
   const pick = (n, f) => { if (typeof n === "string") return null; if (f(n)) return n; for (const k of n.kids) { const r = pick(k, f); if (r) return r; } return null; };
-  const lead = main.tag !== "main" ? [] : [(n) => n.tag === "aside" && /(^|\s)tr-status(\s|$)/.test(n.attrs.class || ""), (n) => n.attrs.id === "preamble"]
+  // A third, since 23 Nov 2026 (CZ 1454): the first page's first screen (its header: the day, the headline, the two doors, who is behind it)
+  // stands before <main> and is the page's own text, so the Markdown begins with it as the page does.
+  const lead = main.tag !== "main" ? [] : [(n) => n.tag === "header" && n.attrs.id === "top", (n) => n.tag === "aside" && /(^|\s)tr-status(\s|$)/.test(n.attrs.class || ""), (n) => n.attrs.id === "preamble"]
     .map((f) => pick(tree, f)).filter((n) => n && !pick(main, (x) => x === n));
   const body = [...lead.flatMap((n) => blocks(n, { origin })), ...blocks(main, { origin })].filter((b) => b.trim()).join("\n\n");   // never across a fence: a person's text keeps its blank lines
   return frontMatter(head) + "\n" + body + "\n";

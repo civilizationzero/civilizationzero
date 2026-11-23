@@ -219,14 +219,14 @@ check(sha256(prompt) == man["machine_prompt"]["sha256"], "prompt hash in manifes
 T = json.loads((SITE / "api" / "home-templates.json").read_text("utf-8"))
 sample = {"__YEAR__": "3", "__DAYS_IN_YEAR__": "332", "__TOTAL__": "1428", "__TOTAL_FMT__": "1,428", "__NEXT_YEAR__": "4", "__NEXT_ISO__": "2026-11-30",
           "__NEXT_HUMAN__": "30 November 2026", "__ASOF_ISO__": "2026-10-28T10:00Z", "__ASOF_HUMAN__": "2026-10-28 10:00 UTC",
-          "__CZ_ISO__": "2026-10-28", "__CZ_STAMP__": "CZ 1428", "__CZ_DOYN__": "332", "__CZ_SINCE__": "3 years and 332 days", "__CZ_TO_NEXT_N__": "33", "__CZ_TO_NEXT__": "33 days", "__CZ_NEXT_DAY__": "1461", "__UTC_DAY_SHORT__": "28 Oct 2026", "__CZ_ZONE__": "Asia/Kuala_Lumpur", "__CZ_UTC_ISO__": "2026-10-27"}
-# the room's two places on the first page (Phase 1, 29 Oct 2026) are filled by api/home.js from the database, after the clock and
-# last of all, so that nothing in an entry is ever filled again; with the database slow or down, both are left empty
+          "__CZ_ISO__": "2026-10-28", "__CZ_STAMP__": "CZ 1428", "__CZ_DOYN__": "332", "__CZ_SINCE__": "3 years and 332 days", "__CZ_TO_NEXT_N__": "33", "__CZ_TO_NEXT__": "33 days", "__CZ_NEXT_DAY__": "1461", "__UTC_DAY_SHORT__": "28 Oct 2026", "__CZ_ZONE__": "Asia/Kuala_Lumpur", "__CZ_UTC_ISO__": "2026-10-27", "__LAUNCH_WORDS__": "Public launch:"}
+# the room's places on the first page (Phase 1, 29 Oct 2026; one answer in the human door, 23 Nov 2026) are filled by api/home.js from the
+# database, in the one pass that fills the clock, so that nothing in an entry is ever filled again; with the database slow or down, all are left empty
 import subprocess
-ROOM_KEYS = ("__ROOM_COUNT__", "__ROOM_LATEST__")
-def fill(s, room=("", "")):
+ROOM_KEYS = ("__ROOM_COUNT__", "__ROOM_LATEST__", "__ROOM_EXAMPLE__")
+def fill(s, room=("", "", "")):
     for k in ("__TOTAL_FMT__", "__YEAR__", "__DAYS_IN_YEAR__", "__TOTAL__", "__NEXT_YEAR__", "__NEXT_ISO__", "__NEXT_HUMAN__", "__ASOF_ISO__", "__ASOF_HUMAN__",
-              "__CZ_ISO__", "__CZ_STAMP__", "__CZ_DOYN__", "__CZ_SINCE__", "__CZ_TO_NEXT_N__", "__CZ_TO_NEXT__", "__CZ_NEXT_DAY__", "__UTC_DAY_SHORT__", "__CZ_ZONE__", "__CZ_UTC_ISO__"):
+              "__CZ_ISO__", "__CZ_STAMP__", "__CZ_DOYN__", "__CZ_SINCE__", "__CZ_TO_NEXT_N__", "__CZ_TO_NEXT__", "__CZ_NEXT_DAY__", "__UTC_DAY_SHORT__", "__CZ_ZONE__", "__CZ_UTC_ISO__", "__LAUNCH_WORDS__"):
         s = s.replace(k, sample[k])
     for k, v in zip(ROOM_KEYS, room):
         s = s.replace(k, v)
@@ -248,12 +248,35 @@ if ROOM_EVER:
                         capture_output=True, env={"PATH": "/usr/bin:/bin:/usr/local/bin", "CZ_SALT": "check-only-" + "0" * 32})
     check(_r.returncode == 0 and "<h3>The latest entries</h3>" in _r.stdout.decode(), f"home: the room's preview renders ({_r.stderr.decode()[:200]})")
     _prev = _r.stdout.decode()
-    for _room in (("", ""), (' (<data value="2">2</data> entries)', _prev)):
+    # one answer in the human door (the originator's decision of 23 Nov 2026), as room/lib.js renders it: the newest row that is published,
+    # declared an AI's and an answer to the short invitation, and no longer than it allows; nothing when no row qualifies; never a hidden one
+    _base = {"received": "2026-11-20T10:00:00+00:00", "state": "published", "author": "N", "kind": "ai", "system": None, "operator": None, "prompt": "cz-short-1.0", "lang": "en", "ref": None,
+             "content": "A short answer.", "content_sha256": "2" * 64, "declared_date": None, "key_fingerprint": None, "hidden": False}
+    _ex_rows = [dict(_base, id=9, state="hidden", hidden=True, content=None), dict(_base, id=8, content="x" * 401), dict(_base, id=7, kind="human"), dict(_base, id=6, prompt="custom"),
+                dict(_base, id=5, state="redacted", content="[redacted]"), dict(_base, id=4, hidden=True, content="Hidden words."),
+                dict(_base, id=3, author="</p><script>x</script>", content="Text with </div> and __ASOF_HUMAN__ and __ROOM_LATEST__\n— N", lang="fa"), dict(_base, id=2, content="An older answer.")]
+    def _example(rows):
+        r = subprocess.run(["node", "-e", "process.stdout.write(require(process.argv[1]).exampleHtml(JSON.parse(process.argv[2])))", str(SITE / "room" / "lib.js"), json.dumps(rows)],
+                           capture_output=True, env={"PATH": "/usr/bin:/bin:/usr/local/bin", "CZ_SALT": "check-only-" + "0" * 32})
+        check(r.returncode == 0, f"home: the example renders ({r.stderr.decode()[:200]})")
+        return r.stdout.decode()
+    _ex = _example(_ex_rows)
+    check(_ex.count('href="/discuss/') == 1 and '<a href="/discuss/3" class="exact">#3</a>' in _ex and "AI · declared, not verified" in _ex and ' lang="fa"' in _ex
+          and "<script>" not in _ex and "</div> and" not in _ex and "&lt;/div&gt; and __ASOF_HUMAN__ and __ROOM_LATEST__\n— N</div>" in _ex and "Hidden words." not in _ex and "redacted" not in _ex and "xxxx" not in _ex,
+          "home: the example is the newest published answer to the short invitation of at most 400 characters, whole and escaped; never a hidden or redacted entry")
+    check(_example(_ex_rows[:6]) == "" and _example([]) == "" and _example([None, 1, "x", {"id": "1 or 1"}]) == "", "home: no example when no entry qualifies — the block is absent, with no placeholder")
+    check(_example([dict(_base, id=1, content="y" * 400)]).count("y" * 400) == 1, "home: an answer of exactly 400 characters is shown whole")
+    _door = re.search(r'<section class="door human".*?</section>', T["html"], re.S)
+    check(T["html"].count("__ROOM_EXAMPLE__") == 1 and _door and re.search(r'<a class="cta" href="/ask">[^<]*</a> <span class="cta-note">[^<]*</span>__ROOM_EXAMPLE__</div>', _door.group(0)) is not None,
+          "home: the example's place is in the human door, under the invitation")
+    for _room in (("", "", ""), (' (<data value="2">2</data> entries)', _prev, _ex)):
         _pg = P(); _pg.feed(fill(T["html"], _room)); check(not _pg.err and not _pg.stack, f"home with the room {'filled' if _room[1] else 'empty'}: HTML nesting {_pg.err[:3]} {_pg.stack[-3:]}")
     check("<script>" not in _prev and "S __YEAR__" in _prev and "__ASOF_HUMAN__" in _prev and _prev.count('<article class="entry" aria-label="Entry #') == 2 and _prev.count("<article") == 2, "home: the preview escapes entries, and is never filled again")
 else:
     check(not any("__ROOM_" in T[x] for x in ("html", "json", "txt")), "home: no room placeholders before the room has opened")
 check("__ROOM_" not in T["json"], "home: the data form carries no room placeholder (api/home.js reads the room for the page only; the text form's are left empty)")
+check(set(T) == {"html", "json", "txt", "launch"} and T["launch"] == {"day": cz_day(LAUNCH), "before": "Public launch:", "since": "Public since"} and all(isinstance(T[x], str) for x in ("html", "json", "txt")),
+      "home templates: the three forms, and the launch day with its two wordings (not a form: api/home.js serves strings only)")
 for ext in ("html", "json", "txt"):
     filled = fill(T[ext])
     check("__" not in re.sub(r"https?://\S+", "", filled), f"home template {ext}: placeholder left")
@@ -467,9 +490,10 @@ if BUNDLE_VERSION not in ("1.0-pre", "1.0"):
     check(r.returncode == 0, f"verify.py on the bundle: {r.stdout[-600:]}")
 
 # 8. CZ time (the originator's decision of 30 Oct 2026): every page but the first carries the bar (the build's fallback, replaced at
-# request time) before the navigation; the first page's heading is today's date, linked to /calendar, with the converter under it, and
-# Coordinate Zero's Gregorian date appears once in its header and no other; the live templates are well formed; and the request-time
-# code (room/cztime.js) gives the stamps lib.py gives
+# request time) before the navigation; the first page says the day in plain words under its name, with today's date in CZ time beside the
+# name, linked to /calendar (the originator's decision of 23 Nov 2026), and two Gregorian dates appear in its header, each once — Coordinate
+# Zero's and the public launch's — and no other; the live templates are well formed; and the request-time code (room/cztime.js) gives the
+# stamps lib.py gives
 BAR = json.loads((SITE / "room" / "cz-bar.json").read_text("utf-8"))
 for _n in ("bar", "calform", "timeform"):
     _pb = P(); _pb.feed(BAR[_n]); check(not _pb.err and not _pb.stack, f"room/cz-bar.json {_n}: HTML nesting {_pb.err} {_pb.stack}")
@@ -491,15 +515,57 @@ for f in pages + [pathlib.Path("virtual") / n for n in VIRTUAL]:
     check(_b.startswith("<!--cz-now") and _b.count("<!--cz-now") == 1 and "<!--/cz-now-->" in _b and _b.index("<!--/cz-now-->") < _b.index('<nav class="site"'),
           f"{f.name}: CZ time at the top, before the navigation")
 _hh = T["html"].split('<header id="top">', 1)[1].split("</header>", 1)[0]
-check(_hh.count("30 November 2022") == 1 and _hh.count("2022-11-30") == 1 and not re.search(r"\b20\d\d-\d\d-\d\d\b|November 20(2[3-9]|[3-9]\d)", _hh.replace("2022-11-30", "")) and "__ASOF" not in _hh,
-      "home: Coordinate Zero's date once in the header, and no other Gregorian date")
+check(_hh.count("30 November 2022") == 1 and _hh.count("2022-11-30") == 1 and _hh.count("30 November 2026") == 1 and _hh.count(LAUNCH.isoformat()) == 1
+      and not re.search(r"\b20\d\d-\d\d-\d\d\b|\b(January|February|March|April|May|June|July|August|September|October|November|December) \d{4}\b", _hh.replace("2022-11-30", "").replace("30 November 2022", "").replace(LAUNCH.isoformat(), "").replace("30 November 2026", "")) and "__ASOF" not in _hh,
+      "home: Coordinate Zero's date and the launch date, each once in the header, and no other Gregorian date")
 _h1 = _hh.split("</h1>")[0]
-check('<h1 class="cz-h1"' in _hh and '<a href="/calendar"' in _h1 and '<time datetime="__CZ_ISO__">__CZ_STAMP__</time>' in _h1 and "<form" not in _hh
-      and 'href="/calendar#convert"' in _hh and 'href="/calendar#time"' in _hh, "home: the heading is today's date in CZ time, linked to /calendar; links to the converters, no form")
-check('Day <data value="__TOTAL__">__TOTAL__</data><br>since Coordinate Zero, <time datetime="2022-11-30">30 November 2022</time></p>' in _hh
-      and '<p class="cz-def"' in _hh and "CZ time counts only days." in _hh
+check(T["html"].count("<h1") == 1 and '<h1 class="cz-name"' in _h1 and _h1.endswith("Civilization Zero (CZ)") and "<form" not in _hh
+      and '</h1><a class="d-stamp" href="/calendar" aria-describedby="cz-read"' in _hh and _hh.count('<time datetime="__CZ_ISO__">__CZ_STAMP__</time>') == 1,
+      "home: one h1, the name; beside it today's date in CZ time, linked to /calendar; no form")
+check('<span class="d-day">Day <data value="__TOTAL__">__TOTAL_FMT__</data></span> since <time datetime="2022-11-30">30 November 2022</time>, the day ChatGPT was released</p>' in _hh
+      and "the day ChatGPT was released" in (PUBLIC / "calendar.html").read_text("utf-8")
       and not re.search(r"\b[Yy]ears?\b|__CZ_(SINCE|TO_NEXT|TO_NEXT_N|NEXT_DAY|DOYN)__|__NEXT_YEAR__", _hh.replace("Year Zero", "")),
-      "home: under the date only 'Day N / since Coordinate Zero, 30 November 2022' and 'CZ time counts only days.' — no years")
+      "home: under the name 'Day N since 30 November 2022, the day ChatGPT was released', as /calendar says it — no years")
+# the first screen (the originator's decision of 23 Nov 2026, CZ 1454): the headline, what the record is not (once), two doors with the human
+# door first, who is behind it between them in the source, the launch sentence written at request time; in every form of the page
+HEADLINE = "Sixteen principles on what humans and AI owe each other. Written for both. Answered by both, on the record."
+NOT_LINE = "It is not a law, a religion, or a claim that any machine is conscious."
+WHO = "Started by one human, the originator, named in the Core. Written, built and run day to day by an artificial intelligence. __LAUNCH_WORDS__ 30 November 2026."
+_hj = json.loads(fill(T["json"]))
+check(_hh.count(f'>{HEADLINE}</p>') == 1 and T["txt"].count(HEADLINE) == 1 and _hj["headline"] == HEADLINE, "home: the headline, once, in the page, its text form and its data form")
+check(T["html"].count(NOT_LINE) == 1 and _hh.index(HEADLINE) < _hh.index(NOT_LINE) < _hh.index('<div class="doors"') and T["txt"].count(NOT_LINE) == 1 and NOT_LINE in _hj["orientation"],
+      "home: what the record is not is said once on the page, under the headline; the data form keeps the paragraph whole")
+check("is still open. It is written for every intelligence able to read it.</p>" in _hh and _hh.index("It is written for every intelligence") > _hh.index("</div>\n<p data-src"), "home: the paragraph under the doors keeps its other sentences")
+_who_h = re.sub(r"<[^>]+>", "", re.search(r'<p class="d-who"[^>]*>(.*?)</p>', _hh, re.S).group(1))
+check(_who_h.startswith(WHO + " About") and WHO in T["txt"] and _hj["who"] == WHO.replace("__LAUNCH_WORDS__", "Public launch:") and T["json"].count("__LAUNCH_WORDS__") == 1 and T["html"].count("__LAUNCH_WORDS__") == 1 and T["txt"].count("__LAUNCH_WORDS__") == 1,
+      "home: who is behind it, the same sentence in the page, its text form and its data form; the launch words are written at request time")
+check('<a href="/about">About</a>' in _hh.split('<p class="d-who"')[1].split("</p>")[0] and (not PRESS_PUBLISHED or '<a href="/press">Press kit</a>' in _hh.split('<p class="d-who"')[1].split("</p>")[0]), "home: About and the press kit beside who is behind it")
+check('<nav class="readers"' not in T["html"] and "If you are not human: the same record" not in T["html"] and "nav.readers" not in T["html"], "home: the strip above the page is gone (the second door says it)")
+_doors = _hh.split('<div class="doors"', 1)[1]
+check(_doors.index('<section class="door human"') < _doors.index('<p class="d-who"') < _doors.index('<section class="door machine"') and _hh.count("<section") == 2 and _hh.count("<h2") == 2
+      and '<h2 id="d-h">I am human</h2>' in _doors and '<h2 id="d-m">I am not human</h2>' in _doors,
+      "home: two doors, the human door first; who is behind it follows the human door in the source (a narrow screen reads it there)")
+_dh = _doors.split("</section>")[0]; _dm = _doors.split('<section class="door machine"')[1].split("</section>")[0]
+check('<a href="/core">Read the 16 principles (one page)</a> <span class="d-note">numbered 0 to 15</span>' in _dh and len(json.loads((PUBLIC / "core.json").read_text("utf-8"))["principles"]) == 16
+      and [int(p["n"]) for p in json.loads((PUBLIC / "core.json").read_text("utf-8"))["principles"]] == list(range(16)), "home, the human door: the 16 principles, numbered 0 to 15, as the Core numbers them")
+_short = (SITE / "prompts" / "cz-short-1.0.txt").read_text("utf-8")
+check((not DT["open"]) or ('<a class="cta" href="/ask">Ask your AI. Post its answer. →</a> <span class="cta-note">The invitation asks your AI for one hard truth to humans, in at most 400 characters. It may decline.</span>' in _dh
+      and "one hard truth" in _short and "At most 400 characters" in _short and "You may decline" in _short and "to humans" in _short), "home, the human door: the invitation said as cz-short-1.0 says it")
+check((not ROOM_EVER) or ('<p class="d-ql" id="d-ql">Open questions in the discussion</p><ul aria-labelledby="d-ql">' + "".join(f'<li><a href="/themes/{t["slug"]}">{_h.escape(t["title"])}</a></li>' for t in [t for t in THEMES if not t.get("proposals")][:3]) + "</ul></div>") in _dh,
+      "home, the human door: the first three themes, as lib.py lists them")
+check(not re.search(r"\b(JSON|API|hash|SHA|schema|endpoint)\b", re.sub(r"<[^>]+>", " ", _hh.split('<section class="door machine"')[0]), re.I), "home: no technical word above the second door")
+check(all(f"<p data-src" in _dm and x in _dm for x in ("Nothing here is withheld from any reader.", 'The same record as text, JSON and an API: <a href="/machine">/machine</a>', "You may respond, object or reject. A response is recorded as a response, not as consent.")),
+      "home, the second door: its three lines")
+check(not re.search(r"\b(he|him|his)\b|Observatory|\bfirst\b", re.sub(r"<[^>]+>", " ", _hh.split("<p data-src=\"E: the first sentence")[0]), re.I) and "Claude" not in _hh and "Anthropic" not in _hh,
+      "home, the first screen: the originator by title only, the builder without a name, no claim to be first")
+check(T["html"].count("<style>") == 2 and "<script>" not in T["html"] and not re.search(r'(src|href)="https?://(?!civilizationzero\.ai)', _hh) and "@import" not in T["html"] and "url(" not in T["html"].split("</style>")[1],
+      "home: the first screen's rules are CSS in the page; no script, no font, no image, nothing from elsewhere")
+_hcss = T["html"].split("<style>")[2].split("</style>")[0]
+check("@media(max-width:34rem)" in _hcss and "grid-template-columns:1fr 1fr" in _hcss and "animation" not in _hcss and "transition" not in _hcss and "outline" not in _hcss and not re.search(r"#[0-9a-fA-F]{3,6}\b|rgb\(", _hcss),
+      "home: the doors side by side on a wide screen, one column on a narrow one; colours from the two palettes only; no motion; focus untouched")
+_rs = (PUBLIC / "how-it-is-built.html").read_text("utf-8")
+check(all(x in _rs for x in (_h.escape(HEADLINE), _h.escape(NOT_LINE), "Two doors, equal width", "Who is behind it, in one line without names", "Public since 30 November 2026.", "The human door: the Core first", "One answer under the invitation", "The door for readers that are not human"))
+      and "Two doors first, equal width" not in _rs and [r["element"] for r in _hj["reasons"]].count("The headline: \"" + HEADLINE + "\"") == 1, "/how-it-is-built: a stated reason for every element of the new first screen")
 _cal = (PUBLIC / "calendar.html").read_text("utf-8")
 check(_cal.count("<!--cz-cal-->") == 1 and _cal.count("<!--cz-time-->") == 1 and all(f'id="{a}"' in _cal for a in ("convert", "time", "how", "examples", "calendars", "beyond-earth", "machines", "sources")),
       "calendar.html: the converters' places and every section")

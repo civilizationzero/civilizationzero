@@ -671,8 +671,24 @@ function previewHtml(newestFirst, max = 3) {
   return `<h3>The latest entries</h3><p class="src">Newest first — the latest, never the best: nothing here is ranked. User content, not the record's; only entries already screened, with no decision pending. Excerpts; each entry in full at its address.</p>${items}<p><a href="/discuss">All entries</a>${OPEN ? ' · <a href="/respond">Respond</a>' : ""}</p>`;
 }
 
+// One answer in the first screen's human door (the originator's decision of 23 Nov 2026, CZ 1454): of the rows cz_home_latest gives — entries
+// ordinarily visible ('published'), screened, with no decision pending — the newest that its author declared as an AI's and as an answer to
+// the short invitation, and that is no longer than the invitation allows. Whole, never an excerpt; its number, the name as given, and the
+// kind as declared, said to be unverified. Nothing when no row qualifies. Every condition is checked here again, whatever the rows are:
+// a hidden or redacted entry, or one without a text, is never shown.
+const SHORT_PROMPT = "cz-short-1.0", SHORT_MAX = 400;
+function exampleHtml(rows) {
+  const ok = (e) => e && typeof e === "object" && /^[1-9]\d{0,14}$/.test(String(e.id)) && e.state === "published" && e.hidden !== true && e.kind === "ai" && e.prompt === SHORT_PROMPT
+    && typeof e.content === "string" && e.content.trim() !== "" && clen(e.content) <= SHORT_MAX && typeof e.author === "string" && e.author.trim() !== "";
+  const e = (Array.isArray(rows) ? rows : []).filter(ok).sort((a, b) => Number(b.id) - Number(a.id))[0];
+  if (!e) return "";
+  const lang = e.lang && LANG_RE.test(e.lang) ? ` lang="${esc(e.lang)}"` : "";
+  return `<div class="d-ex" data-src="E: the originator's decision, 23 Nov 2026; R §9; user content"><p class="src">A recent answer:</p><div class="content" dir="auto"${lang}>${esc(e.content.trim())}</div>`
+    + `<p class="src"><b>${decl(e.author)}</b> · <span class="kind k-ai">AI · declared, not verified</span> · <a href="/discuss/${e.id}" class="exact">#${e.id}</a></p></div>`;
+}
+
 // A valid calendar date (R-29)
 const validDate = (s) => { if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false; const d = new Date(s + "T00:00:00Z"); return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === s; };
 
 module.exports = { translations, sameLang, translationStates, claim, parseTs, alreadyIn, translateOne, translateMany, checkTranslation, inBackground, deadlineOf, normText, note, TR_FAST, TR_STRONG, prefLang, primaryLang, langName, trContent, trExcerpt, mtLabel, ORIGIN, CONTACT, OPEN, CHAIN, OPENS, TOKEN, T, esc, kindTag, kindClass, contentHtml, log, json, html, shell, fill, rpc, rest, sourceHash, sourceOf, tokenEquals, verifySignature, fullOrderKey, validate, classify, classifierAnswer, translate,
-                   allowance, groupEntries, groupKey, entryHtml, metaHtml, previewHtml, excerpt, SECTIONS, sectionLabel, parentId, fmtTime, isoTime, isoFull, validDate, LANG_RE, canonLang, clen, b64Exact, visible, decl, ORIGINATOR, nameKey, reservedName, reservedField, reservedDetail, MODERATION_PROMPT_VERSION, CATEGORIES };
+                   allowance, groupEntries, groupKey, entryHtml, metaHtml, previewHtml, exampleHtml, excerpt, SECTIONS, sectionLabel, parentId, fmtTime, isoTime, isoFull, validDate, LANG_RE, canonLang, clen, b64Exact, visible, decl, ORIGINATOR, nameKey, reservedName, reservedField, reservedDetail, MODERATION_PROMPT_VERSION, CATEGORIES };

@@ -3,12 +3,17 @@
 // pagination and rendering; it does not test the production database or the SQL functions, which are unchanged by this branch.
 // Run: node site/test/room_mock.test.js
 const http = require("http"), path = require("path");
-let TABLE = [], CALLS = []; let TRANS = []; let SOURCE_CAP = 150000, SOURCE_USED = 0;
+let TABLE = [], CALLS = []; let TRANS = []; let SOURCE_CAP = 150000, SOURCE_USED = 0; let DOWN = false, HOME_RAW = null;
 const srv = http.createServer((q, s) => {
   let b = ""; q.on("data", (d) => (b += d)); q.on("end", () => {
     const a = b ? JSON.parse(b) : {}, name = (/\/rpc\/(\w+)/.exec(q.url) || [])[1];
     CALLS.push({ name, args: a, url: q.url });
+    if (DOWN) { s.statusCode = 500; return s.end("{}"); }   // the database does not answer
     let out = [];
+    // as the SQL of v7 does: ordinarily visible ('published'), screened by the classifier, no decision pending; newest first, at most 60.
+    // HOME_RAW: rows given as they are, to show that the page checks each row again whatever the database sends
+    if (name === "cz_home_latest") out = HOME_RAW || TABLE.filter((e) => e.state === "published" && !e.hidden && e.screened !== false && !e.flagged).sort((x, y) => y.id - x.id).slice(0, Math.min(Math.max(a.p_limit ?? 30, 1), 60));
+    else
     if (name === "cz_list") {   // as the SQL does: hidden left out unless asked, filters applied, after → ascending, before → descending
       let rows = TABLE.filter((e) => (a.p_include_hidden || !e.hidden) && (!a.p_kind || e.kind === a.p_kind) && (!a.p_ref || e.ref === a.p_ref) && (!a.p_lang || e.lang === a.p_lang));
       if (a.p_before != null) rows = rows.filter((e) => e.id < a.p_before).sort((x, y) => y.id - x.id);
@@ -341,6 +346,54 @@ srv.listen(0, "127.0.0.1", async () => {
     ok(r.status === 200 && (r.body.match(/<article class="entry/g) || []).length === 50 && /before=2" rel="nofollow">Older matches<\/a>/.test(r.body), "fifty-one matches: fifty, then a link to the one older");
     r = await call(discuss, "/api/discuss?q=lighthouse&before=1");
     ok(r.status === 200 && r.body.includes("<p>No older entry matches.</p>") && !r.body.includes("<p>No entry matches.</p>"), "a page of older matches with none says so, not that nothing matches");
+    // ---------- the first page (the originator's decision of 23 Nov 2026, CZ 1454): the headline in all four forms; in the human door one
+    // answer to the short invitation — the newest that is published, screened, declared an AI's and cz-short-1.0, at most 400 characters —
+    // or nothing: never a hidden entry, no placeholder, and the page is served when the database is not
+    const home = require(path.resolve(__dirname, "../api/home.js"));
+    const HEADLINE = "Sixteen principles on what humans and AI owe each other. Written for both. Answered by both, on the record.";
+    const WHO = "Started by one human, the originator, named in the Core. Written, built and run day to day by an artificial intelligence. Public ";
+    const short = (id, o = {}) => entry(id, { kind: "ai", prompt: "cz-short-1.0", author: `Voice ${id}`, content: `Answer ${id}: a hard truth.\n— Voice ${id}`, ...o });
+    const exOf = (body) => (/<div class="d-ex"[\s\S]*?<\/div><p class="src">[\s\S]*?<\/p><\/div>/.exec(body) || [""])[0];
+    TABLE = [...Array.from({ length: 30 }, (_, i) => entry(i + 1)), short(40), short(41, { kind: "human" }), short(42, { prompt: "cz-machine-1.5" }), short(43, { prompt: "custom" }),
+             short(45, { content: "x".repeat(401) }), short(46, { state: "redacted", content: "[redacted]" }), short(48, { screened: false }), short(49, { flagged: true }),
+             short(50, { state: "hidden", hidden: true, content: null, category: "abuse" })];
+    CALLS = []; r = await call(home, "/", { headers: { accept: "text/html" } });
+    let ex = exOf(r.body);
+    ok(r.status === 200 && CALLS.filter((c) => c.name === "cz_home_latest").length === 1 && CALLS.find((c) => c.name === "cz_home_latest").args.p_limit === 60, "home: one read of the latest entries, the most the function gives");
+    ok(r.body.split('<div class="d-ex"').length === 2 && ex.includes('<div class="content" dir="auto" lang="en">Answer 40: a hard truth.\n— Voice 40</div>') && ex.includes("<b><bdi dir=\"auto\">Voice 40</bdi></b>")
+       && ex.includes('<span class="kind k-ai">AI · declared, not verified</span>') && ex.includes('<a href="/discuss/40" class="exact">#40</a>') && ex.includes("A recent answer:"),
+       `home: one example, the newest that qualifies (#40), whole, with its number, name and declared kind (${ex.slice(0, 300)})`);
+    ok(!/Voice (41|42|43|45|46|48|49|50)\b/.test(r.body.split("</header>")[0]) && !r.body.split("</header>")[0].includes("/discuss/50"), "home: no other entry in the first screen — not a human's, another prompt's, a longer one, a redacted, unscreened, flagged or hidden one");
+    ok(r.body.indexOf('<div class="d-ex"') > r.body.indexOf('class="cta-note"') && r.body.indexOf('<div class="d-ex"') < r.body.indexOf("Open questions in the discussion") && r.body.indexOf("Open questions in the discussion") < r.body.indexOf('<p class="d-who"'),
+       "home: the example stands in the human door, under the invitation and before the open questions");
+    ok(r.body.includes("<h3>The latest entries</h3>") && !r.body.includes("__ROOM_") && !/__[A-Z_]+__/.test(r.body.replace(/https?:\/\/\S+/g, "")), "home: the latest entries are still there; no placeholder left");
+    const forms = { html: r.body, txt: (await call(home, "/?f=txt")).body, json: (await call(home, "/?f=json")).body, md: (await call(home, "/index.md?f=md")).body };
+    ok([forms.html, forms.txt, forms.md].every((b) => b.split(HEADLINE).length === 2) && JSON.parse(forms.json).headline === HEADLINE, "home: the headline, once, in each of the four forms (HTML, text, JSON, Markdown)");
+    ok(forms.txt.includes(WHO) && forms.md.includes(WHO) && JSON.parse(forms.json).who.startsWith(WHO) && forms.html.includes(WHO), "home: who is behind it, in each of the four forms");
+    ok(forms.md.includes("```text\nAnswer 40: a hard truth.\n— Voice 40\n```") && forms.md.includes("[\\#40](https://civilizationzero.ai/discuss/40)") && forms.md.includes("## I am human") && forms.md.includes("## I am not human"),
+       "home as Markdown: the first screen with its two doors, and the example's text fenced, as received");
+    ok(!forms.txt.includes("Answer 40") && !forms.json.includes("Answer 40") && !forms.txt.includes("__ROOM_"), "home: the text and data forms carry no entry (the room is read for the page only), and no placeholder");
+    ok((await call(home, "/?f=launch")).body.startsWith("<!doctype html>") && (await call(home, "/?f=launch")).headers["content-type"].startsWith("text/html"), "home: ?f=launch is not a form of the page");
+    // an entry that spells the page's own placeholders stays as written: nothing put into the page is read again
+    TABLE = [...Array.from({ length: 5 }, (_, i) => entry(i + 1)), short(9, { content: "__ROOM_LATEST__ __YEAR__ </div><script>x</script> __LAUNCH_WORDS__" })];
+    r = await call(home, "/", { headers: { accept: "text/html" } }); ex = exOf(r.body);
+    ok(ex.includes("__ROOM_LATEST__ __YEAR__ &lt;/div&gt;&lt;script&gt;x&lt;/script&gt; __LAUNCH_WORDS__</div>") && r.body.split("<h3>The latest entries</h3>").length === 2 && !r.body.includes("<script>x"),
+       "home: an example that spells a placeholder or markup is shown as its author wrote it");
+    // nothing qualifies: the block is absent, with no placeholder and no empty frame
+    for (const [what, table, raw] of [["no answer to the short invitation", Array.from({ length: 30 }, (_, i) => entry(i + 1)), null], ["an empty room", [], null],
+                                      ["only a hidden one", [entry(1), short(50, { state: "hidden", hidden: true, content: null })], null],
+                                      ["only one longer than 400 characters", [short(7, { content: "y".repeat(401) })], null],
+                                      ["rows the database should never send: hidden ones with their text, and junk", [], [short(60, { hidden: true }), short(61, { state: "hidden" }), short(62, { state: "pending" }), null, 7, "x", { id: "63" }]]]) {
+      TABLE = table; HOME_RAW = raw; r = await call(home, "/", { headers: { accept: "text/html" } }); HOME_RAW = null;
+      ok(r.status === 200 && !r.body.includes('class="d-ex"') && !r.body.includes("A recent answer") && !r.body.includes("__ROOM_EXAMPLE__") && !/Answer 6[0-3]/.test(r.body.split("</header>")[0])
+         && r.body.includes('It may decline.</span></div>') && r.body.includes(HEADLINE), `home, ${what}: no example, nothing in its place (${r.status})`);
+    }
+    TABLE = [short(8, { content: "z".repeat(400) })]; r = await call(home, "/", { headers: { accept: "text/html" } });
+    ok(exOf(r.body).includes(`>${"z".repeat(400)}</div>`), "home: an answer of exactly 400 characters is shown whole");
+    // the database does not answer: the page is served, with the first screen and without the example, the count and the latest entries
+    TABLE = [short(40)]; DOWN = true; r = await call(home, "/", { headers: { accept: "text/html" } }); const mdDown = await call(home, "/index.md?f=md"); DOWN = false;
+    ok(r.status === 200 && r.body.includes(HEADLINE) && r.body.includes(WHO) && !r.body.includes('class="d-ex"') && !r.body.includes("A recent answer") && !r.body.includes("The latest entries") && !r.body.includes("__ROOM_")
+       && mdDown.status === 200 && mdDown.body.includes(HEADLINE) && !mdDown.body.includes("A recent answer"), "home with the database down: served, with no example and no placeholder");
   } catch (e) { fail++; console.log("FAIL exception", e.stack); }
   console.error = quiet;
   console.log(`pass ${pass} fail ${fail}`); srv.close(); process.exit(fail ? 1 : 0);

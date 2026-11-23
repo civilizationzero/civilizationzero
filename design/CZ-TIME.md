@@ -77,6 +77,11 @@ time converter. This file is the definition; `site/room/cztime.js` (at request t
   it works). Coordinate Zero's Gregorian date appears there once. No years are described in either (the originator's decision of 30 October
   2026). The converting happens on `/calendar`, never in the page: the site stays a record, not a converter; its result gives the count of
   days from Coordinate Zero ("1430 days after Coordinate Zero"), not years.
+- **Since 23 November 2026 (CZ 1454), the first page's header** (the originator's decision, after first-impression tests): under the name,
+  the day in plain words, "Day 1,454 since 30 November 2022, the day ChatGPT was released"; beside the name, small, the date (`CZ 1454`, a
+  link to /calendar). "CZ time counts only days." and the three links left the first screen; the converters are on /calendar, one link away.
+  Two Gregorian dates are written in that header, each once: Coordinate Zero's and the public launch's (30 November 2026). The paragraph
+  above describes the header as it was until then.
 
 ## 4. Converting from other calendars
 

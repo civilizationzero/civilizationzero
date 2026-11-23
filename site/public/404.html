@@ -38,9 +38,6 @@ figure.image img{display:block;width:100%;height:auto;border:1px solid var(--rul
 figure.image img.tall{max-width:30rem}
 td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
 hr{border:0;border-top:1px solid var(--rule);margin:2.5rem 0}
-/* E (Blueprint decision 28): two doors, before anything else; equal width — equal standing. */
-nav.readers{display:flex;gap:1rem;padding:.75rem 1rem;border-bottom:1px solid var(--rule)}
-nav.readers a{flex:1;text-align:center}
 nav.site{padding-top:.5rem;padding-bottom:.5rem;border-bottom:1px solid var(--rule);font-size:.9em}
 nav.site ul{display:flex;flex-wrap:wrap;align-items:center;column-gap:1.1rem;list-style:none;margin:0;padding:0}
 /* H: WCAG 2.2 target size (2.5.8): each link of the site's navigation at least 24 pixels tall, also where the row wraps on a phone; the current page marked
@@ -70,8 +67,8 @@ ul,ol{padding-inline-start:1.25rem}
 :root{--machine:#116329}@media(prefers-color-scheme:dark){:root{--machine:#3fb950}}
 /* stage 5: the same two values through light-dark() where a browser has it (the color-scheme above decides); the media rule stays for the others */
 @supports (color:light-dark(#000,#fff)){:root{--machine:light-dark(#116329,#3fb950)}}
-/* E (the originator's proposal of 5 Nov 2026 UTC, CZ 1436, decided by the artificial intelligence that builds the site): the day of the new count in the same green where it is the headline — the large CZ day on the home page and the date at the top of every page — as on the record's images; inline dates in text and entries keep the page's colour, so that green still means "a machine wrote this" everywhere else. */
-h1.cz-h1 time,.cz-stamp time{color:var(--machine)}
+/* E (the originator's proposal of 5 Nov 2026 UTC, CZ 1436, decided by the artificial intelligence that builds the site): the day of the new count in the same green where it leads — the day count on the first page and the date at the top of every page — as on the record's images; inline dates in text and entries keep the page's colour, so that green still means "a machine wrote this" everywhere else. */
+.cz-stamp time{color:var(--machine)}
 .kind{display:inline-block;font-size:.85em;line-height:1.4;padding:0 .4em;border:1px solid var(--mute);border-radius:.2em;white-space:nowrap}
 .kind.k-ai{border-color:var(--machine);color:var(--machine);font-weight:600}
 .entry.k-ai{border-inline-start:3px solid var(--machine);padding-inline-start:.75rem}
@@ -134,19 +131,15 @@ input,select,textarea{font-size:1rem}::placeholder{color:var(--mute);opacity:1}i
 /* E (the originator's decision of 30 Oct 2026): CZ time is the site's basis — today's date in CZ time at the top of every page, linked to how it works, and under it the reason and links to the two converters, which work on /calendar alone. M: plain links and forms, no script. */
 aside.cz-now{padding-top:.55rem;padding-bottom:.5rem;border-bottom:1px solid var(--rule);font-size:.9em}
 aside.cz-now p{margin:0}.cz-line a{padding:.2rem 0;display:inline-block}.cz-stamp{font-size:1.25em;margin-right:.5rem}.cz-why{color:var(--mute);font-size:.92em}
-a.cz-date{text-decoration-thickness:1px;text-decoration-color:var(--mute)}a.cz-date time,.cz-stamp time,h1.cz-h1 time{white-space:nowrap}ul.cz-today{list-style:none;padding:0;margin:.5rem 0}ul.cz-today li{margin:.15rem 0}
+a.cz-date{text-decoration-thickness:1px;text-decoration-color:var(--mute)}a.cz-date time,.cz-stamp time{white-space:nowrap}ul.cz-today{list-style:none;padding:0;margin:.5rem 0}ul.cz-today li{margin:.15rem 0}
 form.cz-conv{display:flex;flex-wrap:wrap;gap:.4rem .5rem;align-items:center;margin:.3rem 0 0;font-size:.9em}
 form.cz-conv input,form.cz-conv select{font:inherit;font-size:1rem;color:var(--fg);background:var(--bg);border:1px solid var(--mute);padding:.2rem .4rem}form.cz-conv input{width:15ch}form.cz-conv label{white-space:nowrap}
-h1.cz-h1{font-size:2.4em;font-weight:400;margin:.4rem 0 .2rem;letter-spacing:.02em}h1.cz-h1 time{font-size:1em}p.cz-links{font-size:.9em;margin-top:.25rem}
-/* E (the originator's decision of 30 Oct 2026): under the date only the day count and its origin, one short line on what is counted, the links. */
-p.cz-read{margin:.2rem 0 0}p.cz-read time{font-size:1em;white-space:nowrap}p.cz-def{color:var(--mute);font-size:.9em;margin:.35rem 0 0}.nw{white-space:nowrap}#how code{white-space:nowrap}
+.nw{white-space:nowrap}#how code{white-space:nowrap}
 table.cz-result th{width:30%;font-weight:600}.cz-native{font-family:system-ui,sans-serif}
-/* E: on the first page the mark and the name are one line, inside the heading, above the date (the name is what a reader and a search engine meet first). */
-h1.cz-h1 .cz-name{display:flex;align-items:center;gap:.6rem;font-size:1rem;font-weight:700;letter-spacing:0;margin:0 0 .5rem}h1.cz-h1 .cz-name svg{flex:none}
 aside.tr-status{margin-top:1rem}
 /* the footer: where everything is, the licence, what this site does not do */
 footer ul.foot{list-style:none;padding:0;margin:0 0 1rem;columns:2 11rem;column-gap:2rem}footer ul.foot li{break-inside:avoid;padding:.2rem 0}footer{padding-bottom:1.5rem}
-@media print{aside.cz-now,nav.site,nav.readers,.skip,form,.filters,footer nav{display:none}a{text-decoration:none}main,header,footer{max-width:none}}
+@media print{aside.cz-now,nav.site,.skip,form,.filters,footer nav{display:none}a{text-decoration:none}main,header,footer{max-width:none}}
 /* stage 5 (CZ 1433): polish that needs no script and falls back to the plain page.
    Cross-document view transitions: moving from page to page of this site fades instead of flashing; none for readers who ask for less motion.
    text-wrap: fewer lone words at the end of a paragraph, balanced headings. */

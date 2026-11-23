@@ -36,6 +36,8 @@ function clock(now, local = now.getTime()) {
     "__CZ_ISO__": f.ISO, "__CZ_STAMP__": f.STAMP, "__CZ_DOYN__": f.DOYN, "__CZ_SINCE__": sinceText(f.p.year, f.p.day),
     "__CZ_TO_NEXT_N__": f.TO_NEXT, "__CZ_TO_NEXT__": plural(Number(f.TO_NEXT), "day"), "__CZ_NEXT_DAY__": f.NEXT_DAY,
     "__UTC_DAY_SHORT__": `${L.getUTCDate()} ${MON[L.getUTCMonth()]} ${L.getUTCFullYear()}`,   // the reader's date beside the count
+    // "Public launch:" until the launch day, "Public since" from that day on, by the reader's date as the count is (the build gives the day and both wordings)
+    "__LAUNCH_WORDS__": total >= T.launch.day ? T.launch.since : T.launch.before,
   };
 }
 
@@ -48,21 +50,27 @@ const negotiate = (accept) => JSON_RE.test(accept) ? "json" : TXT_RE.test(accept
 // the speculation rules in the page (stage 5, CZ 1433) are data, allowed by their hash, read from the template as built
 const SPEC_HASHES = [...String(T.html || "").matchAll(/<script type="speculationrules">([\s\S]*?)<\/script>/g)].map((m) => `'sha256-${require("node:crypto").createHash("sha256").update(m[1], "utf8").digest("base64")}'`);
 
+// One pass over the template: every placeholder is replaced where it stands, and nothing put in is read again — an entry's text that
+// spells a placeholder stays as its author wrote it (as room/lib.js fills its shell)
 function fill(s, c) {
-  for (const k of Object.keys(c)) s = s.split(k).join(c[k]);
-  return s;
+  const keys = Object.keys(c).sort((a, b) => b.length - a.length);
+  return s.replace(new RegExp(keys.map((k) => k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|"), "g"), (m) => String(c[m]));
 }
 
 // The room on the first page (Phase 1 of the room's design for readers, 29 Oct 2026): the number of entries in the first screen's line
-// and the latest groups after the Core's own lines. Read from the database at request time, within 1.5 seconds; if the database is
-// slow or down, the page is served without them (the clock never waits on the room). The room's code is loaded only here.
-const ROOM_MS = 1500;
+// and the latest groups after the Core's own lines; and, in the human door, one answer to the short invitation (the originator's decision
+// of 23 Nov 2026), taken from the same rows — the latest 60 that are published, screened and with no decision pending, the most the
+// database's function gives; the latest groups are still made from the newest 30. Read from the database at request time, within 1.5
+// seconds; if the database is slow or down, the page is served without them (the clock never waits on the room). The room's code is loaded only here.
+const ROOM_MS = 1500, LATEST_ROWS = 30, EXAMPLE_ROWS = 60;
 async function room() {
   const R = require("../room/lib.js");
-  const [rows, stats] = await Promise.all([R.rpc("cz_home_latest", { p_limit: 30 }), R.rpc("cz_stats", {})]);
+  const [got, stats] = await Promise.all([R.rpc("cz_home_latest", { p_limit: EXAMPLE_ROWS }), R.rpc("cz_stats", {})]);
+  const rows = (Array.isArray(got) ? got : []).filter((e) => e && typeof e === "object").sort((a, b) => Number(b.id) - Number(a.id));   // newest first, as the function gives them
   const n = Number(stats && stats.entries);
   return { "__ROOM_COUNT__": Number.isFinite(n) ? ` (<data value="${n}">${n.toLocaleString("en-US")}</data> ${n === 1 ? "entry" : "entries"})` : "",
-           "__ROOM_LATEST__": R.previewHtml(Array.isArray(rows) ? rows : []) };
+           "__ROOM_EXAMPLE__": R.exampleHtml(rows),
+           "__ROOM_LATEST__": R.previewHtml(rows.slice(0, LATEST_ROWS)) };
 }
 async function roomOrNothing() {
   if (!T.html.includes("__ROOM_")) return {};
@@ -83,7 +91,7 @@ module.exports = async (req, res) => {
   if (md) f = "html";
   if (!(Object.hasOwn(T, f) && typeof T[f] === "string")) f = "html";   // ?f=constructor and the like: an inherited property is not a form (review of CZ 1432)
   const now = new Date(), zone = CZ.readerZone(req.headers);   // the reader's date: their network's time zone, read and kept nowhere
-  const c = { ...clock(now, CZ.localMs(now.getTime(), zone)), "__CZ_ZONE__": zone, "__CZ_UTC_ISO__": now.toISOString().slice(0, 10), "__ROOM_COUNT__": "", "__ROOM_LATEST__": "" };
+  const c = { ...clock(now, CZ.localMs(now.getTime(), zone)), "__CZ_ZONE__": zone, "__CZ_UTC_ISO__": now.toISOString().slice(0, 10), "__ROOM_COUNT__": "", "__ROOM_EXAMPLE__": "", "__ROOM_LATEST__": "" };
   const ttl = Math.min(300, CZ.secondsToNextLocalDay(now.getTime(), zone)), vary = CZ.varyZone("Accept");
   if ((T[f] ? f : "html") === "html") Object.assign(c, await roomOrNothing());
   const types = { html: "text/html; charset=utf-8", json: "application/json; charset=utf-8", txt: "text/plain; charset=utf-8" };
@@ -109,3 +117,4 @@ module.exports = async (req, res) => {
 };
 
 module.exports.negotiate = negotiate;
+module.exports.clock = clock;   // for the tests: the launch sentence on each side of the launch day
