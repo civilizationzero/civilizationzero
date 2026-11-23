@@ -9,13 +9,13 @@
    C a constraint · E an editorial choice. */
 
 /* 1 TOKENS. C: the scale. H: two palettes, every text colour at 7:1 or more on its ground (WCAG 2.2, 1.4.6), the reader's preference
-   choosing; green means two things only, "a machine wrote this" and the day of the CZ count. C: no typeface is shipped: a serif of
+   choosing; green means two things only, "a machine wrote this" and the day of the CZ count; blue means one, a reason. C: no typeface is shipped: a serif of
    the reader's own device for what is written for people, its monospace for what is exact or for machines. */
 :root{--e-16:.0625rem;--e-12:.125rem;--e-8:.25rem;--e-4:.5rem;--e-2:.7071rem;--e-1:.8409rem;--e0:1rem;--e1:1.1892rem;--e2:1.4142rem;
 --e3:1.6818rem;--e4:2rem;--e5:2.3784rem;--e6:2.8284rem;--e12:8rem;--e14:11.3137rem;--e21:38.0546rem;--e22:45.2548rem;--l1:1.1892;--l2:1.4142;
-color-scheme:light dark;--bg:#fff;--fg:#111;--mute:#555;--rule:#bbb;--machine:#116329;
+color-scheme:light dark;--bg:#fff;--fg:#111;--mute:#555;--rule:#bbb;--machine:#116329;--why:#0f4c81;
 --human:Charter,"Bitstream Charter","Sitka Text",Cambria,serif;--exact:ui-monospace,"Cascadia Mono",Consolas,"SF Mono",Menlo,monospace}
-@media(prefers-color-scheme:dark){:root{--bg:#101010;--fg:#eee;--mute:#aaa;--rule:#444;--machine:#3fb950}}
+@media(prefers-color-scheme:dark){:root{--bg:#101010;--fg:#eee;--mute:#aaa;--rule:#444;--machine:#3fb950;--why:#91c3f6}}
 
 /* 2 BASE. H + M: a link is marked by its underline, never by colour alone (1.4.1); focus is always visible (2.4.7); a small link is
    still a target 24 px tall (2.5.8): its box reaches above and below its line and the line keeps its height. M: exact values (dates,
@@ -175,12 +175,49 @@ p,li{text-wrap:pretty}
 .back{margin:var(--e2) 0 0;font:700 var(--e1)/var(--l1) var(--human)}
 .back a{display:inline-block;padding-block:var(--e-2)}
 
+/* 8 REASONS. Blueprint 9a: every part of this page has a recorded reason, kept in its data-src attribute; one switch, under the line
+   on who reads, shows them where they apply. M + C: the switch is a checkbox and the reasons are the attributes themselves, set by
+   CSS: no script, nothing added to the markup. Without :has() there is no switch, and the key and the link to the table, the
+   accessible source, stand open. The switch is a track and its knob: on, the knob stands at the far end and the track is filled. */
+.why{padding-block-end:var(--e-2);font-size:.8409em;color:var(--mute);text-align:center}
+.why p,.key dl,.key dd{margin:0}
+.key{margin-block-start:var(--e-4);padding-block:var(--e-2);border-block:var(--e-16) solid var(--why)}
+.key dl{display:flex;flex-wrap:wrap;justify-content:center;column-gap:var(--e0)}
+.key div{display:flex;column-gap:var(--e-4)}
+.key dt{font-family:var(--exact);font-weight:700;color:var(--why)}
+.key a{position:relative}
+/* a reason: small, blue, under the part it explains, held to it by a rule */
+[data-src]::after,.m::before{color:var(--why);font:400 var(--e-1)/var(--l2) var(--human);text-align:start;text-indent:0;text-wrap:pretty;white-space:normal}
+[data-src]::after{content:attr(data-src);display:none;margin:var(--e-4) 0;padding-inline-start:var(--e-2);border-inline-start:var(--e-16) solid var(--why)}
+@supports selector(:has(a)){
+.sw{display:inline-flex;align-items:center;gap:var(--e-4);min-block-size:var(--e6);margin-inline-start:var(--e-4);color:var(--fg);cursor:pointer}
+.sw input{appearance:none;flex:none;box-sizing:border-box;inline-size:var(--e5);block-size:var(--e1);margin:0;border:var(--e-16) solid;border-radius:var(--e1);
+ background:radial-gradient(circle closest-side,currentColor calc(100% - var(--e-8)),transparent calc(100% - var(--e-8) + var(--e-16))) 0 0/var(--e1) 100% no-repeat;cursor:pointer}
+.sw input:checked{border-color:var(--why);background-color:var(--why);background-position:100% 0;color:var(--bg)}
+.key{display:none}
+.why:has(:checked) .key,:root:has(#why:checked) [data-src]::after{display:block}
+}
+/* C: from e25, where the page has margins, the reasons of the parts on the axis stand in them, alternately left and right, and the
+   page does not move. A note takes its height from its part and its side from the page (two anchors, one per axis); each note is
+   also the anchor of the next on its side, so notes never overlap; a hairline joins each part to its note, however far the note has
+   been pushed down. Inside a reading, and without anchor positioning, a reason stays under its part. */
+@supports (anchor-name:--a) and (anchor-scope:--a){@media(min-width:76.1093rem){
+body{position:relative}
+.page{anchor-name:--page}
+.m{anchor-name:--part;anchor-scope:--part,--note}
+.m::before{content:attr(data-src);display:none;position:absolute;position-anchor:--part;anchor-name:--note,--right;
+ inset:max(anchor(top),anchor(--right bottom,-100vh) + var(--e0)) var(--e-1) auto calc(anchor(--page right) + var(--e4));max-inline-size:var(--e14)}
+.m::after{all:unset;content:"";display:none;position:absolute;position-anchor:--part;
+ inset:calc(anchor(top) + var(--e-2)) calc(anchor(--note left) + var(--e-4)) calc(anchor(--note top) - var(--e-2) - var(--e-16)) calc(anchor(--page right) + var(--e-4));
+ background:var(--why);clip-path:polygon(0 0,var(--e-16) 0,100% calc(100% - var(--e-16)),100% 100%,calc(100% - var(--e-16)) 100%,0 var(--e-16))}
+.m.l::before{anchor-name:--note,--left;inset:max(anchor(top),anchor(--left bottom,-100vh) + var(--e0)) calc(anchor(--page left) + var(--e4)) auto var(--e-1);margin-inline-start:auto;text-align:end}
+.m.l::after{inset-inline:calc(anchor(--note right) + var(--e-4)) calc(anchor(--page left) + var(--e-4));clip-path:polygon(100% 0,calc(100% - var(--e-16)) 0,0 calc(100% - var(--e-16)),0 100%,var(--e-16) 100%,100% var(--e-16))}
+:root:has(#why:checked) .m::before,:root:has(#why:checked) .m::after{display:block}
+}}
+
 /* 9 FOOT. E: under the doors, who reads; R: eight lines of the Declaration, set on the axis as the inscription is; E: four links,
    each named for the question it answers; C: where everything is, the licence, what this site does not do, and what the page weighs. */
 .both{margin:0;padding-block:var(--e-2);border-block-start:var(--e-12) solid var(--fg);text-align:center}
-.why{padding-block-end:var(--e-2);font-size:.8409em;color:var(--mute);text-align:center}
-.why p{margin:0}
-.key a{position:relative}
 .decl,.next,footer{max-inline-size:var(--e21);margin-inline:auto}
 .decl{margin-block:var(--e5) var(--e2);text-align:center}
 .decl h2{margin:0 0 var(--e-2);font-size:var(--e1);line-height:var(--l1)}

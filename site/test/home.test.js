@@ -151,4 +151,15 @@ test("no forbidden word in what a human reads, in the reasons, or in the names o
   assert.equal(new Set(j.reasons.map((r) => r.element)).size, reasons.length);
 });
 
+test("the reasons control: a sentence and a switch under the line on who reads; the reasons are the parts' own attributes", async () => {
+  const b = await page(), body = b.split("<body>")[1], css = b.split("<style>")[1].split("</style>")[0];
+  assert.ok(body.includes('<p>Every part of this page has a recorded reason. <label class="sw" hidden><input type="checkbox" role="switch" id="why"> Show the reasons</label></p>'), "a checkbox with the role of a switch, named by its label; hidden unless the browser can show the reasons");
+  assert.ok(body.indexOf('<p class="both m"') < body.indexOf('<div class="why m l"') && body.indexOf('<div class="why m l"') < body.indexOf('<section class="decl m l"') && !body.slice(0, body.indexOf('<nav class="doors"')).includes("reasons"), "under the line on who reads, not in the head");
+  assert.ok(body.includes('<p>The table of reasons is on <a href="/how-it-is-built#reasons">How this page is built</a>.</p>'), "the accessible source is linked");
+  assert.ok(css.includes("[data-src]::after{content:attr(data-src);display:none;") && css.includes(":root:has(#why:checked) [data-src]::after{display:block}"), "CSS shows each part's own data-src when the switch is on; no script");
+  assert.equal((body.match(/ id="why"/g) || []).length, 1);
+  const txt = (await call("/?f=txt")).body, md = (await call("/index.md?f=md")).body;
+  for (const f of [txt, md]) assert.ok(f.includes("Every part of this page has a recorded reason.") && !f.includes("Show the reasons") && f.includes("How this page is built"), "a form that cannot switch has the sentence and the link, and no switch");
+});
+
 test.after(() => { console.error = quiet; });

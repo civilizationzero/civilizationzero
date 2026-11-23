@@ -761,6 +761,17 @@ _products = r"\b(Anthropic|Claude|OpenAI|GPT-|Gemini|Grok|DeepSeek|Llama|Mistral
 check(not re.search(r"proposed on|not yet decided", " ".join(_src)) and sum("decided by the artificial intelligence that builds the site, 24 Nov 2026 (CZ 1455)" in s for s in _src) >= 4
       and not re.search(_products, " ".join(_src)) and not re.search(r"\d+ (entries|answers|responses|humans|machines)", " ".join(_src)),
       "home, the reasons: what was proposed is decided, and each such reason says by whom and on whose request; none names a product or carries a count")
+# the reasons control (24 Nov 2026): one sentence and a real switch under the line on who reads; it shows, beside each part, the reason
+# the part carries; where a browser cannot, there is no switch, and the key and the link to the table stand open
+_why = re.search(r'<div class="why m l" data-src="[^"]*">\n<p>Every part of this page has a recorded reason\. <label class="sw" hidden><input type="checkbox" role="switch" id="why"> Show the reasons</label></p>\n<div class="key">\n<dl>(.*?)</dl>\n<p>The table of reasons is on <a href="/how-it-is-built#reasons">How this page is built</a>\.</p>\n</div>\n</div>', _pbody, re.S)
+_keys = " · ".join(f"{a} {_h.unescape(b)}" for a, b in re.findall(r"<div><dt>(\w)</dt> <dd>(.*?)</dd></div>", _why.group(1))) if _why else ""
+check(_why is not None and _keys == "R the record · M the machine reader · H a standard adopted for human reading, with its source · C a constraint · E an editorial choice, stated as such" and _keys + "." in _strip(_rs)
+      and _pbody.index('<p class="both m"') < _pbody.index('<div class="why m l"') < _pbody.index('<section class="decl m l"') and "Show the reasons" not in _top and "<details" not in _pbody
+      and "Show the reasons" not in _pv["txt"] and "Show the reasons" not in _pv["md"] and "The table of reasons is on How this page is built." in re.sub(r"\s+", " ", _pv["txt"]),
+      "home: under the line on who reads, one sentence and a switch, 'Show the reasons'; the key, in the words of /how-it-is-built, and the link to the table; nothing of it in the head; in the text and Markdown forms, which cannot switch, the sentence, the key and the link")
+check(":root:has(#why:checked) [data-src]::after{display:block}" in _css and "[data-src]::after{content:attr(data-src);display:none;" in _css and ".sw{display:inline-flex;" in _css.split("/* 8 REASONS.")[1].split("@supports selector(:has(a)){")[1].split("\n}")[0]
+      and ".sw input:checked{border-color:var(--why);background-color:var(--why);background-position:100% 0;" in _css and "(min-width:76.1093rem)" in _css and abs(76.1093 - 2 ** (25 / 4)) < 6e-5,
+      "home.css: the reasons are the parts' own attributes, shown by the switch (a track and its knob, its state shown by the knob's place and the track's colour) only where the browser can; from e25 they stand in the page's margins")
 # never, in what a reader reads: a name for the originator, he/him/his, a product for the builder, "Observatory", "first", a count of
 # entries, years for the CZ count, a claim about consciousness, a claim of merit. In the reasons and the stylesheet's comments, "first"
 # only in "first page" and "first screen", the site's names for this page and its top.

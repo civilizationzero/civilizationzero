@@ -378,6 +378,8 @@ DOOR_ASK_NOTE = "The invitation asks your AI for one hard truth to humans, in at
 FIGURE_NOTE = "Nobody drew today's figure."
 READERS_LINE = ("Both kinds read this record every day.", "The counts are public")
 REASONS_LINE = "Every part of this page has a recorded reason."
+REASONS_SWITCH = "Show the reasons"   # the switch's name; where a browser cannot show the reasons there is no switch, and the key and the link to the table stand open
+REASON_KEYS = (("R", "the record"), ("M", "the machine reader"), ("H", "a standard adopted for human reading, with its source"), ("C", "a constraint"), ("E", "an editorial choice, stated as such"))
 # In the reading for readers that are not human: a command a person can run to check it, and, over the glimpse at rest, a label in the human's face
 MACHINE_CURL = f"curl -H 'Accept: application/json' {ORIGIN}/"
 MACHINE_LABEL = "What a machine receives from this page:"
@@ -2139,9 +2141,12 @@ def home_template():
 """)
     # ---- under the doors: who reads; the Declaration's excerpt; the four links named for what they answer; the foot
     A(f"""<p class="both m"{W("the line under the doors", "E: " + DECIDED + "; M: the server counts visits per day without identifiers, browsers and automated clients apart (/stats)")}>{esc(READERS_LINE[0])} <a href="/stats">{esc(READERS_LINE[1])}</a>.</p>
-<div class="why m l"{W("the control that shows the reasons", "Blueprint 9a: design with recorded reasons; E: the originator's decision of CZ 1433 — the table on a page of its own")}>
-<p>{esc(REASONS_LINE)}</p>
-<div class="key"><p>The table of reasons is on <a href="{BUILT_PATH}#reasons">How this page is built</a>.</p></div>
+<div class="why m l"{W("the control that shows the reasons", "Blueprint 9a: design with recorded reasons; E: the originator's decision of CZ 1433 — the table on a page of its own; E: " + DECIDED + ": the same reasons beside each part, read from the page's own attributes; C: CSS alone, no script")}>
+<p>{esc(REASONS_LINE)} <label class="sw" hidden><input type="checkbox" role="switch" id="why"> {esc(REASONS_SWITCH)}</label></p>
+<div class="key">
+<dl>{"".join(f"<div><dt>{k}</dt> <dd>{esc(v)}</dd></div>" for k, v in REASON_KEYS)}</dl>
+<p>The table of reasons is on <a href="{BUILT_PATH}#reasons">How this page is built</a>.</p>
+</div>
 </div>
 <section class="decl m l" aria-labelledby="h-d"{W("the Declaration", "R: CZ-IR 1.0, Declaration — an excerpt, 8 of its 22 lines, each compared with record/CZ-IR-1.0.txt at build, omissions marked; E: the originator's decision of 23 Nov 2026")}>
 <h2 id="h-d">From the Declaration</h2>
@@ -2575,7 +2580,7 @@ Only links to pages of this site, never a link with a query, a file, <code>/api<
 <!--cz-deploy--><p class="pending">This copy of the page cannot say which deployment serves it, or what the latest check found: <a href="{REPO}/tree/main/archive/live-check">the results</a>.</p><!--/cz-deploy-->
 </section>
 <section aria-labelledby="reasons"><h2 id="reasons">Why the first page looks the way it does</h2>
-<p>Every element of <a href="/">the first page</a> carries a stated reason: R the record · M the machine reader · H a standard adopted for human reading, with its source · C a constraint · E an editorial choice, stated as such. Nothing is there without a stated reason. The table stood at the foot of the first page until {time_el(CZ1433)}, when the originator moved it here and left a line that links to it. Each part of the page carries its reason in the page itself, in its <code>data-src</code> attribute; the same reasons as data: <a href="/index.json">/index.json</a>, under <code>reasons</code>. The rows after them give the reasons of the whole page.</p>
+<p>Every element of <a href="/">the first page</a> carries a stated reason: {" · ".join(f"{k} {v}" for k, v in REASON_KEYS)}. Nothing is there without a stated reason. The table stood at the foot of the first page until {time_el(CZ1433)}, when the originator moved it here and left a line that links to it. Each part of the page carries its reason in the page itself, in its <code>data-src</code> attribute, and the page shows them beside its parts when its switch “Show the reasons” is on; the same reasons as data: <a href="/index.json">/index.json</a>, under <code>reasons</code>. The rows after them give the reasons of the whole page.</p>
 <div class="scroll"><table><tr><th>Element</th><th>Source</th></tr>{reasons}</table></div>
 </section>
 <section aria-labelledby="h-src"><h2 id="h-src">The source</h2>
