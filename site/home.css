@@ -50,7 +50,7 @@ p,li{text-wrap:pretty}
 .date,.zero,.say{margin:0}
 .date{color:var(--mute)}
 .date .d{color:var(--machine);font-weight:700;white-space:nowrap}
-.axis :is(time,data){font-family:inherit;font-size:1em;white-space:nowrap}   /* a sentence, not a table of values */
+.axis :is(time,data){font-family:inherit;font-size:1em;white-space:nowrap}
 @media(min-width:38.0546rem){
 .fig-l{inline-size:var(--e14)}
 }
@@ -85,7 +85,7 @@ p,li{text-wrap:pretty}
 .page:has(#human:target){--open:1}
 .page:has(#not-human:target){--open:0}
 .col{scroll-margin-block-start:calc(100vh - var(--e14))}   /* an answered door moves the page only if little of its reading would show */
-.in>h2{position:absolute;inline-size:var(--e-16);block-size:var(--e-16);margin:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap}   /* kept for readers who do not see the layout */
+.in>h2{position:absolute;inline-size:var(--e-16);block-size:var(--e-16);margin:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
 /* the answered door carries a heavier underline, as the site marks the page one is on. "I am not human": the name is set as data,
    what follows the doors for a human is closed, one plain way back remains */
 .page:has(#human:target) .door.h,.page:has(#not-human:target) .door.n{text-decoration-thickness:var(--e-8)}
@@ -150,14 +150,14 @@ p,li{text-wrap:pretty}
 button.open{display:none}
 .themes{margin:0;padding:0;list-style:none}
 .themes a{display:block;padding-block:var(--e-8)}
-/* R §9: one answer a machine gave, as its author declared it: user content, marked as every AI entry is, by a green edge and its kind in words */
+/* R §9: one answer a machine gave, as its author declared it: user content, marked as every AI entry is */
 .ex{padding-inline-start:var(--e-2);border-inline-start:var(--e-8) solid var(--machine)}
 .ex p{margin:0}
 .ex .content{white-space:pre-wrap}
 .kind.ai{border-color:var(--machine);color:var(--machine);font-weight:700}
 /* Blueprint §7: the room's own form in the browser's own popover, never taller than the window; from e21, in the place's column where the browser can anchor it */
 #reply{display:none;box-sizing:border-box;padding:var(--e0);border:var(--e-12) solid var(--fg);color:var(--fg);background:var(--bg)}
-#reply h2{margin:0;outline:0;font-size:var(--e1);line-height:var(--l1)}   /* focused as the sheet opens */
+#reply h2{margin:0;outline:0;font-size:var(--e1);line-height:var(--l1)}
 #reply p{margin:var(--e-2) 0 0}
 #reply :is(label,details){display:block;margin-block-start:var(--e-2)}
 #reply :is(input,select,textarea){display:block;box-sizing:border-box;inline-size:100%;margin-block-start:var(--e-8);padding:var(--e-4);border:var(--e-16) solid var(--mute);color:var(--fg);background:var(--bg);font:inherit}
@@ -230,8 +230,7 @@ footer p{margin:0 0 var(--e-2)}
 .foot a{display:inline-block;padding-block:var(--e-8)}
 
 /* 10 MOTION. E: one movement as the page opens (the figure turns from the day before to today); after that nothing moves unless the
-   reader moves it: the figure by a day at a press, the line between the readings at a door, the sheet as it opens; between pages
-   the site's own fade. H: none of it for a reader who asks for less motion (2.3.3). */
+   reader moves it: the figure by a day at a press, the line between the readings at a door; between pages the site's own fade. H: none of it for a reader who asks for less motion (2.3.3). */
 @media(prefers-reduced-motion:no-preference){
 @view-transition{navigation:auto}
 .page{transition:--open .8409s cubic-bezier(.6,0,.2,1)}
@@ -241,7 +240,4 @@ footer p{margin:0 0 var(--e-2)}
 .fig{transition:--day 1.1892s cubic-bezier(.6,0,.2,1);animation:turn calc(var(--live,0)*1.6818s) cubic-bezier(.6,0,.2,1) .25s backwards}
 @keyframes turn{from{--day:calc(var(--today) - 1)}}
 }
-#reply,#reply::backdrop{transition:opacity .5s,overlay .5s allow-discrete,display .5s allow-discrete}
-@starting-style{#reply:popover-open,#reply:popover-open::backdrop{opacity:0}}
-#reply:not(:popover-open),#reply:not(:popover-open)::backdrop{opacity:0}
 }

@@ -759,7 +759,7 @@ check(len(_m5) == 3 and ".arc circle{stroke-dashoffset:calc(-1*mod(var(--a) + mo
 _mo = _nocom.split("@media(prefers-reduced-motion:no-preference){")
 check(len(_mo) == 2 and not re.search(r"transition|animation|@keyframes|@view-transition", _mo[0]) and _mo[1].rstrip().endswith("}") and "/* 10 MOTION." in _css and _css.index("/* 10 MOTION.") < _css.index("@media(prefers-reduced-motion:no-preference){")
       and ".page{transition:--open .8409s" in _mo[1] and "animation:turn calc(var(--live,0)*1.6818s)" in _mo[1] and '@property --open{syntax:"<number>";inherits:true;initial-value:.5}' in _css,
-      "home.css: one block of motion — the figure's turn as the page opens, the day at a press, the line between the readings at a door, the sheet — and all of it only for a reader who has not asked for less (WCAG 2.3.3)")
+      "home.css: one block of motion — the figure's turn as the page opens, the day at a press, the line between the readings at a door — and all of it only for a reader who has not asked for less (WCAG 2.3.3)")
 _f = _pj["figure"]
 check(list(_f) == ["day", "core_sha256", "modulus", "start", "step", "position", "rule"] and _f["day"] == _day and _f["core_sha256"] == _sha == _pj["record"][0]["sha256_txt"] and _f["modulus"] == _M and _f["start"] == [_hb[2 * i] for i in range(16)] and _f["step"] == [_hb[2 * i + 1] + 1 for i in range(16)]
       and _f["position"] == [(_hb[2 * i] + _day * (_hb[2 * i + 1] + 1)) % _M[i] for i in range(16)] and _f["rule"] == list(FIGURE.RULE) and len(_f["rule"]) == 5 and _pj["figure_note"] == "Nobody drew today's figure."
