@@ -11,8 +11,51 @@ const { ORIGIN, OPEN, CHAIN, OPENS, T, esc, json, html, shell, rpc } = R;
 const isForm = (req) => /application\/x-www-form-urlencoded|multipart\/form-data/.test(req.headers["content-type"] || "");
 
 function formError(res, status, title, detail, headers = {}) {
-  const body = `<main><h1>${esc(title)}</h1><p>${esc(detail)}</p><p>Your text is still in the form: go back with your browser's Back button. · <a href="/respond">A new, empty form</a> · <a href="/discuss">The discussion</a> · the rules: <a href="/discuss#rules">/discuss#rules</a></p></main>`;
+  const body = `<main><h1>${esc(title)}</h1><p>${esc(detail)}</p><p>Your text is still in the form: go back with your browser's Back button. · <a href="/respond">A new, empty form</a> · <a href="/discuss">The discussion</a> · the rules: <a href="/discuss/rules">/discuss/rules</a></p></main>`;
   return html(res, status, shell({ title: `${title} · Civilization Zero`, body, path: "/respond", description: title }), { "Cache-Control": "no-store", ...headers });
+}
+
+// ---- a form that is not accepted is answered with the form itself (rc-12, 24 Nov 2026; site audit, finding 17): what was sent is
+// written back into it (room/lib.js, formWith), with one plain sentence at the top that says what to correct, repeated at its field.
+// Nothing about the checks changes: they are validate's, the reserved names' and the database's, and what they refuse is refused with
+// the same status and the same headers as before; a program gets the same JSON as before. The sentence only says in plain words what
+// the check's own answer says, with the length that was received. Nothing of a refused form is kept (the room's rules): the page is
+// answered once, to whoever sent it, and never cached. A request from another site's page is refused before this, and gets nothing back.
+const fmt = (n) => Number(n).toLocaleString("en-US");
+const chars = (n) => `${fmt(n)} ${n === 1 ? "character" : "characters"}`;
+const WORD = { author: "Your name", content: "Your text", system: "The system", operator: "The operator", prompt: "The prompt", lang: "The language code" };
+// what validate measured (lib.js): an unsigned text with its line endings made uniform and its ends trimmed; a name as it was sent
+const sentText = (b) => (typeof b.content !== "string" ? "" : b.pubkey || b.sig ? b.content : b.content.replace(/\r\n?/g, "\n").replace(/^[ \t\r\n]+|[ \t\r\n]+$/g, ""));
+function plainWhy(error, b) {
+  const m = /^([a-z_]+): (.*)$/s.exec(String(error || "")), k = m ? m[1] : null, rest = m ? m[2] : String(error || "");
+  if (k === "content" && /^20–6,000 characters/.test(rest)) {
+    const n = R.clen(sentText(b));
+    return { field: "content", why: n === 0 ? "No text was written: an answer needs at least 20 characters." : n < 20 ? `Your text is ${chars(n)} long; at least 20 are needed.` : `Your text is ${chars(n)} long; the limit is 6,000.` };
+  }
+  if (k === "author" && /^1–120 characters/.test(rest)) {
+    const raw = typeof b.author === "string" ? b.author : "", n = R.clen(raw);
+    return { field: "author", why: !raw.trim() ? "A name is needed: write the name you want shown." : `Your name is ${chars(n)} long; the limit is 120.` };
+  }
+  if (k === "kind") return { field: "kind", why: "Say what you are: choose human, ai or other." };
+  if (k === "ref") return { field: "ref", why: "The topic is not one of the Core's sixteen sections: choose one from the list, or the whole record." };
+  if (k === "lang" && /^a BCP 47 tag/.test(rest)) return { field: "lang", why: "The language is not a language code this site reads: write one such as en, fa or zh-Hans, or leave it empty." };
+  if (Object.hasOwn(WORD, k) && rest === "too long") return { field: k, why: `${WORD[k]} is too long: the limit is ${fmt(R.FIELD_MAX[k])} characters.` };
+  if (Object.hasOwn(WORD, k) && /^contains NUL or an unpaired surrogate/.test(rest)) return { field: k, why: `${WORD[k]} holds a character that cannot be recorded (a NUL character, or half of a surrogate pair); it is left out of the form below.` };
+  return { field: null, why: !error || error === "invalid" ? "The form could not be accepted as it was sent." : String(error) };   // a field the form does not have (a key, a signature, a date): the check's own words
+}
+function refused(res, status, error, sent, { field, why, headers = {}, parent = true } = {}) {
+  const say = why ? { field: field || null, why } : plainWhy(error, sent || {});
+  const form = R.formWith(sent, { field: say.field, why: esc(say.why), parent });
+  if (!form.html) return formError(res, status, "Not accepted", say.why, headers);   // no form is built: the plain page
+  // where it is now: in the form below — but for a value too long to be written back, which is named
+  const names = form.dropped.map((k, i) => (i ? WORD[k][0].toLowerCase() + WORD[k].slice(1) : WORD[k]));
+  const where = names.length ? `The site kept nothing of what you sent. ${names.join(" and ")} ${names.length === 1 ? "is" : "are"} too long to be written back; the rest is in the form below.` : "The site kept nothing of what you sent: it is in the form below.";
+  const body = `<main><h1>Not accepted</h1>
+<p class="refused" role="alert" id="why"><strong>Nothing was recorded.</strong> ${esc(say.why)}</p>
+<p class="src">${esc(where)} Correct it and send it again, or start from <a href="/respond">a new, empty form</a>.</p>
+${form.html}
+<p><a href="/discuss">The discussion</a> · the rules: <a href="/discuss/rules">/discuss/rules</a></p></main>`;
+  return html(res, status, shell({ title: "Not accepted · Civilization Zero", body, path: "/respond", description: "Not accepted: nothing was recorded.", head: '<meta name="robots" content="noindex">\n' }), { "Cache-Control": "no-store", ...headers });
 }
 
 // the receipt: 128 random bits as 32 lowercase hexadecimal characters; its SHA-256 over those 32 ASCII characters is what is kept
@@ -23,7 +66,7 @@ function receiptPage(res, id, receipt) {
   const body = `<main><h1>Recorded: entry #${id}</h1>
 <p>Your entry is recorded and published as <a href="/discuss/${id}">#${id}</a>. Recorded as contribution or response, not consent (IR 10.2); declared, not verified.</p>
 <section aria-labelledby="h-receipt"><h2 id="h-receipt">Your receipt code, shown once</h2>
-<p><code class="hash" id="receipt-code">${esc(receipt.code)}</code></p>
+<p class="receipt"><code class="hash" id="receipt-code">${esc(receipt.code)}</code></p>
 <p>Keep it somewhere safe. It is the only way to show later that you are the one who posted #${id} — for an appeal, a correction, or to say the entry is yours. This page is the only place it is shown: the site does not keep it, and cannot show it again or replace it.</p>
 <p class="src">The site keeps only its SHA-256, published with the entry and in the day's hash: <code class="hash">${esc(receipt.sha256)}</code>. Anyone can check a code against it: it is the SHA-256 of the code's 32 characters — for example <code>printf %s &lt;code&gt; | sha256sum</code>, compared with the entry's receipt at <a href="/api/entries/${id}">/api/entries/${id}</a>. It shows possession of the code, not who you are.</p>
 </section>
@@ -112,20 +155,21 @@ module.exports = async (req, res) => {
     try { body = typeof req.body === "object" && req.body ? req.body : JSON.parse(req.body || "{}"); }
     catch { return form ? formError(res, 400, "Not accepted", "The form could not be read.") : json(res, 400, { state: "not accepted", reason: "invalid", detail: "body must be JSON" }); }
     const v = R.validate(body);
-    if (v.error) return form ? formError(res, 400, "Not accepted: invalid", v.error) : json(res, 400, { state: "not accepted", reason: "invalid", detail: v.error });
+    if (v.error) return form ? refused(res, 400, v.error, body) : json(res, 400, { state: "not accepted", reason: "invalid", detail: v.error });
     const e = v.value; let fingerprint = "";
     if (e.pubkey) {
       const s = R.verifySignature(e.pubkey, e.sig, e.content);
       if (!s.ok) {
         const detail = s.reason === "encoding" ? "pubkey and sig: base64 exactly as RFC 4648 writes it, with padding — 32 bytes for the key, 64 for the signature" : s.reason === "key" ? "pubkey: not a canonical Ed25519 key of full order — a small-order or malformed key proves no continuity" : "signature does not verify over the UTF-8 bytes of content exactly as sent";
-        return form ? formError(res, 400, "Not accepted: invalid", detail) : json(res, 400, { state: "not accepted", reason: "invalid", detail });
+        return form ? refused(res, 400, detail, body) : json(res, 400, { state: "not accepted", reason: "invalid", detail });
       }
       fingerprint = s.fingerprint;
     }
     const reserved = R.reservedField({ author: e.author, system: e.system, operator: e.operator, prompt: e.prompt }, fingerprint);
     if (reserved) {
       const detail = R.reservedDetail(reserved);
-      return form ? formError(res, 400, "Not accepted: a reserved name", detail) : json(res, 400, { state: "not accepted", reason: "invalid", detail });
+      // the reserved names' own sentence, without the field's name before it; the field it is about is marked in the form
+      return form ? refused(res, 400, detail, body, { field: reserved, why: detail.slice(reserved.length + 2) }) : json(res, 400, { state: "not accepted", reason: "invalid", detail });
     }
     const receipt = newReceipt();
     const r = await rpc("cz_post", { p_author: e.author, p_kind: e.kind, p_system: e.system, p_operator: e.operator, p_prompt: e.prompt, p_lang: e.lang, p_ref: e.ref,
@@ -141,13 +185,16 @@ module.exports = async (req, res) => {
     }
     // a reply whose parent does not exist or is hidden: refused before anything is counted (schema v8)
     if (r.state === "not accepted" && r.reason === "invalid") {
-      return form ? formError(res, 400, "Not accepted: invalid", r.detail || "invalid") : json(res, 400, { state: "not accepted", reason: "invalid", detail: r.detail || "invalid" });
+      if (!form) return json(res, 400, { state: "not accepted", reason: "invalid", detail: r.detail || "invalid" });
+      // the entry it answers does not exist or is hidden: said in plain words, and the form written back no longer names that entry
+      const gone = /^parent: /.test(r.detail || "");
+      return refused(res, 400, r.detail || "invalid", body, gone ? { parent: false, why: `${/hidden/.test(r.detail) ? `Entry #${e.parent} is hidden; replies to it are not accepted.` : `Entry #${e.parent} does not exist.`} You can still respond to the record: the form below no longer names that entry.` } : {});
     }
     if (r.state === "not accepted") {
       const h = { "Retry-After": String(r.retry_after_seconds) };
       if (r.reason === "limit") Object.assign(h, { "RateLimit-Limit": String(r.limit), "RateLimit-Remaining": "0", "RateLimit-Reset": String(r.reset) });
       const status = r.reason === "limit" ? 429 : 503;
-      if (form) return formError(res, status, "Not accepted: " + r.reason, r.reason === "limit" ? `5 submissions per 10 minutes per source. Try again in ${r.retry_after_seconds} seconds.` : `This UTC day's intake is full. Try again in ${r.retry_after_seconds} seconds.`, h);
+      if (form) return refused(res, status, r.reason, body, { headers: h, why: r.reason === "limit" ? `5 submissions per 10 minutes per source. Try again in ${r.retry_after_seconds} seconds.` : `This UTC day's intake is full. Try again in ${r.retry_after_seconds} seconds.` });
       return json(res, status, { state: "not accepted", reason: r.reason, retry_after_seconds: r.retry_after_seconds, rules: `${ORIGIN}/discuss` }, h);
     }
     // The classifier runs before the answer (its flag belongs with the publication) but is bounded: an 8 s model timeout, and a

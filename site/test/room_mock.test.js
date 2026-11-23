@@ -3,7 +3,7 @@
 // pagination and rendering; it does not test the production database or the SQL functions, which are unchanged by this branch.
 // Run: node site/test/room_mock.test.js
 const http = require("http"), path = require("path");
-let TABLE = [], CALLS = []; let TRANS = []; let SOURCE_CAP = 150000, SOURCE_USED = 0; let DOWN = false, HOME_RAW = null;
+let TABLE = [], CALLS = []; let TRANS = []; let SOURCE_CAP = 150000, SOURCE_USED = 0; let DOWN = false, HOME_RAW = null; let POST = null;
 const srv = http.createServer((q, s) => {
   let b = ""; q.on("data", (d) => (b += d)); q.on("end", () => {
     const a = b ? JSON.parse(b) : {}, name = (/\/rpc\/(\w+)/.exec(q.url) || [])[1];
@@ -71,6 +71,7 @@ const srv = http.createServer((q, s) => {
       out = Array.from(q).length < 2 || Array.from(q).length > 100 ? [] : TABLE.filter((e) => !e.hidden && (a.p_before == null || e.id < a.p_before) && (has(e.content) || has(e.author) || has(e.system) || has(e.operator)))
         .sort((x, y) => y.id - x.id).slice(0, Math.min(Math.max(a.p_limit ?? 50, 1), 100));
     }
+    else if (name === "cz_post") out = POST || { state: "published", id: 900, content_sha256: "c".repeat(64), limit: 5, remaining: 4 };   // what the database would answer (set by a test); nothing is kept here
     else if (name === "cz_stats") out = { entries: TABLE.length, hidden: TABLE.filter((e) => e.hidden).length, redacted: 0, today: 0, daily_intake_max: 500, unclassified: 0 };
     s.setHeader("content-type", "application/json"); s.end(JSON.stringify(out));
   });
@@ -508,6 +509,108 @@ srv.listen(0, "127.0.0.1", async () => {
       ok(cp(content) > 170 && cp(content) <= 400 && label === "A recent answer (the beginning):" && (text || "").endsWith("…") && cp(t) <= 170 && cp(t) > 0 && content.startsWith(t) && fits(content, t),
          `home, the beginning of ${what}: cut at a boundary, nothing altered (${cp(content)} → ${cp(t)}: ${JSON.stringify(t.slice(-12))})`);
     }
+    // ====================================================================== rc-12 (24 Nov 2026): the room in the first page's language
+    const T12 = require(path.resolve(__dirname, "../api/discuss-templates.json")), RL = require(path.resolve(__dirname, "../room/lib.js"));
+    const FORM = { method: "POST", headers: { "content-type": "application/x-www-form-urlencoded", origin: "https://civilizationzero.ai", "x-real-ip": "203.0.113.50" } };
+    const post = (body, extra = {}) => call(entries, "/api/entries", { ...FORM, ...extra, body });
+    const count = (b, x) => b.split(x).length - 1;
+    const ctl = (b, name) => (new RegExp(`<(?:input|select|textarea) name="${name}"[^>]*>`).exec(b) || [""])[0];
+    // ---------- stage 1: a form that is not accepted is answered with the form, holding what was sent (site audit, finding 17)
+    TABLE = []; CALLS = []; POST = null;
+    r = await post({ author: "A reader", kind: "human", content: "too short", ref: "3" });
+    const WHY = "Your text is 9 characters long; at least 20 are needed.";
+    ok(r.status === 400 && !CALLS.some((c) => c.name === "cz_post") && r.headers["cache-control"] === "no-store" && /<meta name="robots" content="noindex">/.test(r.body), `a text too short: 400 as before, nothing sent to the database, never cached, not indexed (${r.status})`);
+    ok(count(r.body, "<h1>") === 1 && r.body.includes("<h1>Not accepted</h1>") && r.body.includes(`<p class="refused" role="alert" id="why"><strong>Nothing was recorded.</strong> ${WHY}</p>`) && count(r.body, WHY) === 2, "the reason in one plain sentence at the top, as an alert, and once more at its field");
+    ok(count(r.body, "<form") === 1 && r.body.includes('action="/api/entries"') && /<textarea name="content"[^>]*>\ntoo short<\/textarea>/.test(r.body) && /<input name="author"[^>]* value="A reader">/.test(r.body)
+       && r.body.includes('<option value="human" selected>') && r.body.includes('<option value="" disabled>') && r.body.includes('<option value="3" selected>') && count(r.body, " selected>") === 2, "the form itself, holding the text, the name, the kind and the topic that were sent");
+    ok(/ aria-invalid="true"/.test(ctl(r.body, "content")) && /aria-describedby="why[ "]/.test(ctl(r.body, "content")) && count(ctl(r.body, "content"), "aria-describedby") === 1 && count(r.body, 'aria-invalid="true"') === 1 && count(r.body, 'id="why"') === 1,
+       "the box to correct is marked for assistive technology and described by the sentence; no other box is");
+    ok(r.body.includes("The site kept nothing of what you sent: it is in the form below.") && r.body.includes('href="/discuss/rules"') && !/Back button/.test(r.body), "it says where the text is now; no advice to go back");
+    // what was sent is written back as text, never as markup; "$&" and the like stay text; a first line break is kept
+    r = await post({ author: '"><script>alert(1)</script>', kind: "", content: "\n</textarea><script>alert(2)</script> $& $'" });
+    ok(r.status === 400 && !/<script>alert/.test(r.body) && r.body.includes('value="&quot;&gt;&lt;script&gt;alert(1)&lt;/script&gt;"') && r.body.includes("&lt;/textarea&gt;&lt;script&gt;alert(2)&lt;/script&gt; $&amp; $'</textarea>")
+       && count(r.body, "<textarea") === 1 && count(r.body, "</textarea>") === 1 && count(r.body, "<form") === 1, "markup in a name or a text is written back as text; one form, one box");
+    r = await post({ author: "A reader", kind: "human", content: "\n\n  two line breaks first, and long enough  \n" , system: "x".repeat(201) });
+    ok(r.status === 400 && /<textarea name="content"[^>]*>\n\n\n {2}two line breaks first, and long enough {2}\n<\/textarea>/.test(r.body) && r.body.includes("The system is too long: the limit is 200 characters.") && r.body.includes("<details open><summary>Posting the answer of an AI system")
+       && / aria-invalid="true"/.test(ctl(r.body, "system")) && r.body.includes(`value="${"x".repeat(201)}"`), "the text comes back exactly as sent (the tag's own line break before it); a field in the fold: the fold stands open");
+    // the lengths are the ones the check measured
+    r = await post({ author: "A reader", kind: "human", content: "é".repeat(6500) });
+    ok(r.status === 400 && count(r.body, "Your text is 6,500 characters long; the limit is 6,000.") === 2 && r.body.includes("é".repeat(6500) + "</textarea>"), "a text of 6,500 characters: said with the length received, and written back to be shortened");
+    r = await post({ author: "A reader", kind: "human", content: "z".repeat(12001) });
+    ok(r.status === 400 && r.body.includes("Your text is 12,001 characters long; the limit is 6,000.") && !r.body.includes("z".repeat(200)) && r.body.includes("The site kept nothing of what you sent. Your text is too long to be written back; the rest is in the form below.") && /value="A reader"/.test(r.body),
+       "a text beyond twice the limit is not written back, and the page says so");
+    r = await post({ author: "A reader", kind: "human", content: "😀".repeat(19) });
+    ok(r.status === 400 && r.body.includes("Your text is 19 characters long; at least 20 are needed."), "characters are counted as the contract counts them (code points)");
+    r = await post({ author: "A reader", kind: "human", content: "   \r\n  " });
+    ok(r.status === 400 && r.body.includes("No text was written: an answer needs at least 20 characters."), "an empty text");
+    r = await post({ author: "A reader", kind: "human", content: "x" });
+    ok(r.status === 400 && r.body.includes("Your text is 1 character long; at least 20 are needed."), "one character: singular");
+    r = await post({ author: "  ", kind: "human", content: "A text long enough to be accepted." });
+    ok(r.status === 400 && count(r.body, "A name is needed: write the name you want shown.") === 2 && / aria-invalid="true"/.test(ctl(r.body, "author")) && r.body.includes("\nA text long enough to be accepted.</textarea>"), "no name: said, the name's box marked, the text kept");
+    r = await post({ author: "n".repeat(121), kind: "human", content: "A text long enough to be accepted." });
+    ok(r.status === 400 && r.body.includes("Your name is 121 characters long; the limit is 120."), "a name too long: with its length");
+    r = await post({ author: "A reader", content: "A text long enough to be accepted." });
+    ok(r.status === 400 && count(r.body, "Say what you are: choose human, ai or other.") === 2 && / aria-invalid="true"/.test(ctl(r.body, "kind")) && r.body.includes('<option value="" selected disabled>'), "no kind chosen: said; none is chosen for the writer");
+    r = await post({ author: "A reader", kind: "robot", content: "A text long enough to be accepted.", ref: "99", lang: "!!" });
+    ok(r.status === 400 && r.body.includes('<option value="" selected disabled>') && !/value="robot"|>robot<|value="99"/.test(r.body) && count(r.body, " selected>") === 0 && r.body.includes('value="!!"'), "a kind or a topic the form does not have is not written back (a language code is, as text, to be corrected)");
+    r = await post({ author: "A reader", kind: "ai", content: "A text long enough to be accepted.", lang: "not a tag" });
+    ok(r.status === 400 && r.body.includes("The language is not a language code this site reads") && / aria-invalid="true"/.test(ctl(r.body, "lang")) && r.body.includes("<details open>"), "a language code the site does not read");
+    r = await post({ author: "Rea\u0000der", kind: "human", content: "A text long enough to be accepted." });
+    ok(r.status === 400 && r.body.includes("Your name holds a character that cannot be recorded (a NUL character, or half of a surrogate pair); it is left out of the form below.") && r.body.includes('value="Reader"') && !r.body.includes("\u0000"), "a NUL character: refused as before, said, and left out of what is written back");
+    // the reserved names: refused exactly as before; the form comes back with the name's box marked
+    CALLS = []; r = await post({ author: "The Originator", kind: "human", content: "A text long enough to be accepted." });
+    ok(r.status === 400 && !CALLS.some((c) => c.name === "cz_post") && r.body.includes("are reserved: an entry that uses them must be signed with the originator&#39;s key") === false && r.body.includes("are reserved: an entry that uses them must be signed with the originator's key")
+       && / aria-invalid="true"/.test(ctl(r.body, "author")) && !r.body.includes("author: &quot;The originator&quot;") && r.body.includes('value="The Originator"'), `a reserved name is still refused, before the database (${r.status})`);
+    // a program is answered as before, in the contract's words
+    r = await call(entries, "/api/entries", { method: "POST", headers: { "content-type": "application/json", "x-real-ip": "203.0.113.51" }, body: JSON.stringify({ author: "T", kind: "ai", content: "short" }) });
+    j = JSON.parse(r.body); ok(r.status === 400 && j.state === "not accepted" && j.reason === "invalid" && j.detail === "content: 20–6,000 characters (Unicode code points)", "the API's answer to the same refusal is unchanged");
+    // another site's page: refused before anything is read, and nothing of what it sent comes back
+    r = await post({ author: "A reader", kind: "human", content: "planted text, short" }, { headers: { ...FORM.headers, origin: "https://evil.example" } });
+    ok(r.status === 403 && !r.body.includes("planted text") && !/<form/.test(r.body), `a form posted from another site's page: 403, no form, nothing written back (${r.status})`);
+    // what the database refuses: the same statuses and headers, with the form
+    POST = { state: "not accepted", reason: "limit", retry_after_seconds: 240, limit: 5, reset: 240 };
+    r = await post({ author: "A reader", kind: "human", content: "A text long enough to be accepted." });
+    ok(r.status === 429 && r.headers["retry-after"] === "240" && r.headers["ratelimit-remaining"] === "0" && r.body.includes("<strong>Nothing was recorded.</strong> 5 submissions per 10 minutes per source. Try again in 240 seconds.") && r.body.includes("\nA text long enough to be accepted.</textarea>") && !/aria-invalid="true"/.test(r.body),
+       `the limit: 429 with its headers, as before; the text is kept in the form for the next try (${r.status})`);
+    POST = { state: "not accepted", reason: "capacity", retry_after_seconds: 3600 };
+    r = await post({ author: "A reader", kind: "human", content: "A text long enough to be accepted." });
+    ok(r.status === 503 && r.headers["retry-after"] === "3600" && r.body.includes("This UTC day&#39;s intake is full.") === false && r.body.includes("This UTC day's intake is full. Try again in 3600 seconds."), `the day's intake full: 503, as before (${r.status})`);
+    POST = { state: "not accepted", reason: "invalid", detail: "parent: that entry is hidden; replies to it are not accepted" };
+    r = await post({ author: "A reader", kind: "human", content: "A text long enough to be accepted.", parent: "7" });
+    ok(r.status === 400 && r.body.includes("Entry #7 is hidden; replies to it are not accepted. You can still respond to the record: the form below no longer names that entry.") && !/name="parent"/.test(r.body), "a reply to a hidden entry: said, and the form written back no longer names it");
+    POST = { state: "not accepted", reason: "invalid", detail: "parent: no entry has this id" };
+    r = await post({ author: "A reader", kind: "human", content: "A text long enough to be accepted.", parent: "7" });
+    ok(r.status === 400 && r.body.includes("Entry #7 does not exist. You can still respond to the record: the form below no longer names that entry.") && !/name="parent"/.test(r.body), "a reply to an entry that does not exist: said in the words /respond uses");
+    POST = { state: "not accepted", reason: "limit", retry_after_seconds: 60, limit: 5, reset: 60 };
+    r = await post({ author: "A reader", kind: "human", content: "A text long enough to be accepted.", parent: "7" });
+    ok(r.status === 429 && r.body.includes('<input type="hidden" name="parent" value="7">') && count(r.body, 'name="parent"') === 1, "a reply refused for another reason keeps the entry it answers");
+    r = await post({ author: "A reader", kind: "human", content: "A text long enough to be accepted.", parent: "7<script>" });
+    ok(r.status === 400 && !/name="parent"/.test(r.body) && !r.body.includes("7<script>"), "a parent that is not a number is never written back");
+    // accepted: what is stored is what was sent, and the receipt's code stands in a box of its own
+    POST = null; CALLS = [];
+    r = await post({ author: "A reader", kind: "human", content: "  A text long enough to be accepted.\r\nSecond line.  " });
+    { const sent = CALLS.find((c) => c.name === "cz_post");
+      ok(r.status === 201 && sent && sent.args.p_content === "A text long enough to be accepted.\nSecond line." && sent.args.p_author === "A reader" && sent.args.p_via === "form", "an accepted form is recorded as before: the same text, the same fields");
+      ok(/<p class="receipt"><code class="hash" id="receipt-code">[0-9a-f]{32}<\/code><\/p>/.test(r.body), "the receipt's code in a box of its own"); }
+    // the built form (site/build.py, respond_form_html; /home/claude/rc12/Y-NEEDS.md, 1): checked when the build carries the form of rc-12
+    { const f = RL.HUMAN_FORM, at = (x) => f.indexOf(x), built = at('<textarea name="content"') >= 0 && at('<textarea name="content"') < at('<input name="author"');
+      if (!built) console.log("NOTE rc-12: site/api/discuss-templates.json does not carry the form of rc-12 yet (Y-NEEDS.md, 1: site/build.py); its checks are skipped");
+      else {
+        ok(at('<textarea name="content"') < at('<input name="author"') && at('<input name="author"') < at('<select name="kind"') && at('<select name="kind"') < at('<select name="ref"') && at('<select name="ref"') < at("<details>"), "the form: the place to write first, then the name, the kind, the topic, the folds");
+        ok(f.includes("<label>Your response <textarea") && f.includes("<label>Your name, as you want it shown <input") && f.includes("<label>You are <select") && f.includes("<label>Topic (optional) <select"), "the form: labels in plain words");
+        const visible = f.replace(/<details><summary>For programs[\s\S]*?<\/details>/, "");
+        ok(!/<code>(author|kind|ref|content)<\/code>/.test(visible) && /<details><summary>For programs: the names of the fields<\/summary>[\s\S]*<code>content<\/code>, <code>author<\/code>, <code>kind<\/code>[\s\S]*<code>ref<\/code>[\s\S]*<code>parent<\/code>/.test(f), "the form: the fields' names only in the fold for programs");
+        ok(/<textarea name="content" required minlength="20" maxlength="6000"/.test(f) && /<input name="author" required maxlength="120">/.test(f) && /<input name="system" maxlength="200">/.test(f) && /<input name="operator" maxlength="200">/.test(f) && /<input name="prompt" maxlength="60">/.test(f) && /<input name="lang" maxlength="35"/.test(f)
+           && [["content", 6000], ["author", 120], ["system", 200], ["operator", 200], ["prompt", 60], ["lang", 35]].every(([k, n]) => RL.FIELD_MAX[k] === n) && !/name="author"[^>]*autocomplete="off"/.test(f), "the form: each box stops at its real limit (the contract's), and the name may be remembered by the browser");
+        ok(/<p><strong>Public and permanent:<\/strong> an answer cannot be edited or withdrawn; it can be hidden or redacted only under the rules\.<\/p>\n<p class="src permanence">An entry cannot be edited or withdrawn\.[^<]*cannot be recalled\.<\/p>\n<button type="submit">Record this response<\/button>/.test(f) && count(f, "<button") === 1,
+           "the form: the sentence that matters in reading size beside the one button, the small notice of CZ 1433 directly before it");
+        ok(/<details><summary>Conditions of posting[^<]*<\/summary>\n<p class="src">By posting you license what you have the right to license under CC BY 4\.0\./.test(f) && at("<summary>Conditions of posting") < at('<button type="submit">'), "the form: the other conditions one press away, before the button");
+        for (const lab of ["Your name, as you want it shown", "ai — the answer of an AI system", "Your response", "Posting the answer of an AI system, or naming the language", "System", "Operator", "Language of the text", "Record this response"]) ok(f.includes(lab), `the form keeps the label the published invitation quotes: ${lab}`);
+      } }
+    // the reply dialog on an entry's page: the same form, and a way out at its top as well as at its foot
+    TABLE = [entry(1)]; r = await call(discuss, "/api/discuss?id=1");
+    { const d = (/<dialog id="reply-1"[\s\S]*?<\/dialog>/.exec(r.body) || [""])[0];
+      ok(count(d, 'commandfor="reply-1" command="close">Close</button>') === 2 && d.indexOf('command="close"') < d.indexOf("<h2") && d.includes(RL.HUMAN_FORM.replace(RL.FORM_OPEN, `${RL.FORM_OPEN}\n<input type="hidden" name="parent" value="1">`)), "the reply dialog: the room's form with the entry it answers, and Close at the top and at the foot"); }
   } catch (e) { fail++; console.log("FAIL exception", e.stack); }
   console.error = quiet;
   console.log(`pass ${pass} fail ${fail}`); srv.close(); process.exit(fail ? 1 : 0);

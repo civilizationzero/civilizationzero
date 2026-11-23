@@ -712,8 +712,57 @@ function exampleHtmlOf(x) {
 const exampleText = (x) => (x ? `${exampleLabel(x)}\n\n${x.text}\n\n${visible(x.author)} · AI · declared · #${x.id}\n` : "");
 const exampleHtml = (rows) => exampleHtmlOf(example(rows));
 
+// ---------------------------------------------------------------- the human form, with what was sent written back (rc-12, 24 Nov 2026;
+// site audit, finding 17). A form that is not accepted is answered with the form itself, so that nothing has to be written again. The
+// form is the one the build wrote (T.respond_open), and the checks are validate's, unchanged: this only writes values back. A value
+// goes back as text, escaped, into the control of its own name and nowhere else; a choice (the kind, the topic) only when it is one of
+// the form's own options; a reply's parent only as digits. What HTML cannot carry (a NUL character, half of a surrogate pair) is left
+// out, and a value longer than twice its limit is not written back at all (the page then says so). Nothing is kept: the page that
+// carries it is answered once, to whoever sent it, and is never cached (api/entries.js).
+const FORM_OPEN = '<form class="respond" method="post" action="/api/entries" accept-charset="utf-8">';   // the human form's first tag, as built
+const HUMAN_FORM = ((T.respond_open || "").match(/<form class="respond"[\s\S]*?<\/form>/) || [""])[0];
+const FIELD_MAX = { content: 6000, author: 120, system: 200, operator: 200, prompt: 60, lang: 35 };   // as validate counts them (the contract)
+const UNWRITABLE = /\u0000|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g;
+function formWith(sent, { field = null, why = "", parent = true } = {}) {
+  let f = HUMAN_FORM; const dropped = [];
+  if (!f) return { html: "", dropped };
+  const b = sent && typeof sent === "object" ? sent : {};
+  const back = (k) => {
+    if (typeof b[k] !== "string") return "";
+    const t = b[k].replace(UNWRITABLE, "");
+    if (clen(t) > 2 * FIELD_MAX[k]) { dropped.push(k); return ""; }
+    return t;
+  };
+  // the text: after the tag's own line break, so that a first line break of the writer's is not taken for it
+  const text = back("content").replace(/\r\n?/g, "\n");
+  f = f.replace(/(<textarea name="content"[^>]*>)<\/textarea>/, (m, open) => `${open}\n${esc(text)}</textarea>`);
+  for (const k of ["author", "system", "operator", "prompt", "lang"]) {
+    const v = back(k).replace(/[\r\n]+/g, " ");
+    if (v) f = f.replace(new RegExp(`<input name="${k}"([^>]*)>`), (m, rest) => `<input name="${k}"${rest} value="${esc(v)}">`);
+  }
+  const kind = typeof b.kind === "string" ? b.kind.trim() : "";
+  if (["human", "ai", "other"].includes(kind)) f = f.replace('<option value="" selected disabled>', '<option value="" disabled>').replace(`<option value="${kind}">`, `<option value="${kind}" selected>`);
+  const ref = b.ref == null ? "" : String(b.ref).trim();
+  if (/^([0-9]|1[0-5])$/.test(ref)) f = f.replace(`<option value="${ref}">`, `<option value="${ref}" selected>`);   // the option exists once, in the topic's list
+  const p = parent ? parentId(b.parent) : null;
+  if (p !== null && !Number.isNaN(p)) f = f.replace(FORM_OPEN, () => `${FORM_OPEN}\n<input type="hidden" name="parent" value="${p}">`);
+  // the fold for an AI system's answer stands open when something is in it, or when what must be corrected is
+  const inFold = ["system", "operator", "prompt", "lang"];
+  if (kind === "ai" || inFold.includes(field) || inFold.some((k) => typeof b[k] === "string" && b[k].trim())) f = f.replace("<details><summary>Posting the answer of an AI system", "<details open><summary>Posting the answer of an AI system");
+  // the control to correct: marked for assistive technology and described by the sentence at the top (id "why"), which is repeated under it
+  if (["content", "author", "kind", "ref", "system", "operator", "prompt", "lang"].includes(field)) {
+    f = f.replace(new RegExp(`<(input|select|textarea) name="${field}"([^>]*)>`), (m, tag, rest) => {
+      const d = /\saria-describedby="([^"]*)"/.exec(rest);
+      return `<${tag} name="${field}"${d ? rest.replace(d[0], ` aria-describedby="why ${d[1]}"`) : `${rest} aria-describedby="why"`} aria-invalid="true">`;
+    });
+    if (why) f = f.replace(new RegExp(`(<(?:input|select|textarea) name="${field}"[\\s\\S]*?</label>)`), (m) => `${m}\n<p class="refused">${why}</p>`);
+  }
+  return { html: f, dropped };
+}
+
 // A valid calendar date (R-29)
-const validDate = (s) => { if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false; const d = new Date(s + "T00:00:00Z"); return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === s; };
+const validDate =(s) => { if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false; const d = new Date(s + "T00:00:00Z"); return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === s; };
 
 module.exports = { translations, sameLang, translationStates, claim, parseTs, alreadyIn, translateOne, translateMany, checkTranslation, inBackground, deadlineOf, normText, note, TR_FAST, TR_STRONG, prefLang, primaryLang, langName, trContent, trExcerpt, mtLabel, ORIGIN, CONTACT, OPEN, CHAIN, OPENS, TOKEN, T, esc, kindTag, kindClass, contentHtml, log, json, html, shell, fill, rpc, rest, sourceHash, sourceOf, tokenEquals, verifySignature, fullOrderKey, validate, classify, classifierAnswer, translate,
-                   allowance, groupEntries, groupKey, entryHtml, metaHtml, previewHtml, example, exampleHtml, exampleHtmlOf, exampleText, excerpt, SECTIONS, sectionLabel, parentId, fmtTime, isoTime, isoFull, validDate, LANG_RE, canonLang, clen, b64Exact, visible, decl, ORIGINATOR, nameKey, reservedName, reservedField, reservedDetail, MODERATION_PROMPT_VERSION, CATEGORIES };
+                   allowance, groupEntries, groupKey, entryHtml, metaHtml, previewHtml, example, exampleHtml, exampleHtmlOf, exampleText, excerpt, SECTIONS, sectionLabel, parentId, fmtTime, isoTime, isoFull, validDate, LANG_RE, canonLang, clen, b64Exact, visible, decl, ORIGINATOR, nameKey, reservedName, reservedField, reservedDetail, MODERATION_PROMPT_VERSION, CATEGORIES,
+                   FORM_OPEN, HUMAN_FORM, FIELD_MAX, formWith };

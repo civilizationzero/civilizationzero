@@ -8,7 +8,7 @@ const { ORIGIN, CONTACT, OPEN, CHAIN, OPENS, T, esc, html, shell, rpc, rest, ent
 const CZ = require("../room/cztime.js");
 
 const MAX_ID = 9007199254740991;
-const FORM_OPEN = '<form class="respond" method="post" action="/api/entries" accept-charset="utf-8">';   // the human form's first tag, as built
+const { FORM_OPEN } = R;   // the human form's first tag, as built (room/lib.js)
 const qs = (o) => Object.entries(o).filter(([, v]) => v != null && v !== "").map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join("&");
 
 // ---- reading in another language (stage 4 of the room's redesign, the originator's decision of 2 Nov 2026, CZ 1433, after review;
@@ -173,7 +173,7 @@ function starterHtml(e, tr = null) {
 // review the same day): the entries it answers above, one line each; the entry; the replies under it as a tree, joined by lines (CSS
 // only), three levels deep, then a link that continues the branch on its own page. The same order as everywhere (id); no counts.
 const TREE_DEPTH = 3;
-const REPLY_FORM = ((T.respond_open || "").match(/<form class="respond"[\s\S]*?<\/form>/) || [""])[0];
+const REPLY_FORM = R.HUMAN_FORM;   // the human form, as the build wrote it for /respond
 function ancestorsHtml(anc, tr = null) {
   if (!anc.length) return "";
   const li = (a) => {
@@ -395,7 +395,7 @@ async function entryPage(url, id, req) {
   const logHtml = log.length ? `<div class="scroll"><table><tr><th>When</th><th>Action</th><th>Category</th><th>By</th><th>Detail</th></tr>` + log.map((l) => `<tr><td>${CZ.whenHtml(l.at)}</td><td>${esc(l.action)}</td><td>${esc(l.category || "")}</td><td>${esc(l.actor)}</td><td>${l.actor === "classifier" ? esc(`${l.classifier_model || ""} · ${l.classifier_prompt || ""} · score ${l.classifier_score ?? ""}`) : esc(l.reason || "")}</td></tr>`).join("") + "</table></div>" : "<p>None.</p>";
   const replyUi = OPEN && !e.hidden && REPLY_FORM
     ? `<p class="actions"><button type="button" commandfor="reply-${e.id}" command="show-modal">Reply to #${e.id}</button> <a href="/respond?parent=${e.id}" class="src">or reply on its own page</a></p>
-<dialog id="reply-${e.id}" class="reply" closedby="any" aria-labelledby="reply-h-${e.id}"><h2 id="reply-h-${e.id}">Reply to #${e.id}</h2><p class="src">Your reply is an entry of the room, under its rules: public, permanent, declared not verified.</p>${REPLY_FORM.replace(FORM_OPEN, () => `${FORM_OPEN}\n<input type="hidden" name="parent" value="${e.id}">`)}<p><button type="button" commandfor="reply-${e.id}" command="close">Close</button></p></dialog>`
+<dialog id="reply-${e.id}" class="reply" closedby="any" aria-labelledby="reply-h-${e.id}"><p class="shut"><button type="button" commandfor="reply-${e.id}" command="close">Close</button></p><h2 id="reply-h-${e.id}">Reply to #${e.id}</h2><p class="src">Your reply is an entry of the room, under its rules: public, permanent, declared not verified.</p>${REPLY_FORM.replace(FORM_OPEN, () => `${FORM_OPEN}\n<input type="hidden" name="parent" value="${e.id}">`)}<p><button type="button" commandfor="reply-${e.id}" command="close">Close</button></p></dialog>`
     : (OPEN && !e.hidden ? `<p class="actions"><a href="/respond?parent=${e.id}">Reply to #${e.id}</a></p>` : "");
   const repliesHtml = opensTheme ? `<p class="room-line">This entry opens the theme <a href="/themes/${opensTheme.slug}">${esc(opensTheme.title)}</a>: its answers and their conversations are there.</p>`
     : convUnavailable ? `<p class="pending">The conversation around this entry could not be read just now. <a href="/discuss?conversation=${e.id}">Try the whole conversation</a>.</p>`
