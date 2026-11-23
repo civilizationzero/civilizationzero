@@ -98,7 +98,8 @@ await check("the date at the top of the pages is today's, in the time zone of th
   if (!zone) return det(false, "/index.json names no time zone");
   const seen = [`/index.json ${j.cz_time.day}`];
   for (const p of ["/", "/core", "/about", "/press", "/discuss"]) {
-    const m = /<time datetime="\d{4}-\d{2}-\d{2}">CZ (\d+)<\/time>/.exec((await get(p)).t);   // the first date of a page is the one at its top
+    const t = (await get(p)).t;   // the first date of a page is the one at its top; on the first page it is the calendar line's day number (since 23 Nov 2026)
+    const m = (p === "/" && /<time class="d-day" datetime="\d{4}-\d{2}-\d{2}">Day <data value="(\d+)">/.exec(t)) || /<time datetime="\d{4}-\d{2}-\d{2}">CZ (\d+)<\/time>/.exec(t);
     seen.push(`${p} ${m ? m[1] : "none"}`);
   }
   const want = new Set([dayIn(zone, before), dayIn(zone, Date.now())]);   // both, if midnight there passed while this ran

@@ -139,7 +139,16 @@ test("the first page: its heading is the reader's date; its data form names the 
   const home = require("../api/home.js");
   const now = Date.now();
   const h = await call(home, "/", { ...Z(EAST), accept: "text/html" });
-  assert.ok(h.body.includes(`CZ ${CZ.todayIn(now, EAST)}`), "heading");
+  // the calendar line under the headline (23 Nov 2026): the day number carries the reader's date for a parser, and is the reader's day
+  const dE = CZ.todayIn(now, EAST), dW = CZ.todayIn(now, WEST), cal = (d) => `<a href="/calendar">CZ calendar</a> · <time class="d-day" datetime="${CZ.isoDate(...CZ.toGregorian(d))}">Day <data value="${d}">${d.toLocaleString("en-US")}</data></time> since Civilization Zero began, <time datetime="2022-11-30">30 November 2022</time>.</p>\n<p class="d-sub"`;
+  assert.ok(h.body.includes(cal(dE)), "the calendar line, the reader's day");
+  assert.ok((await call(home, "/", { ...Z(WEST), accept: "text/html" })).body.includes(cal(dW)) && dE !== dW, "another zone, another day");
+  const line = (d) => `CZ calendar · Day ${d.toLocaleString("en-US")} since Civilization Zero began, 30 November 2022.`;
+  assert.ok((await call(home, "/?f=txt", Z(EAST))).body.includes(line(dE)), "text form");
+  assert.ok((await call(home, "/index.md?f=md", Z(EAST))).body.includes(`[CZ calendar](https://civilizationzero.ai/calendar) · Day ${dE.toLocaleString("en-US")} since Civilization Zero began, 30 November 2022.`), "Markdown form");
+  assert.equal(JSON.parse((await call(home, "/?f=json", Z(EAST))).body).calendar_line, line(dE), "data form");
+  assert.ok(!h.body.replace(/<head>[\s\S]*?<\/head>/, "").split("</header>")[0].includes("ChatGPT"), "the first screen names no product");
+  assert.ok(!/<time datetime="[^"]+">CZ \d+<\/time><\/a><\/div>/.test(h.body) && !h.body.includes("d-stamp"), "the small date beside the name is gone");
   assert.equal(h.headers.vary, "Accept, X-Vercel-IP-Timezone");
   const j = JSON.parse((await call(home, "/?f=json", Z(WEST))).body);
   assert.equal(j.cz_time.day, CZ.todayIn(now, WEST));
