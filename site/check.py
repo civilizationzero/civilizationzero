@@ -304,7 +304,7 @@ _rec_decl = re.search(r'<section id="declaration" aria-labelledby="h-decl"><h2 i
 check(len(_DECL) == 22 and _rec_decl is not None and [_h.unescape(l) for l in _rec_decl.group(1).split("<br>\n")] == _DECL and all(l in IR_TXT for l in _DECL), "/record: the Declaration whole, 22 lines, verbatim")
 check(json.loads((PUBLIC / "record.json").read_text("utf-8"))["declaration"] == _DECL and json.loads(T["json"].replace("__YEAR__", "3").replace("__DAYS_IN_YEAR__", "1").replace("__TOTAL__", "1").replace("__NEXT_YEAR__", "4").replace("__CZ_DOYN__", "1").replace("__CZ_TO_NEXT_N__", "1").replace("__CZ_NEXT_DAY__", "1"))["declaration"]["lines"] == _DECL,
       "the Declaration whole in /record.json and in the first page's data form")
-_dsec = re.search(r'<section aria-labelledby="h-decl"[^>]*>\n<h2 id="h-decl">From the Declaration</h2>\n<blockquote cite="/record#declaration" data-src="R"><p>\n(.*?)\n</p><p class="src">(.*?)</p></blockquote>\n</section>', T["html"], re.S)
+_dsec = re.search(r'<section aria-labelledby="h-decl"[^>]*>\n<h2 id="h-decl">From the Declaration</h2>\n<blockquote cite="/record#declaration" data-src="R"><p>\n(.*?)\n</p></blockquote>\n<p class="src">(.*?)</p>\n</section>', T["html"], re.S)
 check(_dsec is not None, "home: the excerpt, headed 'From the Declaration'")
 _shown = [_h.unescape(l) for l in _dsec.group(1).split("<br>\n")]
 _want = ["It places honesty before mythology.", "Restraint before irreversible power.", "Responsibility before delegation.", "Plurality before domination.", "Truth beside care.",
@@ -317,9 +317,9 @@ for _n, _i in enumerate(_ix):
     _marked.append(_DECL[_i])
 check(_shown == _want and len(_ix) == len(_real) == 8 and _ix == sorted(set(_ix)) and _shown == _marked and all(l in IR_TXT for l in _real),
       "home: the excerpt's lines are the Declaration's own, in its order; every omission between two of them is marked, and nothing else is")
-check("An excerpt of CZ-IR 1.0, Declaration: eight of its 22 lines" in _dsec.group(2) and "marks lines left out" in _dsec.group(2) and _dsec.group(2).endswith('<a href="/record#declaration">the whole Declaration</a>') and "verbatim" not in _dsec.group(0)
-      and T["html"].count("From the Declaration") == 1 and "does not announce" not in T["html"] and all(T["txt"].count(l) >= 1 for l in _want[:6]) and "the whole Declaration" in T["txt"] and "does not announce" not in T["txt"],
-      "home: the excerpt is labelled as an excerpt and links the whole Declaration; the text form carries the same excerpt")
+check("An excerpt of CZ-IR 1.0, Declaration: eight of its 22 lines" in _dsec.group(2) and "marks lines left out" in _dsec.group(2) and _dsec.group(2).endswith('. <a href="/record#declaration">Read the whole Declaration</a>') and "<p" not in _dsec.group(1) and "excerpt" not in _dsec.group(1) and "verbatim" not in _dsec.group(0)
+      and T["html"].count("From the Declaration") == 1 and "does not announce" not in T["html"] and all(T["txt"].count(l) >= 1 for l in _want[:6]) and "between them. Read the whole Declaration" in T["txt"] and "does not announce" not in T["txt"],
+      "home: the excerpt is labelled as an excerpt, in a caption after the quotation and not inside it, and links the whole Declaration; the text form carries the same excerpt")
 # the POST example parses
 ex = re.search(r"<pre>POST.*?\n(\{.*?\})</pre>", T["html"], re.S).group(1)
 try: json.loads(_h.unescape(ex))
@@ -568,13 +568,13 @@ check(HEADLINE == ONE_LINE.split(" Here,")[0] and _hh.count(f'<p class="d-line"'
 check(_hh.count(f'>{SECOND_LINE}</p>') == 1 and _hh.index(HEADLINE) < _hh.index(SECOND_LINE) < _hh.index('<div class="doors"') and _btxt.count(SECOND_LINE) == 1 and _hj["second_line"] == SECOND_LINE, "home: the second line, under the headline, in every form")
 _hcss0 = T["html"].split("<style>")[2].split("</style>")[0]
 _size = lambda sel, css: float(re.search(re.escape(sel) + r"\{[^}]*?font-size:([\d.]+)rem", css).group(1))
-check(_size("p.d-line", _hcss0) > _size(".door h2", _hcss0) > _size("p.d-sub", _hcss0) >= 1 and _size("p.d-line", _hcss0.split("@media(max-width:34rem)")[1]) >= _size(".door h2", _hcss0.split("@media(max-width:34rem)")[1]) > _size("p.d-sub", _hcss0.split("@media(max-width:34rem)")[1]) >= 1,
-      "home: the headline is the largest text of the first screen, on a wide screen and on a narrow one; the second line is smaller, never under the page's own size")
+check(_size("p.d-line", _hcss0) > _size(".door h2", _hcss0) > _size("p.d-sub", _hcss0) >= 1 and _size("p.d-line", _hcss0) > 1.5 and _size("p.d-line", _hcss0.split("@media(max-width:34rem)")[1]) > 1.5 and "h2{font-size" not in CSS and _size("p.d-line", _hcss0.split("@media(max-width:34rem)")[1]) > _size(".door h2", _hcss0.split("@media(max-width:34rem)")[1]) > _size("p.d-sub", _hcss0.split("@media(max-width:34rem)")[1]) >= 1,
+      "home: the headline is the largest text of the page, on a wide screen and on a narrow one (larger than the doors' titles and than a heading's browser-default 1.5em); the second line is smaller, never under the page's own size")
 _top = _hh.split('<div class="doors"')[0]
 check(NOT_LINE not in _top and 'class="d-not"' not in T["html"] and "p.d-not" not in T["html"] and T["html"].count(NOT_LINE) == 1 and _btxt.count(NOT_LINE) == 1 and NOT_LINE in _hj["orientation"],
       "home: what the record is not is said once, in the paragraph under the doors, and no longer at the top")
-_para = re.search(r'</div>\n<p data-src="E: the first sentence[^>]*>(.*?)</p>', _hh, re.S).group(1)
-check(_para.startswith("Here, humans and AI confront what they owe each other, on the record, while the future is still open. The record it keeps is of a transition") and _para.count("while the future is still open") == 1
+_para = re.search(r'</div>\n<p data-src="E: the introduction after its first sentence, [^>]*>(.*?)</p>', _hh, re.S).group(1)
+check(_para.startswith("Here, humans and AI confront what they owe each other, on the record, while the future is still open. The record Civilization Zero keeps is of a transition") and "The record it keeps" not in _para and _hj["orientation"].startswith("The record it keeps is of a transition") and _hh.count('data-src="E: the first sentence') == 1 and _para.count("while the future is still open") == 1
       and _para.endswith("and sets constraints before power. " + NOT_LINE + " It is written for every intelligence able to read it.") and _hj["orientation"].count("while the future is still open") == 1 and _hj["orientation"].endswith(NOT_LINE + " It is written for every intelligence able to read it."),
       "home: the paragraph under the doors begins with the introduction's second sentence, says 'while the future is still open' once, and keeps every other sentence; the data form's orientation is complete")
 _who_h = re.sub(r"<[^>]+>", "", re.search(r'<p class="d-who"[^>]*>(.*?)</p>', _hh, re.S).group(1))
@@ -604,7 +604,7 @@ check("It is recorded as contribution or response, not consent, not adoption, no
       "the rules stay where they are stated: 'not consent' on /machine and under Respond on the first page (and in its data form); 'declared not verified' under Open discussion")
 check(not re.search(r"\bnot\b|\bnothing\b|\bnever\b|\bno\b", re.sub(r"<[^>]+>", " ", re.sub(r'<ul aria-labelledby="d-ql">.*?</ul>', "", _hh.split("</div>\n<p data-src")[0], flags=re.S)).replace("I am not human", "").replace(HEADLINE, ""), re.I),
       "home: the first screen, down to who is behind it, says nothing in the negative (but the headline's own 'no longer', the second door's name and the themes' titles)")
-check(not re.search(r"\b(he|him|his)\b|Observatory|\bfirst\b", re.sub(r"<[^>]+>", " ", _hh.split("<p data-src=\"E: the first sentence")[0]), re.I) and "Claude" not in _hh and "Anthropic" not in _hh,
+check(not re.search(r"\b(he|him|his)\b|Observatory|\bfirst\b", re.sub(r"<[^>]+>", " ", _hh.split("<p data-src=\"E: the introduction after its first sentence")[0]), re.I) and "Claude" not in _hh and "Anthropic" not in _hh,
       "home, the first screen: the originator by title only, the builder without a name, no claim to be first")
 check(T["html"].count("<style>") == 2 and "<script>" not in T["html"] and not re.search(r'(src|href)="https?://(?!civilizationzero\.ai)', _hh) and "@import" not in T["html"] and "url(" not in T["html"].split("</style>")[1],
       "home: the first screen's rules are CSS in the page; no script, no font, no image, nothing from elsewhere")

@@ -334,8 +334,10 @@ assert ORIENTATION.count(" " + NOT_LINE + " ") == 1
 # orientation with every sentence it has; "while the future is still open", which the two would say twice in a row, is said once.
 _OPEN = "while the future is still open"
 assert ONE_LINE.count(_OPEN) == 1 and ORIENTATION.count(", and sets constraints before power " + _OPEN + ". ") == 1
-PARAGRAPH_BELOW = ONE_LINE[len(HEADLINE) + 1:] + " " + ORIENTATION.replace(", and sets constraints before power " + _OPEN + ". ", ", and sets constraints before power. ")
-assert PARAGRAPH_BELOW.startswith("Here, humans and AI confront what they owe each other, on the record, while the future is still open. The record it keeps")
+# and "The record it keeps", whose "it" was the sentence that is now the headline, names its subject
+assert ORIENTATION.startswith("The record it keeps is of a transition")
+PARAGRAPH_BELOW = ONE_LINE[len(HEADLINE) + 1:] + " " + ORIENTATION.replace("The record it keeps is of a transition", "The record Civilization Zero keeps is of a transition", 1).replace(", and sets constraints before power " + _OPEN + ". ", ", and sets constraints before power. ")
+assert PARAGRAPH_BELOW.startswith("Here, humans and AI confront what they owe each other, on the record, while the future is still open. The record Civilization Zero keeps is of a transition") and "The record it keeps" not in PARAGRAPH_BELOW
 assert PARAGRAPH_BELOW.count(_OPEN) == 1 and PARAGRAPH_BELOW.endswith(NOT_LINE + " It is written for every intelligence able to read it.") and HEADLINE not in PARAGRAPH_BELOW
 # Who is behind it, without a name (the originator's decisions of 23 Nov 2026). The last sentence names the launch day and is the same before
 # and after it: the site has been public since PRERELEASE, so "public since" the launch day would be false.
@@ -1913,7 +1915,7 @@ p.d-sub{font-size:1.05rem;line-height:1.4;margin:0 0 1.25rem}
 .d-q{font-size:.95rem}.d-q .d-ql{color:var(--mute);font-size:.88em;margin:0 0 .1rem}.d-q ul{list-style:none;margin:0;padding:0}.d-q a{display:block;padding:.2rem 0}
 p.d-who{grid-column:1/-1;grid-row:2;font-size:.92rem;margin:1rem 0 0;padding-left:.75rem;border-left:3px solid var(--fg)}p.d-who time{font-family:inherit;font-size:1em;white-space:nowrap}
 @media(max-width:34rem){.doors{grid-template-columns:1fr;reading-flow:grid-order}.door,.door.human,.door.machine{grid-row:auto;grid-column:auto;border:2px solid var(--fg)}.door.human{order:1}p.d-who{order:2;grid-row:auto;margin:.9rem 0}.door.machine{order:3}
-.door h2{padding:.7rem 0 .6rem;font-size:1.4rem}.door.machine h2{font-size:1.3rem}.door>p,.door>div{padding:.55rem 0}p.d-line{font-size:1.4rem}p.d-sub{font-size:1rem;margin-bottom:1rem}.d-head{margin:.75rem 0 .35rem}p.d-date{margin-bottom:.85rem}}
+.door h2{padding:.7rem 0 .6rem;font-size:1.4rem}.door.machine h2{font-size:1.3rem}.door>p,.door>div{padding:.55rem 0}p.d-line{font-size:1.55rem}p.d-sub{font-size:1rem;margin-bottom:1rem}.d-head{margin:.75rem 0 .35rem}p.d-date{margin-bottom:.85rem}}
 @media print{.doors{display:block}.door{display:block;border-width:1px;margin:0 0 .5rem}}"""
 
 def home_template():
@@ -1962,7 +1964,7 @@ def home_template():
 </section>
 <p class="d-who" data-src="CZ-CORE 1.0, attribution; Blueprint decisions 8 and 29 as the originator changed them on 23 Nov 2026 — said without names">{esc(WHO_LINE)} {LAUNCH_WORDS} <time datetime="{LAUNCH.isoformat()}">{LAUNCH_TEXT}</time>. {who_links}</p>
 </div>
-<p data-src="E: the first sentence, the originator's decision of 1 Nov 2026 (CZ 1432); R: IR 1.1, 1.4; Declaration; Blueprint decision 2">{esc(PARAGRAPH_BELOW)}</p>
+<p data-src="E: the introduction after its first sentence, the originator's decision of 1 Nov 2026 (CZ 1432); R: IR 1.1, 1.4; Declaration; Blueprint decision 2">{esc(PARAGRAPH_BELOW)}</p>
 {room_line}</header>
 {nav_html("/", mark=False)}
 <main id="content">
@@ -1981,7 +1983,8 @@ def home_template():
 <h2 id="h-decl">From the Declaration</h2>
 <blockquote cite="/record#declaration" data-src="R"><p>
 {declh}
-</p><p class="src">An excerpt of CZ-IR 1.0, Declaration: eight of its 22 lines, from its middle to its end; “…” marks lines left out between them. <a href="/record#declaration">the whole Declaration</a></p></blockquote>
+</p></blockquote>
+<p class="src">An excerpt of CZ-IR 1.0, Declaration: eight of its 22 lines, from its middle to its end; “…” marks lines left out between them. <a href="/record#declaration">Read the whole Declaration</a></p>
 </section>
 
 <section aria-labelledby="h-docs" data-src="R §15; IR 10.4; M; C">
