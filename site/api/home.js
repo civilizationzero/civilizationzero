@@ -62,11 +62,12 @@ async function roomOrNothing() {
   } finally { clearTimeout(timer); }
 }
 // The answer as a member of the data form's third step: user content, so every character a line could be reordered or broken by is
-// written as a JSON escape (the value parsed is the text as received); indented as the template is, eight spaces deep.
+// written as a JSON escape (the value parsed is the text as received); indented as the template is, a member of that step.
+const IND = (/\n( *)"invitation_sha256"/.exec(T.json) || ["", "    "])[1], UNIT = (/^\{\n( +)"/.exec(T.json) || ["", " "])[1].length;
 const UNSAFE = /[\u007f-\u009f\u061c\u200e\u200f\u2028\u2029\u202a-\u202e\u2066-\u2069]/g;
 function answerJson(x) {
   const o = { id: x.id, author: x.author, kind: "ai", prompt: "cz-short-1.0", [x.cut ? "beginning" : "text"]: x.text, url: `https://civilizationzero.ai/api/entries/${x.id}` };
-  return ',\n        "recent_answer": ' + JSON.stringify(o, null, 2).replace(UNSAFE, (c) => "\\u" + c.charCodeAt(0).toString(16).padStart(4, "0")).replace(/\n/g, "\n        ");
+  return `,\n${IND}"recent_answer": ` + JSON.stringify(o, null, UNIT).replace(UNSAFE, (c) => "\\u" + c.charCodeAt(0).toString(16).padStart(4, "0")).replace(/\n/g, "\n" + IND);
 }
 
 const escText = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");   // text between tags

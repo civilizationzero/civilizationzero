@@ -1,25 +1,20 @@
-/* CIVILIZATION ZERO, the page at /.
-   ONE MODULE, ONE RATIO. The module is the root em (16 px unless the reader chose otherwise). The ratio is the sixteenth root of
-   sixteen, 1.1892: four steps double a size, sixteen multiply it by sixteen. --eN is the module times ratio^N. Every size, space,
-   width, breakpoint and duration below is one of them or a whole multiple of one; every line height is the ratio or its square.
-   THE FORM. An inscription; under it the day's figure, its centre empty; who is behind the page; under that two doors, one on
-   either side of the figure's axis. On a phone the figure is e12, one door e14 and the two doors together the measure, e18; from
-   e21 the same three are e14, e18 and e22.
-   Each block states its reason in the site's keys: R the record · M the machine reader · H a standard adopted for human reading ·
-   C a constraint · E an editorial choice. */
+/* CIVILIZATION ZERO, the page at /. ONE MODULE, ONE RATIO: the module is the root em, the ratio the sixteenth root of sixteen (1.1892:
+   four steps double a size); --eN is the module times ratio^N, and every size, space, width, breakpoint and duration below is one
+   of them or a whole multiple of one; line heights are the ratio and its square. THE FORM: an inscription; the day's figure, its
+   centre empty; who is behind the page; two doors, one on either side of the figure's axis (on a phone the figure is e12, a door
+   e14, the two doors the measure, e18; from e21: e14, e18, e22). R the record · M the machine reader · H a standard for human
+   reading · C a constraint · E a choice. */
 
-/* 1 TOKENS. C: the scale. H: two palettes, every text colour at 7:1 or more on its ground (WCAG 2.2, 1.4.6), the reader's preference
-   choosing; green means two things only, "a machine wrote this" and the day of the CZ count; blue means one, a reason. C: no typeface is shipped: a serif of
-   the reader's own device for what is written for people, its monospace for what is exact or for machines. */
+/* 1 TOKENS. C: the scale. H: two palettes, every text colour at 7:1 or more (WCAG 2.2, 1.4.6); green means a machine wrote it, or
+   the day of the CZ count; blue, a reason. C: no typeface is shipped: the reader's serif for people, its monospace for what is exact. */
 :root{--e-16:.0625rem;--e-12:.125rem;--e-8:.25rem;--e-4:.5rem;--e-2:.7071rem;--e-1:.8409rem;--e0:1rem;--e1:1.1892rem;--e2:1.4142rem;
---e3:1.6818rem;--e4:2rem;--e5:2.3784rem;--e6:2.8284rem;--e12:8rem;--e14:11.3137rem;--e21:38.0546rem;--e22:45.2548rem;--l1:1.1892;--l2:1.4142;
-color-scheme:light dark;--bg:#fff;--fg:#111;--mute:#555;--rule:#bbb;--machine:#116329;--why:#0f4c81;
+--e3:1.6818rem;--e4:2rem;--e5:2.3784rem;--e6:2.8284rem;--e12:8rem;--e14:11.3137rem;--e18:22.6274rem;--e21:38.0546rem;--e22:45.2548rem;
+--l1:1.1892;--l2:1.4142;color-scheme:light dark;--bg:#fff;--fg:#111;--mute:#555;--rule:#bbb;--machine:#116329;--why:#0f4c81;
 --human:Charter,"Bitstream Charter","Sitka Text",Cambria,serif;--exact:ui-monospace,"Cascadia Mono",Consolas,"SF Mono",Menlo,monospace}
 @media(prefers-color-scheme:dark){:root{--bg:#101010;--fg:#eee;--mute:#aaa;--rule:#444;--machine:#3fb950;--why:#91c3f6}}
 
-/* 2 BASE. H + M: a link is marked by its underline, never by colour alone (1.4.1); focus is always visible (2.4.7); a small link is
-   still a target 24 px tall (2.5.8): its box reaches above and below its line and the line keeps its height. M: exact values (dates,
-   counts, hashes, addresses) in the monospace, one step smaller so that its x-height meets the serif's. */
+/* 2 BASE. H + M: links underlined, never colour alone (1.4.1); focus always visible (2.4.7); a small link is a target 24 px tall
+   (2.5.8). M: exact values in the monospace, one step smaller. */
 html{font:100%/var(--l2) var(--human);-webkit-text-size-adjust:100%;text-size-adjust:100%}
 body{margin:0;color:var(--fg);background:var(--bg);overflow-wrap:break-word}
 .page{max-inline-size:var(--e22);margin-inline:auto;padding-inline:var(--e-1)}
@@ -27,17 +22,16 @@ a{color:inherit;text-decoration:underline;text-decoration-thickness:var(--e-16);
 :focus-visible{outline:var(--e-12) solid var(--fg);outline-offset:var(--e-12)}
 time,data,code,pre,.exact{font-family:var(--exact);font-size:.8409em}
 p,li{text-wrap:pretty}
-.note,.src,.zero,.say,.both,.next,footer{font-size:.8409em;color:var(--mute)}
-:is(.note,.src,.date,.who,.both,.next,footer p) a{position:relative}
-:is(.note,.src,.date,.who,.both,.next,footer p) a::after{content:"";position:absolute;inset:calc(-1*var(--e-8)) 0}
+.note,.src,.zero,.say,.both,.why,.next,footer{font-size:.8409em;color:var(--mute)}
+:is(.note,.src,.date,.who,.both,.key,.next,footer p) a{position:relative}
+:is(.note,.src,.date,.who,.both,.key,.next,footer p) a::after{content:"";position:absolute;inset:calc(-1*var(--e-8)) 0}
 
-/* 3 HEAD. R: the mark and the name, the way to the page with neither door answered; nothing else stands in the head. */
+/* 3 HEAD. R: the mark and the name, the way to the page with neither door answered; nothing else. */
 .name{margin:0;font-size:var(--e0);line-height:var(--l1)}
 .name a{display:inline-flex;align-items:center;gap:var(--e-4);min-block-size:var(--e6)}
 .name svg{flex:none;inline-size:var(--e4);block-size:var(--e4)}
 
-/* 4 INSCRIPTION. E: the statement leads, the largest words of the page, set on the axis; under the figure, the day, who is behind
-   the page, and what is here, in one line. From e21 the two large lines take larger steps of the same scale. */
+/* 4 INSCRIPTION. E: the statement leads, the largest words of the page, on the axis; then the day, who is behind the page, what is here. */
 .axis{text-align:center}
 .line{margin:0 0 var(--e-2);font-size:var(--e3);line-height:var(--l1);text-wrap:balance}
 .who{margin:var(--e-4) 0 0;font-size:.8409em;text-wrap:balance}
@@ -48,8 +42,7 @@ p,li{text-wrap:pretty}
 }
 
 /* 5 FIGURE. R: sixteen rings round an empty centre, each carrying the arc it travelled since the day before, computed from the
-   Core's SHA-256 and the day's number (room/figure.js). Its colour is the day's green; its tracks are hairlines of the page at any
-   size. M: the attributes in the markup are the figure for every browser. */
+   Core's SHA-256 and the day (room/figure.js). M: the markup's attributes are the figure for every browser. */
 .fig-l{display:block;inline-size:var(--e12);margin:0 auto var(--e-4);border-radius:50%}
 .fig{display:block;inline-size:100%;block-size:auto;color:var(--machine)}
 .trk circle{stroke:var(--rule);stroke-width:var(--e-16);vector-effect:non-scaling-stroke}
@@ -61,34 +54,32 @@ p,li{text-wrap:pretty}
 .fig-l{inline-size:var(--e14)}
 }
 
-/* 6 DOORS. E: the web's question to its reader, with both answers open: two doors of one size, one frame cut in two on the figure's
-   axis, each named in its reader's face. M: two plain links; the answer is kept in the address (#human, #not-human), so Back undoes
-   it and a link can carry it. One number, --open, says where the line stands: .5 while nobody has answered, 1 for a human, 0 for a
-   reader that is not; every width and size under the doors is computed from it. Without :has() none of this applies and the two
-   readings follow one another, whole. */
+/* 6 DOORS. E: the web's question, with both answers open: two doors of one size, one frame cut in two on the figure's axis. M: two
+   plain links; the answer is kept in the address (#human, #not-human), so Back undoes it. --open says where the line stands: .5
+   with neither answered, 1 for a human, 0 for a reader that is not. Without :has() the two readings follow one another, whole. */
 .ask{margin:var(--e0) 0 var(--e-4)}
 .ask b{font-size:var(--e1)}
 .doors{display:grid;grid-template-columns:1fr 1fr}
 .door{display:grid;place-items:center;min-block-size:var(--e6);border:var(--e-12) solid var(--fg);font-size:var(--e1);font-weight:700;line-height:var(--l1)}
 .door.n{border-inline-start:0;font-family:var(--exact);font-size:var(--e0)}
-.col:focus{outline:0}                                       /* a door moves focus into its reading; the reading is not a control */
+.col:focus{outline:0}   /* a door moves focus into its reading; the reading is not a control */
 .col>.in{box-sizing:border-box;padding-block:var(--e-2) var(--e2)}
-.col h2{margin:var(--e0) 0 var(--e-2);font-size:var(--e1);line-height:var(--l1)}
+.in>h2{margin:var(--e0) 0 var(--e-2);font-size:var(--e1);line-height:var(--l1)}
 @property --full{syntax:"<length>";inherits:true;initial-value:0px}
 @supports selector(:has(a)){
 .page{--open:.5;--h:clamp(0,var(--open)*2 - 1,1);--n:clamp(0,1 - var(--open)*2,1)}
 .page:has(#human:target){--open:1}
 .page:has(#not-human:target){--open:0}
-.col{scroll-margin-block-start:calc(100vh - var(--e14))}   /* an answered door moves the page only if less than a door's height of its reading would show */
-.col h2{position:absolute;inline-size:var(--e-16);block-size:var(--e-16);margin:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap}   /* the doors show each reading's name; it is kept for readers who do not see the layout */
-/* the answered door is marked as the site marks the page one is on, by a heavier underline. "I am not human": the page stops
-   accommodating a human: its name is set as data, what follows the doors for a human is closed, and one plain way back remains */
+.col{scroll-margin-block-start:calc(100vh - var(--e14))}   /* an answered door moves the page only if little of its reading would show */
+.in>h2{position:absolute;inline-size:var(--e-16);block-size:var(--e-16);margin:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap}   /* kept for readers who do not see the layout */
+/* the answered door carries a heavier underline, as the site marks the page one is on. "I am not human": the name is set as data,
+   what follows the doors for a human is closed, one plain way back remains */
 .page:has(#human:target) .door.h,.page:has(#not-human:target) .door.n{text-decoration-thickness:var(--e-8)}
 .page:has(#not-human:target) .door.n{color:var(--machine)}
 .page:has(#not-human:target) .name{font-family:var(--exact);font-size:var(--e-1)}
 .page:has(#not-human:target) :is(.decl,.next,footer){display:none}
-/* from e16, where two columns have room: the human's column takes --open of the width and the machine's the rest; what does not
-   fit is covered, not squeezed. A reading that a door has closed is out of the keyboard's reach. */
+/* from e16 two columns: the human's takes --open of the width, the machine's the rest; what does not fit is covered, not squeezed;
+   a closed reading is out of the keyboard's reach */
 @media(min-width:16rem){
 .stage{display:grid;grid-template-columns:calc(var(--open)*100%) minmax(0,1fr);container-type:inline-size;overflow:hidden;overflow:clip}
 .col{position:relative;min-inline-size:0;overflow:hidden;overflow:clip;--full:100cqi}
@@ -102,31 +93,27 @@ p,li{text-wrap:pretty}
 .page:has(#not-human:target) .col.h{contain:size}
 .page:has(#not-human:target) :is(.raw,.back,.seal){display:block}
 .page:has(#not-human:target) .lbl{display:none}
-/* with neither door answered each window is a glimpse of its reading, as tall as one door is wide on a phone, fading out at its
-   lower edge: the human's shows the titles of its three steps, step 1 as the control it is; the machine's, under a label in the
-   human's face, the head of what it receives, one header to a line, a line that does not fit ending in an ellipsis and never cut
-   through a letter; the door's name opens the rest */
-.page:not(:has(#human:target,#not-human:target)) .stage{min-block-size:var(--e14)}
-.page:not(:has(#human:target,#not-human:target)) .col{mask-image:linear-gradient(#000 calc(100% - var(--e4)),transparent)}
-.page:not(:has(#human:target,#not-human:target)) :is(.more,.steps>li:first-child .t,.req,.bd,.sum){display:none}
-.page:not(:has(#human:target,#not-human:target)) .x{overflow:hidden}
-.page:not(:has(#human:target,#not-human:target)) .hd>span{padding:0;overflow:hidden;text-indent:0;text-overflow:ellipsis;white-space:pre}
-.page:not(:has(#human:target,#not-human:target)) .steps{flex-direction:column;row-gap:var(--e-2)}
-.page:not(:has(#human:target,#not-human:target)) .steps>li{flex:none}
-.page:not(:has(#human:target,#not-human:target)) .t{padding-inline-start:var(--e-2)}
-.page:not(:has(#human:target,#not-human:target)) .steps>li>.act{display:grid;margin:0}
-.page:not(:has(#human:target,#not-human:target)) .steps>li>.act::before{content:counter(step)}
+/* with neither answered each window is a glimpse fading at its lower edge: the human's three titles, step 1 as the control it is;
+   the machine's, under a label in the human's face, one header to a line, ending in an ellipsis where it does not fit */
+.page:not(:has(.col:target)) .stage{min-block-size:var(--e14)}
+.page:not(:has(.col:target)) .col{mask-image:linear-gradient(#000 calc(100% - var(--e4)),transparent)}
+.page:not(:has(.col:target)) :is(.more,.steps>li:first-child .t,.req,.bd,.sum){display:none}
+.page:not(:has(.col:target)) .steps{flex-direction:column;row-gap:var(--e-2)}
+.page:not(:has(.col:target)) .steps>li{flex:none}
+.page:not(:has(.col:target)) .t{padding-inline-start:var(--e-2)}
+.page:not(:has(.col:target)) .steps>li>.act{display:grid;margin:0}
+.page:not(:has(.col:target)) .steps>li>.act::before{content:counter(step)}
+.page:not(:has(.col:target)) .x{overflow:hidden}
+.page:not(:has(.col:target)) .hd>span{padding:0;overflow:hidden;text-indent:0;text-overflow:ellipsis;white-space:pre}
 }
-/* narrower than e16 there is no room for two columns: an answered door closes the other reading */
+/* narrower than e16: an answered door closes the other reading */
 @media(max-width:16rem){
 .page:has(#human:target) .col.n,.page:has(#not-human:target) .col.h{display:none}
 }
 }
 
-/* 7 REGISTERS. E: the human's reading is three steps in order, read, say, ask your AI, numbered because they are a sequence; each
-   takes as many columns as its room allows. One grammar: a number and a title, then one control. A control is one block, at least
-   e6 tall (2.5.8), framed by a rule of e-12; the step to take now is filled, and it is the page's one filled control. What stands
-   under a title begins where the title's words begin. */
+/* 7 REGISTERS. E: the human's reading is three numbered steps: read, say, ask your AI. One grammar: a number and a title, then one
+   control, at least e6 tall (2.5.8); the step to take now is filled, the page's one filled control. */
 .steps{display:flex;flex-wrap:wrap;gap:var(--e1) var(--e3);margin:0;padding:0;list-style:none;counter-reset:step;font-size:calc(var(--e0) + (var(--e1) - var(--e0))*var(--h,1))}
 .steps>li{flex:1 1 var(--e14);min-inline-size:0;counter-increment:step}
 .t,.act{grid-template-columns:var(--e-2) minmax(0,1fr);gap:var(--e-2);align-items:baseline}
@@ -138,30 +125,48 @@ p,li{text-wrap:pretty}
 .more,.steps>li>.act{margin-inline-start:calc(2*var(--e-2))}
 .more>*,.steps>li>.act{margin-block:var(--e-4) 0}
 .q{font-weight:700;line-height:var(--l1)}
-/* E: the empty place. The next entry of the discussion, drawn as the room draws an entry (a label: the name as given and the kind as
-   declared; then the words) with nothing in it yet, and in it the control that opens the form. The whole of it can be pressed. */
-.place{position:relative;display:grid;align-content:space-between;justify-items:start;row-gap:var(--e2);box-sizing:border-box;padding:var(--e-2);border:var(--e-16) solid var(--mute)}
+/* E: the empty place: the next entry of the discussion, drawn as the room draws one (the name as given, the kind as declared) with
+   nothing in it yet, and the control that opens the form: a plain link to its page, or, with the popover API, the form where it stands */
+.place{position:relative;anchor-name:--place;display:grid;align-content:space-between;justify-items:start;row-gap:var(--e2);box-sizing:border-box;padding:var(--e-2);border:var(--e-16) solid var(--mute)}
 .place p{margin:0}
 .kind{display:inline-block;padding-inline:var(--e-8);border:var(--e-16) solid var(--mute);border-radius:var(--e-8);font-size:.8409em;line-height:var(--l2);white-space:nowrap}
-.open{display:inline-grid;place-items:center;box-sizing:border-box;min-block-size:var(--e6);padding:0 var(--e-2);border:var(--e-12) solid var(--fg);color:var(--fg);font-weight:700;line-height:var(--l1);text-decoration:none}
+.open{display:inline-grid;place-items:center;box-sizing:border-box;min-block-size:var(--e6);padding:0 var(--e-2);border:var(--e-12) solid var(--fg);background:none;color:var(--fg);font:inherit;font-weight:700;line-height:var(--l1);text-decoration:none;cursor:pointer}
 .open::after{content:"";position:absolute;inset:0}
 .place:hover .open,.open:focus-visible{background:var(--fg);color:var(--bg)}
+button.open{display:none}
 .themes{margin:0;padding:0;list-style:none}
 .themes a{display:block;padding-block:var(--e-8)}
-/* R §9: one answer a machine gave, as its author declared it: user content, marked as every AI entry on this site is, by a green
-   edge and its declared kind in words */
+/* R §9: one answer a machine gave, as its author declared it: user content, marked as every AI entry is, by a green edge and its kind in words */
 .ex{padding-inline-start:var(--e-2);border-inline-start:var(--e-8) solid var(--machine)}
 .ex p{margin:0}
 .ex .content{white-space:pre-wrap}
 .kind.ai{border-color:var(--machine);color:var(--machine);font-weight:700}
-/* M: the machine's reading is not a description of the machine forms but the forms: a command a person can run to check it; what
-   this address answers when a client asks for application/json (the status and headers the function sets, the body), no line broken
-   inside a token: the head folds between its words, the body is scrolled sideways; the Core by its SHA-256, as sha256sum prints it and
-   unrolled, 256 cells of one module each, sixteen to a row, the row's two bytes beside it (the place and the daily step of one ring
-   of the figure); the addresses of the raw forms; and, in the human's face, one plain way back */
+/* Blueprint §7: the room's own form in the browser's own popover, never taller than the window; from e21, in the place's column where the browser can anchor it */
+#reply{display:none;box-sizing:border-box;padding:var(--e0);border:var(--e-12) solid var(--fg);color:var(--fg);background:var(--bg)}
+#reply h2{margin:0;outline:0;font-size:var(--e1);line-height:var(--l1)}   /* focused as the sheet opens */
+#reply p{margin:var(--e-2) 0 0}
+#reply :is(label,details){display:block;margin-block-start:var(--e-2)}
+#reply :is(input,select,textarea){display:block;box-sizing:border-box;inline-size:100%;margin-block-start:var(--e-8);padding:var(--e-4);border:var(--e-16) solid var(--mute);color:var(--fg);background:var(--bg);font:inherit}
+#reply textarea{min-block-size:var(--e12);field-sizing:content}
+#reply :is(button,input,select){min-block-size:var(--e6)}
+#reply summary{padding-block:var(--e-4);cursor:pointer}
+#reply button{padding:var(--e-4) var(--e0);border:var(--e-16) solid var(--fg);color:var(--fg);background:var(--bg);font:inherit}
+@supports selector(:popover-open){
+a.open{display:none}
+button.open{display:inline-grid}
+#reply{inline-size:min(var(--e21),100vw - 2*var(--e-1));max-block-size:calc(100vh - 2*var(--e-1));overflow:auto}
+#reply:popover-open{display:block}
+#reply::backdrop{background:rgb(0 0 0/.5)}
+@supports (anchor-name:--a){@media(min-width:38.0546rem){
+#reply{position-anchor:--place;inset:var(--e-1) auto auto anchor(left);margin:0;inline-size:anchor-size(width);min-inline-size:var(--e18)}
+}}
+}
+/* M: the machine's reading is the machine forms themselves: a command to check it; what this address answers a client that asks for
+   application/json, no line broken inside a token (the head folds between its words, the body scrolls sideways); the Core's SHA-256
+   as sha256sum prints it and as 256 cells, sixteen to a row, the row's two bytes beside it; the raw forms; one plain way back */
 .col.n{font-family:var(--exact);font-size:var(--e-1)}
-.x{margin:0 0 var(--e0);font-size:1em;white-space:pre;overflow-x:auto;tab-size:2}
-:is(.req,.hd)>span{display:inline-block;box-sizing:border-box;max-inline-size:100%;padding-inline-start:var(--e0);text-indent:calc(-1*var(--e0));vertical-align:bottom;white-space:pre-wrap}   /* a line of the head: folded between its words only, what is folded hanging under it */
+.x{margin:0 0 var(--e0);font-size:1em;white-space:pre;overflow-x:auto}
+:is(.req,.hd)>span{display:inline-block;box-sizing:border-box;max-inline-size:100%;padding-inline-start:var(--e0);text-indent:calc(-1*var(--e0));vertical-align:bottom;white-space:pre-wrap}
 :is(.req,.hd)>span>span{white-space:nowrap}
 .x .d{color:var(--machine);font-weight:700}
 .lbl{margin:0 0 var(--e-8);font:400 1em/var(--l2) var(--human);color:var(--mute)}
@@ -175,18 +180,16 @@ p,li{text-wrap:pretty}
 .back{margin:var(--e2) 0 0;font:700 var(--e1)/var(--l1) var(--human)}
 .back a{display:inline-block;padding-block:var(--e-2)}
 
-/* 8 REASONS. Blueprint 9a: every part of this page has a recorded reason, kept in its data-src attribute; one switch, under the line
-   on who reads, shows them where they apply. M + C: the switch is a checkbox and the reasons are the attributes themselves, set by
-   CSS: no script, nothing added to the markup. Without :has() there is no switch, and the key and the link to the table, the
-   accessible source, stand open. The switch is a track and its knob: on, the knob stands at the far end and the track is filled. */
-.why{padding-block-end:var(--e-2);font-size:.8409em;color:var(--mute);text-align:center}
+/* 8 REASONS. Blueprint 9a: every part has a recorded reason, kept in its data-src; one switch under the line on who reads shows them
+   where they apply. M + C: a checkbox and the attributes themselves, set by CSS; without :has() no switch, and the key and the link
+   to the table stand open. */
+.why{padding-block-end:var(--e-2);text-align:center}
 .why p,.key dl,.key dd{margin:0}
 .key{margin-block-start:var(--e-4);padding-block:var(--e-2);border-block:var(--e-16) solid var(--why)}
 .key dl{display:flex;flex-wrap:wrap;justify-content:center;column-gap:var(--e0)}
 .key div{display:flex;column-gap:var(--e-4)}
 .key dt{font-family:var(--exact);font-weight:700;color:var(--why)}
-.key a{position:relative}
-/* a reason: small, blue, under the part it explains, held to it by a rule */
+/* a reason: small, blue, under its part, held to it by a rule */
 [data-src]::after,.m::before{color:var(--why);font:400 var(--e-1)/var(--l2) var(--human);text-align:start;text-indent:0;text-wrap:pretty;white-space:normal}
 [data-src]::after{content:attr(data-src);display:none;margin:var(--e-4) 0;padding-inline-start:var(--e-2);border-inline-start:var(--e-16) solid var(--why)}
 @supports selector(:has(a)){
@@ -197,10 +200,9 @@ p,li{text-wrap:pretty}
 .key{display:none}
 .why:has(:checked) .key,:root:has(#why:checked) [data-src]::after{display:block}
 }
-/* C: from e25, where the page has margins, the reasons of the parts on the axis stand in them, alternately left and right, and the
-   page does not move. A note takes its height from its part and its side from the page (two anchors, one per axis); each note is
-   also the anchor of the next on its side, so notes never overlap; a hairline joins each part to its note, however far the note has
-   been pushed down. Inside a reading, and without anchor positioning, a reason stays under its part. */
+/* C: from e25 the page has margins: the reasons of the parts on the axis stand in them, left and right by turns, and the page does
+   not move. A note takes its height from its part and its side from the page (two anchors); each is the anchor of the next on its
+   side, so none overlap; a hairline joins part and note. */
 @supports (anchor-name:--a) and (anchor-scope:--a){@media(min-width:76.1093rem){
 body{position:relative}
 .page{anchor-name:--page}
@@ -215,9 +217,9 @@ body{position:relative}
 :root:has(#why:checked) .m::before,:root:has(#why:checked) .m::after{display:block}
 }}
 
-/* 9 FOOT. E: under the doors, who reads; R: eight lines of the Declaration, set on the axis as the inscription is; E: four links,
-   each named for the question it answers; C: where everything is, the licence, what this site does not do, and what the page weighs. */
-.both{margin:0;padding-block:var(--e-2);border-block-start:var(--e-12) solid var(--fg);text-align:center}
+/* 9 FOOT. E: who reads; R: eight lines of the Declaration; E: four links named for what they answer; C: where everything is, the
+   licence, what the site does not do, what the page weighs. */
+.both{margin:0;padding-block:var(--e-2) 0;border-block-start:var(--e-12) solid var(--fg);text-align:center}
 .decl,.next,footer{max-inline-size:var(--e21);margin-inline:auto}
 .decl{margin-block:var(--e5) var(--e2);text-align:center}
 .decl h2{margin:0 0 var(--e-2);font-size:var(--e1);line-height:var(--l1)}

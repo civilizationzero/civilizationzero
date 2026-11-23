@@ -699,6 +699,20 @@ check(_place is not None and _place.group(1).startswith('<p class="note">your na
       and "No account, no verification" in DT["respond_open"] and "in any language" in DT["respond_open"] and "public and permanent" in DT["respond_open"] and "An entry cannot be edited or withdrawn." in DT["respond_open"]
       and not re.search(r'name="[^"]*(mail|email)[^"]*"|type="email"', DT["respond_open"]),
       "home, the second step: the empty place, labelled as the room labels an entry, with the control that opens the form; beside it what the record means for the writer, each clause the room's own rule (no account; the form asks for no e-mail; any language; public and permanent; an entry cannot be edited or withdrawn)")
+# the reply sheet (24 Nov 2026): the room's own form, as /respond serves it with the kind "human" chosen (api/discuss.js), in the browser's
+# own popover, opened by the empty place without script; a plain link to /respond?kind=human is the base; no new endpoint
+_rform = re.search(r'<form class="respond".*?</form>', DT["respond_open"], re.S).group(0).replace('<option value="" selected disabled>', '<option value="" disabled>').replace('<option value="human">', '<option value="human" selected>')
+_dlg = re.search(r'<dialog id="reply" popover aria-labelledby="reply-h"><h2 id="reply-h" tabindex="-1" autofocus>Your answer</h2><p class="src">Your answer is an entry of the discussion, under its rules: public, permanent, declared not verified\.</p>\n(.*?)\n<p><button type="button" popovertarget="reply" popovertargetaction="hide">Close</button></p></dialog>', _sec_h, re.S)
+check(_dlg is not None and _dlg.group(1) == _rform and _rform.count('<option value="human" selected>') == 1 and '<form class="respond" method="post" action="/api/entries" accept-charset="utf-8">' in _rform and _pbody.count("<form") == 1 and _pbody.count("<dialog") == 1
+,
+      "home, the reply sheet: the form is the one /respond serves with the kind 'human' chosen, byte for byte — same fields, same action (/api/entries), same rules shown")
+check(_place is not None and _place.group(1).endswith('<a class="open" href="/respond?kind=human">Write your answer</a><button class="open" type="button" popovertarget="reply" hidden>Write your answer</button>')
+      and all('type="' in b for b in re.findall(r"<button\b[^>]*>", _sec_h)) and len(re.findall(r'<button type="submit">', _sec_h)) == 1 and "commandfor" not in _pbody
+      and "button.open{display:none}\n" in _css and "@supports selector(:popover-open){\na.open{display:none}\nbutton.open{display:inline-grid}" in _css and "#reply:popover-open{display:block}" in _css and "#reply{display:none;" in _css
+      and "max-block-size:calc(100vh - 2*var(--e-1));overflow:auto" in _css,
+      "home, the reply sheet: opened by the empty place with the popover API (popovertarget; every button states its type), a plain link to /respond?kind=human where a browser has none; never taller than the window")
+check("Your answer is an entry" not in _pv["txt"] and "Record this response" not in _pv["txt"] and "Record this response" not in _pv["md"] and "Write your answer" in _pv["txt"] and "[Write your answer](https://civilizationzero.ai/respond?kind=human)" in _pv["md"],
+      "home as text and as Markdown: the place is the link to the form's page; the sheet, which they cannot open, is not in them")
 _hrefs = re.findall(r'href="([^"]+)"', _sec_h)
 _U = lambda path: f"{ORIGIN}{path}"; _js = _pj["doors"]["human_steps"]
 check(_hrefs[:4 + len(_th3)] == ["/core", "/core#translations", "/respond?kind=human", "/discuss"] + [f'/themes/{t["slug"]}' for t in _th3] and _hrefs[4 + len(_th3)] == "/ask"
@@ -766,7 +780,7 @@ check(not re.search(r"proposed on|not yet decided", " ".join(_src)) and sum("dec
 _why = re.search(r'<div class="why m l" data-src="[^"]*">\n<p>Every part of this page has a recorded reason\. <label class="sw" hidden><input type="checkbox" role="switch" id="why"> Show the reasons</label></p>\n<div class="key">\n<dl>(.*?)</dl>\n<p>The table of reasons is on <a href="/how-it-is-built#reasons">How this page is built</a>\.</p>\n</div>\n</div>', _pbody, re.S)
 _keys = " · ".join(f"{a} {_h.unescape(b)}" for a, b in re.findall(r"<div><dt>(\w)</dt> <dd>(.*?)</dd></div>", _why.group(1))) if _why else ""
 check(_why is not None and _keys == "R the record · M the machine reader · H a standard adopted for human reading, with its source · C a constraint · E an editorial choice, stated as such" and _keys + "." in _strip(_rs)
-      and _pbody.index('<p class="both m"') < _pbody.index('<div class="why m l"') < _pbody.index('<section class="decl m l"') and "Show the reasons" not in _top and "<details" not in _pbody
+      and _pbody.index('<p class="both m"') < _pbody.index('<div class="why m l"') < _pbody.index('<section class="decl m l"') and "Show the reasons" not in _top and "<details" not in _top
       and "Show the reasons" not in _pv["txt"] and "Show the reasons" not in _pv["md"] and "The table of reasons is on How this page is built." in re.sub(r"\s+", " ", _pv["txt"]),
       "home: under the line on who reads, one sentence and a switch, 'Show the reasons'; the key, in the words of /how-it-is-built, and the link to the table; nothing of it in the head; in the text and Markdown forms, which cannot switch, the sentence, the key and the link")
 check(":root:has(#why:checked) [data-src]::after{display:block}" in _css and "[data-src]::after{content:attr(data-src);display:none;" in _css and ".sw{display:inline-flex;" in _css.split("/* 8 REASONS.")[1].split("@supports selector(:has(a)){")[1].split("\n}")[0]
@@ -823,7 +837,7 @@ for _pat, _allowed in ((r"\bconscious", ["It does not declare present artificial
     _hits = [x.strip()[:90] for x in re.findall(r"[^\n]*(?:" + _pat + r")[^\n]*", _mach, re.I) if not any(a in x for a in _allowed)]
     _hits = [x for x in _hits if not isinstance(x, tuple)]
     check(not _hits, f"home, the machine's reading: {_pat} only in the record's own words, in a key machines relied on, or in the site's name for this page {_hits[:3]}")
-check(".x{margin:0 0 var(--e0);font-size:1em;white-space:pre;overflow-x:auto;" in _css and ":is(.req,.hd)>span>span{white-space:nowrap}" in _css and "text-overflow:ellipsis" in _css.split(".hd>span{padding:0;")[1].split("}")[0]
+check(".x{margin:0 0 var(--e0);font-size:1em;white-space:pre;overflow-x:auto}" in _css and ":is(.req,.hd)>span>span{white-space:nowrap}" in _css and "text-overflow:ellipsis" in _css.split(".hd>span{padding:0;")[1].split("}")[0]
       and ".lbl{margin:0 0 var(--e-8);font:400 1em/var(--l2) var(--human);" in _css and "mask-image:linear-gradient(#000 calc(100% - var(--e4)),transparent)" in _css,
       "home.css: in the machine's reading no line is broken inside a token (the head folds between its words, the body is scrolled); in a glimpse a line that does not fit ends in an ellipsis, under a label in the human's face, and the window fades at its lower edge")
 # the foot: the words and links of every page's foot, and the page's own two paragraphs on who keeps and who builds it

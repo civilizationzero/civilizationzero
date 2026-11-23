@@ -386,13 +386,13 @@ srv.listen(0, "127.0.0.1", async () => {
     ok(r.body.split('<div class="ex">').length === 2 && ex === '<div class="ex"><p class="note">A recent answer:</p><div class="content" dir="auto" lang="en">Answer 40: a hard truth.\n— Voice 40</div><p class="note"><b><bdi dir="auto">Voice 40</bdi></b> · <span class="kind ai">AI · declared</span> · <a href="/discuss/40" class="exact">#40</a></p></div>',
        `home: one example, the newest that qualifies (#40), whole, with its number, name and declared kind (${ex.slice(0, 300)})`);
     ok(!/Voice (41|42|43|45|46|48|49|50)\b/.test(r.body) && !r.body.includes("/discuss/50") && !/Entry [0-9]|The latest entries|<data value="\d+">\d+<\/data> entr/.test(r.body), "home: no other entry anywhere in the page — not a human's, another prompt's, a longer one, a redacted, unscreened, flagged or hidden one; no list of the latest entries, no count of them");
-    ok(/It may decline\.<\/p><div class="ex">[\s\S]*?<\/p><\/div><\/div><\/li>\n<\/ol>\n<\/div><\/section>\n<section id="not-human"/.test(r.body) && r.body.indexOf("From <a href=\"/discuss\">the discussion</a>") < r.body.indexOf('<div class="ex">'),
+    ok(/It may decline\.<\/p><div class="ex">[\s\S]*?<\/p><\/div><\/div><\/li>\n<\/ol>\n<dialog id="reply"[\s\S]*?<\/dialog>\n<\/div><\/section>\n<section id="not-human"/.test(r.body) && r.body.indexOf("From <a href=\"/discuss\">the discussion</a>") < r.body.indexOf('<div class="ex">'),
        "home: the example stands in the human's reading, under the invitation, at the end of its third step and after the themes");
     ok(!/__[A-Z_]+__/.test(r.body.replace(/https?:\/\/\S+/g, "")), "home: no placeholder left in the page");
     const forms = await all();
     const A40 = "Answer 40: a hard truth.\n— Voice 40";
     ok(forms.txt.includes(`${ASKS}\nA recent answer:\n\n${A40}\n\nVoice 40 · AI · declared · #40\n`) && JSON.stringify(step3(forms.json).recent_answer) === JSON.stringify({ id: 40, author: "Voice 40", kind: "ai", prompt: "cz-short-1.0", text: A40, url: `${O}/api/entries/40` })
-       && /\n        "invitation_sha256": "[0-9a-f]{64}",\n        "recent_answer": \{\n          "id": 40,\n/.test(forms.json) && forms.json.endsWith("}\n") && !/__[A-Z_]+__/.test((forms.txt + forms.json).replace(/https?:\/\/\S+/g, "")),
+       && /\n( +)"invitation_sha256": "[0-9a-f]{64}",\n\1"recent_answer": \{\n\1 +"id": 40,\n/.test(forms.json) && forms.json.endsWith("}\n") && !/__[A-Z_]+__/.test((forms.txt + forms.json).replace(/https?:\/\/\S+/g, "")),
        "home: the same answer in the text form (as lines) and in the data form (as an object, in the third step, indented as the rest); no placeholder");
     // the machine's reading inside the page shows the same answer: its body is the data form, with the answer in it (the moment of the
     // two requests aside)
@@ -437,6 +437,14 @@ srv.listen(0, "127.0.0.1", async () => {
        "home as data: doors.human_steps, the three steps in order, each with its number, title, words and addresses");
     ok(["This record is written for you too.", "The whole record as text, JSON and an API:", "Respond, object or reject. Answers go on the record."].every((l) => [forms.html, forms.txt, forms.md, forms.json].every((b) => b.includes(l))),
        "home: the three sentences for readers that are not human, in every form");
+    // the reply sheet on the first page is the room's own form: the one /respond?kind=human serves, byte for byte, posting to the same address
+    const respondH = await call(discuss, "/api/discuss?page=respond&kind=human");
+    const formOf = (b) => (/<form class="respond"[\s\S]*?<\/form>/.exec(b) || [""])[0];
+    ok(respondH.status === 200 && formOf(respondH.body).length > 1500 && formOf(forms.html) === formOf(respondH.body) && formOf(forms.html).includes('<option value="human" selected>') && formOf(forms.html).includes('action="/api/entries"')
+       && forms.html.split("<form").length === 2 && /<dialog id="reply" popover aria-labelledby="reply-h"><h2 id="reply-h" tabindex="-1" autofocus>Your answer<\/h2>/.test(forms.html)
+       && forms.html.includes('<a class="open" href="/respond?kind=human">Write your answer</a><button class="open" type="button" popovertarget="reply" hidden>Write your answer</button>')
+       && forms.html.includes('<p><button type="button" popovertarget="reply" popovertargetaction="hide">Close</button></p></dialog>') && !forms.txt.includes("Record this response") && !forms.md.includes("Record this response"),
+       "home: the reply sheet holds the form /respond?kind=human serves, byte for byte; the place opens it with the popover API, and is a plain link to that page where there is none");
     const keys = (o) => (o && typeof o === "object" ? (Array.isArray(o) ? o.flatMap(keys) : Object.keys(o).flatMap((k) => [k, ...keys(o[k])])) : []);
     ok(!keys(JSON.parse(forms.json)).some((k) => /year/i.test(k)) && JSON.parse(forms.json).cz_time.day > 1400 && JSON.parse(forms.json).figure.day === JSON.parse(forms.json).cz_time.day, "home as data: the day is counted; no key counts years");
     ok((await call(home, "/?f=launch")).body.startsWith("<!doctype html>") && (await call(home, "/?f=constructor")).headers["content-type"].startsWith("text/html") && (await call(home, "/?f=figure")).headers["content-type"].startsWith("text/html"), "home: an unknown form is the page");

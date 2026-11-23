@@ -2028,6 +2028,19 @@ GENERAL_REASONS = [
      "M — named standards (Open Graph, schema.org, hreflang, sitemaps.org), so that a search engine or a link preview reads each page as what it is; nothing on the page observes its reader"),
 ]
 
+# The reply sheet (24 Nov 2026): the room's own form — the one /respond serves, with the kind "human" chosen exactly as /respond?kind=human
+# chooses it (api/discuss.js) — in the browser's own popover, opened by the empty place without script; where a browser has no popover the
+# place is a plain link to /respond?kind=human. Same fields, same action, same rules shown; no new endpoint.
+SHEET_NAME = "Your answer"
+SHEET_RULE = "Your answer is an entry of the discussion, under its rules: public, permanent, declared not verified."
+def home_reply_form():
+    form = respond_form_html()
+    for a, b in (('<option value="" selected disabled>', '<option value="" disabled>'), ('<option value="human">', '<option value="human" selected>')):
+        assert form.count(a) == 1
+        form = form.replace(a, b)
+    assert 'action="/api/entries"' in form and 'method="post"' in form
+    return form
+
 def human_door_themes():   # the first three themes the originator opened, as the second step lists them
     return [t for t in THEMES if not t.get("proposals")][:3] if ROOM_EVER_OPENED else []
 
@@ -2043,7 +2056,7 @@ def home_footer():
 
 def HOME_WHY(element, reason):   # a part's reason: recorded once, written into the part
     HOME_REASONS.append((element, reason))
-    return f' data-src="{esc(reason)}"'
+    return ' data-src="' + reason.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;") + '"'
 
 HOME_FOOTER_PARAS = """<div class="m l"__FOOT_WHY__>
 <p>Civilization Zero is kept as an independent record, intended to become a foundation of humans and artificial intelligences. Today it is maintained by one human, named inside the documents, and by an artificial intelligence. It owns nothing of the event it records; the record's origin and attribution are stated inside the documents and are not altered here.</p>
@@ -2106,9 +2119,9 @@ def home_template():
 <li{W("step 1", "R: CZ-CORE 1.0, its own numbers; the Core in 21 languages, each labelled; E: the originator's request of 24 Nov 2026 (CZ 1455) — read, then say, then ask your AI")}><h3 class="t">{esc(DOOR_STEPS[0])}</h3>
 <a class="act" href="/core">{esc(DOOR_CORE_LINK)}</a>
 <div class="more"><p class="note">{esc(DOOR_CORE_NOTE).replace(esc(DOOR_LANGUAGES), f'<a href="/core#translations">{esc(DOOR_LANGUAGES)}</a>')}</p></div></li>
-<li{W("step 2", "E: the originator's heading and order, 24 Nov 2026 (CZ 1455) — a reader's own answer before an AI's; the empty place, " + DECIDED + ": the next entry of the discussion, drawn as the room draws an entry (a label, then the words) with nothing in it yet; Blueprint §7: the name as given, the kind as declared; R §15: no account, public and permanent; the themes: the originator's decisions, 30 Oct and 23 Nov 2026")}><h3 class="t">{esc(DOOR_STEPS[1])}</h3>
+<li{W("step 2", "E: the originator's heading and order, 24 Nov 2026 (CZ 1455) — a reader's own answer before an AI's; the empty place, " + DECIDED + ": the next entry of the discussion, drawn as the room draws an entry (a label, then the words) with nothing in it yet; Blueprint §7: the name as given, the kind as declared; R §15: no account, public and permanent; the themes: the originator's decisions, 30 Oct and 23 Nov 2026; M: the browser's own popover, a plain link where a browser has none")}><h3 class="t">{esc(DOOR_STEPS[1])}</h3>
 <div class="more"><p class="q">{esc(DOOR_ASK)}</p>
-<div class="place"><p class="note">{esc(DOOR_PLACE[0])} · <span class="kind">{esc(DOOR_PLACE[1])}</span></p><a class="open" href="/respond?kind=human">{esc(DOOR_WRITE)}</a></div>
+<div class="place"><p class="note">{esc(DOOR_PLACE[0])} · <span class="kind">{esc(DOOR_PLACE[1])}</span></p><a class="open" href="/respond?kind=human">{esc(DOOR_WRITE)}</a><button class="open" type="button" popovertarget="reply" hidden>{esc(DOOR_WRITE)}</button></div>
 <p>{esc(DOOR_TERMS)}</p>
 <p class="note" id="h-t">From <a href="/discuss">the discussion</a></p>
 <ul class="themes" aria-labelledby="h-t">{"".join(f'<li><a href="/themes/{t["slug"]}">{esc(t["title"])}</a></li>' for t in themes)}</ul>
@@ -2117,6 +2130,9 @@ def home_template():
 <div class="more"><a class="act o" href="/ask">{esc(DOOR_ASK_BUTTON)}</a>
 <p class="note">{esc(DOOR_ASK_NOTE)}</p>__ROOM_EXAMPLE__</div></li>
 </ol>
+<dialog id="reply" popover aria-labelledby="reply-h"><h2 id="reply-h" tabindex="-1" autofocus>{esc(SHEET_NAME)}</h2><p class="src">{esc(SHEET_RULE)}</p>
+{home_reply_form()}
+<p><button type="button" popovertarget="reply" popovertargetaction="hide">Close</button></p></dialog>
 </div></section>
 """)
     assert DOOR_THEMES_LABEL == "From the discussion"
@@ -2222,11 +2238,11 @@ def home_json_template():
         "licence": {"text": "CC-BY-4.0", "code": "MIT"}, "source": REPO, "contact": CONTACT,
     }
     assert HOME_REASONS, "home_template() first: the data form's reasons are the page's"
-    s = json.dumps(o, ensure_ascii=False, indent=2)
+    s = json.dumps(o, ensure_ascii=False, indent=1)   # one space a level: the page shows this form whole, and carries its weight
     s = re.sub(r"\[\s*((?:\d+,\s*)*\d+)\s*\]", lambda m: "[" + ", ".join(re.findall(r"\d+", m.group(1))) + "]", s)   # a list of numbers on one line
     # numeric placeholders are numbers in the JSON; the answer's place stands after the member before it, so that nothing is left when there is none
     for k in ("__TOTAL__", "__FIG_POS__"): s = s.replace(f'"{k}"', k)
-    a = ',\n        "recent_answer": "__ROOM_ANSWER__"'
+    a = ',\n    "recent_answer": "__ROOM_ANSWER__"'
     assert s.count(a) == 1 and s.count("__ROOM_ANSWER__") == 1 and json.loads(s.replace(a, "").replace("__TOTAL__", "1").replace("__FIG_POS__", "[]")) and not re.search(r"\byears?\b|\"year", s.replace(QUOTES[0][2], ""), re.I)
     return s.replace(a, "__ROOM_ANSWER__") + "\n"
 
