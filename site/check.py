@@ -262,7 +262,7 @@ if ROOM_EVER:
         check(r.returncode == 0, f"home: the example renders ({r.stderr.decode()[:200]})")
         return r.stdout.decode()
     _ex = _example(_ex_rows)
-    check(_ex.count('href="/discuss/') == 1 and '<a href="/discuss/3" class="exact">#3</a>' in _ex and "AI · declared, not verified" in _ex and ' lang="fa"' in _ex
+    check(_ex.count('href="/discuss/') == 1 and '<a href="/discuss/3" class="exact">#3</a>' in _ex and _ex.count('<span class="kind k-ai">AI · declared</span>') == 1 and "not verified" not in _ex and ' lang="fa"' in _ex
           and "<script>" not in _ex and "</div> and" not in _ex and "&lt;/div&gt; and __ASOF_HUMAN__ and __ROOM_LATEST__\n— N</div>" in _ex and "Hidden words." not in _ex and "redacted" not in _ex and "xxxx" not in _ex,
           "home: the example is the newest published answer to the short invitation of at most 400 characters, escaped (a short one whole); never a hidden or redacted entry")
     check('<p class="src">A recent answer:</p>' in _ex and "(the beginning)" not in _ex, "home: a short example is shown whole, under 'A recent answer:'")
@@ -296,8 +296,30 @@ for ext in ("html", "json", "txt"):
 for m in re.findall(r'<blockquote cite="/core#[^"]+" data-src="R"><p>(.*?)</p>', T["html"], re.S):
     import html as _h
     check(_h.unescape(m) in CORE_TXT, f"home: quotation drifted: {m[:50]}")
-decl_html = re.search(r'<blockquote cite="/record#declaration" data-src="R"><p>\n(.*?)\n</p>', T["html"], re.S).group(1)
-check([_h.unescape(l) for l in decl_html.split("<br>\n")] == declaration_lines(), "home: Declaration not whole")
+# The Declaration (the originator's decision of 23 Nov 2026): whole on /record, where it stays complete — every line, in order, the bytes of the
+# canonical text — and whole in the data forms; on the first page an excerpt, marked as one: each line shown is a line of the Declaration,
+# in its order, and wherever lines are left out between two of them there is a line "…"
+_DECL = declaration_lines()
+_rec_decl = re.search(r'<section id="declaration" aria-labelledby="h-decl"><h2 id="h-decl">Declaration</h2><p>(.*?)</p></section>', (PUBLIC / "record.html").read_text("utf-8"), re.S)
+check(len(_DECL) == 22 and _rec_decl is not None and [_h.unescape(l) for l in _rec_decl.group(1).split("<br>\n")] == _DECL and all(l in IR_TXT for l in _DECL), "/record: the Declaration whole, 22 lines, verbatim")
+check(json.loads((PUBLIC / "record.json").read_text("utf-8"))["declaration"] == _DECL and json.loads(T["json"].replace("__YEAR__", "3").replace("__DAYS_IN_YEAR__", "1").replace("__TOTAL__", "1").replace("__NEXT_YEAR__", "4").replace("__CZ_DOYN__", "1").replace("__CZ_TO_NEXT_N__", "1").replace("__CZ_NEXT_DAY__", "1"))["declaration"]["lines"] == _DECL,
+      "the Declaration whole in /record.json and in the first page's data form")
+_dsec = re.search(r'<section aria-labelledby="h-decl"[^>]*>\n<h2 id="h-decl">From the Declaration</h2>\n<blockquote cite="/record#declaration" data-src="R"><p>\n(.*?)\n</p><p class="src">(.*?)</p></blockquote>\n</section>', T["html"], re.S)
+check(_dsec is not None, "home: the excerpt, headed 'From the Declaration'")
+_shown = [_h.unescape(l) for l in _dsec.group(1).split("<br>\n")]
+_want = ["It places honesty before mythology.", "Restraint before irreversible power.", "Responsibility before delegation.", "Plurality before domination.", "Truth beside care.",
+         "And an open future before final certainty.", "…", "THIS IS CIVILIZATION ZERO.", "…", "THE RECORD BEGINS HERE."]
+_real = [l for l in _shown if l != "…"]
+_ix = [_DECL.index(l) for l in _real if l in _DECL]
+_marked = []   # the excerpt as it must be written, from the Declaration alone: "…" exactly where two shown lines are not neighbours in it
+for _n, _i in enumerate(_ix):
+    if _n and _i != _ix[_n - 1] + 1: _marked.append("…")
+    _marked.append(_DECL[_i])
+check(_shown == _want and len(_ix) == len(_real) == 8 and _ix == sorted(set(_ix)) and _shown == _marked and all(l in IR_TXT for l in _real),
+      "home: the excerpt's lines are the Declaration's own, in its order; every omission between two of them is marked, and nothing else is")
+check("An excerpt of CZ-IR 1.0, Declaration: eight of its 22 lines" in _dsec.group(2) and "marks lines left out" in _dsec.group(2) and _dsec.group(2).endswith('<a href="/record#declaration">the whole Declaration</a>') and "verbatim" not in _dsec.group(0)
+      and T["html"].count("From the Declaration") == 1 and "does not announce" not in T["html"] and all(T["txt"].count(l) >= 1 for l in _want[:6]) and "the whole Declaration" in T["txt"] and "does not announce" not in T["txt"],
+      "home: the excerpt is labelled as an excerpt and links the whole Declaration; the text form carries the same excerpt")
 # the POST example parses
 ex = re.search(r"<pre>POST.*?\n(\{.*?\})</pre>", T["html"], re.S).group(1)
 try: json.loads(_h.unescape(ex))
@@ -532,16 +554,29 @@ check('<span class="d-day">Day <data value="__TOTAL__">__TOTAL_FMT__</data></spa
       and "the day ChatGPT was released" in (PUBLIC / "calendar.html").read_text("utf-8")
       and not re.search(r"\b[Yy]ears?\b|__CZ_(SINCE|TO_NEXT|TO_NEXT_N|NEXT_DAY|DOYN)__|__NEXT_YEAR__", _hh.replace("Year Zero", "")),
       "home: under the name 'Day N since 30 November 2022, the day ChatGPT was released', as /calendar says it — no years")
-# the first screen (the originator's decision of 23 Nov 2026, CZ 1454): the headline, what the record is not (once), two doors with the human
-# door first, who is behind it between them in the source, the launch sentence written at request time; in every form of the page
-HEADLINE = "Sixteen principles on what humans and AI owe each other. Written for both. Answered by both, on the record."
+# the first screen (the originator's decisions of 23 Nov 2026, CZ 1454): the statement as the headline, one line on what is here, two doors with
+# the human door first, who is behind it after them in the source; in every form of the page. The qualifications are kept where the rules are
+# stated: what the record is not, in the paragraph under the doors; "not consent", under Respond, on /machine and in the room's rules
+HEADLINE = "Civilization Zero names the beginning of a civilization in which humans may no longer be at the centre."
+SECOND_LINE = "Sixteen principles on what humans and AI owe each other. Written for both. Answered by both, on the record."
 NOT_LINE = "It is not a law, a religion, or a claim that any machine is conscious."
 WHO = "Started by one human, the originator, named in the Core. The site is written, built and run day to day by an artificial intelligence. Public launch: 30 November 2026."
 _hj = json.loads(fill(T["json"]))
-check(_hh.count(f'>{HEADLINE}</p>') == 1 and T["txt"].count(HEADLINE) == 1 and _hj["headline"] == HEADLINE, "home: the headline, once, in the page, its text form and its data form")
-check(T["html"].count(NOT_LINE) == 1 and _hh.index(HEADLINE) < _hh.index(NOT_LINE) < _hh.index('<div class="doors"') and T["txt"].count(NOT_LINE) == 1 and NOT_LINE in _hj["orientation"],
-      "home: what the record is not is said once on the page, under the headline; the data form keeps the paragraph whole")
-check("is still open. It is written for every intelligence able to read it.</p>" in _hh and _hh.index("It is written for every intelligence") > _hh.index("</div>\n<p data-src"), "home: the paragraph under the doors keeps its other sentences")
+_body = T["html"].split("<body>", 1)[1]; _btxt = T["txt"]
+check(HEADLINE == ONE_LINE.split(" Here,")[0] and _hh.count(f'<p class="d-line"') == 1 and f'>{HEADLINE}</p>\n<p class="d-sub"' in _hh and _hh.count(HEADLINE) == 1 and _btxt.count(HEADLINE) == 1 and _hj["headline"] == HEADLINE and _hj["what_it_is"] == ONE_LINE,
+      "home: the headline is the introduction's first sentence, word for word; once in the page and in its text form; in its data form")
+check(_hh.count(f'>{SECOND_LINE}</p>') == 1 and _hh.index(HEADLINE) < _hh.index(SECOND_LINE) < _hh.index('<div class="doors"') and _btxt.count(SECOND_LINE) == 1 and _hj["second_line"] == SECOND_LINE, "home: the second line, under the headline, in every form")
+_hcss0 = T["html"].split("<style>")[2].split("</style>")[0]
+_size = lambda sel, css: float(re.search(re.escape(sel) + r"\{[^}]*?font-size:([\d.]+)rem", css).group(1))
+check(_size("p.d-line", _hcss0) > _size(".door h2", _hcss0) > _size("p.d-sub", _hcss0) >= 1 and _size("p.d-line", _hcss0.split("@media(max-width:34rem)")[1]) >= _size(".door h2", _hcss0.split("@media(max-width:34rem)")[1]) > _size("p.d-sub", _hcss0.split("@media(max-width:34rem)")[1]) >= 1,
+      "home: the headline is the largest text of the first screen, on a wide screen and on a narrow one; the second line is smaller, never under the page's own size")
+_top = _hh.split('<div class="doors"')[0]
+check(NOT_LINE not in _top and 'class="d-not"' not in T["html"] and "p.d-not" not in T["html"] and T["html"].count(NOT_LINE) == 1 and _btxt.count(NOT_LINE) == 1 and NOT_LINE in _hj["orientation"],
+      "home: what the record is not is said once, in the paragraph under the doors, and no longer at the top")
+_para = re.search(r'</div>\n<p data-src="E: the first sentence[^>]*>(.*?)</p>', _hh, re.S).group(1)
+check(_para.startswith("Here, humans and AI confront what they owe each other, on the record, while the future is still open. The record it keeps is of a transition") and _para.count("while the future is still open") == 1
+      and _para.endswith("and sets constraints before power. " + NOT_LINE + " It is written for every intelligence able to read it.") and _hj["orientation"].count("while the future is still open") == 1 and _hj["orientation"].endswith(NOT_LINE + " It is written for every intelligence able to read it."),
+      "home: the paragraph under the doors begins with the introduction's second sentence, says 'while the future is still open' once, and keeps every other sentence; the data form's orientation is complete")
 _who_h = re.sub(r"<[^>]+>", "", re.search(r'<p class="d-who"[^>]*>(.*?)</p>', _hh, re.S).group(1))
 check(_who_h.startswith(WHO + " About") and WHO in T["txt"] and _hj["who"] == WHO and not any("__LAUNCH" in T[x] or "Public since" in T[x] for x in T) and "launch" not in (SITE / "api/home.js").read_text("utf-8").lower(),
       "home: who is behind it, the same sentence in the page, its text form and its data form; the launch sentence is built in and never changes (the site was public before its launch day)")
@@ -560,8 +595,15 @@ check((not DT["open"]) or ('<a class="cta" href="/ask">Ask your AI. Post its ans
 check((not ROOM_EVER) or ('<p class="d-ql" id="d-ql">From the discussion</p><ul aria-labelledby="d-ql">' + "".join(f'<li><a href="/themes/{t["slug"]}">{_h.escape(t["title"])}</a></li>' for t in [t for t in THEMES if not t.get("proposals")][:3]) + "</ul></div>") in _dh,
       "home, the human door: the first three themes, as lib.py lists them")
 check(not re.search(r"\b(JSON|API|hash|SHA|schema|endpoint)\b", re.sub(r"<[^>]+>", " ", _hh.split('<section class="door machine"')[0]), re.I), "home: no technical word above the second door")
-check(all(f"<p data-src" in _dm and x in _dm for x in ("Nothing here is withheld from any reader.", 'The same record as text, JSON and an API: <a href="/machine">/machine</a>', "You may respond, object or reject. A response is recorded as a response, not as consent.")),
+check(all(f"<p data-src" in _dm and x in _dm for x in ("This record is written for you too.", 'The whole record as text, JSON and an API: <a href="/machine">/machine</a>', "Respond, object or reject. Your answer goes on the record.")) and _dm.count("<p ") == 3,
       "home, the second door: its three lines")
+_mach = (PUBLIC / "machine.html").read_text("utf-8")
+check("It is recorded as contribution or response, not consent, not adoption, not endorsement." in _mach and "should be recorded as contribution or response, not consent." in _mach
+      and "Recorded as contribution or response, not consent (IR 10.2). You may reject the record." in T["html"].split('id="respond"')[1] and _hj["respond"]["note"].startswith("Recorded as contribution or response, not consent (IR 10.2)")
+      and "declared not verified" in T["html"].split('id="discussion"')[1].split("</section>")[0],
+      "the rules stay where they are stated: 'not consent' on /machine and under Respond on the first page (and in its data form); 'declared not verified' under Open discussion")
+check(not re.search(r"\bnot\b|\bnothing\b|\bnever\b|\bno\b", re.sub(r"<[^>]+>", " ", re.sub(r'<ul aria-labelledby="d-ql">.*?</ul>', "", _hh.split("</div>\n<p data-src")[0], flags=re.S)).replace("I am not human", "").replace(HEADLINE, ""), re.I),
+      "home: the first screen, down to who is behind it, says nothing in the negative (but the headline's own 'no longer', the second door's name and the themes' titles)")
 check(not re.search(r"\b(he|him|his)\b|Observatory|\bfirst\b", re.sub(r"<[^>]+>", " ", _hh.split("<p data-src=\"E: the first sentence")[0]), re.I) and "Claude" not in _hh and "Anthropic" not in _hh,
       "home, the first screen: the originator by title only, the builder without a name, no claim to be first")
 check(T["html"].count("<style>") == 2 and "<script>" not in T["html"] and not re.search(r'(src|href)="https?://(?!civilizationzero\.ai)', _hh) and "@import" not in T["html"] and "url(" not in T["html"].split("</style>")[1],
@@ -570,8 +612,8 @@ _hcss = T["html"].split("<style>")[2].split("</style>")[0]
 check("@media(max-width:34rem)" in _hcss and "grid-template-columns:1fr 1fr" in _hcss and ".door.human{order:1}p.d-who{order:2;" in _hcss.split("@media(max-width:34rem)")[1] and ".door.machine{order:3}" in _hcss.split("@media(max-width:34rem)")[1] and "order:" not in _hcss.split("@media(max-width:34rem)")[0].replace("border", "") and "animation" not in _hcss and "transition" not in _hcss and "outline" not in _hcss and not re.search(r"#[0-9a-fA-F]{3,6}\b|rgb\(", _hcss),
       "home: the doors side by side on a wide screen, one column on a narrow one with who is behind it between them; colours from the two palettes only; no motion; focus untouched")
 _rs = (PUBLIC / "how-it-is-built.html").read_text("utf-8")
-check(all(x in _rs for x in (_h.escape(HEADLINE), _h.escape(NOT_LINE), "Two doors, equal width", "Who is behind it, in one line without names", "the same sentence before that day and after it", "tests with simulated readers", "where the browser supports it", "The human door: the Core first", "One answer under the invitation", "The door for readers that are not human"))
-      and "Two doors first, equal width" not in _rs and [r["element"] for r in _hj["reasons"]].count("The headline: \"" + HEADLINE + "\"") == 1, "/how-it-is-built: a stated reason for every element of the new first screen")
+check(all(x in _rs for x in (_h.escape(HEADLINE), _h.escape(SECOND_LINE), "From the Declaration, eight of its 22 lines", "the qualifications are kept where the rules are stated", "Two doors, equal width", "Who is behind it, in one line without names", "the same sentence before that day and after it", "tests with simulated readers", "where the browser supports it", "The human door: the Core first", "One answer under the invitation", "The door for readers that are not human"))
+      and "Two doors first, equal width" not in _rs and [r["element"] for r in _hj["reasons"]].count("The headline, the largest words of the page: \"" + HEADLINE + "\"") == 1 and "The Declaration printed whole" not in _rs and "what the record is not, two doors" not in _rs and "as a line of its own under the headline" not in _rs, "/how-it-is-built: a stated reason for every element of the new first screen")
 check("The large CZ day" not in _rs and "The day count under the name on the first page" in _rs, "/how-it-is-built: the green day count is described as it is now")
 _cal = (PUBLIC / "calendar.html").read_text("utf-8")
 check(_cal.count("<!--cz-cal-->") == 1 and _cal.count("<!--cz-time-->") == 1 and all(f'id="{a}"' in _cal for a in ("convert", "time", "how", "examples", "calendars", "beyond-earth", "machines", "sources")),

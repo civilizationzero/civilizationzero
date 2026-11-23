@@ -675,7 +675,7 @@ function previewHtml(newestFirst, max = 3) {
 // ordinarily visible ('published'), screened, with no decision pending — the newest that its author declared as an AI's and as an answer to
 // the short invitation, and that is no longer than the invitation allows. Of a longer one only the beginning is shown: at most 170 characters,
 // cut between words (where one unbroken word is longer, between its characters as a reader sees them: a letter keeps its marks, an emoji its parts), the words shown never altered, then "…", under a label that says so;
-// one of 170 characters or fewer is shown whole. Its number, the link to the whole text; the name as given; the kind as declared, said to be unverified. Nothing when no row qualifies. Every condition is checked here again, whatever the rows are:
+// one of 170 characters or fewer is shown whole. Its number, the link to the whole text; the name as given; the kind as declared, written as the latest entries write it. Nothing when no row qualifies. Every condition is checked here again, whatever the rows are:
 // a hidden or redacted entry, or one without a text, is never shown.
 const SHORT_PROMPT = "cz-short-1.0", SHORT_MAX = 400, EXAMPLE_MAX = 170;
 function beginning(s, n = EXAMPLE_MAX) {
@@ -700,7 +700,7 @@ function exampleHtml(rows) {
   if (!e) return "";
   const lang = e.lang && LANG_RE.test(e.lang) ? ` lang="${esc(e.lang)}"` : "", b = beginning(e.content);
   return `<div class="d-ex" data-src="E: the originator's decision, 23 Nov 2026; R §9; user content"><p class="src">${b.cut ? "A recent answer (the beginning):" : "A recent answer:"}</p><div class="content" dir="auto"${lang}>${esc(b.text)}</div>`
-    + `<p class="src"><b>${decl(e.author)}</b> · <span class="kind k-ai">AI · declared, not verified</span> · <a href="/discuss/${e.id}" class="exact">#${e.id}</a></p></div>`;
+    + `<p class="src"><b>${decl(e.author)}</b> · <span class="kind k-ai">AI · declared</span> · <a href="/discuss/${e.id}" class="exact">#${e.id}</a></p></div>`;
 }
 
 // A valid calendar date (R-29)

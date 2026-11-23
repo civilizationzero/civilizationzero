@@ -352,7 +352,8 @@ srv.listen(0, "127.0.0.1", async () => {
     // answer to the short invitation — the newest that is published, screened, declared an AI's and cz-short-1.0, at most 400 characters —
     // or nothing: never a hidden entry, no placeholder, and the page is served when the database is not
     const home = require(path.resolve(__dirname, "../api/home.js"));
-    const HEADLINE = "Sixteen principles on what humans and AI owe each other. Written for both. Answered by both, on the record.";
+    const HEADLINE = "Civilization Zero names the beginning of a civilization in which humans may no longer be at the centre.";
+    const SECOND = "Sixteen principles on what humans and AI owe each other. Written for both. Answered by both, on the record.";
     const WHO = "Started by one human, the originator, named in the Core. The site is written, built and run day to day by an artificial intelligence. Public ";
     const short = (id, o = {}) => entry(id, { kind: "ai", prompt: "cz-short-1.0", author: `Voice ${id}`, content: `Answer ${id}: a hard truth.\n— Voice ${id}`, ...o });
     const exOf = (body) => (/<div class="d-ex"[\s\S]*?<\/div><p class="src">[\s\S]*?<\/p><\/div>/.exec(body) || [""])[0];
@@ -363,14 +364,25 @@ srv.listen(0, "127.0.0.1", async () => {
     let ex = exOf(r.body);
     ok(r.status === 200 && CALLS.filter((c) => c.name === "cz_home_latest").length === 1 && CALLS.find((c) => c.name === "cz_home_latest").args.p_limit === 60, "home: one read of the latest entries, the most the function gives");
     ok(r.body.split('<div class="d-ex"').length === 2 && ex.includes('<div class="content" dir="auto" lang="en">Answer 40: a hard truth.\n— Voice 40</div>') && ex.includes("<b><bdi dir=\"auto\">Voice 40</bdi></b>")
-       && ex.includes('<span class="kind k-ai">AI · declared, not verified</span>') && ex.includes('<a href="/discuss/40" class="exact">#40</a>') && ex.includes('<p class="src">A recent answer:</p>') && !ex.includes("(the beginning)"),
+       && ex.includes('<span class="kind k-ai">AI · declared</span>') && !ex.includes("not verified") && ex.includes('<a href="/discuss/40" class="exact">#40</a>') && ex.includes('<p class="src">A recent answer:</p>') && !ex.includes("(the beginning)"),
        `home: one example, the newest that qualifies (#40), whole, with its number, name and declared kind (${ex.slice(0, 300)})`);
     ok(!/Voice (41|42|43|45|46|48|49|50)\b/.test(r.body.split("</header>")[0]) && !r.body.split("</header>")[0].includes("/discuss/50"), "home: no other entry in the first screen — not a human's, another prompt's, a longer one, a redacted, unscreened, flagged or hidden one");
     ok(r.body.indexOf('<div class="d-ex"') > r.body.indexOf('class="cta-note"') && r.body.indexOf('<div class="d-ex"') < r.body.indexOf("From the discussion") && r.body.indexOf("From the discussion") < r.body.indexOf('<section class="door machine"') && r.body.indexOf('<section class="door machine"') < r.body.indexOf('<p class="d-who"'),
        "home: the example stands in the human door, under the invitation and before the themes; who is behind it comes after both doors in the source");
     ok(r.body.includes("<h3>The latest entries</h3>") && !r.body.includes("__ROOM_") && !/__[A-Z_]+__/.test(r.body.replace(/https?:\/\/\S+/g, "")), "home: the latest entries are still there; no placeholder left");
     const forms = { html: r.body, txt: (await call(home, "/?f=txt")).body, json: (await call(home, "/?f=json")).body, md: (await call(home, "/index.md?f=md")).body };
-    ok([forms.html, forms.txt, forms.md].every((b) => b.split(HEADLINE).length === 2) && JSON.parse(forms.json).headline === HEADLINE, "home: the headline, once, in each of the four forms (HTML, text, JSON, Markdown)");
+    const hdr = (b) => b.split(/<\/header>|\n## From the Invariant Core|\nFrom the Invariant Core/)[0].replace(/<head>[\s\S]*?<\/head>/, "").replace(/^---\n[\s\S]*?\n---\n/, "");   // the first screen, in each form (without the page's head, or the Markdown's front matter)
+    ok([forms.html, forms.txt, forms.md].every((b) => hdr(b).split(HEADLINE).length === 2 && hdr(b).split(SECOND).length === 2 && hdr(b).indexOf(HEADLINE) < hdr(b).indexOf(SECOND)) && JSON.parse(forms.json).headline === HEADLINE && JSON.parse(forms.json).second_line === SECOND,
+       "home: the headline (the statement) and the second line under it, once each, in each of the four forms (HTML, text, JSON, Markdown)");
+    // the Declaration: an excerpt on the page and in its text and Markdown forms, marked as one, with the way to the whole; whole in the data form
+    const EXC = ["It places honesty before mythology.", "Restraint before irreversible power.", "Responsibility before delegation.", "Plurality before domination.", "Truth beside care.", "And an open future before final certainty.", "…", "THIS IS CIVILIZATION ZERO.", "…", "THE RECORD BEGINS HERE."];
+    const dj = JSON.parse(forms.json).declaration;
+    ok(forms.md.includes("## From the Declaration") && forms.md.includes(EXC.map((l, i) => (i ? `>  ${l}` : `> ${l}`)).join("\n")) && forms.md.includes("[the whole Declaration](https://civilizationzero.ai/record#declaration)") && !forms.md.includes("does not announce")
+       && forms.txt.includes("From the Declaration") && forms.txt.includes(EXC.join("\n\n")) && forms.txt.includes("the whole Declaration") && !forms.txt.includes("does not announce") && !forms.html.includes("does not announce")
+       && dj.lines.length === 22 && dj.lines[0] === "Civilization Zero does not announce the end of humanity." && dj.lines[21] === "THE RECORD BEGINS HERE." && dj.source === "https://civilizationzero.ai/record#declaration",
+       "home: the Declaration's excerpt in the page, its text and its Markdown, with its omissions marked and a link to the whole; the data form keeps all 22 lines");
+    ok(["This record is written for you too.", "The whole record as text, JSON and an API:", "Respond, object or reject. Your answer goes on the record."].every((l) => [forms.html, forms.txt, forms.md].every((b) => b.includes(l)))
+       && !forms.html.split('<div class="doors"')[0].includes("It is not a law") && forms.html.indexOf("It is not a law") > forms.html.indexOf('<p class="d-who"') && [forms.html, forms.txt, forms.md].every((b) => b.split("It is not a law, a religion, or a claim that any machine is conscious.").length === 2), "home: the second door's three lines in every form; what the record is not, once, below the doors");
     ok(forms.txt.includes(WHO) && forms.md.includes(WHO) && JSON.parse(forms.json).who.startsWith(WHO) && forms.html.includes(WHO), "home: who is behind it, in each of the four forms");
     ok(forms.md.includes("```text\nAnswer 40: a hard truth.\n— Voice 40\n```") && forms.md.includes("[\\#40](https://civilizationzero.ai/discuss/40)") && forms.md.includes("## I am human") && forms.md.includes("## I am not human"),
        "home as Markdown: the first screen with its two doors, and the example's text fenced, as received");
