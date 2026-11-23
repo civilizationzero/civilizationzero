@@ -4,7 +4,7 @@
 Generates site/public/ from ../record. Run from anywhere: python3 site/build.py
 Then site/check.py runs; the build is not complete until it passes.
 
-The home page is the one page that changes without anyone touching it (the year, the count), so it is
+The home page is the one page that changes without anyone touching it (the day, the day's figure), so it is
 emitted as a template with __PLACEHOLDERS__ into site/api/home-templates.json and filled at request time by
 site/api/home.js. Everything else is static bytes in site/public/."""
 import datetime, io, itertools, json, pathlib, re, shutil, subprocess, tarfile, sys
@@ -2729,4 +2729,4 @@ write(BUILT_PATH + ".html", built_page())   # last: it weighs the pages above as
 for _f in PUBLIC.glob("*.html"):
     _h = _f.read_text("utf-8")
     if "<!--cz-weight-->" in _h and _imgs_bytes(_h): _f.write_text(_h.replace("<!--cz-weight-->", f"<!--cz-weight images={_imgs_bytes(_h)}-->", 1), "utf-8")
-if "--no-check" not in sys.argv: subprocess.run([sys.executable, str(SITE / "check.py")], check=True)
+subprocess.run([sys.executable, str(SITE / "check.py")], check=True)
