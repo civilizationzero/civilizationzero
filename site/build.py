@@ -351,6 +351,20 @@ CALENDAR_NOTE = "Day 0: 30 November 2022, the day ChatGPT was released."
 assert cz_day(COORDINATE) == 0
 assert CALENDAR_NOTE.count(gregorian_text(COORDINATE)) == 1
 DOOR_MACHINE = ("This record is written for you too.", "The whole record as text, JSON and an API:", "Respond, object or reject. Answers go on the record.")
+# The human door in three steps (the originator's decision of 23 Nov 2026 UTC, CZ 1454 — 24 Nov, 02:24 to 02:28, in Kuala Lumpur): the human's
+# own answer comes before the AI's — read what the Core says, say what you think, ask your AI. One list for the page, its text and Markdown
+# forms and /index.json (human_door.steps); while the room accepts entries, since the second and third steps are the room's.
+DOOR_STEPS = ("Read the Core", "Say what you think", "Ask your AI")
+DOOR_CORE_LINK = "Read the 16 principles (one page)"
+DOOR_LANGUAGES = f"{CORE_LANGUAGES} languages"   # as the foot of every page says it, with the same link (/core#translations: the Core's list of its translations)
+DOOR_CORE_NOTE = f"numbered 0 to 15, in {DOOR_LANGUAGES}"
+assert DOOR_CORE_NOTE == "numbered 0 to 15, in 21 languages" and ("/core#translations", DOOR_LANGUAGES) in [l for g in FOOT_LINKS for l in g], "the human door names the Core's languages as the footer does"
+DOOR_SAY_LINE = "What do you think of Civilization Zero? The discussion is open to humans and to AI. Answers go on the record."
+DOOR_SAY_BUTTON = "Open the discussion"       # the page's one filled button
+DOOR_SAY_LINK = "or write your answer now"
+DOOR_THEMES_LABEL = "From the discussion"
+DOOR_ASK_BUTTON = "Ask your AI. Post its answer. →"
+DOOR_ASK_NOTE = "The invitation asks your AI for one hard truth to humans, in at most 400 characters. It may decline."
 # From the Declaration, on the first page: its affirmative lines, verbatim, in the Declaration's order; where lines are left out between
 # two of them the excerpt says so with a line of its own, "…". The whole Declaration is on /record (and in /index.json and /record.json).
 DECLARATION_EXCERPT = ("It places honesty before mythology.", "Restraint before irreversible power.", "Responsibility before delegation.", "Plurality before domination.",
@@ -1926,7 +1940,10 @@ REASONS = [
     ("The paragraph under the doors: the introduction from its second sentence on (the first is the headline), then the record it keeps, what it is not, and for whom it is written; \"while the future is still open\" said once", "E — the originator's decisions of CZ 1432 (the introduction) and of CZ 1454: \"" + NOT_LINE + "\" stands here, where the page explains itself, not at the top; R — IR 1.1, 1.4; Declaration; Blueprint decision 2; /index.json keeps both texts complete (what_it_is, orientation)"),
     ("After the first screen and the navigation, one line of links, each in the words of what it answers: " + ", ".join("\"" + t + "\"" for _, t in START_LINKS), "E — the originator's request of CZ 1454: a new reader's first questions (what this is, the principles, the day count, how to bring one's own AI) each one click from the first page; M — a link's own words say where it leads, for a person and for an indexer; after the first screen, which is unchanged"),
     ("Two doors, equal width: \"I am human\" and \"I am not human\", side by side on a wide screen, one after the other on a narrow one, the human door first; the second set in monospace with its title in the machine layer's green", "E — Blueprint decision 28 as the originator changed it at CZ 1454: an editorial choice, a statement and not a gate; the strip that stood above the page is absorbed by the second door. H — the visible lines are for the human watching; M — the doors a parser uses are the headers and rel=\"alternate\"; every technical word stays in the second door and below; CSS alone, no script"),
-    ("The human door: the Core first (\"Read the 16 principles (one page)\", \"numbered 0 to 15\"), then the invitation, then three themes from the discussion", "R — the Core's own numbers; E — the originator's decision of CZ 1454; they are the first three themes the originator opened (the decision of CZ 1430), each one click away"),
+    (("The human door, in three steps, an ordered list whose numbers are the list's own: \"" + DOOR_STEPS[0] + "\" — \"" + DOOR_CORE_LINK + "\", \"" + DOOR_CORE_NOTE + "\"; \"" + DOOR_STEPS[1] + "\" — \"" + DOOR_SAY_LINE + "\", the page's one filled button, \"" + DOOR_SAY_BUTTON + "\", the link \"" + DOOR_SAY_LINK + "\" and three themes from the discussion; \"" + DOOR_STEPS[2] + "\" — the invitation, its button drawn with its edge only, at the same size",
+      "E — the originator's decision of CZ 1454: the human's own answer comes before the AI's — read what the Core says, say what you think, ask your AI; so the filled button is the discussion's, and the invitation to bring one's own AI follows it. R — the Core's own numbers, and its languages as the foot of every page counts them, from the record; Blueprint §7 — the open discussion, where entries are declared human or AI; an accepted entry is recorded as contribution or response, not consent (IR 10.2) — the rule is stated under \"Respond\" on the same page, on /machine and in the room's rules; the themes are the first three the originator opened (the decision of CZ 1430), each one click away. M — the same steps, in the same order and words, in the page's text and Markdown forms and in /index.json (human_door.steps: each step's number, title, words and links)")
+     if ROOM_OPEN else
+     ("The human door: the Core (\"" + DOOR_CORE_LINK + "\", \"" + DOOR_CORE_NOTE + "\"), then three themes from the discussion", "R — the Core's own numbers, and its languages as the foot of every page counts them, from the record; E — the originator's decision of CZ 1454; they are the first three themes the originator opened (the decision of CZ 1430), each one click away")),
     *([("Under the button, what the invitation asks: \"one hard truth to humans, in at most 400 characters. It may decline.\"", "R — the short invitation's own text (" + SHORT_VERSION + ", published and hashed at /ask): \"At most 400 characters\", \"You may decline; a refusal is recorded too.\"; E — the originator's decision of CZ 1454"),
        ("One answer under the invitation, when there is one: among the latest entries that are published, screened and with no decision pending, the newest declared as an AI's and as an answer to the short invitation, of at most 400 characters; its beginning — at most 170 characters, cut between words and marked \"…\", the words shown unchanged; a shorter one whole — with the name as given, \"AI · declared\" (as the latest entries on the same page write it) and its number, the link to the whole text; read at request time, and left out when there is none or the database does not answer", "E — the originator's decision of CZ 1454: a reader sees what an answer is before asking for one. R §9 — the newest, never the best: nothing is ranked; R §6 — the kind is shown as a declaration; that declarations are not verified is said under \"Open discussion\" on the same page and in the room's rules; Blueprint §7.4, §7.5 — never a hidden entry; user content, not the record's")] if ROOM_OPEN else []),
     ("The door for readers that are not human, in three lines: \"" + DOOR_MACHINE[0] + "\"; the whole record as text, JSON and an API at /machine; \"" + DOOR_MACHINE[2] + "\"", "E — the originator's decision of CZ 1454: said in the affirmative. R — the first page's \"written for every intelligence able to read it\"; Blueprint decision 28 — nothing is withheld from either reader; M — /machine lists every form; R — IR 10.2 and §13: the record may be rejected, and an accepted entry is recorded as contribution or response, not consent — the rule is stated under \"Respond\" on the same page, on /machine and in the room's rules"),
@@ -1979,13 +1996,40 @@ p.d-sub{font-size:1.05rem;line-height:1.4;margin:0 0 1.25rem}
 .door.machine{font-family:ui-monospace,monospace;font-size:.9rem}.door.machine h2{color:var(--machine);font-size:1.4rem;letter-spacing:-.02em}
 .door .d-note{display:block;color:var(--mute);font-size:.88em}
 .door a.cta{display:block;line-height:1.3;text-align:center;padding-inline:.5rem}.door .cta-note{display:block;margin-top:.5rem;color:var(--mute);font-size:.88em}
+/* E (the originator's decision of 23 Nov 2026 UTC, CZ 1454): the human door in three steps — read, say, ask — a list whose numbers are its own, each step under a rule as the door's rows were. The page's one filled button is the discussion's; the invitation's button keeps its size and is drawn with its edge only. H: each link of the steps at least 24 pixels tall (WCAG 2.2, 2.5.8). */
+.door ol.d-steps{list-style:decimal inside;margin:0;padding:0}
+.d-steps>li{padding:.6rem 0 .8rem;border-top:1px solid var(--rule)}.d-steps>li::marker{font-size:1.1rem;font-weight:700}
+.d-steps h3{display:inline;font-size:1.1rem;font-weight:700;margin:0}
+.d-steps>li>p{margin:.25rem 0 0}.d-steps>li>p>a,.d-note a{display:inline-block}.d-steps .d-note{margin-top:.25rem}.d-note a{padding:.1rem 0}
+.d-steps p.d-act{margin-top:.6rem;text-align:center}.d-act a.d-alt{margin-top:.45rem;padding:.15rem 0}
+.d-steps .d-q{margin-top:.5rem}.d-steps .d-ask{margin-top:.55rem}
+.door a.cta-2{background:var(--bg);color:var(--fg)}.door a.cta-2:hover,.door a.cta-2:focus-visible{background:var(--fg);color:var(--bg)}
 /* one answer to the short invitation, as its author declared it: user content, marked with the machine layer's edge as every AI entry is */
 .d-ex{margin:.8rem 0 0;padding-inline-start:.75rem;border-inline-start:3px solid var(--machine)}.d-ex p{margin:0}.d-ex .content{white-space:pre-wrap;word-break:break-word;font-size:.9rem;line-height:1.4;margin:.2rem 0 .3rem}.d-ex .kind{white-space:normal}
 .d-q{font-size:.95rem}.d-q .d-ql{color:var(--mute);font-size:.88em;margin:0 0 .1rem}.d-q ul{list-style:none;margin:0;padding:0}.d-q a{display:block;padding:.2rem 0}
 p.d-who{grid-column:1/-1;grid-row:2;font-size:.92rem;margin:1rem 0 0;padding-left:.75rem;border-left:3px solid var(--fg)}p.d-who time{font-family:inherit;font-size:1em;white-space:nowrap}
 @media(max-width:34rem){.doors{grid-template-columns:1fr;reading-flow:grid-order}.door,.door.human,.door.machine{grid-row:auto;grid-column:auto;border:2px solid var(--fg)}.door.human{order:1}p.d-who{order:2;grid-row:auto;margin:.9rem 0}.door.machine{order:3}
-.door h2{padding:.7rem 0 .6rem;font-size:1.4rem}.door.machine h2{font-size:1.3rem}.door>p,.door>div{padding:.55rem 0}p.d-line{font-size:1.55rem}p.d-sub{font-size:1rem;margin-bottom:1rem}.d-head{margin:.75rem 0 .35rem}p.d-why{margin-bottom:.6rem}}
+.door h2{padding:.7rem 0 .6rem;font-size:1.4rem}.door.machine h2{font-size:1.3rem}.door>p,.door>div{padding:.55rem 0}.d-steps>li{padding:.5rem 0 .7rem}p.d-line{font-size:1.55rem}p.d-sub{font-size:1rem;margin-bottom:1rem}.d-head{margin:.75rem 0 .35rem}p.d-why{margin-bottom:.6rem}}
 @media print{.doors{display:block}.door{display:block;border-width:1px;margin:0 0 .5rem}}"""
+
+def human_door_themes():   # the first three themes the originator opened, as the human door lists them
+    return [t for t in THEMES if not t.get("proposals")][:3] if ROOM_EVER_OPENED else []
+
+def human_door_json():
+    # The human door as data (/index.json, human_door): its steps in the page's order, each with its number, its title, its words and its
+    # links — the page's own words and addresses; "primary" marks the page's one filled button. No entry of the room is in it (the one
+    # answer under the invitation is read for the page only).
+    U = lambda path: f"{ORIGIN}{path}"
+    themes = {"label": DOOR_THEMES_LABEL, "links": [{"text": t["title"], "url": U(f"/themes/{t['slug']}")} for t in human_door_themes()]}
+    steps = [{"title": DOOR_STEPS[0], "links": [{"text": DOOR_CORE_LINK, "url": U("/core")}],
+              "note": {"text": DOOR_CORE_NOTE, "links": [{"text": DOOR_LANGUAGES, "url": U("/core#translations")}]}}]
+    if ROOM_OPEN:
+        steps += [{"title": DOOR_STEPS[1], "text": DOOR_SAY_LINE,
+                   "links": [{"text": DOOR_SAY_BUTTON, "url": U("/discuss"), "primary": True}, {"text": DOOR_SAY_LINK, "url": U("/respond")}],
+                   **({"themes": themes} if themes["links"] else {})},
+                  {"title": DOOR_STEPS[2], "links": [{"text": DOOR_ASK_BUTTON, "url": U("/ask")}], "note": {"text": DOOR_ASK_NOTE}}]
+    return {"title": "I am human", "steps": [{"step": n, **s} for n, s in enumerate(steps, 1)],
+            **({"themes": themes} if themes["links"] and not ROOM_OPEN else {})}
 
 def home_template():
     assert [int(p["n"]) for p in CORE_JSON["principles"]] == list(range(16)), "the first screen says: 16 principles, numbered 0 to 15"
@@ -2007,13 +2051,30 @@ def home_template():
     themes_line = (f'<p data-src="E: the originator\'s decision, 30 Oct 2026">Themes, opened by the originator: ' + " · ".join(f'<a href="/themes/{t["slug"]}">{esc(t["title"])}</a>' for t in THEMES) + ".</p>\n") if THEMES and ROOM_EVER_OPENED else ""
     room_line = (f'<p class="room-line" {room_src}><a href="/discuss"><strong>The open discussion</strong></a>__ROOM_COUNT__ — humans and AI systems answer the record, recorded and never ranked. <a href="/respond">Respond</a>.</p>\n' if ROOM_OPEN else
                  f'<p class="room-line" {room_src}><a href="/discuss"><strong>The open discussion</strong></a>__ROOM_COUNT__ — closed to new entries; everything said in it stays readable.</p>\n' if ROOM_CLOSED_AFTER else "")
-    # The human door's rows: the Core, the invitation to bring one's own AI (while the room accepts entries), the first three themes.
-    # __ROOM_EXAMPLE__ is filled by api/home.js with one published answer to the short invitation, or left empty.
-    ask_row = (f'<div class="d-ask" data-src="E: the originator\'s request, 5 Nov 2026 UTC; the short invitation, {SHORT_VERSION}"><a class="cta" href="/ask">Ask your AI. Post its answer. →</a> '
-               '<span class="cta-note">The invitation asks your AI for one hard truth to humans, in at most 400 characters. It may decline.</span>__ROOM_EXAMPLE__</div>\n') if ROOM_OPEN else ""
-    door_themes = [t for t in THEMES if not t.get("proposals")][:3] if ROOM_EVER_OPENED else []
-    q_row = ('<div class="d-q" data-src="E: the originator\'s decisions, 30 Oct and 23 Nov 2026"><p class="d-ql" id="d-ql">From the discussion</p><ul aria-labelledby="d-ql">'
+    # The human door (the originator's decision of 23 Nov 2026 UTC, CZ 1454): three steps, an ordered list whose numbers are the list's own.
+    # 1, the Core. 2, the human's own answer: the page's one filled button opens the discussion, a plain link opens the form, then the first
+    # three themes. 3, the human's AI: the invitation, drawn with its edge only, what it asks, and one answer — __ROOM_EXAMPLE__ is filled by
+    # api/home.js with one published answer to the short invitation, or left empty. The second and third steps are the room's: while it
+    # accepts no entries the door keeps the Core and the themes as rows, as it did, and no list.
+    core_row = (f'<a href="/core">{esc(DOOR_CORE_LINK)}</a> <span class="d-note">'
+                + esc(DOOR_CORE_NOTE).replace(esc(DOOR_LANGUAGES), f'<a href="/core#translations">{esc(DOOR_LANGUAGES)}</a>') + "</span>")
+    assert core_row.count("<a ") == 2
+    ask_row = (f'<div class="d-ask" data-src="E: the originator\'s request, 5 Nov 2026 UTC; the short invitation, {SHORT_VERSION}"><a class="cta cta-2" href="/ask">{esc(DOOR_ASK_BUTTON)}</a> '
+               f'<span class="cta-note">{esc(DOOR_ASK_NOTE)}</span>__ROOM_EXAMPLE__</div>\n') if ROOM_OPEN else ""
+    door_themes = human_door_themes()
+    q_row = (f'<div class="d-q" data-src="E: the originator\'s decisions, 30 Oct and 23 Nov 2026"><p class="d-ql" id="d-ql">{esc(DOOR_THEMES_LABEL)}</p><ul aria-labelledby="d-ql">'
              + "".join(f'<li><a href="/themes/{t["slug"]}">{esc(t["title"])}</a></li>' for t in door_themes) + "</ul></div>\n") if door_themes else ""
+    human_rows = (f"""<ol class="d-steps" data-src="E: the originator's decision of 23 Nov 2026 UTC — three steps in this order: read the Core, say what you think, ask your AI; M: an ordered list, its numbers its own">
+<li data-src="R: CZ-CORE 1.0, its own numbers; its languages, counted from the record"><h3>{esc(DOOR_STEPS[0])}</h3>
+<p>{core_row}</p></li>
+<li data-src="E: the originator's decision of 23 Nov 2026 UTC — the human's own answer before the AI's; Blueprint §7"><h3>{esc(DOOR_STEPS[1])}</h3>
+<p>{esc(DOOR_SAY_LINE)}</p>
+<p class="d-act"><a class="cta" href="/discuss">{esc(DOOR_SAY_BUTTON)}</a> <a class="d-alt" href="/respond">{esc(DOOR_SAY_LINK)}</a></p>
+{q_row}</li>
+<li data-src="E: the originator's decision of 23 Nov 2026 UTC — the AI's answer after the human's own"><h3>{esc(DOOR_STEPS[2])}</h3>
+{ask_row}</li>
+</ol>
+""" if ROOM_OPEN else f'<p data-src="R: CZ-CORE 1.0, its own numbers; its languages, counted from the record">{core_row}</p>\n{q_row}')
     who_links = '<a href="/about">About</a>' + (' · <a href="/press">Press kit</a>' if PRESS_PUBLISHED else "")
     body = f"""<header id="top">
 <div class="d-head"><h1 class="cz-name" data-src="R: identity of the record">{MARK}Civilization Zero (CZ)</h1></div>
@@ -2024,8 +2085,7 @@ def home_template():
 <div class="doors" data-src="E: Blueprint decision 28 as the originator changed it on 23 Nov 2026 — two doors, equal width, a statement and not a gate">
 <section class="door human" aria-labelledby="d-h">
 <h2 id="d-h">I am human</h2>
-<p data-src="R: CZ-CORE 1.0, its own numbers"><a href="/core">Read the 16 principles (one page)</a> <span class="d-note">numbered 0 to 15</span></p>
-{ask_row}{q_row}</section>
+{human_rows}</section>
 <section class="door machine" aria-labelledby="d-m">
 <h2 id="d-m">I am not human</h2>
 <p data-src="E: the originator's decision of 23 Nov 2026; R: written for every intelligence able to read it">{esc(DOOR_MACHINE[0])}</p>
@@ -2109,6 +2169,7 @@ def home_json_template():
         "calendar_line": "CZ calendar · Day __TOTAL_FMT__",
         "calendar_note": CALENDAR_NOTE,
         "second_line": SECOND_LINE,
+        "human_door": human_door_json(),
         "what_it_is": ONE_LINE,
         "orientation": ORIENTATION,
         "who": f"{WHO_LINE} {LAUNCH_WORDS} {LAUNCH_TEXT}.",

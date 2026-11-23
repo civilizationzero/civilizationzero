@@ -370,8 +370,8 @@ if ROOM_EVER:
     _e170 = "a" * 80 + " " + "b" * 89
     check(len(_e170) == 170 and f">{_e170}</div>" in _example([dict(_base, id=1, content=_e170)]) and "(the beginning)" not in _example([dict(_base, id=1, content=_e170)]), "home: an example of exactly 170 characters is shown whole")
     _door = re.search(r'<section class="door human".*?</section>', T["html"], re.S)
-    check(T["html"].count("__ROOM_EXAMPLE__") == 1 and _door and re.search(r'<a class="cta" href="/ask">[^<]*</a> <span class="cta-note">[^<]*</span>__ROOM_EXAMPLE__</div>', _door.group(0)) is not None,
-          "home: the example's place is in the human door, under the invitation")
+    check(T["html"].count("__ROOM_EXAMPLE__") == 1 and _door and re.search(r'<a class="cta cta-2" href="/ask">[^<]*</a> <span class="cta-note">[^<]*</span>__ROOM_EXAMPLE__</div>\n</li>\n</ol>', _door.group(0)) is not None,
+          "home: the example's place is in the human door, under the invitation, in its last step")
     for _room in (("", "", ""), (' (<data value="2">2</data> entries)', _prev, _ex)):
         _pg = P(); _pg.feed(fill(T["html"], _room)); check(not _pg.err and not _pg.stack, f"home with the room {'filled' if _room[1] else 'empty'}: HTML nesting {_pg.err[:3]} {_pg.stack[-3:]}")
     check("<script>" not in _prev and "S __YEAR__" in _prev and "__ASOF_HUMAN__" in _prev and _prev.count('<article class="entry" aria-label="Entry #') == 2 and _prev.count("<article") == 2, "home: the preview escapes entries, and is never filled again")
@@ -696,13 +696,64 @@ check(_doors.index('<section class="door human"') < _doors.index('<section class
       and '<h2 id="d-h">I am human</h2>' in _doors and '<h2 id="d-m">I am not human</h2>' in _doors,
       "home: two doors, the human door first; who is behind it comes after both in the source, as a wide screen shows it (the keyboard follows)")
 _dh = _doors.split("</section>")[0]; _dm = _doors.split('<section class="door machine"')[1].split("</section>")[0]
-check('<a href="/core">Read the 16 principles (one page)</a> <span class="d-note">numbered 0 to 15</span>' in _dh and ".d-note{display:block;" in T["html"] and "nowrap" not in T["html"].split(".d-note{")[1].split("}")[0] and ".d-head{display:flex;flex-wrap:wrap;" in T["html"] and "the day in plain words" not in (PUBLIC / "how-it-is-built.html").read_text("utf-8") and len(json.loads((PUBLIC / "core.json").read_text("utf-8"))["principles"]) == 16
+# The human door in three steps (the originator's decision of 23 Nov 2026 UTC, CZ 1454): the human's own answer comes before the AI's — read the
+# Core, say what you think, ask your AI. An ordered list whose numbers are the list's own; the words as decided; the page's one filled button
+# is the discussion's, and the invitation's button is drawn with its edge only; the same steps, words and addresses in every form of the page.
+STEPS = ("Read the Core", "Say what you think", "Ask your AI")
+CORE_ROW = '<a href="/core">Read the 16 principles (one page)</a> <span class="d-note">numbered 0 to 15, in <a href="/core#translations">21 languages</a></span>'
+SAY_LINE = "What do you think of Civilization Zero? The discussion is open to humans and to AI. Answers go on the record."
+SAY_ROW = '<p class="d-act"><a class="cta" href="/discuss">Open the discussion</a> <a class="d-alt" href="/respond">or write your answer now</a></p>'
+ASK_BUTTON = "Ask your AI. Post its answer. →"; ASK_NOTE = "The invitation asks your AI for one hard truth to humans, in at most 400 characters. It may decline."
+ASK_ROW = f'<a class="cta cta-2" href="/ask">{ASK_BUTTON}</a> <span class="cta-note">{ASK_NOTE}</span>'
+_th3 = [t for t in THEMES if not t.get("proposals")][:3]
+Q_ROW = '<p class="d-ql" id="d-ql">From the discussion</p><ul aria-labelledby="d-ql">' + "".join(f'<li><a href="/themes/{t["slug"]}">{_h.escape(t["title"])}</a></li>' for t in _th3) + "</ul></div>"
+_core_page = (PUBLIC / "core.html").read_text("utf-8")
+check(_dh.count(CORE_ROW) == 1 and ".d-note{display:block;" in T["html"] and "nowrap" not in T["html"].split(".d-note{")[1].split("}")[0] and ".d-head{display:flex;flex-wrap:wrap;" in T["html"] and "the day in plain words" not in (PUBLIC / "how-it-is-built.html").read_text("utf-8") and len(json.loads((PUBLIC / "core.json").read_text("utf-8"))["principles"]) == 16
       and [int(p["n"]) for p in json.loads((PUBLIC / "core.json").read_text("utf-8"))["principles"]] == list(range(16)), "home, the human door: the 16 principles, numbered 0 to 15, as the Core numbers them")
+_trs = sorted(f.name[5:-5] for f in PUBLIC.glob("core.*.html"))
+check(CORE_LANGUAGES == 21 == 1 + len(_trs) and _core_page.count('id="translations"') == 1 and all(f'href="/core.{l}"' in _core_page.split('id="translations"')[1].split("</li>")[0] for l in _trs)
+      and '<a href="/core#translations">21 languages</a>' in T["html"].split("<footer")[1] and T["html"].count('<a href="/core#translations">21 languages</a>') == 2,
+      "home, the human door: the Core's languages — their number, counted from the pages, as the foot of every page states it, linked to the list of them on /core")
 _short = (SITE / "prompts" / "cz-short-1.0.txt").read_text("utf-8")
-check((not DT["open"]) or ('<a class="cta" href="/ask">Ask your AI. Post its answer. →</a> <span class="cta-note">The invitation asks your AI for one hard truth to humans, in at most 400 characters. It may decline.</span>' in _dh
+check((not DT["open"]) or (ASK_ROW in _dh
       and "one hard truth" in _short and "At most 400 characters" in _short and "You may decline" in _short and "to humans" in _short), "home, the human door: the invitation said as cz-short-1.0 says it")
-check((not ROOM_EVER) or ('<p class="d-ql" id="d-ql">From the discussion</p><ul aria-labelledby="d-ql">' + "".join(f'<li><a href="/themes/{t["slug"]}">{_h.escape(t["title"])}</a></li>' for t in [t for t in THEMES if not t.get("proposals")][:3]) + "</ul></div>") in _dh,
-      "home, the human door: the first three themes, as lib.py lists them")
+check((not ROOM_EVER) or Q_ROW in _dh, "home, the human door: the first three themes, as lib.py lists them")
+if DT["open"]:
+    _ol = re.search(r'<h2 id="d-h">I am human</h2>\n<ol class="d-steps" data-src="[^"]*">\n(.*)</ol>\n$', _dh, re.S)
+    _li = re.findall(r'^<li data-src="[^"]+"><h3>([^<]*)</h3>\n(.*?)</li>$', _ol.group(1) if _ol else "", re.S | re.M)
+    check(_ol is not None and tuple(t for t, _ in _li) == STEPS and _dh.count("<ol") == 1 and _dh.count("<h3>") == 3 and _hh.count("<ol") == 1 and _hh.count("<h3") == 3 and not re.search(r">\s*[0-9]+[.)]\s", _dh),
+          "home, the human door: three steps in an ordered list — read the Core, say what you think, ask your AI — each with its title; the numbers are the list's own, written nowhere in the page")
+    check(len(_li) == 3 and _li[0][1] == f"<p>{CORE_ROW}</p>" and _li[1][1] == f"<p>{SAY_LINE}</p>\n{SAY_ROW}\n" + '<div class="d-q" data-src="E: the originator\'s decisions, 30 Oct and 23 Nov 2026">' + Q_ROW + "\n"
+          and re.fullmatch(r'<div class="d-ask" data-src="[^"]+">' + re.escape(ASK_ROW) + r"__ROOM_EXAMPLE__</div>\n", _li[2][1]) is not None,
+          "home, the human door: each step's words and links, as decided — the Core and its languages; the question, the discussion, the form and three themes; the invitation, what it asks and the place of one answer")
+    _cta = re.findall(r'<a class="(cta[^"]*)" href="([^"]+)">([^<]*)</a>', T["html"])
+    check(_cta == [("cta", "/discuss", "Open the discussion"), ("cta cta-2", "/ask", ASK_BUTTON)] and len(re.findall(r'class="cta[ "]', T["html"])) == 2 and "<button" not in T["html"]
+          and ".door a.cta-2{background:var(--bg);color:var(--fg)}.door a.cta-2:hover,.door a.cta-2:focus-visible{background:var(--fg);color:var(--bg)}" in T["html"]
+          and ".door a.cta{display:block;" in T["html"] and "a.cta,button.cta{display:inline-block;box-sizing:border-box;min-height:2.75rem;padding:.7rem 1.2rem;background:var(--fg);color:var(--bg);" in CSS and "cta-2" not in CSS,
+          "home: the page's one filled button opens the discussion; the invitation's button, after it, has the same size and is drawn with its edge only, in the page's two colours")
+    check(".door ol.d-steps{list-style:decimal inside;" in T["html"] and ".d-steps h3{display:inline;" in T["html"] and ".d-steps>li>p>a,.d-note a{display:inline-block}" in T["html"] and ".d-q a{display:block;padding:.2rem 0}" in T["html"],
+          "home, the human door: the list keeps its numbers, each beside its step's title; every link of the steps is a block with its own height (WCAG 2.2, 2.5.8)")
+    # the same three steps in the text form (the list's numbers written out, since text has no list) and in the data form
+    _td = fill(T["txt"]).split("I am human\n", 1)[1].split("I am not human\n")[0]
+    check(_td == "\n1. Read the Core\n\nRead the 16 principles (one page) numbered 0 to 15, in 21 languages\n\n2. Say what you think\n\n" + SAY_LINE + "\n\nOpen the discussion or write your answer now\n\nFrom the discussion\n\n"
+          + "".join(t["title"] + "\n\n" for t in _th3) + "3. Ask your AI\n\n" + ASK_BUTTON + " " + ASK_NOTE + "\n\n",
+          "home as text: the human door's three steps, numbered, in the same order and words")
+    _U = lambda path: f"{ORIGIN}{path}"; _jd = _hj.get("human_door") or {}
+    check(_jd == {"title": "I am human", "steps": [
+              {"step": 1, "title": STEPS[0], "links": [{"text": "Read the 16 principles (one page)", "url": _U("/core")}], "note": {"text": "numbered 0 to 15, in 21 languages", "links": [{"text": "21 languages", "url": _U("/core#translations")}]}},
+              {"step": 2, "title": STEPS[1], "text": SAY_LINE, "links": [{"text": "Open the discussion", "url": _U("/discuss"), "primary": True}, {"text": "or write your answer now", "url": _U("/respond")}],
+               "themes": {"label": "From the discussion", "links": [{"text": t["title"], "url": _U(f'/themes/{t["slug"]}')} for t in _th3]}},
+              {"step": 3, "title": STEPS[2], "links": [{"text": ASK_BUTTON, "url": _U("/ask")}], "note": {"text": ASK_NOTE}}]}
+          and list(_hj).index("human_door") == list(_hj).index("second_line") + 1 and fill(T["json"]).count('"primary": true') == 1,
+          "home as data: human_door — the three steps in order, each with its number, title, words and links (absolute addresses); one link marked primary, the discussion's")
+    # every address the door's steps give, in order, the same in the page and in the data form
+    _hrefs = re.findall(r'href="([^"]+)"', _dh)
+    def _jl(o): return [o["url"]] if isinstance(o, dict) and "url" in o else [u for v in (o.values() if isinstance(o, dict) else o if isinstance(o, list) else []) for u in _jl(v)]
+    check(_hrefs == ["/core", "/core#translations", "/discuss", "/respond"] + [f'/themes/{t["slug"]}' for t in _th3] + ["/ask"] and _jl(_jd) == [_U(h) for h in _hrefs], "home, the human door: its links, in order, the same in the page and in the data form")
+else:
+    check("<ol" not in _hh and not re.search(r'class="cta[ "]', T["html"]) and f'<h2 id="d-h">I am human</h2>\n<p data-src="R: CZ-CORE 1.0, its own numbers; its languages, counted from the record">{CORE_ROW}</p>\n' in _dh
+          and SAY_LINE not in T["html"] and [x["step"] for x in _hj["human_door"]["steps"]] == [1] and SAY_LINE not in T["json"],
+          "home, the human door while the room accepts no entries: the Core and the themes, and no step that the room would have to keep")
 check(not re.search(r"\b(JSON|API|hash|SHA|schema|endpoint)\b", re.sub(r"<[^>]+>", " ", _hh.split('<section class="door machine"')[0]), re.I), "home: no technical word above the second door")
 check(all(f"<p data-src" in _dm and x in _dm for x in ("This record is written for you too.", 'The whole record as text, JSON and an API: <a href="/machine">/machine</a>', "Respond, object or reject. Answers go on the record.")) and _dm.count("<p ") == 3,
       "home, the second door: its three lines")
@@ -719,9 +770,9 @@ check(T["html"].count("<style>") == 2 and "<script>" not in T["html"] and not re
       "home: the first screen's rules are CSS in the page; no script, no font, no image, nothing from elsewhere")
 _hcss = T["html"].split("<style>")[2].split("</style>")[0]
 check("@media(max-width:34rem)" in _hcss and "grid-template-columns:1fr 1fr" in _hcss and ".door.human{order:1}p.d-who{order:2;" in _hcss.split("@media(max-width:34rem)")[1] and ".door.machine{order:3}" in _hcss.split("@media(max-width:34rem)")[1] and "order:" not in _hcss.split("@media(max-width:34rem)")[0].replace("border", "") and "animation" not in _hcss and "transition" not in _hcss and "outline" not in _hcss and not re.search(r"#[0-9a-fA-F]{3,6}\b|rgb\(", _hcss),
-      "home: the doors side by side on a wide screen, one column on a narrow one with who is behind it between them; colours from the two palettes only; no motion; focus untouched")
+      "home: the doors side by side on a wide screen, one column on a narrow one with who is behind it between them; colours from the two palettes only; no motion; the focus ring untouched")
 _rs = (PUBLIC / "how-it-is-built.html").read_text("utf-8")
-check(all(x in _rs for x in (_h.escape(HEADLINE), _h.escape(SECOND_LINE), "From the Declaration, eight of its 22 lines", "the qualifications are kept where the rules are stated", "Under the headline, the calendar line", "Under the calendar line, one small grey line", "the calendar line stands under it, named", "Two doors, equal width", "Who is behind it, in one line without names", "the same sentence before that day and after it", "tests with simulated readers", "where the browser supports it", "The human door: the Core first", "One answer under the invitation", "The door for readers that are not human"))
+check(all(x in _rs for x in (_h.escape(HEADLINE), _h.escape(SECOND_LINE), "From the Declaration, eight of its 22 lines", "the qualifications are kept where the rules are stated", "Under the headline, the calendar line", "Under the calendar line, one small grey line", "the calendar line stands under it, named", "Two doors, equal width", "Who is behind it, in one line without names", "the same sentence before that day and after it", "tests with simulated readers", "where the browser supports it", ("The human door, in three steps, an ordered list" if DT["open"] else "The human door: the Core ("), ("human_door.steps" if DT["open"] else "three themes from the discussion"), "One answer under the invitation", "The door for readers that are not human"))
       and "Two doors first, equal width" not in _rs and [r["element"] for r in _hj["reasons"]].count("The headline, the largest words of the page: \"" + HEADLINE + "\"") == 1 and "The Declaration printed whole" not in _rs and "what the record is not, two doors" not in _rs and "as a line of its own under the headline" not in _rs, "/how-it-is-built: a stated reason for every element of the new first screen")
 check("The large CZ day" not in _rs and "The day count in the calendar line on the first page" in _rs and "The day count under the name" not in _rs and "began" not in _rs.split("Under the calendar line, one small grey line")[1].split("</tr>")[0] and "as the first page says under" not in _rs, "/how-it-is-built: the green day count is described as it is now")
 _cal = (PUBLIC / "calendar.html").read_text("utf-8")

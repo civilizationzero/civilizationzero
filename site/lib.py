@@ -615,18 +615,25 @@ from html.parser import HTMLParser
 class _Text(HTMLParser):
     BLOCK = {"p", "h1", "h2", "h3", "li", "tr", "blockquote", "section", "header", "footer", "nav", "pre", "div", "details", "summary", "table"}
     def __init__(self):
-        super().__init__(); self.out = []; self.skip = 0; self.cell = False
+        super().__init__(); self.out = []; self.skip = 0; self.cell = False; self.lists = []; self.num = ""
     def handle_starttag(self, t, a):
         if t in ("style", "script", "title", "svg", "head", "form"): self.skip += 1   # a form (the converter) is no text
         if t == "br": self.out.append("\n")
         if t in self.BLOCK: self.out.append("\n")
         if t in ("td", "th"): self.cell = True
+        # an ordered list's numbers are the list's own and are not in its text: here they are written before each item's first words
+        if t in ("ol", "ul"): self.lists.append(0 if t == "ol" else None)
+        if t == "li" and self.lists and self.lists[-1] is not None: self.lists[-1] += 1; self.num = f"{self.lists[-1]}. "
     def handle_endtag(self, t):
         if t in ("style", "script", "title", "svg", "head", "form"): self.skip -= 1
         if t in self.BLOCK: self.out.append("\n")
         if t in ("td", "th"): self.out.append("  ")
+        if t in ("ol", "ul") and self.lists: self.lists.pop()
+        if t == "li": self.num = ""
     def handle_data(self, d):
-        if not self.skip: self.out.append(d)
+        if self.skip: return
+        if self.num and d.strip(): d = self.num + d.lstrip(); self.num = ""
+        self.out.append(d)
 
 def to_text(h):
     p = _Text(); p.feed(h)
