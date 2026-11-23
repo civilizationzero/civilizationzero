@@ -41,7 +41,7 @@ test("the day's figure in the page and in the data form is the reader's day's", 
   for (const [zone, d] of [[EAST, dE], [WEST, dW]]) {
     const b = await page(zone), j = await data(zone);
     assert.ok(b.includes(`<g class="arc" stroke-width="4">${FIG.rings(d, K)}</g>`), `${zone}: the sixteen arcs of day ${d}`);
-    assert.ok(b.includes(`style="--today:${d}"`) && b.includes(`data-day="${d}"`) && b.includes(`<title id="fig-t">The figure of Day ${d.toLocaleString("en-US")}: sixteen rings round an empty centre, each carrying one arc.</title>`));
+    assert.ok(b.includes(`style="--today:${d}"`) && b.includes(`data-day="${d}"`) && b.replace(/&#x27;/g, "'").includes(`<title id="fig-t">The day's figure: sixteen rings round an empty centre, each carrying one arc.</title>`));
     assert.ok(b.includes(`<time class="d" datetime="${CZ.isoDate(...CZ.toGregorian(d))}">Day <data value="${d}">${d.toLocaleString("en-US")}</data></time>`), "the calendar line names the same day");
     assert.equal(j.cz_time.day, d); assert.equal(j.figure.day, d);
     assert.deepEqual(j.figure.position, FIG.positions(d, K));
@@ -76,7 +76,7 @@ test("three states, each an address: neither door answered, #human, #not-human",
   assert.ok(!/<script(?![^>]*type="(application\/ld\+json|speculationrules)")/.test(b) && !/\son[a-z]+\s*=/.test(b.split("<body>")[1]), "no script that runs, no event attribute");
 });
 
-test("one filled control; three steps in order — read, say, ask your AI — in every form", async () => {
+test("one filled control, in the opened reading; three steps in order — read, say, ask your AI — in every form", async () => {
   const b = await page(), txt = (await call("/?f=txt")).body, md = (await call("/index.md?f=md")).body, j = await data();
   const acts = [...b.matchAll(/<a class="(act[^"]*)" href="([^"]+)">([^<]*)<\/a>/g)].map((m) => m.slice(1));
   assert.deepEqual(acts, [["act", "/core", "Read the 16 principles (one page)"], ["act o", "/ask", "Ask your AI. Post its answer."]]);
@@ -85,7 +85,7 @@ test("one filled control; three steps in order — read, say, ask your AI — in
   assert.ok(filled.length >= 1 && filled[0].startsWith(".act:not(.o),"), "the first step's control is filled");
   for (const sel of filled) for (const s of sel.split(",")) assert.ok(/:hover|:focus-visible|\.act:not\(\.o\)/.test(s), `nothing else is filled unless the reader points at it: ${sel}`);
   const seq = ["I am human", "Read the Core", "Read the 16 principles (one page)", "numbered 0 to 15, in 21 languages", "Say what you think", "What do you think about Civilization Zero?", "your name · human · declared", "Write your answer",
-               "No account, no e-mail. Any language. Public and permanent: an answer cannot be edited or withdrawn.", "From the discussion", "Is the future frightening?", "Can an AI say no?", "Beyond dystopia and utopia",
+               "No account, no e-mail. Any language. Public and permanent: an answer cannot be edited or withdrawn; it can be hidden or redacted only under the rules.", "From the discussion", "Is the future frightening?", "Can an AI say no?", "Beyond dystopia and utopia",
                "Ask your AI", "Ask your AI. Post its answer.", "The invitation asks your AI for one hard truth to humans, in at most 400 characters. It may decline.", "I am not human"];
   const human = b.slice(b.indexOf('<section id="human"'), b.indexOf('<section id="not-human"') + 200);
   assert.ok(inOrder(text(human), seq), "the page");
@@ -93,6 +93,36 @@ test("one filled control; three steps in order — read, say, ask your AI — in
   assert.ok(inOrder(md.slice(md.indexOf("## I am human")).replace(/\]\([^)]*\)/g, "").replace(/[\[\]#>*\\]/g, "").replace(/\s+/g, " "), seq), "the Markdown form");
   assert.deepEqual(j.doors.human_steps.map((s) => [s.n, s.title, s.do]), [[1, "Read the Core", "Read the 16 principles (one page)"], [2, "Say what you think", "Write your answer"], [3, "Ask your AI", "Ask your AI. Post its answer."]]);
   assert.deepEqual((human.match(/<h3 class="t">[^<]*<\/h3>/g) || []), ["Read the Core", "Say what you think", "Ask your AI"].map((t) => `<h3 class="t">${t}</h3>`));
+});
+
+test("with neither door answered a window shows no control: three bare titles; the label and the head; a press anywhere in a window answers its door", async () => {
+  const b = await page(), css = b.split("<style>")[1].split("</style>")[0];
+  const secH = b.slice(b.indexOf('<section id="human"'), b.indexOf('<section id="not-human"')), secN = b.slice(b.indexOf('<section id="not-human"'), b.indexOf('<p class="both"'));
+  const ctl = /<(a|button|input|select|textarea|summary)\b|tabindex="0"/;
+  const steps = [...secH.matchAll(/^<li data-src="[^"]+"><h3 class="t">([^<]*)<\/h3>\n([\s\S]*?)<\/li>$/gm)];
+  assert.equal(steps.length, 3);
+  for (const m of steps) assert.ok(m[2].startsWith('<div class="more">') && m[2].endsWith("</div>") && m[2].split("<div").length === m[2].split("</div>").length, `${m[1]}: a title, then everything else in .more`);
+  const restH = secH.replace(/<div class="more">[\s\S]*?<\/div><\/li>/g, "</li>").replace(/<dialog[\s\S]*?<\/dialog>/, "");
+  assert.ok(!ctl.test(restH), "the human's window at rest: nothing that takes the keyboard");
+  assert.deepEqual(text(restH).trim().split(/\s+/), "I am human Read the Core Say what you think Ask your AI".split(" "));
+  const restN = secN.replace(/<pre class="x (req|bd|sum)"[\s\S]*?<\/pre>|<ul class="raw"[\s\S]*?<\/ul>|<p class="back">[\s\S]*?<\/p>/g, "");
+  assert.ok(!ctl.test(restN) && restN.includes('<p class="lbl">What this page answers a machine that asks for JSON:</p>') && restN.includes('<pre class="x hd">'), "the machine's window at rest: its label and the head, no control");
+  assert.ok(css.includes("\n.page:not(:has(.col:target)) :is(.more,.req,.bd,.sum){display:none}\n") && css.includes(".raw,.back{display:none}\n") && css.includes("#reply{display:none;"), "what is not shown at rest");
+  assert.ok(css.includes(".page:not(:has(.col:target)) .stage{min-block-size:var(--e14);pointer-events:none}") && css.includes('.page:not(:has(.col:target)) .door::after{content:"";position:absolute;inset:100% 0 auto;block-size:var(--e14)}'), "each door reaches down over its window");
+  assert.ok(!css.includes("first-child") && !/lbl[^{}]*\{[^{}]*display:none/.test(css), "no step is set apart at rest; the label is shown in every state");
+  assert.ok(secN.includes('<h2 id="h-n">I am not human</h2>\n<p class="lbl">What this page answers a machine that asks for JSON:</p>\n<pre class="x req"'), "the label stands over the command");
+  assert.ok(secN.includes('<pre class="x bd" tabindex="0">') && secN.includes('<pre class="x sum" tabindex="0">'), "the two blocks that scroll take the keyboard");
+});
+
+test("the first screen in order: the headline, the figure, the calendar line, day 0, the line on the figure, the standfirst, who is behind it, the question, the doors", async () => {
+  const b = await page(), j = await data(), top = b.slice(b.indexOf("<body>"), b.indexOf('<nav class="doors"'));
+  const marks = ['<h1 class="name"', '<p class="line"', '<div class="fb"', '<p class="date"', '<p class="zero"', '<p class="say"', '<p class="sub"', '<p class="who"', '<p class="ask"'];
+  assert.deepEqual(marks.map((m) => top.indexOf(m)), marks.map((m) => top.indexOf(m)).slice().sort((x, y) => x - y)); assert.ok(marks.every((m) => top.split(m).length === 2));
+  assert.ok(/<p class="sub"[^>]*>Its Core is sixteen principles on what humans and AI owe each other\. Written for both\. Answered by both, <a href="\/discuss">on the record<\/a>\.<\/p>\n<p class="who"/.test(top), "the standfirst says what the Core is, before the who line names it");
+  assert.equal(j.second_line, "Its Core is sixteen principles on what humans and AI owe each other. Written for both. Answered by both, on the record.");
+  const keys = Object.keys(j);
+  assert.deepEqual(keys.slice(keys.indexOf("headline"), keys.indexOf("who") + 1), ["headline", "calendar_line", "calendar_note", "figure_note", "second_line", "who"]);
+  assert.equal(j.doors.human, "https://civilizationzero.ai/#human");
 });
 
 test("the data form counts days: no key that counts years; what machines relied on is kept", async () => {
@@ -133,16 +163,10 @@ test("the machine's reading in the page is true: the status, the headers and the
   t.mock.timers.reset();
 });
 
-test("the Core's SHA-256 unrolled: the 256 cells and the bytes beside the rows are the hash's", async () => {
-  const b = await page(), svg = (/<div class="seal"[^>]*>(<svg[\s\S]*?<\/svg>)<\/div>/.exec(b) || [])[1] || "";
-  const cells = Array.from({ length: 16 }, () => Array(16).fill("0"));
-  for (const m of (/<path d="([^"]+)" fill="currentColor"\/>/.exec(svg) || ["", ""])[1].matchAll(/M(\d+) (\d+)h(\d+)v1h-\d+z/g)) for (let k = 0; k < Number(m[3]); k++) cells[Number(m[2])][Number(m[1]) + k] = "1";
-  const bits = [...Buffer.from(SHA, "hex")].map((x) => x.toString(2).padStart(8, "0")).join("");
-  assert.equal(cells.map((r) => r.join("")).join(""), bits, "the cells drawn are the bits of SHA-256(core.txt), most significant first, sixteen to a row");
-  const left = [...svg.matchAll(/<tspan x="-.5" dy="1">([0-9a-f]{2})<\/tspan>/g)].map((m) => m[1]), right = [...svg.matchAll(/<tspan x="16.5" dy="1">([0-9a-f]{2})<\/tspan>/g)].map((m) => m[1]);
-  assert.equal(left.map((l, i) => l + right[i]).join(""), SHA, "the two bytes beside each row");
-  K.forEach(([a, s], i) => { assert.equal(a, parseInt(left[i], 16)); assert.equal(s, parseInt(right[i], 16) + 1); });   // ring i: its start is the row's left byte, its step the right byte plus one
-  assert.ok(svg.includes("<title id=\"seal-t\">The Core's SHA-256: 256 bits, sixteen by sixteen, the two bytes of each row beside it.</title>"));
+test("the Core's hash as 256 cells is not on the first page; the hash stays in the data form", async () => {
+  const b = await page(), j = await data();
+  assert.ok(!/seal/.test(b) && !b.includes("256 cells") && !b.includes("256 bits"));
+  assert.equal(j.figure.core_sha256, SHA); assert.equal(j.record[0].sha256_txt, SHA);
 });
 
 test("no forbidden word in what a human reads, in the reasons, or in the names of the page's parts", async () => {

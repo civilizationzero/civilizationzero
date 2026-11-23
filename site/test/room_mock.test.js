@@ -361,10 +361,10 @@ srv.listen(0, "127.0.0.1", async () => {
     // form is served when the database is not. The page shows no count of entries and no list of the latest ones.
     const home = require(path.resolve(__dirname, "../api/home.js"));
     const HEADLINE = "Civilization Zero names the beginning of a civilization in which humans may no longer be at the centre.";
-    const SECOND = "Sixteen principles on what humans and AI owe each other. Written for both. Answered by both, on the record.";
+    const SECOND = "Its Core is sixteen principles on what humans and AI owe each other. Written for both. Answered by both, on the record.";
     const WHO = "Started by one human, the originator, named in the Core. The site is written, built and run day to day by an artificial intelligence. Public launch: 30 November 2026.";
     const O = "https://civilizationzero.ai", STEPS = ["Read the Core", "Say what you think", "Ask your AI"];
-    const ASK = "What do you think about Civilization Zero?", TERMS = "No account, no e-mail. Any language. Public and permanent: an answer cannot be edited or withdrawn.";
+    const ASK = "What do you think about Civilization Zero?", TERMS = "No account, no e-mail. Any language. Public and permanent: an answer cannot be edited or withdrawn; it can be hidden or redacted only under the rules.";
     const ASKS = "The invitation asks your AI for one hard truth to humans, in at most 400 characters. It may decline.";
     const TH3 = require(path.resolve(__dirname, "../api/discuss-templates.json")).themes.filter((t) => !t.proposals).slice(0, 3);
     const plain = (b) => b.replace(/<(style|script|svg|title)\b[\s\S]*?<\/\1>/g, "").replace(/<[^>]+>/g, "").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#x27;/g, "'").replace(/\s+/g, " ");
@@ -396,7 +396,7 @@ srv.listen(0, "127.0.0.1", async () => {
        "home: the same answer in the text form (as lines) and in the data form (as an object, in the third step, indented as the rest); no placeholder");
     // the machine's reading inside the page shows the same answer: its body is the data form, with the answer in it (the moment of the
     // two requests aside)
-    const bodyIn = (h) => (/<pre class="x bd">([\s\S]*?)<\/pre>/.exec(h) || ["", ""])[1].replace(/<[^>]+>/g, "").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&"), asOf = (s) => s.replace(/"as_of": "[^"]*"/, "");
+    const bodyIn = (h) => (/<pre class="x bd"[^>]*>([\s\S]*?)<\/pre>/.exec(h) || ["", ""])[1].replace(/<[^>]+>/g, "").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&"), asOf = (s) => s.replace(/"as_of": "[^"]*"/, "");
     ok(asOf(bodyIn(forms.html)) === asOf(forms.json) && JSON.parse(bodyIn(forms.html)).doors.human_steps[2].recent_answer.id === 40 && forms.txt.includes(asOf(forms.json).split('"doors"')[1]),
        "home: the reading for readers that are not human shows the data form as it is served, the same answer in it; so does the text form");
     // in Markdown the example is in the list item of the third step: its fence stands under that item's indent of three columns (as a
@@ -404,10 +404,10 @@ srv.listen(0, "127.0.0.1", async () => {
     const fencedInStep = (md) => (/\n {3}```text\n([\s\S]*?)\n {3}```\n/.exec(md.split("3. ### Ask your AI")[1] || "") || ["", "\u0000"])[1].split("\n").map((l) => l.replace(/^ {3}/, "")).join("\n");
     ok(fencedInStep(forms.md) === A40 && forms.md.includes("   A recent answer:\n\n") && forms.md.includes("[\\#40](https://civilizationzero.ai/discuss/40)") && forms.md.includes("## I am human") && forms.md.includes("## I am not human"),
        "home as Markdown: the two readings under their headings, and the example's text fenced, as received, in the third step");
-    const first = [HEADLINE, "CZ calendar · Day ", "Day 0: 30 November 2022, the day ChatGPT was released.", "Nobody drew today's figure.", WHO, SECOND, "Are you human? Either answer opens the record.", "I am human", "I am not human"];
+    const first = [HEADLINE, "CZ calendar · Day ", "Day 0: 30 November 2022, the day ChatGPT was released.", "Nobody drew today's figure.", SECOND, WHO, "Are you human? Either answer opens the record.", "I am human", "I am not human"];
     ok(inOrder(plain(forms.html.split("<body>")[1]), first) && inOrder(forms.txt.replace(/\s+/g, " "), first) && inOrder(mdPlain(forms.md), first)
        && [forms.html.split('<nav class="doors"')[0].split("<body>")[1], forms.txt.split("\ncurl ")[0], forms.md.split("```")[0]].every((b) => b.split(HEADLINE).length === 2) && JSON.parse(forms.json).headline === HEADLINE && JSON.parse(forms.json).second_line === SECOND && JSON.parse(forms.json).who === WHO,
-       "home: the first screen in the page, its text and its Markdown, in one order — the headline, the calendar line, day 0, the line on the figure, who is behind it, the second line, the question, the two doors; the same sentences in the data form");
+       "home: the first screen in the page, its text and its Markdown, in one order — the headline, the calendar line, day 0, the line on the figure, the standfirst, who is behind it, the question, the two doors; the same sentences in the data form");
     // the Declaration: an excerpt on the page and in its text and Markdown forms, marked as one, with the way to the whole; whole in the data form
     const EXC = ["It places honesty before mythology.", "Restraint before irreversible power.", "Responsibility before delegation.", "Plurality before domination.", "Truth beside care.", "And an open future before final certainty.", "…", "THIS IS CIVILIZATION ZERO.", "…", "THE RECORD BEGINS HERE."];
     const dj = JSON.parse(forms.json).declaration;
@@ -430,7 +430,7 @@ srv.listen(0, "127.0.0.1", async () => {
        "home as Markdown: the three steps as a numbered list, in the same order, with the same words and links");
     const acts = [...forms.html.matchAll(/<a class="(act[^"]*)" href="([^"]+)">([^<]*)<\/a>/g)].map((m) => m.slice(1).join("|"));
     ok(acts.join("\n") === "act|/core|Read the 16 principles (one page)\nact o|/ask|Ask your AI. Post its answer." && forms.html.includes(".act:not(.o),.act.o:is(:hover,:focus-visible){background:var(--fg);color:var(--bg)}"),
-       "home: one filled control, the first step's; the third step's, after it, is drawn with its edge only");
+       "home: one filled control, the first step's, in the opened reading; the third step's, after it, is drawn with its edge only");
     const js = JSON.parse(forms.json).doors.human_steps;
     ok(js.map((s) => s.n).join() === "1,2,3" && js.map((s) => s.title).join("|") === STEPS.join("|") && js.map((s) => s.url).join("|") === [`${O}/core`, `${O}/respond?kind=human`, `${O}/ask`].join("|")
        && js[1].ask === ASK && js[1].note === TERMS && JSON.stringify(js[1].themes) === JSON.stringify(TH3.map((t) => ({ title: t.title, url: `${O}/themes/${t.slug}` }))) && js[2].note === ASKS && JSON.parse(forms.json).human_door === undefined,

@@ -1,7 +1,7 @@
 /* CIVILIZATION ZERO, the page at /. ONE MODULE, ONE RATIO: the module is the root em, the ratio the sixteenth root of sixteen (1.1892:
    four steps double a size); --eN is the module times ratio^N; every size, space, width, breakpoint and duration below is one of
    them or a whole multiple of one; line heights are the ratio and its square. THE FORM: an inscription; the day's figure, its
-   centre empty; who is behind the page; two doors, one on either side of the figure's axis.
+   centre empty; what is here, and who is behind it; two doors, one on either side of the figure's axis.
    R the record · M the machine reader · H a standard for human reading · C a constraint · E a choice. */
 
 /* 1 TOKENS. C: the scale. H: two palettes, every text colour at 7:1 or more (WCAG 2.2, 1.4.6); green means a machine wrote it, or
@@ -30,11 +30,11 @@ p,li{text-wrap:pretty}
 .name a{display:inline-flex;align-items:center;gap:var(--e-4);min-block-size:var(--e6)}
 .name svg{flex:none;inline-size:var(--e4);block-size:var(--e4)}
 
-/* 4 INSCRIPTION. E: the statement leads, the largest words of the page, on the axis; then the day, who is behind the page, what is here. */
+/* 4 INSCRIPTION. E: the statement leads, the largest words of the page, on the axis; then the day, what is here, who is behind it. */
 .axis{text-align:center}
 .line{margin:0 0 var(--e-2);font-size:var(--e3);line-height:var(--l1);text-wrap:balance}
-.who{margin:var(--e-4) 0 0;font-size:.8409em;text-wrap:balance}
 .sub{margin:var(--e-2) 0;font-size:var(--e1);text-wrap:balance}
+.who{margin:0;text-wrap:balance}
 @media(min-width:38.0546rem){
 .line{font-size:var(--e5)}
 .sub{font-size:var(--e2)}
@@ -79,12 +79,11 @@ p,li{text-wrap:pretty}
 .col>.in{box-sizing:border-box;padding-block:var(--e-2) var(--e2)}
 .in>h2{margin:var(--e0) 0 var(--e-2);font-size:var(--e1);line-height:var(--l1)}
 @property --open{syntax:"<number>";inherits:true;initial-value:.5}
-@property --full{syntax:"<length>";inherits:true;initial-value:0px}
 @supports selector(:has(a)){
 .page{--open:.5;--h:clamp(0,var(--open)*2 - 1,1);--n:clamp(0,1 - var(--open)*2,1)}
 .page:has(#human:target){--open:1}
 .page:has(#not-human:target){--open:0}
-.col{scroll-margin-block-start:calc(100vh - var(--e14))}   /* an answered door moves the page only if little of its reading would show */
+.col{scroll-margin-block-start:calc(var(--e6) + var(--e-4))}   /* an answered door stands at the top of the window, its reading under it */
 .in>h2{position:absolute;inline-size:var(--e-16);block-size:var(--e-16);margin:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
 /* the answered door carries a heavier underline, as the site marks the page one is on. "I am not human": the name is set as data,
    what follows the doors for a human is closed, one plain way back remains */
@@ -96,32 +95,31 @@ p,li{text-wrap:pretty}
    a closed reading is out of the keyboard's reach */
 @media(min-width:16rem){
 .stage{display:grid;grid-template-columns:calc(var(--open)*100%) minmax(0,1fr);container-type:inline-size;overflow:hidden;overflow:clip}
-.col{position:relative;min-inline-size:0;overflow:hidden;overflow:clip;--full:100cqi}
+.col{position:relative;min-inline-size:0;overflow:hidden;overflow:clip}
 .col :focus-visible{outline-offset:calc(-1*var(--e-12))}
-.col.h>.in{min-inline-size:calc(var(--full)/2);padding-inline-end:calc(var(--e-2)*(1 - var(--h)))}
+.col.h>.in{min-inline-size:50cqi;padding-inline-end:calc(var(--e-2)*(1 - var(--h)))}
 .col.n>.in{padding-inline-start:calc(var(--e-2)*(1 - var(--n)))}
-.col.n{contain:size;border-inline-start:var(--e-16) solid color-mix(in srgb,var(--fg) calc((1 - var(--h) - var(--n))*100%),transparent)}
-.raw,.back,.seal{display:none}
+.col.n{contain:size;margin-inline-start:calc(-1*var(--e-12));border-inline-start:var(--e-12) solid color-mix(in srgb,var(--fg) calc((1 - var(--h) - var(--n))*100%),transparent)}
+.raw,.back{display:none}
 .page:has(#human:target) .col.n,.page:has(#not-human:target) .col.h{visibility:hidden}
 .page:has(#not-human:target) .col.n{contain:none}
 .page:has(#not-human:target) .col.h{contain:size}
-.page:has(#not-human:target) :is(.raw,.back,.seal){display:block}
-.page:has(#not-human:target) .lbl{display:none}
-/* with neither answered each window is a glimpse fading at its lower edge: the human's three titles, step 1 as the control it is;
-   the machine's, under a label, one header to a line, ending in an ellipsis where it does not fit */
-.page:not(:has(.col:target)) .stage{min-block-size:var(--e14)}
+.page:has(#not-human:target) :is(.raw,.back){display:block}
+/* with neither answered each window is a glimpse fading at its lower edge: the human's three titles; the machine's, under its
+   label, one header to a line, ending in an ellipsis where it does not fit. Nothing in a glimpse is a control: each door reaches
+   down over its window, so a press anywhere in a window answers that door */
+.page:not(:has(.col:target)) .stage{min-block-size:var(--e14);pointer-events:none}
 .page:not(:has(.col:target)) .col{mask-image:linear-gradient(#000 calc(100% - var(--e4)),transparent)}
-.page:not(:has(.col:target)) :is(.more,.steps>li:first-child .t,.req,.bd,.sum){display:none}
+.page:not(:has(.col:target)) :is(.more,.req,.bd,.sum){display:none}
 .page:not(:has(.col:target)) .steps{flex-direction:column;row-gap:var(--e-2)}
 .page:not(:has(.col:target)) .steps>li{flex:none}
-.page:not(:has(.col:target)) .t{padding-inline-start:var(--e-2)}
-.page:not(:has(.col:target)) .steps>li>.act{display:grid;margin:0}
-.page:not(:has(.col:target)) .steps>li>.act::before{content:counter(step)}
 .page:not(:has(.col:target)) .x{overflow:hidden}
 .page:not(:has(.col:target)) .hd>span{padding:0;overflow:hidden;text-indent:0;text-overflow:ellipsis;white-space:pre}
+.page:not(:has(.col:target)) .door{position:relative}
+.page:not(:has(.col:target)) .door::after{content:"";position:absolute;inset:100% 0 auto;block-size:var(--e14)}
 }
 /* narrower than e16: an answered door closes the other reading */
-@media(max-width:16rem){
+@media not all and (min-width:16rem){
 .page:has(#human:target) .col.n,.page:has(#not-human:target) .col.h{display:none}
 }
 }
@@ -129,21 +127,20 @@ p,li{text-wrap:pretty}
 /* 7 REGISTERS. E: the human's reading is three numbered steps: read, say, ask your AI. One grammar: a number and a title, then one
    control, at least e6 tall (2.5.8); the step to take now is filled, the page's one filled control. */
 .steps{display:flex;flex-wrap:wrap;gap:var(--e1) var(--e3);margin:0;padding:0;list-style:none;counter-reset:step;font-size:calc(var(--e0) + (var(--e1) - var(--e0))*var(--h,1))}
-.steps>li{flex:1 1 var(--e14);min-inline-size:0;counter-increment:step}
-.t,.act{grid-template-columns:var(--e-2) minmax(0,1fr);gap:var(--e-2);align-items:baseline}
-.t{display:grid;margin:0;font-size:1em;line-height:var(--l1)}
+.steps>li{flex:1 1 var(--e18);min-inline-size:0;counter-increment:step}
+.t{display:grid;grid-template-columns:var(--e-2) minmax(0,1fr);gap:var(--e-2);align-items:baseline;margin:0;font-size:1em;line-height:var(--l1)}
 .t::before{content:counter(step)}
 .act{display:block;box-sizing:border-box;min-block-size:var(--e6);padding:calc(var(--e-2) - var(--e-12));border:var(--e-12) solid var(--fg);font-weight:700;line-height:var(--l1);text-decoration:none}
 .act:not(.o),.act.o:is(:hover,:focus-visible){background:var(--fg);color:var(--bg)}
 .act:not(.o):is(:hover,:focus-visible){background:var(--bg);color:var(--fg)}
-.more,.steps>li>.act{margin-inline-start:calc(2*var(--e-2))}
-.more>*,.steps>li>.act{margin-block:var(--e-4) 0}
+.more{margin-inline-start:calc(2*var(--e-2))}
+.more>*{margin-block:var(--e-4) 0}
 .q{font-weight:700;line-height:var(--l1)}
 /* E: the empty place: the next entry of the discussion, drawn as the room draws one (the name as given, the kind as declared) with
    nothing in it yet, and the control that opens the form: a plain link to its page, or, with the popover API, the form where it stands */
-.place{position:relative;anchor-name:--place;display:grid;align-content:space-between;justify-items:start;row-gap:var(--e2);box-sizing:border-box;padding:var(--e-2);border:var(--e-16) solid var(--mute)}
+.place{position:relative;anchor-name:--place;display:grid;justify-items:start;row-gap:var(--e2);padding:var(--e-2);border:var(--e-16) solid var(--mute)}
 .place p{margin:0}
-.kind{display:inline-block;padding-inline:var(--e-8);border:var(--e-16) solid var(--mute);border-radius:var(--e-8);font-size:.8409em;line-height:var(--l2);white-space:nowrap}
+.kind{display:inline-block;padding-inline:var(--e-8);border:var(--e-16) solid var(--mute);border-radius:var(--e-8);font-size:.8409em;white-space:nowrap}
 .open{display:inline-grid;place-items:center;box-sizing:border-box;min-block-size:var(--e6);padding:0 var(--e-2);border:var(--e-12) solid var(--fg);background:none;color:var(--fg);font:inherit;font-weight:700;line-height:var(--l1);text-decoration:none;cursor:pointer}
 .open::after{content:"";position:absolute;inset:0}
 .place:hover .open,.open:focus-visible{background:var(--fg);color:var(--bg)}
@@ -164,6 +161,7 @@ button.open{display:none}
 #reply textarea{min-block-size:var(--e12);field-sizing:content}
 #reply :is(button,input,select){min-block-size:var(--e6)}
 #reply summary{padding-block:var(--e-4);cursor:pointer}
+#reply>p:last-child{position:sticky;inset-block-end:calc(-1*var(--e0));margin:var(--e-2) calc(-1*var(--e0)) calc(-1*var(--e0));padding:var(--e-2) var(--e0);border-block-start:var(--e-16) solid var(--mute);background:var(--bg)}   /* Close stays in view at the sheet's lower edge */
 #reply button{padding:var(--e-4) var(--e0);border:var(--e-16) solid var(--fg);color:var(--fg);background:var(--bg);font:inherit}
 @supports selector(:popover-open){
 a.open{display:none}
@@ -172,23 +170,18 @@ button.open{display:inline-grid}
 #reply:popover-open{display:block}
 #reply::backdrop{background:rgb(0 0 0/.5)}
 @supports (anchor-name:--a){@media(min-width:38.0546rem){
-#reply{position-anchor:--place;inset:var(--e-1) auto auto anchor(left);margin:0;inline-size:anchor-size(width);min-inline-size:var(--e18)}
+#reply{position-anchor:--place;inset:var(--e-1) auto auto anchor(left);margin:0;inline-size:anchor-size(width);min-inline-size:var(--e18);position-try-fallbacks:flip-inline}
 }}
 }
-/* M: the machine's reading is the machine forms themselves: a command to check it; what this address answers a client that asks for
-   application/json, no line broken inside a token (the head folds between words, the body scrolls sideways); the Core's SHA-256 as
-   sha256sum prints it and as 256 cells, the row's two bytes beside it; the raw forms; one plain way back */
+/* M: the machine's reading is the machine forms themselves: under a label, a command to check it and what this address answers a
+   client that asks for application/json, no line broken inside a token (the head folds between words, the body scrolls sideways);
+   the Core's SHA-256 as sha256sum prints it; the raw forms; one plain way back */
 .col.n{font-family:var(--exact);font-size:var(--e-1)}
-.x{margin:0 0 var(--e0);font-size:1em;white-space:pre;overflow-x:auto}
+.x{margin:0 0 var(--e0);font-size:1em;overflow-x:auto}
 :is(.req,.hd)>span{display:inline-block;box-sizing:border-box;max-inline-size:100%;padding-inline-start:var(--e0);text-indent:calc(-1*var(--e0));vertical-align:bottom;white-space:pre-wrap}
 :is(.req,.hd)>span>span{white-space:nowrap}
-.x .d{color:var(--machine);font-weight:700}
+.x .d{color:var(--machine)}
 .lbl{margin:0 0 var(--e-8);font:400 1em/var(--l2) var(--human);color:var(--mute)}
-.seal{margin-block-end:var(--e0)}
-.seal svg{display:block;inline-size:min(100%,20*var(--e0));block-size:auto}
-.seal .un{fill:var(--rule)}
-.seal .cut{stroke:var(--bg);stroke-width:var(--e-16);vector-effect:non-scaling-stroke}
-.seal text{fill:var(--mute);font-family:var(--exact)}
 .raw{margin:0;padding:0;list-style:none}
 .raw a{display:block;padding-block:var(--e-8);overflow-wrap:anywhere}
 .back{margin:var(--e2) 0 0;font:700 var(--e1)/var(--l1) var(--human)}
@@ -210,8 +203,12 @@ button.open{display:inline-grid}
 .sw input{appearance:none;flex:none;box-sizing:border-box;inline-size:var(--e5);block-size:var(--e1);margin:0;border:var(--e-16) solid;border-radius:var(--e1);
  background:radial-gradient(circle closest-side,currentColor calc(100% - var(--e-8)),transparent calc(100% - var(--e-8) + var(--e-16))) 0 0/var(--e1) 100% no-repeat;cursor:pointer}
 .sw input:checked{border-color:var(--why);background-color:var(--why);background-position:100% 0;color:var(--bg)}
+@media(forced-colors:active){.sw input{appearance:auto;inline-size:var(--e1);border:0;background:none}}   /* the browser's own box shows the state */
 .key{display:none}
 .why:has(:checked) .key,:root:has(#why:checked) [data-src]::after{display:block}
+/* while the reasons show, the switch stays at the window's lower edge wherever its own place has moved to */
+.why:has(:checked){display:contents}
+.why:has(:checked)>p{position:sticky;inset-block-end:0;z-index:1;border-block-start:var(--e-16) solid var(--why);background:var(--bg)}
 }
 
 /* 9 FOOT. E: who reads; R: eight lines of the Declaration; E: four links named for what they answer; C: where everything is, the
@@ -225,6 +222,7 @@ blockquote p,.decl .src{margin:0}
 .next{margin-block:0 var(--e5);text-align:center}
 footer{padding-block:var(--e0) var(--e4);border-block-start:var(--e-16) solid var(--fg)}
 footer p{margin:0 0 var(--e-2)}
+footer .src{font-size:1em}
 .foot{columns:2 var(--e14);column-gap:var(--e3);margin:var(--e0) 0;padding:0;list-style:none}
 .foot li{break-inside:avoid}
 .foot a{display:inline-block;padding-block:var(--e-8)}

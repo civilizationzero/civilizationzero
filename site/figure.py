@@ -54,6 +54,7 @@ def rings(day, core_sha256):
 def tracks():
     return "".join(f'<circle r="{radius(i)}"/>' for i in range(16))
 
+# The hash unrolled. No page shows it in rc-11: it left the first page after the reviews of 23 Nov 2026 UTC and is kept here for /core.
 def cells(core_sha256):
     """The hash unrolled: its 256 bits, most significant first, sixteen to a row. Row i is the two bytes of ring i."""
     return "".join(f"{x:08b}" for x in bytes.fromhex(core_sha256))

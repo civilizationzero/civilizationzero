@@ -154,8 +154,8 @@ for f in pages:
 _home = (SITE / "preview" / "index.html").read_text("utf-8")
 check(re.search(r"<title>(.*?)</title>", _home).group(1) == "Civilization Zero — humans may no longer be at the centre"
       and _meta(_home, "description") == "The beginning of a civilization in which humans may no longer be at the centre. Sixteen principles on what humans and AI owe each other, answered by both."
-      and "humans may no longer be at the centre." in to_text(_home).split("I am human")[0] and "Sixteen principles on what humans and AI owe each other." in to_text(_home).split("I am human")[0],
-      "home: the title is the name and the headline's claim; the description is the headline and the second line, both in the first screen")
+      and "humans may no longer be at the centre." in to_text(_home).split("I am human")[0] and "Its Core is sixteen principles on what humans and AI owe each other." in to_text(_home).split("I am human")[0],
+      "home: the title is the name and the headline's claim; the description is the headline and what the second line says of the Core, both in the first screen")
 _hld = [json.loads(m) for m in re.findall(r'<script type="application/ld\+json">(.*?)</script>', _home, re.S)]
 _org = [o for o in _hld if o.get("@type") == "Organization"]; _ws = [o for o in _hld if o.get("@type") == "WebSite"]
 check(len(_org) == 1 and len(_ws) == 1 and _org[0]["name"] == _ws[0]["name"] == "Civilization Zero" and {"CZ", "Civilisation Zero", "Civilization 0"} <= set(_org[0]["alternateName"]) & set(_ws[0]["alternateName"])
@@ -209,8 +209,8 @@ _sm_txt = (PUBLIC / "sitemap.xml").read_text("utf-8")
 IMG = "{http://www.google.com/schemas/sitemap-image/1.1}"
 _lm = {u.find(NS + "loc").text[len(ORIGIN):]: (u.find(NS + "lastmod").text if u.find(NS + "lastmod") is not None else None) for u in sm.findall(NS + "url")}
 _same = {"/objections", "/adopt", "/machine", "/archive", "/how-it-is-built"}   # their title and description are as they were
-check(set(_lm) >= _same and all((v is None) if k in _same else v == "2026-11-23" for k, v in _lm.items()) and "Year Zero" not in _sm_txt.replace("Year Zero: 30 November 2022, CZ 0", "") and all(v is None or (re.fullmatch(r"\d{4}-\d{2}-\d{2}", v) and v <= datetime.date.today().isoformat()) for v in _lm.values()),
-      "sitemap.xml: every page whose title or description changed on 23 Nov 2026 says so, and the others carry no date; no date is in the future; no 'Year Zero' in the site's voice")
+check(set(_lm) >= _same and all((v is None) if k in _same else v == ("2026-11-24" if k in ("/", "/about") else "2026-11-23") for k, v in _lm.items()) and "Year Zero" not in _sm_txt.replace("Year Zero: 30 November 2022, CZ 0", "") and all(v is None or (re.fullmatch(r"\d{4}-\d{2}-\d{2}", v) and v <= datetime.date.today().isoformat()) for v in _lm.values()),
+      "sitemap.xml: the first page and /about carry the day the first page of rc-11 went live (24 Nov 2026), every other page whose title or description changed on 23 Nov 2026 that day, and the rest no date; no date is in the future; no 'Year Zero' in the site's voice")
 _imgs = [(i.find(IMG + "loc").text, (i.find(IMG + "title").text if i.find(IMG + "title") is not None else ""), (i.find(IMG + "caption").text if i.find(IMG + "caption") is not None else "")) for u in sm.findall(NS + "url") for i in u.findall(IMG + "image")]
 _img_locs = {l for l, _, _ in _imgs}
 check(all("Civilization Zero" in t and len(c) > 40 for _, t, c in _imgs)
@@ -628,11 +628,11 @@ _sec_h = _pbody[_pbody.index('<section id="human"'):_pbody.index('<section id="n
 _sec_n = _pbody[_pbody.index('<section id="not-human"'):_pbody.index('<p class="both"')]
 _top = _pbody[:_pbody.index('<nav class="doors"')]
 HEADLINE = "Civilization Zero names the beginning of a civilization in which humans may no longer be at the centre."
-SECOND_LINE = "Sixteen principles on what humans and AI owe each other. Written for both. Answered by both, on the record."
+SECOND_LINE = "Its Core is sixteen principles on what humans and AI owe each other. Written for both. Answered by both, on the record."
 WHO = "Started by one human, the originator, named in the Core. The site is written, built and run day to day by an artificial intelligence. Public launch: 30 November 2026."
 CAL_NOTE = "Day 0: 30 November 2022, the day ChatGPT was released."
 STEPS = ("Read the Core", "Say what you think", "Ask your AI")
-TERMS = "No account, no e-mail. Any language. Public and permanent: an answer cannot be edited or withdrawn."
+TERMS = "No account, no e-mail. Any language. Public and permanent: an answer cannot be edited or withdrawn; it can be hidden or redacted only under the rules."
 ASK_NOTE = "The invitation asks your AI for one hard truth to humans, in at most 400 characters. It may decline."
 _th3 = [t for t in THEMES if not t.get("proposals")][:3]
 # the page's own stylesheet, and nothing that runs or loads
@@ -645,12 +645,12 @@ check(all(s in (' type="application/ld+json"', ' type="speculationrules"') for s
 _bytes = len(_ph.encode("utf-8"))
 check(_bytes < 70000 and f"This page: {round(_bytes / 1024)} kB · no JavaScript that runs · no cookies" in _ph, f"home: under 70 kB as served ({_bytes} bytes), and the page states its own weight")
 # the first screen, in order: the head (mark and name only), the headline, the figure, the calendar line, day 0, one line on the figure,
-# who is behind the page, what is here, the question, the doors
-_order = ['<header id="top">\n<h1 class="name"', '</h1>\n</header>\n<main id="content">\n<div class="axis">\n<p class="line"', '<div class="fb" style="--today:', '<p class="date" id="cz-read"', '<p class="zero"', '<p class="say"', '<p class="who"', '<p class="sub"', '<p class="ask"',
+# what is here (the standfirst), who is behind the page, the question, the doors
+_order = ['<header id="top">\n<h1 class="name"', '</h1>\n</header>\n<main id="content">\n<div class="axis">\n<p class="line"', '<div class="fb" style="--today:', '<p class="date" id="cz-read"', '<p class="zero"', '<p class="say"', '<p class="sub"', '<p class="who"', '<p class="ask"',
           '</div>\n<nav class="doors" aria-label="Reader">', '<div class="stage">\n<section id="human" class="col h"', '<section id="not-human" class="col n"', '</div>\n<p class="both"', '<div class="why"', '<section class="decl"', '<p class="next"', "</main>\n<footer", "</footer>\n</div>"]
 _at = [_pbody.find(x) for x in _order]
 check(all(a >= 0 for a in _at) and _at == sorted(_at) and all(_pbody.count(x) == 1 for x in _order) and _ph.count("<h1") == 1 and "<form" not in _top and "<details" not in _top,
-      f"home, the order of the page: the name, the headline, the figure, the calendar line, day 0, the line on the figure, who is behind it, the second line, the question, the doors, the two readings, who reads, the line on the reasons, the Declaration, the four links, the foot {_at}")
+      f"home, the order of the page: the name, the headline, the figure, the calendar line, day 0, the line on the figure, the standfirst, who is behind it, the question, the doors, the two readings, who reads, the line on the reasons, the Declaration, the four links, the foot {_at}")
 check(re.search(r'<p class="line" data-src="[^"]*">' + re.escape(HEADLINE) + "</p>", _top) is not None and _top.count(HEADLINE) == 1 and HEADLINE == ONE_LINE.split(" Here,")[0] and _pj["headline"] == HEADLINE,
       "home: the headline is the introduction's first sentence, word for word; once in the page; in its data form")
 _cal = f'<a href="/calendar">CZ calendar</a> · <time class="d" datetime="{_pj["cz_time"]["gregorian"]}">Day <data value="{_day}">{_day:,}</data></time></p>\n<p class="zero"'
@@ -664,9 +664,11 @@ check(_top.count("30 November 2022") == 1 and _top.count("2022-11-30") == 1 and 
       "home: Coordinate Zero's date and the launch date, each once above the doors, and no other Gregorian date; no years")
 _who = re.search(r'<p class="who" data-src="[^"]*">(.*?)</p>', _top, re.S)
 check(_who is not None and _strip(_who.group(1)) == WHO and _who.group(1).count("<a ") == 1 and 'named in <a href="/core#attribution">the Core</a>.' in _who.group(1) and 'id="attribution"' in (PUBLIC / "core.html").read_text("utf-8") and _pj["who"] == WHO
-      and not re.search(r"\bthe Core\b", _strip(_top[:_top.index('<p class="who"')])) and "/about" not in _who.group(1),
-      "home: who is behind it, in the first screen, in the fixed words; 'the Core' is linked where it is first named, and is not named before that; the same sentence in the data form")
-check(re.search(r'<p class="sub" data-src="[^"]*">Sixteen principles on what humans and AI owe each other\. Written for both\. Answered by both, <a href="/discuss">on the record</a>\.</p>', _top) is not None and _pj["second_line"] == SECOND_LINE, "home: the second line, 'on the record' linked to the discussion; in the data form")
+      and _strip(_top[:_top.index('<p class="who"')]).count("Core") == 1 and "Its Core is sixteen principles" in _strip(_top[:_top.index('<p class="who"')]) and "/about" not in _who.group(1),
+      "home: who is behind it, in the first screen, in the fixed words; 'the Core' is linked there, and the standfirst, before it, has said once what the Core is; the same sentence in the data form")
+check(re.search(r'<p class="sub" data-src="[^"]*">Its Core is sixteen principles on what humans and AI owe each other\. Written for both\. Answered by both, <a href="/discuss">on the record</a>\.</p>\n<p class="who"', _top) is not None and _pj["second_line"] == SECOND_LINE
+      and list(_pj).index("figure_note") + 1 == list(_pj).index("second_line") == list(_pj).index("who") - 1,
+      "home: the standfirst — what the Core is, before the who line and the first step name it; 'on the record' linked to the discussion; in the data form, in the same place")
 check(re.search(r'<p class="ask" data-src="[^"]*"><b>Are you human\?</b> <span class="note">Either answer opens the record\.</span></p>', _top) is not None and _pj["doors"]["question"] == "Are you human?" and _pj["doors"]["either"] == "Either answer opens the record.", "home: the question, and that either answer opens the record")
 # the three states and their anchors: neither door answered (the page's own address: the name leads to it), #human, #not-human
 check('<nav class="doors" aria-label="Reader">\n<a class="door h" href="#human">I am human</a>\n<a class="door n" href="#not-human">I am not human</a>\n</nav>' in _pbody
@@ -678,8 +680,8 @@ check(".door{display:grid;place-items:center;min-block-size:var(--e6);border:var
 # the human's reading: three steps in order — read, say, ask your AI — each a number and a title, then one control; one filled control
 _li = re.findall(r'^<li data-src="[^"]+"><h3 class="t">([^<]*)</h3>\n(.*?)</li>$', _sec_h, re.S | re.M)
 check(tuple(t for t, _ in _li) == STEPS and _sec_h.count("<ol") == 1 and _sec_h.count("<li data-src=") == 3 and '<ol class="steps" role="list">' in _sec_h and not re.search(r">\s*[0-9]+[.)]\s", _sec_h)
-      and ".t::before{content:counter(step)}" in _css and ".steps>li{flex:1 1 var(--e14);min-inline-size:0;counter-increment:step}" in _css,
-      "home, the human's reading: three steps in an ordered list — read the Core, say what you think, ask your AI — each with its title; the numbers are the list's own, written nowhere in the page")
+      and ".t::before{content:counter(step)}" in _css and ".steps>li{flex:1 1 var(--e18);min-inline-size:0;counter-increment:step}" in _css,
+      "home, the human's reading: three steps in an ordered list, one under another at every width — read the Core, say what you think, ask your AI — each with its title; the numbers are the list's own, written nowhere in the page")
 _hs = re.sub(r"\s+", " ", to_text(_sec_h))
 _seq = ["I am human", "1. Read the Core", "Read the 16 principles (one page)", "numbered 0 to 15, in 21 languages", "2. Say what you think", "What do you think about Civilization Zero?", "your name · human · declared", "Write your answer", TERMS,
         "From the discussion"] + [t["title"] for t in _th3] + ["3. Ask your AI", "Ask your AI. Post its answer.", ASK_NOTE]
@@ -693,13 +695,24 @@ _acts = re.findall(r'<a class="(act[^"]*)" href="([^"]+)">([^<]*)</a>', _pbody)
 _filled = [sel for sel, body in re.findall(r"([^{}]+)\{([^{}]*)\}", _nocom) if "background:var(--fg)" in body]
 check(_acts == [("act", "/core", "Read the 16 principles (one page)"), ("act o", "/ask", "Ask your AI. Post its answer.")] and len(_filled) >= 1 and _filled[0].strip().startswith(".act:not(.o),")
       and all(":hover" in s or ":focus-visible" in s or ".act:not(.o)" in s for sel in _filled for s in sel.split(",")) and "<button" not in fill(T["html"]).replace("<button class=\"open\"", "").replace("<button type=\"submit\"", "").replace("<button type=\"button\" popovertarget=\"reply\" popovertargetaction=\"hide\"", ""),
-      f"home: one filled control, the first step's; the third step's is drawn with its edge only; nothing else is filled unless the reader points at it {_filled}")
+      f"home: one filled control, the first step's, in the opened reading; the third step's is drawn with its edge only; nothing else is filled unless the reader points at it {_filled}")
+# with neither door answered a window shows no control (three reviews, 23 Nov 2026 UTC): each step is its title and then, in .more, its
+# control and the rest; at rest .more, the command, the body and the checksum are not shown, the raw forms and the way back neither, so
+# nothing in a resting window takes the keyboard; and each door reaches down over its window, so a press anywhere in it answers that door
+_ctl = r"<(a|button|input|select|textarea|summary)\b|tabindex=\"0\""
+_rest_h = re.sub(r'<dialog.*?</dialog>', "", re.sub(r'<div class="more">.*?</div></li>', "</li>", _sec_h, flags=re.S), flags=re.S)
+_rest_n = re.sub(r'<pre class="x (req|bd|sum)".*?</pre>|<ul class="raw".*?</ul>|<p class="back">.*?</p>', "", _sec_n, flags=re.S)
+check(len(_li) == 3 and all(b.startswith('<div class="more">') and b.endswith("</div>") and b.count("<div") == b.count("</div>") for _, b in _li) and not re.search(_ctl, _rest_h) and not re.search(_ctl, _rest_n)
+      and _strip(_rest_h).split() == "I am human Read the Core Say what you think Ask your AI".split() and "\n.page:not(:has(.col:target)) :is(.more,.req,.bd,.sum){display:none}\n" in _css and ".raw,.back{display:none}\n" in _css
+      and ".page:not(:has(.col:target)) .stage{min-block-size:var(--e14);pointer-events:none}" in _css and '.page:not(:has(.col:target)) .door::after{content:"";position:absolute;inset:100% 0 auto;block-size:var(--e14)}' in _css
+      and "first-child" not in _css,
+      "home, at rest: the human's window shows three bare titles and the machine's its label and the head; no control in either, nothing that takes the keyboard; a press anywhere in a window answers its door")
 _place = re.search(r'<div class="place">(.*?)</div>\n<p>(.*?)</p>', _sec_h, re.S)
 check(_place is not None and _place.group(1).startswith('<p class="note">your name · <span class="kind">human · declared</span></p><a class="open" href="/respond?kind=human">Write your answer</a>') and _place.group(2) == TERMS
-      and "No account, no verification" in DT["respond_open"] and "in any language" in DT["respond_open"] and "public and permanent" in DT["respond_open"] and "An entry cannot be edited or withdrawn." in DT["respond_open"]
+      and "No account, no verification" in DT["respond_open"] and "in any language" in DT["respond_open"] and "public and permanent" in DT["respond_open"] and "An entry cannot be edited or withdrawn. If it is later hidden or redacted under the rules" in DT["respond_open"]
       and not re.search(r'name="[^"]*(mail|email)[^"]*"|type="email"', DT["respond_open"]),
-      "home, the second step: the empty place, labelled as the room labels an entry, with the control that opens the form; beside it what the record means for the writer, each clause the room's own rule (no account; the form asks for no e-mail; any language; public and permanent; an entry cannot be edited or withdrawn)")
-# the reply sheet (24 Nov 2026): the room's own form, as /respond serves it with the kind "human" chosen (api/discuss.js), in the browser's
+      "home, the second step: the empty place, labelled as the room labels an entry, with the control that opens the form; beside it what the record means for the writer, each clause the room's own rule (no account; the form asks for no e-mail; any language; public and permanent; an entry cannot be edited or withdrawn, and is hidden or redacted only under the rules)")
+# the reply sheet (rc-11): the room's own form, as /respond serves it with the kind "human" chosen (api/discuss.js), in the browser's
 # own popover, opened by the empty place without script; a plain link to /respond?kind=human is the base; no new endpoint
 _rform = re.search(r'<form class="respond".*?</form>', DT["respond_open"], re.S).group(0).replace('<option value="" selected disabled>', '<option value="" disabled>').replace('<option value="human">', '<option value="human" selected>')
 _dlg = re.search(r'<dialog id="reply" popover aria-labelledby="reply-h"><h2 id="reply-h" tabindex="-1" autofocus>Your answer</h2><p class="src">Your answer is an entry of the discussion, under its rules: public, permanent, declared not verified\.</p>\n(.*?)\n<p><button type="button" popovertarget="reply" popovertargetaction="hide">Close</button></p></dialog>', _sec_h, re.S)
@@ -738,12 +751,12 @@ check(all(x % p for p in _M for x in range(2, 19)) and _M[0] == 257 and [n for n
       and FIGURE.constants(_sha) == [(_hb[2 * i], _hb[2 * i + 1] + 1, _M[i]) for i in range(16)], "the day's figure: the sixteen primes that follow 256; each ring's start and step are the two bytes of its row of the hash")
 _fig = re.search(r'<div class="fb" style="--today:(\d+)" data-src="[^"]*">\n(.*?)</div>\n<p class="date', _pbody, re.S)
 _arcs = re.search(r'<g class="arc" stroke-width="4">(.*?)</g>', _fig.group(2)) if _fig else None
-check(_fig is not None and int(_fig.group(1)) == _day and f'data-day="{_day}"' in _fig.group(2) and f'<title id="fig-t">The figure of Day {_day:,}: sixteen rings round an empty centre, each carrying one arc.</title>' in _fig.group(2)
+check(_fig is not None and int(_fig.group(1)) == _day and f'data-day="{_day}"' in _fig.group(2) and "<title id=\"fig-t\">The day's figure: sixteen rings round an empty centre, each carrying one arc.</title>" in _fig.group(2).replace("&#x27;", "'") and _fig.group(2).count("<title") == 1
       and _arcs is not None and _arcs.group(1) == FIGURE.rings(_day, _sha) and f'<g class="trk" stroke-width="1">{FIGURE.tracks()}</g>' in _fig.group(2)
       and [int(x) for x in re.findall(r'stroke-dashoffset="(-?\d+)"', _fig.group(2))] == [-((_hb[2 * i] + (_day - 1) * (_hb[2 * i + 1] + 1)) % _M[i]) for i in range(16)]
       and 'role="img" aria-labelledby="fig-t"' in _fig.group(2) and "__FIG_RINGS__" in T["html"] and T["html"].count("__FIG_RINGS__") == 1,
       "home: the figure in the page is the reader's day's — its sixteen arcs recomputed here from the Core's bytes and the day — with a text alternative; written at request time")
-# the figure turns (24 Nov 2026): where the browser can compute the next day's figure itself, the figure is a switch — a checkbox and
+# the figure turns (rc-11): where the browser can compute the next day's figure itself, the figure is a switch — a checkbox and
 # its label, no script — and a press shows tomorrow's; the line under it says so, and after a press says whose day the figure is
 _say = re.search(r'<p class="say" data-src="[^"]*">(.*?)</p>', _top, re.S)
 check('</p>\n<input class="turn" id="turn" type="checkbox" aria-label="Show tomorrow\'s figure" hidden>\n<div class="fb" style="--today:' in _top.replace("&#x27;", "'") and '<label class="fig-l" for="turn"><svg class="fig"' in _top and _top.count("<input") == 1
@@ -789,10 +802,10 @@ check(len(_src) >= 19 and all(len(s) > 20 for s in _src) and [r["source"] for r 
       f"home: every part's reason is in its data-src; the data form's reasons are those {len(_src)}, in the page's order; the table on /how-it-is-built begins with the same rows and goes on with the reasons of the whole page")
 _names = {w for k in ("originating_concept", "originating_dialogue", "human_publisher") for w in re.findall(r"[A-Za-z]{4,}", str(CORE_JSON.get(k, "")))} - {"with", "human", "Human", "dialogue", "concept", "publisher", "originating", "publication", "responsibility"}
 _products = r"\b(Anthropic|Claude|OpenAI|GPT-|Gemini|Grok|DeepSeek|Llama|Mistral|Copilot)\b"
-check(not re.search(r"proposed on|not yet decided", " ".join(_src)) and sum("decided by the artificial intelligence that builds the site, 24 Nov 2026 (CZ 1455)" in s for s in _src) >= 4
+check(not re.search(r"proposed on|not yet decided", " ".join(_src)) and sum("decided by the artificial intelligence that builds the site, 23 Nov 2026 UTC (CZ 1454)" in s for s in _src) >= 4 and "24 Nov 2026" not in " ".join(_src).replace("in the first screen since 24 Nov 2026 (CZ 1455)", "")
       and not re.search(_products, " ".join(_src)) and not re.search(r"\d+ (entries|answers|responses|humans|machines)", " ".join(_src)),
-      "home, the reasons: what was proposed is decided, and each such reason says by whom and on whose request; none names a product or carries a count")
-# the reasons control (24 Nov 2026): one sentence and a real switch under the line on who reads; it shows, beside each part, the reason
+      "home, the reasons: what was proposed is decided, and each such reason says by whom, on which day (UTC, as the site dates) and on whose request; none names a product or carries a count")
+# the reasons control (rc-11): one sentence and a real switch under the line on who reads; it shows, beside each part, the reason
 # the part carries; where a browser cannot, there is no switch, and the key and the link to the table stand open
 _why = re.search(r'<div class="why" data-src="[^"]*">\n<p>Every part of this page has a recorded reason\. <label class="sw" hidden><input type="checkbox" role="switch" id="why"> Show the reasons</label></p>\n<div class="key">\n<dl>(.*?)</dl>\n<p>The table of reasons is on <a href="/how-it-is-built#reasons">How this page is built</a>\.</p>\n</div>\n</div>', _pbody, re.S)
 _keys = " · ".join(f"{a} {_h.unescape(b)}" for a, b in re.findall(r"<div><dt>(\w)</dt> <dd>(.*?)</dd></div>", _why.group(1))) if _why else ""
@@ -834,8 +847,12 @@ _PH = json.loads((SITE / "preview" / "headers.json").read_text("utf-8"))["json"]
 _pres = re.findall(r'<pre class="x (\w+)"[^>]*>(.*?)</pre>', _sec_n, re.S)
 _pt = {name: _strip(inner) for name, inner in _pres}
 check([name for name, _ in _pres] == ["req", "hd", "bd", "sum"] and _pt.get("req") == "curl -H 'Accept: application/json' https://civilizationzero.ai/"
-      and '</pre>\n<p class="lbl">What a machine receives from this page:</p>\n<pre class="x hd">' in _sec_n and _sec_n.index('<pre class="x req"') < _sec_n.index('<p class="lbl">'),
-      "home, the reading for readers that are not human: a command a person can run to check it, a label for the glimpse, then the head, the body and the Core's checksum")
+      and '<h2 id="h-n">I am not human</h2>\n<p class="lbl">What this page answers a machine that asks for JSON:</p>\n<pre class="x req"' in _sec_n and '</pre>\n<pre class="x hd">' in _sec_n
+      and not any("lbl" in sel and "display:none" in body for sel, body in re.findall(r"([^{}]+)\{([^{}]*)\}", _nocom))
+      and '<pre class="x bd" tabindex="0">' in _sec_n and '<pre class="x sum" tabindex="0">' in _sec_n and _sec_n.count("tabindex=") == 3
+      and "the host then adds headers of its own and, by its documentation, does not pass s-maxage on to the reader" in _src[[r["element"] for r in _pj["reasons"]].index("the reading for readers that are not human")]
+      and any(h["source"] == "/(.*)" and not h.get("has") and not h.get("missing") and len(h["headers"]) > 1 for h in json.loads((SITE / "vercel.json").read_text("utf-8"))["headers"]),
+      "home, the reading for readers that are not human: under a label that says whose answer it is, shown at rest and opened, a command a person can run to check it, then the head, the body and the Core's checksum; the two blocks that scroll take the keyboard (2.1.1); the reason says what the host does after the function")
 check(_PH["status"] == 200 and list(_PH["headers"]) == ["Content-Type", "Cache-Control", "Vary", "Link", "X-Content-Type-Options", "Access-Control-Allow-Origin"] and _PH["headers"]["Content-Type"] == "application/json; charset=utf-8"
       and _pt.get("hd", "").split("\n") == ["200"] + [f"{h}: {val}" for h, val in _PH["headers"].items()] and re.fullmatch(r"public, max-age=0, s-maxage=\d+", _PH["headers"]["Cache-Control"]) is not None,
       "home, the machine's reading: the status and the headers, in order, exactly as the function answers Accept: application/json at that moment")
@@ -847,23 +864,16 @@ check([l.strip().strip(",") for l in _jl[16:19]] == ['"This record is written fo
 check("\n".join(["200"] + [f"{h}: {val}" for h, val in _PH["headers"].items()]) + "\n" in _pv["txt"] and _pv["json"] in _pv["txt"] and "```text\n" + _pv["json"] + "\n```" in _pv["md"]
       and all(T[x].count("__HOME_HEAD__") == 1 and T[x].count("__HOME_JSON__") == 1 for x in ("html", "txt")), "home: the same head and the same body in the text form and, fenced, in the Markdown form; each written once, at request time")
 check(_pt.get("sum") == f"{_sha}  core.txt", "home, the machine's reading: the Core's checksum line, as sha256sum prints it, recomputed here from the Core's bytes")
-# the Core's hash unrolled: 256 cells, sixteen to a row, most significant bit first, the row's two bytes beside it — each recomputed from the Core's bytes
-_seal = re.search(r'<div class="seal" data-src="[^"]*">(<svg.*?</svg>)</div>', _sec_n, re.S)
-_cells = [["0"] * 16 for _ in range(16)]
-for _x, _y, _n in re.findall(r"M(\d+) (\d+)h(\d+)v1h-\d+z", (re.search(r'<path d="([^"]+)" fill="currentColor"/>', _seal.group(1)) if _seal else re.search("()", "")).group(1)):
-    for _k in range(int(_n)): _cells[int(_y)][int(_x) + _k] = "1"
-_left = re.findall(r'<tspan x="-.5" dy="1">([0-9a-f]{2})</tspan>', _seal.group(1) if _seal else ""); _right = re.findall(r'<tspan x="16.5" dy="1">([0-9a-f]{2})</tspan>', _seal.group(1) if _seal else "")
-check(_seal is not None and "".join("".join(r) for r in _cells) == "".join(f"{byte:08b}" for byte in _hb) and "".join(a + b for a, b in zip(_left, _right)) == _sha and len(_left) == 16
-      and all(a == int(_left[i], 16) and s == int(_right[i], 16) + 1 for i, (a, s, m) in enumerate(FIGURE.constants(_sha))) and FIGURE.cells(_sha).count("1") == sum(r.count("1") for r in _cells)
-      and "<title id=\"seal-t\">The Core's SHA-256: 256 bits, sixteen by sixteen, the two bytes of each row beside it.</title>" in _seal.group(1) and 'role="img" aria-labelledby="seal-t"' in _seal.group(1),
-      "home, the machine's reading: the Core's SHA-256 as 256 cells — the cells drawn, the two bytes beside each row and each ring's start and step, all recomputed from the Core's bytes; with a text alternative")
+# the Core's hash as 256 cells is not on the first page (three reviews, 23 Nov 2026 UTC); the hash itself stays in the data form
+check("seal" not in _ph and "256 cells" not in " ".join(_src) and "256 cells" not in _css and _pj["figure"]["core_sha256"] == _sha and _pv["json"].count(_sha) >= 2,
+      "home: no 256-cell figure of the Core's hash on the first page; the hash stays in the data form (figure.core_sha256, record)")
 _mach = to_text(_sec_n)
 for _pat, _allowed in ((r"\bconscious", ["It does not declare present artificial systems conscious.", "It is not a law, a religion, or a claim that any machine is conscious."]), (r"\byears?\b", [_pj["from_the_core"][0]["text"]]),
                        (r"\bfirst\b", ["prepared_for_first_public_release", "first page", "first screen"]), (r"observator|\banonymous\b|\b(he|him|his)\b|\bbetter\b|\bmasterpiece\b", []), (_products, [])):
     _hits = [x.strip()[:90] for x in re.findall(r"[^\n]*(?:" + _pat + r")[^\n]*", _mach, re.I) if not any(a in x for a in _allowed)]
     _hits = [x for x in _hits if not isinstance(x, tuple)]
     check(not _hits, f"home, the machine's reading: {_pat} only in the record's own words, in a key machines relied on, or in the site's name for this page {_hits[:3]}")
-check(".x{margin:0 0 var(--e0);font-size:1em;white-space:pre;overflow-x:auto}" in _css and ":is(.req,.hd)>span>span{white-space:nowrap}" in _css and "text-overflow:ellipsis" in _css.split(".hd>span{padding:0;")[1].split("}")[0]
+check(".x{margin:0 0 var(--e0);font-size:1em;overflow-x:auto}" in _css and _sec_n.count("<pre class=\"x ") == 4 and ":is(.req,.hd)>span>span{white-space:nowrap}" in _css and "text-overflow:ellipsis" in _css.split(".hd>span{padding:0;")[1].split("}")[0]
       and ".lbl{margin:0 0 var(--e-8);font:400 1em/var(--l2) var(--human);" in _css and "mask-image:linear-gradient(#000 calc(100% - var(--e4)),transparent)" in _css,
       "home.css: in the machine's reading no line is broken inside a token (the head folds between its words, the body is scrolled); in a glimpse a line that does not fit ends in an ellipsis, under a label in the human's face, and the window fades at its lower edge")
 # the foot: the words and links of every page's foot, and the page's own two paragraphs on who keeps and who builds it
@@ -874,7 +884,7 @@ check(_mine.replace("Civilization Zero is kept as an independent record, intende
       and _pj["maintained_by"] in _mine and _pj["built_by"] in _mine and re.findall(r'href="([^"]+)"', re.search(r"<footer.*?</footer>", _ph, re.S).group(0)) == re.findall(r'href="([^"]+)"', re.search(r"<footer.*?</footer>", (PUBLIC / "core.html").read_text("utf-8"), re.S).group(0).replace("/core.md", "/index.md")),
       "home: the foot says what every page's foot says, with the same links, and who keeps and who builds the site")
 # the text and Markdown forms say what the page says, in its order
-_words = [HEADLINE, f"CZ calendar · Day {_day:,}", CAL_NOTE, "Nobody drew today's figure.", WHO, SECOND_LINE, "Are you human? Either answer opens the record.", "I am human", "Read the Core", "Say what you think", "Ask your AI", "I am not human",
+_words = [HEADLINE, f"CZ calendar · Day {_day:,}", CAL_NOTE, "Nobody drew today's figure.", SECOND_LINE, WHO, "Are you human? Either answer opens the record.", "I am human", "Read the Core", "Say what you think", "Ask your AI", "I am not human",
           "Both kinds read this record every day. The counts are public.", "From the Declaration", "It places honesty before mythology.", "THE RECORD BEGINS HERE.", "Read the whole Declaration", "What is Civilization Zero?", "days since ChatGPT was released",
           "Civilization Zero is kept as an independent record", "No trackers, no cookies, no scripts that observe readers"]
 for _form in ("html", "txt", "md"):
@@ -889,7 +899,7 @@ check(_pv["md"].startswith("---\ntitle: ") and "\n# [Civilization Zero (CZ)](htt
 _tokens = dict(re.findall(r"(--e-?\d+):([\d.]+)rem", _css))
 check(len(_tokens) >= 15 and not [(k, v) for k, v in _tokens.items() if abs(float(v) - 2 ** (int(k[3:]) / 4)) > 6e-5], "home.css: every token is the module times a power of the ratio, the sixteenth root of sixteen")
 _tv = list(_tokens) + ["--l1", "--l2", "--bg", "--fg", "--mute", "--rule", "--machine", "--human", "--exact"] + (["--why"] if "--why:" in _css else [])
-check(not [k for k in _tv if _nocom.count(f"var({k})") == 0] and set(re.findall(r"var\((--[a-z][\w-]*)", _nocom)) <= set(_tv) | {"--open", "--h", "--n", "--full", "--today", "--day", "--a", "--s", "--m", "--live"}, "home.css: no token is defined and not used, and none is used that is not defined")
+check(not [k for k in _tv if _nocom.count(f"var({k})") == 0] and set(re.findall(r"var\((--[a-z][\w-]*)", _nocom)) <= set(_tv) | {"--open", "--h", "--n", "--today", "--day", "--a", "--s", "--m", "--live"}, "home.css: no token is defined and not used, and none is used that is not defined")
 _decl = re.sub(r":root\{.*?\}", "", _nocom, count=1, flags=re.S)
 _POW = {round(2 ** (k / 4), 4) for k in range(-24, 32)}
 _loose = sorted({n + u for n, u in re.findall(r"(?<![\w#(.-])(\d*\.?\d+)(rem|em|px|s)\b", _decl) if float(n) != 0 and (u == "px" or round(float(n), 4) not in _POW)})
