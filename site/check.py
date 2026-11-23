@@ -318,7 +318,7 @@ for _n, _i in enumerate(_ix):
 check(_shown == _want and len(_ix) == len(_real) == 8 and _ix == sorted(set(_ix)) and _shown == _marked and all(l in IR_TXT for l in _real),
       "home: the excerpt's lines are the Declaration's own, in its order; every omission between two of them is marked, and nothing else is")
 check("An excerpt of CZ-IR 1.0, Declaration: eight of its 22 lines" in _dsec.group(2) and "marks lines left out" in _dsec.group(2) and _dsec.group(2).endswith('. <a href="/record#declaration">Read the whole Declaration</a>') and "<p" not in _dsec.group(1) and "excerpt" not in _dsec.group(1) and "verbatim" not in _dsec.group(0)
-      and T["html"].count("From the Declaration") == 1 and "does not announce" not in T["html"] and all(T["txt"].count(l) >= 1 for l in _want[:6]) and "between them. Read the whole Declaration" in T["txt"] and "does not announce" not in T["txt"],
+      and T["html"].count("From the Declaration") == 1 and "does not announce" not in T["html"] and all(T["txt"].count(l) >= 1 for l in _want) and "between them. Read the whole Declaration" in T["txt"] and "does not announce" not in T["txt"],
       "home: the excerpt is labelled as an excerpt, in a caption after the quotation and not inside it, and links the whole Declaration; the text form carries the same excerpt")
 # the POST example parses
 ex = re.search(r"<pre>POST.*?\n(\{.*?\})</pre>", T["html"], re.S).group(1)
