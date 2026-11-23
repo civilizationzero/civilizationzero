@@ -128,7 +128,6 @@ import html as _html_mod
 def _meta(h, name): m = re.search(r'<meta name="' + name + r'" content="([^"]*)">', h); return _html_mod.unescape(m.group(1)) if m else None
 def _prop(h, name): m = re.search(r'<meta property="' + name + r'" content="([^"]*)">', h); return _html_mod.unescape(m.group(1)) if m else None
 _seen_t, _seen_d = {}, {}
-TITLE_OVER_60 = {"calendar.html": 64}   # the question a searcher types, whole, before the name: four characters over, stated in build.py
 for f in pages:
     if f.name == "404.html": continue
     h = f.read_text("utf-8"); tr = f.stem.startswith("core.")
@@ -136,7 +135,7 @@ for f in pages:
     check(t not in _seen_t and d not in _seen_d, f"{f.name}: its title or description is also that of {_seen_t.get(t) or _seen_d.get(d)}")
     _seen_t[t] = f.name; _seen_d[d] = f.name
     check("Civilization Zero" in t, f"{f.name}: the title carries the name")
-    check(tr or len(t) <= TITLE_OVER_60.get(f.name, 60), f"{f.name}: title of {len(t)} characters")
+    check(tr or len(t) <= 60, f"{f.name}: title of {len(t)} characters")
     check(tr or (50 <= len(d) <= 155), f"{f.name}: description of {len(d)} characters")
     check("Year Zero" not in t and "Year Zero" not in d and not re.search(r"<h[1-3][^>]*>[^<]*Year Zero", h), f"{f.name}: 'Year Zero' in a title, a description or a heading")
     check("<meta name=\"robots\" content=\"max-image-preview:large\">" in h and "noindex" not in h.split("</head>")[0], f"{f.name}: kept from an index")
@@ -163,7 +162,7 @@ check(len(_org) == 1 and len(_ws) == 1 and _org[0]["name"] == _ws[0]["name"] == 
       and _org[0]["sameAs"] == ["https://github.com/civilizationzero"] + SOCIAL + [f"https://doi.org/{DOI_CONCEPT}"] and len(SOCIAL) == 6,
       "home: the organisation and the site by name, with the other spellings, the accounts (GitHub and six more) and the deposit's DOI")
 _main = _home.split('<main id="content">', 1)[1]
-check(all(f'<a href="{u}">{t}</a>' in _main.split("<section", 1)[0] for u, t in (("/about", "What is Civilization Zero?"), ("/core", "the 16 principles"), ("/calendar", "CZ calendar: days since ChatGPT was released"), ("/ask", "ask your AI"))),
+check(all(f'<a href="{u}">{t}</a>' in _main.split("<section", 1)[0] for u, t in (("/about", "What is Civilization Zero?"), ("/core", "the 16 principles"), ("/calendar", "days since ChatGPT was released"), ("/ask", "ask your AI"))),
       "home: after the first screen, the links named for what they answer")
 # /about: the question is the heading, a plain answer of 40 to 60 words stands directly under it, then five to seven questions; the FAQ
 # data is those questions and answers, word for word (an answer's links are not part of its text)
@@ -180,21 +179,21 @@ if _am:
     _all = " ".join(a for _, a in _qa)
     check(not re.search(r"\b(he|him|his|she|her)\b|Year Zero|\bfirst\b|\byears?\b", _all, re.I) and "the originator" in _all and "an artificial intelligence" in _all,
           "about, the answers: the originator by title only, the builder without a name, no claim to be first, days and not years")
-    check(all(x in _ab for x in ('<a href="/core">the 16 principles</a>', '<a href="/calendar">CZ calendar: days since ChatGPT was released</a>', '<a href="/ask">ask your AI</a>')),
+    check(all(x in _ab for x in ('<a href="/core">the 16 principles</a>', '<a href="/calendar">CZ calendar</a>', '<a href="/ask">ask your AI</a>')) and "<h2 id=\"h-faq\">Questions and answers</h2>" in _ab,
           "about: the links named for what they answer")
     check(all(x in CORE_TXT for x in re.findall(r"“([^”]+)”", _qa[3][1])) and "The name Civilization Zero does not grant authority." in IR_TXT and "“The name Civilization Zero does not grant authority.”" in _qa[6][1],
           "about, the answers: each quotation is in the canonical text")
 check("About Civilization Zero</h2>" in _ab and "A founding human expression" in _ab and 'id="originator-key"' in _ab and 'id="custody"' in _ab, "about: what the page said before stays below")
 # /calendar: the title is the searcher's question; the first sentence says the count — as built without a number (api/page.js puts today's in)
 _cl = (PUBLIC / "calendar.html").read_text("utf-8")
-check("<title>Days since ChatGPT was released: CZ calendar · Civilization Zero</title>" in _cl and "<h1>CZ calendar: days since ChatGPT was released</h1>\n<p id=\"today\"><strong><!--cz-day-->The CZ calendar counts the days since ChatGPT was released on 30 November 2022.<!--/cz-day--></strong></p>" in _cl
+check("<title>Days since ChatGPT was released · Civilization Zero calendar</title>" in _cl and _cl.split("<h2", 1)[0].split("<h1>")[1].count("ChatGPT was released") == 2 and "<h1>CZ calendar: days since ChatGPT was released</h1>\n<p id=\"today\"><strong><!--cz-day-->The CZ calendar counts the days since ChatGPT was released on 30 November 2022.<!--/cz-day--></strong></p>" in _cl
       and "Today is day <data value=\"${f.DAYS}\">${f.DAYS_FMT}</data> since ChatGPT was released on <time datetime=\"2022-11-30\">30 November 2022</time>." in (SITE / "api" / "page.js").read_text("utf-8"),
-      "calendar: the title, the heading and the first sentence in the words a searcher uses; the function fills today's count")
+      "calendar: the title, the heading and the first sentence in the words a searcher uses, said in the heading and the sentence and not a third time before the converter; the function fills today's count")
 check('<a href="/calendar">CZ calendar</a>' in _cl.split("<footer")[-1], "the foot of every page names /calendar as the first page does: CZ calendar")
 # the functions' pages: their titles carry the name, differ from the files' and fit; a theme's is its question
 _djs = (SITE / "api" / "discuss.js").read_text("utf-8")
-check(_djs.count('title = "Civilization Zero discussion: humans and AI systems answer";') == 2 and "title: `${theme.title} · Civilization Zero`" in _djs
-      and "Civilization Zero discussion: humans and AI systems answer" not in _seen_t and all(f'{t["title"]} · Civilization Zero' not in _seen_t and len(f'{t["title"]} · Civilization Zero') <= 70 for t in THEMES),
+check(_djs.count('title = "Civilization Zero discussion: humans and AI systems answer";') == 2 and "title: themeTitle(theme.title)," in _djs and "const themeTitle = (t) => (`${t} · Civilization Zero`.length <= 60 ? `${t} · Civilization Zero` : `${t} · CZ`);" in _djs
+      and "Civilization Zero discussion: humans and AI systems answer" not in _seen_t and all(f'{t["title"]} · Civilization Zero' not in _seen_t and len(f'{t["title"]} · CZ') <= 60 for t in THEMES),
       "discuss.js: the room's title and a theme's title")
 # what keeps a page from an index, by header: only a copy served from another host, the API and the administrator's page (vercel.json);
 # a page served through a rewrite keeps the address it was asked for, so none of these reaches a public page
@@ -207,8 +206,9 @@ check(rb.startswith("User-agent: *\nAllow: /\n") and rb.count("User-agent:") == 
 _sm_txt = (PUBLIC / "sitemap.xml").read_text("utf-8")
 IMG = "{http://www.google.com/schemas/sitemap-image/1.1}"
 _lm = {u.find(NS + "loc").text[len(ORIGIN):]: (u.find(NS + "lastmod").text if u.find(NS + "lastmod") is not None else None) for u in sm.findall(NS + "url")}
-check(_lm["/"] == _lm["/about"] == _lm["/calendar"] == "2026-11-23" and all(v is None or (re.fullmatch(r"\d{4}-\d{2}-\d{2}", v) and v <= datetime.date.today().isoformat()) for v in _lm.values()),
-      "sitemap.xml: the pages whose content changed on 23 Nov 2026 say so; no date is in the future")
+_same = {"/objections", "/adopt", "/machine", "/archive", "/how-it-is-built"}   # their title and description are as they were
+check(set(_lm) >= _same and all((v is None) if k in _same else v == "2026-11-23" for k, v in _lm.items()) and "Year Zero" not in _sm_txt.replace("Year Zero: 30 November 2022, CZ 0", "") and all(v is None or (re.fullmatch(r"\d{4}-\d{2}-\d{2}", v) and v <= datetime.date.today().isoformat()) for v in _lm.values()),
+      "sitemap.xml: every page whose title or description changed on 23 Nov 2026 says so, and the others carry no date; no date is in the future; no 'Year Zero' in the site's voice")
 _imgs = [(i.find(IMG + "loc").text, (i.find(IMG + "title").text if i.find(IMG + "title") is not None else ""), (i.find(IMG + "caption").text if i.find(IMG + "caption") is not None else "")) for u in sm.findall(NS + "url") for i in u.findall(IMG + "image")]
 _img_locs = {l for l, _, _ in _imgs}
 check(all("Civilization Zero" in t and len(c) > 40 for _, t, c in _imgs)
@@ -653,8 +653,8 @@ CAL_TEXT = "CZ calendar · Day 1,428"
 CAL_NOTE = "Day 0: 30 November 2022, the day ChatGPT was released."
 check(CAL_LINE in _hh and _hh.count("__CZ_ISO__") == 1 and _hh.count("__TOTAL__") == 1 and _hh.count('href="/calendar"') == 1
       and '>Day 0: <time datetime="2022-11-30">30 November 2022</time>, the day ChatGPT was released.</p>\n<p class="d-sub"' in _hh and _hh.count("ChatGPT") == 1 and "began" not in re.sub(r"<[^>]+>", " ", _hh) and cz_day(datetime.date(2022, 11, 30)) == 0
-      and "CZ day 0 is 30 November 2022" in (PUBLIC / "llms.txt").read_text("utf-8") and "CZ 0 is 30 November 2022, the day ChatGPT was released" in (PUBLIC / "calendar.html").read_text("utf-8")
-      and "the day ChatGPT was released" in (PUBLIC / "calendar.html").read_text("utf-8") and '<p class="d-date"' in _hh and re.sub(r"<[^>]+>", "", re.search(r'<p class="d-date"[^>]*>(.*?)</p>', _hh, re.S).group(1)) == "CZ calendar · Day __TOTAL_FMT__"
+      and "CZ day 0 is 30 November 2022" in (PUBLIC / "llms.txt").read_text("utf-8") and "ChatGPT was released on 30 November 2022.<!--/cz-day--></strong></p>\n<p>CZ 0 is that day: the public threshold the record calls Coordinate Zero." in (PUBLIC / "calendar.html").read_text("utf-8")
+      and "public threshold" in CORE_TXT and "Coordinate Zero" in CORE_TXT and '<p class="d-date"' in _hh and re.sub(r"<[^>]+>", "", re.search(r'<p class="d-date"[^>]*>(.*?)</p>', _hh, re.S).group(1)) == "CZ calendar · Day __TOTAL_FMT__"
       and _size("p.d-date", _hcssd) > _size("p.d-why", _hcssd) and "p.d-date .d-day{color:var(--machine);font-weight:600}" in _hcssd and "p.d-why{color:var(--mute);" in _hcssd and re.search(r"\.d-note\{display:block;color:var\(--mute\);font-size:\.88em", _hcssd) and _size("p.d-why", _hcssd) == 0.88
       and not re.search(r"\b[Yy]ears?\b|__CZ_(SINCE|TO_NEXT|TO_NEXT_N|NEXT_DAY|DOYN)__|__NEXT_YEAR__", _hh.replace("Year Zero", "")),
       "home: the calendar line — 'CZ calendar' the link to /calendar, the day number carrying today's date (<time datetime>) and the count (<data value>), no Gregorian date in it, no years; under it one small grey line, smaller and lighter than the CZ day: day 0 and what happened that day, as /calendar and llms.txt say it; nowhere 'began'")

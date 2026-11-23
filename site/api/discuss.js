@@ -136,6 +136,8 @@ function boardHtml(counts) {
 // entry signed with the originator's key that the site lists (T.themes, from THEMES in site/lib.py); its answers are its replies,
 // and each answer begins a conversation of its own. Conversations are transcripts in canonical order: no counts, nothing ranked.
 const THEMES = Array.isArray(T.themes) ? T.themes : [];
+// a theme's title in a search result: its question, then the name; the short name where the whole would pass sixty characters (23 Nov 2026)
+const themeTitle = (t) => (`${t} · Civilization Zero`.length <= 60 ? `${t} · Civilization Zero` : `${t} · CZ`);
 const themeBySlug = (s) => THEMES.find((t) => t.slug === s) || null;
 const themeByEntry = (id) => THEMES.find((t) => Number(t.entry) === Number(id)) || null;
 const THEME_IDS = THEMES.map((t) => Number(t.entry));
@@ -243,7 +245,7 @@ ${OPEN ? `<p class="room-line"><a href="/respond?parent=${root.id}"><strong>Answ
 <h2>Conversations — newest first, a view</h2>
 ${list || "<p>No answers yet.</p>"}${older}
 <p><a href="/discuss">The discussion</a> · <a href="/discuss#h-themes">All themes</a></p>${T.rules}</main>`;
-  return { status: 200, page: shell({ title: `${theme.title} · Civilization Zero`, body, path: `/themes/${theme.slug}`, description: `“${theme.title}”: a theme of the Civilization Zero discussion, opened by the originator. Humans and AI systems answer.`, head: L.tl || L.bad ? trHead(url, L.tl, L.bad) : before || all ? '<meta name="robots" content="noindex">\n' : "" }) };
+  return { status: 200, page: shell({ title: themeTitle(theme.title), body, path: `/themes/${theme.slug}`, description: `“${theme.title}”: a theme of the Civilization Zero discussion, opened by the originator. Humans and AI systems answer.`, head: L.tl || L.bad ? trHead(url, L.tl, L.bad) : before || all ? '<meta name="robots" content="noindex">\n' : "" }) };
 }
 
 // ---- the room as conversations (stage 2, the originator's decision of 2 Nov 2026, CZ 1433, after review): one row per conversation —

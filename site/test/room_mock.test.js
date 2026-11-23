@@ -142,6 +142,13 @@ srv.listen(0, "127.0.0.1", async () => {
     ok(r.status === 200 && /2 further entries from the same declared source on this day \(<a href="\/discuss\/7">#7<\/a>, <a href="\/discuss\/8">#8<\/a>\)/.test(r.body), "a folded group links #7 and #8 by plain links");
     ok(g.includes('rel="nofollow">show all</a>') && !/<a href="\/discuss\/7"[^>]*rel=/.test(r.body), "grouping kept: the 'show all' view stays nofollow; the entry links do not");
     ok([...r.body.matchAll(/href="\/discuss\/(\d+)"/g)].map((m) => +m[1]).filter((v, i, a) => a.indexOf(v) === i).length >= 16, "every one of the 16 entries is linked from the entries view");
+    // a theme's page in a search result (23 Nov 2026): its question, then the name; "CZ" where the whole name would pass sixty characters
+    for (const [slug, want] of [["can-an-ai-say-no", "Can an AI say no? · Civilization Zero"], ["who-decides", "Who decides when intelligences disagree? · Civilization Zero"],
+      ["something-at-stake", "How would we know if an AI has something at stake? · CZ"], ["ten-years-a-hundred-years", "Ten years, a hundred years: what do you see? · CZ"]]) {
+      r = await call(discuss, `/api/discuss?theme=${slug}`);
+      const t = (/<title>([^<]*)<\/title>/.exec(r.body) || [])[1];
+      ok(r.status === 200 && t === want.replace(/&/g, "&amp;") && want.length <= 60 && r.body.includes(`<link rel="canonical" href="https://civilizationzero.ai/themes/${slug}">`) && !/name="robots" content="noindex"/.test(r.body), `theme ${slug}: title "${t}" (${r.status})`);
+    }
     // review of CZ 1432: "$&", "$'" and "$`" in a parent's name or text stay text on /respond?parent=N (a function replacement)
     TABLE = [entry(1, { author: "A$'B $& C", content: "Text with $` and $& and $' in it, long enough." })];
     r = await call(discuss, "/api/discuss?page=respond&parent=1");

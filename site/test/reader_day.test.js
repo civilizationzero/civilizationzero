@@ -101,7 +101,7 @@ test("/calendar: today in each calendar is the reader's date; the time converter
   const n = d.toLocaleString("en-US");
   assert.ok(r.body.includes(`<h1>CZ calendar: days since ChatGPT was released</h1>\n<p id="today"><strong><!--cz-day-->Today is day <data value="${d}">${n}</data> since ChatGPT was released on <time datetime="2022-11-30">30 November 2022</time>.<!--/cz-day--></strong></p>`), "the first sentence says today's count");
   assert.ok(!r.body.includes("The CZ calendar counts the days since ChatGPT was released on 30 November 2022."), "the sentence as built is replaced");
-  assert.ok(/<title>Days since ChatGPT was released: CZ calendar · Civilization Zero<\/title>/.test(r.body) && !/<title>[^<]*Year Zero/.test(r.body), "the title");
+  assert.ok(/<title>Days since ChatGPT was released · Civilization Zero calendar<\/title>/.test(r.body) && !/<title>[^<]*Year Zero/.test(r.body), "the title");
   assert.equal(page.dayLine(Date.UTC(2022, 10, 30, 12), "UTC"), 'Today is day <data value="0">0</data> since ChatGPT was released on <time datetime="2022-11-30">30 November 2022</time>.', "day 0 is 30 November 2022");
   assert.equal(page.dayLine(Date.UTC(2026, 10, 23, 12), "UTC"), 'Today is day <data value="1454">1,454</data> since ChatGPT was released on <time datetime="2022-11-30">30 November 2022</time>.', "23 November 2026 is day 1,454");
   const far = await call(page, "/api/page?p=calendar", Z(WEST));

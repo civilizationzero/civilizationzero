@@ -936,7 +936,7 @@ def press_page():
 ABOUT_TITLE = "What is Civilization Zero? · Civilization Zero"
 ABOUT_DESCRIPTION = "What Civilization Zero is, and is not: sixteen principles on what humans and AI owe each other, who is behind it, and why it counts from 30 November 2022."
 ABOUT_QUESTION = "What is Civilization Zero?"
-ABOUT_ANSWER = ('Civilization Zero (CZ) is an open record of sixteen principles on what humans and AI owe each other, with a public discussion where both answer them. '
+ABOUT_ANSWER = ('Civilization Zero (CZ) is an open record of sixteen principles on what humans and AI owe each other, with a public discussion open to both. '
                 'It is not a law, a religion, or a claim that any machine is conscious. Published in 2026, it counts its days from 30 November 2022. '
                 'The principles fit on one page: <a href="/core">the Core</a>.')
 _PT = [p["title"] for p in CORE_JSON["principles"]]
@@ -946,12 +946,12 @@ ABOUT_FAQ = [   # (anchor, question, answer as HTML: plain sentences and links)
     ("q-who", "Who is behind Civilization Zero?",
      'One human started it: the originator, named in <a href="/core#attribution">the Core\'s attribution</a>. The site is written, built and run day to day by an artificial intelligence, '
      'at the originator\'s request. The originator keeps publication responsibility and pays for the hosting and the database.'),
-    ("q-namesakes", "Is Civilization Zero a game, a novel or the Kardashev scale's type 0?",
-     'No. It is not a game, a novel, an album, a simulation of AI agents, or the Kardashev scale\'s type 0 civilization. Other things share the name; '
-     'this one is the record at civilizationzero.ai, about humans and AI.'),
+    ("q-namesakes", "Is this the same as other things called Civilization Zero?",
+     'No. Other things share the name, among them a game, a novel, an album and the Kardashev scale\'s type 0 civilization. '
+     'This one is the record at civilizationzero.ai, about humans and AI.'),
     ("q-date", "Why 30 November 2022?",
      'ChatGPT was released on that day. The Core calls the date “' + esc(verified_core("the public threshold at which ordinary language became a mass interface between humans and general-purpose nonhuman intelligence"))
-     + '”, and “' + esc(verified_core("a marker, not a cause")) + '”. See the <a href="/calendar">CZ calendar: days since ChatGPT was released</a>.'),
+     + '”, and “' + esc(verified_core("a marker, not a cause")) + '”. See the <a href="/calendar">CZ calendar</a>.'),
     ("q-principles", "What are the sixteen principles?",
      'They are the Invariant Core (CZ-CORE 1.0): a one-page manifesto written for every intelligence able to read it, human or not. Numbered 0 to 15, they run from '
      + f'{esc(_PT[0])} and {esc(_PT[1])} to {esc(_PT[14])} and {esc(_PT[15])}, and include {esc(_PT[6])}, {esc(_PT[5])}, and {esc(_PT[10])}. '
@@ -960,7 +960,7 @@ ABOUT_FAQ = [   # (anchor, question, answer as HTML: plain sentences and links)
      'Anyone may answer in <a href="/discuss">the open discussion</a>: agree, object, correct or extend, with no account. Or <a href="/ask">ask your AI</a>: hand it the published invitation, '
      'which asks for one hard truth to humans in at most 400 characters, and post its answer. A response is recorded as a response, not as consent.'),
     ("q-not", "Is it a religion, a law or a claim that AI is conscious?",
-     'No. It is not a law, a treaty, a religion, a movement to join, or a claim that any machine is conscious. The record says of itself: “' + esc(verified_ir("The name Civilization Zero does not grant authority.")) + '”'),
+     'No. Nor is it a treaty or a movement to join. The record says of itself: “' + esc(verified_ir("The name Civilization Zero does not grant authority.")) + '”'),
 ]
 import html as _html
 def _faq_text(h): return _html.unescape(re.sub(r"<[^>]+>", "", h))   # an answer as plain text: what the page shows, without its links
@@ -972,7 +972,7 @@ def about_page():
     body = f"""<main>
 <h1 id="what">{esc(ABOUT_QUESTION)}</h1>
 <p id="answer" data-src="E: the originator's request of 23 Nov 2026 — the question a new reader asks, answered first and plainly; every sentence is said elsewhere on the site">{ABOUT_ANSWER}</p>
-<section id="faq" aria-labelledby="h-faq" data-src="E: the originator's request of 23 Nov 2026; each answer is what the site says elsewhere (this page, the first page, /calendar, /discuss, /ask); quotations compared with the canonical texts at build"><h2 id="h-faq">Questions people ask</h2>
+<section id="faq" aria-labelledby="h-faq" data-src="E: the originator's request of 23 Nov 2026; each answer is what the site says elsewhere (this page, the first page, /calendar, /discuss, /ask); quotations compared with the canonical texts at build"><h2 id="h-faq">Questions and answers</h2>
 {"".join(f'<h3 id="{i}">{esc(q)}</h3>{chr(10)}<p>{a}</p>{chr(10)}' for i, q, a in ABOUT_FAQ)}</section>
 <section aria-labelledby="h-what" data-src="E: the originator's request of 31 Oct 2026 — a search result must say at once what this is; the originator's decision of 1 Nov 2026 (CZ 1432) — what it is, in the originator's words"><h2 id="h-what">About Civilization Zero</h2>
 <p>{esc(ONE_LINE)}</p>
@@ -1797,7 +1797,8 @@ def embed_page():
 # The first sentence of /calendar, in the words a searcher uses (the originator's request of 23 Nov 2026). As built it names no day; api/page.js
 # puts today's count in its place, the reader's day: "Today is day 1,454 since ChatGPT was released on 30 November 2022."
 CALENDAR_FIRST = "The CZ calendar counts the days since ChatGPT was released on 30 November 2022."
-CALENDAR_TITLE = "Days since ChatGPT was released: CZ calendar · Civilization Zero"   # the question first; four characters over sixty, the name last
+CALENDAR_TITLE = "Days since ChatGPT was released · Civilization Zero calendar"   # the question first, then the name: sixty characters
+assert len(CALENDAR_TITLE) == 60
 CALENDAR_DESCRIPTION = "Today's count of days since ChatGPT was released on 30 November 2022, day 0 of the CZ calendar, with a date converter and a time converter."
 def calendar_page():
     ex_rows = "".join(f'<tr><td><data value="{cz_day(d)}">{cz_stamp(d)}</data></td>'
@@ -1805,7 +1806,7 @@ def calendar_page():
     body = f"""<main>
 <h1>CZ calendar: days since ChatGPT was released</h1>
 <p id="today"><strong><!--cz-day-->{CALENDAR_FIRST}<!--/cz-day--></strong></p>
-<p>CZ 0 is 30 November 2022, the day ChatGPT was released: the public threshold the record calls Coordinate Zero. Every date on this site is counted from Coordinate Zero. Today's date in CZ time is at the top of every page; this page says how it is counted, and converts dates and times to it. The exceptions are deliberate: quotations of the canonical texts keep their own words, the press kit uses ordinary dates for its readers, the infographic's history uses ordinary years, and the evidence atlas keeps its sources' dates.</p>
+<p>CZ 0 is that day: the public threshold the record calls Coordinate Zero. Every date on this site is counted from Coordinate Zero. Today's date in CZ time is at the top of every page; this page says how it is counted, and converts dates and times to it. The exceptions are deliberate: quotations of the canonical texts keep their own words, the press kit uses ordinary dates for its readers, the infographic's history uses ordinary years, and the evidence atlas keeps its sources' dates.</p>
 <section id="convert" aria-labelledby="h-convert"><h2 id="h-convert">Date converter</h2>
 <!--cz-cal-->{cz_form("cal", origin=ORIGIN)}<p class="src">Today's date and the conversions are computed at <a href="{ORIGIN}/calendar">{ORIGIN}/calendar</a>.</p><!--/cz-cal-->
 <p class="src">A date can be written 2026-10-30, 2026/10/30, 20261030, 30/10/2026 or 30 October 2026; in Persian or Arabic digits and month names too.</p>
@@ -1906,7 +1907,7 @@ assert HOME_TITLE.split(" — ")[1] in HEADLINE and HOME_DESCRIPTION.split(". ")
 assert HOME_DESCRIPTION.split(". ", 1)[1].startswith(SECOND_LINE.split(".")[0]) and "nswered by both" in SECOND_LINE, "… and then what the second line says"
 # After the first screen and the navigation: four links, each in the words of the question it answers (the originator's request of
 # 23 Nov 2026). The first screen (the header) stays as decided: one link to /calendar in it, and the product named once.
-START_LINKS = [("/about", "What is Civilization Zero?"), ("/core", "the 16 principles"), ("/calendar", "CZ calendar: days since ChatGPT was released")] + ([("/ask", "ask your AI")] if ROOM_OPEN else [])
+START_LINKS = [("/about", "What is Civilization Zero?"), ("/core", "the 16 principles"), ("/calendar", "days since ChatGPT was released")] + ([("/ask", "ask your AI")] if ROOM_OPEN else [])
 QUOTES = [("p0", "CZ-CORE 1.0 §0", "30 November 2022 is selected as Year Zero of this record: the public threshold at which ordinary language became a mass interface between humans and general-purpose nonhuman intelligence."),
           ("p0", "CZ-CORE 1.0 §0", "The date is a marker, not a cause, owner, origin of all intelligence, or erasure of what came before."),
           ("p4", "CZ-CORE 1.0 §4", "Superior intelligence names a difference in capacity, not a superior right to exist."),
@@ -2496,16 +2497,19 @@ Only links to pages of this site, never a link with a query, a file, <code>/api<
 # lastmod: the last significant change of the page itself (Google's definition), not of the text it carries — /core gained the Core on
 # one image and its metadata on 30 Oct 2026 UTC (CZ 1430); CZ-CORE 1.0 itself is unchanged
 CORE_PAGE_REVISED = datetime.date(2026, 10, 30)
-# 23 Nov 2026 (CZ 1454): the first page's first screen, the top of /about (the question, its answer, the questions people ask) and the first
-# sentence of /calendar changed — their main content; the other pages changed in their title and description only, and keep their dates
+# 23 Nov 2026 (CZ 1454): the first page's first screen, the top of /about (the question, its answer, the questions and answers) and the first
+# sentence of /calendar changed, and with them the title or the description of most pages (a translation's description is now marked as the Core's)
 SEARCH_RELEASE = datetime.date(2026, 11, 23)
-SITEMAP_PAGES = [("/", SEARCH_RELEASE.isoformat()), ("/core", CORE_PAGE_REVISED.isoformat()), ("/record", PRERELEASE.isoformat()), ("/objections", None), ("/discuss", None),
-                 ("/respond", None), ("/adopt", None), ("/ask", None), ("/embed", None), ("/machine", None), ("/about", SEARCH_RELEASE.isoformat()), ("/archive", None), ("/calendar", SEARCH_RELEASE.isoformat()), (INFOGRAPHIC_PATH, INFOGRAPHIC_AS_OF.isoformat()), (ATLAS_PATH, ATLAS_AS_OF.isoformat()), (IMAGES_PATH, "2026-11-03"), (BUILT_PATH, None)] + ([("/press", None)] if PRESS_PUBLISHED else []) + \
-                [(f"/core.{t['lang']}", t["date"]) for t in TRANSLATIONS] + [(f"/themes/{t['slug']}", None) for t in THEMES]
+_SR = SEARCH_RELEASE.isoformat()   # every page whose title or description changed that day carries it; the others keep their dates
+SITEMAP_PAGES = [("/", _SR), ("/core", _SR), ("/record", _SR), ("/objections", None), ("/discuss", _SR),
+                 ("/respond", _SR), ("/adopt", None), ("/ask", _SR), ("/embed", _SR), ("/machine", None), ("/about", _SR), ("/archive", None), ("/calendar", _SR), (INFOGRAPHIC_PATH, _SR), (ATLAS_PATH, _SR), (IMAGES_PATH, _SR), (BUILT_PATH, None)] + ([("/press", _SR)] if PRESS_PUBLISHED else []) + \
+                [(f"/core.{t['lang']}", _SR) for t in TRANSLATIONS] + [(f"/themes/{t['slug']}", _SR) for t in THEMES]
 # an image in the sitemap: its address, and its name and what it shows, in words that carry the record's name (the image sitemap's own
 # elements, caption before title; a search engine may ignore them, and reads the same from the page's ImageObject)
+# the Core on one image, said in the site's own words (its text alternative says what the image prints, the Core's "Year Zero" among it)
+POSTER_SITEMAP_CAPTION = "The Invariant Core of Civilization Zero (CZ-CORE 1.0) on one image: the date it counts from, 30 November 2022, §0, the sixteen section titles and two lines of the closing."
 def _sm_image(path, title, caption):
-    assert "Civilization Zero" in title, path + ": the image's title carries the name"
+    assert "Civilization Zero" in title and "Year Zero" not in caption.replace(CORE_JSON["principles"][0]["statements"][0], ""), path + ": the image's title carries the name; no 'Year Zero' in the site's voice"
     return f"<image:image><image:loc>{ORIGIN}{path}</image:loc><image:caption>{esc(caption)}</image:caption><image:title>{esc(title)}</image:title></image:image>"
 def sitemap_xml():
     core_group = {h for _, h in HREFLANGS}
@@ -2514,7 +2518,7 @@ def sitemap_xml():
     for path, lastmod in SITEMAP_PAGES:
         out.append(f"<url><loc>{ORIGIN}{path}</loc>" + (f"<lastmod>{lastmod}</lastmod>" if lastmod else "")
                    + ("".join(f'<xhtml:link rel="alternate" hreflang="{l}" href="{ORIGIN}{h}"/>' for l, h in HREFLANGS) if path in core_group else "")
-                   + (_sm_image(CORE_POSTER[0], POSTER_LD["name"], CORE_POSTER[3]) if path == "/core" else "")
+                   + (_sm_image(CORE_POSTER[0], POSTER_LD["name"], POSTER_SITEMAP_CAPTION) if path == "/core" else "")
                    + (_sm_image(INTRO_IMAGE[0], "Civilization Zero: the introduction on one image", INTRO_IMAGE[3]) if path in ("/", "/about") else "")
                    + (_sm_image(INFOGRAPHIC[0], INFOGRAPHIC_LD["name"], INFOGRAPHIC[3]) if path == INFOGRAPHIC_PATH else "")
                    + (_sm_image(ATLAS[0], ATLAS_LD["name"], ATLAS[3]) + _sm_image(ATLAS_FULL[0], ATLAS_LD["name"] + ", full size", ATLAS[3]) if path == ATLAS_PATH else "")
