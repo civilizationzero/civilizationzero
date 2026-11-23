@@ -158,7 +158,7 @@ test("the first page: the launch sentence turns on the launch day, where the rea
   assert.equal(words(Date.UTC(2026, 10, 29, 23, 59, 59)), "Public launch:", "the last second before the day");
   assert.equal(words(Date.UTC(2026, 10, 30, 0, 0, 0)), "Public since", "the first second of the day");
   assert.equal(words(Date.UTC(2031, 0, 1)), "Public since");
-  const BEFORE = "by an artificial intelligence. Public launch: 30 November 2026.", SINCE = "by an artificial intelligence. Public since 30 November 2026.";
+  const BEFORE = "The site is written, built and run day to day by an artificial intelligence. Public launch: 30 November 2026.", SINCE = "The site is written, built and run day to day by an artificial intelligence. Public since 30 November 2026.";
   const text = (b) => b.replace(/<[^>]+>/g, "");
   const forms = async (zone) => ({ html: text((await call(home, "/", { ...Z(zone), accept: "text/html" })).body), txt: (await call(home, "/?f=txt", Z(zone))).body,
     json: JSON.parse((await call(home, "/?f=json", Z(zone))).body).who, md: (await call(home, "/index.md?f=md", Z(zone))).body });

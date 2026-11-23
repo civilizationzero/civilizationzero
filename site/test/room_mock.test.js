@@ -351,7 +351,7 @@ srv.listen(0, "127.0.0.1", async () => {
     // or nothing: never a hidden entry, no placeholder, and the page is served when the database is not
     const home = require(path.resolve(__dirname, "../api/home.js"));
     const HEADLINE = "Sixteen principles on what humans and AI owe each other. Written for both. Answered by both, on the record.";
-    const WHO = "Started by one human, the originator, named in the Core. Written, built and run day to day by an artificial intelligence. Public ";
+    const WHO = "Started by one human, the originator, named in the Core. The site is written, built and run day to day by an artificial intelligence. Public ";
     const short = (id, o = {}) => entry(id, { kind: "ai", prompt: "cz-short-1.0", author: `Voice ${id}`, content: `Answer ${id}: a hard truth.\n— Voice ${id}`, ...o });
     const exOf = (body) => (/<div class="d-ex"[\s\S]*?<\/div><p class="src">[\s\S]*?<\/p><\/div>/.exec(body) || [""])[0];
     TABLE = [...Array.from({ length: 30 }, (_, i) => entry(i + 1)), short(40), short(41, { kind: "human" }), short(42, { prompt: "cz-machine-1.5" }), short(43, { prompt: "custom" }),
@@ -361,11 +361,11 @@ srv.listen(0, "127.0.0.1", async () => {
     let ex = exOf(r.body);
     ok(r.status === 200 && CALLS.filter((c) => c.name === "cz_home_latest").length === 1 && CALLS.find((c) => c.name === "cz_home_latest").args.p_limit === 60, "home: one read of the latest entries, the most the function gives");
     ok(r.body.split('<div class="d-ex"').length === 2 && ex.includes('<div class="content" dir="auto" lang="en">Answer 40: a hard truth.\n— Voice 40</div>') && ex.includes("<b><bdi dir=\"auto\">Voice 40</bdi></b>")
-       && ex.includes('<span class="kind k-ai">AI · declared, not verified</span>') && ex.includes('<a href="/discuss/40" class="exact">#40</a>') && ex.includes("A recent answer:"),
+       && ex.includes('<span class="kind k-ai">AI · declared, not verified</span>') && ex.includes('<a href="/discuss/40" class="exact">#40</a>') && ex.includes('<p class="src">A recent answer:</p>') && !ex.includes("(the beginning)"),
        `home: one example, the newest that qualifies (#40), whole, with its number, name and declared kind (${ex.slice(0, 300)})`);
     ok(!/Voice (41|42|43|45|46|48|49|50)\b/.test(r.body.split("</header>")[0]) && !r.body.split("</header>")[0].includes("/discuss/50"), "home: no other entry in the first screen — not a human's, another prompt's, a longer one, a redacted, unscreened, flagged or hidden one");
-    ok(r.body.indexOf('<div class="d-ex"') > r.body.indexOf('class="cta-note"') && r.body.indexOf('<div class="d-ex"') < r.body.indexOf("Open questions in the discussion") && r.body.indexOf("Open questions in the discussion") < r.body.indexOf('<p class="d-who"'),
-       "home: the example stands in the human door, under the invitation and before the open questions");
+    ok(r.body.indexOf('<div class="d-ex"') > r.body.indexOf('class="cta-note"') && r.body.indexOf('<div class="d-ex"') < r.body.indexOf("From the discussion") && r.body.indexOf("From the discussion") < r.body.indexOf('<section class="door machine"') && r.body.indexOf('<section class="door machine"') < r.body.indexOf('<p class="d-who"'),
+       "home: the example stands in the human door, under the invitation and before the themes; who is behind it comes after both doors in the source");
     ok(r.body.includes("<h3>The latest entries</h3>") && !r.body.includes("__ROOM_") && !/__[A-Z_]+__/.test(r.body.replace(/https?:\/\/\S+/g, "")), "home: the latest entries are still there; no placeholder left");
     const forms = { html: r.body, txt: (await call(home, "/?f=txt")).body, json: (await call(home, "/?f=json")).body, md: (await call(home, "/index.md?f=md")).body };
     ok([forms.html, forms.txt, forms.md].every((b) => b.split(HEADLINE).length === 2) && JSON.parse(forms.json).headline === HEADLINE, "home: the headline, once, in each of the four forms (HTML, text, JSON, Markdown)");
@@ -388,8 +388,24 @@ srv.listen(0, "127.0.0.1", async () => {
       ok(r.status === 200 && !r.body.includes('class="d-ex"') && !r.body.includes("A recent answer") && !r.body.includes("__ROOM_EXAMPLE__") && !/Answer 6[0-3]/.test(r.body.split("</header>")[0])
          && r.body.includes('It may decline.</span></div>') && r.body.includes(HEADLINE), `home, ${what}: no example, nothing in its place (${r.status})`);
     }
-    TABLE = [short(8, { content: "z".repeat(400) })]; r = await call(home, "/", { headers: { accept: "text/html" } });
-    ok(exOf(r.body).includes(`>${"z".repeat(400)}</div>`), "home: an answer of exactly 400 characters is shown whole");
+    // a longer answer: only its beginning — at most 170 characters, cut between words, the words shown unchanged, then "…" — under a label that
+    // says so, with the entry's number as the link to the whole text; one of 170 characters or fewer is shown whole
+    const shown = (body) => (/<div class="d-ex"[^>]*><p class="src">([^<]*)<\/p><div class="content"[^>]*>([\s\S]*?)<\/div>/.exec(body) || []).slice(1);
+    const long = "Nobody is coming to decide this for you. " + "You will go on choosing, one convenience at a time, " .repeat(6) + "and call it progress.\n— Voice 8";
+    TABLE = [short(8, { content: long })]; r = await call(home, "/", { headers: { accept: "text/html" } }); let [label, text] = shown(r.body);
+    ok([...long].length > 170 && [...long].length <= 400 && label === "A recent answer (the beginning):" && text.endsWith("…") && [...text].length - 1 <= 170 && [...text].length > 150
+       && long.startsWith(text.slice(0, -1)) && /\s/.test(long[text.length - 1]) && !/\s$/.test(text.slice(0, -1)) && exOf(r.body).includes('<a href="/discuss/8" class="exact">#8</a>') && !r.body.split("</header>")[0].includes("call it progress"),
+       `home: a longer answer shows its beginning only, cut between words and unchanged, and links the whole (${label} | ${text})`);
+    const md8 = (await call(home, "/index.md?f=md")).body;
+    ok(md8.includes("A recent answer (the beginning):") && md8.includes("```text\n" + text + "\n```"), "home as Markdown: the same beginning, under the same label");
+    for (const [what, content, whole] of [["exactly 170 characters", "a".repeat(80) + " " + "b".repeat(89), true], ["171 characters", "a".repeat(80) + " " + "b".repeat(90), false],
+                                          ["a line break inside the beginning", "First line.\nSecond line.\n— V", true]]) {
+      TABLE = [short(8, { content })]; r = await call(home, "/", { headers: { accept: "text/html" } }); [label, text] = shown(r.body);
+      ok(whole ? label === "A recent answer:" && text === content : label === "A recent answer (the beginning):" && text === "a".repeat(80) + "…", `home, an answer of ${what}: ${whole ? "whole" : "its beginning"} (${label} | ${text})`);
+    }
+    // no place to cut between words (one unbroken run): the first 170 characters, then "…" — nothing wider than the door, nothing added
+    TABLE = [short(8, { content: "z".repeat(400) })]; r = await call(home, "/", { headers: { accept: "text/html" } }); [label, text] = shown(r.body);
+    ok(label === "A recent answer (the beginning):" && text === "z".repeat(170) + "…", "home: an unbroken run of 400 characters is cut at 170");
     // the database does not answer: the page is served, with the first screen and without the example, the count and the latest entries
     TABLE = [short(40)]; DOWN = true; r = await call(home, "/", { headers: { accept: "text/html" } }); const mdDown = await call(home, "/index.md?f=md"); DOWN = false;
     ok(r.status === 200 && r.body.includes(HEADLINE) && r.body.includes(WHO) && !r.body.includes('class="d-ex"') && !r.body.includes("A recent answer") && !r.body.includes("The latest entries") && !r.body.includes("__ROOM_")

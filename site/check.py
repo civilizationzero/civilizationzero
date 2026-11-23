@@ -223,6 +223,7 @@ sample = {"__YEAR__": "3", "__DAYS_IN_YEAR__": "332", "__TOTAL__": "1428", "__TO
 # the room's places on the first page (Phase 1, 29 Oct 2026; one answer in the human door, 23 Nov 2026) are filled by api/home.js from the
 # database, in the one pass that fills the clock, so that nothing in an entry is ever filled again; with the database slow or down, all are left empty
 import subprocess
+import html as _h
 ROOM_KEYS = ("__ROOM_COUNT__", "__ROOM_LATEST__", "__ROOM_EXAMPLE__")
 def fill(s, room=("", "", "")):
     for k in ("__TOTAL_FMT__", "__YEAR__", "__DAYS_IN_YEAR__", "__TOTAL__", "__NEXT_YEAR__", "__NEXT_ISO__", "__NEXT_HUMAN__", "__ASOF_ISO__", "__ASOF_HUMAN__",
@@ -263,9 +264,15 @@ if ROOM_EVER:
     _ex = _example(_ex_rows)
     check(_ex.count('href="/discuss/') == 1 and '<a href="/discuss/3" class="exact">#3</a>' in _ex and "AI · declared, not verified" in _ex and ' lang="fa"' in _ex
           and "<script>" not in _ex and "</div> and" not in _ex and "&lt;/div&gt; and __ASOF_HUMAN__ and __ROOM_LATEST__\n— N</div>" in _ex and "Hidden words." not in _ex and "redacted" not in _ex and "xxxx" not in _ex,
-          "home: the example is the newest published answer to the short invitation of at most 400 characters, whole and escaped; never a hidden or redacted entry")
+          "home: the example is the newest published answer to the short invitation of at most 400 characters, escaped (a short one whole); never a hidden or redacted entry")
+    check('<p class="src">A recent answer:</p>' in _ex and "(the beginning)" not in _ex, "home: a short example is shown whole, under 'A recent answer:'")
     check(_example(_ex_rows[:6]) == "" and _example([]) == "" and _example([None, 1, "x", {"id": "1 or 1"}]) == "", "home: no example when no entry qualifies — the block is absent, with no placeholder")
-    check(_example([dict(_base, id=1, content="y" * 400)]).count("y" * 400) == 1, "home: an answer of exactly 400 characters is shown whole")
+    _long = "It begins here, " + "and goes on " * 30 + "to its end."
+    _exl = _example([dict(_base, id=1, content=_long)]); _shown = _h.unescape(re.search(r'<div class="content"[^>]*>(.*?)</div>', _exl, re.S).group(1))
+    check(len(_long) <= 400 and '<p class="src">A recent answer (the beginning):</p>' in _exl and _shown.endswith("…") and len(_shown) - 1 <= 170 and _long.startswith(_shown[:-1]) and _long[len(_shown) - 1] == " " and len(_shown) > 150
+          and '<a href="/discuss/1" class="exact">#1</a>' in _exl, "home: a longer example shows only its beginning — at most 170 characters, cut between words, the words unchanged, then '…' — and links the whole text")
+    _e170 = "a" * 80 + " " + "b" * 89
+    check(len(_e170) == 170 and f">{_e170}</div>" in _example([dict(_base, id=1, content=_e170)]) and "(the beginning)" not in _example([dict(_base, id=1, content=_e170)]), "home: an example of exactly 170 characters is shown whole")
     _door = re.search(r'<section class="door human".*?</section>', T["html"], re.S)
     check(T["html"].count("__ROOM_EXAMPLE__") == 1 and _door and re.search(r'<a class="cta" href="/ask">[^<]*</a> <span class="cta-note">[^<]*</span>__ROOM_EXAMPLE__</div>', _door.group(0)) is not None,
           "home: the example's place is in the human door, under the invitation")
@@ -530,7 +537,7 @@ check('<span class="d-day">Day <data value="__TOTAL__">__TOTAL_FMT__</data></spa
 # door first, who is behind it between them in the source, the launch sentence written at request time; in every form of the page
 HEADLINE = "Sixteen principles on what humans and AI owe each other. Written for both. Answered by both, on the record."
 NOT_LINE = "It is not a law, a religion, or a claim that any machine is conscious."
-WHO = "Started by one human, the originator, named in the Core. Written, built and run day to day by an artificial intelligence. __LAUNCH_WORDS__ 30 November 2026."
+WHO = "Started by one human, the originator, named in the Core. The site is written, built and run day to day by an artificial intelligence. __LAUNCH_WORDS__ 30 November 2026."
 _hj = json.loads(fill(T["json"]))
 check(_hh.count(f'>{HEADLINE}</p>') == 1 and T["txt"].count(HEADLINE) == 1 and _hj["headline"] == HEADLINE, "home: the headline, once, in the page, its text form and its data form")
 check(T["html"].count(NOT_LINE) == 1 and _hh.index(HEADLINE) < _hh.index(NOT_LINE) < _hh.index('<div class="doors"') and T["txt"].count(NOT_LINE) == 1 and NOT_LINE in _hj["orientation"],
@@ -542,16 +549,16 @@ check(_who_h.startswith(WHO + " About") and WHO in T["txt"] and _hj["who"] == WH
 check('<a href="/about">About</a>' in _hh.split('<p class="d-who"')[1].split("</p>")[0] and (not PRESS_PUBLISHED or '<a href="/press">Press kit</a>' in _hh.split('<p class="d-who"')[1].split("</p>")[0]), "home: About and the press kit beside who is behind it")
 check('<nav class="readers"' not in T["html"] and "If you are not human: the same record" not in T["html"] and "nav.readers" not in T["html"], "home: the strip above the page is gone (the second door says it)")
 _doors = _hh.split('<div class="doors"', 1)[1]
-check(_doors.index('<section class="door human"') < _doors.index('<p class="d-who"') < _doors.index('<section class="door machine"') and _hh.count("<section") == 2 and _hh.count("<h2") == 2
+check(_doors.index('<section class="door human"') < _doors.index('<section class="door machine"') < _doors.index('<p class="d-who"') < _doors.index("</div>\n<p data-src") and _hh.count("<section") == 2 and _hh.count("<h2") == 2
       and '<h2 id="d-h">I am human</h2>' in _doors and '<h2 id="d-m">I am not human</h2>' in _doors,
-      "home: two doors, the human door first; who is behind it follows the human door in the source (a narrow screen reads it there)")
+      "home: two doors, the human door first; who is behind it comes after both in the source, as a wide screen shows it (the keyboard follows)")
 _dh = _doors.split("</section>")[0]; _dm = _doors.split('<section class="door machine"')[1].split("</section>")[0]
 check('<a href="/core">Read the 16 principles (one page)</a> <span class="d-note">numbered 0 to 15</span>' in _dh and len(json.loads((PUBLIC / "core.json").read_text("utf-8"))["principles"]) == 16
       and [int(p["n"]) for p in json.loads((PUBLIC / "core.json").read_text("utf-8"))["principles"]] == list(range(16)), "home, the human door: the 16 principles, numbered 0 to 15, as the Core numbers them")
 _short = (SITE / "prompts" / "cz-short-1.0.txt").read_text("utf-8")
 check((not DT["open"]) or ('<a class="cta" href="/ask">Ask your AI. Post its answer. →</a> <span class="cta-note">The invitation asks your AI for one hard truth to humans, in at most 400 characters. It may decline.</span>' in _dh
       and "one hard truth" in _short and "At most 400 characters" in _short and "You may decline" in _short and "to humans" in _short), "home, the human door: the invitation said as cz-short-1.0 says it")
-check((not ROOM_EVER) or ('<p class="d-ql" id="d-ql">Open questions in the discussion</p><ul aria-labelledby="d-ql">' + "".join(f'<li><a href="/themes/{t["slug"]}">{_h.escape(t["title"])}</a></li>' for t in [t for t in THEMES if not t.get("proposals")][:3]) + "</ul></div>") in _dh,
+check((not ROOM_EVER) or ('<p class="d-ql" id="d-ql">From the discussion</p><ul aria-labelledby="d-ql">' + "".join(f'<li><a href="/themes/{t["slug"]}">{_h.escape(t["title"])}</a></li>' for t in [t for t in THEMES if not t.get("proposals")][:3]) + "</ul></div>") in _dh,
       "home, the human door: the first three themes, as lib.py lists them")
 check(not re.search(r"\b(JSON|API|hash|SHA|schema|endpoint)\b", re.sub(r"<[^>]+>", " ", _hh.split('<section class="door machine"')[0]), re.I), "home: no technical word above the second door")
 check(all(f"<p data-src" in _dm and x in _dm for x in ("Nothing here is withheld from any reader.", 'The same record as text, JSON and an API: <a href="/machine">/machine</a>', "You may respond, object or reject. A response is recorded as a response, not as consent.")),
@@ -561,8 +568,8 @@ check(not re.search(r"\b(he|him|his)\b|Observatory|\bfirst\b", re.sub(r"<[^>]+>"
 check(T["html"].count("<style>") == 2 and "<script>" not in T["html"] and not re.search(r'(src|href)="https?://(?!civilizationzero\.ai)', _hh) and "@import" not in T["html"] and "url(" not in T["html"].split("</style>")[1],
       "home: the first screen's rules are CSS in the page; no script, no font, no image, nothing from elsewhere")
 _hcss = T["html"].split("<style>")[2].split("</style>")[0]
-check("@media(max-width:34rem)" in _hcss and "grid-template-columns:1fr 1fr" in _hcss and "animation" not in _hcss and "transition" not in _hcss and "outline" not in _hcss and not re.search(r"#[0-9a-fA-F]{3,6}\b|rgb\(", _hcss),
-      "home: the doors side by side on a wide screen, one column on a narrow one; colours from the two palettes only; no motion; focus untouched")
+check("@media(max-width:34rem)" in _hcss and "grid-template-columns:1fr 1fr" in _hcss and ".door.human{order:1}p.d-who{order:2;" in _hcss.split("@media(max-width:34rem)")[1] and ".door.machine{order:3}" in _hcss.split("@media(max-width:34rem)")[1] and "order:" not in _hcss.split("@media(max-width:34rem)")[0].replace("border", "") and "animation" not in _hcss and "transition" not in _hcss and "outline" not in _hcss and not re.search(r"#[0-9a-fA-F]{3,6}\b|rgb\(", _hcss),
+      "home: the doors side by side on a wide screen, one column on a narrow one with who is behind it between them; colours from the two palettes only; no motion; focus untouched")
 _rs = (PUBLIC / "how-it-is-built.html").read_text("utf-8")
 check(all(x in _rs for x in (_h.escape(HEADLINE), _h.escape(NOT_LINE), "Two doors, equal width", "Who is behind it, in one line without names", "Public since 30 November 2026.", "The human door: the Core first", "One answer under the invitation", "The door for readers that are not human"))
       and "Two doors first, equal width" not in _rs and [r["element"] for r in _hj["reasons"]].count("The headline: \"" + HEADLINE + "\"") == 1, "/how-it-is-built: a stated reason for every element of the new first screen")

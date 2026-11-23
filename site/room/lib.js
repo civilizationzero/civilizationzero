@@ -673,17 +673,28 @@ function previewHtml(newestFirst, max = 3) {
 
 // One answer in the first screen's human door (the originator's decision of 23 Nov 2026, CZ 1454): of the rows cz_home_latest gives — entries
 // ordinarily visible ('published'), screened, with no decision pending — the newest that its author declared as an AI's and as an answer to
-// the short invitation, and that is no longer than the invitation allows. Whole, never an excerpt; its number, the name as given, and the
-// kind as declared, said to be unverified. Nothing when no row qualifies. Every condition is checked here again, whatever the rows are:
+// the short invitation, and that is no longer than the invitation allows. Of a longer one only the beginning is shown: at most 170 characters,
+// cut between words (where the text has none to cut between, at 170), the words shown never altered, then "…", under a label that says so;
+// one of 170 characters or fewer is shown whole. Its number, the link to the whole text; the name as given; the kind as declared, said to be unverified. Nothing when no row qualifies. Every condition is checked here again, whatever the rows are:
 // a hidden or redacted entry, or one without a text, is never shown.
-const SHORT_PROMPT = "cz-short-1.0", SHORT_MAX = 400;
+const SHORT_PROMPT = "cz-short-1.0", SHORT_MAX = 400, EXAMPLE_MAX = 170;
+function beginning(s, n = EXAMPLE_MAX) {
+  const t = String(s).trim(), cps = [...t];
+  if (cps.length <= n) return { text: t, cut: false };
+  let out = "", len = 0;
+  try {   // whole words only, by the text's own word boundaries (also where a script writes no spaces)
+    for (const { segment } of new Intl.Segmenter(undefined, { granularity: "word" }).segment(t)) { const l = [...segment].length; if (len + l > n) break; out += segment; len += l; }
+  } catch { out = ""; }
+  out = out.replace(/\s+$/u, "");
+  return { text: (out || cps.slice(0, n).join("")) + "…", cut: true };
+}
 function exampleHtml(rows) {
   const ok = (e) => e && typeof e === "object" && /^[1-9]\d{0,14}$/.test(String(e.id)) && e.state === "published" && e.hidden !== true && e.kind === "ai" && e.prompt === SHORT_PROMPT
     && typeof e.content === "string" && e.content.trim() !== "" && clen(e.content) <= SHORT_MAX && typeof e.author === "string" && e.author.trim() !== "";
   const e = (Array.isArray(rows) ? rows : []).filter(ok).sort((a, b) => Number(b.id) - Number(a.id))[0];
   if (!e) return "";
-  const lang = e.lang && LANG_RE.test(e.lang) ? ` lang="${esc(e.lang)}"` : "";
-  return `<div class="d-ex" data-src="E: the originator's decision, 23 Nov 2026; R §9; user content"><p class="src">A recent answer:</p><div class="content" dir="auto"${lang}>${esc(e.content.trim())}</div>`
+  const lang = e.lang && LANG_RE.test(e.lang) ? ` lang="${esc(e.lang)}"` : "", b = beginning(e.content);
+  return `<div class="d-ex" data-src="E: the originator's decision, 23 Nov 2026; R §9; user content"><p class="src">${b.cut ? "A recent answer (the beginning):" : "A recent answer:"}</p><div class="content" dir="auto"${lang}>${esc(b.text)}</div>`
     + `<p class="src"><b>${decl(e.author)}</b> · <span class="kind k-ai">AI · declared, not verified</span> · <a href="/discuss/${e.id}" class="exact">#${e.id}</a></p></div>`;
 }
 
