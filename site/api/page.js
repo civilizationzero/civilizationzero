@@ -182,6 +182,13 @@ function askOpen(res, name, head) {
   return true;
 }
 const CAL_RE = /<!--cz-cal-->[\s\S]*?<!--\/cz-cal-->/;
+// the first sentence of /calendar (the originator's request of 23 Nov 2026): today's count in the words a searcher uses, the reader's day;
+// the file as built says the same without a number. "30 November 2022, the day ChatGPT was released" is the page's own statement of day 0.
+const DAY_RE = /<!--cz-day-->[\s\S]*?<!--\/cz-day-->/;
+function dayLine(ms, zone = "UTC") {
+  const f = CZ.fields(CZ.localMs(ms, zone));
+  return `Today is day <data value="${f.DAYS}">${f.DAYS_FMT}</data> since ChatGPT was released on <time datetime="2022-11-30">30 November 2022</time>.`;
+}
 const TIME_RE = /<!--cz-time-->[\s\S]*?<!--\/cz-time-->/;
 module.exports = async (req, res) => {
   if (!["GET", "HEAD"].includes(req.method)) {
@@ -201,7 +208,8 @@ module.exports = async (req, res) => {
   let out = CZ.fillBar(html, CZ.localMs(now, zone));
   const query = p === "calendar" && ["d", "c", "t", "z"].some((k) => url.searchParams.has(k));
   if (p === "calendar" && status === 200) {
-    out = out.replace(CAL_RE, () => `<!--cz-cal-->${calendarBlock(url.searchParams, now, zone)}<!--/cz-cal-->`)
+    out = out.replace(DAY_RE, () => `<!--cz-day-->${dayLine(now, zone)}<!--/cz-day-->`)
+             .replace(CAL_RE, () => `<!--cz-cal-->${calendarBlock(url.searchParams, now, zone)}<!--/cz-cal-->`)
              .replace(TIME_RE, () => `<!--cz-time-->${timeBlock(url.searchParams, now, zone)}<!--/cz-time-->`);
   }
   if (query && status === 200) { const t = resultTitle(out); if (t) out = out.replace(/<title>[^<]*<\/title>/, () => `<title>${CZ.escHtml(t)}</title>`); }
@@ -230,6 +238,7 @@ module.exports = async (req, res) => {
 };
 module.exports.calendarBlock = calendarBlock;
 module.exports.timeBlock = timeBlock;
+module.exports.dayLine = dayLine;
 module.exports.linkFor = linkFor;
 module.exports.deployBlock = deployBlock;
 module.exports.OPEN = OPEN;

@@ -427,6 +427,8 @@ footer ul.foot{list-style:none;padding:0;margin:0 0 1rem;columns:2 11rem;column-
 @media(prefers-reduced-motion:reduce){@view-transition{navigation:none}}
 p,li,dd,blockquote{text-wrap:pretty}h1,h2,h3{text-wrap:balance}
 .cz-weight{font-variant-numeric:tabular-nums}
+/* /calendar's first sentence: the count and the date in the sentence's own type (a sentence, not a table of exact values) */
+#today time,#today data{font-family:inherit;font-size:1em}
 """
 
 # The site's navigation, in English on every page (lang and dir set, so that a translated page does not read it in its own language
@@ -462,7 +464,7 @@ ONE_LINE_SHORT = ("Civilization Zero names the beginning of a civilization in wh
                   "what they owe each other.")
 assert len(ONE_LINE_SHORT) <= 160
 FOOT_LINKS = [[("/core", "The Core"), ("/core#translations", f"{CORE_LANGUAGES} languages")], [("/record", "The Record")], [("/objections", "Objections and errata")],
-              [("/discuss", "Discussion"), ("/respond", "Respond")], [("/adopt", "Adoption Register")], [("/calendar", "CZ time"), ("/embed", "on your site")], [("/civilization-zero-infographic", "Infographic"), ("/civilization-zero-evidence-atlas", "Evidence atlas"), ("/civilization-zero-images", "Images")], [("/ask", "Ask your AI")],
+              [("/discuss", "Discussion"), ("/respond", "Respond")], [("/adopt", "Adoption Register")], [("/calendar", "CZ calendar"), ("/embed", "CZ time on your site")], [("/civilization-zero-infographic", "Infographic"), ("/civilization-zero-evidence-atlas", "Evidence atlas"), ("/civilization-zero-images", "Images")], [("/ask", "Ask your AI")],
               [("/machine", "For machines")], [("/about", "About")] + ([("/press", "Press kit")] if PRESS_PUBLISHED else []), [("/stats", "Visits")], [("/archive", "Archive and verification")]]
 # ---------------------------------------------------------------- stage 5 of the room's redesign (CZ 1433)
 # How this page is built: the page that says, with numbers, how every page is made.
@@ -562,10 +564,16 @@ GOOGLE_SITE_VERIFICATION = "Hf73qd5zTa6JZ_-O6QM0JBYPSqxOdIM-M33lsIGihhg"   # Goo
 OG_IMAGE = ("/civilization-zero.png", 1200, 630, "The mark CZ, a zero in which C and Z share their strokes, and the words: Civilization Zero names the beginning of a civilization in which humans may no longer be at the centre. Coordinate Zero, 30 November 2022.")
 
 def shell(title, body, path, description, alternates=(), ldjson=None, nav=True, extra_head="", hreflangs=(), og_type="website", robots=None, crumbs=True, cz_bar=True, footer_extra="", crumb=None, og_image=None):
+    assert "Year Zero" not in title and (path == "__PATH__" or "Year Zero" not in description), f"{path}: the site counts days; \"Year Zero\" is the Core's phrase, quoted as the Core's and never a title or a description"
     ogi = og_image or OG_IMAGE
     alt = "".join(f'<link rel="alternate" type="{t}" href="{h}" title="{esc(n)}">' for t, h, n in alternates)
     hl = "".join(f'<link rel="alternate" hreflang="{l}" href="{ORIGIN}{h}">' for l, h in hreflangs)
     objs = list(ldjson or [])
+    # what the page is and what it answers, for an indexer (schema.org WebPage: name, description, about), where the page does not say it itself;
+    # the functions' pages (__PATH__) fill their title and description at request time and carry them in the head alone
+    if path not in ("__PATH__", "/404") and not any(o.get("@type") in ("WebPage", "FAQPage", "CollectionPage") for o in objs):
+        objs.append({"@context": "https://schema.org", "@type": "WebPage", "url": f"{ORIGIN}{path}", "name": title, "description": description,
+                     "isPartOf": {"@id": f"{ORIGIN}/#website"}, "about": {"@id": f"{ORIGIN}/#publisher"}})
     if crumbs and path not in ("/", "__PATH__"):   # where the page sits: Home > page (schema.org BreadcrumbList)
         objs.append({"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [
             {"@type": "ListItem", "position": 1, "name": "Civilization Zero", "item": f"{ORIGIN}/"},
@@ -577,7 +585,8 @@ def shell(title, body, path, description, alternates=(), ldjson=None, nav=True, 
           f'<meta property="og:title" content="{esc(title)}"><meta property="og:description" content="{esc(description)}">'
           f'<meta property="og:url" content="{ORIGIN}{path}"><meta property="og:image" content="{ORIGIN}{ogi[0]}">'
           f'<meta property="og:image:width" content="{ogi[1]}"><meta property="og:image:height" content="{ogi[2]}">'
-          f'<meta property="og:image:alt" content="{esc(ogi[3])}"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:site" content="@czrecord">\n')
+          f'<meta property="og:image:alt" content="{esc(ogi[3])}"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:site" content="@czrecord">'
+          f'<meta name="twitter:title" content="{esc(title)}"><meta name="twitter:description" content="{esc(description)}">\n')
     return f"""<!doctype html>
 <html lang="en">
 <head>

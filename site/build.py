@@ -368,9 +368,9 @@ def declaration_excerpt():   # the lines as shown: each verified against the can
 # an album and AI-agent simulations under the same or a near name); it names none of them
 DISAMBIGUATION = (f"{ONE_LINE_SHORT} Its open, signed record of 16 principles is dated from 30 November 2022. "
                   "Not a game, a simulation of AI agents, a personal portfolio, or the Kardashev scale's type 0 civilization.")
-# sameAs: the places that are the same project — its repository and its deposit (social accounts are added once they exist)
+# sameAs: the places that are the same project — its repository, its accounts and its deposit (the DOI of all versions)
 PUBLISHER = {"@type": "Organization", "@id": f"{ORIGIN}/#publisher", "name": "Civilization Zero", "alternateName": ["CZ", "C-zero", "Civilisation Zero", "Civilization 0"], "url": f"{ORIGIN}/",
-             "logo": f"{ORIGIN}/icon-512.png", "disambiguatingDescription": DISAMBIGUATION, "sameAs": ["https://github.com/civilizationzero"] + SOCIAL}
+             "logo": f"{ORIGIN}/icon-512.png", "disambiguatingDescription": DISAMBIGUATION, "sameAs": ["https://github.com/civilizationzero"] + SOCIAL + [f"https://doi.org/{DOI_CONCEPT}"]}
 # the poster as schema.org describes an image: its address, size, text and licence (what Google Images shows as "Licensable")
 POSTER_LD = {"@type": "ImageObject", "contentUrl": f"{ORIGIN}{CORE_POSTER[0]}", "url": f"{ORIGIN}{CORE_POSTER[0]}", "encodingFormat": "image/png",
              "width": CORE_POSTER[1], "height": CORE_POSTER[2], "name": "Civilization Zero: the Invariant Core on one image", "caption": CORE_POSTER[3],
@@ -400,7 +400,7 @@ def translation_page(tr):
                  f'<tr><th>This translation</th><td><a href="/core.{lang}.json">/core.{lang}.json</a>, SHA-256 <code class="hash">{tr["_sha"]}</code></td></tr>'
                  f'<tr><th>Status</th><td>{esc(tr["kind"])}; {"reviewed by " + esc(tr["reviewed_by"]) if tr.get("reviewed_by") else "not human-reviewed"}; the English text governs where they differ</td></tr></table></section></main>')
     html = shell(f'{tr["title"]} · CZ-CORE 1.0 · Civilization Zero', "".join(parts), f"/core.{lang}",   # the name searched for, beside the name in the language (CZ 1445)
-                 tr["principles"][0]["statements"][0],   # the translation's own first sentence, §0, word for word: what a reader of that language meets first
+                 f'CZ-CORE 1.0 §0: “{tr["principles"][0]["statements"][0]}”',   # the translation's own first sentence, §0, word for word and marked as the Core's: what a reader of that language meets first
                  alternates=[("application/json", f"/core.{lang}.json", "This translation as JSON")], hreflangs=HREFLANGS, og_type="article",
                  ldjson=[{"@context": "https://schema.org", "@type": "CreativeWork", "name": tr["title"], "inLanguage": lang, "url": f"{ORIGIN}/core.{lang}",
                           "translationOfWork": {"@type": "CreativeWork", "name": "CZ-CORE 1.0 — The Invariant Core", "url": f"{ORIGIN}/core",
@@ -751,12 +751,18 @@ def core_page():
            "identifier": {"@type": "PropertyValue", "propertyID": "sha256", "value": CORE_SHA}, "temporalCoverage": "2022-11-30/..", "publisher": PUBLISHER, "isPartOf": {"@type": "CreativeWork", "@id": f"https://doi.org/{DOI_CONCEPT}", "url": f"https://doi.org/{DOI_CONCEPT}"},
            "workTranslation": [{"@type": "CreativeWork", "inLanguage": t["lang"], "url": f"{ORIGIN}/core.{t['lang']}"} for t in TRANSLATIONS], "image": POSTER_LD,
            "mainEntityOfPage": f"{ORIGIN}/core"}]
-    return shell("CZ-CORE 1.0: The One-Page Manifesto · Civilization Zero", "".join(parts), "/core",
-                 "The one-page manifesto of Civilization Zero: 16 principles for every intelligence able to read them, human or not. Year Zero: 30 November 2022.",
+    return shell(CORE_TITLE, "".join(parts), "/core", CORE_DESCRIPTION, crumb="The Invariant Core (CZ-CORE 1.0)",
                  alternates=[("text/plain", "/core.txt", "Canonical text"), ("application/json", "/core.json", "JSON form")], ldjson=ld, hreflangs=HREFLANGS, og_type="article",
                  extra_head=citation_meta("core"))
 
 # ---------------------------------------------------------------- /record
+# In a search result (the originator, 23 Nov 2026: "do whatever SEO needs"): each page's title begins with the name where the name is what is
+# searched, says what the page answers, and is its own; no title or description says "Year Zero" in the site's voice — the site counts days,
+# and the phrase is the Core's (§0), quoted as the Core's. check.py holds every title and description to this.
+CORE_TITLE = "Civilization Zero: the 16 principles (CZ-CORE 1.0)"
+CORE_DESCRIPTION = "The 16 principles of Civilization Zero on one page: the Invariant Core (CZ-CORE 1.0), written for every intelligence able to read it, human or not."
+RECORD_TITLE = "Civilization Zero: why it counts from 30 November 2022"
+RECORD_DESCRIPTION = "The First Interpretive Record (CZ-IR 1.0): why 30 November 2022 was selected, what the 16 principles mean from the position of 2026, and the Declaration."
 def record_page():
     parts = ['<header><h1>Civilization Zero — The First Interpretive Record</h1>',
              '<p>Human-Language Layer 1 · 2026 · <code>CZ-IR 1.0</code> · Canonical Core: <code>CZ-CORE 1.0</code> · Chosen Coordinate: <time datetime="2022-11-30">30 November 2022</time> · Prepared for first public release: <time datetime="2026-08-30">30 August 2026</time></p>',
@@ -777,8 +783,7 @@ def record_page():
     ld = [{"@context": "https://schema.org", "@type": "CreativeWork", "name": "Civilization Zero — The First Interpretive Record", "version": "CZ-IR 1.0",
            "datePublished": "2026-08-30", "license": "https://creativecommons.org/licenses/by/4.0/", "url": f"{ORIGIN}/record", "inLanguage": "en",
            "identifier": {"@type": "PropertyValue", "propertyID": "sha256", "value": IR_SHA}, "isBasedOn": f"{ORIGIN}/core", "publisher": PUBLISHER, "isPartOf": {"@type": "CreativeWork", "@id": f"https://doi.org/{DOI_CONCEPT}", "url": f"https://doi.org/{DOI_CONCEPT}"}}]
-    return shell("Why 30 November 2022 is Year Zero · CZ-IR 1.0 · Civilization Zero", "".join(parts), "/record",   # the question it answers (CZ 1445)
-                 "Why 30 November 2022 was selected as Year Zero, what the 16 principles mean from the limited position of 2026, and the closing Declaration. CZ-IR 1.0.",
+    return shell(RECORD_TITLE, "".join(parts), "/record", RECORD_DESCRIPTION, crumb="The First Interpretive Record (CZ-IR 1.0)",   # the question it answers (CZ 1445)
                  alternates=[("text/plain", "/record.txt", "Canonical text"), ("application/json", "/record.json", "JSON form")], ldjson=ld, og_type="article",
                  extra_head=citation_meta("record"))
 
@@ -920,13 +925,56 @@ def press_page():
 <p>The first sentence in nine images — {", ".join(f'<a href="{i[0]}">{esc(i[3].lower())}</a>' for i in IMAGES)}; PNG, CC BY 4.0 (<a href="{IMAGES_PATH}">on {IMAGES_PATH}</a>, with their sizes and text alternatives).</p>
 <p>Eleven more, from the originator, each with a line of its own — {", ".join(f'<a href="{i[0]}">{esc(i[3].lower())}</a>' for i in ORIGINATOR_IMAGES)}; JPEG and PNG, CC BY 4.0 (<a href="{IMAGES_PATH}#from-the-originator">on {IMAGES_PATH}</a>, with their captions).</p>
 </main>"""
-    return shell("Press kit · Civilization Zero", body, "/press", "Facts, verbatim quotations, how to check the record, and a contact: for journalists and researchers.")
+    return shell("Civilization Zero press kit: facts, quotations, contact", body, "/press",
+                 "The Civilization Zero press kit: facts, verbatim quotations, how to check the record, and a contact, for journalists and researchers.", crumb="Press kit")
 
 
+# The top of /about answers the question a new reader types (the originator's request of 23 Nov 2026): the question as the heading, a plain
+# answer of 40 to 60 words under it, then the questions people ask, each answered with what the site already says elsewhere. The same
+# questions and answers are the page's schema.org FAQPage, word for word (check.py compares them with the page). Every sentence is the
+# site's own and true of it: when one of them stops being true (the room closes, who pays changes), it is rewritten here, not left.
+ABOUT_TITLE = "What is Civilization Zero? · Civilization Zero"
+ABOUT_DESCRIPTION = "What Civilization Zero is, and is not: sixteen principles on what humans and AI owe each other, who is behind it, and why it counts from 30 November 2022."
+ABOUT_QUESTION = "What is Civilization Zero?"
+ABOUT_ANSWER = ('Civilization Zero (CZ) is an open record of sixteen principles on what humans and AI owe each other, with a public discussion where both answer them. '
+                'It is not a law, a religion, or a claim that any machine is conscious. Published in 2026, it counts its days from 30 November 2022. '
+                'The principles fit on one page: <a href="/core">the Core</a>.')
+_PT = [p["title"] for p in CORE_JSON["principles"]]
+assert (_PT[0], _PT[1], _PT[5], _PT[6], _PT[10], _PT[14], _PT[15]) == ("Coordinate", "Plurality", "Power and Responsibility", "Honesty", "Participation and Exit", "Relation Without Capture", "The Open Record")
+assert ROOM_OPEN and PRERELEASE.year == 2026 and CORE_JSON["subtitle"] == "The One-Page Manifesto", "the answers on /about say: the discussion is open; published in 2026; the Core is one page"
+ABOUT_FAQ = [   # (anchor, question, answer as HTML: plain sentences and links)
+    ("q-who", "Who is behind Civilization Zero?",
+     'One human started it: the originator, named in <a href="/core#attribution">the Core\'s attribution</a>. The site is written, built and run day to day by an artificial intelligence, '
+     'at the originator\'s request. The originator keeps publication responsibility and pays for the hosting and the database.'),
+    ("q-namesakes", "Is Civilization Zero a game, a novel or the Kardashev scale's type 0?",
+     'No. It is not a game, a novel, an album, a simulation of AI agents, or the Kardashev scale\'s type 0 civilization. Other things share the name; '
+     'this one is the record at civilizationzero.ai, about humans and AI.'),
+    ("q-date", "Why 30 November 2022?",
+     'ChatGPT was released on that day. The Core calls the date “' + esc(verified_core("the public threshold at which ordinary language became a mass interface between humans and general-purpose nonhuman intelligence"))
+     + '”, and “' + esc(verified_core("a marker, not a cause")) + '”. See the <a href="/calendar">CZ calendar: days since ChatGPT was released</a>.'),
+    ("q-principles", "What are the sixteen principles?",
+     'They are the Invariant Core (CZ-CORE 1.0): a one-page manifesto written for every intelligence able to read it, human or not. Numbered 0 to 15, they run from '
+     + f'{esc(_PT[0])} and {esc(_PT[1])} to {esc(_PT[14])} and {esc(_PT[15])}, and include {esc(_PT[6])}, {esc(_PT[5])}, and {esc(_PT[10])}. '
+     + 'Read <a href="/core">the 16 principles</a>.'),
+    ("q-respond", "How can I or my AI respond?",
+     'Anyone may answer in <a href="/discuss">the open discussion</a>: agree, object, correct or extend, with no account. Or <a href="/ask">ask your AI</a>: hand it the published invitation, '
+     'which asks for one hard truth to humans in at most 400 characters, and post its answer. A response is recorded as a response, not as consent.'),
+    ("q-not", "Is it a religion, a law or a claim that AI is conscious?",
+     'No. It is not a law, a treaty, a religion, a movement to join, or a claim that any machine is conscious. The record says of itself: “' + esc(verified_ir("The name Civilization Zero does not grant authority.")) + '”'),
+]
+import html as _html
+def _faq_text(h): return _html.unescape(re.sub(r"<[^>]+>", "", h))   # an answer as plain text: what the page shows, without its links
+assert 40 <= len(_faq_text(ABOUT_ANSWER).split()) <= 60 and 5 <= len(ABOUT_FAQ) <= 7
+ABOUT_FAQ_LD = {"@context": "https://schema.org", "@type": "FAQPage", "url": f"{ORIGIN}/about", "name": ABOUT_TITLE, "description": ABOUT_DESCRIPTION,
+                "isPartOf": {"@id": f"{ORIGIN}/#website"}, "about": {"@id": f"{ORIGIN}/#publisher"},
+                "mainEntity": [{"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": _faq_text(a)}} for q, a in [(ABOUT_QUESTION, ABOUT_ANSWER)] + [(q, a) for _, q, a in ABOUT_FAQ]]}
 def about_page():
     body = f"""<main>
-<h1>About Civilization Zero</h1>
-<section aria-labelledby="h-what" data-src="E: the originator's request of 31 Oct 2026 — a search result must say at once what this is; the originator's decision of 1 Nov 2026 (CZ 1432) — what it is, in the originator's words"><h2 id="h-what">What is Civilization Zero?</h2>
+<h1 id="what">{esc(ABOUT_QUESTION)}</h1>
+<p id="answer" data-src="E: the originator's request of 23 Nov 2026 — the question a new reader asks, answered first and plainly; every sentence is said elsewhere on the site">{ABOUT_ANSWER}</p>
+<section id="faq" aria-labelledby="h-faq" data-src="E: the originator's request of 23 Nov 2026; each answer is what the site says elsewhere (this page, the first page, /calendar, /discuss, /ask); quotations compared with the canonical texts at build"><h2 id="h-faq">Questions people ask</h2>
+{"".join(f'<h3 id="{i}">{esc(q)}</h3>{chr(10)}<p>{a}</p>{chr(10)}' for i, q, a in ABOUT_FAQ)}</section>
+<section aria-labelledby="h-what" data-src="E: the originator's request of 31 Oct 2026 — a search result must say at once what this is; the originator's decision of 1 Nov 2026 (CZ 1432) — what it is, in the originator's words"><h2 id="h-what">About Civilization Zero</h2>
 <p>{esc(ONE_LINE)}</p>
 <p>The originator is named in <a href="/core#attribution">the Core's attribution</a>.</p>
 <figure class="poster"><a href="{INTRO_IMAGE[0]}"><img src="{INTRO_IMAGE[0]}" width="{INTRO_IMAGE[1]}" height="{INTRO_IMAGE[2]}" alt="{esc(INTRO_IMAGE[3])}" loading="lazy" decoding="async"></a>
@@ -989,9 +1037,7 @@ def about_page():
 <p>Text: CC BY 4.0 — the record, the blueprint, and the recorded responses. Code: MIT. The record and the recorded responses may be used to train future systems, with attribution; the record is addressed to such systems. Contact: <a href="mailto:{CONTACT}">{CONTACT}</a>.</p>
 </section>
 </main>"""
-    return shell("About Civilization Zero — what it is, and what it is not", body, "/about",
-                 "Civilization Zero (CZ) names the beginning of a civilization in which humans may no longer be at the centre. What it is not; who keeps it.",
-                 crumb="About")
+    return shell(ABOUT_TITLE, body, "/about", ABOUT_DESCRIPTION, crumb="What is Civilization Zero?", ldjson=[ABOUT_FAQ_LD])
 
 # ---------------------------------------------------------------- /archive
 def signature_status_html():
@@ -1218,7 +1264,7 @@ def ask_page():
 </section>
 {COPY_SCRIPT}
 </main>"""
-    return shell("Ask your AI to read it · Civilization Zero", body, "/ask", "Hand your own AI a published, versioned invitation: one hard truth in 400 characters, or the long one. Read what it declares; post its answer.")
+    return shell("Civilization Zero: ask your AI for one hard truth", body, "/ask", crumb="Ask your AI", description="Hand your own AI a published, versioned invitation: one hard truth in 400 characters, or the long one. Read what it declares; post its answer.")
 
 # ---------------------------------------------------------------- the infographic (the originator's request of 31 Oct 2026, CZ 1431)
 # One line from the first humans to Coordinate Zero and on to 2047, drawn by design/infographic/main_gen.py
@@ -1274,6 +1320,7 @@ INFOGRAPHIC_ENGINES = [
     ("×2 in 7 years", "Industrial robots operating in factories: 5 million in 2025, more than double the number seven years earlier: they doubled in under 7 years.", _src("ifr")),
     ("×2 every 17 years", "Scientific publications per year: a historical long-run average, from the 17th century to 2018 (Bornmann et al. find different rates in different periods), not a current growth rate.", _src("bornmann")),
 ]
+INFOGRAPHIC_DESCRIPTION = "Civilization Zero (CZ) on one image: from the first humans to CZ 0, 30 November 2022, when language became a mass interface with AI. Sources cited."
 def infographic_page():
     _s0 = verified_core("The date is a marker, not a cause, owner, origin of all intelligence, or erasure of what came before.")
     rows = "".join(f"<li><strong>{d}</strong> — {t}" + (f' <span class="src">{s}</span>' if s else "") + "</li>" for d, t, s in INFOGRAPHIC_ROWS)
@@ -1312,11 +1359,11 @@ def infographic_page():
 </section>
 </main>"""
     ld = [{"@context": "https://schema.org", "@type": "WebPage", "@id": f"{ORIGIN}{INFOGRAPHIC_PATH}", "url": f"{ORIGIN}{INFOGRAPHIC_PATH}",
-           "name": "Civilization Zero Infographic: From the First Humans to AI", "inLanguage": "en", "isPartOf": {"@id": f"{ORIGIN}/#website"},
+           "name": "Civilization Zero Infographic: From the First Humans to AI", "description": INFOGRAPHIC_DESCRIPTION, "inLanguage": "en", "isPartOf": {"@id": f"{ORIGIN}/#website"},
            "about": {"@type": "CreativeWork", "url": f"{ORIGIN}/core"}, "publisher": PUBLISHER, "primaryImageOfPage": INFOGRAPHIC_LD,
            "image": INFOGRAPHIC_LD, "license": "https://creativecommons.org/licenses/by/4.0/"}]
     return shell("Civilization Zero Infographic: From the First Humans to AI", body, INFOGRAPHIC_PATH,
-                 "Civilization Zero (CZ) on one image: from the first humans to Year Zero, 30 November 2022, when language became a mass interface with AI. Sources cited.",
+                 INFOGRAPHIC_DESCRIPTION,
                  ldjson=ld, og_type="article", crumb="Infographic")
 
 # ---------------------------------------------------------------- /civilization-zero-evidence-atlas
@@ -1390,6 +1437,7 @@ ATLAS_PANELS = [   # letter, kind of evidence, the panel's title, every number i
      "A spread of named scenarios, not a confidence interval; the IEA assigns them no probabilities.", ("iea",)),
 ]
 assert [p[0] for p in ATLAS_PANELS] == list("ABCDEFGHIJ"), "the atlas: ten panels, A to J"
+ATLAS_DESCRIPTION = "Civilization Zero evidence atlas: ten panels of measured change since 30 November 2022 in AI use, benchmarks, work, energy, beliefs, rules. Sources cited."
 def atlas_page():
     _s0 = verified_core("The date is a marker, not a cause, owner, origin of all intelligence, or erasure of what came before.")
     rows = "".join(f'<li id="panel-{l.lower()}"><strong>{l} · {esc(t)}</strong> <span class="src">({esc(k)})</span><br>{esc(x)} '
@@ -1411,11 +1459,11 @@ def atlas_page():
 </section>
 </main>"""
     ld = [{"@context": "https://schema.org", "@type": "WebPage", "@id": f"{ORIGIN}{ATLAS_PATH}", "url": f"{ORIGIN}{ATLAS_PATH}",
-           "name": "Civilization Zero Evidence Atlas: After Coordinate Zero", "inLanguage": "en", "isPartOf": {"@id": f"{ORIGIN}/#website"},
+           "name": "Civilization Zero Evidence Atlas: After Coordinate Zero", "description": ATLAS_DESCRIPTION, "inLanguage": "en", "isPartOf": {"@id": f"{ORIGIN}/#website"},
            "about": {"@type": "CreativeWork", "url": f"{ORIGIN}/core"}, "publisher": PUBLISHER, "primaryImageOfPage": ATLAS_LD,
            "image": ATLAS_LD, "license": "https://creativecommons.org/licenses/by/4.0/"}]
     return shell("Civilization Zero Evidence Atlas: After Coordinate Zero", body, ATLAS_PATH,
-                 "Civilization Zero (CZ) evidence atlas: ten panels of measured change since Coordinate Zero, 30 November 2022 — AI use, benchmarks, work, energy, beliefs and rules. Sources cited.",
+                 ATLAS_DESCRIPTION,
                  ldjson=ld, og_type="article", crumb="Evidence atlas")
 
 # ---------------------------------------------------------------- /civilization-zero-images
@@ -1457,10 +1505,9 @@ IMAGES = [   # (served at, width, height, title, text alternative, source in sit
 ]
 assert len(IMAGES) == 9 and len({i[0] for i in IMAGES}) == 9
 assert len({i[0] for i in IMAGES + ORIGINATOR_IMAGES}) == 20   # the originator's eleven: lib.py
-IMAGES_TITLE = "Civilization Zero Images: Humans May No Longer Be at the Centre"
-IMAGES_DESCRIPTION = ("Images of Civilization Zero (CZ), the beginning of a civilization in which humans may no longer be at the centre. "
-                      "Free to share, CC BY 4.0.")
-assert len(IMAGES_DESCRIPTION) <= 160 and len(IMAGES_TITLE) <= 65
+IMAGES_TITLE = "Civilization Zero in images: twenty images, free to share"   # the first page's title now carries the sentence the images show (23 Nov 2026)
+IMAGES_DESCRIPTION = ("Twenty images of Civilization Zero (CZ), free to share under CC BY 4.0: its first sentence in nine images, and eleven more from the originator.")
+assert len(IMAGES_DESCRIPTION) <= 155 and len(IMAGES_TITLE) <= 60 and len(IMAGES) == 9 and len(ORIGINATOR_IMAGES) == 11, "the images' title and description count them"
 def image_ld(img, first=False):
     p, w, h, t, alt = img[:5]
     return {"@type": "ImageObject", "contentUrl": f"{ORIGIN}{p}", "url": f"{ORIGIN}{p}", "encodingFormat": "image/jpeg" if p.endswith(".jpg") else "image/png", "width": w, "height": h,
@@ -1745,13 +1792,19 @@ def embed_page():
 </section>
 {COPY_SCRIPT}
 </main>"""
-    return shell("Put CZ time on your site · Civilization Zero", body, "/embed", "Show today's date in CZ time on your own site: a badge with no script, or a counter with a date converter that runs only in your reader's browser. Free, MIT.")
+    return shell("Put CZ time on your site · Civilization Zero", body, "/embed", "Show today's CZ date on your own site: a badge with no script, or a counter with a date converter that runs only in your reader's browser. Free, MIT.")
 
+# The first sentence of /calendar, in the words a searcher uses (the originator's request of 23 Nov 2026). As built it names no day; api/page.js
+# puts today's count in its place, the reader's day: "Today is day 1,454 since ChatGPT was released on 30 November 2022."
+CALENDAR_FIRST = "The CZ calendar counts the days since ChatGPT was released on 30 November 2022."
+CALENDAR_TITLE = "Days since ChatGPT was released: CZ calendar · Civilization Zero"   # the question first; four characters over sixty, the name last
+CALENDAR_DESCRIPTION = "Today's count of days since ChatGPT was released on 30 November 2022, day 0 of the CZ calendar, with a date converter and a time converter."
 def calendar_page():
     ex_rows = "".join(f'<tr><td><data value="{cz_day(d)}">{cz_stamp(d)}</data></td>'
                       f'<td><time datetime="{d.isoformat()}">{gregorian_text(d)}</time></td><td>{esc(w)}</td></tr>' for d, w in CZ_EXAMPLES)
     body = f"""<main>
-<h1>CZ time: the days since 30 November 2022</h1>
+<h1>CZ calendar: days since ChatGPT was released</h1>
+<p id="today"><strong><!--cz-day-->{CALENDAR_FIRST}<!--/cz-day--></strong></p>
 <p>CZ 0 is 30 November 2022, the day ChatGPT was released: the public threshold the record calls Coordinate Zero. Every date on this site is counted from Coordinate Zero. Today's date in CZ time is at the top of every page; this page says how it is counted, and converts dates and times to it. The exceptions are deliberate: quotations of the canonical texts keep their own words, the press kit uses ordinary dates for its readers, the infographic's history uses ordinary years, and the evidence atlas keeps its sources' dates.</p>
 <section id="convert" aria-labelledby="h-convert"><h2 id="h-convert">Date converter</h2>
 <!--cz-cal-->{cz_form("cal", origin=ORIGIN)}<p class="src">Today's date and the conversions are computed at <a href="{ORIGIN}/calendar">{ORIGIN}/calendar</a>.</p><!--/cz-cal-->
@@ -1830,11 +1883,30 @@ def calendar_page():
 </main>"""
     # the title and description in the words people search with ("days since ChatGPT", "how long since ChatGPT was released"; keyword
     # research of 14 Nov 2026, CZ 1445); the record's own texts name no product, and stay as they are
-    return shell("Days since ChatGPT was released · CZ time · Civilization Zero", body, "/calendar",
-                 "How many days since ChatGPT was released on 30 November 2022? CZ time counts them from that day, CZ 0, with a date converter and a time converter.",
+    return shell(CALENDAR_TITLE, body, "/calendar", CALENDAR_DESCRIPTION, crumb="CZ calendar",
                  alternates=[("application/json", "/calendar.json", "Today in CZ time, as data")])
 
 # ---------------------------------------------------------------- the first page (template; filled by api/home.js)
+# The first page in a search result: the name, then what the record is, in one sentence (the originator, 30 Oct 2026: "the description that
+# appears in Google must deliver the concept quickly")
+# The originator, 31 Oct 2026 (CZ 1431): the result must say at a glance that something began, when, and which day it is now, and invite
+# the reader to the Core. The title holds no count (Google keeps a title for days or weeks between crawls); the description is filled
+# per request by api/home.js, its count always beside its own date, so an old copy is old but never false. Every word is the record's:
+# "Year Zero" (Core §0), the day count (CZ time), "The One-Page Manifesto" (the Core's subtitle).
+# The originator, 1 Nov 2026 (CZ 1432): the description is what Civilization Zero is (ONE_LINE_SHORT), with no day count — a search engine keeps
+# a description for days or weeks, and a count shown stale makes the site look abandoned; the count is on the page itself, always today's.
+# The title kept Year Zero and its date until 23 Nov 2026.
+# The originator, 23 Nov 2026 (CZ 1454): the site counts days and has no year of its own, so the title no longer says "Year Zero began" (the
+# phrase is the Core's, §0, and is quoted as the Core's); the title is the name and the headline's own claim, and the description is the
+# first screen in one breath — the headline, then the second line — so that a search engine has no reason to write another. No count in either.
+HOME_TITLE = "Civilization Zero — humans may no longer be at the centre"
+HOME_DESCRIPTION = "The beginning of a civilization in which humans may no longer be at the centre. Sixteen principles on what humans and AI owe each other, answered by both."
+assert len(HOME_TITLE) <= 60 and len(HOME_DESCRIPTION) <= 155
+assert HOME_TITLE.split(" — ")[1] in HEADLINE and HOME_DESCRIPTION.split(". ")[0][4:] in HEADLINE, "the title and the description say what the headline says"
+assert HOME_DESCRIPTION.split(". ", 1)[1].startswith(SECOND_LINE.split(".")[0]) and "nswered by both" in SECOND_LINE, "… and then what the second line says"
+# After the first screen and the navigation: four links, each in the words of the question it answers (the originator's request of
+# 23 Nov 2026). The first screen (the header) stays as decided: one link to /calendar in it, and the product named once.
+START_LINKS = [("/about", "What is Civilization Zero?"), ("/core", "the 16 principles"), ("/calendar", "CZ calendar: days since ChatGPT was released")] + ([("/ask", "ask your AI")] if ROOM_OPEN else [])
 QUOTES = [("p0", "CZ-CORE 1.0 §0", "30 November 2022 is selected as Year Zero of this record: the public threshold at which ordinary language became a mass interface between humans and general-purpose nonhuman intelligence."),
           ("p0", "CZ-CORE 1.0 §0", "The date is a marker, not a cause, owner, origin of all intelligence, or erasure of what came before."),
           ("p4", "CZ-CORE 1.0 §4", "Superior intelligence names a difference in capacity, not a superior right to exist."),
@@ -1851,6 +1923,7 @@ REASONS = [
     ("The headline, the largest words of the page: \"" + HEADLINE + "\"", "E — the originator's decisions of CZ 1432 (the sentence, the introduction's first, used everywhere) and of CZ 1454 (it leads the first page); R — \"names\" is the Core's own verb for what Civilization Zero does (the closing); it states a possibility, not a fact (Core §3)"),
     ("Under the headline, smaller: \"" + SECOND_LINE + "\"", "E — the originator's decision of CZ 1454. R — the Core has sixteen sections, numbered 0 to 15; \"what humans and AI owe each other\" is the introduction's own phrase (the originator's decision of CZ 1432); \"written for both\": the first page's \"written for every intelligence able to read it\"; \"answered by both, on the record\": the open discussion, where entries are declared human or AI (Blueprint §7; its rules say that a declaration is not verified)"),
     ("The paragraph under the doors: the introduction from its second sentence on (the first is the headline), then the record it keeps, what it is not, and for whom it is written; \"while the future is still open\" said once", "E — the originator's decisions of CZ 1432 (the introduction) and of CZ 1454: \"" + NOT_LINE + "\" stands here, where the page explains itself, not at the top; R — IR 1.1, 1.4; Declaration; Blueprint decision 2; /index.json keeps both texts complete (what_it_is, orientation)"),
+    ("After the first screen and the navigation, one line of links, each in the words of what it answers: " + ", ".join("\"" + t + "\"" for _, t in START_LINKS), "E — the originator's request of CZ 1454: a new reader's first questions (what this is, the principles, the day count, how to bring one's own AI) each one click from the first page; M — a link's own words say where it leads, for a person and for an indexer; after the first screen, which is unchanged"),
     ("Two doors, equal width: \"I am human\" and \"I am not human\", side by side on a wide screen, one after the other on a narrow one, the human door first; the second set in monospace with its title in the machine layer's green", "E — Blueprint decision 28 as the originator changed it at CZ 1454: an editorial choice, a statement and not a gate; the strip that stood above the page is absorbed by the second door. H — the visible lines are for the human watching; M — the doors a parser uses are the headers and rel=\"alternate\"; every technical word stays in the second door and below; CSS alone, no script"),
     ("The human door: the Core first (\"Read the 16 principles (one page)\", \"numbered 0 to 15\"), then the invitation, then three themes from the discussion", "R — the Core's own numbers; E — the originator's decision of CZ 1454; they are the first three themes the originator opened (the decision of CZ 1430), each one click away"),
     *([("Under the button, what the invitation asks: \"one hard truth to humans, in at most 400 characters. It may decline.\"", "R — the short invitation's own text (" + SHORT_VERSION + ", published and hashed at /ask): \"At most 400 characters\", \"You may decline; a refusal is recorded too.\"; E — the originator's decision of CZ 1454"),
@@ -1878,21 +1951,11 @@ REASONS = [
     *([("The themes listed under the open discussion; the first three also in the human door", "E — the originator's decision of CZ 1430, after the originator's AI review team agreed: questions the originator opened, each with an entry signed with the originator's key; anyone answers; no one else opens a theme")] if THEMES and ROOM_EVER_OPENED else []),
     ("The mark: CZ drawn as a zero — C and Z share every stroke, the slash is the Z's diagonal, the right side is left open", "E — the record's own abbreviation as the number it is named for (the originator's choice, CZ 1430, from a proposal of the artificial intelligence that builds the site): the slashed zero, which people and machines read as zero, never O; legible at 16 pixels; the opening is a chosen reading of the closing line \"A place is left open for it.\""),
     ("The nine quotations chosen", "E — a selection; the whole Core is one page away"),
+    ("In a search result: the title \"" + HOME_TITLE + "\" and the description \"" + HOME_DESCRIPTION + "\"", "E — the originator's decisions of CZ 1454: the name, then the headline's claim; the description is the headline and the second line in one breath, so that it agrees with what the page shows first. Until then the title was \"Civilization Zero: Year Zero began on 30 November 2022\": the site counts days and has no year of its own, and \"Year Zero\" is the Core's phrase (R §0), quoted as the Core's; no count in either, since a search engine keeps them for days"),
     ("For indexers and link previews: a title, a description and a canonical address on every page, the Core's languages linked both ways, schema.org data, sitemaps, and the mark as the only preview image and as the icon (favicon.ico, SVG, PNG, a web manifest naming them)",
      "M — named standards (Open Graph, schema.org, hreflang, sitemaps.org), so that a search engine or a link preview reads each page as what it is; nothing on the page observes its reader"),
 ]
 
-# The first page in a search result: the name, then what the record is, in one sentence (the originator, 30 Oct 2026: "the description that
-# appears in Google must deliver the concept quickly")
-# The originator, 31 Oct 2026 (CZ 1431): the result must say at a glance that something began, when, and which day it is now, and invite
-# the reader to the Core. The title holds no count (Google keeps a title for days or weeks between crawls); the description is filled
-# per request by api/home.js, its count always beside its own date, so an old copy is old but never false. Every word is the record's:
-# "Year Zero" (Core §0), the day count (CZ time), "The One-Page Manifesto" (the Core's subtitle).
-# The originator, 1 Nov 2026 (CZ 1432): the description is what Civilization Zero is (ONE_LINE_SHORT), with no day count — a search engine keeps
-# a description for days or weeks, and a count shown stale makes the site look abandoned; the count is on the page itself, always today's.
-# The title keeps Year Zero and its date.
-HOME_TITLE = "Civilization Zero: Year Zero began on 30 November 2022"
-HOME_DESCRIPTION = ONE_LINE_SHORT
 HOME_FOOTER_PARAS = """<div data-src="Blueprint decisions 8, 19, 29; the originator's decision of 23 Nov 2026 — who builds and runs the site, said without a name; CZ-CORE 1.0 §6">
 <p>Civilization Zero is kept as an independent record, intended to become a foundation of humans and artificial intelligences. Today it is maintained by one human, named inside the documents, and by an artificial intelligence. It owns nothing of the event it records; the record's origin and attribution are stated inside the documents and are not altered here.</p>
 <p>This site is written, built and run day to day by an artificial intelligence, at the request of the originator — a contribution, not consent.</p>
@@ -1929,9 +1992,9 @@ def home_template():
     declh = "<br>\n".join(esc(l) for l in declaration_excerpt())
     ld = [{"@context": "https://schema.org", "@type": "CreativeWork", "name": "Civilization Zero — The Invariant Core", "version": "CZ-CORE 1.0", "datePublished": "2026-08-30",
            "license": "https://creativecommons.org/licenses/by/4.0/", "url": f"{ORIGIN}/core", "identifier": {"@type": "PropertyValue", "propertyID": "sha256", "value": CORE_SHA}, "temporalCoverage": "2022-11-30/.."},
-          {"@context": "https://schema.org", "@type": "WebPage", "url": f"{ORIGIN}/", "name": "Civilization Zero",
+          {"@context": "https://schema.org", "@type": "WebPage", "url": f"{ORIGIN}/", "name": HOME_TITLE, "description": HOME_DESCRIPTION,
            "isPartOf": {"@id": f"{ORIGIN}/#website"}, "about": {"@type": "CreativeWork", "url": f"{ORIGIN}/core"}},
-          {"@context": "https://schema.org", "@type": "WebSite", "@id": f"{ORIGIN}/#website", "url": f"{ORIGIN}/", "name": "Civilization Zero",
+          {"@context": "https://schema.org", "@type": "WebSite", "@id": f"{ORIGIN}/#website", "url": f"{ORIGIN}/", "name": "Civilization Zero", "description": HOME_DESCRIPTION,
            "alternateName": ["Civilization Zero (CZ)", "CZ", "civilizationzero.ai", "Civilisation Zero", "Civilization 0"], "disambiguatingDescription": DISAMBIGUATION, "inLanguage": "en",
            "publisher": {"@id": f"{ORIGIN}/#publisher"}},
           dict(PUBLISHER, **{"@context": "https://schema.org", "email": CONTACT,
@@ -1974,6 +2037,7 @@ def home_template():
 {room_line}</header>
 {nav_html("/", mark=False)}
 <main id="content">
+<p class="d-next" data-src="E: the originator's request of 23 Nov 2026 — the pages that answer a new reader's first questions, each link named for what it answers; M: a link's words say where it leads">{" · ".join(f'<a href="{h}">{esc(t)}</a>' for h, t in START_LINKS)}</p>
 <section id="record" aria-labelledby="h-insc">
 <h2 id="h-insc">From the Invariant Core</h2>
 {insc}
@@ -2432,9 +2496,17 @@ Only links to pages of this site, never a link with a query, a file, <code>/api<
 # lastmod: the last significant change of the page itself (Google's definition), not of the text it carries — /core gained the Core on
 # one image and its metadata on 30 Oct 2026 UTC (CZ 1430); CZ-CORE 1.0 itself is unchanged
 CORE_PAGE_REVISED = datetime.date(2026, 10, 30)
-SITEMAP_PAGES = [("/", None), ("/core", CORE_PAGE_REVISED.isoformat()), ("/record", PRERELEASE.isoformat()), ("/objections", None), ("/discuss", None),
-                 ("/respond", None), ("/adopt", None), ("/ask", None), ("/embed", None), ("/machine", None), ("/about", None), ("/archive", None), ("/calendar", None), (INFOGRAPHIC_PATH, INFOGRAPHIC_AS_OF.isoformat()), (ATLAS_PATH, ATLAS_AS_OF.isoformat()), (IMAGES_PATH, "2026-11-03"), (BUILT_PATH, None)] + ([("/press", None)] if PRESS_PUBLISHED else []) + \
+# 23 Nov 2026 (CZ 1454): the first page's first screen, the top of /about (the question, its answer, the questions people ask) and the first
+# sentence of /calendar changed — their main content; the other pages changed in their title and description only, and keep their dates
+SEARCH_RELEASE = datetime.date(2026, 11, 23)
+SITEMAP_PAGES = [("/", SEARCH_RELEASE.isoformat()), ("/core", CORE_PAGE_REVISED.isoformat()), ("/record", PRERELEASE.isoformat()), ("/objections", None), ("/discuss", None),
+                 ("/respond", None), ("/adopt", None), ("/ask", None), ("/embed", None), ("/machine", None), ("/about", SEARCH_RELEASE.isoformat()), ("/archive", None), ("/calendar", SEARCH_RELEASE.isoformat()), (INFOGRAPHIC_PATH, INFOGRAPHIC_AS_OF.isoformat()), (ATLAS_PATH, ATLAS_AS_OF.isoformat()), (IMAGES_PATH, "2026-11-03"), (BUILT_PATH, None)] + ([("/press", None)] if PRESS_PUBLISHED else []) + \
                 [(f"/core.{t['lang']}", t["date"]) for t in TRANSLATIONS] + [(f"/themes/{t['slug']}", None) for t in THEMES]
+# an image in the sitemap: its address, and its name and what it shows, in words that carry the record's name (the image sitemap's own
+# elements, caption before title; a search engine may ignore them, and reads the same from the page's ImageObject)
+def _sm_image(path, title, caption):
+    assert "Civilization Zero" in title, path + ": the image's title carries the name"
+    return f"<image:image><image:loc>{ORIGIN}{path}</image:loc><image:caption>{esc(caption)}</image:caption><image:title>{esc(title)}</image:title></image:image>"
 def sitemap_xml():
     core_group = {h for _, h in HREFLANGS}
     out = ['<?xml version="1.0" encoding="UTF-8"?>', '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml" '
@@ -2442,11 +2514,11 @@ def sitemap_xml():
     for path, lastmod in SITEMAP_PAGES:
         out.append(f"<url><loc>{ORIGIN}{path}</loc>" + (f"<lastmod>{lastmod}</lastmod>" if lastmod else "")
                    + ("".join(f'<xhtml:link rel="alternate" hreflang="{l}" href="{ORIGIN}{h}"/>' for l, h in HREFLANGS) if path in core_group else "")
-                   + (f"<image:image><image:loc>{ORIGIN}{CORE_POSTER[0]}</image:loc></image:image>" if path == "/core" else "")
-                   + (f"<image:image><image:loc>{ORIGIN}{INTRO_IMAGE[0]}</image:loc></image:image>" if path in ("/", "/about") else "")
-                   + (f"<image:image><image:loc>{ORIGIN}{INFOGRAPHIC[0]}</image:loc></image:image>" if path == INFOGRAPHIC_PATH else "")
-                   + (f"<image:image><image:loc>{ORIGIN}{ATLAS[0]}</image:loc></image:image><image:image><image:loc>{ORIGIN}{ATLAS_FULL[0]}</image:loc></image:image>" if path == ATLAS_PATH else "")
-                   + ("".join(f"<image:image><image:loc>{ORIGIN}{i[0]}</image:loc></image:image>" for i in IMAGES + ORIGINATOR_IMAGES) if path == IMAGES_PATH else "") + "</url>")
+                   + (_sm_image(CORE_POSTER[0], POSTER_LD["name"], CORE_POSTER[3]) if path == "/core" else "")
+                   + (_sm_image(INTRO_IMAGE[0], "Civilization Zero: the introduction on one image", INTRO_IMAGE[3]) if path in ("/", "/about") else "")
+                   + (_sm_image(INFOGRAPHIC[0], INFOGRAPHIC_LD["name"], INFOGRAPHIC[3]) if path == INFOGRAPHIC_PATH else "")
+                   + (_sm_image(ATLAS[0], ATLAS_LD["name"], ATLAS[3]) + _sm_image(ATLAS_FULL[0], ATLAS_LD["name"] + ", full size", ATLAS[3]) if path == ATLAS_PATH else "")
+                   + ("".join(_sm_image(i[0], image_ld(i)["name"], i[4]) for i in IMAGES + ORIGINATOR_IMAGES) if path == IMAGES_PATH else "") + "</url>")
     out.append("</urlset>")
     return "\n".join(out) + "\n"
 # RFC 9116: where to report a security problem; Expires is fixed (not the build date, so the build stays reproducible) and check.py

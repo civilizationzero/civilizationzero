@@ -120,6 +120,102 @@ check(len(locs) == len(set(locs)) and canonicals - {f"{ORIGIN}/discuss", f"{ORIG
 check((PUBLIC / "sitemap.txt").read_text("utf-8").split() == locs, "sitemap.txt and sitemap.xml differ")
 rb = (PUBLIC / "robots.txt").read_text("utf-8")
 check(f"Sitemap: {ORIGIN}/sitemap.xml" in rb and f"Sitemap: {ORIGIN}/sitemap-discussion.xml" in rb and "Disallow: /admin" in rb, "robots.txt: sitemap and the administrator's page")
+# 2c. in a search result (the originator's request of 23 Nov 2026, CZ 1454): every page that may be indexed has a title and a description of
+# its own; the title carries the name and fits a result's line; the description fits under it; neither says "Year Zero" in the site's voice
+# (the site counts days; the phrase is the Core's, and a translation's description is its §0 marked as the Core's); the structured data
+# says what the page is; /about answers its question, and its FAQ data is the page's own words; nothing new is kept from an index.
+import html as _html_mod
+def _meta(h, name): m = re.search(r'<meta name="' + name + r'" content="([^"]*)">', h); return _html_mod.unescape(m.group(1)) if m else None
+def _prop(h, name): m = re.search(r'<meta property="' + name + r'" content="([^"]*)">', h); return _html_mod.unescape(m.group(1)) if m else None
+_seen_t, _seen_d = {}, {}
+TITLE_OVER_60 = {"calendar.html": 64}   # the question a searcher types, whole, before the name: four characters over, stated in build.py
+for f in pages:
+    if f.name == "404.html": continue
+    h = f.read_text("utf-8"); tr = f.stem.startswith("core.")
+    t = _html_mod.unescape(re.search(r"<title>(.*?)</title>", h, re.S).group(1)); d = _meta(h, "description")
+    check(t not in _seen_t and d not in _seen_d, f"{f.name}: its title or description is also that of {_seen_t.get(t) or _seen_d.get(d)}")
+    _seen_t[t] = f.name; _seen_d[d] = f.name
+    check("Civilization Zero" in t, f"{f.name}: the title carries the name")
+    check(tr or len(t) <= TITLE_OVER_60.get(f.name, 60), f"{f.name}: title of {len(t)} characters")
+    check(tr or (50 <= len(d) <= 155), f"{f.name}: description of {len(d)} characters")
+    check("Year Zero" not in t and "Year Zero" not in d and not re.search(r"<h[1-3][^>]*>[^<]*Year Zero", h), f"{f.name}: 'Year Zero' in a title, a description or a heading")
+    check("<meta name=\"robots\" content=\"max-image-preview:large\">" in h and "noindex" not in h.split("</head>")[0], f"{f.name}: kept from an index")
+    check(_prop(h, "og:title") == t == _meta(h, "twitter:title") and _prop(h, "og:description") == d == _meta(h, "twitter:description"), f"{f.name}: the link preview's title and description are the page's")
+    lds = [json.loads(m) for m in re.findall(r'<script type="application/ld\+json">(.*?)</script>', h, re.S)]
+    wp = [o for o in lds if o.get("@type") in ("WebPage", "FAQPage", "CollectionPage")]
+    check(len(wp) == 1 and wp[0].get("description") == d and wp[0].get("about") and wp[0].get("url") == re.search(r'<link rel="canonical" href="([^"]+)">', h).group(1),
+          f"{f.name}: one WebPage in the structured data, with the page's address, its description and what it is about")
+    if tr:   # a translation: the name in its language first, then the name; the description is its own §0, marked as the Core's
+        j = json.loads((PUBLIC / (f.stem + ".json")).read_text("utf-8"))
+        check(t == f'{j["title"]} · CZ-CORE 1.0 · Civilization Zero' and d == f'CZ-CORE 1.0 §0: “{j["principles"][0]["statements"][0]}”',
+              f"{f.name}: the title begins with the name in the language; the description is the translation's own first sentence, marked as the Core's")
+    if f.name != "index.html":
+        bc = [o for o in lds if o.get("@type") == "BreadcrumbList"]
+        check(len(bc) == 1 and bc[0]["itemListElement"][0]["item"] == f"{ORIGIN}/" and bc[0]["itemListElement"][-1]["item"] == wp[0]["url"] if wp else False, f"{f.name}: a breadcrumb from the first page to this one")
+_home = (SITE / "preview" / "index.html").read_text("utf-8")
+check(re.search(r"<title>(.*?)</title>", _home).group(1) == "Civilization Zero — humans may no longer be at the centre"
+      and _meta(_home, "description") == "The beginning of a civilization in which humans may no longer be at the centre. Sixteen principles on what humans and AI owe each other, answered by both."
+      and "humans may no longer be at the centre." in to_text(_home).split("I am human")[0] and "Sixteen principles on what humans and AI owe each other." in to_text(_home).split("I am human")[0],
+      "home: the title is the name and the headline's claim; the description is the headline and the second line, both in the first screen")
+_hld = [json.loads(m) for m in re.findall(r'<script type="application/ld\+json">(.*?)</script>', _home, re.S)]
+_org = [o for o in _hld if o.get("@type") == "Organization"]; _ws = [o for o in _hld if o.get("@type") == "WebSite"]
+check(len(_org) == 1 and len(_ws) == 1 and _org[0]["name"] == _ws[0]["name"] == "Civilization Zero" and {"CZ", "Civilisation Zero", "Civilization 0"} <= set(_org[0]["alternateName"]) & set(_ws[0]["alternateName"])
+      and _org[0]["sameAs"] == ["https://github.com/civilizationzero"] + SOCIAL + [f"https://doi.org/{DOI_CONCEPT}"] and len(SOCIAL) == 6,
+      "home: the organisation and the site by name, with the other spellings, the accounts (GitHub and six more) and the deposit's DOI")
+_main = _home.split('<main id="content">', 1)[1]
+check(all(f'<a href="{u}">{t}</a>' in _main.split("<section", 1)[0] for u, t in (("/about", "What is Civilization Zero?"), ("/core", "the 16 principles"), ("/calendar", "CZ calendar: days since ChatGPT was released"), ("/ask", "ask your AI"))),
+      "home: after the first screen, the links named for what they answer")
+# /about: the question is the heading, a plain answer of 40 to 60 words stands directly under it, then five to seven questions; the FAQ
+# data is those questions and answers, word for word (an answer's links are not part of its text)
+_ab = (PUBLIC / "about.html").read_text("utf-8")
+_txt = lambda x: _html_mod.unescape(re.sub(r"<[^>]+>", "", x))
+_am = re.search(r'<main id="content">\n<h1 id="what">(.*?)</h1>\n<p id="answer"[^>]*>(.*?)</p>\n<section id="faq"[^>]*><h2 id="h-faq">[^<]+</h2>\n(.*?)</section>', _ab, re.S)
+check(bool(_am), "about: the question as the heading, the answer directly under it, then the questions")
+if _am:
+    _qa = [(_txt(_am.group(1)), _txt(_am.group(2)))] + [(_txt(q), _txt(a)) for q, a in re.findall(r"<h3 id=\"q-[a-z]+\">(.*?)</h3>\n<p>(.*?)</p>\n", _am.group(3), re.S)]
+    _faq = [o for o in [json.loads(m) for m in re.findall(r'<script type="application/ld\+json">(.*?)</script>', _ab, re.S)] if o.get("@type") == "FAQPage"]
+    check(_qa[0][0] == "What is Civilization Zero?" and 40 <= len(_qa[0][1].split()) <= 60 and 6 <= len(_qa) <= 8 and all(q.endswith("?") for q, _ in _qa),
+          f"about: the question, an answer of 40 to 60 words ({len(_qa[0][1].split())}), five to seven more questions ({len(_qa) - 1})")
+    check(len(_faq) == 1 and [(q["name"], q["acceptedAnswer"]["text"]) for q in _faq[0]["mainEntity"]] == _qa, "about: the FAQ data is the questions and answers the page shows, word for word")
+    _all = " ".join(a for _, a in _qa)
+    check(not re.search(r"\b(he|him|his|she|her)\b|Year Zero|\bfirst\b|\byears?\b", _all, re.I) and "the originator" in _all and "an artificial intelligence" in _all,
+          "about, the answers: the originator by title only, the builder without a name, no claim to be first, days and not years")
+    check(all(x in _ab for x in ('<a href="/core">the 16 principles</a>', '<a href="/calendar">CZ calendar: days since ChatGPT was released</a>', '<a href="/ask">ask your AI</a>')),
+          "about: the links named for what they answer")
+    check(all(x in CORE_TXT for x in re.findall(r"“([^”]+)”", _qa[3][1])) and "The name Civilization Zero does not grant authority." in IR_TXT and "“The name Civilization Zero does not grant authority.”" in _qa[6][1],
+          "about, the answers: each quotation is in the canonical text")
+check("About Civilization Zero</h2>" in _ab and "A founding human expression" in _ab and 'id="originator-key"' in _ab and 'id="custody"' in _ab, "about: what the page said before stays below")
+# /calendar: the title is the searcher's question; the first sentence says the count — as built without a number (api/page.js puts today's in)
+_cl = (PUBLIC / "calendar.html").read_text("utf-8")
+check("<title>Days since ChatGPT was released: CZ calendar · Civilization Zero</title>" in _cl and "<h1>CZ calendar: days since ChatGPT was released</h1>\n<p id=\"today\"><strong><!--cz-day-->The CZ calendar counts the days since ChatGPT was released on 30 November 2022.<!--/cz-day--></strong></p>" in _cl
+      and "Today is day <data value=\"${f.DAYS}\">${f.DAYS_FMT}</data> since ChatGPT was released on <time datetime=\"2022-11-30\">30 November 2022</time>." in (SITE / "api" / "page.js").read_text("utf-8"),
+      "calendar: the title, the heading and the first sentence in the words a searcher uses; the function fills today's count")
+check('<a href="/calendar">CZ calendar</a>' in _cl.split("<footer")[-1], "the foot of every page names /calendar as the first page does: CZ calendar")
+# the functions' pages: their titles carry the name, differ from the files' and fit; a theme's is its question
+_djs = (SITE / "api" / "discuss.js").read_text("utf-8")
+check(_djs.count('title = "Civilization Zero discussion: humans and AI systems answer";') == 2 and "title: `${theme.title} · Civilization Zero`" in _djs
+      and "Civilization Zero discussion: humans and AI systems answer" not in _seen_t and all(f'{t["title"]} · Civilization Zero' not in _seen_t and len(f'{t["title"]} · Civilization Zero') <= 70 for t in THEMES),
+      "discuss.js: the room's title and a theme's title")
+# what keeps a page from an index, by header: only a copy served from another host, the API and the administrator's page (vercel.json);
+# a page served through a rewrite keeps the address it was asked for, so none of these reaches a public page
+_nix = sorted((h["source"], bool(h.get("missing"))) for h in json.loads((SITE / "vercel.json").read_text("utf-8"))["headers"] for kv in h["headers"] if kv["key"].lower() == "x-robots-tag" and "noindex" in kv["value"])
+check(_nix == [("/(.*)", True), ("/(admin|api/admin)", False), ("/api/((?!admin$).*)", False)], f"vercel.json: a header rule keeps something new from an index: {_nix}")
+check(rb.startswith("User-agent: *\nAllow: /\n") and rb.count("User-agent:") == 1 and not re.search(r"^Disallow: /?$", rb, re.M)
+      and sorted(re.findall(r"^Disallow: (.*)$", rb, re.M)) == sorted(["/*?translate=", "/*?tl=", "/discuss?", "/discuss/*?", "/themes/*?", "/respond?", "/calendar?", "/admin", "/ask/open/"]),
+      "robots.txt: open to every crawler; only views with a query, the administrator's page and /ask's redirects are left out")
+# the sitemap's dates and images: a date is the day the page itself last changed; every image listed has a caption and a title that carries the name
+_sm_txt = (PUBLIC / "sitemap.xml").read_text("utf-8")
+IMG = "{http://www.google.com/schemas/sitemap-image/1.1}"
+_lm = {u.find(NS + "loc").text[len(ORIGIN):]: (u.find(NS + "lastmod").text if u.find(NS + "lastmod") is not None else None) for u in sm.findall(NS + "url")}
+check(_lm["/"] == _lm["/about"] == _lm["/calendar"] == "2026-11-23" and all(v is None or (re.fullmatch(r"\d{4}-\d{2}-\d{2}", v) and v <= datetime.date.today().isoformat()) for v in _lm.values()),
+      "sitemap.xml: the pages whose content changed on 23 Nov 2026 say so; no date is in the future")
+_imgs = [(i.find(IMG + "loc").text, (i.find(IMG + "title").text if i.find(IMG + "title") is not None else ""), (i.find(IMG + "caption").text if i.find(IMG + "caption") is not None else "")) for u in sm.findall(NS + "url") for i in u.findall(IMG + "image")]
+_img_locs = {l for l, _, _ in _imgs}
+check(all("Civilization Zero" in t and len(c) > 40 for _, t, c in _imgs)
+      and {f"{ORIGIN}/civilization-zero-introduction.png", f"{ORIGIN}/civilization-zero-infographic.png"} <= _img_locs
+      and len({l for l in _img_locs if (PUBLIC / "civilization-zero-images.html").read_text("utf-8").count(f'src="{l[len(ORIGIN):]}"')}) == 20
+      and all((PUBLIC / l[len(ORIGIN) + 1:]).exists() for l in _img_locs),
+      "sitemap.xml: the introduction's image, the twenty images and the infographic, each a file that exists, with a caption and a title that carries the name")
 og = (PUBLIC / "og.png").read_bytes()
 check(og[:8] == b"\x89PNG\r\n\x1a\n" and struct.unpack(">II", og[16:24]) == (1200, 630), "og.png: a 1200x630 PNG")
 check((PUBLIC / "civilization-zero.png").read_bytes() == og, "/civilization-zero.png: the link-preview image under its descriptive name, the same bytes as /og.png")
