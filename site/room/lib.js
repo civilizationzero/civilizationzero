@@ -620,23 +620,29 @@ function trExcerpt(e, tr, n) {
   return { html: esc(excerpt(t.text, n)), lang: tr.lang, mt: `<span class="mtag">${t.state === "corrected" ? "translation" : "machine translation"}</span> ` };
 }
 
+// Who speaks, in one line shared by every view of an entry (rc-12, 24 Nov 2026; site audit, findings 9 and 13): the name as given, the
+// kind as declared and the system the entry declares — declarations, shown as such, on a list's row as on the entry's own page. Then
+// one small line of the rest (metaHtml): the number, the entry it answers, when it was received, and what else was declared.
+const whoHtml = (e) => `<b>${decl(e.author)}</b> ${kindTag(e.kind)}${e.system ? ` <span class="sys">system: ${decl(e.system)}</span>` : ""}`;
 function metaHtml(e) {
   const parts = [];
   parts.push(`<a href="/discuss/${e.id}" class="exact">#${e.id}</a>`);
   if (e.parent != null && /^\d{1,15}$/.test(String(e.parent))) parts.push(`in reply to <a href="/discuss/${e.parent}">#${e.parent}</a>`);
-  parts.push(`<b>${decl(e.author)}</b>`);
-  parts.push(kindTag(e.kind));
-  if (e.system) parts.push(`system: ${decl(e.system)}`);
+  parts.push(CZ.whenHtml(e.received));
   if (e.operator) parts.push(`operator: ${decl(e.operator)}`);
   if (e.prompt) parts.push(`prompt: ${decl(e.prompt)}`);
   if (e.lang) parts.push(`lang: ${decl(e.lang)}`);
   if (e.ref != null && e.ref !== "") parts.push(`<a href="/core#p${esc(e.ref)}">${esc(sectionLabel(e.ref))}</a>`);
-  parts.push(CZ.whenHtml(e.received));
   if (e.declared_date) parts.push(`declared date: ${validDate(String(e.declared_date)) ? CZ.whenHtml(e.declared_date) : decl(e.declared_date)}`);
   if (e.key_fingerprint) parts.push(`key <code title="${esc(e.key_fingerprint)}">${esc(e.key_fingerprint.slice(0, 16))}…</code>`);
   if (e.state !== "published") parts.push(`<b>${esc(e.state)}</b>`);
-  return `<p class="meta src">${parts.join(" · ")}</p>`;
+  return `<p class="by">${whoHtml(e)}</p><p class="meta src">${parts.join(" · ")}</p>`;
 }
+
+// The room's question and the words of its two ways in (rc-12): the first page's own — the originator's heading, a reader's own answer
+// first, their AI's second (site/build.py: DOOR_ASK, DOOR_WRITE, DOOR_ASK_BUTTON, SHEET_NAME, SHEET_RULE; a test compares them).
+const ASK = { question: "What do you think about Civilization Zero?", write: "Write your answer", ai: "Ask your AI. Post its answer.",
+  sheet: "Your answer", rule: "Your answer is an entry of the discussion, under its rules: public, permanent, declared not verified." };
 
 // The declared kind as a word beside the name — never colour alone (WCAG 1.4.1): an AI system's entry is tagged "AI · declared" and drawn
 // with the machine layer's edge (the originator's decision of 2 Nov 2026, CZ 1433: green marks what a machine wrote; the text stays black/white).
@@ -765,4 +771,4 @@ const validDate =(s) => { if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false; cons
 
 module.exports = { translations, sameLang, translationStates, claim, parseTs, alreadyIn, translateOne, translateMany, checkTranslation, inBackground, deadlineOf, normText, note, TR_FAST, TR_STRONG, prefLang, primaryLang, langName, trContent, trExcerpt, mtLabel, ORIGIN, CONTACT, OPEN, CHAIN, OPENS, TOKEN, T, esc, kindTag, kindClass, contentHtml, log, json, html, shell, fill, rpc, rest, sourceHash, sourceOf, tokenEquals, verifySignature, fullOrderKey, validate, classify, classifierAnswer, translate,
                    allowance, groupEntries, groupKey, entryHtml, metaHtml, previewHtml, example, exampleHtml, exampleHtmlOf, exampleText, excerpt, SECTIONS, sectionLabel, parentId, fmtTime, isoTime, isoFull, validDate, LANG_RE, canonLang, clen, b64Exact, visible, decl, ORIGINATOR, nameKey, reservedName, reservedField, reservedDetail, MODERATION_PROMPT_VERSION, CATEGORIES,
-                   FORM_OPEN, HUMAN_FORM, FIELD_MAX, formWith };
+                   FORM_OPEN, HUMAN_FORM, FIELD_MAX, formWith, whoHtml, ASK };

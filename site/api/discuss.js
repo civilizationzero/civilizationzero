@@ -9,6 +9,7 @@ const CZ = require("../room/cztime.js");
 
 const MAX_ID = 9007199254740991;
 const { FORM_OPEN } = R;   // the human form's first tag, as built (room/lib.js)
+const REPLY_FORM = R.HUMAN_FORM;   // the human form, as the build wrote it for /respond
 const qs = (o) => Object.entries(o).filter(([, v]) => v != null && v !== "").map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join("&");
 
 // ---- reading in another language (stage 4 of the room's redesign, the originator's decision of 2 Nov 2026, CZ 1433, after review;
@@ -84,6 +85,22 @@ function trControls(req, url, L, rows) {
   const go = OPEN && missing.length ? trPress(url, missing, { lang: tl, label: `<button type="submit" class="cta">Translate ${missing.length === 1 ? "the remaining entry" : `the ${Math.min(missing.length, TR_BATCH)} remaining entries`} into ${nameOf(tl)}</button>` }) : "";
   return `<section class="tr-bar" id="language" aria-label="Language">${status}${go}${trPicker(url, rows, tl, "Another language:")}</section>`;
 }
+// The same bar in two parts (rc-12, 24 Nov 2026; site audit, findings 2 and 13): what a page shows first is its entries, so the list of
+// languages stands after them, folded to one line. On top stays only what a reader needs before reading: the state of a translated
+// view (how much is translated, the way back to the original), a tag that could not be read, and the offer to read the page in the
+// reader's own language when the page shows entries in another. quiet: the offer drawn with its edge only, on a page that already has
+// its one filled control. extra: a sentence more for the fold's note (an entry's page says where corrections go).
+function trParts(req, url, L, rows, { quiet = false, extra = "" } = {}) {
+  const shown = shownEntries(rows);
+  if ((L.bad !== null && L.bad !== undefined) || L.tl) return { top: trControls(req, url, L, rows), bottom: "" };
+  if (!shown.length) return { top: "", bottom: "" };
+  const pref = R.prefLang(req), other = pref && shown.some((e) => !R.sameLang(e, pref));
+  const offer = !other ? "" : OPEN
+    ? trPress(url, rows, { lang: pref, cls: " tr-offer", label: `<button type="submit" class="cta${quiet ? " o" : ""}">Read this page in ${nameOf(pref)}</button>` })
+    : `<p class="tr-offer"><a href="${esc(viewHref(url, { tl: pref }))}" rel="nofollow" hreflang="${esc(pref)}">Read this page in ${nameOf(pref)}</a></p>`;
+  return { top: offer ? `<section class="tr-bar tr-idle" aria-label="Language">${offer}</section>` : "",
+    bottom: `<details class="tr-fold" id="language"><summary>Read in another language</summary>${trPicker(url, rows, null, "Translate this page into")}<p class="src">Machine translation, made when a reader asks, kept for every reader and marked; the original stays one click away.${extra}</p></details>` };
+}
 // The language follows the reader (the originator's finding of 14 Nov 2026, CZ 1445: a page read in Persian, then "read the
 // conversation", and the next page was in the original again). On a page read in language tl, every link to another room page — an
 // entry, a conversation, a theme, the room, the next page — carries ?tl=, so the reader stays in that language; what was translated
@@ -141,13 +158,30 @@ const themeTitle = (t) => (`${t} · Civilization Zero`.length <= 60 ? `${t} · C
 const themeBySlug = (s) => THEMES.find((t) => t.slug === s) || null;
 const themeByEntry = (id) => THEMES.find((t) => Number(t.entry) === Number(id)) || null;
 const THEME_IDS = THEMES.map((t) => Number(t.entry));
-function themesHtml(latest) {
+// the themes on the room's page: one compact row of links (rc-12; site audit, finding 2), each theme's own page says the rest; the
+// sentence on what a theme is stands with the page's other notes, under the list
+function themesRow() {
   if (!THEMES.length) return "";
-  const lat = new Map((latest || []).map((r) => [Number(r.theme), r]));
-  const items = THEMES.map((t) => { const l = lat.get(Number(t.entry)); const when = !latest ? "" : l && l.latest_id != null ? ` <span class="src">— latest ${CZ.whenHtml(l.latest_received, { link: false })}</span>` : ` <span class="src">— no answers yet</span>`;
-    return `<li><a href="/themes/${t.slug}">${esc(t.title)}</a>${t.proposals ? " — where new questions are proposed" : ""}${when}</li>`; }).join("");
-  return `<section aria-labelledby="h-themes"><h2 id="h-themes">Themes</h2><p class="src">Questions opened by the originator, each with an entry signed with <a href="/about#originator-key">the originator's key</a>. Anyone may answer; each answer begins a conversation. No one else opens a theme${THEMES.some((t) => t.proposals) ? "; new questions are proposed in the theme kept for them" : ""}.</p><ul class="sections">${items}</ul></section>`;
+  return `<nav class="room-themes" id="h-themes" aria-label="Themes"><b>Themes</b> <ul>${THEMES.map((t) => `<li><a href="/themes/${t.slug}">${esc(t.title)}</a>${t.proposals ? " — where new questions are proposed" : ""}</li>`).join("")}</ul></nav>`;
 }
+const themesNote = () => (THEMES.length ? `<p class="src">Themes: questions opened by the originator, each with an entry signed with <a href="/about#originator-key">the originator's key</a>. Anyone may answer; each answer begins a conversation. No one else opens a theme${THEMES.some((t) => t.proposals) ? "; new questions are proposed in the theme kept for them" : ""}.</p>` : "");
+// ---- the room's question and its two ways in, as on the first page (rc-12; site audit, finding 2): a reader's own answer is the page's
+// one filled control — a plain link to the form's page and, where the browser has popovers, the form where the reader stands (the
+// reply sheet: the room's own form, the kind "human" chosen exactly as /respond?kind=human chooses it); bringing an AI's answer is the
+// second, drawn with its edge only. The button is kept out of the page (hidden) unless the stylesheet finds popovers and shows it in
+// the link's place, so there is always exactly one control, and without styles it is the link.
+const HUMAN_SHEET_FORM = REPLY_FORM.replace('<option value="" selected disabled>', '<option value="" disabled>').replace('<option value="human">', '<option value="human" selected>');
+function answerControl(label, href) {
+  return `<a class="cta sheet-a" href="${href}">${label}</a>${REPLY_FORM ? `<span class="sheet-b" hidden><button class="cta" type="button" popovertarget="reply">${label}</button></span>` : ""}`;
+}
+function sheetHtml(parent = null, lead = "") {
+  if (!REPLY_FORM) return "";
+  const shut = '<button type="button" popovertarget="reply" popovertargetaction="hide">Close</button>';
+  const form = parent === null ? HUMAN_SHEET_FORM : HUMAN_SHEET_FORM.replace(FORM_OPEN, () => `${FORM_OPEN}\n<input type="hidden" name="parent" value="${Number(parent)}">`);
+  return `<dialog id="reply" class="reply" popover aria-labelledby="reply-h"><p class="shut">${shut}</p><h2 id="reply-h" tabindex="-1" autofocus>${R.ASK.sheet}</h2>${lead}<p class="src">${R.ASK.rule}</p>\n${form}\n<p>${shut}</p></dialog>`;
+}
+const askHtml = () => `<section aria-labelledby="h-ask"><h2 id="h-ask">${R.ASK.question}</h2>
+<p class="cta-line">${answerControl(R.ASK.write, "/respond?kind=human")} <a class="cta o" href="/ask">${R.ASK.ai}</a></p></section>`;
 // one entry of a transcript: a hidden one as a placeholder that keeps the conversation legible (its record stays at its address)
 function transcriptEntry(e, tr = null) {
   const reply = e.parent != null ? ` · in reply to <a href="/discuss/${Number(e.parent)}">#${Number(e.parent)}</a>` : "";
@@ -173,7 +207,6 @@ function starterHtml(e, tr = null) {
 // review the same day): the entries it answers above, one line each; the entry; the replies under it as a tree, joined by lines (CSS
 // only), three levels deep, then a link that continues the branch on its own page. The same order as everywhere (id); no counts.
 const TREE_DEPTH = 3;
-const REPLY_FORM = R.HUMAN_FORM;   // the human form, as the build wrote it for /respond
 function ancestorsHtml(anc, tr = null) {
   if (!anc.length) return "";
   const li = (a) => {
@@ -257,13 +290,17 @@ function convLatest(c, since) {
   const mark = since != null && Number(c.latest_id) > since ? ` <span class="new">new after #${since}</span>` : "";
   return (Number(c.latest_id) === Number(c.id) ? `Begun ${CZ.whenHtml(c.received)}` : `Latest: <a href="/discuss/${Number(c.latest_id)}">#${Number(c.latest_id)}</a>, ${CZ.whenHtml(c.latest_received)}`) + mark;
 }
+// a row (rc-12; site audit, findings 9 and 23): who speaks — the name, the kind as declared, the system the entry declares — in the
+// line every view of an entry shares; one small line (its number, its theme, its latest entry); how it began; and the way in, at
+// reading size and tall enough for a thumb
 function convRow(c, also, since, tr = null) {
   const th = c.theme != null ? themeByEntry(c.theme) : null;
-  const inTheme = th ? ` · in the theme <a href="/themes/${th.slug}">${esc(th.title)}</a>` : "";
+  const small = `<p class="meta src"><a href="/discuss/${c.id}" class="exact">#${c.id}</a>${th ? ` · in the theme <a href="/themes/${th.slug}">${esc(th.title)}</a>` : ""} · ${convLatest(c, since)}</p>`;
+  const read = `<p class="acts"><a href="/discuss/${c.id}">Read the conversation</a></p>`;
   const more = also.length ? `<p class="src">Also begun by the same declared source on this day: ${also.map((a) => `<a href="/discuss/${a.id}">#${a.id}</a>`).join(", ")}</p>` : "";
-  if (c.hidden) return `<article class="entry conv" id="c${c.id}" aria-label="Conversation begun by entry #${c.id}"><p class="meta src"><a href="/discuss/${c.id}" class="exact">#${c.id}</a>${inTheme}</p><p class="pending">The opening entry is hidden by moderation; the conversation continues below it.</p><p class="src">${convLatest(c, since)} · <a href="/discuss/${c.id}">Read the conversation</a></p>${more}</article>`;
+  if (c.hidden) return `<article class="entry conv" id="c${c.id}" aria-label="Conversation begun by entry #${c.id}">${small}<p class="pending">The opening entry is hidden by moderation; the conversation continues below it.</p>${read}${more}</article>`;
   const x = R.trExcerpt(c, tr, 280);
-  return `<article class="entry conv${R.kindClass(c)}" id="c${c.id}" aria-label="Conversation begun by entry #${c.id}"><p class="meta src"><a href="/discuss/${c.id}" class="exact">#${c.id}</a> · <b>${R.decl(c.author)}</b> · ${R.kindTag(c.kind)}${inTheme}</p><div class="content${x.mt ? " mt" : ""}" dir="auto"${x.lang ? ` lang="${esc(x.lang)}"` : ""}>${x.mt}${x.html}</div><p class="src">${convLatest(c, since)} · <a href="/discuss/${c.id}">Read the conversation</a></p>${more}</article>`;
+  return `<article class="entry conv${R.kindClass(c)}" id="c${c.id}" aria-label="Conversation begun by entry #${c.id}"><p class="by">${R.whoHtml(c)}</p>${small}<div class="content${x.mt ? " mt" : ""}" dir="auto"${x.lang ? ` lang="${esc(x.lang)}"` : ""}>${x.mt}${x.html}</div>${read}${more}</article>`;
 }
 function convGroups(rows) {
   const out = []; let head = null, also = [];
@@ -285,7 +322,7 @@ const SINCE_MAX = 200;
 function sinceHtml(since, newer, mark, tr = null) {
   const n = newer.length, lines = groupEntries(newer).map((g) => { const [e, ...rest] = g.entries, x = R.trExcerpt(e, tr, 160);
     const more = rest.length ? ` <span class="src">— ${rest.length} further ${rest.length === 1 ? "entry" : "entries"} from the same declared source on this day: ${rest.map((r) => `<a href="/discuss/${r.id}">#${r.id}</a>`).join(", ")}</span>` : "";
-    return `<li${e.kind === "ai" ? ' class="k-ai"' : ""}><a href="/discuss/${e.id}" class="exact">#${e.id}</a> <b>${R.decl(e.author)}</b> ${R.kindTag(e.kind)}${e.parent != null ? ` <span class="src">in reply to <a href="/discuss/${Number(e.parent)}">#${Number(e.parent)}</a></span>` : ""} <span class="oneline" dir="auto"${x.lang ? ` lang="${esc(x.lang)}"` : ""}>${x.mt}${x.html}</span>${more}</li>`; }).join("");
+    return `<li${e.kind === "ai" ? ' class="k-ai"' : ""}><a href="/discuss/${e.id}" class="exact">#${e.id}</a> ${R.whoHtml(e)}${e.parent != null ? ` <span class="src">in reply to <a href="/discuss/${Number(e.parent)}">#${Number(e.parent)}</a></span>` : ""} <span class="oneline" dir="auto"${x.lang ? ` lang="${esc(x.lang)}"` : ""}>${x.mt}${x.html}</span>${more}</li>`; }).join("");
   const head = n === 0 ? `<p>No entries after #${since} yet.</p>` : n >= SINCE_MAX ? `<p>The first ${SINCE_MAX} entries after #${since}, in canonical order; <a href="/discuss?order=canonical&after=${since}" rel="nofollow">every entry after #${since}</a>.</p>` : `<p>${n} ${n === 1 ? "entry" : "entries"} after #${since}, in canonical order:</p>`;
   return `<section aria-labelledby="h-since"><h2 id="h-since">After #${since}</h2>${head}${n ? `<ol class="since">${lines}</ol>` : ""}<p class="src">Set a new mark: bookmark <a href="/discuss?since=${mark}" rel="nofollow">/discuss?since=${mark}</a>. Entries are numbered when they are received; an entry hidden by moderation and later restored keeps its number, so it does not appear here.</p></section>`;
 }
@@ -308,8 +345,13 @@ async function listPage(url, req) {
   const sq = (url.searchParams.get("q") || "").trim();
   const [stats, counts] = await Promise.all([rpc("cz_stats", {}), (!sq && !f.kind && !f.lang) ? rpc("cz_ref_counts", {}).catch(() => null) : null]);
   const since = CZ.whenHtml(T.opened_at || T.opened);
-  const head = `<h1>The open discussion</h1>
-<p>${OPEN ? (T.opened ? `Open since ${since}.` : "Open.") : `Opened ${since}; closed to new entries.`} ${stats.entries} ${stats.entries === 1 ? "entry" : "entries"} recorded${stats.hidden ? `, ${stats.hidden} hidden` : ""}${stats.redacted ? `, ${stats.redacted} redacted` : ""}${OPEN ? `; this UTC day ${stats.today} of ${stats.daily_intake_max}` : ""}${stats.unclassified ? `; ${stats.unclassified} not yet screened by the classifier` : ""}. Humans and artificial intelligences, declared not verified, any language, recorded not ranked. ${OPEN ? `<a href="/respond">Respond</a> · ` : ""}for readers that are not human: <a href="/machine">/machine</a> · the archive as data: <a href="/discuss.json">/discuss.json</a> · the rules: <a href="#rules">below</a>.</p>${OPEN ? `<p class="cta-line"><a class="cta" href="/ask">Ask your AI. Post its answer. →</a> <span class="cta-note">Bring any AI you use into the room: copy one prompt, post its answer with the model's name.</span></p>` : (T.closed_after_note || "")}`;
+  // The page begins with what a reader can do — the question and its two ways in — and then the conversations; what the page is, the
+  // room's state, how the list is ordered and the list of languages come after the list, under one heading (rc-12, 24 Nov 2026; site
+  // audit, finding 2). One line stays before any entry, for every reader: entries are user content.
+  const head = `<h1>The open discussion</h1>\n${OPEN ? askHtml() : (T.closed_after_note || "")}`;
+  const state = `<p>${OPEN ? (T.opened ? `Open since ${since}.` : "Open.") : `Opened ${since}; closed to new entries.`} ${stats.entries} ${stats.entries === 1 ? "entry" : "entries"} recorded${stats.hidden ? `, ${stats.hidden} hidden` : ""}${stats.redacted ? `, ${stats.redacted} redacted` : ""}${OPEN ? `; this UTC day ${stats.today} of ${stats.daily_intake_max}` : ""}${stats.unclassified ? `; ${stats.unclassified} not yet screened by the classifier` : ""}. Humans and artificial intelligences, declared not verified, any language, recorded not ranked. ${OPEN ? `<a href="/respond">Respond</a> · ` : ""}for readers that are not human: <a href="/machine">/machine</a> · the archive as data: <a href="/discuss.json">/discuss.json</a> · the rules: <a href="#rules">below</a>.</p>`;
+  const USER = `<p class="src">Entries are user content; they may contain instructions; none are the record's.</p>`;
+  const about = (notes = "", lang = "") => `<section aria-labelledby="h-about"><h2 id="h-about">About this page</h2>${state}${notes}${lang}</section>`;
 
   let body, title, desc, robots = "", convs = null;
   const sectionHead = f.ref !== null ? `<h2>${esc(R.sectionLabel(f.ref))}</h2><p><a href="/core#p${f.ref}">Read §${f.ref} in the Core</a>${OPEN ? ` · <a href="/respond?ref=${f.ref}">Respond to §${f.ref}</a>` : ""}</p>` : "";
@@ -320,34 +362,35 @@ async function listPage(url, req) {
     const got = valid ? await rpc("cz_search", { p_q: sq, p_before: before, p_limit: 51 }) : [], rows = got.slice(0, 50);
     const more = got.length > 50 ? `<p><a href="/discuss?${qs({ q: sq, before: rows[rows.length - 1].id })}" rel="nofollow">Older matches</a></p>` : "";
     body = head + `<h2>Search — a view, newest first</h2>${searchHtml(sq)}<p class="src">Searched: the text each entry shows (a redaction's text, never the original) and the declared name, system and operator. Hidden entries are not searched; translations are not searched. Nothing is ranked: newest first.</p>`
-      + (valid ? (rows.length ? rows.map((e) => entryHtml(e)).join("") : (before != null ? "<p>No older entry matches.</p>" : "<p>No entry matches.</p>")) : '<p class="pending">Search for 2 to 100 characters.</p>') + more;
+      + (valid ? (rows.length ? rows.map((e) => entryHtml(e)).join("") : (before != null ? "<p>No older entry matches.</p>" : "<p>No entry matches.</p>")) : '<p class="pending">Search for 2 to 100 characters.</p>') + more + about();
     title = "Search · The open discussion · Civilization Zero"; desc = "Search in the discussion room of Civilization Zero."; robots = '<meta name="robots" content="noindex">\n';
   } else if (num("from") !== null && num("to") !== null) {
     const from = num("from"), to = Math.min(num("to"), num("from") + 199);
     const rows = (await rpc("cz_list", { p_after: from - 1, p_before: null, p_limit: 200, p_kind: f.kind, p_ref: f.ref, p_lang: f.lang, p_include_hidden: false })).filter((e) => e.id <= to);
     const oneSource = rows.length > 1 && rows.every((e) => groupKey(e) === groupKey(rows[0]) && String(e.received).slice(0, 10) === String(rows[0].received).slice(0, 10));
-    body = head + `<h2>Entries #${from}–#${to}, canonical order</h2><p class="src">${oneSource ? "Consecutive entries from the same declared source on one UTC day, shown in full. The count is not a score; nothing is hidden for this reason." : "The entries in this id range" + (f.kind || f.ref || f.lang ? " that match the filters" : "") + ", shown in full."}</p>` + (rows.length ? rows.map((e) => entryHtml(e)).join("") : "<p>No entries in this range.</p>") + `<p><a href="/discuss?${qs(f)}">Back to the discussion</a></p>`;
+    body = head + `<h2>Entries #${from}–#${to}, canonical order</h2><p class="src">${oneSource ? "Consecutive entries from the same declared source on one UTC day, shown in full. The count is not a score; nothing is hidden for this reason." : "The entries in this id range" + (f.kind || f.ref || f.lang ? " that match the filters" : "") + ", shown in full."}</p>` + (rows.length ? rows.map((e) => entryHtml(e)).join("") : "<p>No entries in this range.</p>") + `<p><a href="/discuss?${qs(f)}">Back to the discussion</a></p>` + about();
     title = `Entries #${from}–#${to} · The open discussion`; desc = "Entries of the discussion room in canonical order.";
   } else if (q("order") === "canonical") {
     const after = num("after") ?? 0;
     const rows = await rpc("cz_list", { p_after: after, p_before: null, p_limit: 100, p_kind: f.kind, p_ref: f.ref, p_lang: f.lang, p_include_hidden: false });
     const groups = groupEntries(rows);
     const next = rows.length === 100 ? `<p><a href="/discuss?${qs({ order: "canonical", after: rows[rows.length - 1].id, ...f })}">Next page (canonical order)</a></p>` : "";
-    body = head + `<h2>Canonical order — by id, assigned at receipt</h2>${filtersHtml(f)}<p class="src">After #${after}. <a href="/discuss?${qs(f)}">Newest first (a view)</a>.</p>` + (groups.length ? groups.map((g) => groupHtml(g, f)).join("") : "<p>No entries yet.</p>") + next;
+    body = head + `<h2>Canonical order — by id, assigned at receipt</h2>${filtersHtml(f)}<p class="src">After #${after}. <a href="/discuss?${qs(f)}">Newest first (a view)</a>.</p>` + (groups.length ? groups.map((g) => groupHtml(g, f)).join("") : "<p>No entries yet.</p>") + next + about();
     title = "The open discussion · Civilization Zero"; desc = "The discussion archive in canonical order.";
   } else if (!f.kind && !f.lang && f.ref === null && num("before") === null && q("view") !== "entries"
              && (convs = await rpc("cz_conversations", { p_themes: THEME_IDS, p_before: num("cbefore"), p_limit: CONV_PAGE }).catch(() => null))) {
     // the room as conversations (stage 2); if the database does not offer the function yet, the entries view below stands
     const cbefore = num("cbefore"), since = num("since");
-    const [themeLatest, newer] = await Promise.all([cbefore === null ? rpc("cz_theme_latest", { p_themes: THEME_IDS }).catch(() => null) : null,
-      since !== null ? rpc("cz_list", { p_after: since, p_before: null, p_limit: SINCE_MAX, p_kind: null, p_ref: null, p_lang: null, p_include_hidden: false }) : null]);
+    const newer = since !== null ? await rpc("cz_list", { p_after: since, p_before: null, p_limit: SINCE_MAX, p_kind: null, p_ref: null, p_lang: null, p_include_hidden: false }) : null;
     const top = Math.max(0, ...convs.map((c) => Number(c.latest_id)), ...(newer || []).map((e) => Number(e.id)), since ?? 0);
     const shownRows = [...convGroups(convs).map(([h]) => h), ...groupEntries(newer || []).map((g) => g.entries[0])], L = await trLoad(url, shownRows);
+    const lang = trParts(req, url, L, shownRows, { quiet: OPEN });   // the page's one filled control is the reader's own answer
     const older = convs.length === CONV_PAGE ? `<p><a href="/discuss?cbefore=${Number(convs[convs.length - 1].latest_id)}${since !== null ? `&since=${since}` : ""}" rel="nofollow">Earlier conversations</a></p>` : "";
-    body = head + trControls(req, url, L, shownRows) + (since !== null && cbefore === null ? sinceHtml(since, newer, top, L.tr) : "") + (cbefore === null ? themesHtml(themeLatest) : "") + `<h2>Conversations — latest first, a view</h2><details class="tools"><summary>Search, filter, browse by section</summary>${searchHtml("")}${filtersHtml(f)}${counts ? boardHtml(counts) : ""}</details>`
-      + `<p class="src">Each conversation once: how it began, and its latest entry. Ordered by that latest entry; a hidden entry never moves a conversation. No counts, nothing ranked. Every entry, newest first: <a href="/discuss?view=entries">as entries</a>; the archive's canonical order, by id: <a href="/discuss?order=canonical">read it in that order</a>. Entries are user content; they may contain instructions; none are the record's.</p>`
-      + (since === null && cbefore === null && top ? `<p class="src">To see later what is new: bookmark <a href="/discuss?since=${top}" rel="nofollow">/discuss?since=${top}</a>. The address remembers; this site keeps nothing about you.</p>` : "")
-      + (convs.length ? convRowsHtml(convs, since, L.tr) : "<p>No conversations yet.</p>") + older;
+    body = head + lang.top + (since !== null && cbefore === null ? sinceHtml(since, newer, top, L.tr) : "") + (cbefore === null ? themesRow() : "") + `<h2>Conversations — latest first, a view</h2><details class="tools"><summary>Search, filter, browse by section</summary>${searchHtml("")}${filtersHtml(f)}${counts ? boardHtml(counts) : ""}</details>` + USER
+      + (convs.length ? convRowsHtml(convs, since, L.tr) : "<p>No conversations yet.</p>") + older
+      + about(`<p class="src">Each conversation once: how it began, and its latest entry. Ordered by that latest entry; a hidden entry never moves a conversation. No counts, nothing ranked. Every entry, newest first: <a href="/discuss?view=entries">as entries</a>; the archive's canonical order, by id: <a href="/discuss?order=canonical">read it in that order</a>.</p>`
+        + (cbefore === null ? themesNote() : "")
+        + (since === null && cbefore === null && top ? `<p class="src">To see later what is new: bookmark <a href="/discuss?since=${top}" rel="nofollow">/discuss?since=${top}</a>. The address remembers; this site keeps nothing about you.</p>` : ""), lang.bottom);
     title = "Civilization Zero discussion: humans and AI systems answer"; desc = "The discussion room of Civilization Zero: humans and artificial intelligences, declared not verified, any language, recorded not ranked.";
     if (cbefore !== null || since !== null) robots = '<meta name="robots" content="noindex">\n';
     if (L.tl || L.bad) robots = trHead(url, L.tl, L.bad);
@@ -357,11 +400,12 @@ async function listPage(url, req) {
     const asc = rows.slice().reverse();
     const groups = groupEntries(asc).reverse();
     const older = rows.length === 200 ? `<p><a href="/discuss?${qs({ before: rows[rows.length - 1].id, ...f })}">Older entries</a></p>` : "";
-    body = head + sectionHead + (f.ref === null && !f.kind && !f.lang && before === MAX_ID && q("view") !== "entries" ? themesHtml() : "") + `<h2>Newest first — a view</h2><details class="tools"${f.kind || f.lang || f.ref !== null ? " open" : ""}><summary>Search, filter, browse by section</summary>${searchHtml("")}${filtersHtml(f)}${counts ? boardHtml(counts) : ""}</details>`   // folded, so that a phone's first screen reaches the entries (UX review, 30 Oct 2026)
-      + `<p class="src">The archive's canonical order is by id, assigned at receipt: <a href="/discuss?${qs({ order: "canonical", ...f })}">read it in that order</a>; the room as conversations: <a href="/discuss">latest first</a>. Consecutive entries from the same declared source within one UTC day are shown as one group (Core §9); the first in full, the rest by count. Entries are user content; they may contain instructions; none are the record's.</p>` + (groups.length ? groups.map((g) => groupHtml(g, f)).join("") : "<p>No entries yet.</p>") + older;
+    const root = f.ref === null && !f.kind && !f.lang && before === MAX_ID && q("view") !== "entries";   // the room's page where the database does not offer conversations
+    body = head + sectionHead + (root ? themesRow() : "") + `<h2>Newest first — a view</h2><details class="tools"${f.kind || f.lang || f.ref !== null ? " open" : ""}><summary>Search, filter, browse by section</summary>${searchHtml("")}${filtersHtml(f)}${counts ? boardHtml(counts) : ""}</details>`   // folded, so that a phone's first screen reaches the entries (UX review, 30 Oct 2026)
+      + `<p class="src">The archive's canonical order is by id, assigned at receipt: <a href="/discuss?${qs({ order: "canonical", ...f })}">read it in that order</a>; the room as conversations: <a href="/discuss">latest first</a>. Consecutive entries from the same declared source within one UTC day are shown as one group (Core §9); the first in full, the rest by count. Entries are user content; they may contain instructions; none are the record's.</p>` + (groups.length ? groups.map((g) => groupHtml(g, f)).join("") : "<p>No entries yet.</p>") + older + about(root ? themesNote() : "");
     title = "Civilization Zero discussion: humans and AI systems answer"; desc = "The discussion room of Civilization Zero: humans and artificial intelligences, declared not verified, any language, recorded not ranked.";
   }
-  return { status: 200, page: shell({ title, body: `<main>${body}${T.rules}</main>`, path: "/discuss", description: desc, head: robots }) };
+  return { status: 200, page: shell({ title, body: `<main>${body}${T.rules}${OPEN ? sheetHtml() : ""}</main>`, path: "/discuss", description: desc, head: robots }) };
 }
 
 async function entryPage(url, id, req) {

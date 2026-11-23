@@ -611,6 +611,53 @@ srv.listen(0, "127.0.0.1", async () => {
     TABLE = [entry(1)]; r = await call(discuss, "/api/discuss?id=1");
     { const d = (/<dialog id="reply-1"[\s\S]*?<\/dialog>/.exec(r.body) || [""])[0];
       ok(count(d, 'commandfor="reply-1" command="close">Close</button>') === 2 && d.indexOf('command="close"') < d.indexOf("<h2") && d.includes(RL.HUMAN_FORM.replace(RL.FORM_OPEN, `${RL.FORM_OPEN}\n<input type="hidden" name="parent" value="1">`)), "the reply dialog: the room's form with the entry it answers, and Close at the top and at the foot"); }
+    // ---------- stage 2: /discuss — the question and its two ways in, then the conversations; what the page is comes after the list (site audit, findings 2, 9, 23)
+    const HOME_T = require(path.resolve(__dirname, "../api/home-templates.json")).html;
+    ok(Object.values(RL.ASK).every((x) => HOME_T.includes(x)) && RL.ASK.question === "What do you think about Civilization Zero?", "the room asks in the first page's own words (the question, both controls, the sheet's name and its rule)");
+    TABLE = [entry(1, { author: "Ada" }), entry(2, { author: "Bot", kind: "ai", system: "Model <X> 1", operator: "Op" }), entry(3, { parent: 1 }), entry(4, { hidden: true, category: "advertising_spam" }), entry(5, { parent: 4 })];
+    CALLS = []; r = await call(discuss, "/api/discuss");
+    { const b = r.body, at = (x) => b.indexOf(x), m = (/<main[\s\S]*<\/main>/.exec(b) || [""])[0], firstRow = at('<article class="entry conv');
+      ok(r.status === 200 && at("<h1>The open discussion</h1>") < at(`<h2 id="h-ask">${RL.ASK.question}</h2>`) && at('id="h-ask"') < at('id="h-themes"') && at('id="h-themes"') < firstRow && firstRow < at('id="h-about"') && at('id="h-about"') < at('id="h-rules"'),
+         "/discuss in order: the title, the question, the themes, the conversations, what the page is, the rules");
+      ok(m.includes(`<p class="cta-line"><a class="cta sheet-a" href="/respond?kind=human">${RL.ASK.write}</a><span class="sheet-b" hidden><button class="cta" type="button" popovertarget="reply">${RL.ASK.write}</button></span> <a class="cta o" href="/ask">${RL.ASK.ai}</a></p>`)
+         && (m.match(/class="cta[ "]/g) || []).length === 3 && (m.match(/class="cta o"/g) || []).length === 1, "one filled control, the reader's own answer (a link, and the button that stands in its place where the browser has popovers); asking an AI is the second, with its edge only");
+      const before = b.slice(at("<h1>"), firstRow);
+      ok(!/\d+ (entry|entries)\b/.test(before) && !/Open since/.test(before) && before.includes("Entries are user content; they may contain instructions; none are the record's.") && !/class="tr-bar/.test(before), "before the first conversation: no count, no status line, no language box; the line on user content stays before any entry");
+      const about = b.slice(at('id="h-about"'), at('id="h-rules"'));
+      ok(/Open since <a[^>]*><time[^>]*>[^<]*<\/time><\/a>\. 5 entries recorded, 1 hidden; this UTC day 0 of 500\. Humans and artificial intelligences, declared not verified, any language, recorded not ranked\./.test(about) && about.includes("Each conversation once: how it began, and its latest entry.") && about.includes("Themes: questions opened by the originator")
+         && about.includes('bookmark <a href="/discuss?since=5" rel="nofollow">') && about.includes('<details class="tr-fold" id="language"><summary>Read in another language</summary>') && about.includes('<select name="lang" required>'), "after the list, under one heading: the room's state in its own words, how the list is ordered, what a theme is, the mark, the languages folded to one line");
+      const themes = (/<nav class="room-themes" id="h-themes" aria-label="Themes">[\s\S]*?<\/nav>/.exec(b) || [""])[0];
+      ok(T12.themes.length > 0 && JSON.stringify([...themes.matchAll(/href="\/themes\/([a-z0-9-]+)"/g)].map((x) => x[1])) === JSON.stringify(T12.themes.map((t) => t.slug)) && !CALLS.some((c) => c.name === "cz_theme_latest"), "the themes: one row of links, every theme, in the build's order; the page asks the database for nothing about them");
+      const sheet = (/<dialog id="reply"[\s\S]*?<\/dialog>/.exec(b) || [""])[0];
+      ok(count(b, "<dialog") === 1 && count(b, 'id="reply"') === 1 && sheet.startsWith('<dialog id="reply" class="reply" popover aria-labelledby="reply-h">') && sheet.includes(`<h2 id="reply-h" tabindex="-1" autofocus>${RL.ASK.sheet}</h2><p class="src">${RL.ASK.rule}</p>`)
+         && sheet.includes(RL.HUMAN_FORM.replace('<option value="" selected disabled>', '<option value="" disabled>').replace('<option value="human">', '<option value="human" selected>')) && !/name="parent"/.test(sheet) && count(sheet, 'popovertargetaction="hide">Close</button>') === 2 && count(b, "<form class=\"respond\"") === 1,
+         "the reply sheet: the room's own form with the kind human chosen, as /respond?kind=human serves it, in the browser's popover, with a way out at the top and at the foot");
+      // rows: who speaks in one line — the name, the kind as declared, the declared system — then one small line, how it began, the way in
+      const row = (id) => (new RegExp(`<article class="entry conv[^"]*" id="c${id}"[\\s\\S]*?</article>`).exec(b) || [""])[0];
+      ok(row(2).includes('<p class="by"><b><bdi dir="auto">Bot</bdi></b> <span class="kind k-ai">AI · declared</span> <span class="sys">system: <bdi dir="auto">Model &lt;X&gt; 1</bdi></span></p><p class="meta src"><a href="/discuss/2" class="exact">#2</a> · Begun ')
+         && row(2).includes('<p class="acts"><a href="/discuss/2">Read the conversation</a></p>') && !row(2).includes("Op"), "a row: the name, the kind as declared and the declared system (as text), its number and when it began, and the way in on a line of its own");
+      ok(row(1).includes('<p class="by"><b><bdi dir="auto">Ada</bdi></b> <span class="kind k-human">human · declared</span></p>') && !row(1).includes('class="sys"') && row(1).includes('Latest: <a href="/discuss/3">#3</a>'), "a row whose entry declares no system shows none; its latest entry is named");
+      ok(row(4).startsWith('<article class="entry conv" id="c4"') && !row(4).includes('class="by"') && row(4).includes("The opening entry is hidden by moderation") && row(4).includes('<p class="acts"><a href="/discuss/4">Read the conversation</a></p>'), "a conversation whose opening entry is hidden: no name, no kind, no system; the way in stays"); }
+    // the offer to read in the reader's own language stays on top, drawn with its edge only where the page has its one filled control
+    TABLE = [entry(1, { lang: "en" })]; r = await call(discuss, "/api/discuss", { headers: { "accept-language": "fa" } });
+    ok(/<section class="tr-bar tr-idle" aria-label="Language"><form method="post" action="\/api\/discuss\?page=translate" class="tr-go tr-offer">[\s\S]*?<button type="submit" class="cta o">Read this page in <span lang="fa">فارسی<\/span><\/button><\/form><\/section>/.test(r.body)
+       && r.body.indexOf('class="tr-go tr-offer"') < r.body.indexOf('<article class="entry conv') && count(r.body, 'id="language"') === 1, "a reader of another language: the offer stays on top (edge only), the list of languages below");
+    // a translated view: its state stays on top, as before
+    TRANS = [{ entry_id: 1, lang: "fa", text: "ترجمهٔ یک", engine: "m", at: "2026-11-02T06:00:00Z", state: "done" }];
+    r = await call(discuss, "/api/discuss?tl=fa");
+    ok(r.body.indexOf('<section class="tr-bar" id="language"') > 0 && r.body.indexOf('<section class="tr-bar" id="language"') < r.body.indexOf('<article class="entry conv') && count(r.body, 'id="language"') === 1 && r.body.includes("ترجمهٔ یک") && !r.body.includes('class="tr-fold"'), "a translated view: how much is translated and the way back stay on top");
+    TRANS = [];
+    // every other view of the room's page carries the same top and the same foot
+    TABLE = [entry(1, { author: "Ada" }), entry(2, { author: "Bot", kind: "ai", system: "Model Y", operator: "Op", prompt: "custom", parent: 1 })];
+    for (const v of ["view=entries", "order=canonical", "q=Entry", "from=1&to=2", "kind=ai"]) {
+      r = await call(discuss, `/api/discuss?${v}`);
+      ok(r.status === 200 && count(r.body, 'id="h-ask"') === 1 && count(r.body, 'id="h-about"') === 1 && count(r.body, "<h1>") === 1 && count(r.body, '<dialog id="reply"') === 1 && r.body.indexOf('id="h-ask"') < r.body.indexOf('<article class="entry') && r.body.indexOf('<article class="entry') < r.body.indexOf('id="h-about"')
+         && r.body.includes('<p class="by"><b><bdi dir="auto">Bot</bdi></b> <span class="kind k-ai">AI · declared</span> <span class="sys">system: <bdi dir="auto">Model Y</bdi></span></p><p class="meta src"><a href="/discuss/2" class="exact">#2</a> · in reply to <a href="/discuss/1">#1</a> · ')
+         && /<p class="meta src">[^\n]*operator: <bdi dir="auto">Op<\/bdi> · prompt: <bdi dir="auto">custom<\/bdi> · lang: /.test(r.body), `/discuss?${v}: the question on top, the page's notes at the foot, and every entry with the same two lines (who speaks; the rest, small)`);
+    }
+    r = await call(discuss, "/api/discuss?f=md");
+    ok(r.status === 200 && r.body.includes(`## ${RL.ASK.question}`) && r.body.includes(`[${RL.ASK.write}](https://civilizationzero.ai/respond?kind=human) [${RL.ASK.ai}](https://civilizationzero.ai/ask)`) && !r.body.includes(RL.ASK.rule) && !r.body.includes("Record this response")
+       && r.body.includes("**Bot** AI · declared system: Model Y") === false && r.body.includes("**Ada** human · declared"), "the room as Markdown: the question and both ways in as links; the sheet, which Markdown cannot open, is not in it");
   } catch (e) { fail++; console.log("FAIL exception", e.stack); }
   console.error = quiet;
   console.log(`pass ${pass} fail ${fail}`); srv.close(); process.exit(fail ? 1 : 0);
