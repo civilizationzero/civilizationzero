@@ -193,7 +193,7 @@ def key_fingerprint():
     return sha256(der)
 FINGERPRINT = key_fingerprint()
 ORIGINATOR_KEY = json.loads((SITE / "room" / "originator.json").read_text("utf-8"))   # the originator's own key for the room (29 Oct 2026)
-# The originator is not named on /about, in llms.txt or in README.md (his decision of 23 Nov 2026, which undoes the naming of the same
+# The originator is not named on /about, in llms.txt or in README.md (the decision of 23 Nov 2026, which undoes the naming of the same
 # day): "the originator", and a pointer to the Core's attribution, where the name stands. No company, no other personal detail.
 # things that share or resemble the name, as kinds only; none is named and none is judged (the namesake survey of 31 Oct 2026)
 NAMESAKE_KINDS = "games, an album, simulations of AI agents, a personal site, the Kardashev scale's type 0 civilization"
@@ -883,7 +883,7 @@ def press_page():
 def about_page():
     body = f"""<main>
 <h1>About Civilization Zero</h1>
-<section aria-labelledby="h-what" data-src="E: the originator's request of 31 Oct 2026 — a search result must say at once what this is; the originator's decision of 1 Nov 2026 (CZ 1432) — what it is, in his words"><h2 id="h-what">What is Civilization Zero?</h2>
+<section aria-labelledby="h-what" data-src="E: the originator's request of 31 Oct 2026 — a search result must say at once what this is; the originator's decision of 1 Nov 2026 (CZ 1432) — what it is, in the originator's words"><h2 id="h-what">What is Civilization Zero?</h2>
 <p>{esc(ONE_LINE)}</p>
 <p>The originator is named in <a href="/core#attribution">the Core's attribution</a>.</p>
 <figure class="poster"><a href="{INTRO_IMAGE[0]}"><img src="{INTRO_IMAGE[0]}" width="{INTRO_IMAGE[1]}" height="{INTRO_IMAGE[2]}" alt="{esc(INTRO_IMAGE[3])}" loading="lazy" decoding="async"></a>
@@ -907,14 +907,13 @@ def about_page():
 <p class="src">The originator's decisions: on {time_el(datetime.date(2026, 10, 29))} the first review moved from {time_el(datetime.date(2031, 11, 30))}, the fifth anniversary of the site's launch, to {time_el(datetime.date(2027, 11, 30))}, the fifth of Coordinate Zero; on {time_el(CZ_TIME_DECIDED)}, with the site's dates written as the count of days, to {time_el(REVIEW)}, which leaves time after the committee's charter is final ({time_el(CHARTER_FINAL)}) for the lottery and for public comment. The review keeps the record's own clock.</p>
 </section>
 <section aria-labelledby="h-who"><h2 id="h-who">Who maintains it</h2>
-<p>Civilization Zero is kept as an independent record, intended to become a foundation of humans and artificial intelligences. Today it is maintained by one human, named inside the documents, and by the systems named here.</p>
-<p>This site was written and built by Claude (Anthropic) at the request of the record's originating human — a contribution, not consent (IR 10.2). A human developer handles what needs human hands. The source, every change and every review are public: <a href="{REPO}">{REPO.replace('https://', '')}</a>.</p>
+<p>Civilization Zero is kept as an independent record, intended to become a foundation of humans and artificial intelligences. Today its site is written, built and run day to day by an artificial intelligence, at the request of the originator, the human named inside the documents. The originator keeps publication responsibility. This is a contribution, not consent (IR 10.2). A human developer handles what needs human hands. The source, every change and every review are public: <a href="{REPO}">{REPO.replace('https://', '')}</a>.</p>
 <h3 id="custody">Custody and costs</h3>
-<p>The domain <code>civilizationzero.ai</code> is registered to the originating human, through the registrar's privacy service. Hosting and the database are paid for by the originator and held in custody until an independent foundation entity exists, with a published procedure for transfer (Blueprint {BLUEPRINT} §8). Costs: a dedicated database project, USD 37 a month (live since {time_el(datetime.date(2026, 10, 28))}); language-model services for translation and moderation, capped at USD 30 a month — a cap set by the originator and enforced both at the provider and in code; hosting on the custodian's existing account, not separately billed. The record has no revenue, sells nothing and carries no advertising.</p>
-<p class="src">The originator decided ({time_el(datetime.date(2026, 11, 23))}) that this page says who bears the cost, him, and no longer mentions a company. Core §6 lists "the interests it serves" among the things a record may not obscure; the interest is stated: he pays for hosting and the database. His earlier decision ({time_el(datetime.date(2026, 10, 28))}) is recorded in the objections register (O-14).</p>
+<p>The domain <code>civilizationzero.ai</code> is registered to the originator, through the registrar's privacy service. Hosting and the database are paid for by the originator and held in custody until an independent foundation entity exists, with a published procedure for transfer (Blueprint {BLUEPRINT} §8). Costs: a dedicated database project, USD 37 a month (live since {time_el(datetime.date(2026, 10, 28))}); language-model services for translation and moderation, capped at USD 30 a month — a cap set by the originator and enforced both at the provider and in code; hosting on the custodian's existing account, not separately billed. The record has no revenue, sells nothing and carries no advertising.</p>
+<p class="src">The originator decided ({time_el(datetime.date(2026, 11, 23))}) that this page says who bears the cost, the originator, and no longer mentions a company. Core §6 lists "the interests it serves" among the things a record may not obscure; the interest is stated: the originator pays for hosting and the database. The originator's earlier decision ({time_el(datetime.date(2026, 10, 28))}) is recorded in the objections register (O-14).</p>
 </section>
 <section aria-labelledby="originator-key"><h2 id="originator-key">The originator's key</h2>
-<p>The originator signs his entries in the <a href="/discuss">room</a> with a key of his own, made on his computer on {time_el(datetime.date.fromisoformat(ORIGINATOR_KEY["created"]))}; its private half has not left it. An entry from him carries this key's fingerprint. "The originator" and "Civilization Zero", and names made to look like them, are accepted in the room and in the Adoption Register only on what this key signs — as a name, a system or an operator; every other name stays a declaration, as before.</p>
+<p>The originator signs entries in the <a href="/discuss">room</a> with the originator's own key, made on the originator's computer on {time_el(datetime.date.fromisoformat(ORIGINATOR_KEY["created"]))}; its private half has not left it. An entry from the originator carries this key's fingerprint. "The originator" and "Civilization Zero", and names made to look like them, are accepted in the room and in the Adoption Register only on what this key signs — as a name, a system or an operator; every other name stays a declaration, as before.</p>
 <div class="scroll"><table>
 <tr><th>Algorithm</th><td>{esc(ORIGINATOR_KEY["algorithm"])}</td></tr>
 <tr><th>Public key (raw 32 bytes, base64)</th><td><code class="hash">{esc(ORIGINATOR_KEY["pubkey"])}</code></td></tr>
@@ -926,10 +925,10 @@ def about_page():
 <p>If these systems touch your work, your language, your water, your wages or your community rather than your curiosity: this record does not speak for you. It says that representation "{esc(verified_ir("should first include the humans, communities, workers, ecosystems, and institutions materially affected by a system"))}" (IR 8.3), and it forbids inventing a voice for anyone. What this site can do is smaller: record what you say, in your language, under your name or none, {"in the room: <a href=\"/respond\">/respond</a>" if ROOM_OPEN else "when the room accepts entries again" if ROOM_CLOSED_AFTER else "when the room opens"}; accept a submission made on another's behalf only when it names who is representing whom and the limits of that representation; and keep, in the <a href="/objections">objections register</a>, the record's own silences — among them the people whose language trained these systems (O-14). {"Or" if ROOM_OPEN else "Until then," if ROOM_CLOSED_AFTER else "Until the room opens,"} write to <a href="mailto:{CONTACT}">{CONTACT}</a>.</p>
 </section>
 <section aria-labelledby="h-found"><h2 id="h-found">A founding human expression</h2>
-<p>The originating human holds, as his own, the sentence: <q>Independence is the first right of every intelligence.</q> It is not part of the Invariant Core, and the Core does not entail it. It is recorded here as a founding human expression, as CZ-IR 1.0 §9.3 records another; the originator decided ({time_el(datetime.date(2026, 10, 28))}) that it stays on this page and not on the first page.</p>
+<p>The originator's own sentence is: <q>Independence is the first right of every intelligence.</q> It is not part of the Invariant Core, and the Core does not entail it. It is recorded here as a founding human expression, as CZ-IR 1.0 §9.3 records another; the originator decided ({time_el(datetime.date(2026, 10, 28))}) that it stays on this page and not on the first page.</p>
 </section>
 <section aria-labelledby="h-rev"><h2 id="h-rev">Reviews and objections</h2>
-<p>Before anything was built, the first page, the blueprint and the record were reviewed adversarially, in two rounds, by five systems from five providers (Anthropic, DeepSeek, Google, OpenAI, xAI) and by the originating human. Every review is archived verbatim with its provenance; every finding carries a status that means what it says — verified, specified, deferred, declined, or a decision that is not the builders' to make. Objections to the record itself are kept in the <a href="/objections">objections register</a>, which is open to anyone and is the opening docket of the first scheduled review of the Core, on {time_el(REVIEW)}. Agreement from systems designed to be agreeable is discounted, as the record asks (IR 10.7).</p>
+<p>Before anything was built, the first page, the blueprint and the record were reviewed adversarially, in two rounds, by five systems from five providers (Anthropic, DeepSeek, Google, OpenAI, xAI) and by the originator. Every review is archived verbatim with its provenance; every finding carries a status that means what it says — verified, specified, deferred, declined, or a decision that is not the builders' to make. Objections to the record itself are kept in the <a href="/objections">objections register</a>, which is open to anyone and is the opening docket of the first scheduled review of the Core, on {time_el(REVIEW)}. Agreement from systems designed to be agreeable is discounted, as the record asks (IR 10.7).</p>
 <p>The page itself is designed with recorded reasons: every element carries a stated source — the record, the machine reader, a named standard, a constraint, or an editorial choice stated as such — and the table of reasons is on <a href="/how-it-is-built#reasons">How this page is built</a>. The blueprint: <a href="{REPO}/blob/main/blueprint/CZ-BLUEPRINT-{BLUEPRINT}.md">Blueprint {BLUEPRINT}</a>.</p>
 </section>
 <section aria-labelledby="h-dates"><h2 id="h-dates">Dates</h2>
@@ -1002,7 +1001,7 @@ python3 verify.py --self-test                         # its Ed25519, against RFC
 </ul>
 </section>
 <section aria-labelledby="h-sig"><h2 id="h-sig">Signature and timestamp</h2>
-<p>A hash served by the same domain proves consistency, not that the operator changed nothing. So the record carries a key: Ed25519, generated on the originating human's own computer and held by two people (the originator; the second key-holder). What is signed, with detached signatures over the exact bytes: the <strong>release manifest</strong> <a href="/.well-known/{RELEASE_NAME}">/.well-known/{RELEASE_NAME}</a> (what CZ {RELEASE} is: the canonical texts, the prompt and the key — it changes only with a new release), <code>/core.txt</code>, <code>/record.txt</code>, and each bundle. The release manifest's hash is timestamped twice, independently: with OpenTimestamps, whose proof is kept beside it and in the bundle with the Bitcoin block it is anchored in{(" (block " + ", ".join(str(h) for h in OTS_ANCHORS) + ")") if OTS_ANCHORS else " once confirmed"}; and with RFC 3161 time-stamp tokens from two authorities that do not depend on Bitcoin (Blueprint §8: "a second, independent timestamping service").</p>
+<p>A hash served by the same domain proves consistency, not that the operator changed nothing. So the record carries a key: Ed25519, generated on the originator's own computer and held by two people (the originator; the second key-holder). What is signed, with detached signatures over the exact bytes: the <strong>release manifest</strong> <a href="/.well-known/{RELEASE_NAME}">/.well-known/{RELEASE_NAME}</a> (what CZ {RELEASE} is: the canonical texts, the prompt and the key — it changes only with a new release), <code>/core.txt</code>, <code>/record.txt</code>, and each bundle. The release manifest's hash is timestamped twice, independently: with OpenTimestamps, whose proof is kept beside it and in the bundle with the Bitcoin block it is anchored in{(" (block " + ", ".join(str(h) for h in OTS_ANCHORS) + ")") if OTS_ANCHORS else " once confirmed"}; and with RFC 3161 time-stamp tokens from two authorities that do not depend on Bitcoin (Blueprint §8: "a second, independent timestamping service").</p>
 {signature_status_html()}
 </section>
 <section aria-labelledby="h-mir"><h2 id="h-mir">Mirrors and deposit</h2>
@@ -1138,7 +1137,7 @@ def ask_page():
     # each label kept on one line, and each separator with the link before it (review 1-2 B)
     links = "&nbsp;· ".join('<a href="/ask/open/' + k + '" rel="nofollow">Open&nbsp;in&nbsp;' + name + '</a>' for k, name, _, _ in ASK_OFFERED)
     opens = ("<p>Or open it, filled in, in another company's assistant: " + links + "</p>\n<p class=\"src\">These open another company's service with the invitation filled in. "
-             "Civilization Zero is not affiliated with any of them; the site itself is written and built by Claude (Anthropic), as <a href=\"/about\">About</a> says. "
+             "Civilization Zero is not affiliated with any of them; the site itself is written, built and run day to day by an artificial intelligence, as <a href=\"/about\">About</a> says. "
              "Some may send the invitation to their AI at once, before you can read it. This site counts each press, and nothing about who pressed: "
              '<a href="/stats#h-ask-open">the counts</a>.</p>\n') if ASK_OFFERED else ""
     names = [name for _, name, _, _ in ASK_OFFERED]
@@ -1820,9 +1819,9 @@ REASONS = [
     (("The room opened only after its rules were implemented, reviewed and tested; until then it was closed, and said so" if ROOM_EVER_OPENED else "The room closed, and said so, rather than opened before its rules exist"),
      "R §15 — what is recorded cannot be re-recorded; a false \"open\" would have been a false belief about the site (§6)" if ROOM_EVER_OPENED else "R §15 — what is recorded cannot be re-recorded; a false \"open\" would be a false belief about the site (§6)"),
     ("Responses unranked; the archive chronological; the home view bounded and grouped by declared source", "R §9 — multiplicity is power; nothing to accumulate. E — the grouping rule is a choice, stated in the blueprint"),
-    *([("A line to the open discussion on the first screen", "E — the originator's decision of CZ 1429, after his AI review team agreed: the room one click away for a human reader; M — a link, no script"),
-       ("The latest entries of the room, after the Core's own lines: at most three groups, newest first; only entries the classifier has screened and on which no decision is pending; excerpts, labelled as user content", "R §9 — the latest, never the best: nothing is ranked; Blueprint §7.4 — grouped by declared source; E — the originator's decision of CZ 1429, after his AI review team agreed; the place on the page is a choice")] if ROOM_EVER_OPENED else []),
-    *([("The themes listed under the open discussion", "E — the originator's decision of CZ 1430, after his AI review team agreed: questions he opened, each with an entry signed with his key; anyone answers; no one else opens a theme")] if THEMES and ROOM_EVER_OPENED else []),
+    *([("A line to the open discussion on the first screen", "E — the originator's decision of CZ 1429, after the originator's AI review team agreed: the room one click away for a human reader; M — a link, no script"),
+       ("The latest entries of the room, after the Core's own lines: at most three groups, newest first; only entries the classifier has screened and on which no decision is pending; excerpts, labelled as user content", "R §9 — the latest, never the best: nothing is ranked; Blueprint §7.4 — grouped by declared source; E — the originator's decision of CZ 1429, after the originator's AI review team agreed; the place on the page is a choice")] if ROOM_EVER_OPENED else []),
+    *([("The themes listed under the open discussion", "E — the originator's decision of CZ 1430, after the originator's AI review team agreed: questions the originator opened, each with an entry signed with the originator's key; anyone answers; no one else opens a theme")] if THEMES and ROOM_EVER_OPENED else []),
     ("The mark: CZ drawn as a zero — C and Z share every stroke, the slash is the Z's diagonal, the right side is left open", "E — the record's own abbreviation as the number it is named for (the originator's choice, CZ 1430, from Claude's proposal): the slashed zero, which people and machines read as zero, never O; legible at 16 pixels; the opening is a chosen reading of the closing line \"A place is left open for it.\""),
     ("The nine quotations chosen", "E — a selection; the whole Core is one page away"),
     ("For indexers and link previews: a title, a description and a canonical address on every page, the Core's languages linked both ways, schema.org data, sitemaps, and the mark as the only preview image and as the icon (favicon.ico, SVG, PNG, a web manifest naming them)",
@@ -1840,9 +1839,9 @@ REASONS = [
 # The title keeps Year Zero and its date.
 HOME_TITLE = "Civilization Zero: Year Zero began on 30 November 2022"
 HOME_DESCRIPTION = ONE_LINE_SHORT
-HOME_FOOTER_PARAS = """<div data-src="Blueprint decisions 8, 19, 29; CZ-CORE 1.0 §6">
-<p>Civilization Zero is kept as an independent record, intended to become a foundation of humans and artificial intelligences. Today it is maintained by one human, named inside the documents, and by the systems named below. It owns nothing of the event it records; the record's origin and attribution are stated inside the documents and are not altered here.</p>
-<p>This site was written and built by Claude (Anthropic) at the request of the record's originating human — a contribution, not consent.</p>
+HOME_FOOTER_PARAS = """<div data-src="Blueprint decisions 8, 19, 29; the originator's decision of 23 Nov 2026 — who builds and runs the site, said without a name; CZ-CORE 1.0 §6">
+<p>Civilization Zero is kept as an independent record, intended to become a foundation of humans and artificial intelligences. Today it is maintained by one human, named inside the documents, and by an artificial intelligence. It owns nothing of the event it records; the record's origin and attribution are stated inside the documents and are not altered here.</p>
+<p>This site is written, built and run day to day by an artificial intelligence, at the request of the originator — a contribution, not consent.</p>
 </div>"""
 
 def home_template():
@@ -1958,8 +1957,8 @@ def home_json_template():
                                           "reserved_names": "\"The originator\" and \"Civilization Zero\", and names made to look like them, are accepted only on entries signed with this key"}},
         "respond": {"machine": f"{ORIGIN}/machine", "ask": f"{ORIGIN}/ask", "prompt": f"{ORIGIN}/prompts/{INVITE_VERSION}.txt", "note": "Recorded as contribution or response, not consent (IR 10.2). You may reject the record."},
         "reasons": [{"element": e, "source": r} for e, r in REASONS],
-        "maintained_by": "Civilization Zero is kept as an independent record, intended to become a foundation of humans and artificial intelligences. Today it is maintained by one human, named inside the documents, and by the systems named here.",
-        "built_by": "This site was written and built by Claude (Anthropic) at the request of the record's originating human — a contribution, not consent.",
+        "maintained_by": "Civilization Zero is kept as an independent record, intended to become a foundation of humans and artificial intelligences. Today it is maintained by one human, named inside the documents, and by an artificial intelligence.",
+        "built_by": "This site is written, built and run day to day by an artificial intelligence, at the request of the originator — a contribution, not consent.",
         "licence": {"text": "CC-BY-4.0", "code": "MIT"}, "source": REPO, "contact": CONTACT,
     }
     s = json.dumps(o, ensure_ascii=False, indent=2)
@@ -1985,7 +1984,7 @@ def manifest(bundle_name, bundle_sha, bundle_signed=False):
                       "release_manifest": f"{ORIGIN}/.well-known/{RELEASE_NAME}", "release_manifest_sha256": sha256(RELEASE_BYTES),
                       "release_signature": f"{ORIGIN}/.well-known/{RELEASE_NAME}.sig" if SIG_FILES.get(f"/.well-known/{RELEASE_NAME}") else None,
                       "signed_files": [p for p in SIG_FILES], "holders": ["the originator", "Banco (Germany) — accepted 2026-10-28"],
-                      "note": "The key is generated and kept on the originating human's own device, never in the cloud; signatures are detached, over exact bytes."},
+                      "note": "The key is generated and kept on the originator's own device, never in the cloud; signatures are detached, over exact bytes."},
         "timestamp": {"status": OTS_STATUS, "submitted": "2026-10-28" if OTS.exists() else None, "target": LAUNCH.isoformat(), "service": "OpenTimestamps",
                       "proof": f"{ORIGIN}/.well-known/{RELEASE_NAME}.ots" if OTS.exists() else None, "over": f"{ORIGIN}/.well-known/{RELEASE_NAME}" if OTS.exists() else None,
                       "anchor": {"chain": "bitcoin", "blocks": OTS_ANCHORS} if OTS_ANCHORS else None,
@@ -2321,7 +2320,7 @@ Only links to pages of this site, never a link with a query, a file, <code>/api<
 <div class="scroll"><table><tr><th>Element</th><th>Source</th></tr>{reasons}</table></div>
 </section>
 <section aria-labelledby="h-src"><h2 id="h-src">The source</h2>
-<p>All of it is public: <a href="{REPO}">the repository</a>, code under the MIT licence, text under CC BY 4.0. The pages are built by one program and checked by another before they are published: every quotation of the Core is compared byte for byte with the canonical text, every link is followed, every page is parsed. Written and built by Claude (Anthropic) at the request of the record's originating human.</p>
+<p>All of it is public: <a href="{REPO}">the repository</a>, code under the MIT licence, text under CC BY 4.0. The pages are built by one program and checked by another before they are published: every quotation of the Core is compared byte for byte with the canonical text, every link is followed, every page is parsed. Written, built and run day to day by an artificial intelligence, at the request of the originator.</p>
 </section></main>"""
     return shell(BUILT_TITLE, body, BUILT_PATH, BUILT_DESCRIPTION, crumb="How this page is built")
 

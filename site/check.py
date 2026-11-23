@@ -395,7 +395,7 @@ for _k, _u in _open.get("to", {}).items():
 check(len(re.findall(r'href="/ask/open/', _cur)) == len(_open.get("offered", [])), "/ask: a link to an assistant that is not offered")
 _built = (PUBLIC / "how-it-is-built.html").read_text("utf-8")
 check(not _open.get("offered") or ("These open another company's service with the invitation filled in. Civilization Zero is not affiliated with any of them; "
-      'the site itself is written and built by Claude (Anthropic), as <a href="/about">About</a> says.') in _cur, "/ask: the links to the assistants are not labelled as another company's, not affiliated, and the site as built by Claude")
+      'the site itself is written, built and run day to day by an artificial intelligence, as <a href="/about">About</a> says.') in _cur, "/ask: the links to the assistants are not labelled as another company's, not affiliated, and the site as built by an artificial intelligence")
 check(bool(_open.get("offered")) == ('<p id="ask-open">' in _built), "/how-it-is-built says how the presses are counted exactly while /ask offers the links")
 check({"source": "/ask/open/:name(chatgpt|claude|perplexity)", "destination": "/api/page?open=:name"} in v["rewrites"], "vercel.json: /ask/open/<name> is not routed to the redirect")
 _mw = (SITE / "middleware.js").read_text("utf-8")

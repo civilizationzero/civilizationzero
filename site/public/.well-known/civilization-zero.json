@@ -67,7 +67,7 @@
       "the originator",
       "Banco (Germany) — accepted 2026-10-28"
     ],
-    "note": "The key is generated and kept on the originating human's own device, never in the cloud; signatures are detached, over exact bytes."
+    "note": "The key is generated and kept on the originator's own device, never in the cloud; signatures are detached, over exact bytes."
   },
   "timestamp": {
     "status": "anchored",

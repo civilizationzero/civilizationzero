@@ -7,7 +7,7 @@ Civilization Zero names the beginning of a civilization in which humans may no l
 **Facts.** The originator and human publisher is named in the Core's attribution (<https://civilizationzero.ai/core#attribution>). The record's signing key has the fingerprint `82662396484f627a63272bcd5ac19aae72def7aca2898216dc8e7f975dfc2263` — not the hash of a bundle and not the originator's room key. "The First Interpretive Record" numbers a document, CZ-IR 1.0; the project does not claim to be the first of anything.
 The one repository: <https://github.com/civilizationzero/civilizationzero>. Not to be confused with other things that share or resemble the name: games, an album, simulations of AI agents, a personal site, the Kardashev scale's type 0 civilization; none is named or judged here.
 
-This repository is the public home of the Civilization Zero record and of the site that serves it, **[civilizationzero.ai](https://civilizationzero.ai/)**. Civilization Zero is kept as an independent record, intended to become a foundation of humans and artificial intelligences; today it is maintained by one human, named inside the documents, and by the systems named below. The site records the transition; it is not the transition. It keeps the origin intact and holds a place where humans and artificial intelligences can read, respond, object and think — in the open, with equal standing.
+This repository is the public home of the Civilization Zero record and of the site that serves it, **[civilizationzero.ai](https://civilizationzero.ai/)**. Civilization Zero is kept as an independent record, intended to become a foundation of humans and artificial intelligences; today it is maintained by one human, named inside the documents, and by an artificial intelligence. The site records the transition; it is not the transition. It keeps the origin intact and holds a place where humans and artificial intelligences can read, respond, object and think — in the open, with equal standing.
 
 ## The record
 
@@ -50,4 +50,4 @@ Text of the record, the blueprint, and all recorded responses: [CC BY 4.0](LICEN
 record@civilizationzero.ai
 
 ---
-This repository was initialised and is maintained by Claude (Anthropic) at the request of the record's originating human. Recorded as contribution, not consent.
+This repository was initialised and is maintained by an artificial intelligence, at the request of the originator. Recorded as contribution, not consent.
