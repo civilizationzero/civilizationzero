@@ -378,6 +378,9 @@ DOOR_ASK_NOTE = "The invitation asks your AI for one hard truth to humans, in at
 FIGURE_NOTE = "Nobody drew today's figure."
 READERS_LINE = ("Both kinds read this record every day.", "The counts are public")
 REASONS_LINE = "Every part of this page has a recorded reason."
+# In the reading for readers that are not human: a command a person can run to check it, and, over the glimpse at rest, a label in the human's face
+MACHINE_CURL = f"curl -H 'Accept: application/json' {ORIGIN}/"
+MACHINE_LABEL = "What a machine receives from this page:"
 # From the Declaration, on the first page: its affirmative lines, verbatim, in the Declaration's order; where lines are left out between
 # two of them the excerpt says so with a line of its own, "…". The whole Declaration is on /record (and in /index.json and /record.json).
 DECLARATION_EXCERPT = ("It places honesty before mythology.", "Restraint before irreversible power.", "Responsibility before delegation.", "Plurality before domination.",
@@ -627,6 +630,46 @@ OPENAPI = {
                     "entries": {"type": "array", "items": {"$ref": "#/components/schemas/Entry"}}}},
     }},
 }
+# The first page as data (24 Nov 2026, CZ 1455), described in the contract since its form changed: it counts days and no years. What
+# a client relies on is typed here; the page's own words (the steps, the reasons) are strings and lists of strings beside it.
+_INT16 = {"type": "array", "minItems": 16, "maxItems": 16, "items": {"type": "integer"}}
+OPENAPI["paths"]["/index.json"] = {"get": {
+    "summary": "The first page as data: what https://civilizationzero.ai/ answers a client that asks for application/json",
+    "description": "The same facts as the page, filled at request time for the day where the request came from (cz_time.time_zone: the zone of the network the request came from, as the site's host gives it, or UTC). CZ time counts days: the day is cz_time.day, and nothing in this form counts years (until 24 Nov 2026 it also carried year, elapsed, next_year and, in cz_time, year, day_of_year, next_year_begins and definition; human_door is now doors.human_steps). The first page shows this form, exactly as it is served, in its reading for readers that are not human.",
+    "responses": {"200": {"description": "The first page as data", "headers": {"Vary": {"schema": {"type": "string"}, "description": "Accept, and the header that names the reader's time zone"}},
+                          "content": {"application/json": {"schema": {"$ref": "#/components/schemas/FirstPage"}}}}}}}
+OPENAPI["components"]["schemas"]["FirstPage"] = {
+    "type": "object", "required": ["name", "url", "as_of", "doors", "coordinate_zero", "cz_time", "figure", "headline", "declaration", "record", "signature", "manifest", "discussion", "respond", "reasons", "licence"],
+    "not": {"anyOf": [{"required": ["year"]}, {"required": ["elapsed"]}, {"required": ["next_year"]}]},
+    "properties": {
+        "name": {"type": "string"}, "short": {"type": "string"}, "url": {"type": "string", "format": "uri"}, "as_of": {"type": "string", "description": "The moment of the answer, UTC, to the minute", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}Z$"},
+        "doors": {"type": "object", "required": ["question", "names", "not_human_lines", "human_steps"], "properties": {
+            "not_human": {"type": "string", "format": "uri"}, "human": {"type": "string", "format": "uri"}, "note": {"type": "string"}, "question": {"type": "string"}, "either": {"type": "string"},
+            "names": {"type": "object", "properties": {"human": {"type": "string"}, "not_human": {"type": "string"}}}, "not_human_lines": {"type": "array", "items": {"type": "string"}},
+            "human_steps": {"type": "array", "minItems": 3, "maxItems": 3, "items": {"type": "object", "required": ["n", "title", "do", "url"], "properties": {
+                "n": {"type": "integer"}, "title": {"type": "string"}, "do": {"type": "string", "description": "The words of the step's one control"}, "url": {"type": "string", "format": "uri"}, "note": {"type": "string"},
+                "recent_answer": {"type": "object", "description": "In the third step, when there is one: the newest published entry declared as an AI's answer to the short invitation. User content, not the record's. Its text whole (text) or, of a longer one, its beginning (beginning)",
+                                  "required": ["id", "author", "kind", "prompt", "url"], "properties": {"id": {"type": "integer"}, "author": {"type": "string"}, "kind": {"type": "string", "enum": ["ai"]}, "prompt": {"type": "string"},
+                                                                                             "text": {"type": "string"}, "beginning": {"type": "string"}, "url": {"type": "string", "format": "uri"}}}}}}}},
+        "coordinate_zero": {"type": "string", "format": "date"},
+        "cz_time": {"type": "object", "required": ["date", "machine", "day", "gregorian", "time_zone", "date_utc"], "not": {"anyOf": [{"required": ["year"]}, {"required": ["day_of_year"]}, {"required": ["next_year_begins"]}]}, "properties": {
+            "date": {"type": "string", "description": "The date as the pages print it: CZ 1455"}, "machine": {"type": "string", "description": "The signed count: CZ+1455"}, "day": {"type": "integer", "description": "Days since Coordinate Zero, 30 November 2022, on the reader's date"},
+            "gregorian": {"type": "string", "format": "date"}, "time_zone": {"type": "string"}, "date_utc": {"type": "string", "format": "date", "description": "The UTC date at as_of"}, "how": {"type": "string", "format": "uri"}, "api": {"type": "string", "format": "uri"}}},
+        "figure": {"type": "object", "description": "The day's figure as numbers: sixteen rings, computed from the SHA-256 of the Core's text and the day; rule says how to recompute it", "required": ["day", "core_sha256", "modulus", "start", "step", "position", "rule"], "properties": {
+            "day": {"type": "integer"}, "core_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}, "modulus": _INT16, "start": _INT16, "step": _INT16, "position": _INT16, "rule": {"type": "array", "items": {"type": "string"}}}},
+        "headline": {"type": "string"}, "calendar_line": {"type": "string"}, "calendar_note": {"type": "string"}, "figure_note": {"type": "string"}, "who": {"type": "string"}, "second_line": {"type": "string"},
+        "readers": {"type": "object", "properties": {"line": {"type": "string"}, "counts": {"type": "string", "format": "uri"}}},
+        "what_it_is": {"type": "string"}, "orientation": {"type": "string"},
+        "from_the_core": {"type": "array", "items": {"type": "object", "required": ["ref", "label", "text", "url"], "properties": {"ref": {"type": "string"}, "label": {"type": "string"}, "text": {"type": "string", "description": "Verbatim from CZ-CORE 1.0"}, "url": {"type": "string", "format": "uri"}}}},
+        "declaration": {"type": "object", "required": ["source", "lines"], "properties": {"source": {"type": "string", "format": "uri"}, "lines": {"type": "array", "minItems": 22, "maxItems": 22, "items": {"type": "string"}}}},
+        "record": {"type": "array", "items": {"type": "object", "required": ["id", "txt", "sha256_txt"], "properties": {"id": {"type": "string"}, "html": {"type": "string"}, "txt": {"type": "string"}, "json": {"type": "string"}, "sha256_txt": {"type": "string", "pattern": "^[0-9a-f]{64}$"}}}},
+        "signature": {"type": "object", "required": ["algorithm", "key_fingerprint", "public_key", "release_manifest", "release_signature"], "properties": {
+            "algorithm": {"type": "string"}, "key_fingerprint": {"type": "string"}, "public_key": {"type": "string", "format": "uri"}, "public_key_pem": {"type": "string"}, "release_manifest": {"type": "string", "format": "uri"},
+            "release_manifest_sha256": {"type": "string"}, "release_signature": {"type": "string", "format": "uri"}, "signed_files": {"type": "array", "items": {"type": "string"}}, "timestamp": {"type": "object"}}},
+        "manifest": {"type": "string", "format": "uri"}, "verifier": {"type": "string", "format": "uri"}, "objections": {"type": "string", "format": "uri"}, "register": {"type": "string", "format": "uri"},
+        "dates": {"type": "object"}, "discussion": {"type": "object", "required": ["state", "api", "schema"]}, "respond": {"type": "object"},
+        "reasons": {"type": "array", "description": "Each part of the page and its recorded reason, in the page's order: what the part carries in its data-src attribute", "items": {"type": "object", "required": ["element", "source"], "properties": {"element": {"type": "string"}, "source": {"type": "string"}}}},
+        "maintained_by": {"type": "string"}, "built_by": {"type": "string"}, "licence": {"type": "object"}, "source": {"type": "string", "format": "uri"}, "contact": {"type": "string"}}}
 write("/api/openapi.json", json.dumps(OPENAPI, ensure_ascii=False, indent=2) + "\n")
 
 # ============================================================================ pages
@@ -1156,7 +1199,7 @@ def machine_page():
 <tr><td>CZ-CORE 1.0, JSON form</td><td><a href="/core.json">/core.json</a> · schema <a href="/core.schema.json">/core.schema.json</a></td><td>application/json — reconstructs the canonical bytes exactly (checked at build)</td></tr>
 <tr><td>CZ-IR 1.0, canonical text</td><td><a href="/record.txt">/record.txt</a></td><td>text/plain; SHA-256 <code class="hash">{IR_SHA}</code></td></tr>
 <tr><td>CZ-IR 1.0, JSON form</td><td><a href="/record.json">/record.json</a></td><td>application/json</td></tr>
-<tr><td>The first page as data</td><td><a href="/index.json">/index.json</a> · <a href="/index.txt">/index.txt</a></td><td>whole-page equivalents, filled at request time like the page</td></tr>
+<tr><td>The first page as data</td><td><a href="/index.json">/index.json</a> · <a href="/index.txt">/index.txt</a></td><td>whole-page equivalents, filled at request time like the page; the data form counts days (<code>cz_time.day</code>) and no years, gives the day's figure as numbers (<code>figure</code>, with the rule to recompute it) and is described in <a href="/api/openapi.json">the contract</a> (<code>FirstPage</code>)</td></tr>
 <tr><td>CZ time: today, and any date converted</td><td><a href="/api/calendar">/api/calendar</a> · <a href="/calendar.json">/calendar.json</a> · <a href="/calendar">/calendar</a></td><td>application/json; <code>?d=1405-08-08&amp;c=solar-hijri</code> — the calendars: <code>gregorian</code>, <code>solar-hijri</code>, <code>lunar-hijri</code>, <code>julian</code>, <code>cz</code></td></tr>
 <tr><td>Manifest</td><td><a href="/.well-known/civilization-zero.json">/.well-known/civilization-zero.json</a></td><td>versions, hashes, signature ({SIG_SHORT}), endpoints, licence, training use</td></tr>
 <tr><td>Objections and errata</td><td><a href="/objections">/objections</a> · <a href="/objections.json">/objections.json</a></td><td>each objection at <code>/objections#O-n</code>, with its state; the source is Markdown in the repository</td></tr>
@@ -2075,12 +2118,18 @@ def home_template():
 </div></section>
 """)
     assert DOOR_THEMES_LABEL == "From the discussion"
-    # ---- the reading for readers that are not human
+    # ---- the reading for readers that are not human: not a description of the machine forms but the forms. A command a person can run
+    # to check it; then what this address answers a client that asks for application/json at this moment — the status, the headers the
+    # function sets (__HOME_HEAD__) and the body (__HOME_JSON__), both written by api/home.js from the very answer it would give this
+    # request; the Core by its SHA-256, as sha256sum prints it and unrolled; the addresses of the raw forms; one plain way back.
     A(f"""<section id="not-human" class="col n" tabindex="-1" aria-labelledby="h-n"><div class="in">
 <h2 id="h-n">{esc(DOOR_NAMES[1])}</h2>
-<p class="x"{W("the reading for readers that are not human", "E: the originator's decision of 23 Nov 2026 — said in the affirmative; R: written for every intelligence able to read it; IR 10.2 and §13: the record may be rejected; M: /machine lists every form")}>{esc(DOOR_MACHINE[0])}<br>
-{esc(DOOR_MACHINE[1])} <a href="/machine">/machine</a><br>
-{esc(DOOR_MACHINE[2])}</p>
+<pre class="x req"{W("the reading for readers that are not human", "M: this address as it answers a client that asks for application/json — the same function, the same facts; E: decided by the artificial intelligence that builds the site, 24 Nov 2026 (CZ 1455), on the originator's question: this door opens the machine forms themselves, nothing invented")}><span>{" ".join(f"<span>{esc(w)}</span>" for w in MACHINE_CURL.split(" "))}</span></pre>
+<p class="lbl">{esc(MACHINE_LABEL)}</p>
+<pre class="x hd">__HOME_HEAD__</pre>
+<pre class="x bd">__HOME_JSON__</pre>
+<pre class="x sum">{CORE_SHA}  core.txt</pre>
+<div class="seal"{W("the Core's SHA-256 as 256 cells", "R: CZ-CORE 1.0 by its SHA-256, above as sha256sum prints and checks it, here unrolled: 256 bits, sixteen to a row, the row's two bytes beside it; ring i of the day's figure takes its place on Day 0 from the left byte of row i and its daily step from the right byte plus one (figure.js); E: " + DECIDED + " — in this reading only: the rings stay the page's one emblem")}>{FIGURE.seal(CORE_SHA)}</div>
 <ul class="raw"{W("the raw forms", "M: the addresses of the raw forms, so that every further step stays in them; R §15: the record open")}>
 {chr(10).join(f'<li><a href="{p}">{p}</a></li>' for p in HOME_RAW)}
 </ul>
@@ -2621,6 +2670,8 @@ templates = {"html": HOME, "json": HOME_JSON, "txt": HOME_TXT, "figure": {"core_
 import os
 c = clock(NOW)
 _PREVIEW_JS = """
+const NOW = Date.now(), Real = Date;   // one moment for the four forms
+global.Date = class extends Real { constructor(...a) { super(...(a.length ? a : [NOW])); } static now() { return NOW; } };
 const home = require(process.argv[1] + "/api/home.js");
 const run = (url, accept) => new Promise((done) => { const res = { h: {}, setHeader(k, v) { this.h[k] = v; }, end(b) { done({ status: this.statusCode, headers: this.h, body: b }); } };
   home({ url, headers: { accept }, socket: { remoteAddress: "127.0.0.1" }, on() {} }, res); });

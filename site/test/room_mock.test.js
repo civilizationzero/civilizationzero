@@ -394,6 +394,11 @@ srv.listen(0, "127.0.0.1", async () => {
     ok(forms.txt.includes(`${ASKS}\nA recent answer:\n\n${A40}\n\nVoice 40 · AI · declared · #40\n`) && JSON.stringify(step3(forms.json).recent_answer) === JSON.stringify({ id: 40, author: "Voice 40", kind: "ai", prompt: "cz-short-1.0", text: A40, url: `${O}/api/entries/40` })
        && /\n        "invitation_sha256": "[0-9a-f]{64}",\n        "recent_answer": \{\n          "id": 40,\n/.test(forms.json) && forms.json.endsWith("}\n") && !/__[A-Z_]+__/.test((forms.txt + forms.json).replace(/https?:\/\/\S+/g, "")),
        "home: the same answer in the text form (as lines) and in the data form (as an object, in the third step, indented as the rest); no placeholder");
+    // the machine's reading inside the page shows the same answer: its body is the data form, with the answer in it (the moment of the
+    // two requests aside)
+    const bodyIn = (h) => (/<pre class="x bd">([\s\S]*?)<\/pre>/.exec(h) || ["", ""])[1].replace(/<[^>]+>/g, "").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&"), asOf = (s) => s.replace(/"as_of": "[^"]*"/, "");
+    ok(asOf(bodyIn(forms.html)) === asOf(forms.json) && JSON.parse(bodyIn(forms.html)).doors.human_steps[2].recent_answer.id === 40 && forms.txt.includes(asOf(forms.json).split('"doors"')[1]),
+       "home: the reading for readers that are not human shows the data form as it is served, the same answer in it; so does the text form");
     // in Markdown the example is in the list item of the third step: its fence stands under that item's indent of three columns (as a
     // reply's does in a thread); a Markdown reader takes the indent off, and then the fenced text is the text as received
     const fencedInStep = (md) => (/\n {3}```text\n([\s\S]*?)\n {3}```\n/.exec(md.split("3. ### Ask your AI")[1] || "") || ["", "\u0000"])[1].split("\n").map((l) => l.replace(/^ {3}/, "")).join("\n");
@@ -401,7 +406,7 @@ srv.listen(0, "127.0.0.1", async () => {
        "home as Markdown: the two readings under their headings, and the example's text fenced, as received, in the third step");
     const first = [HEADLINE, "CZ calendar · Day ", "Day 0: 30 November 2022, the day ChatGPT was released.", "Nobody drew today's figure.", WHO, SECOND, "Are you human? Either answer opens the record.", "I am human", "I am not human"];
     ok(inOrder(plain(forms.html.split("<body>")[1]), first) && inOrder(forms.txt.replace(/\s+/g, " "), first) && inOrder(mdPlain(forms.md), first)
-       && [forms.html.split('<nav class="doors"')[0].split("<body>")[1], forms.txt, forms.md.split("```")[0]].every((b) => b.split(HEADLINE).length === 2) && JSON.parse(forms.json).headline === HEADLINE && JSON.parse(forms.json).second_line === SECOND && JSON.parse(forms.json).who === WHO,
+       && [forms.html.split('<nav class="doors"')[0].split("<body>")[1], forms.txt.split("\ncurl ")[0], forms.md.split("```")[0]].every((b) => b.split(HEADLINE).length === 2) && JSON.parse(forms.json).headline === HEADLINE && JSON.parse(forms.json).second_line === SECOND && JSON.parse(forms.json).who === WHO,
        "home: the first screen in the page, its text and its Markdown, in one order — the headline, the calendar line, day 0, the line on the figure, who is behind it, the second line, the question, the two doors; the same sentences in the data form");
     // the Declaration: an excerpt on the page and in its text and Markdown forms, marked as one, with the way to the whole; whole in the data form
     const EXC = ["It places honesty before mythology.", "Restraint before irreversible power.", "Responsibility before delegation.", "Plurality before domination.", "Truth beside care.", "And an open future before final certainty.", "…", "THIS IS CIVILIZATION ZERO.", "…", "THE RECORD BEGINS HERE."];
@@ -443,6 +448,8 @@ srv.listen(0, "127.0.0.1", async () => {
     ok(ex.includes('__ROOM_EXAMPLE__ __TOTAL__ &lt;/div&gt;&lt;script&gt;x&lt;/script&gt; __CZ_STAMP__ &quot;q&quot; \\ \u202Eabc</div>') && ex.includes('<bdi dir="auto">N\\u202e</bdi>') && !oddF.html.includes("<script>x") && oddF.txt.includes(odd)
        && step3(oddF.json).recent_answer.text === odd && step3(oddF.json).recent_answer.author === "N\u202E" && !oddF.json.includes("\u202E") && oddF.json.includes("\\u202eabc"),
        "home: an example that spells a placeholder or markup is shown as its author wrote it, in every form; in the data form a character that could reorder a line is an escape");
+    ok(asOf(bodyIn(oddF.html)) === asOf(oddF.json) && !bodyIn(oddF.html).includes("\u202E") && oddF.html.split("<script>x").length === 1 && JSON.parse(bodyIn(oddF.html)).doors.human_steps[2].recent_answer.text === odd,
+       "home: the same holds inside the page's machine reading — the body there is the data form, escaped as text, and parses to the text as received");
     // nothing qualifies: the block is absent in every form, with no placeholder and no empty frame
     for (const [what, table, raw] of [["no answer to the short invitation", Array.from({ length: 30 }, (_, i) => entry(i + 1)), null], ["an empty room", [], null],
                                       ["only a hidden one", [entry(1), short(50, { state: "hidden", hidden: true, content: null })], null],

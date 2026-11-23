@@ -94,5 +94,13 @@ ok(s400.get("required") == ["error", "parameter"], "GET /api/entries documents i
 ok(not list(jsonschema.Draft202012Validator(s400).iter_errors({"error": "kind: one of human, ai, other", "parameter": "kind"})), "the 400 answer the code gives fits its schema")
 ok(list(jsonschema.Draft202012Validator(s400).iter_errors({"entries": []})), "an answer listing entries does not fit the 400 schema")
 print(f"synthetic: {len(good)} valid shapes, {len(bad)} invalid shapes (a short content is checked on Submission, not on Entry: round 2)")
+# 5. the first page as data (24 Nov 2026): what api/home.js answers, as the build rendered it (site/preview/index.json), fits FirstPage;
+# an answer that counts years, as the form did until then, does not
+home = json.loads((SITE / "preview/index.json").read_text("utf-8"))
+ok(not errors(OA, "FirstPage", home), f"the first page as data fits the contract: {[e.message[:100] for e in errors(OA, 'FirstPage', home)][:3]}")
+ok(errors(OA, "FirstPage", {**home, "year": 3}) and errors(OA, "FirstPage", {**home, "cz_time": {**home["cz_time"], "year": 3}}) and errors(OA, "FirstPage", {k: v for k, v in home.items() if k != "figure"}),
+   "a first page that counts years, or has no figure, does not fit it")
+fp = OA["components"]["schemas"]["FirstPage"]["properties"]
+ok("/index.json" in OA["paths"] and not any("year" in k for k in list(fp) + list(fp["cz_time"]["properties"])), "the contract describes /index.json, and types no key that counts years")
 print(f"pass {passed} fail {failed}")
 sys.exit(1 if failed else 0)

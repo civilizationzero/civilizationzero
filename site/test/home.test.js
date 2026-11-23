@@ -100,6 +100,41 @@ test("the data form counts days: no key that counts years; what machines relied 
   assert.match(j.as_of, /^\d{4}-\d\d-\d\dT\d\d:\d\dZ$/);
 });
 
+test("the machine's reading in the page is true: the status, the headers and the body the function answers Accept: application/json at that moment", async (t) => {
+  t.mock.timers.enable({ apis: ["Date"], now: Date.UTC(2026, 10, 29, 23, 58, 30) });   // near midnight UTC: the readers' days differ, and the cache time is short
+  for (const zone of ["UTC", EAST, WEST, "Asia/Kuala_Lumpur"]) {
+    const h = await call("/", { ...Z(zone), accept: "text/html" }), j = await call("/", { ...Z(zone), accept: "application/json" }), txt = await call("/?f=txt", Z(zone)), md = await call("/index.md?f=md", Z(zone));
+    const pre = Object.fromEntries([...h.body.matchAll(/<pre class="x (\w+)"[^>]*>([\s\S]*?)<\/pre>/g)].map((m) => [m[1], unesc(m[2].replace(/<[^>]+>/g, ""))]));
+    assert.deepEqual(Object.keys(pre), ["req", "hd", "bd", "sum"], zone);
+    assert.equal(pre.req, "curl -H 'Accept: application/json' https://civilizationzero.ai/");
+    assert.equal(j.status, 200);
+    assert.deepEqual(pre.hd.split("\n"), ["200", ...Object.entries(j.headers).map(([k, v]) => `${k}: ${v}`)], `${zone}: the status and every header the function sets, in its order`);
+    assert.deepEqual(Object.keys(j.headers), ["Content-Type", "Cache-Control", "Vary", "Link", "X-Content-Type-Options", "Access-Control-Allow-Origin"]);
+    assert.equal(pre.bd, j.body, `${zone}: the body, byte for byte`);
+    const o = JSON.parse(pre.bd);
+    assert.equal(o.cz_time.time_zone, zone); assert.equal(o.as_of, "2026-11-29T23:58Z"); assert.equal(o.cz_time.day, CZ.todayIn(Date.now(), zone));
+    assert.ok(h.body.includes(`<time class="d" datetime="${o.cz_time.gregorian}">Day <data value="${o.cz_time.day}">`) && h.body.includes(`"day": <b class="d">${o.cz_time.day}</b>,`), "the same day as the page shows");
+    assert.equal(j.headers["Cache-Control"], `public, max-age=0, s-maxage=${Math.min(300, CZ.secondsToNextLocalDay(Date.now(), zone))}`);
+    assert.ok(txt.body.includes(pre.hd + "\n") && txt.body.includes(j.body), `${zone}: the text form shows the same head and body`);
+    assert.ok(md.body.includes("```text\n" + j.body + "\n```"), `${zone}: the Markdown form fences the same body`);
+    assert.equal(pre.sum, `${SHA}  core.txt`);
+    assert.deepEqual(o.doors.not_human_lines, ["This record is written for you too.", "The whole record as text, JSON and an API: /machine", "Respond, object or reject. Answers go on the record."]);
+  }
+  t.mock.timers.reset();
+});
+
+test("the Core's SHA-256 unrolled: the 256 cells and the bytes beside the rows are the hash's", async () => {
+  const b = await page(), svg = (/<div class="seal"[^>]*>(<svg[\s\S]*?<\/svg>)<\/div>/.exec(b) || [])[1] || "";
+  const cells = Array.from({ length: 16 }, () => Array(16).fill("0"));
+  for (const m of (/<path d="([^"]+)" fill="currentColor"\/>/.exec(svg) || ["", ""])[1].matchAll(/M(\d+) (\d+)h(\d+)v1h-\d+z/g)) for (let k = 0; k < Number(m[3]); k++) cells[Number(m[2])][Number(m[1]) + k] = "1";
+  const bits = [...Buffer.from(SHA, "hex")].map((x) => x.toString(2).padStart(8, "0")).join("");
+  assert.equal(cells.map((r) => r.join("")).join(""), bits, "the cells drawn are the bits of SHA-256(core.txt), most significant first, sixteen to a row");
+  const left = [...svg.matchAll(/<tspan x="-.5" dy="1">([0-9a-f]{2})<\/tspan>/g)].map((m) => m[1]), right = [...svg.matchAll(/<tspan x="16.5" dy="1">([0-9a-f]{2})<\/tspan>/g)].map((m) => m[1]);
+  assert.equal(left.map((l, i) => l + right[i]).join(""), SHA, "the two bytes beside each row");
+  K.forEach(([a, s], i) => { assert.equal(a, parseInt(left[i], 16)); assert.equal(s, parseInt(right[i], 16) + 1); });   // ring i: its start is the row's left byte, its step the right byte plus one
+  assert.ok(svg.includes("<title id=\"seal-t\">The Core's SHA-256: 256 bits, sixteen by sixteen, the two bytes of each row beside it.</title>"));
+});
+
 test("no forbidden word in what a human reads, in the reasons, or in the names of the page's parts", async () => {
   const b = await page(), body = b.split("<body>")[1];
   const human = text(body.slice(0, body.indexOf('<section id="not-human"')) + body.slice(body.indexOf('<p class="both m"')));

@@ -69,6 +69,8 @@ function answerJson(x) {
   return ',\n        "recent_answer": ' + JSON.stringify(o, null, 2).replace(UNSAFE, (c) => "\\u" + c.charCodeAt(0).toString(16).padStart(4, "0")).replace(/\n/g, "\n        ");
 }
 
+const escText = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");   // text between tags
+const lineHtml = (l) => `<span>${l.split(" ").map((w) => `<span>${escText(w)}</span>`).join(" ")}</span>`;   // a line and its words
 const LINK = '</index.json>; rel="alternate"; type="application/json", </index.txt>; rel="alternate"; type="text/plain", </index.md>; rel="alternate"; type="text/markdown", </api/openapi.json>; rel="service-desc"; type="application/vnd.oai.openapi+json"';
 // What this function answers a client that asks for the data form: its headers, in the order it sets them. At most five minutes in a
 // cache, and never past midnight in the reader's time zone, when the day turns; each zone's copy apart. The data and text forms name
@@ -89,9 +91,18 @@ module.exports = async (req, res) => {
   const x = await roomOrNothing();
   const R = x ? require("../room/lib.js") : null;
   const send = (head, body) => { res.statusCode = 200; for (const [k, v] of head) res.setHeader(k, v); res.end(body); };
-  if (f === "json") return send(dataHead("application/json; charset=utf-8", ttl, vary), fill(T.json, { ...c, "__ROOM_ANSWER__": x ? answerJson(x) : "" }));
-  if (f === "txt") return send(dataHead("text/plain; charset=utf-8", ttl, vary), fill(T.txt, { ...c, "__ROOM_EXAMPLE__": x ? R.exampleText(x) : "" }));
-  const page = fill(T.html, { ...c, "__ROOM_EXAMPLE__": x ? R.exampleHtmlOf(x) : "" });
+  // What this address answers a client that asks for application/json, at this moment and for this reader: its head and its body.
+  // The data form is exactly that; the page and its text form show it — the same status, the same headers in the same order, the same
+  // bytes — as the reading for readers that are not human (24 Nov 2026). Nothing shown there is written anywhere else.
+  const head = dataHead("application/json; charset=utf-8", ttl, vary), body = fill(T.json, { ...c, "__ROOM_ANSWER__": x ? answerJson(x) : "" });
+  if (f === "json") return send(head, body);
+  const lines = ["200", ...head.map(([k, v]) => `${k}: ${v}`)];
+  if (f === "txt") return send(dataHead("text/plain; charset=utf-8", ttl, vary), fill(T.txt, { ...c, "__ROOM_EXAMPLE__": x ? R.exampleText(x) : "", "__HOME_HEAD__": lines.join("\n"), "__HOME_JSON__": body }));
+  // in the page: each line of the head an element of its own, so that a glimpse can end it with an ellipsis, and each of its words
+  // one too, so that a line too long for a phone folds between words and never inside one; the body as text, its day marked as the
+  // page marks the day
+  const page = fill(T.html, { ...c, "__ROOM_EXAMPLE__": x ? R.exampleHtmlOf(x) : "", "__HOME_HEAD__": lines.map(lineHtml).join("\n"),
+    "__HOME_JSON__": escText(body).replace(`"day": ${c.__TOTAL__},`, `"day": <b class="d">${c.__TOTAL__}</b>,`) });
   if (md) {
     const MD = require("../room/md.js");
     return MD.sendMarkdown(res, 200, MD.htmlToMarkdown(page, { path: "/" }), "/", "https://civilizationzero.ai",

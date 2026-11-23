@@ -143,7 +143,7 @@ standards.
   `cz`; `d`: year-month-day, or a CZ date `CZ 1430` / `CZ+1430`; year and day `CZ+3:334` is read too); 400 with the reason for an invalid
   date. Also `/calendar.json`, and `/calendar` asked for as JSON. The contract: `/api/openapi.json` (`CZDay`: `cz.date` "CZ 1430",
   `cz.machine` "CZ+1430", `cz.day`, `cz.year`, `cz.day_of_year`, `cz.year_day`).
-- `/index.json` carries today's date as `cz_time`; the manifest (`/.well-known/civilization-zero.json`) carries the definition.
+- `/index.json` carries today's date as `cz_time` (the day and its Gregorian date; since 24 Nov 2026, CZ 1455, no year: CZ time counts days); the manifest (`/.well-known/civilization-zero.json`) carries the definition.
 - Pages: the build writes a fallback between `<!--cz-now-->` and `<!--/cz-now-->` at the top of every page but the first (for copies
   that serve the files as they are: no date, links to this site); `api/page.js` and the room's functions put the live date there at
   request time from `room/cz-bar.json`, for the reader's time zone. Each page is cached apart for each time zone

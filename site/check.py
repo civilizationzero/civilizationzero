@@ -776,6 +776,45 @@ check(_strip(_pbody[_pbody.index('<p class="both m"'):].split("</p>")[0]) == "Bo
 _raw = re.findall(r'<li><a href="([^"]+)">([^<]+)</a></li>', _sec_n)
 check(len(_raw) == 25 and all(a == b for a, b in _raw) and _raw[0][0] == "/index.json" and _raw[-1][0] == "/machine" and {"/index.txt", "/index.md", "/llms.txt", "/core.txt", "/core.txt.sig", "/record.txt", "/api/entries", "/api/openapi.json", "/archive/verify.py"} <= {a for a, _ in _raw},
       "home, the reading for readers that are not human: the addresses of the raw forms, each a link named by its address")
+# The machine's reading inside the page is true at the moment the page is served: a command a person can run; then the status and the
+# headers exactly as the function answers a client that asks for application/json, and the body exactly the JSON it returns — here
+# compared with the function's own answers to the two requests, made at one moment (site/preview)
+_PH = json.loads((SITE / "preview" / "headers.json").read_text("utf-8"))["json"]
+_pres = re.findall(r'<pre class="x (\w+)"[^>]*>(.*?)</pre>', _sec_n, re.S)
+_pt = {name: _strip(inner) for name, inner in _pres}
+check([name for name, _ in _pres] == ["req", "hd", "bd", "sum"] and _pt.get("req") == "curl -H 'Accept: application/json' https://civilizationzero.ai/"
+      and '</pre>\n<p class="lbl">What a machine receives from this page:</p>\n<pre class="x hd">' in _sec_n and _sec_n.index('<pre class="x req"') < _sec_n.index('<p class="lbl">'),
+      "home, the reading for readers that are not human: a command a person can run to check it, a label for the glimpse, then the head, the body and the Core's checksum")
+check(_PH["status"] == 200 and list(_PH["headers"]) == ["Content-Type", "Cache-Control", "Vary", "Link", "X-Content-Type-Options", "Access-Control-Allow-Origin"] and _PH["headers"]["Content-Type"] == "application/json; charset=utf-8"
+      and _pt.get("hd", "").split("\n") == ["200"] + [f"{h}: {val}" for h, val in _PH["headers"].items()] and re.fullmatch(r"public, max-age=0, s-maxage=\d+", _PH["headers"]["Cache-Control"]) is not None,
+      "home, the machine's reading: the status and the headers, in order, exactly as the function answers Accept: application/json at that moment")
+check(_pt.get("bd") == _pv["json"] and json.loads(_pt.get("bd", "{}")) == _pj and _pbody.count(f'"day": <b class="d">{_day}</b>,') == 1,
+      "home, the machine's reading: the body is, byte for byte, the JSON the function returns for the same request at the same moment (its day marked as the page marks the day)")
+_jl = _pv["json"].split("\n")
+check([l.strip().strip(",") for l in _jl[16:19]] == ['"This record is written for you too."', '"The whole record as text, JSON and an API: /machine"', '"Respond, object or reject. Answers go on the record."'] and _jl[15].strip() == '"not_human_lines": [',
+      "home, the machine's reading: the three sentences for readers that are not human are values of the body, near its top (lines 17 to 19)")
+check("\n".join(["200"] + [f"{h}: {val}" for h, val in _PH["headers"].items()]) + "\n" in _pv["txt"] and _pv["json"] in _pv["txt"] and "```text\n" + _pv["json"] + "\n```" in _pv["md"]
+      and all(T[x].count("__HOME_HEAD__") == 1 and T[x].count("__HOME_JSON__") == 1 for x in ("html", "txt")), "home: the same head and the same body in the text form and, fenced, in the Markdown form; each written once, at request time")
+check(_pt.get("sum") == f"{_sha}  core.txt", "home, the machine's reading: the Core's checksum line, as sha256sum prints it, recomputed here from the Core's bytes")
+# the Core's hash unrolled: 256 cells, sixteen to a row, most significant bit first, the row's two bytes beside it — each recomputed from the Core's bytes
+_seal = re.search(r'<div class="seal" data-src="[^"]*">(<svg.*?</svg>)</div>', _sec_n, re.S)
+_cells = [["0"] * 16 for _ in range(16)]
+for _x, _y, _n in re.findall(r"M(\d+) (\d+)h(\d+)v1h-\d+z", (re.search(r'<path d="([^"]+)" fill="currentColor"/>', _seal.group(1)) if _seal else re.search("()", "")).group(1)):
+    for _k in range(int(_n)): _cells[int(_y)][int(_x) + _k] = "1"
+_left = re.findall(r'<tspan x="-.5" dy="1">([0-9a-f]{2})</tspan>', _seal.group(1) if _seal else ""); _right = re.findall(r'<tspan x="16.5" dy="1">([0-9a-f]{2})</tspan>', _seal.group(1) if _seal else "")
+check(_seal is not None and "".join("".join(r) for r in _cells) == "".join(f"{byte:08b}" for byte in _hb) and "".join(a + b for a, b in zip(_left, _right)) == _sha and len(_left) == 16
+      and all(a == int(_left[i], 16) and s == int(_right[i], 16) + 1 for i, (a, s, m) in enumerate(FIGURE.constants(_sha))) and FIGURE.cells(_sha).count("1") == sum(r.count("1") for r in _cells)
+      and "<title id=\"seal-t\">The Core's SHA-256: 256 bits, sixteen by sixteen, the two bytes of each row beside it.</title>" in _seal.group(1) and 'role="img" aria-labelledby="seal-t"' in _seal.group(1),
+      "home, the machine's reading: the Core's SHA-256 as 256 cells — the cells drawn, the two bytes beside each row and each ring's start and step, all recomputed from the Core's bytes; with a text alternative")
+_mach = to_text(_sec_n)
+for _pat, _allowed in ((r"\bconscious", ["It does not declare present artificial systems conscious.", "It is not a law, a religion, or a claim that any machine is conscious."]), (r"\byears?\b", [_pj["from_the_core"][0]["text"]]),
+                       (r"\bfirst\b", ["prepared_for_first_public_release", "first page", "first screen"]), (r"observator|\banonymous\b|\b(he|him|his)\b|\bbetter\b|\bmasterpiece\b", []), (_products, [])):
+    _hits = [x.strip()[:90] for x in re.findall(r"[^\n]*(?:" + _pat + r")[^\n]*", _mach, re.I) if not any(a in x for a in _allowed)]
+    _hits = [x for x in _hits if not isinstance(x, tuple)]
+    check(not _hits, f"home, the machine's reading: {_pat} only in the record's own words, in a key machines relied on, or in the site's name for this page {_hits[:3]}")
+check(".x{margin:0 0 var(--e0);font-size:1em;white-space:pre;overflow-x:auto;" in _css and ":is(.req,.hd)>span>span{white-space:nowrap}" in _css and "text-overflow:ellipsis" in _css.split(".hd>span{padding:0;")[1].split("}")[0]
+      and ".lbl{margin:0 0 var(--e-8);font:400 1em/var(--l2) var(--human);" in _css and "mask-image:linear-gradient(#000 calc(100% - var(--e4)),transparent)" in _css,
+      "home.css: in the machine's reading no line is broken inside a token (the head folds between its words, the body is scrolled); in a glimpse a line that does not fit ends in an ellipsis, under a label in the human's face, and the window fades at its lower edge")
 # the foot: the words and links of every page's foot, and the page's own two paragraphs on who keeps and who builds it
 _foot = lambda h: re.sub(r"This page: [\d.]+ kB(, and [\d.]+ kB of images)? · [^·]* · no cookies|No cookies", "", re.sub(r"\s+", " ", to_text(re.search(r"<footer.*?</footer>", h, re.S).group(0))))
 _other = _foot((PUBLIC / "core.html").read_text("utf-8")).replace(ONE_LINE, "").replace("/core.md", "/index.md")
