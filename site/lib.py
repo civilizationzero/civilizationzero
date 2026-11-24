@@ -368,7 +368,7 @@ a.home svg{flex:none;inline-size:var(--e4);block-size:var(--e4)}
 nav.site{border-block-end:var(--e-16) solid var(--rule)}
 nav.site ul{display:flex;flex-wrap:wrap;justify-content:space-between;column-gap:var(--e-4);margin:0;padding:0;list-style:none}
 nav.site li,.foot li{margin:0}
-a[aria-current=page]{text-decoration-thickness:var(--e-8)}
+a[aria-current=page],.toc a:target-current{text-decoration-thickness:var(--e-8);text-decoration-skip-ink:none}
 @media(min-width:38.0546rem){
 .cz-now,nav.site{font-size:var(--e0)}
 nav.site ul{justify-content:start;column-gap:var(--e2)}
@@ -400,6 +400,9 @@ div[popover]{position-anchor:--sec;inset:anchor(bottom) auto auto anchor(left);m
 .next p{margin-block:var(--e-2)}
 .q{font-size:1.1892em;font-weight:700;line-height:var(--l1)}
 .acts{display:flex;flex-wrap:wrap;gap:var(--e-4) var(--e-2)}
+.lines>span{display:block;padding-inline-start:var(--e2);text-indent:calc(-1*var(--e2))}
+.lines>br{display:none}
+pre[id]{user-select:all}
 .seal svg{display:block;inline-size:min(100%,20*var(--e0));block-size:auto}
 .seal .un{fill:var(--rule)}
 .seal .cut{stroke:var(--bg);stroke-width:var(--e-16);vector-effect:non-scaling-stroke}
@@ -411,7 +414,6 @@ div[popover]{position-anchor:--sec;inset:anchor(bottom) auto auto anchor(left);m
    margin; the section being read marked as the head marks the page one is on, where the browser can tell. */
 .toc ul{margin:0;padding:0;list-style:none;scroll-target-group:auto}
 .toc a{display:inline-block;padding-block:var(--e-8)}
-.toc a:target-current{text-decoration-thickness:var(--e-8)}
 @media(min-width:76.1093rem){
 .toc{--w:min(16rem,50vw - 28ch - var(--e-1) - var(--e4));float:inline-start;position:sticky;inset-block-start:var(--e0);box-sizing:border-box;inline-size:var(--w);max-block-size:calc(100vh - 2*var(--e0));margin-inline:calc(-1*(var(--w) + var(--e3))) var(--e3);overflow:auto}
 .toc details{margin:0}
@@ -455,7 +457,7 @@ button{padding:var(--e-4) var(--e0);border:var(--e-16) solid var(--fg);cursor:po
 ::placeholder{color:var(--mute);opacity:1}
 input:is([type=radio],[type=checkbox]){accent-color:var(--fg)}
 label{min-inline-size:0}
-a.cta,button.cta{display:inline-block;box-sizing:border-box;min-block-size:var(--e6);padding:calc(var(--e-2) - var(--e-12)) var(--e0);border:var(--e-12) solid var(--fg);background:var(--fg);color:var(--bg);font-weight:700;line-height:var(--l1);text-decoration:none}
+a.cta,button.cta{display:inline-flex;align-items:center;box-sizing:border-box;min-block-size:var(--e6);padding:calc(var(--e-2) - var(--e-12)) var(--e0);border:var(--e-12) solid var(--fg);background:var(--fg);color:var(--bg);font-weight:700;line-height:var(--l1);text-decoration:none}
 :is(a.cta,button.cta):is(:hover,:focus-visible),button.cta.done,a.cta.o{background:var(--bg);color:var(--fg)}
 a.cta.o:is(:hover,:focus-visible),button.done:not(.cta){background:var(--fg);color:var(--bg)}
 p.cta-line{display:flex;flex-wrap:wrap;align-items:center;gap:var(--e-4) var(--e-2)}

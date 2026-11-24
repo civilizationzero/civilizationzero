@@ -170,8 +170,8 @@ check(_next is not None and _next.group(1) == " · ".join(f'<a href="{u}">{t}</a
 # data is those questions and answers, word for word (an answer's links are not part of its text)
 _ab = (PUBLIC / "about.html").read_text("utf-8")
 _txt = lambda x: _html_mod.unescape(re.sub(r"<[^>]+>", "", x))
-_am = re.search(r'<main id="content">\n<h1 id="what">(.*?)</h1>\n<p id="answer"[^>]*>(.*?)</p>\n<section id="faq"[^>]*><h2 id="h-faq">[^<]+</h2>\n(.*?)</section>', _ab, re.S)
-check(bool(_am), "about: the question as the heading, the answer directly under it, then the questions")
+_am = re.search(r'<main id="content">\n<h1 id="what">(.*?)</h1>\n<p id="answer"[^>]*>(.*?)</p>\n<p class="forms" lang="en" dir="ltr">This page as <a href="/about\.md" type="text/markdown">Markdown</a></p><nav class="toc" aria-label="Contents">.*?</nav>\n<section id="faq"[^>]*><h2 id="h-faq">[^<]+</h2>\n(.*?)</section>', _ab, re.S)
+check(bool(_am), "about: the question as the heading, the answer directly under it; then the page's forms and its contents, folded; then the questions")
 if _am:
     _qa = [(_txt(_am.group(1)), _txt(_am.group(2)))] + [(_txt(q), _txt(a)) for q, a in re.findall(r"<h3 id=\"q-[a-z]+\">(.*?)</h3>\n<p>(.*?)</p>\n", _am.group(3), re.S)]
     _faq = [o for o in [json.loads(m) for m in re.findall(r'<script type="application/ld\+json">(.*?)</script>', _ab, re.S)] if o.get("@type") == "FAQPage"]
@@ -378,8 +378,15 @@ for ext in ("html", "json", "txt"):
 # canonical text — and whole in the data forms; on the first page an excerpt, marked as one: each line shown is a line of the Declaration,
 # in its order, and wherever lines are left out between two of them there is a line "…"
 _DECL = declaration_lines()
-_rec_decl = re.search(r'<section id="declaration" aria-labelledby="h-decl"><h2 id="h-decl">Declaration</h2><p>(.*?)</p></section>', (PUBLIC / "record.html").read_text("utf-8"), re.S)
-check(len(_DECL) == 22 and _rec_decl is not None and [_h.unescape(l) for l in _rec_decl.group(1).split("<br>\n")] == _DECL and all(l in IR_TXT for l in _DECL), "/record: the Declaration whole, 22 lines, verbatim")
+# rc-12 (finding 12): each line stands in a piece of its own, so that a wrapped line indents and a new line begins at the margin; the
+# words, their order and the line breaks are the canonical text's
+_rec_decl = re.search(r'<section id="declaration" aria-labelledby="h-decl"><h2 id="h-decl">Declaration</h2><p class="lines">(.*?)</p></section>', (PUBLIC / "record.html").read_text("utf-8"), re.S)
+_dl = _rec_decl.group(1).split("<br>\n") if _rec_decl else []
+check(len(_DECL) == 22 and all(l.startswith("<span>") and l.endswith("</span>") and "<" not in l[6:-7] for l in _dl) and [_h.unescape(l[6:-7]) for l in _dl] == _DECL and all(l in IR_TXT for l in _DECL)
+      and "\n".join(_DECL) in IR_TXT and [x for x in to_text(_rec_decl.group(0)).split("\n") if x][1:] == _DECL if _rec_decl else False,
+      "/record: the Declaration whole, 22 lines, verbatim, one line to a piece; as text, the canonical lines with their breaks")
+_snc = re.sub(r"/\*.*?\*/", "", CSS, flags=re.S)
+check(".lines>span{display:block;padding-inline-start:var(--e2);text-indent:calc(-1*var(--e2))}" in _snc and ".lines>br{display:none}" in _snc, "the shared stylesheet: of a line of the Declaration that wraps, the continuation is indented (a hanging indent); the breaks are the text's own")
 check(json.loads((PUBLIC / "record.json").read_text("utf-8"))["declaration"] == _DECL and json.loads(fill(T["json"]))["declaration"]["lines"] == _DECL, "the Declaration whole in /record.json and in the first page's data form")
 _dsec = re.search(r'<section class="decl" aria-labelledby="h-d"[^>]*>\n<h2 id="h-d">From the Declaration</h2>\n<blockquote cite="/record#declaration"><p>\n(.*?)\n</p></blockquote>\n<p class="src">(.*?)</p>\n</section>', T["html"], re.S)
 check(_dsec is not None, "home: the excerpt, headed 'From the Declaration'")
@@ -516,7 +523,12 @@ check(_cur.index('<pre id="prompt-short">') < _cur.index('<h3 id="h-long">The lo
 check('<button type="button" class="cta" data-copy="prompt-short">' in _cur and _cur.count('href="/respond?kind=ai&amp;prompt=cz-short-1.0"') == 3 and f'href="/respond?kind=ai&amp;prompt={_curv}"' in _cur, "/ask: the short invitation's copy button and post links, and the long one's post link")
 # each invitation's copy button sits beside its text, not a screen away from it (review 1-2 B)
 check(re.search(r'<pre id="prompt-short">[^<]*</pre>\n<p class="cta-line"><button type="button" data-copy="prompt-short">', _cur) is not None, "/ask: no copy button beside the short invitation")
-check(re.search(r'<h3 id="h-long">The long invitation</h3>\n<p>[^\n]*</p>\n<p class="cta-line"><button type="button" data-copy="prompt-urls">[^\n]*\n<pre id="prompt-urls">', _cur) is not None, "/ask: the long invitation's copy button is not between its heading and its text")
+# rc-12 (finding 16): the long invitation's text is folded under its heading; its copy button stands outside the fold, before it, and copies it folded or open
+check(re.search(r'<h3 id="h-long">The long invitation</h3>\n<p>[^\n]*</p>\n<p class="cta-line"><button type="button" data-copy="prompt-urls">[^\n]*\n<details><summary>Show the long invitation \(([\d,]+) characters\)</summary>\n<pre id="prompt-urls">[^<]*</pre>\n</details>', _cur) is not None
+      and int(re.search(r"Show the long invitation \(([\d,]+) characters\)", _cur).group(1).replace(",", "")) == len((PUBLIC / f"prompts/{_curv}.txt").read_text("utf-8"))
+      and _cur.index('data-copy="prompt-short"') < _cur.index('<pre id="prompt-short">') and "<details" not in _cur[_cur.index("<main"):_cur.index('<h3 id="h-long">')] and 'var dt=el.closest("details");if(dt)dt.open=true' in _cur
+      and "pre[id]{user-select:all}" in _snc,
+      "/ask: the long invitation's copy button between its heading and its text; the text folded, with its length; the short one stays open; where a browser will not copy, the fold opens and the text is selected; one press selects an invitation whole")
 _open = json.loads((SITE / "api/ask-open.json").read_text("utf-8"))
 _bases = {"chatgpt": "https://chatgpt.com/?q=", "claude": "https://claude.ai/new?q=", "perplexity": "https://www.perplexity.ai/search?q="}
 check(_open.get("prompt") == "cz-short-1.0" and _open.get("sha256") == sha256(_short_b) and set(_open.get("to", {})) <= set(_bases) and set(_open.get("offered", [])) <= set(_open.get("to", {})), "api/ask-open.json: the short invitation, and only the three assistants; only served links offered")
@@ -711,7 +723,7 @@ _cal = f'<a href="/calendar">CZ calendar</a> · <time class="d" datetime="{_pj["
 check(_cal in _top and _top.count('href="/calendar"') == 1 and '>Day 0: <time datetime="2022-11-30">30 November 2022</time>, the day ChatGPT was released.</p>\n<p class="say"' in _top and _top.count("ChatGPT") == 1 and "began" not in _strip(_top)
       and _pj["calendar_line"] == f"CZ calendar · Day {_day:,}" and _pj["calendar_note"] == CAL_NOTE and _pj["cz_time"]["date"] == f"CZ {_day}" and cz_day(datetime.date.fromisoformat(_pj["cz_time"]["gregorian"])) == _day
       and ".date .d{color:var(--machine);font-weight:700" in _css and re.search(r"\.note,\.src,\.zero,\.say,[^{]*\{font-size:\.8409em;color:var\(--mute\)\}", _css) is not None
-      and "CZ day 0 is 30 November 2022" in (PUBLIC / "llms.txt").read_text("utf-8") and "ChatGPT was released on 30 November 2022.<!--/cz-day--></strong></p>\n<p>CZ 0 is that day: the public threshold the record calls Coordinate Zero." in (PUBLIC / "calendar.html").read_text("utf-8"),
+      and "CZ day 0 is 30 November 2022" in (PUBLIC / "llms.txt").read_text("utf-8") and 'ChatGPT was released on 30 November 2022.<!--/cz-day--></strong></p>\n<p class="forms" lang="en" dir="ltr">This page as <a href="/calendar.md" type="text/markdown">Markdown</a> · <a href="/calendar.json" type="application/json">JSON</a></p><p>CZ 0 is that day: the public threshold the record calls Coordinate Zero.' in (PUBLIC / "calendar.html").read_text("utf-8"),
       "home: the calendar line — 'CZ calendar' the link to /calendar, the day in green carrying the reader's date (<time datetime>) and the count (<data value>); under it, smaller and quiet, day 0 and what happened that day, as /calendar and llms.txt say it; nowhere 'began'")
 check(_top.count("30 November 2022") == 1 and _top.count("2022-11-30") == 1 and _top.count("30 November 2026") == 1 and _top.count(LAUNCH.isoformat()) == 1
       and not re.search(r"\b(January|February|March|April|May|June|July|August|September|October|November|December) \d{4}\b", _strip(_top).replace("30 November 2022", "").replace("30 November 2026", "")) and not re.search(r"\b[Yy]ears?\b", _strip(_top)),
@@ -1020,6 +1032,46 @@ check(_seal is not None and "".join("".join(r) for r in _cells) == "".join(f"{by
 check(_seal is not None and _html_mod.unescape(_seal.group(2)) == "The Core's SHA-256 as 256 cells, sixteen rows of sixteen bits. Each row gives one ring of the day's figure its place on Day 0 and its daily step."
       and [f.name for f in pages if "256 cells" in f.read_text("utf-8").split("</style>", 1)[1]] == ["core.html"] and _core_page.count('class="seal"') == 1 and "seal" not in (PUBLIC / "record.html").read_text("utf-8").split("</style>", 1)[1],
       "/core: under the seal the one sentence, word for word, and no other claim; the seal on /core only")
+# ---- every static page (rc-12; findings 12, 14, 24, 26, 29). The machine's forms in plain sight: one line under the title, of the forms
+# the address really has — its Markdown, and the text and the JSON the head names as alternates, nothing else. Long pages carry their
+# contents, folded: every second-level heading, linked. Tables are of two kinds, every heading cell with its scope; a region that
+# scrolls sideways takes the keyboard and has a name.
+_KIND = {"text/plain": "text", "application/json": "JSON"}
+for f in pages:
+    if f.name in ("index.html", "404.html"): continue
+    h = f.read_text("utf-8"); _path = "/" + f.stem; _main = h[h.index("<main"):h.index("</main>")]
+    _alts = re.findall(r'<link rel="alternate" type="(text/plain|application/json)" href="([^"]+)"', h.split("</head>")[0])
+    _want = f'<p class="forms" lang="en" dir="ltr">This page as <a href="{_path}.md" type="text/markdown">Markdown</a>' + "".join(f' · <a href="{u}" type="{k}">{_KIND[k]}</a>' for k in _KIND for a, u in _alts if a == k) + "</p>"
+    check(h.count('<p class="forms"') == 1 and _want in _main and _main.index(_want) > _main.index("</h1>") and _main.index(_want) < (_main.index("<h2") if "<h2" in _main else len(_main))
+          and all(resolves(u) for _, u in _alts) and f'<link rel="alternate" type="text/markdown" href="{_path}.md"' in h,
+          f"{f.name}: under its title, one line of the forms this address has ({', '.join(['Markdown'] + [_KIND[a] for a, _ in _alts])}), each declared in its head and each answering")
+    for _tb in re.findall(r"<table[^>]*>.*?</table>", _main, re.S):
+        _open = re.match(r"<table[^>]*>", _tb).group(0)
+        _ths = re.findall(r"<th\b([^>]*)>", _tb)
+        check(_open in ('<table class="kv">', '<table class="rows">', "<table>") and all(re.search(r'scope="(row|col)"', a) for a in _ths) and len(_ths) > 0, f"{f.name}: a table of one of the two kinds, every heading cell with its scope ({_open} {_ths[:2]})")
+        if _open == '<table class="kv">': check(re.fullmatch(r'<table class="kv">\n?(<tr><th scope="row">.*?</th><td>.*?</td></tr>\n?)+</table>', _tb, re.S) is not None, f"{f.name}: a table of labels and values: each row a label and its value")
+        if _open == '<table class="rows">': check(re.match(r'<table class="rows"><thead><tr>(<th scope="col">[^<]*</th>)+</tr></thead><tbody>', _tb) is not None and "<th" not in _tb.split("</thead>")[1], f"{f.name}: a table of rows: its column headings in a head of their own")
+        if _open == "<table>": check(re.search(r'<div class="scroll" tabindex="0" role="region" aria-labelledby="[^"]+">' + re.escape(_tb[:40]), _main) is not None or "<details><summary>" in _main[:_main.index(_tb[:60])][-400:], f"{f.name}: a plain table stands in a region that scrolls, takes the keyboard and has a name (or is folded data)")
+    check(all(re.search(r'<div class="scroll" tabindex="0" role="region" aria-labelledby="([^"]+)">', x) for x in re.findall(r'<div class="scroll"[^>]*>', _main)), f"{f.name}: every region that scrolls sideways takes the keyboard and has a name")
+_TOCS = {"calendar": 10, "record": 14, "about": 11, "how-it-is-built": 9, "archive": 7, "machine": 7}
+for f in pages:
+    h = f.read_text("utf-8")
+    if f.stem not in _TOCS:
+        check('class="toc"' not in h.split("</style>", 1)[1], f"{f.name}: no contents expected"); continue
+    _main = h[h.index("<main"):h.index("</main>")]
+    _toc = re.search(r'<nav class="toc" aria-label="Contents"><details><summary>Contents</summary><ul>(.*?)</ul></details></nav>', _main, re.S)
+    _items = re.findall(r'<li><a href="#([^"]+)">(.*?)</a></li>', _toc.group(1)) if _toc else []
+    _h2 = re.findall(r"<h2[^>]*>(.*?)</h2>", _main, re.S)
+    _ids = set(re.findall(r'\sid="([^"]+)"', _main))
+    check(_toc is not None and len(_items) == len(_h2) == _TOCS[f.stem] and [x for _, x in _items] == [re.sub(r"<[^>]+>", "", x).strip() for x in _h2] and all(i in _ids for i, _ in _items) and len({i for i, _ in _items}) == len(_items)
+          and _main.index('<nav class="toc"') < _main.index("<h2") and re.search(r"(</header>|</p>)\n?<nav class=\"toc\"", _main) is not None,
+          f"{f.name}: its contents, folded under one word before its first section — each of its {_TOCS[f.stem]} sections by its own heading, linked to an address on the page ({len(_items)}/{len(_h2)})")
+_rc = (PUBLIC / "record.html").read_text("utf-8").split("<body>", 1)[1]
+check(re.match(r'.*?</header>\n<main id="content"><header><h1>Civilization Zero — The First Interpretive Record</h1><p>Human-Language Layer 1 · 2026 · <code>CZ-IR 1\.0</code> · Canonical Core: <code>CZ-CORE 1\.0</code> · Chosen Coordinate: <time datetime="2022-11-30">30 November 2022</time> · Prepared for first public release: <time datetime="2026-08-30">30 August 2026</time></p>'
+               r'<p class="forms" lang="en" dir="ltr">This page as <a href="/record\.md" type="text/markdown">Markdown</a> · <a href="/record\.txt" type="text/plain">text</a> · <a href="/record\.json" type="application/json">JSON</a></p><p>([^<]*)</p></header><nav class="toc"', _rc, re.S) is not None
+      and _h.unescape(re.search(r"JSON</a></p><p>([^<]*)</p></header>", _rc).group(1)) == _meta((PUBLIC / "record.html").read_text("utf-8"), "description") and _rc.count("<header>") == 1
+      and _rc.index("The document's own heading reads") > _rc.index('id="integrity"') and re.search(r'<section id="attribution" aria-labelledby="h-attr"><h2 id="h-attr">Origin and attribution</h2><p class="lines">(<span>[^<]*</span>(<br>\n)?)+</p></section>', _rc) is not None,
+      "/record: the title and the record's own line inside the main part; under them the forms and what the page holds, in the words of its description; its contents; the attribution one line to a piece; the site's note on anchors after the integrity record")
 # ---- /calendar (rc-12; findings 8, 24 and 31): a figure for every day. The frame of the figure the converter's result shows is written
 # by the build into room/cz-bar.json (dayfigure): the first page's tracks, one place for the day's arcs and the day's number, the Core's
 # hash from the Core's bytes; the sentence under it is the fixed one. The page says, once, what a day before Day 0 shows.

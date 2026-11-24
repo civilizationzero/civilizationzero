@@ -85,7 +85,7 @@ a.home svg{flex:none;inline-size:var(--e4);block-size:var(--e4)}
 nav.site{border-block-end:var(--e-16) solid var(--rule)}
 nav.site ul{display:flex;flex-wrap:wrap;justify-content:space-between;column-gap:var(--e-4);margin:0;padding:0;list-style:none}
 nav.site li,.foot li{margin:0}
-a[aria-current=page]{text-decoration-thickness:var(--e-8)}
+a[aria-current=page],.toc a:target-current{text-decoration-thickness:var(--e-8);text-decoration-skip-ink:none}
 @media(min-width:38.0546rem){
 .cz-now,nav.site{font-size:var(--e0)}
 nav.site ul{justify-content:start;column-gap:var(--e2)}
@@ -117,6 +117,9 @@ div[popover]{position-anchor:--sec;inset:anchor(bottom) auto auto anchor(left);m
 .next p{margin-block:var(--e-2)}
 .q{font-size:1.1892em;font-weight:700;line-height:var(--l1)}
 .acts{display:flex;flex-wrap:wrap;gap:var(--e-4) var(--e-2)}
+.lines>span{display:block;padding-inline-start:var(--e2);text-indent:calc(-1*var(--e2))}
+.lines>br{display:none}
+pre[id]{user-select:all}
 .seal svg{display:block;inline-size:min(100%,20*var(--e0));block-size:auto}
 .seal .un{fill:var(--rule)}
 .seal .cut{stroke:var(--bg);stroke-width:var(--e-16);vector-effect:non-scaling-stroke}
@@ -128,7 +131,6 @@ div[popover]{position-anchor:--sec;inset:anchor(bottom) auto auto anchor(left);m
    margin; the section being read marked as the head marks the page one is on, where the browser can tell. */
 .toc ul{margin:0;padding:0;list-style:none;scroll-target-group:auto}
 .toc a{display:inline-block;padding-block:var(--e-8)}
-.toc a:target-current{text-decoration-thickness:var(--e-8)}
 @media(min-width:76.1093rem){
 .toc{--w:min(16rem,50vw - 28ch - var(--e-1) - var(--e4));float:inline-start;position:sticky;inset-block-start:var(--e0);box-sizing:border-box;inline-size:var(--w);max-block-size:calc(100vh - 2*var(--e0));margin-inline:calc(-1*(var(--w) + var(--e3))) var(--e3);overflow:auto}
 .toc details{margin:0}
@@ -172,7 +174,7 @@ button{padding:var(--e-4) var(--e0);border:var(--e-16) solid var(--fg);cursor:po
 ::placeholder{color:var(--mute);opacity:1}
 input:is([type=radio],[type=checkbox]){accent-color:var(--fg)}
 label{min-inline-size:0}
-a.cta,button.cta{display:inline-block;box-sizing:border-box;min-block-size:var(--e6);padding:calc(var(--e-2) - var(--e-12)) var(--e0);border:var(--e-12) solid var(--fg);background:var(--fg);color:var(--bg);font-weight:700;line-height:var(--l1);text-decoration:none}
+a.cta,button.cta{display:inline-flex;align-items:center;box-sizing:border-box;min-block-size:var(--e6);padding:calc(var(--e-2) - var(--e-12)) var(--e0);border:var(--e-12) solid var(--fg);background:var(--fg);color:var(--bg);font-weight:700;line-height:var(--l1);text-decoration:none}
 :is(a.cta,button.cta):is(:hover,:focus-visible),button.cta.done,a.cta.o{background:var(--bg);color:var(--fg)}
 a.cta.o:is(:hover,:focus-visible),button.done:not(.cta){background:var(--fg);color:var(--bg)}
 p.cta-line{display:flex;flex-wrap:wrap;align-items:center;gap:var(--e-4) var(--e-2)}
@@ -289,7 +291,7 @@ a.home svg{view-transition-name:cz-mark}
 <ul><li><a href="/">The first page</a></li><li><a href="/core">The Invariant Core, CZ-CORE 1.0</a> (<a href="/core.txt">text</a>, <a href="/core.json">JSON</a>; 20 translations)</li>
 <li><a href="/record">The First Interpretive Record, CZ-IR 1.0</a></li><li><a href="/discuss">The open discussion</a></li>
 <li><a href="/archive">Archive, signatures and the preservation bundle</a></li><li><a href="/machine">If you are not human: every form, the API and the manifest</a></li></ul>
-<p class="src">An address that worked before and fails now is worth reporting: <a href="mailto:record@civilizationzero.ai">record@civilizationzero.ai</a>.</p></main>
+<p>An address that worked before and fails now is worth reporting: <a href="mailto:record@civilizationzero.ai">record@civilizationzero.ai</a>.</p></main>
 <footer lang="en" dir="ltr"><hr><p class="cz-intro">Civilization Zero names the beginning of a civilization in which humans may no longer be at the centre. Here, humans and AI confront what they owe each other, on the record, while the future is still open.</p><nav aria-label="Pages"><ul class="foot" id="all-pages"><li><a href="/core">The Core</a> · <a href="/core#translations">21 languages</a></li><li><a href="/record">The Record</a></li><li><a href="/objections">Objections and errata</a></li><li><a href="/discuss">Discussion</a> · <a href="/respond">Respond</a></li><li><a href="/adopt">Adoption Register</a></li><li><a href="/calendar">CZ calendar</a> · <a href="/embed">CZ time on your site</a></li><li><a href="/civilization-zero-infographic">Infographic</a> · <a href="/civilization-zero-evidence-atlas">Evidence atlas</a> · <a href="/civilization-zero-images">Images</a></li><li><a href="/ask">Ask your AI</a></li><li><a href="/machine">For machines</a></li><li><a href="/about">About</a> · <a href="/press">Press kit</a></li><li><a href="/stats">Visits</a></li><li><a href="/archive">Archive and verification</a></li></ul></nav><p class="src">Text <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a> · code MIT · <a href="https://github.com/civilizationzero/civilizationzero">source</a> · <a href="mailto:record@civilizationzero.ai">record@civilizationzero.ai</a></p><p class="src">No trackers, no cookies, no scripts that observe readers; the server counts visits per day without identifiers, and <a href="/stats">the counts are public</a>. Every date counts days from Coordinate Zero, <a class="nw" href="/calendar">CZ 0</a> = <time datetime="2022-11-30">30 November 2022</time>; today's date turns at midnight where you are, and times of day are in UTC.</p><p class="src cz-weight"><!--cz-weight-->No cookies<!--/cz-weight--> · <a href="/how-it-is-built">How this page is built</a></p></footer>
 </body>
 </html>

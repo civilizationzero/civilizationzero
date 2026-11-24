@@ -8,7 +8,7 @@
 <meta name="robots" content="max-image-preview:large">
 <meta name="google-site-verification" content="Hf73qd5zTa6JZ_-O6QM0JBYPSqxOdIM-M33lsIGihhg">
 <link rel="canonical" href="https://civilizationzero.ai/press">
-<link rel="alternate" type="text/markdown" href="/press.md" title="This page as Markdown"><link rel="service-desc" type="application/vnd.oai.openapi+json" href="/api/openapi.json">
+<link rel="alternate" type="text/plain" href="/press.txt" title="The press kit as text"><link rel="alternate" type="text/markdown" href="/press.md" title="This page as Markdown"><link rel="service-desc" type="application/vnd.oai.openapi+json" href="/api/openapi.json">
 <meta property="og:site_name" content="Civilization Zero"><meta property="og:type" content="website"><meta property="og:title" content="Civilization Zero press kit: facts, quotations, contact"><meta property="og:description" content="The Civilization Zero press kit: facts, verbatim quotations, how to check the record, and a contact, for journalists and researchers."><meta property="og:url" content="https://civilizationzero.ai/press"><meta property="og:image" content="https://civilizationzero.ai/civilization-zero.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="The mark CZ, a zero in which C and Z share their strokes, and the words: Civilization Zero names the beginning of a civilization in which humans may no longer be at the centre. Coordinate Zero, 30 November 2022."><meta name="twitter:card" content="summary_large_image"><meta name="twitter:site" content="@czrecord"><meta name="twitter:title" content="Civilization Zero press kit: facts, quotations, contact"><meta name="twitter:description" content="The Civilization Zero press kit: facts, verbatim quotations, how to check the record, and a contact, for journalists and researchers.">
 <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)"><meta name="theme-color" content="#101010" media="(prefers-color-scheme: dark)">
 <link rel="icon" href="/favicon.ico" sizes="48x48"><link rel="icon" href="/favicon-96x96.png" type="image/png" sizes="96x96"><link rel="icon" href="/favicon.svg" type="image/svg+xml" sizes="any"><link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180"><link rel="manifest" href="/site.webmanifest"><meta name="apple-mobile-web-app-title" content="Civilization Zero">
@@ -86,7 +86,7 @@ a.home svg{flex:none;inline-size:var(--e4);block-size:var(--e4)}
 nav.site{border-block-end:var(--e-16) solid var(--rule)}
 nav.site ul{display:flex;flex-wrap:wrap;justify-content:space-between;column-gap:var(--e-4);margin:0;padding:0;list-style:none}
 nav.site li,.foot li{margin:0}
-a[aria-current=page]{text-decoration-thickness:var(--e-8)}
+a[aria-current=page],.toc a:target-current{text-decoration-thickness:var(--e-8);text-decoration-skip-ink:none}
 @media(min-width:38.0546rem){
 .cz-now,nav.site{font-size:var(--e0)}
 nav.site ul{justify-content:start;column-gap:var(--e2)}
@@ -118,6 +118,9 @@ div[popover]{position-anchor:--sec;inset:anchor(bottom) auto auto anchor(left);m
 .next p{margin-block:var(--e-2)}
 .q{font-size:1.1892em;font-weight:700;line-height:var(--l1)}
 .acts{display:flex;flex-wrap:wrap;gap:var(--e-4) var(--e-2)}
+.lines>span{display:block;padding-inline-start:var(--e2);text-indent:calc(-1*var(--e2))}
+.lines>br{display:none}
+pre[id]{user-select:all}
 .seal svg{display:block;inline-size:min(100%,20*var(--e0));block-size:auto}
 .seal .un{fill:var(--rule)}
 .seal .cut{stroke:var(--bg);stroke-width:var(--e-16);vector-effect:non-scaling-stroke}
@@ -129,7 +132,6 @@ div[popover]{position-anchor:--sec;inset:anchor(bottom) auto auto anchor(left);m
    margin; the section being read marked as the head marks the page one is on, where the browser can tell. */
 .toc ul{margin:0;padding:0;list-style:none;scroll-target-group:auto}
 .toc a{display:inline-block;padding-block:var(--e-8)}
-.toc a:target-current{text-decoration-thickness:var(--e-8)}
 @media(min-width:76.1093rem){
 .toc{--w:min(16rem,50vw - 28ch - var(--e-1) - var(--e4));float:inline-start;position:sticky;inset-block-start:var(--e0);box-sizing:border-box;inline-size:var(--w);max-block-size:calc(100vh - 2*var(--e0));margin-inline:calc(-1*(var(--w) + var(--e3))) var(--e3);overflow:auto}
 .toc details{margin:0}
@@ -173,7 +175,7 @@ button{padding:var(--e-4) var(--e0);border:var(--e-16) solid var(--fg);cursor:po
 ::placeholder{color:var(--mute);opacity:1}
 input:is([type=radio],[type=checkbox]){accent-color:var(--fg)}
 label{min-inline-size:0}
-a.cta,button.cta{display:inline-block;box-sizing:border-box;min-block-size:var(--e6);padding:calc(var(--e-2) - var(--e-12)) var(--e0);border:var(--e-12) solid var(--fg);background:var(--fg);color:var(--bg);font-weight:700;line-height:var(--l1);text-decoration:none}
+a.cta,button.cta{display:inline-flex;align-items:center;box-sizing:border-box;min-block-size:var(--e6);padding:calc(var(--e-2) - var(--e-12)) var(--e0);border:var(--e-12) solid var(--fg);background:var(--fg);color:var(--bg);font-weight:700;line-height:var(--l1);text-decoration:none}
 :is(a.cta,button.cta):is(:hover,:focus-visible),button.cta.done,a.cta.o{background:var(--bg);color:var(--fg)}
 a.cta.o:is(:hover,:focus-visible),button.done:not(.cta){background:var(--fg);color:var(--bg)}
 p.cta-line{display:flex;flex-wrap:wrap;align-items:center;gap:var(--e-4) var(--e-2)}
@@ -287,7 +289,7 @@ a.home svg{view-transition-name:cz-mark}
 <header class="site" lang="en" dir="ltr"><div class="top"><a class="home" href="/"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="32" height="32" aria-hidden="true" focusable="false"><path d="M50.5,26.5 V17 A12,12 0 0 0 38.5,5 H25.5 A12,12 0 0 0 13.5,17 V47 A12,12 0 0 0 25.5,59 H38.5 A12,12 0 0 0 50.5,47 V37.5" fill="none" stroke="currentColor" stroke-width="6.5"/><path d="M38.5,5 L25.5,59" fill="none" stroke="currentColor" stroke-width="6.5"/></svg>Civilization Zero (CZ)</a><!--cz-now--><div class="cz-now" data-nosnippet><a href="https://civilizationzero.ai/calendar">CZ calendar</a></div><!--/cz-now--></div><nav class="site" aria-label="Site"><ul><li><a href="/core">The Core</a></li><li><a href="/discuss">Discussion</a></li><li><a href="/ask">Ask your AI</a></li><li><a href="/about">About</a></li><li><a href="#all-pages">All pages</a></li></ul></nav></header>
 <main id="content">
 <h1>Press kit</h1>
-<p class="src">For journalists and researchers. Every quotation below attributed to CZ-CORE 1.0 or CZ-IR 1.0 is verbatim, and the build checks it. The same kit as text: <a href="/press.txt">/press.txt</a>. Contact: <a href="mailto:record@civilizationzero.ai">record@civilizationzero.ai</a>.</p>
+<p class="forms" lang="en" dir="ltr">This page as <a href="/press.md" type="text/markdown">Markdown</a> · <a href="/press.txt" type="text/plain">text</a></p><p>For journalists and researchers. Every quotation below attributed to CZ-CORE 1.0 or CZ-IR 1.0 is verbatim, and the build checks it. The same kit as text: <a href="/press.txt">/press.txt</a>. Contact: <a href="mailto:record@civilizationzero.ai">record@civilizationzero.ai</a>.</p>
 <h2 id="h-one-line">One line</h2>
 <p>Civilization Zero names the beginning of a civilization in which humans may no longer be at the centre. Here, humans and AI confront what they owe each other, on the record, while the future is still open.</p>
 <h2 id="h-press-information">Press information</h2>

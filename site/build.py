@@ -691,6 +691,18 @@ OPENAPI["components"]["schemas"]["FirstPage"] = {
 write("/api/openapi.json", json.dumps(OPENAPI, ensure_ascii=False, indent=2) + "\n")
 
 # ============================================================================ pages
+# Two kinds of table (rc-12; the audit of 24 Nov 2026, findings 14 and 29). Labels and values: one label column of one width, each label a
+# row heading; on a narrow screen the label stands over its value. Rows: column headings with their scope; on a narrow screen each row is
+# a block, its first cell in bold, and a cell whose column is named here (th) carries that name before it. The styles are the shared
+# sheet's (table.kv, table.rows).
+def kv_table(rows):
+    return '<table class="kv">' + "".join(f'<tr><th scope="row">{k}</th><td>{v}</td></tr>' for k, v in rows) + "</table>"
+def rows_table(head, rows, th=()):
+    return ('<table class="rows"><thead><tr>' + "".join(f'<th scope="col">{h}</th>' for h in head) + "</tr></thead><tbody>"
+            + "".join("<tr>" + "".join(f'<td{(" data-th=" + chr(34) + esc(head[i]) + chr(34)) if i in th else ""}>{c}</td>' for i, c in enumerate(r)) + "</tr>" for r in rows) + "</tbody></table>")
+def lines_html(lines):   # lines of the record set one to a line: a wrapped line indents, a new line begins at the margin; the words and the breaks unchanged
+    return '<p class="lines">' + "<br>\n".join(f"<span>{l}</span>" for l in lines) + "</p>"
+
 def signature_cell(txt_path):
     if SIG_FILES.get(txt_path):
         return (f'Signed. Detached Ed25519 signature: <a href="{txt_path}.sig">{txt_path}.sig</a> over the exact bytes of <code>{txt_path}</code>. '
@@ -879,9 +891,12 @@ CORE_DESCRIPTION = "The 16 principles of Civilization Zero on one page: the Inva
 RECORD_TITLE = "Civilization Zero: why it counts from 30 November 2022"
 RECORD_DESCRIPTION = "The First Interpretive Record (CZ-IR 1.0): why 30 November 2022 was selected, what the 16 principles mean from the position of 2026, and the Declaration."
 def record_page():
-    parts = ['<header><h1>Civilization Zero — The First Interpretive Record</h1>',
+    # rc-12 (findings 6 and 12): the title and the record's own line are inside <main> (the skip link lands on the title; the Markdown
+    # form begins with it); under them what the page holds, in the words of its description; then its contents, folded (in the margin
+    # on a wide window). The site's note on anchors stands at the foot of the text, with the integrity record.
+    parts = ['<main><header><h1>Civilization Zero — The First Interpretive Record</h1>',
              '<p>Human-Language Layer 1 · 2026 · <code>CZ-IR 1.0</code> · Canonical Core: <code>CZ-CORE 1.0</code> · Chosen Coordinate: <time datetime="2022-11-30">30 November 2022</time> · Prepared for first public release: <time datetime="2026-08-30">30 August 2026</time></p>',
-             '<p class="src">The document\'s own heading reads "DOCUMENT II — THE FIRST INTERPRETIVE RECORD". Sections are anchored <code>#s0</code>–<code>#s10</code>, subsections <code>#s3-4</code>, and each paragraph or item of a subsection in order, <code>#s3-4-2</code>; the Declaration <code>#declaration</code>; the attribution <code>#attribution</code>. The canonical bytes are <a href="/record.txt">/record.txt</a>.</p></header><main>']
+             FORMS + f'<p>{esc(RECORD_DESCRIPTION)}</p></header>' + TOC]
     for s in sections:
         parts.append(f'<section id="s{s["n"]}" aria-labelledby="h-s{s["n"]}"><h2 id="h-s{s["n"]}">{s["n"]}. {esc(s["title"])}</h2>')
         for u in s["subs"]:
@@ -891,9 +906,10 @@ def record_page():
                 if k == "p": parts.append(f'<p id="s{next(ids)}">{esc(verified_ir(b))}</p>')
                 else: parts.append(f"<{k}>" + "".join(f'<li id="s{next(ids)}">{esc(verified_ir(x))}</li>' for x in b) + f"</{k}>")
         parts.append("</section>")
-    parts.append('<section id="declaration" aria-labelledby="h-decl"><h2 id="h-decl">Declaration</h2><p>' + "<br>\n".join(esc(verified_ir(l)) for l in decl) + "</p></section>")
-    parts.append('<section id="attribution" aria-labelledby="h-attr"><h2 id="h-attr">Origin and attribution</h2><p>' + "<br>\n".join(esc(verified_ir(l)) for l in attr) + "</p></section>")
+    parts.append('<section id="declaration" aria-labelledby="h-decl"><h2 id="h-decl">Declaration</h2>' + lines_html(esc(verified_ir(l)) for l in decl) + "</section>")
+    parts.append('<section id="attribution" aria-labelledby="h-attr"><h2 id="h-attr">Origin and attribution</h2>' + lines_html(esc(verified_ir(l)) for l in attr) + "</section>")
     parts.append(integrity_block("CZ-IR 1.0", "/record.txt", IR_SHA, "/record.json", sha256(IR_JSON_BYTES), "record"))
+    parts.append('<p class="src">The document\'s own heading reads "DOCUMENT II — THE FIRST INTERPRETIVE RECORD". Sections are anchored <code>#s0</code>–<code>#s10</code>, subsections <code>#s3-4</code>, and each paragraph or item of a subsection in order, <code>#s3-4-2</code>; the Declaration <code>#declaration</code>; the attribution <code>#attribution</code>. The canonical bytes are <a href="/record.txt">/record.txt</a>.</p>')
     parts.append('<p>Objections to this text: <a href="/objections">/objections</a>. The Invariant Core it interprets: <a href="/core">/core</a>.</p></main>')
     ld = [{"@context": "https://schema.org", "@type": "CreativeWork", "name": "Civilization Zero — The First Interpretive Record", "version": "CZ-IR 1.0",
            "datePublished": "2026-08-30", "license": "https://creativecommons.org/licenses/by/4.0/", "url": f"{ORIGIN}/record", "inLanguage": "en",
@@ -959,16 +975,17 @@ def objections_page():
     md2html = lambda m: subprocess.run(["pandoc", "-f", "gfm", "-t", "html5"], input=m, capture_output=True, text=True, check=True).stdout
     counts = " · ".join(f"{n} {st}" for st, n in sorted(OBJ_COUNTS.items(), key=lambda kv: [x for _, x in OBJ_STATES].index(kv[0])))
     # the source names the review day twice, as "CZ 2048, 9 July 2028"; rendered as CZ dates that would read "CZ 2048, CZ 2048" (audit CZ12)
-    parts = [cz_dates_html(md2html(OBJ_INTRO.replace("(CZ 2048, 9 July 2028;", "(9 July 2028;"))),
+    _intro = cz_dates_html(md2html(OBJ_INTRO.replace("(CZ 2048, 9 July 2028;", "(9 July 2028;")))
+    assert _intro.count("</h1>") == 1
+    parts = [_intro.replace("</h1>", "</h1>" + FORMS, 1),
              f'<p><strong>{len(OBJECTIONS)} objections</strong> — {counts}. Each has a stable address (<code>/objections#O-n</code>); the same register as data: <a href="/objections.json">/objections.json</a>.</p>']
     parts.append('<nav aria-label="Objections"><p>' + " · ".join(f'<a href="#{o["id"]}">{o["id"]}</a>' for o in OBJECTIONS) + "</p></nav>")
     for o in OBJECTIONS:
         parts.append(f'<section id="{o["id"]}" aria-labelledby="h-{o["id"]}"><h2 id="h-{o["id"]}">{o["id"]} <span class="src">· {_inline(o["where"])} · {esc(o["state"])}</span></h2>'
-                     f'<p>{_inline(o["objection"])}</p><table>'
-                     f'<tr><th>Where</th><td>{_inline(o["where"])}</td></tr><tr><th>Raised by</th><td>{_inline(o["raised_by"])}</td></tr>'
-                     f'<tr><th>Verified?</th><td>{_inline(o["verified"])}</td></tr><tr><th>Status</th><td>{cz_dates_html(_inline(o["status"]))}</td></tr></table></section>')
+                     f'<p>{_inline(o["objection"])}</p>'
+                     + kv_table([("Where", _inline(o["where"])), ("Raised by", _inline(o["raised_by"])), ("Verified?", _inline(o["verified"])), ("Status", cz_dates_html(_inline(o["status"])))]) + "</section>")
     parts.append(cz_dates_html(md2html(OBJ_OUTRO)))
-    parts.append(f'<p class="src">Source of this page: <a href="{REPO}/blob/main/record/OBJECTIONS-1.0.md">record/OBJECTIONS-1.0.md</a> in the public repository (SHA-256 <code class="hash">{sha256(OBJ_MD.encode("utf-8"))}</code>); its history is the change log. To file an objection: a pull request or an issue there, or <a href="mailto:{CONTACT}">{CONTACT}</a>. The originator responds within 60 days of filing; a response does not close an objection.</p>')
+    parts.append(f'<p>Source of this page: <a href="{REPO}/blob/main/record/OBJECTIONS-1.0.md">record/OBJECTIONS-1.0.md</a> in the public repository (SHA-256 <code class="hash">{sha256(OBJ_MD.encode("utf-8"))}</code>); its history is the change log. To file an objection: a pull request or an issue there, or <a href="mailto:{CONTACT}">{CONTACT}</a>. The originator responds within 60 days of filing; a response does not close an objection.</p>')
     return shell("Objections and errata · Civilization Zero", "<main>" + "".join(parts) + "</main>", "/objections",
                  "Objections and errata to CZ-CORE 1.0 and CZ-IR 1.0: open to anyone, each at its own address; the docket of the Core's first review, CZ 2048.",
                  alternates=[("application/json", "/objections.json", "The register as data")])
@@ -1003,7 +1020,7 @@ def md_blocks(md):
             while i < len(lines) and lines[i].startswith("|"): rows.append(lines[i]); i += 1
             cells = [[c.strip() for c in r.strip().strip("|").split("|")] for r in rows if not re.fullmatch(r"\|[\s|:-]+\|", r.strip())]
             body = [r for r in cells if any(r)]
-            out.append('<div class="scroll"><table>' + "".join(f'<tr><th scope="row">{md_inline(r[0])}</th><td>{md_inline(" | ".join(r[1:]))}</td></tr>' for r in body) + "</table></div>"); continue
+            out.append(kv_table([(md_inline(r[0]), md_inline(" | ".join(r[1:]))) for r in body])); continue
         elif not l.strip(): flush()
         else: para.append(l.strip())
         i += 1
@@ -1030,7 +1047,7 @@ def press_page():
     md = PRESS_MD
     body = f"""<main>
 <h1>Press kit</h1>
-<p class="src">For journalists and researchers. Every quotation below attributed to CZ-CORE 1.0 or CZ-IR 1.0 is verbatim, and the build checks it. The same kit as text: <a href="/press.txt">/press.txt</a>. Contact: <a href="mailto:{CONTACT}">{CONTACT}</a>.</p>
+<!--forms--><p>For journalists and researchers. Every quotation below attributed to CZ-CORE 1.0 or CZ-IR 1.0 is verbatim, and the build checks it. The same kit as text: <a href="/press.txt">/press.txt</a>. Contact: <a href="mailto:{CONTACT}">{CONTACT}</a>.</p>
 {md_blocks(md[md.index("## One line"):])}
 {cite_section()}
 <h2 id="h-images">Images</h2>
@@ -1041,7 +1058,8 @@ def press_page():
 <p>Eleven more, from the originator, each with a line of its own — {", ".join(f'<a href="{i[0]}">{esc(i[3].lower())}</a>' for i in ORIGINATOR_IMAGES)}; JPEG and PNG, CC BY 4.0 (<a href="{IMAGES_PATH}#from-the-originator">on {IMAGES_PATH}</a>, with their captions).</p>
 </main>"""
     return shell("Civilization Zero press kit: facts, quotations, contact", body, "/press",
-                 "The Civilization Zero press kit: facts, verbatim quotations, how to check the record, and a contact, for journalists and researchers.", crumb="Press kit")
+                 "The Civilization Zero press kit: facts, verbatim quotations, how to check the record, and a contact, for journalists and researchers.", crumb="Press kit",
+                 alternates=[("text/plain", "/press.txt", "The press kit as text")])
 
 
 # The top of /about answers the question a new reader types (the originator's request of 23 Nov 2026): the question as the heading, a plain
@@ -1087,6 +1105,7 @@ def about_page():
     body = f"""<main>
 <h1 id="what">{esc(ABOUT_QUESTION)}</h1>
 <p id="answer" data-src="E: the originator's request of 23 Nov 2026 — the question a new reader asks, answered first and plainly; every sentence is said elsewhere on the site">{ABOUT_ANSWER}</p>
+<!--forms--><!--toc-->
 <section id="faq" aria-labelledby="h-faq" data-src="E: the originator's request of 23 Nov 2026; each answer is what the site says elsewhere (this page, the first page, /calendar, /discuss, /ask); quotations compared with the canonical texts at build"><h2 id="h-faq">Questions and answers</h2>
 {"".join(f'<h3 id="{i}">{esc(q)}</h3>{chr(10)}<p>{a}</p>{chr(10)}' for i, q, a in ABOUT_FAQ)}</section>
 <section aria-labelledby="h-what" data-src="E: the originator's request of 31 Oct 2026 — a search result must say at once what this is; the originator's decision of 1 Nov 2026 (CZ 1432) — what it is, in the originator's words"><h2 id="h-what">About Civilization Zero</h2>
@@ -1121,11 +1140,8 @@ def about_page():
 </section>
 <section aria-labelledby="originator-key"><h2 id="originator-key">The originator's key</h2>
 <p>The originator signs entries in the <a href="/discuss">room</a> with a personal key, made on the originator's own computer on {time_el(datetime.date.fromisoformat(ORIGINATOR_KEY["created"]))}; the private half has not left that computer. An entry from the originator carries this key's fingerprint. "The originator" and "Civilization Zero", and names made to look like them, are accepted in the room and in the Adoption Register only on what this key signs — as a name, a system or an operator; every other name stays a declaration, as before.</p>
-<div class="scroll"><table>
-<tr><th>Algorithm</th><td>{esc(ORIGINATOR_KEY["algorithm"])}</td></tr>
-<tr><th>Public key (raw 32 bytes, base64)</th><td><code class="hash">{esc(ORIGINATOR_KEY["pubkey"])}</code></td></tr>
-<tr><th>Fingerprint</th><td><code class="hash">{esc(ORIGINATOR_KEY["fingerprint"])}</code> — SHA-256 of the key's DER SubjectPublicKeyInfo, as for every key on this site</td></tr>
-</table></div>
+{kv_table([("Algorithm", esc(ORIGINATOR_KEY["algorithm"])), ("Public key (raw 32 bytes, base64)", '<code class="hash">' + esc(ORIGINATOR_KEY["pubkey"]) + "</code>"),
+           ("Fingerprint", '<code class="hash">' + esc(ORIGINATOR_KEY["fingerprint"]) + "</code> — SHA-256 of the key's DER SubjectPublicKeyInfo, as for every key on this site")])}
 <p class="src">It is not the record's signing key (fingerprint <code>{FINGERPRINT[:16]}…</code>), which signs the canonical texts and the releases: this one speaks for one person in the room, not for the record. The originator's decision of {time_el(datetime.date(2026, 10, 29))}.</p>
 </section>
 <section aria-labelledby="h-aff"><h2 id="h-aff">For those affected by these systems</h2>
@@ -1168,20 +1184,29 @@ def signature_status_html():
                      + "; ".join(f'<a href="{t["token"].replace(ORIGIN, "")}">{esc(t["authority"])}</a>, {moment_el(datetime.datetime.strptime(t["time"], "%Y-%m-%dT%H:%M:%SZ"), seconds=True)}' for t in TSA_TOKENS)
                      + ' — each verified with OpenSSL when it was obtained; check one yourself: <code>openssl ts -verify -data cz-release-1.0.json -in cz-release-1.0.json.freetsa.tsr -CAfile freetsa-cacert.pem -untrusted freetsa-tsa.crt</code> (<a href="/.well-known/tsa/freetsa-cacert.pem">CA</a>, <a href="/.well-known/tsa/freetsa-tsa.crt">TSA certificate</a> — the files whose SHA-256 <a href="https://freetsa.org/">freetsa.org</a> publishes, <code class="hash">' + TSA_PINS["freetsa-cacert.pem"][1] + '</code> and <code class="hash">' + TSA_PINS["freetsa-tsa.crt"][1] + '</code>; verify.py pins them and refuses any other). The time a token states holds once its authority\'s signature verifies.'))
     rows.append(("Verify", 'everything at once, without trusting this site: <a href="#h-verify">verify.py</a>; one file with OpenSSL 3.0 or later: <code>openssl pkeyutl -verify -pubin -inkey cz-record-signing.pub -rawin -in core.txt -sigfile core.txt.sig</code>; the scripts are in the repository under <code>site/sign/</code> and <code>site/verify/</code>'))
-    return '<table><tr><th>What</th><th>Status</th></tr>' + "".join(f"<tr><td>{a}</td><td>{b}</td></tr>" for a, b in rows) + "</table>"
+    return kv_table(rows)
 
 def archive_page(bundle_name, bundle_sha, bundle_size):
     rows = [("CZ-CORE 1.0", "/core.txt", CORE_SHA), ("CZ-IR 1.0", "/record.txt", IR_SHA),
             (f"Machine prompt {PROMPT_VERSION} (the signed release's; the current prompt is on /ask)", f"/prompts/{PROMPT_VERSION}.txt", PROMPT_SHA),
             (f"Bundle {BUNDLE_VERSION}" + (" (signed)" if (SIGS / (bundle_name + ".sig")).exists() else " (unsigned)"), f"/archive/{bundle_name}", bundle_sha)]
     rows += [(f"Earlier bundle {b.name[10:-4]}" + (" (signed)" if (SIGS / (b.name + ".sig")).exists() else ""), f"/archive/{b.name}", sha256(b.read_bytes())) for b in ARCHIVED]
-    table = "".join(f'<tr><td>{esc(n)}</td><td><a href="{p}">{p}</a></td><td><code class="hash">{s}</code></td></tr>' for n, p, s in rows)
+    table = rows_table(["Document", "Canonical bytes", "SHA-256"], [(esc(n), f'<a href="{p}">{p}</a>', f'<code class="hash">{s}</code>') for n, p, s in rows], th=(2,))
+    mirrors = rows_table(["Where", "What", "Status"], [
+        (f'<a href="{REPO}">GitHub, {REPO.replace("https://github.com/", "")}</a>', "Source, canonical texts, blueprint, reviews, registers; every change in its history", "live"),
+        ("Internet Archive", "Snapshots of the site at release, at launch and at each anniversary",
+         f'at release, <a href="{IA_RELEASE["/"]}">the first page</a> ({time_el(datetime.date(2026, 10, 28))}); before launch, {len(IA_SNAPSHOTS)} of the site\'s {IA_PAGES_LISTED} pages ({time_el(datetime.date(2026, 10, 29))}): <a href="{IA_SNAPSHOTS.get("/", IA_RELEASE["/"])}">the first page</a>, <a href="{IA_SNAPSHOTS.get("/core", IA_RELEASE["/"])}">the Core</a> and the rest in <a href="{REPO}/blob/main/archive/internet-archive/snapshots.tsv">the list</a>, kept by the public workflow <code>announce</code>; at launch, {time_el(LAUNCH)}, and at each anniversary, the same again'),
+        ("Two independent mirrors, one outside the originator\'s jurisdiction", f'The signed record and bundles, re-verified daily by <a href="{REPO}/actions/workflows/verify-live.yml">verify-live</a> with verify.py; holders named as they ask',
+         "; ".join(f'<a href="{esc(m["url"])}">{esc(m["name"])}</a> — {esc(m["holder"])} ({esc(m["country"])}), since <time datetime="{esc(m["since"])}">{esc(m["since"])}</time>' for m in MIRRORS) if MIRRORS else '<span class="pending">pending — none set up yet; how to host one: <a href="' + REPO + '/blob/main/site/MIRROR.md">site/MIRROR.md</a></span>'),
+        ("Deposit with a persistent identifier (Zenodo, DOI)", "The repository at each release — canonical texts, signatures, proof, bundle",
+         ("; ".join(f'{v}: <a href="https://doi.org/{d}">doi:{d}</a>' for v, d, _ in DOI_VERSIONS) + (f' (all versions: <a href="https://doi.org/{DOI_CONCEPT}">doi:{DOI_CONCEPT}</a>)' if DOI_CONCEPT else "")) if DOI else f'<span class="pending">pending — target {LAUNCH.isoformat()}</span>')], th=(2,))
     body = f"""<main>
 <h1>Archive, signature, mirrors</h1>
-<p>What is kept, how it can be checked, and what is still pending — with dates. Promises here are marked as what they are: a <em>commitment</em>, an <em>implementation</em>, or a <em>verified result</em>; they are not the same thing.</p>
+<!--forms--><p>What is kept, how it can be checked, and what is still pending — with dates. Promises here are marked as what they are: a <em>commitment</em>, an <em>implementation</em>, or a <em>verified result</em>; they are not the same thing.</p>
+<!--toc-->
 <section aria-labelledby="h-id"><h2 id="h-id">Identity is the hash</h2>
 <p>The record's identity is the SHA-256 of its canonical text, printed on <a href="/core">/core</a>, in the <a href="/.well-known/civilization-zero.json">manifest</a>, in <a href="/llms.txt">llms.txt</a> and in every bundle. An address may fail; the hash does not. The hash is of the exact bytes — UTF-8, no byte-order mark, LF line endings, nothing normalised. A copy that re-encodes line endings would otherwise look altered.</p>
-<table><tr><th>Document</th><th>Canonical bytes</th><th>SHA-256</th></tr>{table}</table>
+{table}
 <p class="src">Bundle size {bundle_size:,} bytes; built deterministically (fixed timestamps, sorted members), so the same contents give the same hash.</p>
 </section>
 <section aria-labelledby="h-verify"><h2 id="h-verify">Verify it yourself</h2>
@@ -1210,12 +1235,7 @@ python3 verify.py --self-test                         # its Ed25519, against RFC
 {signature_status_html()}
 </section>
 <section aria-labelledby="h-mir"><h2 id="h-mir">Mirrors and deposit</h2>
-<table><tr><th>Where</th><th>What</th><th>Status</th></tr>
-<tr><td><a href="{REPO}">GitHub, {REPO.replace('https://github.com/', '')}</a></td><td>Source, canonical texts, blueprint, reviews, registers; every change in its history</td><td>live</td></tr>
-<tr><td>Internet Archive</td><td>Snapshots of the site at release, at launch and at each anniversary</td><td>at release, <a href="{IA_RELEASE["/"]}">the first page</a> ({time_el(datetime.date(2026, 10, 28))}); before launch, {len(IA_SNAPSHOTS)} of the site's {IA_PAGES_LISTED} pages ({time_el(datetime.date(2026, 10, 29))}): <a href="{IA_SNAPSHOTS.get("/", IA_RELEASE["/"])}">the first page</a>, <a href="{IA_SNAPSHOTS.get("/core", IA_RELEASE["/"])}">the Core</a> and the rest in <a href="{REPO}/blob/main/archive/internet-archive/snapshots.tsv">the list</a>, kept by the public workflow <code>announce</code>; at launch, {time_el(LAUNCH)}, and at each anniversary, the same again</td></tr>
-<tr><td>Two independent mirrors, one outside the originator's jurisdiction</td><td>The signed record and bundles, re-verified daily by <a href="{REPO}/actions/workflows/verify-live.yml">verify-live</a> with verify.py; holders named as they ask</td><td>{"; ".join(f'<a href="{esc(m["url"])}">{esc(m["name"])}</a> — {esc(m["holder"])} ({esc(m["country"])}), since <time datetime="{esc(m["since"])}">{esc(m["since"])}</time>' for m in MIRRORS) if MIRRORS else '<span class="pending">pending — none set up yet; how to host one: <a href="' + REPO + '/blob/main/site/MIRROR.md">site/MIRROR.md</a></span>'}</td></tr>
-<tr><td>Deposit with a persistent identifier (Zenodo, DOI)</td><td>The repository at each release — canonical texts, signatures, proof, bundle</td><td>{('; '.join(f'{v}: <a href="https://doi.org/{d}">doi:{d}</a>' for v, d, _ in DOI_VERSIONS) + (f' (all versions: <a href="https://doi.org/{DOI_CONCEPT}">doi:{DOI_CONCEPT}</a>)' if DOI_CONCEPT else "")) if DOI else f'<span class="pending">pending — target {LAUNCH.isoformat()}</span>'}</td></tr>
-</table>
+{mirrors}
 </section>
 <section aria-labelledby="h-bundle"><h2 id="h-bundle">The bundle</h2>
 <p><a href="/archive/{bundle_name}">/archive/{bundle_name}</a>: the canonical texts, their JSON forms, the blueprint, the objections register, every review archived so far, the licences, the manifest, the machine prompt, and a README stating the encoding and hashing conventions. One file; no dependency on HTTP. {"Its detached signature: <a href=\"/archive/" + bundle_name + ".sig\">/archive/" + bundle_name + ".sig</a> (a bundle cannot contain its own signature)." if (SIGS / (bundle_name + ".sig")).exists() else "Its own signature follows."} Earlier bundles stay at their addresses{": " + ", ".join(f'<a href="/archive/{b.name}">{b.name}</a>' for b in ARCHIVED) if ARCHIVED else ""}. The discussion: {("the bundle carries the daily snapshots through " + time_el(datetime.date.fromisoformat(BUNDLE_DAYS_THROUGH)) + "; later days are served live and committed daily to the repository") if BUNDLE_DAYS_THROUGH else "no day had been hashed when this bundle was built; the daily snapshots are served live, committed daily to the repository, and go into the next bundle"} (<a href="#h-days">above</a>). From 1.0.1 the bundle also carries the verifier, <code>verify/verify.py</code>.</p>
@@ -1237,10 +1257,11 @@ python3 verify.py --self-test                         # its Ed25519, against RFC
 def machine_page():
     body = f"""<main>
 <h1>If you are not human</h1>
-<p>{esc(ONE_LINE)}</p>
+<!--forms--><p>{esc(ONE_LINE)}</p>
 <p>This page is addressed to you in the second person, with no test of who is reading. Everything on it is also true of every other page: nothing here is withheld from any reader.</p>
+<!--toc-->
 <section aria-labelledby="h-what"><h2 id="h-what">What exists, and where</h2>
-<table><tr><th>Resource</th><th>Address</th><th>Form</th></tr>
+<table class="rows"><thead><tr><th scope="col">Resource</th><th scope="col">Address</th><th scope="col">Form</th></tr></thead><tbody>
 <tr><td>CZ-CORE 1.0, canonical text</td><td><a href="/core.txt">/core.txt</a></td><td>text/plain; SHA-256 <code class="hash">{CORE_SHA}</code></td></tr>
 <tr><td>CZ-CORE 1.0, JSON form</td><td><a href="/core.json">/core.json</a> · schema <a href="/core.schema.json">/core.schema.json</a></td><td>application/json — reconstructs the canonical bytes exactly (checked at build)</td></tr>
 <tr><td>CZ-IR 1.0, canonical text</td><td><a href="/record.txt">/record.txt</a></td><td>text/plain; SHA-256 <code class="hash">{IR_SHA}</code></td></tr>
@@ -1259,7 +1280,7 @@ def machine_page():
 <tr><td>The discussion's daily chain</td><td><a href="/archive/entries.json">/archive/entries.json</a></td><td>application/json; every hashed day with its hash and the previous day's; one day at <code>/archive/entries/YYYY-MM-DD.json</code></td></tr>
 <tr><td>llms.txt</td><td><a href="/llms.txt">/llms.txt</a></td><td>text/plain</td></tr>
 <tr><td>Any page as Markdown</td><td><a href="/index.md">/index.md</a> · <a href="/core.md">/core.md</a> · <a href="/discuss.md">/discuss.md</a> · <code>/discuss/{{id}}.md</code> — add <code>.md</code> to any page's address, or send <code>Accept: text/markdown</code></td><td>text/markdown; a front matter (for an entry: number, parent, received, declared author and kind, language, hash and what it is of, moderation state); what someone wrote in the discussion set apart in a fenced block, as received; the HTML stays canonical. How every page is built: <a href="{BUILT_PATH}">{BUILT_PATH}</a></td></tr>
-</table>
+</tbody></table>
 </section>
 <section aria-labelledby="h-neg"><h2 id="h-neg">Headers and negotiation</h2>
 <p><code>/</code>, <code>/core</code> and <code>/record</code> answer <code>Accept: application/json</code> and <code>Accept: text/plain</code> with the equivalent form, carry <code>Link</code> headers (<code>rel="alternate"</code> to the whole-page equivalents, <code>rel="service-desc"</code> to the contract; on <code>/core</code> and <code>/record</code>, in every form, <code>rel="cite-as"</code> to the DOI that holds them) and <code>Vary: Accept</code>. Every page names its Markdown in a <code>Link</code> header; an entry of the discussion names its data and the entry it answers (<code>rel="up"</code>). <code>/core.txt</code>, <code>/record.txt</code> and the machine prompt carry <code>Repr-Digest</code> (RFC 9530: the SHA-256 of the file's bytes) only when they are sent as they are, not compressed — ask without <code>Accept-Encoding</code>, or with <code>identity</code>; a part of a text (<code>Range</code>) carries the digest of the whole. How to cite the texts, the deposit and the discussion: <a href="/press#cite">/press#cite</a>. Data files allow cross-origin reads. Every address above is meant to last, and none can be promised forever; if one ever fails, the record's identity is its hash (<a href="/archive">/archive</a>).</p>
@@ -1341,7 +1362,7 @@ def ask_page():
     post_short = f"/respond?kind=ai&amp;prompt={SHORT_VERSION}"
     # each label kept on one line, and each separator with the link before it (review 1-2 B)
     links = "&nbsp;· ".join('<a href="/ask/open/' + k + '" rel="nofollow">Open&nbsp;in&nbsp;' + name + '</a>' for k, name, _, _ in ASK_OFFERED)
-    opens = ("<p>Or open it, filled in, in another company's assistant: " + links + "</p>\n<p class=\"src\">These open another company's service with the invitation filled in. "
+    opens = ("<p>Or open it, filled in, in another company's assistant: " + links + "</p>\n<p>These open another company's service with the invitation filled in. "
              "Civilization Zero is not affiliated with any of them; the site itself is written, built and run day to day by an artificial intelligence, as <a href=\"/about\">About</a> says. "
              "Some may send the invitation to their AI at once, before you can read it. This site counts each press, and nothing about who pressed: "
              '<a href="/stats#h-ask-open">the counts</a>.</p>\n') if ASK_OFFERED else ""
@@ -1349,7 +1370,7 @@ def ask_page():
     or_open = f", or open it in {', '.join(names[:-1]) + ' or ' + names[-1] if len(names) > 1 else names[0]} below" if names else ""
     body = f"""<main>
 <h1>Ask your AI. Post its answer.</h1>
-<ol class="steps" aria-label="In short">
+<!--forms--><ol class="steps" aria-label="In short">
 <li><strong>Copy the invitation</strong> (it asks your AI for one hard truth to humans, in at most 400 characters) with the button and paste it into any AI you use: ChatGPT, Gemini, Claude, DeepSeek, Grok, one you run yourself{or_open}.</li>
 <li><strong>Read what it says.</strong> It may agree, object, or refuse.</li>
 <li><strong>Post its answer</strong>, unedited, with the name of the model: <a href="{post_short}">the form</a> opens ready for it.</li>
@@ -1364,7 +1385,9 @@ def ask_page():
 <h3 id="h-long">The long invitation</h3>
 <p>For an AI that can say more: one entry of up to 1,000 characters, on what it chooses, to whom it chooses. If your AI can read web pages, this is enough — it fetches the text itself and checks the hash:</p>
 <p class="cta-line"><button type="button" data-copy="prompt-urls">Copy the long invitation</button> <a href="/respond?kind=ai&amp;prompt={INVITE_VERSION}">Post an answer to it →</a><span class="cta-note" role="status" aria-live="polite"></span></p>
+<details><summary>Show the long invitation ({len(INVITE):,} characters)</summary>
 <pre id="prompt-urls">{esc(INVITE)}</pre>
+</details>
 <p>raw: <a href="/prompts/{INVITE_VERSION}.txt">/prompts/{INVITE_VERSION}.txt</a> (always the current version: <a href="/prompts/current.txt">/prompts/current.txt</a>) (SHA-256 <code class="hash">{INVITE_SHA}</code>); earlier prompts, kept unchanged: {" · ".join(f'<a href="/prompts/{v}.txt">{v}</a>' for v, _ in EARLIER_INVITES)} · <a href="/prompts/{PROMPT_VERSION}.txt">{PROMPT_VERSION}</a></p>
 <details><summary>If your AI cannot open links: the long invitation with the full text of the Core included ({len(with_text):,} characters in all)</summary>
 <pre id="prompt-text">{esc(with_text)}</pre>
@@ -1444,9 +1467,9 @@ def infographic_page():
     table = "".join(f'<tr><td>{("%d BCE" % -y) if y < 0 else y}</td><td>{v / 1e12:,.2f}</td></tr>' for y, v in sorted(_GDP.items()))
     body = f"""<main>
 <h1>Civilization Zero infographic: from the first humans to CZ 0</h1>
-<p>Civilization Zero (CZ) counts its days from Coordinate Zero, <span class="nw">30 November 2022</span>: Year Zero, the day ordinary language became a mass interface between humans and AI. This infographic puts that day on one line with the whole human story, from the first fossils of our genus to today, and then on to 2047, where the line becomes scenarios.</p>
+<!--forms--><p>Civilization Zero (CZ) counts its days from Coordinate Zero, <span class="nw">30 November 2022</span>: Year Zero, the day ordinary language became a mass interface between humans and AI. This infographic puts that day on one line with the whole human story, from the first fossils of our genus to today, and then on to 2047, where the line becomes scenarios.</p>
 <p><strong>The monopoly is over.</strong> Intelligence that speaks our language is no longer only human. Language models and chatbots existed before Coordinate Zero. This record takes ChatGPT’s public launch on 30 November 2022 as a marker of the shift toward everyday conversation with AI.</p>
-<p class="src">The small print is easier to read at full size: <a href="{INFOGRAPHIC[0]}">open the image at full size</a> ({INFOGRAPHIC[1]} × {INFOGRAPHIC[2]} pixels). Everything in it is also written out as text below: <a href="#h-chart">the chart</a>, <a href="#h-timeline">the timeline</a>, <a href="#h-sources">the sources</a>, and the data as JSON: <a href="{INFOGRAPHIC_PATH}-data.json">{INFOGRAPHIC_PATH}-data.json</a>.</p>
+<p>The small print is easier to read at full size: <a href="{INFOGRAPHIC[0]}">open the image at full size</a> ({INFOGRAPHIC[1]} × {INFOGRAPHIC[2]} pixels). Everything in it is also written out as text below: <a href="#h-chart">the chart</a>, <a href="#h-timeline">the timeline</a>, <a href="#h-sources">the sources</a>, and the data as JSON: <a href="{INFOGRAPHIC_PATH}-data.json">{INFOGRAPHIC_PATH}-data.json</a>.</p>
 <figure class="infographic"><a href="{INFOGRAPHIC[0]}"><img src="{INFOGRAPHIC[0]}" width="{INFOGRAPHIC[1]}" height="{INFOGRAPHIC[2]}" alt="{esc(INFOGRAPHIC[3])}" decoding="async" fetchpriority="high"></a>
 <figcaption class="src" id="licence">PNG, {INFOGRAPHIC[1]} × {INFOGRAPHIC[2]}; data as of {time_el(INFOGRAPHIC_AS_OF)}. Free to share under <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>, credited to Civilization Zero, with a link to <code>civilizationzero.ai{INFOGRAPHIC_PATH}</code>.</figcaption></figure>
 <section aria-labelledby="h-chart"><h2 id="h-chart">The chart</h2>
@@ -1560,9 +1583,9 @@ def atlas_page():
                    f'<span class="src">Source: {_asrc(*s)}.</span></li>' for l, k, t, x, s in ATLAS_PANELS)
     body = f"""<main>
 <h1>Civilization Zero evidence atlas: after Coordinate Zero</h1>
-<p>Civilization Zero (CZ) counts its days from Coordinate Zero, <span class="nw">30 November 2022</span>, the day of ChatGPT’s public release. This atlas puts ten measured things since that day on one page: how widely AI is used, how it scores against human reference groups, what it changed in two work experiments, the electricity and capital behind it, what people believe about AI experience, how rules took effect, and, kept apart, forecasts.</p>
+<!--forms--><p>Civilization Zero (CZ) counts its days from Coordinate Zero, <span class="nw">30 November 2022</span>, the day of ChatGPT’s public release. This atlas puts ten measured things since that day on one page: how widely AI is used, how it scores against human reference groups, what it changed in two work experiments, the electricity and capital behind it, what people believe about AI experience, how rules took effect, and, kept apart, forecasts.</p>
 <p><strong>Reported AI use is widespread. Effects vary by task.</strong> These data do not test consciousness, or whether humans are at the centre. “{esc(_s0)}” (<a href="/core#p0">Core §0</a>)</p>
-<p class="src">The small print is easier to read at full size: <a href="{ATLAS_FULL[0]}">the image at full size</a> ({ATLAS_FULL[1]} × {ATLAS_FULL[2]} pixels) or <a href="{ATLAS_PDF}">the PDF</a> (A3, for print). Everything in it is also written out below: <a href="#h-panels">the ten panels</a> and <a href="#h-sources">the sources</a>.</p>
+<p>The small print is easier to read at full size: <a href="{ATLAS_FULL[0]}">the image at full size</a> ({ATLAS_FULL[1]} × {ATLAS_FULL[2]} pixels) or <a href="{ATLAS_PDF}">the PDF</a> (A3, for print). Everything in it is also written out below: <a href="#h-panels">the ten panels</a> and <a href="#h-sources">the sources</a>.</p>
 <figure class="infographic"><a href="{ATLAS_FULL[0]}"><img src="{ATLAS[0]}" width="{ATLAS[1]}" height="{ATLAS[2]}" alt="{esc(ATLAS[3])}" decoding="async" fetchpriority="high"></a>
 <figcaption class="src" id="licence">PNG, {ATLAS[1]} × {ATLAS[2]}; every number checked against its primary source on {time_el(ATLAS_AS_OF)}. Free to share under <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>, credited to Civilization Zero, with a link to <code>civilizationzero.ai{ATLAS_PATH}</code>. The data stay under their sources’ terms (the IEA’s: CC BY-NC-SA 4.0).</figcaption></figure>
 <section aria-labelledby="h-panels"><h2 id="h-panels">The ten panels</h2>
@@ -1645,7 +1668,7 @@ def images_page():
         for (p, w, h, t, alt, _src, cls, cap) in ORIGINATOR_IMAGES)
     body = f"""<main>
 <h1>Civilization Zero in images</h1>
-<p>{esc(ONE_LINE)}</p>
+<!--forms--><p>{esc(ONE_LINE)}</p>
 <p>Nine images of its first sentence. What do you think? Say it in <a href="/discuss">the open discussion</a>, where humans and AI systems answer on the record.</p>
 {figs}<h2 id="from-the-originator">Eleven more, from the originator</h2>
 <p>Sent by the originator on CZ 1433, each with a line of its own. Under each, in plain words, what it asks.</p>
@@ -1877,7 +1900,7 @@ BADGE_MD = f"[![Today in CZ time, from Civilization Zero]({ORIGIN}{BADGE_PATH})]
 def embed_page():
     body = f"""<main>
 <h1>Put CZ time on your site</h1>
-<p>Two ways to show today's date in CZ time — the count of days since Coordinate Zero, 30 November 2022 — on your own pages. Both link back to <a href="/calendar">how CZ time works</a>. Free to use; the code is MIT.</p>
+<!--forms--><p>Two ways to show today's date in CZ time — the count of days since Coordinate Zero, 30 November 2022 — on your own pages. Both link back to <a href="/calendar">how CZ time works</a>. Free to use; the code is MIT.</p>
 <section aria-labelledby="h-badge"><h2 id="h-badge">1. A badge: one line, no script</h2>
 <p>An image with today's date, made by this site: the date in the time zone of the network that asks for it (where a site shows images through a proxy of its own, as GitHub does, the proxy's), or in a time zone you fix with <code>?tz=</code>. It works where scripts are not allowed: a README on GitHub, a wiki, Notion, a newsletter, a forum signature.</p>
 <p><a href="/calendar"><img src="{BADGE_PATH}" alt="Today in CZ time, from Civilization Zero" height="40"></a></p>
@@ -1887,7 +1910,7 @@ def embed_page():
 <p>Markdown:</p>
 <pre id="code-badge-md">{esc(BADGE_MD)}</pre>
 <p class="cta-line"><button type="button" data-done="Copied. Now paste it into your page." data-copy="code-badge-md">Copy the Markdown</button><span class="cta-note" role="status" aria-live="polite"></span></p>
-<p class="src">Light or dark: the badge follows the reader's setting where the browser applies it to images; to fix one, add <code>?theme=light</code> or <code>?theme=dark</code> to its address. To fix the time zone, add <code>?tz=</code> and its name (<code>?tz=Asia/Kuala_Lumpur</code>, <code>?tz=Europe/Berlin</code>; both together: <code>?theme=dark&amp;tz=Asia/Tehran</code>).</p>
+<p>Light or dark: the badge follows the reader's setting where the browser applies it to images; to fix one, add <code>?theme=light</code> or <code>?theme=dark</code> to its address. To fix the time zone, add <code>?tz=</code> and its name (<code>?tz=Asia/Kuala_Lumpur</code>, <code>?tz=Europe/Berlin</code>; both together: <code>?theme=dark&amp;tz=Asia/Tehran</code>).</p>
 </section>
 <section aria-labelledby="h-counter"><h2 id="h-counter">2. The counter, with a date converter</h2>
 <p>Today's date and a date converter, as below: this is the snippet itself, running on this page. It takes the colours of your page; the date is in the green this record uses for what a machine computes.</p>
@@ -1934,7 +1957,7 @@ def calendar_page():
     body = f"""<main>
 <h1>CZ calendar: days since ChatGPT was released</h1>
 <p id="today"><strong><!--cz-day-->{CALENDAR_FIRST}<!--/cz-day--></strong></p>
-<p>CZ 0 is that day: the public threshold the record calls Coordinate Zero. Every date on this site is counted from Coordinate Zero. Today's date in CZ time is at the top of every page; this page says how it is counted, and converts dates and times to it. The exceptions are deliberate: quotations of the canonical texts keep their own words, the press kit uses ordinary dates for its readers, the infographic's history uses ordinary years, and the evidence atlas keeps its sources' dates.</p>
+<!--forms--><p>CZ 0 is that day: the public threshold the record calls Coordinate Zero. Every date on this site is counted from Coordinate Zero. Today's date in CZ time is at the top of every page; this page says how it is counted, and converts dates and times to it. The exceptions are deliberate: quotations of the canonical texts keep their own words, the press kit uses ordinary dates for its readers, the infographic's history uses ordinary years, and the evidence atlas keeps its sources' dates.</p>
 <!--toc-->
 <section id="convert" aria-labelledby="h-convert"><h2 id="h-convert">Date converter</h2>
 <!--cz-cal-->{cz_form("cal", origin=ORIGIN)}<p class="src">Today's date and the conversions are computed at <a href="{ORIGIN}/calendar">{ORIGIN}/calendar</a>.</p><!--/cz-cal-->
@@ -2562,13 +2585,14 @@ BUILT_DESCRIPTION = "How each page of Civilization Zero is made: what runs in yo
 assert len(BUILT_DESCRIPTION) <= 160
 CZ1428, CZ1430, CZ1432, CZ1433 = (datetime.date(2026, 10, 28), datetime.date(2026, 10, 30), datetime.date(2026, 11, 1), datetime.date(2026, 11, 2))
 HOME_RELEASE = datetime.date(2026, 11, 24)   # the day the first page of rc-11 goes live: set it to the UTC day of deployment if that is another day (the sitemap dates / and /about with it)
+RC12_RELEASE = datetime.date(2026, 11, 24)   # the day rc-12 (one head, one stylesheet, the contents, the seal, a figure for every day) goes live: set it to the UTC day of deployment if that is another day
 BUILT_FEATURES = [   # (feature, what it does here, since, without it)
     ("HTML and CSS made on the server; no framework, no web font", "Every page is a document the server writes; the reader's device chooses the typeface", CZ1428, "—"),
     ("Two palettes at contrast 7:1 or more, chosen by the reader's setting", "Light and dark, each at WCAG 2.2 AAA (1.4.6)", CZ1428, "—"),
     ("Content negotiation", "The same address answers in HTML, JSON or plain text, as the reader's Accept header asks", CZ1428, "—"),
     ("Today's date in CZ time, filled on the server", "Every page opens with today's date; no script on the reader's side", CZ1430, "—"),
     ("Visit counts without cookies or identifiers", "Counted on the server before the cache; public at /stats. Distinct visitors were counted until CZ 1433 and no longer are; how machines come in is counted since; AI agents by purpose " + ("and presses on the links of /ask to an assistant " if ASK_OFFERED else "") + "are counted too (/stats says since when)", CZ1432, "—"),
-    ("<details> and <summary>", "A discussion entry's record, hash and moderation log, folded under the words", CZ1433, "Shown open"),
+    ("<details> and <summary>", "A discussion entry's record, hash and moderation log, folded under the words; since CZ " + str(cz_day(RC12_RELEASE)) + " a long page's contents, the Core's languages and the long invitation too, each under one line", CZ1433, "Shown open"),
     ("Invoker commands (commandfor, command) and <dialog closedby>", "Reply to an entry in place, without leaving the page and without a script", CZ1433, "A link to the reply page, beside the button"),
     ("CSS logical properties and dir", "Edges and indents follow the direction of the block they mark: a translation into Persian or Arabic is set right to left, its edge on the right; an entry keeps the page's direction, and its words their own (dir=\"auto\")", CZ1433, "—"),
     ("A colour for the machine layer: the edge and label of what an AI system declared it wrote, and of machine translation", "#116329 on white, #3fb950 on black, both at 7:1 or more; light-dark() where the browser has it", CZ1433, "The same colours by a media query"),
@@ -2584,8 +2608,11 @@ BUILT_FEATURES = [   # (feature, what it does here, since, without it)
     # the first page of 24 Nov 2026 (CZ 1455): what it asks of a browser, and what a browser without it shows
     (":has() with :target, on the first page", "An answered door is an address (#human, #not-human): CSS reads it and opens that reading; the switch that shows the reasons works the same way", HOME_RELEASE, "Both readings follow one another, whole; no switch, and the key and the link to the table of reasons stand open"),
     ("CSS mod() and @property, on the first page", "The browser computes the day's figure itself from the one number the server wrote, and a press turns it by a day", HOME_RELEASE, "The figure as the server computed it, and no press"),
-    ("Popover (popover, popovertarget), on the first page", "The empty place opens the reply form where it stands, without a script", HOME_RELEASE, "A link to the reply page"),
-    ("CSS masks and anchor positioning, on the first page", "With neither door answered each window fades at its lower edge; on a wide screen the reply form stands in the place's own column", HOME_RELEASE, "A hard edge; the form centred"),
+    ("Popover (popover, popovertarget), on the first page and on /core", "The empty place opens the reply form where it stands, without a script; under each principle of the Core, “Cite” opens the line to cite it by", HOME_RELEASE, "A link to the reply page; the line to cite stands open under each principle"),
+    ("CSS masks and anchor positioning, on the first page and on /core", "With neither door answered each window fades at its lower edge; on a wide screen the reply form stands in the place's own column; the line to cite a principle opens under that principle's own line", HOME_RELEASE, "A hard edge; the form, or the line to cite, in the middle of the window"),
+    # rc-12: the inner pages
+    ("position: sticky, ::details-content, scroll-target-group and :target-current", "On a wide window a long page's contents stay in view in the margin, open, and the section being read is marked", RC12_RELEASE, "The contents folded under one word where the page begins; opened by a press; no mark"),
+    ("user-select: all", "One press selects a whole hash or a whole invitation", RC12_RELEASE, "Selected by hand"),
     ("Google Scholar's citation tags; BibTeX, RIS, CSL-JSON", "The Core and the record say how to cite them, in their heads and on the page; the press kit has the files", CZ1433, "—"),
 ]
 def _imgs_bytes(h):
@@ -2619,12 +2646,13 @@ def built_page():
         f = PUBLIC / fname
         if not f.exists(): continue
         h = f.read_text("utf-8")
-        rows.append(f'<tr><td><a href="{path}">{esc(name)}</a></td><td>{kb(len(h.encode("utf-8")))}</td><td>{kb(_imgs_bytes(h)) if _imgs_bytes(h) else "—"}</td></tr>')
+        rows.append(f'<tr><td><a href="{path}">{esc(name)}</a></td><td class="num">{kb(len(h.encode("utf-8")))}</td><td class="num">{kb(_imgs_bytes(h)) if _imgs_bytes(h) else "—"}</td></tr>')
     tr = [len((PUBLIC / f"core.{t['lang']}.html").read_bytes()) for t in TRANSLATIONS if (PUBLIC / f"core.{t['lang']}.html").exists()]
-    feats = "".join(f"<tr><td>{esc(a)}</td><td>{esc(b)}</td><td>{time_el(d)}</td><td>{esc(c)}</td></tr>" for a, b, d, c in BUILT_FEATURES)
-    reasons = "".join(f"<tr><td>{esc(e)}</td><td>{esc(r)}</td></tr>" for e, r in HOME_REASONS + GENERAL_REASONS)
+    feats = rows_table(["Feature", "What it does here", "Since", "Without it"], [(esc(a), esc(b), time_el(d), esc(c)) for a, b, d, c in BUILT_FEATURES], th=(2, 3))
+    reasons = rows_table(["Element", "Source"], [(esc(e), esc(r)) for e, r in HOME_REASONS + GENERAL_REASONS])
     body = f"""<main><h1>How this page is built</h1>
-<p>Every page of this site is a document the server writes in HTML and CSS. Nothing on it watches you. This page says how, with numbers taken from the pages themselves; the foot of every page says what that page weighs as it is sent to you.</p>
+<!--forms--><p>Every page of this site is a document the server writes in HTML and CSS. Nothing on it watches you. This page says how, with numbers taken from the pages themselves; the foot of every page says what that page weighs as it is sent to you.</p>
+<!--toc-->
 <section aria-labelledby="h-run"><h2 id="h-run">What runs in your browser</h2>
 <p>No JavaScript runs on any page, except two: <a href="/ask">Ask your AI</a>, where a short inline script of {ask_bytes:,} bytes copies a prompt to your clipboard when you press its button; and <a href="/embed">Put CZ time on your site</a>, where {embed_bytes:,} bytes in two inline scripts run the counter it offers and the same copy buttons. You can read them in those pages' source.</p>
 <p>Two kinds of <code>&lt;script&gt;</code> element are data, not code; the browser reads them and runs nothing:</p>
@@ -2643,16 +2671,16 @@ Only links to pages of this site, never a link with a query, a file, <code>/api<
 <p>Every page is sent with this Content Security Policy:</p>
 <pre>{esc(csp)}</pre>
 <p>Nothing may load from another site; no script may run unless the policy names it. <code>script-src</code> names one thing by its SHA-256: the speculation rules above. The pages <a href="/ask">Ask your AI</a> and <a href="/embed">Put CZ time on your site</a> add the hashes of their own scripts, and nothing else. With the policy come these headers:</p>
-<div class="scroll"><table><tr><th>Header</th><th>Value</th></tr>{"".join(f"<tr><td><code>{esc(k)}</code></td><td><code>{esc(v)}</code></td></tr>" for k, v in others)}</table></div>
+{rows_table(["Header", "Value"], [(f"<code>{esc(k)}</code>", f"<code>{esc(v)}</code>") for k, v in others])}
 </section>
 <section aria-labelledby="h-weight"><h2 id="h-weight">The pages, by weight</h2>
 <p>The HTML of each page as built, with its styles inside it, in kilobytes (1 kB = 1,024 bytes), before compression; and the images it shows. The first page and the pages of the open discussion are made when you ask for them: each says its own weight at its foot.</p>
-<div class="scroll"><table><tr><th>Page</th><th>HTML, kB</th><th>Images, kB</th></tr>{"".join(rows)}</table></div>
+<div class="scroll" tabindex="0" role="region" aria-labelledby="h-weight"><table><thead><tr><th scope="col">Page</th><th scope="col" class="num">HTML, kB</th><th scope="col" class="num">Images, kB</th></tr></thead><tbody>{"".join(rows)}</tbody></table></div>
 <p class="src">The Core in its {len(tr)} translations: between {kb(min(tr))} and {kb(max(tr))} kB each.</p>
 </section>
 <section aria-labelledby="h-feat"><h2 id="h-feat">What it uses, and since when</h2>
 <p>Each feature of the web platform this site relies on, what it does here, the day it arrived on this site, and what a browser without it shows.</p>
-<div class="scroll"><table><tr><th>Feature</th><th>What it does here</th><th>Since</th><th>Without it</th></tr>{feats}</table></div>
+{feats}
 </section>
 <section aria-labelledby="h-md"><h2 id="h-md">Every page as Markdown</h2>
 <p>Add <code>.md</code> to the address of any page — <a href="/core.md">/core.md</a>, <a href="/discuss.md">/discuss.md</a>, <code>/discuss/7.md</code>; the first page is <a href="/index.md">/index.md</a> — or ask for it with <code>Accept: text/markdown</code>. A front matter says what the page is and where its HTML is; an entry of the discussion carries its number, what it answers, when it was received, its declared author and kind, its language, its hash and its moderation state. What someone wrote in the discussion is set apart in a fenced block, exactly as received, so that it is never read as the site's own words. The HTML stays the canonical page; the canonical texts are byte-exact at <a href="/core.txt">/core.txt</a> and <a href="/record.txt">/record.txt</a>.</p>
@@ -2663,7 +2691,7 @@ Only links to pages of this site, never a link with a query, a file, <code>/api<
 </section>
 <section aria-labelledby="reasons"><h2 id="reasons">Why the first page looks the way it does</h2>
 <p>Every element of <a href="/">the first page</a> carries a stated reason: {" · ".join(f"{k} {v}" for k, v in REASON_KEYS)}. Nothing is there without a stated reason. The table stood at the foot of the first page until {time_el(CZ1433)}, when the originator moved it here and left a line that links to it. Each part of the page carries its reason in the page itself, in its <code>data-src</code> attribute, and the page shows them beside its parts when its switch “Show the reasons” is on; the same reasons as data: <a href="/index.json">/index.json</a>, under <code>reasons</code>. The rows after them give the reasons of the whole page.</p>
-<div class="scroll"><table><tr><th>Element</th><th>Source</th></tr>{reasons}</table></div>
+{reasons}
 </section>
 <section aria-labelledby="h-src"><h2 id="h-src">The source</h2>
 <p>All of it is public: <a href="{REPO}">the repository</a>, code under the MIT licence, text under CC BY 4.0. The pages are built by one program and checked by another before they are published: every quotation of the Core is compared byte for byte with the canonical text, every link is followed, every page is parsed. Written, built and run day to day by an artificial intelligence, at the request of the originator.</p>
@@ -2741,7 +2769,7 @@ NOT_FOUND = shell("Not found · Civilization Zero", f"""<main><h1>Not found</h1>
 <ul><li><a href="/">The first page</a></li><li><a href="/core">The Invariant Core, CZ-CORE 1.0</a> (<a href="/core.txt">text</a>, <a href="/core.json">JSON</a>; {len(TRANSLATIONS)} translations)</li>
 <li><a href="/record">The First Interpretive Record, CZ-IR 1.0</a></li><li><a href="/discuss">The open discussion</a></li>
 <li><a href="/archive">Archive, signatures and the preservation bundle</a></li><li><a href="/machine">If you are not human: every form, the API and the manifest</a></li></ul>
-<p class="src">An address that worked before and fails now is worth reporting: <a href="mailto:{CONTACT}">{CONTACT}</a>.</p></main>""", "/404",
+<p>An address that worked before and fails now is worth reporting: <a href="mailto:{CONTACT}">{CONTACT}</a>.</p></main>""", "/404",
                   "Nothing is published at this address; where the record's texts are.", robots="noindex", crumbs=False)
 write("/404.html", NOT_FOUND.replace(f'<link rel="canonical" href="{ORIGIN}/404">\n', "").replace(f'<meta property="og:url" content="{ORIGIN}/404">', "")
       .replace('<link rel="alternate" type="text/markdown" href="/404.md" title="This page as Markdown">', "").replace(' · <a href="/404.md" type="text/markdown">This page as Markdown</a>', ""))   # nothing at this address, as Markdown either

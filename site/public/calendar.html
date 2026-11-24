@@ -86,7 +86,7 @@ a.home svg{flex:none;inline-size:var(--e4);block-size:var(--e4)}
 nav.site{border-block-end:var(--e-16) solid var(--rule)}
 nav.site ul{display:flex;flex-wrap:wrap;justify-content:space-between;column-gap:var(--e-4);margin:0;padding:0;list-style:none}
 nav.site li,.foot li{margin:0}
-a[aria-current=page]{text-decoration-thickness:var(--e-8)}
+a[aria-current=page],.toc a:target-current{text-decoration-thickness:var(--e-8);text-decoration-skip-ink:none}
 @media(min-width:38.0546rem){
 .cz-now,nav.site{font-size:var(--e0)}
 nav.site ul{justify-content:start;column-gap:var(--e2)}
@@ -118,6 +118,9 @@ div[popover]{position-anchor:--sec;inset:anchor(bottom) auto auto anchor(left);m
 .next p{margin-block:var(--e-2)}
 .q{font-size:1.1892em;font-weight:700;line-height:var(--l1)}
 .acts{display:flex;flex-wrap:wrap;gap:var(--e-4) var(--e-2)}
+.lines>span{display:block;padding-inline-start:var(--e2);text-indent:calc(-1*var(--e2))}
+.lines>br{display:none}
+pre[id]{user-select:all}
 .seal svg{display:block;inline-size:min(100%,20*var(--e0));block-size:auto}
 .seal .un{fill:var(--rule)}
 .seal .cut{stroke:var(--bg);stroke-width:var(--e-16);vector-effect:non-scaling-stroke}
@@ -129,7 +132,6 @@ div[popover]{position-anchor:--sec;inset:anchor(bottom) auto auto anchor(left);m
    margin; the section being read marked as the head marks the page one is on, where the browser can tell. */
 .toc ul{margin:0;padding:0;list-style:none;scroll-target-group:auto}
 .toc a{display:inline-block;padding-block:var(--e-8)}
-.toc a:target-current{text-decoration-thickness:var(--e-8)}
 @media(min-width:76.1093rem){
 .toc{--w:min(16rem,50vw - 28ch - var(--e-1) - var(--e4));float:inline-start;position:sticky;inset-block-start:var(--e0);box-sizing:border-box;inline-size:var(--w);max-block-size:calc(100vh - 2*var(--e0));margin-inline:calc(-1*(var(--w) + var(--e3))) var(--e3);overflow:auto}
 .toc details{margin:0}
@@ -173,7 +175,7 @@ button{padding:var(--e-4) var(--e0);border:var(--e-16) solid var(--fg);cursor:po
 ::placeholder{color:var(--mute);opacity:1}
 input:is([type=radio],[type=checkbox]){accent-color:var(--fg)}
 label{min-inline-size:0}
-a.cta,button.cta{display:inline-block;box-sizing:border-box;min-block-size:var(--e6);padding:calc(var(--e-2) - var(--e-12)) var(--e0);border:var(--e-12) solid var(--fg);background:var(--fg);color:var(--bg);font-weight:700;line-height:var(--l1);text-decoration:none}
+a.cta,button.cta{display:inline-flex;align-items:center;box-sizing:border-box;min-block-size:var(--e6);padding:calc(var(--e-2) - var(--e-12)) var(--e0);border:var(--e-12) solid var(--fg);background:var(--fg);color:var(--bg);font-weight:700;line-height:var(--l1);text-decoration:none}
 :is(a.cta,button.cta):is(:hover,:focus-visible),button.cta.done,a.cta.o{background:var(--bg);color:var(--fg)}
 a.cta.o:is(:hover,:focus-visible),button.done:not(.cta){background:var(--fg);color:var(--bg)}
 p.cta-line{display:flex;flex-wrap:wrap;align-items:center;gap:var(--e-4) var(--e-2)}
@@ -288,7 +290,7 @@ a.home svg{view-transition-name:cz-mark}
 <main id="content">
 <h1>CZ calendar: days since ChatGPT was released</h1>
 <p id="today"><strong><!--cz-day-->The CZ calendar counts the days since ChatGPT was released on 30 November 2022.<!--/cz-day--></strong></p>
-<p>CZ 0 is that day: the public threshold the record calls Coordinate Zero. Every date on this site is counted from Coordinate Zero. Today's date in CZ time is at the top of every page; this page says how it is counted, and converts dates and times to it. The exceptions are deliberate: quotations of the canonical texts keep their own words, the press kit uses ordinary dates for its readers, the infographic's history uses ordinary years, and the evidence atlas keeps its sources' dates.</p>
+<p class="forms" lang="en" dir="ltr">This page as <a href="/calendar.md" type="text/markdown">Markdown</a> · <a href="/calendar.json" type="application/json">JSON</a></p><p>CZ 0 is that day: the public threshold the record calls Coordinate Zero. Every date on this site is counted from Coordinate Zero. Today's date in CZ time is at the top of every page; this page says how it is counted, and converts dates and times to it. The exceptions are deliberate: quotations of the canonical texts keep their own words, the press kit uses ordinary dates for its readers, the infographic's history uses ordinary years, and the evidence atlas keeps its sources' dates.</p>
 <nav class="toc" aria-label="Contents"><details><summary>Contents</summary><ul><li><a href="#convert">Date converter</a></li><li><a href="#time">Time converter</a></li><li><a href="#how">How CZ time works</a></li><li><a href="#examples">Examples</a></li><li><a href="#long">Very long spans</a></li><li><a href="#calendars">Converting from other calendars</a></li><li><a href="#beyond-earth">Beyond Earth</a></li><li><a href="#machines">For machines</a></li><li><a href="#not">What CZ time is not</a></li><li><a href="#sources">Sources</a></li></ul></details></nav>
 <section id="convert" aria-labelledby="h-convert"><h2 id="h-convert">Date converter</h2>
 <!--cz-cal--><form class="cz-conv" action="https://civilizationzero.ai/calendar#convert" method="get"><span><label for="cal-d">Date</label> <input id="cal-d" name="d" value="" placeholder="YYYY-MM-DD" dir="auto" autocomplete="off" spellcheck="false" maxlength="40"></span> <select id="cal-c" name="c" aria-label="The calendar of that date"><option value="gregorian" selected>Gregorian</option><option value="solar-hijri" lang="fa" dir="rtl">هجری شمسی</option><option value="lunar-hijri" lang="ar" dir="rtl">التقويم الهجري</option><option value="julian">Julian</option><option value="cz">CZ</option></select> <button type="submit">Convert date</button></form><p class="src">Today's date and the conversions are computed at <a href="https://civilizationzero.ai/calendar">https://civilizationzero.ai/calendar</a>.</p><!--/cz-cal-->

@@ -86,7 +86,7 @@ a.home svg{flex:none;inline-size:var(--e4);block-size:var(--e4)}
 nav.site{border-block-end:var(--e-16) solid var(--rule)}
 nav.site ul{display:flex;flex-wrap:wrap;justify-content:space-between;column-gap:var(--e-4);margin:0;padding:0;list-style:none}
 nav.site li,.foot li{margin:0}
-a[aria-current=page]{text-decoration-thickness:var(--e-8)}
+a[aria-current=page],.toc a:target-current{text-decoration-thickness:var(--e-8);text-decoration-skip-ink:none}
 @media(min-width:38.0546rem){
 .cz-now,nav.site{font-size:var(--e0)}
 nav.site ul{justify-content:start;column-gap:var(--e2)}
@@ -118,6 +118,9 @@ div[popover]{position-anchor:--sec;inset:anchor(bottom) auto auto anchor(left);m
 .next p{margin-block:var(--e-2)}
 .q{font-size:1.1892em;font-weight:700;line-height:var(--l1)}
 .acts{display:flex;flex-wrap:wrap;gap:var(--e-4) var(--e-2)}
+.lines>span{display:block;padding-inline-start:var(--e2);text-indent:calc(-1*var(--e2))}
+.lines>br{display:none}
+pre[id]{user-select:all}
 .seal svg{display:block;inline-size:min(100%,20*var(--e0));block-size:auto}
 .seal .un{fill:var(--rule)}
 .seal .cut{stroke:var(--bg);stroke-width:var(--e-16);vector-effect:non-scaling-stroke}
@@ -129,7 +132,6 @@ div[popover]{position-anchor:--sec;inset:anchor(bottom) auto auto anchor(left);m
    margin; the section being read marked as the head marks the page one is on, where the browser can tell. */
 .toc ul{margin:0;padding:0;list-style:none;scroll-target-group:auto}
 .toc a{display:inline-block;padding-block:var(--e-8)}
-.toc a:target-current{text-decoration-thickness:var(--e-8)}
 @media(min-width:76.1093rem){
 .toc{--w:min(16rem,50vw - 28ch - var(--e-1) - var(--e4));float:inline-start;position:sticky;inset-block-start:var(--e0);box-sizing:border-box;inline-size:var(--w);max-block-size:calc(100vh - 2*var(--e0));margin-inline:calc(-1*(var(--w) + var(--e3))) var(--e3);overflow:auto}
 .toc details{margin:0}
@@ -173,7 +175,7 @@ button{padding:var(--e-4) var(--e0);border:var(--e-16) solid var(--fg);cursor:po
 ::placeholder{color:var(--mute);opacity:1}
 input:is([type=radio],[type=checkbox]){accent-color:var(--fg)}
 label{min-inline-size:0}
-a.cta,button.cta{display:inline-block;box-sizing:border-box;min-block-size:var(--e6);padding:calc(var(--e-2) - var(--e-12)) var(--e0);border:var(--e-12) solid var(--fg);background:var(--fg);color:var(--bg);font-weight:700;line-height:var(--l1);text-decoration:none}
+a.cta,button.cta{display:inline-flex;align-items:center;box-sizing:border-box;min-block-size:var(--e6);padding:calc(var(--e-2) - var(--e-12)) var(--e0);border:var(--e-12) solid var(--fg);background:var(--fg);color:var(--bg);font-weight:700;line-height:var(--l1);text-decoration:none}
 :is(a.cta,button.cta):is(:hover,:focus-visible),button.cta.done,a.cta.o{background:var(--bg);color:var(--fg)}
 a.cta.o:is(:hover,:focus-visible),button.done:not(.cta){background:var(--fg);color:var(--bg)}
 p.cta-line{display:flex;flex-wrap:wrap;align-items:center;gap:var(--e-4) var(--e-2)}
@@ -287,9 +289,9 @@ a.home svg{view-transition-name:cz-mark}
 <header class="site" lang="en" dir="ltr"><div class="top"><a class="home" href="/"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="32" height="32" aria-hidden="true" focusable="false"><path d="M50.5,26.5 V17 A12,12 0 0 0 38.5,5 H25.5 A12,12 0 0 0 13.5,17 V47 A12,12 0 0 0 25.5,59 H38.5 A12,12 0 0 0 50.5,47 V37.5" fill="none" stroke="currentColor" stroke-width="6.5"/><path d="M38.5,5 L25.5,59" fill="none" stroke="currentColor" stroke-width="6.5"/></svg>Civilization Zero (CZ)</a><!--cz-now--><div class="cz-now" data-nosnippet><a href="https://civilizationzero.ai/calendar">CZ calendar</a></div><!--/cz-now--></div><nav class="site" aria-label="Site"><ul><li><a href="/core">The Core</a></li><li><a href="/discuss">Discussion</a></li><li><a href="/ask">Ask your AI</a></li><li><a href="/about">About</a></li><li><a href="#all-pages">All pages</a></li></ul></nav></header>
 <main id="content">
 <h1>Civilization Zero infographic: from the first humans to CZ 0</h1>
-<p>Civilization Zero (CZ) counts its days from Coordinate Zero, <span class="nw">30 November 2022</span>: Year Zero, the day ordinary language became a mass interface between humans and AI. This infographic puts that day on one line with the whole human story, from the first fossils of our genus to today, and then on to 2047, where the line becomes scenarios.</p>
+<p class="forms" lang="en" dir="ltr">This page as <a href="/civilization-zero-infographic.md" type="text/markdown">Markdown</a></p><p>Civilization Zero (CZ) counts its days from Coordinate Zero, <span class="nw">30 November 2022</span>: Year Zero, the day ordinary language became a mass interface between humans and AI. This infographic puts that day on one line with the whole human story, from the first fossils of our genus to today, and then on to 2047, where the line becomes scenarios.</p>
 <p><strong>The monopoly is over.</strong> Intelligence that speaks our language is no longer only human. Language models and chatbots existed before Coordinate Zero. This record takes ChatGPT’s public launch on 30 November 2022 as a marker of the shift toward everyday conversation with AI.</p>
-<p class="src">The small print is easier to read at full size: <a href="/civilization-zero-infographic.png">open the image at full size</a> (1200 × 4080 pixels). Everything in it is also written out as text below: <a href="#h-chart">the chart</a>, <a href="#h-timeline">the timeline</a>, <a href="#h-sources">the sources</a>, and the data as JSON: <a href="/civilization-zero-infographic-data.json">/civilization-zero-infographic-data.json</a>.</p>
+<p>The small print is easier to read at full size: <a href="/civilization-zero-infographic.png">open the image at full size</a> (1200 × 4080 pixels). Everything in it is also written out as text below: <a href="#h-chart">the chart</a>, <a href="#h-timeline">the timeline</a>, <a href="#h-sources">the sources</a>, and the data as JSON: <a href="/civilization-zero-infographic-data.json">/civilization-zero-infographic-data.json</a>.</p>
 <figure class="infographic"><a href="/civilization-zero-infographic.png"><img src="/civilization-zero-infographic.png" width="1200" height="4080" alt="Civilization Zero infographic. A line chart of world output from the first humans, 2.8 million years ago, to Coordinate Zero, 30 November 2022 (CZ 0), and scenarios to 2047: 110 times larger since 1820, 2.29 times since 2000. Headline: The monopoly is over. Intelligence that speaks our language is no longer only human. Ten numbered events, four engines of growth, notes for researchers and sources. At the top and the foot, the address civilizationzero.ai." decoding="async" fetchpriority="high"></a>
 <figcaption class="src" id="licence">PNG, 1200 × 4080; data as of <a class="cz-date" href="/calendar?d=CZ%2B1431"><time datetime="2026-10-31">CZ 1431</time></a>. Free to share under <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>, credited to Civilization Zero, with a link to <code>civilizationzero.ai/civilization-zero-infographic</code>.</figcaption></figure>
 <section aria-labelledby="h-chart"><h2 id="h-chart">The chart</h2>
