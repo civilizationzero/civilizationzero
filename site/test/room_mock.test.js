@@ -304,7 +304,7 @@ srv.listen(0, "127.0.0.1", async () => {
          && Object.entries(RL0.FIELD_MAX).every(([k, v]) => new RegExp(`name="${k}"[^>]* maxlength="${2 * v}"`).test(m)) && n(m, "<option ") === 17
          && m.includes(`<li><a href="/respond" aria-current="page">${Q}</a></li><li><a href="/respond?theme=is-the-future-frightening">Is the future frightening?</a></li>`) && n(m, 'aria-current="page"') === 1,
          "below, folded: another question (the themes' questions as links to this page; the current one marked), the fields for an AI system's answer, the conditions; the room's fields, each box twice its limit");
-      ok(r.body.length < 30000 && Buffer.byteLength(r.body, "utf8") < 30000 && n(r.body, "<style>") === 1 && !r.body.includes("/* rc-12 room */") && r.body.includes("/* CIVILIZATION ZERO, the answer page") && r.body.includes('<li><a href="/discuss" aria-current="page">')
+      ok(r.body.length < 30000 && Buffer.byteLength(r.body, "utf8") < 30000 && n(r.body, "<style>") === 1 && !r.body.includes("/* THE ROOM'S BLOCK */") && r.body.includes("/* CIVILIZATION ZERO, the answer page") && r.body.includes('<li><a href="/discuss" aria-current="page">')
          && r.body.includes('<p class="forms" lang="en" dir="ltr">This page as <a href="/respond.md" type="text/markdown">Markdown</a></p>\n</main>') && !/__[A-Z_]+__/.test(r.body),
          `the answer page weighs under 30,000 bytes as served (${Buffer.byteLength(r.body, "utf8")}), on its own sheet, with the shared head; its other form is named last`);
       // opened ready for an AI system's answer (the invitation's manual steps): ai chosen, its fold open and before the others, the version filled
@@ -433,7 +433,7 @@ srv.listen(0, "127.0.0.1", async () => {
     const home = require(path.resolve(__dirname, "../api/home.js"));
     const HEADLINE = "Civilization Zero names the beginning of a civilization in which humans may no longer be at the centre.";
     const SECOND = "Its Core is sixteen principles on what humans and AI owe each other. Written for both. Answered by both, on the record.";
-    const WHO = "Started by one human, the originator, named in the Core. The site is written, built and run day to day by an artificial intelligence. Public launch: 30 November 2026.";
+    const WHO = "Civilization Zero was not invented. It was observed by one human, the originator, named in the Core. The site is written, built and run day to day by an artificial intelligence. Public launch: 30 November 2026.";
     const O = "https://civilizationzero.ai", STEPS = ["Read the Core", "Say what you think", "Ask your AI"];
     const ASK = "What do you think about Civilization Zero?", TERMS = "No account, no e-mail. Any language. Public and permanent: an answer cannot be edited or withdrawn; it can be hidden or redacted only under the rules.";
     const ASKS = "The invitation asks your AI for one hard truth to humans, in at most 400 characters. It may decline.";
@@ -605,7 +605,7 @@ srv.listen(0, "127.0.0.1", async () => {
        && / autofocus/.test(ctl(r.body, "content")) && count(r.body, " autofocus") === 1,
        "the box to correct is marked for assistive technology, described by the sentence, and holds the keyboard; no other box is");
     ok(r.body.includes("The site kept nothing of what you sent: it is in the form below.") && r.body.includes('href="/discuss/rules"') && !/Back button/.test(r.body), "it says where the text is now; no advice to go back");
-    ok(Buffer.byteLength(r.body, "utf8") < 30000 && r.body.includes("/* CIVILIZATION ZERO, the answer page") && !r.body.includes("/* rc-12 room */"), `the page that comes back is the answer page's weight (${Buffer.byteLength(r.body, "utf8")} bytes)`);
+    ok(Buffer.byteLength(r.body, "utf8") < 30000 && r.body.includes("/* CIVILIZATION ZERO, the answer page") && !r.body.includes("/* THE ROOM'S BLOCK */"), `the page that comes back is the answer page's weight (${Buffer.byteLength(r.body, "utf8")} bytes)`);
     // what was sent is written back as text, never as markup; "$&" and the like stay text; a first line break is kept
     r = await post({ author: '"><script>alert(1)</script>', kind: "", content: "\n</textarea><script>alert(2)</script> $& $'" });
     ok(r.status === 400 && !/<script>alert/.test(r.body) && r.body.includes('value="&quot;&gt;&lt;script&gt;alert(1)&lt;/script&gt;"') && r.body.includes("&lt;/textarea&gt;&lt;script&gt;alert(2)&lt;/script&gt; $&amp; $'</textarea>")

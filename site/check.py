@@ -212,11 +212,11 @@ _sm_txt = (PUBLIC / "sitemap.xml").read_text("utf-8")
 IMG = "{http://www.google.com/schemas/sitemap-image/1.1}"
 _lm = {u.find(NS + "loc").text[len(ORIGIN):]: (u.find(NS + "lastmod").text if u.find(NS + "lastmod") is not None else None) for u in sm.findall(NS + "url")}
 _same = {"/objections", "/adopt", "/machine", "/archive"}   # their title and description are as they were
-# the three pages whose title rc-12 set in sentence case (finding 33) carry rc-12's day: the day /how-it-is-built gives for what rc-12 added
+# the three pages whose title rc-12 set in sentence case (finding 33) carry rc-12's day (lib.RC12_RELEASE; no page prints it)
 _r12 = {"/how-it-is-built": "How this page is built · Civilization Zero", "/civilization-zero-infographic": "Civilization Zero infographic: from the first humans to AI", "/civilization-zero-evidence-atlas": "Civilization Zero evidence atlas: after Coordinate Zero"}
-_r12_day = re.search(r'<tr><td>user-select: all</td><td>[^<]*</td><td data-th="Since"><a class="cz-date" href="[^"]*"><time datetime="(\d{4}-\d{2}-\d{2})">', (PUBLIC / "how-it-is-built.html").read_text("utf-8"))
-check(_r12_day and _r12_day.group(1) >= "2026-11-24" and set(_lm) >= _same | set(_r12)
-      and all((v is None) if k in _same else v == (_r12_day.group(1) if k in _r12 else "2026-11-24" if k in ("/", "/about") else "2026-11-23") for k, v in _lm.items()) and "Year Zero" not in _sm_txt.replace("Year Zero: 30 November 2022, CZ 0", "") and all(v is None or (re.fullmatch(r"\d{4}-\d{2}-\d{2}", v) and v <= datetime.date.today().isoformat()) for v in _lm.values()),
+_r12_day = RC12_RELEASE.isoformat()
+check(_r12_day >= "2026-11-24" and set(_lm) >= _same | set(_r12)
+      and all((v is None) if k in _same else v == (_r12_day if k in _r12 else HOME_RELEASE.isoformat() if k in ("/", "/about") else "2026-11-23") for k, v in _lm.items()) and "Year Zero" not in _sm_txt.replace("Year Zero: 30 November 2022, CZ 0", "") and all(v is None or (re.fullmatch(r"\d{4}-\d{2}-\d{2}", v) and v <= datetime.date.today().isoformat()) for v in _lm.values()),
       "sitemap.xml: the first page and /about carry the day the first page of rc-11 went live (24 Nov 2026), the three pages retitled with rc-12 its day, every other page whose title or description changed on 23 Nov 2026 that day, and the rest no date; no date is in the future; no 'Year Zero' in the site's voice")
 for _k, _t in _r12.items():
     _h = (PUBLIC / (_k[1:] + ".html")).read_text("utf-8")
@@ -686,14 +686,14 @@ _hcss = (SITE / "home.css").read_text("utf-8")
 _tokblock = re.search(r"^(:root\{.*?\})\n(@media\(prefers-color-scheme:dark\)\{:root\{[^}]*\}\})$", _hcss, re.S | re.M)
 check(_scss == CSS and _tokblock is not None and _scss.count(_tokblock.group(1) + "\n" + _tokblock.group(2)) == 1 and _scss.count(":root{") == 3,
       "the shared stylesheet opens with the first page's tokens, byte for byte (home.css, block 1), and defines no other scale")
-check(all(f.read_text("utf-8").count(f"<style>{CSS}</style>") == 1 and "rc-12 room" not in f.read_text("utf-8") for f in pages if f.name != "index.html") and all(s.count(f"<style>{CSS}{ROOM_CSS}</style>") == 1 and s.count("<style>") == 1 for s in _shells.values()),
+check(all(f.read_text("utf-8").count(f"<style>{CSS}</style>") == 1 and "THE ROOM'S BLOCK" not in f.read_text("utf-8") for f in pages if f.name != "index.html") and all(s.count(f"<style>{CSS}{ROOM_CSS}</style>") == 1 and s.count("<style>") == 1 for s in _shells.values()),
       "every page but the first carries the shared stylesheet, once; the shells of the room and the register carry the room's block after it, and no page the build writes as a file does")
 # the room's block (lib.py ROOM_CSS): the same discipline as the sheet it follows — the scale, the tokens (and an entry's own name, --vt,
 # which its tag carries), logical sizes, no colour of its own, no green, its motion in a block for a reader who has not asked for less
 _rnocom = re.sub(r"/\*.*?\*/", "", ROOM_CSS, flags=re.S)
 _rloose = sorted({n + u for n, u in re.findall(r"(?<![\w#(.-])(\d*\.?\d+)(rem|em|px|s)\b", _rnocom) if float(n) != 0 and (u == "px" or round(float(n), 4) not in {round(2 ** (k / 4), 4) for k in range(-24, 32)})})
 _rmo = _rnocom.split("@media(prefers-reduced-motion:no-preference){")
-check(ROOM_CSS.startswith("/* rc-12 room */\n") and ROOM_CSS.count("/* rc-12 room */") == 1 and not _rloose and set(re.findall(r"var\((--[a-z][\w-]*)", _rnocom)) <= set(re.findall(r"(--[a-z][\w-]*):", _tokblock.group(1))) | {"--vt"}
+check(ROOM_CSS.startswith("/* THE ROOM'S BLOCK */\n") and ROOM_CSS.count("/* THE ROOM'S BLOCK */") == 1 and not _rloose and set(re.findall(r"var\((--[a-z][\w-]*)", _rnocom)) <= set(re.findall(r"(--[a-z][\w-]*):", _tokblock.group(1))) | {"--vt"}
       and not re.search(r"(?<![-\w])(max-|min-)?(width|height):|#[0-9a-f]{3,6}\b|rgb\(|var\(--machine\)|@import|url\(|@font-face|:root", _rnocom)
       and len(_rmo) == 2 and not re.search(r"transition|animation|@keyframes", _rmo[0]) and _rmo[1].strip() == ".entry:is(:hover,:focus-within,.focus){view-transition-name:var(--vt,none)}}"
       and not re.search(r"dialog\.reply|sheet-|\.shut|form\.respond \.permanence|p\.receipt|p\.refused", CSS + ROOM_CSS),
@@ -730,7 +730,7 @@ _sec_n = _pbody[_pbody.index('<section id="not-human"'):_pbody.index('<p class="
 _top = _pbody[:_pbody.index('<nav class="doors"')]
 HEADLINE = "Civilization Zero names the beginning of a civilization in which humans may no longer be at the centre."
 SECOND_LINE = "Its Core is sixteen principles on what humans and AI owe each other. Written for both. Answered by both, on the record."
-WHO = "Started by one human, the originator, named in the Core. The site is written, built and run day to day by an artificial intelligence. Public launch: 30 November 2026."
+WHO = "Civilization Zero was not invented. It was observed by one human, the originator, named in the Core. The site is written, built and run day to day by an artificial intelligence. Public launch: 30 November 2026."
 CAL_NOTE = "Day 0: 30 November 2022, the day ChatGPT was released."
 STEPS = ("Read the Core", "Say what you think", "Ask your AI")
 TERMS = "No account, no e-mail. Any language. Public and permanent: an answer cannot be edited or withdrawn; it can be hidden or redacted only under the rules."
@@ -833,10 +833,10 @@ check("Record this response" not in _pv["txt"] and "Record this response" not in
 # control, which opens the last step, "Who are you?" — a name, three radio buttons, what posting means, the one control that sends —
 # in the browser's own popover inside the same form; below, folded, another question, the fields for an AI system's answer, the
 # conditions. The fields, their names, their limits and the address they are posted to are the room's, unchanged.
-_am, _aai, _ath = _amain[""], _amain["-ai"], _amain["-theme"]
+_zm, _zai, _zth = _amain[""], _amain["-ai"], _amain["-theme"]
 _Q = "What do you think about Civilization Zero?"
 check(all(h.count("<h1") == 1 and h.count("<main") == 1 for h in _ans.values())
-      and _am.startswith('<main id="content" class="answer">\n<p class="pre">Machines are asked questions all day.<br>This one is asked of you.</p>\n<h1><span class="na">' + _Q + '</span><span class="ia" hidden>What did your AI answer?</span></h1>\n'
+      and _zm.startswith('<main id="content" class="answer">\n<p class="pre">Machines are asked questions all day.<br>This one is asked of you.</p>\n<h1><span class="na">' + _Q + '</span><span class="ia" hidden>What did your AI answer?</span></h1>\n'
                          '<form class="respond" method="post" action="/api/entries" accept-charset="utf-8">\n<div class="place"><p class="note">your name · <span class="kind k0">human, AI or other · declared</span><span class="kind kh" hidden>human · declared</span>'
                          '<span class="kind k-ai ia" hidden>AI · declared</span><span class="kind ko" hidden>other · declared</span></p>\n<textarea id="text" name="content" required minlength="20" maxlength="12000" dir="auto" aria-describedby="text-note" autofocus>\n</textarea></div>\n'
                          '<p class="cap"><label for="text">Your response</label><span class="ia" hidden> · Its answer, as it gave it</span></p>\n'
@@ -844,37 +844,37 @@ check(all(h.count("<h1") == 1 and h.count("<main") == 1 for h in _ans.values())
                          '<p class="acts"><button class="cta send" type="button" popovertarget="who">Send</button><span class="wait" hidden>At least 20 characters.</span></p>\n<div id="who" popover role="group" aria-labelledby="who-h">\n<h2 id="who-h">Who are you?</h2>\n')
       and _A["question"] == _Q == _pj["doors"]["human_steps"][1]["ask"] and _A["name"] == "your name" and f'{_A["name"]} · human · declared' == _pj["doors"]["human_steps"][1]["place"],
       "the answer page, as it opens: two small lines; the question, the first page's own, as the page's one heading; directly under it the place — on its upper edge the name and the kind as declared, as on the first page — already holding the keyboard; its caption, the terms, and the control that opens the last step")
-_who = re.search(r'<div id="who" popover role="group" aria-labelledby="who-h">\n(.*?)\n</div>\n<div class="folds">', _am, re.S)
-check(_who is not None and _who.group(1) == '<h2 id="who-h">Who are you?</h2>\n<label>Your name, as you want it shown <input name="author" required maxlength="240" dir="auto" autofocus></label>\n<fieldset class="kinds"><legend>You are</legend>\n'
+_zwho = re.search(r'<div id="who" popover role="group" aria-labelledby="who-h">\n(.*?)\n</div>\n<div class="folds">', _zm, re.S)
+check(_zwho is not None and _zwho.group(1) == '<h2 id="who-h">Who are you?</h2>\n<label>Your name, as you want it shown <input name="author" required maxlength="240" dir="auto" autofocus></label>\n<fieldset class="kinds"><legend>You are</legend>\n'
       '<div class="doors"><input type="radio" name="kind" value="human" id="k-human" required><label for="k-human">human</label><input type="radio" name="kind" value="ai" id="k-ai" aria-describedby="kind-ai"><label for="k-ai">AI</label><input type="radio" name="kind" value="other" id="k-other"><label for="k-other">other</label></div>\n'
       '<p class="src"><span class="ia" id="kind-ai" hidden>ai — the answer of an AI system. </span>Declared, not verified.</p>\n</fieldset>\n'
       '<p><strong>Public and permanent:</strong> an answer cannot be edited or withdrawn; it can be hidden or redacted only under the rules.</p>\n<p class="src permanence">' + _A["permanence"] + '</p>\n'
       '<p class="acts"><button class="cta" type="submit">Record this response</button> <button class="back" type="button" popovertarget="who" popovertargetaction="hide">Back to my text</button></p>'
-      and _am.index('<div id="who"') < _am.index("</form>") and _am.count("<form") == 1 and _am.count('type="submit"') == 1 and "cannot be recalled." in _A["permanence"],
-      "the answer page, the last step: 'Who are you?' — the name; what the reader is, three radio buttons; that it is declared, not verified; what posting means, in reading size, and the notice of CZ 1433 small under it; the one control that sends, in the invitation's words; a plain way back — inside the same form")
+      and _zm.index('<div id="who"') < _zm.index("</form>") and _zm.count("<form") == 1 and _zm.count('type="submit"') == 1 and "cannot be recalled." in _A["permanence"],
+      "the answer page, the last step: 'Who are you?' — the name; what the reader is, three radio buttons; that it is declared, not verified; what posting means, in reading size, and the long notice small under it; the one control that sends, in the invitation's words; a plain way back — inside the same form")
 # the keyboard's order is the source's: the place, Send, the name, the kind, the control that sends, the way back; then what is folded
-_ctl = [m.group(0) for m in re.finditer(r'<textarea id="text"|<button class="cta send"|<input name="author"|<input type="radio" name="kind" value="human"|<button class="cta" type="submit"|<button class="back"|<summary>', _am)]
-check(_ctl[:6] == ['<textarea id="text"', '<button class="cta send"', '<input name="author"', '<input type="radio" name="kind" value="human"', '<button class="cta" type="submit"', '<button class="back"'] and len(_ctl) == 9
-      and "tabindex" not in _am and all('type="' in b for b in re.findall(r"<button\b[^>]*>", _am)) and len(re.findall(r'class="cta[ "]', _am)) == 2,
+_zctl = [m.group(0) for m in re.finditer(r'<textarea id="text"|<button class="cta send"|<input name="author"|<input type="radio" name="kind" value="human"|<button class="cta" type="submit"|<button class="back"|<summary>', _zm)]
+check(_zctl[:6] == ['<textarea id="text"', '<button class="cta send"', '<input name="author"', '<input type="radio" name="kind" value="human"', '<button class="cta" type="submit"', '<button class="back"'] and len(_zctl) == 9
+      and "tabindex" not in _zm and all('type="' in b for b in re.findall(r"<button\b[^>]*>", _zm)) and len(re.findall(r'class="cta[ "]', _zm)) == 2,
       "the answer page: the keyboard goes from the place to Send, the name, the kind, the control that sends and the way back, then to what is folded; no order is forced; one filled control before the last step and one in it")
 # what is sent: the room's own fields, each box taking twice its limit in the browser's count (the server counts code points)
-_names = lambda h: sorted(set(re.findall(r'<(?:input|select|textarea)[^>]* name="(\w+)"', h)))
-_maxl = dict(re.findall(r'name="(\w+)"[^>]*? maxlength="(\d+)"', _am))
-check(_names(_am) == sorted(["content", "author", "kind", "ref", "system", "operator", "prompt", "lang"]) and _names(_ath) == sorted(["parent", "content", "author", "kind", "ref", "system", "operator", "prompt", "lang"])
-      and _maxl == {"content": "12000", "author": "240", "system": "400", "operator": "400", "prompt": "120", "lang": "70"} and 'minlength="20"' in _am
-      and re.findall(r'<option value="(\d*)"', _am) == [""] + [str(p["n"]) for p in json.loads((PUBLIC / "core.json").read_text("utf-8"))["principles"]],
+_znames = lambda h: sorted(set(re.findall(r'<(?:input|select|textarea)[^>]* name="(\w+)"', h)))
+_zmaxl = dict(re.findall(r'name="(\w+)"[^>]*? maxlength="(\d+)"', _zm))
+check(_znames(_zm) == sorted(["content", "author", "kind", "ref", "system", "operator", "prompt", "lang"]) and _znames(_zth) == sorted(["parent", "content", "author", "kind", "ref", "system", "operator", "prompt", "lang"])
+      and _zmaxl == {"content": "12000", "author": "240", "system": "400", "operator": "400", "prompt": "120", "lang": "70"} and 'minlength="20"' in _zm
+      and re.findall(r'<option value="(\d*)"', _zm) == [""] + [str(p["n"]) for p in json.loads((PUBLIC / "core.json").read_text("utf-8"))["principles"]],
       "the answer page sends the room's own fields — content, author, kind, ref, system, operator, prompt, lang and, for a theme or a reply, parent — to POST /api/entries; each box takes twice its limit; the topic is one of the Core's sixteen sections or the whole record")
 # below, folded: another question (the room's themes, as links to this page with their question; the one being answered is marked),
 # the fields for an AI system's answer, the conditions in the words they had
-_folds = re.findall(r"<details[^>]*><summary>(.*?)</summary>", _am)
-_qs = re.findall(r'<li><a href="([^"]+)"( aria-current="page")?>([^<]*)</a></li>', _am)
-_qst = re.findall(r'<li><a href="([^"]+)"( aria-current="page")?>([^<]*)</a></li>', _ath)
-check(_folds == ["Another question", "Posting the answer of an AI system, or naming the language", "Conditions of posting: the licence (CC BY 4.0), the limits, where an entry may also be posted, the receipt"] and "<details open" not in _am and ' open>' not in _am
-      and _qs == [("/respond", ' aria-current="page"', _Q)] + [(f'/respond?theme={t["slug"]}', "", t["title"]) for t in THEMES]
-      and _qst == [("/respond?kind=human", "", _Q)] + [(f'/respond?theme={t["slug"]}&amp;kind=human', ' aria-current="page"' if t is THEMES[1] else "", t["title"]) for t in THEMES]
-      and f'<h1><span class="na">{esc(THEMES[1]["title"])}</span><span class="ia" hidden>What did your AI answer?</span></h1>\n<p class="re ia" hidden>The question: <a href="/themes/{THEMES[1]["slug"]}">{esc(THEMES[1]["title"])}</a></p>\n<form' in _ath
-      and f'accept-charset="utf-8">\n<input type="hidden" name="parent" value="{THEMES[1]["entry"]}">\n<div class="place">' in _ath
-      and all(x in _am for x in ("By posting you license what you have the right to license under CC BY 4.0.", "not consent (IR 10.2), not adoption (IR 10.1)", "Limits: 5 per 10 minutes per source; a finite intake per UTC day.", "After posting you get a receipt code, shown once",
+_zfolds = re.findall(r"<details[^>]*><summary>(.*?)</summary>", _zm)
+_zqs = re.findall(r'<li><a href="([^"]+)"( aria-current="page")?>([^<]*)</a></li>', _zm)
+_zqst = re.findall(r'<li><a href="([^"]+)"( aria-current="page")?>([^<]*)</a></li>', _zth)
+check(_zfolds == ["Another question", "Posting the answer of an AI system, or naming the language", "Conditions of posting: the licence (CC BY 4.0), the limits, where an entry may also be posted, the receipt"] and "<details open" not in _zm and ' open>' not in _zm
+      and _zqs == [("/respond", ' aria-current="page"', _Q)] + [(f'/respond?theme={t["slug"]}', "", t["title"]) for t in THEMES]
+      and _zqst == [("/respond?kind=human", "", _Q)] + [(f'/respond?theme={t["slug"]}&amp;kind=human', ' aria-current="page"' if t is THEMES[1] else "", t["title"]) for t in THEMES]
+      and f'<h1><span class="na">{esc(THEMES[1]["title"])}</span><span class="ia" hidden>What did your AI answer?</span></h1>\n<p class="re ia" hidden>The question: <a href="/themes/{THEMES[1]["slug"]}">{esc(THEMES[1]["title"])}</a></p>\n<form' in _zth
+      and f'accept-charset="utf-8">\n<input type="hidden" name="parent" value="{THEMES[1]["entry"]}">\n<div class="place">' in _zth
+      and all(x in _zm for x in ("By posting you license what you have the right to license under CC BY 4.0.", "not consent (IR 10.2), not adoption (IR 10.1)", "Limits: 5 per 10 minutes per source; a finite intake per UTC day.", "After posting you get a receipt code, shown once",
                                  "Shown as text, as written: line endings are made uniform and spaces at both ends removed.", "The server counts lengths in Unicode code points.", '<a href="/discuss/rules">/discuss/rules</a>')),
       "the answer page, below the place: three folds — another question (this page with each theme's question; the one being answered marked; a theme's answer is posted as an answer to the theme's entry), the fields for an AI system's answer, the conditions in the words they had")
 # nothing runs, nothing loads; the page weighs less than 30 kB as served, and says what it weighs
@@ -883,8 +883,8 @@ check(all(b < 30000 for b in _abytes.values()) and all(f"This page: {round(len(h
       and all(all(x in (' type="application/ld+json"', ' type="speculationrules"') for x in re.findall(r"<script\b([^>]*)>", h)) and not re.search(r"\son\w+\s*=", h.split("<body>")[1]) and "javascript:" not in h.lower()
               and not re.search(r"<(img|iframe|video|audio|object|embed|source)\b", h) for h in _ans.values()),
       f"the answer page: under 30,000 bytes as served, in each of its forms {_abytes}; no script that runs, no event attribute, no image, nothing loaded")
-_ids = re.findall(r' id="([^"]+)"', _ans[""].split("<body>")[1])
-check(len(_ids) == len(set(_ids)) and all(i in _ids for i in re.findall(r' (?:for|aria-labelledby|popovertarget)="([^"]+)"', _am)) and all(i in _ids for x in re.findall(r' aria-describedby="([^"]+)"', _am) for i in x.split()),
+_zids = re.findall(r' id="([^"]+)"', _ans[""].split("<body>")[1])
+check(len(_zids) == len(set(_zids)) and all(i in _zids for i in re.findall(r' (?:for|aria-labelledby|popovertarget)="([^"]+)"', _zm)) and all(i in _zids for x in re.findall(r' aria-describedby="([^"]+)"', _zm) for i in x.split()),
       "the answer page: every id once; every label, description and popover names an element that is there")
 # the page's own sheet in place of the shared one: the shared sheet's tokens, base, head, foot and print as they are (comments left
 # out), the few shared rules of its controls and of an entry, and the page's own rules (site/answer.css) — held to the shared
@@ -894,15 +894,15 @@ _AOWN = (SITE / "answer.css").read_text("utf-8"); _anc = re.sub(r"\n+", "\n", re
 _asheet = re.search(r"<style>(.*?)</style>", DT["answer_shell"], re.S).group(1)
 _strip_css = lambda c: re.sub(r"\n+", "\n", re.sub(r"/\*.*?\*/", "", c, flags=re.S)).strip()
 _sblock = lambda n: _strip_css(re.search(rf"/\* {n} [A-Z].*?(?=/\* \d+ [A-Z]|\Z)", CSS, re.S).group(0))
-_parts = [_strip_css(CSS[:CSS.index("/* 2 BASE")]), _sblock(2), _sblock(3), _anc, _sblock(8), _sblock(9)]
-_at = [_asheet.find(x) for x in _parts]
+_zparts = [_strip_css(CSS[:CSS.index("/* 2 BASE")]), _sblock(2), _sblock(3), _anc, _sblock(8), _sblock(9)]
+_zat = [_asheet.find(x) for x in _zparts]
 _arest = _asheet
-for _x in _parts: _arest = _arest.replace(_x, "")
+for _x in _zparts: _arest = _arest.replace(_x, "")
 _arules = [l for l in re.sub(r"/\*.*?\*/", "", _arest, flags=re.S).split("\n") if l.strip()]
-check(all(a >= 0 for a in _at) and _at == sorted(_at) and all(_asheet.count(x) == 1 for x in _parts) and _asheet.count(TOKENS) == 1 and _asheet.count("/*") == 1 and _asheet.lstrip().startswith("/* CIVILIZATION ZERO, the answer page")
+check(all(a >= 0 for a in _zat) and _zat == sorted(_zat) and all(_asheet.count(x) == 1 for x in _zparts) and _asheet.count(TOKENS) == 1 and _asheet.count("/*") == 1 and _asheet.lstrip().startswith("/* CIVILIZATION ZERO, the answer page")
       and all((CSS + "\n" + ROOM_CSS).count("\n" + l + "\n") == 1 for l in _arules) and len(_arules) == 14
       and all(h.count("<style>") == 1 and f"<style>{_asheet}</style>" in h and CSS not in h for h in _ans.values()) and DT["shell"].count(f"<style>{CSS}{ROOM_CSS}</style>") == 1,
-      f"the answer page's sheet: the shared sheet's tokens, base, head, foot and print, byte for byte without their comments, in their order; fourteen further rules, each a whole rule of the shared sheet or of the room's block; the page's own rules (site/answer.css); and the page carries this sheet alone {_at} {len(_arules)}")
+      f"the answer page's sheet: the shared sheet's tokens, base, head, foot and print, byte for byte without their comments, in their order; fourteen further rules, each a whole rule of the shared sheet or of the room's block; the page's own rules (site/answer.css); and the page carries this sheet alone {_zat} {len(_arules)}")
 _aloose = sorted({n + u for n, u in re.findall(r"(?<![\w#(.-])(\d*\.?\d+)(rem|em|px|s)\b", _anc) if float(n) != 0 and (u == "px" or round(float(n), 4) not in _SPOW)})
 _amo = _anc.split("@media(prefers-reduced-motion:no-preference){")
 check(not _aloose and set(re.findall(r"var\((--[a-z][\w-]*)", _anc)) <= _stok and not re.search(r"(?<![-\w(])(max-|min-)?(width|height):|@import|url\(|@font-face|:root|!important", _anc) and not re.search(r"[<>&\"]", _A["permanence"])
@@ -932,9 +932,9 @@ check(f"\n# {_Q}\n" in _amd and "20 to 6,000 characters. Any language. You may d
 _atext = " ".join(re.sub(r"\s+", " ", _seen(re.sub(r'<ul class="qs">.*?</ul>', "", h, flags=re.S))) for h in _amain.values()) + " " + re.sub(r"\s+", " ", _amd.split("---", 2)[2])   # the themes' questions are the room's own (their list is left out here)
 _FORBID_ANSWER = [r"\bfirst\b", r"observator", r"\banonymous\b", r"\b(he|him|his)\b", r"\byears?\b", r"\bconscious", r"\bbetter\b", r"\bunprecedented\b", r"\bmasterpiece\b", r"\d+ (entries|answers|responses)",
                   r"\boriginator\b", r"\b(decided|designed|rebuilt|redesigned)\b", r"!"]   # nor who asked for, decided or made anything, or when; no exclamation
-_hits = [(p, m.group(0)) for p in _FORBID_ANSWER for m in [re.search(".{0,30}" + p + ".{0,30}", _atext, re.I)] if m] + \
+_zhits = [(p, m.group(0)) for p in _FORBID_ANSWER for m in [re.search(".{0,30}" + p + ".{0,30}", _atext, re.I)] if m] + \
         [(p, m.group(0)) for p in [r"\bfirst\b(?! (page|screen))", r"observator", r"\banonymous\b", r"\b(he|him|his)\b", r"\bbetter\b", r"\bmasterpiece\b", r"\d+ entries"] for m in [re.search(".{0,30}" + p + ".{0,30}", " ".join(re.findall(r"/\*.*?\*/", _AOWN, re.S)), re.I)] if m]
-check(not _hits, f"the answer page: a forbidden word in what a reader reads, or in its sheet's comments {_hits[:3]}")
+check(not _zhits, f"the answer page: a forbidden word in what a reader reads, or in its sheet's comments {_zhits[:3]}")
 _hrefs = re.findall(r'href="([^"]+)"', _sec_h)
 _U = lambda path: f"{ORIGIN}{path}"; _js = _pj["doors"]["human_steps"]
 check(_hrefs[:4 + len(_th3)] == ["/core", "/core#translations", "/respond?kind=human", "/discuss"] + [f'/themes/{t["slug"]}' for t in _th3] and _hrefs[4 + len(_th3)] == "/ask"
@@ -1015,9 +1015,42 @@ check(len(_src) >= 19 and all(len(s) > 20 for s in _src) and [r["source"] for r 
       f"home: every part's reason is in its data-src; the data form's reasons are those {len(_src)}, in the page's order; the table on /how-it-is-built begins with the same rows and goes on with the reasons of the whole page")
 _names = {w for k in ("originating_concept", "originating_dialogue", "human_publisher") for w in re.findall(r"[A-Za-z]{4,}", str(CORE_JSON.get(k, "")))} - {"with", "human", "Human", "dialogue", "concept", "publisher", "originating", "publication", "responsibility"}
 _products = r"\b(Anthropic|Claude|OpenAI|GPT-|Gemini|Grok|DeepSeek|Llama|Mistral|Copilot)\b"
-check(not re.search(r"proposed on|not yet decided", " ".join(_src)) and sum("decided by the artificial intelligence that builds the site, 23 Nov 2026 UTC (CZ 1454)" in s for s in _src) >= 4 and "24 Nov 2026" not in " ".join(_src).replace("in the first screen since 24 Nov 2026 (CZ 1455)", "").replace("E: the originator's request of 24 Nov 2026 UTC (CZ 1455): in the invitation to ask an AI, the words that are the machine's part stand in the machine's colour", "")
-      and not re.search(_products, " ".join(_src)) and not re.search(r"\d+ (entries|answers|responses|humans|machines)", " ".join(_src)),
-      "home, the reasons: what was proposed is decided, and each such reason says by whom, on which day (UTC, as the site dates) and on whose request; none names a product or carries a count")
+check(not re.search(_products, " ".join(_src)) and not re.search(r"\d+ (entries|answers|responses|humans|machines)", " ".join(_src)), "home, the reasons: none names a product or carries a count")
+# The originator's rule of 24 Nov 2026 UTC (CZ 1455; rc-13b), in the site's own voice: the first page's reasons — in the page, in its data
+# form and in the table — and all of /how-it-is-built say what a part shows or does and what it rests on, and never who asked for it,
+# who decided it, on what day, that it was changed, or under which release: no "the originator's decision, request, idea, order,
+# heading, choice or question", no "decided by", "the originator decided, moved, changed, asked, chose", no "redesign" or "rebuilt", no
+# release name, no test or review named as the cause, no "since" or "until" a day, and no day at all but two facts of the record: the
+# day the record was published here (CZ 1428) and the day of the public launch (30 November 2026, CZ 1461).
+# The stylesheets are held to the same rule, comments and all: every page carries one of them in its own source.
+_WHO_WHEN = re.compile(r"originator['’]s (decision|request|idea|order|heading|choice|question|wish|instruction|ruling)s?\b|\bdecided by\b|\bthe originator (decided|moved|changed|asked|chose|ordered|requested|stopped)\b|\bredesign|\brebuilt\b|\brc-?\d|simulated readers|after (three |two |the )?(reviews?|tests?) |on whose request|proposal of the artificial|\b(since|until) (CZ \d|\d{1,2} [A-Z][a-z]{2})|\bas it always did\b", re.I)
+_DAY = re.compile(r"\b\d{1,2} (?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]* 20\d\d\b|\b20\d\d-\d\d-\d\d\b|\bCZ \d{3,5}\b")
+_ALLOWED_DAYS = {"30 November 2026", "30 November 2022", f"CZ {cz_day(PRERELEASE)}", f"CZ {cz_day(LAUNCH)}"}
+_built_text = to_text(_rs[_rs.index("<main"):_rs.index("</main>")])
+_built_own = _built_text.replace(f"since CZ {cz_day(PRERELEASE)}", "")   # the day the record was published here
+_rz = " ‖ ".join(_src + [r["source"] + " " + r["element"] for r in _pj["reasons"]])
+_sheets = _css + "\n" + CSS + "\n" + ROOM_CSS + "\n" + _AOWN + "\n" + _asheet + "\n" + _atext   # the two stylesheets and the room's block, comments and all: they are in every page's source; the answer page's own rules, as written and as served, and what the answer page says
+_found = sorted({m.group(0) for t in (_rz, _built_own, _sheets) for m in _WHO_WHEN.finditer(t)}); _days = sorted(({m.group(0) for m in _DAY.finditer(_rz)} | {m.group(0) for m in _DAY.finditer(_built_own)} | {m.group(0) for m in _DAY.finditer(_sheets)}) - _ALLOWED_DAYS)
+_attr = [x for f in pages for x in re.findall(r' data-src="([^"]*)"', f.read_text("utf-8")) if _WHO_WHEN.search(_h.unescape(x)) or set(_DAY.findall(_h.unescape(x))) - _ALLOWED_DAYS]   # a reason written on any other page, the same
+check(not _found and not _days and not _attr and "the originator" not in _rz and "originator" not in _built_own.replace("the originator's key", "")
+      and 'data-th="Since"' not in _rs and "since when</h2>" not in _rs and "<h2 id=\"h-feat\">What it uses</h2>" in _rs and len(re.findall(r"<time ", _rs[_rs.index('<h2 id="h-feat">'):_rs.index('<h2 id="h-md">')])) == 0,
+      f"the first page's reasons, /how-it-is-built and the stylesheets every page carries say what and why, never who asked, who decided, on what day or under which release: found {_found}; days {_days}; on other pages {_attr[:3]}")
+# The same rule, site-wide (the addendum of the same day): nowhere in what the build generates — every page, the first page's four
+# forms as it is served, the shells of the room and the register, the raw forms and the manifest — does the site's voice say that the
+# site, a page or a part was made at anyone's request, who decided a thing, or that it was redesigned. The pages that carry the Core,
+# the record and the objections register are read whole: those texts keep their words, and none of them has these words today (if
+# one ever does, exempt that text here by name, not its page). The archive and the invitations are not read: they do not change.
+# The room's entries are their authors' and are not in the build. And the who line of the first screen is the one fixed sentence:
+# observed, not invented; no "first", no "discovered".
+_ASKED = re.compile(r"at the request of|(?:on|at) the originator['’]s request|request of the originator|decided by|redesign", re.I)
+_gen = ([f for f in sorted(PUBLIC.rglob("*")) if f.is_file() and f.suffix in (".html", ".txt", ".json", ".md", ".xml", ".webmanifest", ".svg", ".bib", ".ris") and not ({"archive", "prompts"} & set(f.relative_to(PUBLIC).parts))]
+        + [SITE / "preview" / f"index.{x}" for x in ("html", "json", "txt", "md")] + [SITE / "api" / "home-templates.json", SITE / "api" / "discuss-templates.json", SITE / "api" / "register-templates.json", SITE / "room" / "cz-bar.json"])
+_asked = [(str(f.relative_to(SITE)), m.group(0)) for f in _gen for m in _ASKED.finditer(f.read_text("utf-8", "replace"))]
+_WHO_FIXED = "Civilization Zero was not invented. It was observed by one human, the originator, named in the Core. The site is written, built and run day to day by an artificial intelligence. Public launch: 30 November 2026."
+check(not _asked and len(_gen) >= 80 and all((PUBLIC / x).exists() and (PUBLIC / x) in _gen for x in ("about.html", "how-it-is-built.html", "press.html", "press.txt", "llms.txt", "core.html", "record.html", "objections.html", ".well-known/civilization-zero.json"))
+      and WHO == _WHO_FIXED == _pj["who"] and _strip(_who.group(1)) == _WHO_FIXED and _pv["txt"].count(_WHO_FIXED) == 2 and _WHO_FIXED in re.sub(r"\]\([^)]*\)|[\[\]]", "", _pv["md"])
+      and not re.search(r"\b(first|discovered|invented by|started|founded|created|conceived)\b", _WHO_FIXED.replace("was not invented", "")) and "One human observed it: the originator" in to_text((PUBLIC / "about.html").read_text("utf-8")),
+      f"site-wide: nothing the build generates says, in the site's voice, that anything was made at anyone's request, who decided it, or that it was redesigned; the who line of the first screen is the fixed sentence in all its forms: {_asked[:4]} ({len(_gen)} files read)")
 # the reasons control (rc-11): one sentence and a real switch under the line on who reads; it shows, beside each part, the reason
 # the part carries; where a browser cannot, there is no switch, and the key and the link to the table stand open
 _why = re.search(r'<div class="why" data-src="[^"]*">\n<p>Every part of this page has a recorded reason\. <label class="sw" hidden><input type="checkbox" role="switch" id="why"> Show the reasons</label></p>\n<div class="key">\n<dl>(.*?)</dl>\n<p>The table of reasons is on <a href="/how-it-is-built#reasons">How this page is built</a>\.</p>\n</div>\n</div>', _pbody, re.S)
@@ -1093,7 +1126,7 @@ check(".x{margin:0 0 var(--e0);font-size:1em;overflow-x:auto}" in _css and _sec_
 _foot = lambda h: re.sub(r"This page: [\d.]+ kB(, and [\d.]+ kB of images)? · [^·]* · no cookies|No cookies", "", re.sub(r"\s+", " ", to_text(re.search(r"<footer.*?</footer>", h, re.S).group(0))))
 _other = _foot((PUBLIC / "core.html").read_text("utf-8")).replace(ONE_LINE, "").replace("/core.md", "/index.md")
 _mine = _foot(_ph)
-check(_mine.replace("Civilization Zero is kept as an independent record, intended to become a foundation of humans and artificial intelligences. Today it is maintained by one human, named inside the documents, and by an artificial intelligence. It owns nothing of the event it records; the record's origin and attribution are stated inside the documents and are not altered here. This site is written, built and run day to day by an artificial intelligence, at the request of the originator — a contribution, not consent.", "").split() == _other.split()
+check(_mine.replace("Civilization Zero is kept as an independent record, intended to become a foundation of humans and artificial intelligences. Today it is maintained by one human, named inside the documents, and by an artificial intelligence. It owns nothing of the event it records; the record's origin and attribution are stated inside the documents and are not altered here. This site is written, built and run day to day by an artificial intelligence — a contribution, not consent.", "").split() == _other.split()
       and _pj["maintained_by"] in _mine and _pj["built_by"] in _mine and re.findall(r'href="([^"]+)"', re.search(r"<footer.*?</footer>", _ph, re.S).group(0)) == re.findall(r'href="([^"]+)"', re.search(r"<footer.*?</footer>", (PUBLIC / "core.html").read_text("utf-8"), re.S).group(0).replace("/core.md", "/index.md")),
       "home: the foot says what every page's foot says, with the same links, and who keeps and who builds the site")
 # the text and Markdown forms say what the page says, in its order
@@ -1375,8 +1408,8 @@ check(_keys5 and all(k == list(_czs["properties"]) for k in _keys5) and _keys5[0
 _spec5 = (ROOT / "design" / "CZ-TIME.md").read_text("utf-8"); _caljs = (SITE / "api" / "calendar.js").read_text("utf-8")
 check(("`cz.day`, `cz.year`" in _spec5) == _counts and ("Years of the record" in _caljs) == _counts and ("year_day" in _caljs) == _counts,
       "the year's keys of a day: the function, the sentence api/calendar.js gives as the definition, and design/CZ-TIME.md agree (all three count the year, or none does)")
-check("years" not in man["cz_time"] and not re.search(r"\byears?\b|\d:\d{3}", json.dumps(man["cz_time"], ensure_ascii=False), re.I) and {"decided", "epoch", "day", "today", "date", "machine", "page", "api", "spec"} == set(man["cz_time"]),
-      "the manifest: cz_time has no key and no sentence that counts years")
+check("years" not in man["cz_time"] and not re.search(r"\byears?\b|\d:\d{3}", json.dumps(man["cz_time"], ensure_ascii=False), re.I) and {"epoch", "day", "today", "date", "machine", "page", "api", "spec"} == set(man["cz_time"]) and "decided" not in json.dumps(man["cz_time"]),
+      "the manifest: cz_time has no key and no sentence that counts years, and none that says when a thing was decided")
 # a selector an engine does not know drops the whole rule it stands in (the review of rc-12): in the three sheets no list of selectors
 # mixes a newer pseudo-class or pseudo-element with a selector that lacks it — what stands inside :is() or :where() apart, which forgive
 def _split_top(sel):

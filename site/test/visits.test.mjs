@@ -234,7 +234,7 @@ o = await call("/api/stats?f=json"); const j = JSON.parse(o.b);
 ok(o.s === 200 && j.days.length === 2 && j.first_day === "2026-11-01" && /without cookies or identifiers/.test(j.what), "/stats.json");
 o = await call("/api/stats?x=1"); ok(o.s === 400, "/stats refuses parameters");
 o = await call("/api/stats");
-ok(o.b.includes('<p id="visitors">Until ') && o.b.includes("the originator stopped it") && o.b.includes('5 <span class="src">(until 10:23 UTC)</span>'), "/stats: the visitors' count marked as stopped, the last day partial");
+ok(o.b.includes('<p id="visitors">Until ') && o.b.includes("that count stopped") && !/the originator stopped|originator's decision/.test(o.b) && o.b.includes('5 <span class="src">(until 10:23 UTC)</span>'), "/stats: the visitors' count marked as stopped, the last day partial");
 ok((o.b.match(/<div class="scroll" tabindex="0" role="region" aria-labelledby="(h-[a-z-]+)">/g) || []).length >= 6 && [...o.b.matchAll(/<div class="scroll"[^>]*aria-labelledby="(h-[a-z-]+)"/g)].every((m) => o.b.includes(`<h2 id="${m[1]}">`)) && !/<div class="scroll">/.test(o.b), "/stats: every table's scrolling region can take the keyboard and is named by its heading");
 ok(o.b.includes('<h2 id="h-entrances">How machines come in</h2>') && o.b.includes('<td><code>/core.md</code></td><td>Anthropic, all agents counted together (until the split by purpose)</td>') && o.b.includes("<td>Browsers</td>") && o.b.includes("<code>&lt;x&gt;</code>"), "/stats: machines' entrances, escaped");
 ok(/visitors_counted_until/.test(j.what) && /entrances/.test(j.what), "/stats.json says what the new fields are");

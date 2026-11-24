@@ -75,9 +75,9 @@ figure img{display:block;inline-size:100%;block-size:auto;border:var(--e-16) sol
 figure.poster img,img.tall{max-inline-size:calc(4*var(--e12))}
 ol.atlas li{margin-block-end:var(--e-1)}
 
-/* 3 HEAD. E: one block on every page (CZ 1455). First the mark and the name, the way to the first page; at the row's end today's day of
-   the CZ calendar in the first page's own words, the day in green (the originator's decision of 30 Oct 2026: the day at the top of every
-   page). Under them four pages, and the way to the list of all pages at the foot. H: each a target at least 24 px tall (2.5.8); the page
+/* 3 HEAD. E: one block on every page. First the mark and the name, the way to the first page; at the row's end today's day of
+   the CZ calendar in the first page's own words, the day in green. Under them four pages, and the way to the list of all pages at
+   the foot. H: each a target at least 24 px tall (2.5.8); the page
    one is on carries a heavier underline, never a colour alone (aria-current); a way past the head for keyboard and screen-reader users
    (2.4.1), shown when it has focus. H: the head keeps its two rows in a typeface wider than the one it was drawn in (measured
    with the widest serif at hand, at 360 and 390 px): where the head is narrow the day stands alone, "Day 1,455", still the link to
@@ -195,8 +195,8 @@ td.num,th.num{text-align:end;font-variant-numeric:tabular-nums}
 
 /* 6 CONTROLS. H: every control at least e6 tall (2.5.8 and the platforms' touch guidance) and no wider than its line; fields at the
    reading size, so that a phone does not zoom in when one is tapped; field borders and placeholders at 3:1 or more (1.4.11). E: one
-   filled control for the act a page asks for; pointed at, it shows its edge only. E (the originator's request of 24 Nov 2026 UTC,
-   CZ 1455): in the invitation to ask an AI, the words that are the machine's part stand in the machine's colour; colour only.
+   filled control for the act a page asks for; pointed at, it shows its edge only. E: in the invitation to ask an AI, the words that
+   are the machine's part stand in the machine's colour; colour only.
    Pointed at, that control is filled, and the words take the green that holds 7:1 on the fill; in the dark palette the fill is
    then white, since on #eee neither green holds 7:1 (--fill-on, --machine-on; /how-it-is-built names the colours). */
 button,input,select,textarea{font:inherit;color:var(--fg);background:var(--bg)}
@@ -238,8 +238,8 @@ form.cz-conv input{inline-size:15ch}
 .dayfig figcaption{flex:1 1 var(--e14)}
 .trk circle{stroke:var(--rule);stroke-width:var(--e-16);vector-effect:non-scaling-stroke}
 
-/* 7 THE ROOM. Blueprint §7: an entry is user content, shown as text, its words unchanged. The machine layer (the originator's decision of
-   CZ 1433): green is for what is a machine's, here what an AI system declared it wrote (its tag and its edge) and a machine translation
+/* 7 THE ROOM. Blueprint §7: an entry is user content, shown as text, its words unchanged. The machine layer:
+   green is for what is a machine's, here what an AI system declared it wrote (its tag and its edge) and a machine translation
    (its tag, its dashed edge and its progress), and for the count of days; /how-it-is-built names every use. The tag's words always say
    it too (1.4.1). The tag keeps its size inside small print. */
 .entry{margin:var(--e2) 0;padding-block-start:var(--e-4);border-block-start:var(--e-16) solid var(--rule)}
@@ -368,7 +368,7 @@ python3 verify.py --self-test                         # its Ed25519, against RFC
 <ul>
 <li><strong>Daily verification</strong> — a job that fetches the live bytes of <code>core.txt</code>, <code>record.txt</code>, the prompt, the release manifest and its signatures, recomputes the published hashes and verifies the signatures against the public key kept in the repository; a drift fails the run. Implemented as the public workflow <a href="https://github.com/civilizationzero/civilizationzero/actions/workflows/verify-live.yml">verify-live</a> (daily, 03:40 UTC; every run and its log are public there).</li>
 <li><strong>Build-time verification</strong> — every quotation of CZ-CORE 1.0 or CZ-IR 1.0 on every page is compared byte-for-byte with the canonical text (user entries and titles are not quotations of the record); the JSON forms are reconstructed into the canonical bytes; the build fails on any drift. <em>Implemented</em> (<code>site/check.py</code> in the repository).</li>
-<li><strong>Succession</strong> — a named second key-holder outside the originator's jurisdiction; a published procedure for transfer of domain, repository and accounts; prepaid renewal of the domain for its longest term; a dead-man's procedure (if the administrator does not confirm within 90 days of a scheduled check, the second key-holder takes custody). Second key-holder: <strong>Banco</strong> (Germany), named by the originator on <a class="cz-date" href="/calendar?d=CZ%2B1428"><time datetime="2026-10-28">CZ 1428</time></a>; <strong>acceptance received</strong> by email from the key-holder's own address on <a class="cz-date" href="/calendar?d=CZ%2B1428"><time datetime="2026-10-28">CZ 1428</time></a>, kept in the record's mailbox. The dead-man's procedure becomes active when the second key-holder holds his copy of the key.</li>
+<li><strong>Succession</strong> — a named second key-holder outside the originator's jurisdiction; a published procedure for transfer of domain, repository and accounts; prepaid renewal of the domain for its longest term; a dead-man's procedure (if the administrator does not confirm within 90 days of a scheduled check, the second key-holder takes custody). Second key-holder: <strong>Banco</strong> (Germany); <strong>acceptance received</strong> by email from the key-holder's own address on <a class="cz-date" href="/calendar?d=CZ%2B1428"><time datetime="2026-10-28">CZ 1428</time></a>, kept in the record's mailbox. The dead-man's procedure becomes active when the second key-holder holds his copy of the key.</li>
 <li><strong>Recovery exercise</strong> — once a year, the site restored from the bundle on a host the originator does not control, with the result published. First: between <a class="cz-date" href="/calendar?d=CZ%2B1493"><time datetime="2027-01-01">CZ 1493</time></a> and <a class="cz-date" href="/calendar?d=CZ%2B1857"><time datetime="2027-12-31">CZ 1857</time></a>.</li>
 <li><strong>Correction before the first review</strong> (<a class="cz-date" href="/calendar?d=CZ%2B2048"><time datetime="2028-07-09">CZ 2048</time></a>) — objections and errata are filed in the <a href="/objections">register</a> by anyone; the originator responds within 60 days; a consequential error may produce an erratum note published beside the text without changing 1.0. A successor version is a new file with its own hash, change log, contributors, reasons, evidence and unresolved objections (IR 10.4); 1.0 stays at its addresses.</li>
 <li><strong>Change history</strong> — <a href="https://github.com/civilizationzero/civilizationzero/commits/main">the repository's commits</a>.</li>
