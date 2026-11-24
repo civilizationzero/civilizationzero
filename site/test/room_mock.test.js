@@ -272,7 +272,7 @@ srv.listen(0, "127.0.0.1", async () => {
     { const m = /<script type="speculationrules">([\s\S]*?)<\/script>/.exec(r.body); const hsh = require("node:crypto").createHash("sha256").update(m[1], "utf8").digest("base64");
       ok((r.headers["content-security-policy"] || "").includes(`'sha256-${hsh}'`), "the hash is of the rules on the page"); }
     r = await call(discuss, "/api/discuss?f=md"); ok(r.status === 200 && /^---\ntitle: /.test(r.body) && /\nurl: "https:\/\/civilizationzero.ai\/discuss.md"\n/.test(r.body), "the room as Markdown");
-    // ---------- the answer page (rc-15): /respond. A question, a place, and who the reader is last; known values only from the address
+    // ---------- the answer page: /respond. A question, a place, and who the reader is last; known values only from the address
     { const main = (b) => (/<main[^>]*>[\s\S]*<\/main>/.exec(b) || [""])[0], n = (b, x) => b.split(x).length - 1;
       const chosen = (b) => [...b.matchAll(/<input type="radio" name="kind" value="(\w+)"[^>]* checked/g)].map((m) => m[1]).join();
       const RL0 = require(path.resolve(__dirname, "../room/lib.js")), A = RL0.T.answer, Q = "What do you think about Civilization Zero?";
@@ -508,7 +508,7 @@ srv.listen(0, "127.0.0.1", async () => {
        "home as data: doors.human_steps, the three steps in order, each with its number, title, words and addresses");
     ok(["This record is written for you too.", "The whole record as text, JSON and an API:", "Respond, object or reject. Answers go on the record."].every((l) => [forms.html, forms.txt, forms.md, forms.json].every((b) => b.includes(l))),
        "home: the three sentences for readers that are not human, in every form");
-    // rc-15: no reply sheet on the first page. The empty place is the way in — a plain link to the answer page, which opens with the
+    // no reply sheet on the first page. The empty place is the way in — a plain link to the answer page, which opens with the
     // kind "human" chosen for a reader who came through "I am human"; no form but the figure's own empty one, no dialog, no button
     const respondH = await call(discuss, "/api/discuss?page=respond&kind=human");
     ok(respondH.status === 200 && /<input type="radio" name="kind" value="human" id="k-human" required checked>/.test(respondH.body) && (respondH.body.match(/ checked>/g) || []).length === 1
@@ -588,7 +588,7 @@ srv.listen(0, "127.0.0.1", async () => {
     const ctl = (b, name) => (new RegExp(`<(?:input|select|textarea)[^>]* name="${name}"[^>]*>`).exec(b) || [""])[0];
     const chosenKind = (b) => [...b.matchAll(/<input type="radio" name="kind" value="(\w+)"[^>]* checked/g)].map((m) => m[1]).join();
     const QUESTION = "What do you think about Civilization Zero?";
-    // ---------- a form that is not accepted comes back as the answer page (site audit, finding 17; rc-15): the text kept in its place, the
+    // ---------- a form that is not accepted comes back as the answer page (site audit, finding 17): the text kept in its place, the
     // reason in one plain sentence above the place, and the last step's fields open under it (not in a sheet), the one at fault marked
     TABLE = []; CALLS = []; POST = null;
     r = await post({ author: "A reader", kind: "human", content: "too short", ref: "3" });
@@ -679,7 +679,7 @@ srv.listen(0, "127.0.0.1", async () => {
        "a refused answer to a theme's question comes back under that question (an AI system's answer: the question under the heading)");
     r = await post({ author: "A reader", kind: "human", content: "A text long enough to be accepted.", parent: "7<script>" });
     ok(r.status === 400 && !/name="parent"/.test(r.body) && !r.body.includes("7<script>"), "a parent that is not a number is never written back");
-    // accepted: what is stored is what was sent. The receipt (rc-15): the entry as it now stands in the record, read back once; its place
+    // accepted: what is stored is what was sent. The receipt: the entry as it now stands in the record, read back once; its place
     // in the discussion; the code, shown once, in a box of its own, with what it is for; two plain next steps
     POST = null; CALLS = []; TABLE = [entry(900, { author: "A <reader>", kind: "human", content: "A text long enough to be accepted.\nSecond line.", received: "2026-11-24T07:15:02+00:00", ref: null })];
     r = await post({ author: "A <reader>", kind: "human", content: "  A text long enough to be accepted.\r\nSecond line.  " });
@@ -703,7 +703,7 @@ srv.listen(0, "127.0.0.1", async () => {
     j = JSON.parse(r.body); ok(r.status === 201 && j.id === 900 && j.via === "api" && /^[0-9a-f]{32}$/.test(j.receipt.code) && !CALLS.some((c) => /cz_entry/.test(c.name)) && Object.keys(j).join() === "id,state,url,content_sha256,via,receipt,note", "the API's answer to an accepted entry is unchanged; it reads nothing back");
     { const astral = "\u{1F600}".repeat(6000), v = RL.validate({ author: "A", kind: "human", content: astral });
       ok(astral.length === 12000 && !v.error && RL.clen(v.value.content) === 6000 && !!RL.validate({ author: "A", kind: "human", content: astral + "x" }).error, "a text of 6,000 characters outside the basic plane (12,000 units) fits the box and is accepted; one more character is refused"); }
-    // an entry's page: the way to reply is a plain link to the answer page, which names the entry (rc-15: no sheet)
+    // an entry's page: the way to reply is a plain link to the answer page, which names the entry (no sheet)
     TABLE = [entry(1)]; r = await call(discuss, "/api/discuss?id=1");
     ok(r.body.includes('<p class="actions"><a href="/respond?parent=1">Reply to #1</a></p>') && !/<dialog|popover|commandfor=|command="|closedby=|<form class="respond"/.test((/<main[\s\S]*<\/main>/.exec(r.body) || [""])[0]), "an entry's page: 'Reply to #N' is a plain link to the answer page; no sheet, no form in the page");
     // ---------- stage 2: /discuss — the question and its two ways in, then the conversations; what the page is comes after the list (site audit, findings 2, 9, 23)
@@ -723,7 +723,7 @@ srv.listen(0, "127.0.0.1", async () => {
          && about.includes('bookmark <a href="/discuss?since=5" rel="nofollow">') && about.includes('<details class="tr-fold" id="language"><summary>Read in another language</summary>') && about.includes('<select name="lang" required>'), "after the list, under one heading: the room's state in its own words, how the list is ordered, what a theme is, the mark, the languages folded to one line");
       const themes = (/<nav class="room-themes" id="h-themes" aria-label="Themes">[\s\S]*?<\/nav>/.exec(b) || [""])[0];
       ok(T12.themes.length > 0 && JSON.stringify([...themes.matchAll(/href="\/themes\/([a-z0-9-]+)"/g)].map((x) => x[1])) === JSON.stringify(T12.themes.map((t) => t.slug)) && !CALLS.some((c) => c.name === "cz_theme_latest"), "the themes: one row of links, every theme, in the build's order; the page asks the database for nothing about them");
-      ok(!/<dialog|popover|<form class="respond"|<textarea/.test(m) && !/dialog\.reply|sheet-a|sheet-b|\.shut/.test(b), "no reply sheet (rc-15): the answer is written on its own page; no dialog, no form of the room's and no rule for one in the page");
+      ok(!/<dialog|popover|<form class="respond"|<textarea/.test(m) && !/dialog\.reply|sheet-a|sheet-b|\.shut/.test(b), "no reply sheet: the answer is written on its own page; no dialog, no form of the room's and no rule for one in the page");
       // rows: who speaks in one line — the name, the kind as declared, the declared system — then one small line, how it began, the way in
       const row = (id) => (new RegExp(`<article class="entry conv[^"]*" id="c${id}"[\\s\\S]*?</article>`).exec(b) || [""])[0];
       ok(row(2).includes('<p class="by"><b><bdi dir="auto">Bot</bdi></b> <span class="kind k-ai">AI · declared</span> <span class="sys">system: <bdi dir="auto">Model &lt;X&gt; 1</bdi></span></p><p class="meta src"><a href="/discuss/2" class="exact">#2</a> · Begun ')

@@ -78,7 +78,7 @@ const pub = (f) => fs.readFileSync(`${SITE}/public/${f}`, "utf8");
   ok(home.includes('href="/how-it-is-built#reasons"') && !home.includes('id="h-deriv"') && !home.includes("<tr><th>Element</th>"), "3: the first page keeps a line, not the table");
   ok(pub("about.html").includes('the table of reasons is on <a href="/how-it-is-built#reasons">'), "3: /about points to the colophon");
 
-  // 2. the notice, small, directly before the control that sends (rc-15: in the answer page's last step, the same form); in the contract
+  // 2. the notice, small, directly before the control that sends (in the answer page's last step, the same form); in the contract
   const T = JSON.parse(fs.readFileSync(`${SITE}/api/discuss-templates.json`, "utf8"));
   const answer = require(SITE + "/room/lib.js").answerPage({}).html;
   ok(/<p class="src permanence">An entry cannot be edited or withdrawn\.[^<]*cannot be recalled\.<\/p>\n<p class="acts"><button class="cta" type="submit">Record this response<\/button>/.test(answer) && /^An entry cannot be edited or withdrawn\..*cannot be recalled\.$/.test(T.answer.permanence)

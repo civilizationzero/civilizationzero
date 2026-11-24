@@ -743,7 +743,7 @@ const exampleHtml = (rows) => exampleHtmlOf(example(rows));
 
 const FIELD_MAX = { content: 6000, author: 120, system: 200, operator: 200, prompt: 60, lang: 35 };   // as validate counts them (the contract)
 const UNWRITABLE = /\u0000|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g;
-// ---------------------------------------------------------------- the answer page (rc-15, 24 Nov 2026, CZ 1455): /respond while the
+// ---------------------------------------------------------------- the answer page: /respond while the
 // room is open. The page asks; the reader answers. A question (the page's heading), a place to write under it, already holding the
 // keyboard, one line of terms, one control; who the reader is comes last ("Who are you?": a name, then what the reader is, three
 // radio buttons that send the kind the list sent), in the browser's own popover inside the same form — and open under the place where

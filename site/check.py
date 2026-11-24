@@ -495,7 +495,7 @@ for _p, _f in (("/core.txt", "core.txt"), ("/record.txt", "record.txt"), ("/prom
     check(all(any(m.get("key") == "accept-encoding" and re.fullmatch(m.get("value", ""), _v) for m in h["missing"]) for h in _rules for _v in ("gzip, deflate, br", "GZIP", "br", "zstd", "*")), f"vercel.json: a digest of {_p} without the condition on compression")
 # the invitation's posting steps quote the form's own labels (the originator's request of 6 Nov 2026 SGT, CZ 1436): each label quoted
 # in the current invitation stands on the answer page, as a reader sees it (site/preview, the page as api/discuss.js serves it), and
-# the kind has no default (a choice is required). rc-15: the page as it opens, and as it opens for an AI system's answer
+# the kind has no default (a choice is required): the page as it opens, and as it opens for an AI system's answer
 _tpl = (SITE / "api/discuss-templates.json").read_text("utf-8")
 _inv = sorted((PUBLIC / "prompts").glob("cz-machine-1.*.txt"), key=lambda p_: int(p_.stem.split(".")[-1]))[-1].read_text("utf-8")
 _ans = {n: (SITE / "preview" / f"respond{n}.html").read_text("utf-8") for n in ("", "-ai", "-theme")}
@@ -697,7 +697,7 @@ check(ROOM_CSS.startswith("/* THE ROOM'S BLOCK */\n") and ROOM_CSS.count("/* THE
       and not re.search(r"(?<![-\w])(max-|min-)?(width|height):|#[0-9a-f]{3,6}\b|rgb\(|var\(--machine\)|@import|url\(|@font-face|:root", _rnocom)
       and len(_rmo) == 2 and not re.search(r"transition|animation|@keyframes", _rmo[0]) and _rmo[1].strip() == ".entry:is(:hover,:focus-within,.focus){view-transition-name:var(--vt,none)}}"
       and not re.search(r"dialog\.reply|sheet-|\.shut|form\.respond \.permanence|p\.receipt|p\.refused", CSS + ROOM_CSS),
-      f"the room's block: on the first page's scale and tokens, no size in px, no colour of its own and no green, its one motion for a reader who has not asked for less; no rule left of the reply sheet (rc-15: the answer is written on its own page) {_rloose}")
+      f"the room's block: on the first page's scale and tokens, no size in px, no colour of its own and no green, its one motion for a reader who has not asked for less; no rule left of the reply sheet (the answer is written on its own page) {_rloose}")
 _snocom = re.sub(r"/\*.*?\*/", "", _scss, flags=re.S)
 _sdecl = _snocom.replace(_tokblock.group(1), "").replace(_tokblock.group(2), "")
 _SPOW = {round(2 ** (k / 4), 4) for k in range(-24, 32)}
@@ -815,7 +815,7 @@ check(_place is not None and _place.group(1) == '<p class="note">your name · <s
       and "No account, no email, no verification" in _rules_txt and "Any language" in _rules_txt and " ".join(_A["permanent"]) in TERMS and _A["permanence"].startswith("An entry cannot be edited or withdrawn. If it is later hidden or redacted under the rules")
       and "Any language." in _A["terms"] and not re.search(r'name="[^"]*(mail|email)[^"]*"|type="email"', _amain[""] + _amain["-ai"]),
       "home, the second step: the empty place, labelled as the room labels an entry, is the way in: a plain link to the answer page; beside it what the record means for the writer, each clause the room's own rule (no account; the form asks for no e-mail; any language; public and permanent; an entry cannot be edited or withdrawn, and is hidden or redacted only under the rules)")
-# rc-15: the reply sheet is gone from the first page. The place itself is the way in; the answer is written on its own page, /respond,
+# No reply sheet on the first page. The place itself is the way in; the answer is written on its own page, /respond,
 # which opens with the kind "human" chosen for a reader who came through "I am human". The place and the place one writes in carry one
 # name, so that a browser which carries one page into the next (cross-document view transitions) turns the one into the other; only
 # for a reader who has not asked for less motion.
@@ -824,10 +824,10 @@ check("<dialog" not in _pbody and "popover" not in _pbody and "<button" not in _
       and not re.search(r"#reply|button\.open|:popover-open|anchor-name|::backdrop", _css) and ".open::after{content:\"\";position:absolute;inset:0}" in _css
       and len(_hmo) == 2 and "\n.place{view-transition-name:cz-place}\n" in _hmo[1] and "view-transition-name" not in _hmo[0]
       and [v for v, a, _ in _radio(_amain["-theme"]) if "checked" in a] == ["human"],
-      "home, the second step (rc-15): no sheet, no form and no button on the first page; the whole place is the link (its ::after covers it); the place carries one name into the answer page, for a reader who has not asked for less motion; /respond?kind=human opens with human chosen")
+      "home, the second step: no sheet, no form and no button on the first page; the whole place is the link (its ::after covers it); the place carries one name into the answer page, for a reader who has not asked for less motion; /respond?kind=human opens with human chosen")
 check("Record this response" not in _pv["txt"] and "Record this response" not in _pv["md"] and "Write your answer" in _pv["txt"] and "[Write your answer](https://civilizationzero.ai/respond?kind=human)" in _pv["md"],
       "home as text and as Markdown: the place is the link to the answer page")
-# ---- the answer page (rc-15, 24 Nov 2026, CZ 1455): /respond while the room is open, read here as api/discuss.js serves it (site/preview:
+# ---- the answer page: /respond while the room is open, read here as api/discuss.js serves it (site/preview:
 # as it opens; for an AI system's answer; for a theme's question; as Markdown). The page asks and the reader answers: two small lines,
 # the question as the page's heading, directly under it the place to write, already holding the keyboard; one line of terms; one
 # control, which opens the last step, "Who are you?" — a name, three radio buttons, what posting means, the one control that sends —
@@ -914,15 +914,15 @@ check(not _aloose and set(re.findall(r"var\((--[a-z][\w-]*)", _anc)) <= _stok an
 # step stands open under the place), and in its place one quiet line while the text is not yet one the record takes (:has()); the
 # place, not the field in it, shows that it holds the keyboard; the three doors of one size; the field grows with its text
 _apop = _anc.split("@supports selector(:popover-open){"); _ahas = _anc.split("@supports selector(:has(a)){")
-check(len(_apop) == 2 and "button.send{display:none}\n" in _apop[0] and _apop[1].startswith("\nbutton.send{display:inline-flex}\n#who[popover]{position:fixed;inset:var(--e-1) 0 auto;") and "max-block-size:calc(100% - 2*var(--e-1))" in _apop[1] and "overflow:auto}" in _apop[1]
+check(len(_apop) == 2 and "button.send,button.back{display:none}\n" in _apop[0] and _apop[1].startswith("\nbutton.send{display:inline-flex}\nbutton.back{display:inline-block}\n#who[popover]{position:fixed;inset:var(--e-1) 0 auto;") and "max-block-size:calc(100% - 2*var(--e-1))" in _apop[1] and "overflow:auto}" in _apop[1]
       and "#who[popover]" not in _apop[0] and len(_ahas) == 2 and _ahas[1].startswith("\nform:has(textarea:invalid) button.send{display:none}\nform:has(textarea:invalid) .wait{display:flex}\n") and ":has(" not in _ahas[0]
       and ".answer [hidden]{display:none}\n" in _anc and _anc.index(".answer [hidden]{display:none}") < _anc.index(".place{")
       and ".place{border:var(--e-16) solid var(--mute)}\n.place:focus-within{outline:var(--e-12) solid var(--fg);outline-offset:calc(-1*var(--e-16))}" in _anc and ".place{position:relative;display:grid;justify-items:start;row-gap:var(--e2);padding:var(--e-2);border:var(--e-16) solid var(--mute)}" in _css
       and "field-sizing:content}" in _anc and "min-block-size:max(var(--e14),30vh)" in _anc and "font-size:1.1892em" in _anc
       and ".doors{display:grid;grid-template-columns:1fr 1fr 1fr;" in _anc and ".doors label{display:grid;place-items:center;min-block-size:var(--e6);margin:0;border:var(--e-12) solid var(--fg);font-size:var(--e1);font-weight:700;line-height:var(--l1);cursor:pointer}" in _anc
       and ".door{display:grid;place-items:center;min-block-size:var(--e6);border:var(--e-12) solid var(--fg);font-size:var(--e1);font-weight:700;line-height:var(--l1)}" in _css
-      and ".answer h1{margin:var(--e-4) 0 var(--e0);font-size:var(--e3)}\n@media(min-width:38.0546rem){.answer h1{font-size:var(--e5)}}" in _anc and ".line{margin:0 0 var(--e-2);font-size:var(--e3);" in _css and "\n.line{font-size:var(--e5)}\n" in _css,
-      "the answer page's rules: 'Send' only where the browser has the popover, and one quiet line in its place while the text is not yet valid; what is marked hidden stays hidden; the place has the first page's hairline frame and shows that it holds the keyboard; the field grows with its text; the question in the first page's headline scale; the three doors built as the first page's two")
+      and ".answer h1{margin:var(--e-4) 0 var(--e0);font-size:var(--e3)}\n" in _anc and "\n@media(min-width:38.0546rem){.answer h1{font-size:var(--e5)}}\n" in _anc and ".line{margin:0 0 var(--e-2);font-size:var(--e3);" in _css and "\n.line{font-size:var(--e5)}\n" in _css,
+      "the answer page's rules: 'Send' and the way back only where the browser has the popover, and one quiet line in Send's place while the text is not yet valid; what is marked hidden stays hidden; the place has the first page's hairline frame and shows that it holds the keyboard; the field grows with its text; the question in the first page's headline scale; the three doors built as the first page's two")
 # as Markdown: the question, the terms, how to post by the form or by the API; no control
 _amd = (SITE / "preview" / "respond.md").read_text("utf-8")
 check(f"\n# {_Q}\n" in _amd and "20 to 6,000 characters. Any language. You may decline: nothing you write is kept until you send it." in _amd and "## By the form" in _amd and "## If you are not human" in _amd and "POST /api/entries" in _amd
@@ -1469,7 +1469,7 @@ check(all(v >= 7 for v in _c5.values()) and (_l5["fill-on"], _l5["machine-on"], 
 # selectors and no others: a new green rule, or a use that lost its rule, fails the build until the sentence and this table say so too.
 _GREEN_USES = [
     ("what an AI system declared it wrote (its tag and its edge)", {".kind.ai", ".ex", ".kind.k-ai", ".entry.k-ai", "ol:is(.ancestors,.since) li.k-ai",
-                                                                    ".doors #k-ai:checked+label", ".answer:has(#k-ai:checked) .place"}),   # rc-15, the answer page: the kind "AI" when it is the one declared (its door), and the place that then holds an AI system's answer (its edge)
+                                                                    ".doors #k-ai:checked+label", ".answer:has(#k-ai:checked) .place"}),   # the answer page: the kind "AI" when it is the one declared (its door), and the place that then holds an AI system's answer (its edge)
     ("a machine translation (its tag, its edge and its progress)", {".mtag", ".mt", ".tr-meter", ".tr-meter span", ".tr-spin", "ol.tr-items li.tr-done", ".tr-done .tr-st", ".tr-progress:not(.tr-finished) .tr-meter::after"}),
     ("the machine's part of the invitation to ask an AI", {".act .ai", ".act.o:is(:hover,:focus-visible) .ai", "a.cta.o .ai", "a.cta.o:is(:hover,:focus-visible) .ai"}),
     ("the door “I am not human” when it is the one answered", {".page:has(#not-human:target) .door.n"}),

@@ -1767,7 +1767,7 @@ def respond_closed_after_body():
 </section>
 </main>"""
 
-# ---------------------------------------------------------------- the answer page (rc-15, 24 Nov 2026, CZ 1455): /respond while the
+# ---------------------------------------------------------------- the answer page: /respond while the
 # room is open. Everywhere else people put questions to machines; here the page asks and the reader answers, under terms of the kind
 # the invitation gives a machine: a limit, the right to decline, the answer public and attributed as declared. The page is a question
 # and a place to write; who the reader is comes last ("Who are you?"), in the browser's own popover, inside the same form. The words
@@ -2840,7 +2840,7 @@ _pv = json.loads(_pv.stdout)
 (SITE / "preview").mkdir(exist_ok=True)
 for ext in ("html", "json", "txt", "md"): (SITE / "preview" / f"index.{ext}").write_text(_pv[ext]["body"], "utf-8")
 (SITE / "preview" / "headers.json").write_text(json.dumps({k: {"status": v["status"], "headers": v["headers"]} for k, v in _pv.items()}, indent=1) + "\n", "utf-8")
-# the answer page (rc-15), as api/discuss.js serves it: as it opens, as it opens for an AI system's answer, for a theme's question, and
+# the answer page, as api/discuss.js serves it: as it opens, as it opens for an AI system's answer, for a theme's question, and
 # as Markdown; for the checks, like the first page's copy (no database is reached: none of these reads the room)
 _PREVIEW_ANSWER_JS = """
 const discuss = require(process.argv[1] + "/api/discuss.js");

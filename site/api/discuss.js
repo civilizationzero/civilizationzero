@@ -173,7 +173,7 @@ function themesRow() {
   return `<nav class="room-themes" id="h-themes" aria-label="Themes"><b>Themes</b> <ul>${THEMES.map((t) => `<li><a href="/themes/${t.slug}">${esc(t.title)}</a></li>`).join("")}</ul></nav>`;
 }
 const themesNote = () => (THEMES.length ? `<p class="src">Themes: questions opened by the originator, each with an entry signed with <a href="/about#originator-key">the originator's key</a>. Anyone may answer; each answer begins a conversation. No one else opens a theme${THEMES.some((t) => t.proposals) ? "; new questions are proposed in the theme kept for them" : ""}.</p>` : "");
-// ---- the room's question and its two ways in, as on the first page (rc-12; site audit, finding 2; rc-15): a reader's own answer is the
+// ---- the room's question and its two ways in, as on the first page (site audit, finding 2): a reader's own answer is the
 // page's one filled control, a plain link to the page where it is written (/respond: the question, a place, and who the reader is
 // last); bringing an AI's answer is the second, drawn with its edge only
 const askHtml = () => `<section aria-labelledby="h-ask"><h2 id="h-ask">${R.ASK.question}</h2>
@@ -444,7 +444,7 @@ async function entryPage(url, id, req) {
   const lang = trParts(req, url, L, shownRows, { extra: ` One press translates what the page shows: the entry and the conversation around it. The original governs. Corrections: <a href="mailto:${CONTACT}">${CONTACT}</a> with the entry id; a correction is logged.` });
   const longConv = conv && conv.length === 500 ? `<p class="pending">This conversation is longer than this page reads at once; the replies shown stop at the first 500 entries of the conversation. <a href="/discuss?conversation=${e.id}">The whole conversation, page by page</a>.</p>` : "";
   const logHtml = log.length ? `<div class="scroll" tabindex="0" role="region" aria-labelledby="h-log"><table><tr><th scope="col">When</th><th scope="col">Action</th><th scope="col">Category</th><th scope="col">By</th><th scope="col">Detail</th></tr>` + log.map((l) => `<tr><td>${CZ.whenHtml(l.at)}</td><td>${esc(l.action)}</td><td>${esc(l.category || "")}</td><td>${esc(l.actor)}</td><td>${l.actor === "classifier" ? esc(`${l.classifier_model || ""} · ${l.classifier_prompt || ""} · score ${l.classifier_score ?? ""}`) : esc(l.reason || "")}</td></tr>`).join("") + "</table></div>" : "<p>None.</p>";
-  // the way to reply is a plain link to the answer page, which names the entry and shows its first lines (rc-15)
+  // the way to reply is a plain link to the answer page, which names the entry and shows its first lines
   const replyUi = OPEN && !e.hidden ? `<p class="actions"><a href="/respond?parent=${e.id}">Reply to #${e.id}</a></p>` : "";
   const repliesHtml = opensTheme ? `<p class="room-line">This entry opens the theme <a href="/themes/${opensTheme.slug}">${esc(opensTheme.title)}</a>: its answers and their conversations are there.</p>`
     : convUnavailable ? `<p class="pending">The conversation around this entry could not be read just now. <a href="/discuss?conversation=${e.id}">Try the whole conversation</a>.</p>`
@@ -652,7 +652,7 @@ module.exports = async (req, res) => {
     res.czMdHref = require("../room/md.js").mdPath(view);
     if (url.searchParams.get("f") === "md" && page !== "sitemap") res.czMarkdown = { path: view };   // the page as Markdown (stage 5)
     if (page === "respond" && OPEN && T.answer) {
-      // the answer page (rc-15; room/lib.js, answerPage): a question, a place to write, and who the reader is last. The address says
+      // the answer page (room/lib.js, answerPage): a question, a place to write, and who the reader is last. The address says
       // what is answered and how the page opens — ?theme= a theme's question (the answer is posted as an answer to its entry, as the
       // theme's own page posts it), ?parent= an entry (a theme's entry: that theme), ?ref= a section of the Core, ?kind= the kind
       // declared (otherwise none is chosen and one must be), ?prompt= a published prompt's version or "custom" — only known values,

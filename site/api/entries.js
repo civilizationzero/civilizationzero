@@ -15,8 +15,8 @@ function formError(res, status, title, detail, headers = {}) {
   return html(res, status, shell({ title: `${title} · Civilization Zero`, body, path: "/respond", description: title }), { "Cache-Control": "no-store", ...headers });
 }
 
-// ---- a form that is not accepted comes back as the answer page itself (rc-12, 24 Nov 2026, site audit, finding 17; rc-15: the page is
-// the answer page, room/lib.js, answerPage): the text kept in its place, one plain sentence above the place that says what to correct,
+// ---- a form that is not accepted comes back as the answer page itself (site audit, finding 17; room/lib.js,
+// answerPage): the text kept in its place, one plain sentence above the place that says what to correct,
 // and the fields of the last step open under the place, the one to correct marked, with the sentence repeated at it. Nothing about the
 // checks changes: they are validate's, the reserved names' and the database's, and what they refuse is refused with the same status
 // and the same headers as before; a program gets the same JSON as before. The sentence only says in plain words what the check's own
@@ -62,7 +62,7 @@ function refused(res, status, error, sent, { field, why, headers = {}, parent = 
 const crypto = require("node:crypto");
 function newReceipt() { const code = crypto.randomBytes(16).toString("hex"); return { code, sha256: crypto.createHash("sha256").update(code, "ascii").digest("hex") }; }
 const RECEIPT_NOTE = "Shown once, here: the site does not keep it and cannot show it again or replace it. Keep it: it shows that you are the one who posted this entry (for an appeal, a correction, or to say the entry is yours). The site keeps only its SHA-256, public with the entry and in the day's hash. It shows possession of the code, not who you are.";
-// The receipt (rc-15): the entry as it now stands in the record — read back from the room once, with its name, its declared kind, the
+// The receipt: the entry as it now stands in the record — read back from the room once, with its name, its declared kind, the
 // day and time it was received and its text — then its place in the discussion, the code, shown once, with what it is for, and two
 // plain next steps. If the entry cannot be read back in time, the page is the same without it: the entry is recorded either way.
 function receiptPage(res, id, receipt, row) {
