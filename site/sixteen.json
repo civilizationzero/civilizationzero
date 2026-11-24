@@ -151,7 +151,17 @@
     "mastodon": "https://mastodon.social/@civilizationzero/117669931864538850"
    }
   },
-  null,
+  {
+   "sentence": "People picked the machine as \"the human\" 73% of the time in a 2025 test. The real human lost.",
+   "day": 1455,
+   "art": "de Jong attractor",
+   "file": "people-picked-the",
+   "watch": {
+    "x": "https://x.com/czrecord/status/2125206427606335965",
+    "bluesky": "https://bsky.app/profile/civilizationzero.ai/post/3n32nzasqec2a",
+    "mastodon": "https://mastodon.social/@civilizationzero/117671470590789078"
+   }
+  },
   null,
   null
  ]
