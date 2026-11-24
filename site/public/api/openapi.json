@@ -830,6 +830,36 @@
         "properties": {
           "cz": {
             "type": "object",
+            "description": "The CZ calendar counts days: nothing here counts years (until rc-12 a day also carried year, day_of_year, days_in_year and year_day)",
+            "required": [
+              "date",
+              "machine",
+              "day"
+            ],
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "year"
+                  ]
+                },
+                {
+                  "required": [
+                    "day_of_year"
+                  ]
+                },
+                {
+                  "required": [
+                    "days_in_year"
+                  ]
+                },
+                {
+                  "required": [
+                    "year_day"
+                  ]
+                }
+              ]
+            },
             "properties": {
               "date": {
                 "type": "string",
@@ -841,20 +871,6 @@
               },
               "day": {
                 "type": "integer"
-              },
-              "year": {
-                "type": "integer",
-                "description": "The record's year (from each 30 November), or before zero the whole years counted back"
-              },
-              "day_of_year": {
-                "type": "integer"
-              },
-              "days_in_year": {
-                "type": "integer"
-              },
-              "year_day": {
-                "type": "string",
-                "description": "The secondary reading, year and day: CZ+3:334 / CZ-5:171"
               }
             }
           },

@@ -22,9 +22,9 @@ const cspFor = (html) => { const h = scriptHashes(html); return h.length ? `${CS
 const plainText = (h) => h.replace(/<[^>]+>/g, "").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#x27;/g, "'").replace(/\s+/g, " ").trim();
 function resultTitle(html) {
   const err = /<p class="pending" role="alert" id="(?:result|time-result)">([\s\S]*?)<\/p>/.exec(html);
-  if (err) return `Error: ${plainText(err[1]).slice(0, 90)} · CZ time`;
+  if (err) return `Error: ${plainText(err[1]).slice(0, 90)} · CZ calendar`;
   const t = /<h3 id="h-time-result">([\s\S]*?)<\/h3>/.exec(html) || /<h3 id="h-result">([\s\S]*?)<\/h3>/.exec(html);
-  return t ? `${plainText(t[1]).slice(0, 90)} · CZ time` : null;
+  return t ? `${plainText(t[1]).slice(0, 90)} · CZ calendar` : null;
 }
 
 const PAGES = /^(core(\.[a-z]{2,3}(-[A-Za-z0-9]{1,8})?)?|record|objections|ask|machine|about|archive|calendar|civilization-zero-infographic|civilization-zero-evidence-atlas|civilization-zero-images|press|how-it-is-built|embed)$/;
@@ -41,10 +41,9 @@ function read(name) {
 
 const esc = CZ.escHtml;
 const plural = (n, w) => `${CZ.fmtInt(n)} ${w}${Math.abs(n) === 1 ? "" : "s"}`;
-function since(D) {   // "1430 days after Coordinate Zero": CZ time counts only days (the originator's decision of 30 Oct 2026)
+function since(D) {   // "1,430 days after Coordinate Zero": the CZ calendar counts only days (the originator's decision of 30 Oct 2026)
   if (D === 0) return "Coordinate Zero itself";
-  const n = Math.abs(D);
-  return `${n} day${n === 1 ? "" : "s"} ${D < 0 ? "before" : "after"} Coordinate Zero`;
+  return `${plural(Math.abs(D), "day")} ${D < 0 ? "before" : "after"} Coordinate Zero`;
 }
 const fromToday = (n) => (n === 0 ? "today" : n > 0 ? `in ${plural(n, "day")}` : `${plural(-n, "day")} ago`);
 const num = (n) => (n < 0 ? `−${-n}` : String(n));   // a day number as printed: no separators, a true minus

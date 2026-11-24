@@ -60,9 +60,9 @@ const ok = (c, m) => { if (c) pass++; else { fail++; console.log("FAIL", m); } }
      && !/Solar Hijri|Lunar Hijri|Aban|Jumada/.test(tb), "each calendar only in its own script in the result");
   // only days are counted: the CZ row gives the count of days, no years
   const czRow = (b) => text((/<tr><th scope="row">CZ<\/th><td>([\s\S]*?)<\/td><\/tr>/.exec(b) || ["", ""])[1]);
-  ok(czRow(tb) === "CZ 1430 — 1430 days after Coordinate Zero · machine form CZ+1430", "result CZ row, days only: " + czRow(tb));
+  ok(czRow(tb) === "CZ 1430 — 1,430 days after Coordinate Zero · machine form CZ+1430", "result CZ row, days only: " + czRow(tb));
   const tn = (await call(page, `/api/page?p=calendar&d=2017-06-12&c=gregorian`)).body, t0 = (await call(page, `/api/page?p=calendar&d=CZ%200&c=cz`)).body, t1d = (await call(page, `/api/page?p=calendar&d=2022-12-01&c=gregorian`)).body;
-  ok(czRow(tn) === "CZ −1997 — 1997 days before Coordinate Zero · machine form CZ-1997" && czRow(t0) === "CZ 0 — Coordinate Zero itself · machine form CZ+0"
+  ok(czRow(tn) === "CZ −1997 — 1,997 days before Coordinate Zero · machine form CZ-1997" && czRow(t0) === "CZ 0 — Coordinate Zero itself · machine form CZ+0"
      && czRow(t1d) === "CZ 1 — 1 day after Coordinate Zero · machine form CZ+1", "result CZ row before, at and just after zero: " + [czRow(tn), czRow(t0), czRow(t1d)].join(" | "));
   const bad = [["2026-02-30", "gregorian", "has 28 days"], ["1405-13-01", "solar-hijri", "no month 13"], ["foo", "gregorian", "not a month"], ["CZ+3:366", "cz", "not a day"],
                ["5/10/26", "gregorian", "year in full"], ["<script>alert(1)</script>", "gregorian", "not a month"], ["2026-10", "gregorian", "year-month-day"], ["99999-01-01", "gregorian", "range"]];
@@ -112,12 +112,12 @@ const ok = (c, m) => { if (c) pass++; else { fail++; console.log("FAIL", m); } }
   const tsel = await call(page, `/api/page?p=calendar&d=2026-10-30&t=13:30&z=Asia%2FTehran`); ok(tsel.body.includes('<option value="Asia/Tehran" selected>Tehran</option>'), "the zone stays chosen");
   // the JSON API
   const j = await call(cal, "/api/calendar?d=1405-08-08&c=solar-hijri"); const o = JSON.parse(j.body);
-  ok(j.status === 200 && o.cz.date === "CZ 1430" && o.cz.machine === "CZ+1430" && o.cz.year_day === "CZ+3:334" && o.cz.day === 1430 && o.gregorian.date === "2026-10-30"
+  ok(j.status === 200 && o.cz.date === "CZ 1430" && o.cz.machine === "CZ+1430" && Object.keys(o.cz).join() === "date,machine,day" && o.cz.day === 1430 && o.gregorian.date === "2026-10-30"
      && o.lunar_hijri.method === "umm-al-qura" && o.jdn === 2461344 && o.weekday === "Friday" && o.solar_hijri.native_long === "جمعه ۸ آبان ۱۴۰۵", "api conversion");
   const j0 = JSON.parse((await call(cal, "/api/calendar")).body); ok(j0.input === null && j0.today.day === j0.cz.day && j0.from_today_days === 0 && j0.today.date === `CZ ${today}`, "api today");
   const jb = await call(cal, "/api/calendar?d=2026-02-30"); ok(jb.status === 400 && JSON.parse(jb.body).error.includes("28 days"), "api 400");
   const jc = await call(cal, "/api/calendar?d=2026-01-01&c=mayan"); ok(jc.status === 400, "api bad c");
-  const jn = JSON.parse((await call(cal, "/api/calendar?d=CZ-1997&c=cz")).body); ok(jn.cz.date === "CZ −1997" && jn.cz.machine === "CZ-1997" && jn.cz.year_day === "CZ-5:171", "api negative");
+  const jn = JSON.parse((await call(cal, "/api/calendar?d=CZ-1997&c=cz")).body); ok(jn.cz.date === "CZ −1997" && jn.cz.machine === "CZ-1997" && jn.cz.day === -1997 && !Object.keys(jn.cz).some((k) => /year/.test(k)) && !/[Yy]ears? of the record|year_day/.test(jn.definition), "api negative: a day and no year");
   const jo = JSON.parse((await call(cal, "/api/calendar?d=0600-01-01")).body); ok(jo.lunar_hijri === null && jo.solar_hijri === null, "api before both Hijri eras");
   // the room's dates and the register's: the day count, the time in UTC, a link to the converter
   ok(CZ.whenHtml("2026-10-29T18:46:18.123456+00:00") === '<a class="cz-date" href="/calendar?d=CZ%2B1429"><time datetime="2026-10-29T18:46Z">CZ 1429 18:46 UTC</time></a>', "a moment in a post");

@@ -37,7 +37,7 @@ module.exports = (req, res) => {
     ...CZ.describe(r.day),
     from_today_days: r.day - today,
     today: { date: CZ.czDay(today), day: today, zone, zone_from: tz !== null ? "tz" : network !== "UTC" ? "network" : "default" },
-    definition: "CZ day 0 is 30 November 2022. A CZ date is a calendar date: CZ 1438 is 7 November 2026 wherever it is 7 November, and today's date turns at midnight where the reader is (here: in today.zone). The date is the count of days since Coordinate Zero: CZ 1430 (CZ −1997 before it); a moment is named by its UTC date and time, CZ 1430 15:20 UTC. The machine form is the signed count, CZ+1430; day = JDN - 2459914. Years of the record begin on each 30 November; year and day (year_day) is a secondary reading.",
+    definition: "CZ day 0 is 30 November 2022. A CZ date is a calendar date: CZ 1438 is 7 November 2026 wherever it is 7 November, and today's date turns at midnight where the reader is (here: in today.zone). The date is the count of days since Coordinate Zero: CZ 1430 (CZ −1997 before it); a moment is named by its UTC date and time, CZ 1430 15:20 UTC. The machine form is the signed count, CZ+1430; day = JDN - 2459914. Only days are counted.",
     how: `${ORIGIN}/calendar#how`, spec: SPEC,
     notes: { solar_hijri: "K. Borkowski's algorithm (as jalaali-js), years 1 to 3177 SH", lunar_hijri: "Umm al-Qura for 1343-1500 AH (hijridate 2.6.0); the tabular Islamic calendar outside it, an approximation; observed months can differ by a day" },
   }, ms, zone);

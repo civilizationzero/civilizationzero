@@ -200,11 +200,12 @@ const fmtInt = (n) => (n < 0 ? "−" : "") + Math.abs(n).toLocaleString("en-US")
 // Everything a CZ day is, in every calendar here. A calendar that does not reach the day (before its year 1, or outside the range of
 // its algorithm) is null.
 function describe(D) {
-  const p = parts(D), w = isoWeekday(D);
+  const w = isoWeekday(D);
   const [gy, gm, gd] = toGregorian(D), [jy, jm, jd] = toJulian(D);
   const sh = toSolarHijri(D), lh = D >= ISLAMIC_EPOCH ? toLunarHijri(D) : null;
   return {
-    cz: { date: czDay(D), machine: machine(D), day: D, year: p.year, day_of_year: p.day, days_in_year: p.days_in_year, year_day: stamp(D, "-") },
+    // the CZ calendar counts days: a day carries no year (rc-12; until then it also carried year, day_of_year, days_in_year and year_day)
+    cz: { date: czDay(D), machine: machine(D), day: D },
     weekday: WEEKDAYS[w - 1], iso_weekday: w,
     gregorian: { date: isoDate(gy, gm, gd), year: gy, month: gm, day: gd, text: `${gd} ${MONTHS[gm - 1]} ${yearText(gy)}`, leap_year: gregorianLeap(gy) },
     julian: { date: isoDate(jy, jm, jd), year: jy, month: jm, day: jd, text: `${jd} ${MONTHS[jm - 1]} ${yearText(jy)}`, leap_year: julianLeap(jy) },
@@ -221,7 +222,7 @@ function describe(D) {
 
 // ---------------------------------------------------------------- reading a date someone typed
 const CALENDARS = ["gregorian", "solar-hijri", "lunar-hijri", "julian", "cz"];
-const CAL_NAME = { gregorian: "Gregorian", "solar-hijri": "Solar Hijri", "lunar-hijri": "Lunar Hijri", julian: "Julian", cz: "CZ time" };
+const CAL_NAME = { gregorian: "Gregorian", "solar-hijri": "Solar Hijri", "lunar-hijri": "Lunar Hijri", julian: "Julian", cz: "CZ calendar" };
 // digits of every script people type dates in here become ASCII; the minus signs become "-"; Arabic comma and joiners are removed
 function normalizeInput(s) {
   return String(s ?? "").normalize("NFKC").slice(0, 80)

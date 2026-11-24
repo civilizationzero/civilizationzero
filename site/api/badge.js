@@ -15,7 +15,7 @@ function badge(day, theme) {
   const num = `CZ ${day < 0 ? "−" + -day : day}`;
   const w = 40 + Math.max(100, Math.ceil(num.length * 9.8)) + 12;
   const style = theme === "dark" ? rules(DARK) : theme === "light" ? rules(LIGHT) : rules(LIGHT) + `@media (prefers-color-scheme:dark){${rules(DARK)}}`;
-  const label = `Today in CZ time: ${num}, day ${day} since Coordinate Zero, 30 November 2022. Civilization Zero, civilizationzero.ai`;
+  const label = `Today in the CZ calendar: ${num}, Day ${CZ.fmtInt(day)} since Coordinate Zero, 30 November 2022. Civilization Zero, civilizationzero.ai`;
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="40" viewBox="0 0 ${w} 40" role="img" aria-label="${label}">` +
     `<title>${label}</title>` +
     `<style>${style}.t{font:11px system-ui,-apple-system,'Segoe UI',Roboto,sans-serif}.n{font:700 16px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}</style>` +

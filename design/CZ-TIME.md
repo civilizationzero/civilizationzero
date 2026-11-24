@@ -45,10 +45,10 @@ time converter. This file is the definition; `site/room/cztime.js` (at request t
   in a page, the ISO value stays in `<time datetime>`; the data forms (JSON, the API, the archive's files) keep ISO 8601.
 - **Only days are counted** (the originator's decision of 30 October 2026, after the first two releases): a CZ date has no months and
   no years, and the pages say so in one line under the date ("CZ time counts only days."). The anniversaries of Coordinate Zero still fall
-  on each 30 November (the fourth, the public launch, on CZ 1461; the fifth on CZ 1826). For machines, the API still gives the year of the
-  record and the day within it (`cz.year`, `cz.day_of_year`, `cz.year_day`: CZ 1430 is year 3, day 334, `CZ+3:334`; before zero `CZ−5:171`,
-  counted back from the fifth 30 November before it), a secondary reading the pages do not print; it was the site's first notation for a
-  few hours on 30 October 2026, and the converter still reads it.
+  on each 30 November (the fourth, the public launch, on CZ 1461; the fifth on CZ 1826). Until rc-12 (24 November 2026) the API also gave
+  the year of the record and the day within it (CZ 1430 was year 3, day 334, `CZ+3:334`; before zero `CZ−5:171`, counted back from the
+  fifth 30 November before it); it gives them no longer, and the contract says that an answer carrying one does not fit. That reading
+  was the site's first notation for a few hours on 30 October 2026, and the converter still reads a date written in it.
 
 | CZ | Gregorian |
 |---|---|
@@ -142,7 +142,7 @@ standards.
 - `GET /api/calendar` — today; `GET /api/calendar?d=…&c=…` — a conversion (`c`: `gregorian`, `solar-hijri`, `lunar-hijri`, `julian`,
   `cz`; `d`: year-month-day, or a CZ date `CZ 1430` / `CZ+1430`; year and day `CZ+3:334` is read too); 400 with the reason for an invalid
   date. Also `/calendar.json`, and `/calendar` asked for as JSON. The contract: `/api/openapi.json` (`CZDay`: `cz.date` "CZ 1430",
-  `cz.machine` "CZ+1430", `cz.day`, `cz.year`, `cz.day_of_year`, `cz.year_day`).
+  `cz.machine` "CZ+1430", `cz.day`; no key counts years).
 - `/index.json` carries today's date as `cz_time` (the day and its Gregorian date; since 24 Nov 2026, CZ 1455, no year: CZ time counts days); the manifest (`/.well-known/civilization-zero.json`) carries the definition.
 - Pages: the build writes a fallback between `<!--cz-now-->` and `<!--/cz-now-->` at the top of every page but the first (for copies
   that serve the files as they are: no date, links to this site); `api/page.js` and the room's functions put the live date there at
