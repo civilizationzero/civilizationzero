@@ -44,7 +44,7 @@ time converter. This file is the definition; `site/room/cztime.js` (at request t
 - **The machine form** is the same count, signed, in ASCII, without a space: `CZ+1430`, `CZ-1997`. It converts exactly, but as text it does not sort in time order (CZ+10 before CZ+2): sort by the count as a number. Beside a date
   in a page, the ISO value stays in `<time datetime>`; the data forms (JSON, the API, the archive's files) keep ISO 8601.
 - **Only days are counted** (the originator's decision of 30 October 2026, after the first two releases): a CZ date has no months and
-  no years, and the pages say so in one line under the date ("CZ time counts only days."). The anniversaries of Coordinate Zero still fall
+  no years. The anniversaries of Coordinate Zero still fall
   on each 30 November (the fourth, the public launch, on CZ 1461; the fifth on CZ 1826). Until rc-12 (24 November 2026) the API also gave
   the year of the record and the day within it (CZ 1430 was year 3, day 334, `CZ+3:334`; before zero `CZ−5:171`, counted back from the
   fifth 30 November before it); it gives them no longer, and the contract says that an answer carrying one does not fit. That reading
@@ -77,6 +77,7 @@ time converter. This file is the definition; `site/room/cztime.js` (at request t
   it works). Coordinate Zero's Gregorian date appears there once. No years are described in either (the originator's decision of 30 October
   2026). The converting happens on `/calendar`, never in the page: the site stays a record, not a converter; its result gives the count of
   days from Coordinate Zero ("1430 days after Coordinate Zero"), not years.
+- **Since rc-12 (CZ 1455), at the top of every page** but the first: "CZ calendar · Day 1,455" alone; the converter links left it.
 - **Since 23 November 2026 (CZ 1454), the first page's header** (the originator's decision, after first-impression tests): under the name,
   the day in plain words, "Day 1,454 since 30 November 2022, the day ChatGPT was released"; beside the name, small, the date (`CZ 1454`, a
   link to /calendar). "CZ time counts only days." and the three links left the first screen; the converters are on /calendar, one link away.

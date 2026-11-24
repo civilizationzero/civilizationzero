@@ -288,7 +288,7 @@ check(all("M56.57,41.93" not in p.read_text("utf-8") and "ring left open" not in
 # the name line: the full name first, the short name beside it (31 Oct 2026; the site name asked of Google, build.py WebSite)
 _hmark = MARK_GEOMETRY.svg(MARK_GEOMETRY.LARGE, attrs=' width="32" height="32" aria-hidden="true" focusable="false"')
 check(NAV_MARK == _hmark, "the mark in the head of every page is the first page's, at its size")
-_navmark = re.compile(r'<a class="home" href="/">' + re.escape(NAV_MARK) + re.escape("Civilization Zero (CZ)") + "</a>")
+_navmark = re.compile(r'<a class="home" href="/">' + re.escape(NAV_MARK) + re.escape('<span>Civilization Zero<span class="w"> (CZ)</span></span>') + "</a>")
 _nav_pages = {f.name: (VIRTUAL[f.name] if f.parent.name == "virtual" else f.read_text("utf-8")) for f in pages + [pathlib.Path("virtual") / n for n in VIRTUAL] if f.name != "index.html"}
 _nav_pages["the register's shell (api/adopt.js)"] = json.loads((SITE / "api" / "register-templates.json").read_text("utf-8"))["shell"]
 _missing = [n for n, h in _nav_pages.items() if len(_navmark.findall(h)) != 1 or h.count(NAV_MARK) != 1]
@@ -498,11 +498,12 @@ for _lab in ("Your name, as you want it shown", "ai — the answer of an AI syst
              "Posting the answer of an AI system, or naming the language", "System", "Operator", "Language of the text", "Record this response"):
     check(f'"{_lab}"' in _inv, f"the invitation does not quote the form's label {_lab!r}")
     check(_lab in _tpl, f"the form lacks the label {_lab!r} that the invitation quotes")
-check('<select name=\\"kind\\" required><option value=\\"\\" selected disabled>' in _tpl, "the form's kind has a default")
+check('<select name=\\"kind\\" required aria-describedby=\\"kind-note\\"><option value=\\"\\" selected disabled>' in _tpl
+      and '</select></label>\\n<p class=\\"src\\" id=\\"kind-note\\">What you declare yourself to be: declared, not verified.</p>' in _tpl, "the form's kind has a default, and under it the line that says a kind is declared, not verified")
 _pv = json.loads(_tpl).get("prompt_versions") or []
 check(len(_pv) >= 2 and _pv[0] == PROMPT_VERSION and _pv[-1] == _inv.split(" ", 1)[0] and all((PUBLIC / f"prompts/{_v}.txt").exists() for _v in _pv), "the published prompts (discuss-templates prompt_versions) are not all served, or the list is wrong")
 # the pieces api/discuss.js replaces to open the form ready for an AI system's answer (?kind=ai&prompt=…) stand in the form exactly once
-for _piece in ('<option value=\\"\\" selected disabled>', '<option value=\\"ai\\">', '<details><summary>Posting the answer of an AI system', '<input name=\\"prompt\\" maxlength=\\"60\\">'):
+for _piece in ('<option value=\\"\\" selected disabled>', '<option value=\\"ai\\">', '<details><summary>Posting the answer of an AI system', '<input name=\\"prompt\\" maxlength=\\"120\\">'):
     check(_tpl.count(_piece) == 1, f"the form lacks, or repeats, the piece {_piece!r} that /respond?kind=ai replaces")
 check("/respond?kind=ai&prompt=" in _inv, "the invitation's manual steps do not open the form ready for an AI system's answer")
 # CZ time on other sites (/embed, 6 Nov 2026 SGT): the badge draws the site's own mark, the snippet counts from the same epoch, the routes exist
@@ -630,17 +631,20 @@ check(all(f"__CZ_SEL_{c}__" in BAR["calform"] and f"__CZ_SEL_{c}__" in BAR["time
       "room/cz-bar.json: the placeholders and the zones")
 # the day, as the first page's calendar line writes it: the calendar's name the link to /calendar, the day in green with the reader's date
 # for a parser (<time datetime>) and the count as a number (<data value>); only days are counted: no year, no form, no converter here
-_DAYLINE = '<a href="/calendar">CZ calendar</a> · <time class="d" datetime="__CZ_ISO__">Day <data value="__CZ_DAYS__">__CZ_DAYS_FMT__</data></time>'
+_DAYLINE = '<a class="day" href="/calendar"><span class="w"><span class="n">CZ calendar</span> · </span><time class="d" datetime="__CZ_ISO__">Day <data value="__CZ_DAYS__">__CZ_DAYS_FMT__</data></time></a>'
 check(BAR["bar"] == f'<div class="cz-now" data-nosnippet>{_DAYLINE}</div>' and not re.search(r"\b[Yy]ears?\b|__CZ_(YEAR|DOYN|DOY|YEARDAY|STAMP)__|<form|calendar#", BAR["bar"]),
-      "the head's day: 'CZ calendar · Day N', the name linked to /calendar; no years, no form, no converter link")
-check(_DAYLINE.replace("__CZ_DAYS__", "__TOTAL__").replace("__CZ_DAYS_FMT__", "__TOTAL_FMT__") + "</p>" in T["html"], "the head's day is written as the first page's calendar line is, word for word")
+      "the head's day: 'CZ calendar · Day N', the whole of it the link to /calendar; no years, no form, no converter link")
+_HOMELINE = '<a href="/calendar">CZ calendar</a> · <time class="d" datetime="__CZ_ISO__">Day <data value="__TOTAL__">__TOTAL_FMT__</data></time>'
+check(_HOMELINE + "</p>" in T["html"] and re.sub(r"<[^>]+>", "", _DAYLINE).replace("__CZ_DAYS_FMT__", "__TOTAL_FMT__") == re.sub(r"<[^>]+>", "", _HOMELINE) == "CZ calendar · Day __TOTAL_FMT__"
+      and re.findall(r'<time class="d" datetime="__CZ_ISO__">Day <data value="[^"]*">[^<]*</data></time>', _DAYLINE.replace("__CZ_DAYS__", "__TOTAL__").replace("__CZ_DAYS_FMT__", "__TOTAL_FMT__")) == re.findall(r'<time class="d" datetime="__CZ_ISO__">Day <data value="[^"]*">[^<]*</data></time>', _HOMELINE),
+      "the head's day says what the first page's calendar line says, word for word, with the same date for a parser and the same count as a number")
 _cztime_js = (SITE / "room" / "cztime.js").read_text("utf-8")
 check(all(re.search(r"\b" + k + r": ", _cztime_js.split("function fields(ms)")[1].split("\n}")[0]) for k in ("ISO", "DAYS", "DAYS_FMT")), "room/cztime.js fills the fields the head's day names (ISO, DAYS, DAYS_FMT)")
 # each calendar named in its own script only
 check([n for _, n, _ in CZ_CALENDARS] == ["Gregorian", "هجری شمسی", "التقويم الهجري", "Julian", "CZ"], "the calendars' names, each in its own script")
 _NAVI = [("/core", "The Core"), ("/discuss", "Discussion"), ("/ask", "Ask your AI"), ("/about", "About"), ("#all-pages", "All pages")]
 _FALL = f'<!--cz-now--><div class="cz-now" data-nosnippet><a href="{ORIGIN}/calendar">CZ calendar</a></div><!--/cz-now-->'
-_HEAD_RE = re.compile(r'<header class="site" lang="en" dir="ltr"><div class="top"><a class="home" href="/">' + re.escape(NAV_MARK) + r'Civilization Zero \(CZ\)</a>' + re.escape(_FALL)
+_HEAD_RE = re.compile(r'<header class="site" lang="en" dir="ltr"><div class="top"><a class="home" href="/">' + re.escape(NAV_MARK) + r'<span>Civilization Zero<span class="w"> \(CZ\)</span></span></a>' + re.escape(_FALL)
                       + r'</div><nav class="site" aria-label="Site"><ul>(.*?)</ul></nav></header>\n')
 _CUR = {"core": "/core", "ask": "/ask", "about": "/about", "discuss": "/discuss", "respond": "/respond"}
 for f in pages + [pathlib.Path("virtual") / n for n in VIRTUAL]:
@@ -748,8 +752,8 @@ check(_top.count("30 November 2022") == 1 and _top.count("2022-11-30") == 1 and 
       "home: Coordinate Zero's date and the launch date, each once above the doors, and no other Gregorian date; no years")
 _who = re.search(r'<p class="who" data-src="[^"]*">(.*?)</p>', _top, re.S)
 check(_who is not None and _strip(_who.group(1)) == WHO and _who.group(1).count("<a ") == 1 and 'named in <a href="/core#attribution">the Core</a>.' in _who.group(1) and 'id="attribution"' in (PUBLIC / "core.html").read_text("utf-8") and _pj["who"] == WHO
-      and _strip(_top[:_top.index('<p class="who"')]).count("Core") == 1 and "Its Core is sixteen principles" in _strip(_top[:_top.index('<p class="who"')]) and "/about" not in _who.group(1),
-      "home: who is behind it, in the first screen, in the fixed words; 'the Core' is linked there, and the standfirst, before it, has said once what the Core is; the same sentence in the data form")
+      and _strip(re.sub(r'<span class="t1" hidden>.*?</span>', "", _top[:_top.index('<p class="who"')], flags=re.S)).count("Core") == 1 and _strip(_top[:_top.index('<p class="who"')]).count("Core") == 2 and "Its Core is sixteen principles" in _strip(_top[:_top.index('<p class="who"')]) and "/about" not in _who.group(1),
+      "home: who is behind it, in the first screen, in the fixed words; 'the Core' is linked there, and the standfirst, before it, has said once what the Core is (the line shown after a press on the figure names the Core too); the same sentence in the data form")
 check(re.search(r'<p class="sub" data-src="[^"]*">Its Core is sixteen principles on what humans and AI owe each other\. Written for both\. Answered by both, <a href="/discuss">on the record</a>\.</p>\n<p class="who"', _top) is not None and _pj["second_line"] == SECOND_LINE
       and list(_pj).index("figure_note") + 1 == list(_pj).index("second_line") == list(_pj).index("who") - 1,
       "home: the standfirst — what the Core is, before the who line and the first step name it; 'on the record' linked to the discussion; in the data form, in the same place")
@@ -848,7 +852,7 @@ check(_fig is not None and int(_fig.group(1)) == _day and f'data-day="{_day}"' i
 # its label, no script — and a press shows tomorrow's; the line under it says so, and after a press says whose day the figure is
 _say = re.search(r'<p class="say" data-src="[^"]*">(.*?)</p>', _top, re.S)
 check('</p>\n<input class="turn" id="turn" type="checkbox" aria-label="Show tomorrow\'s figure" hidden>\n<div class="fb" style="--today:' in _top.replace("&#x27;", "'") and '<label class="fig-l" for="turn"><svg class="fig"' in _top and _top.count("<input") == 1
-      and _say is not None and _say.group(1).replace("&#x27;", "'") == f'<span class="t0">Nobody drew today\'s figure. <span class="press" hidden>Press it to see tomorrow\'s.</span></span><span class="t1" hidden>This is tomorrow\'s, Day {_day + 1:,}: computed, like today\'s, from the day\'s number and the text of the sixteen principles. Press it again for today\'s.</span>'
+      and _say is not None and _say.group(1).replace("&#x27;", "'") == f'<span class="t0">Nobody drew today\'s figure. <span class="press" hidden>Press it to see tomorrow\'s.</span></span><span class="t1" hidden>This is tomorrow\'s, Day {_day + 1:,}: computed, like today\'s, from the day\'s number and the text of the Core. Press it again for today\'s.</span>'
       and T["html"].count("__TOMORROW_FMT__") == 1 and "__TOMORROW_FMT__" not in T["txt"] + T["json"] and "Press it" not in _pv["txt"] + _pv["md"] and "tomorrow" not in _pv["txt"] + _pv["md"],
       "home: the figure is the label of a checkbox named 'Show tomorrow's figure'; the line under it: 'Nobody drew today's figure.', and, only where pressing works, 'Press it to see tomorrow's.'; after a press it names tomorrow's day and what the figure is computed from; the text and Markdown forms have the one sentence")
 _m5 = _css.split("@supports (stroke-dashoffset:calc(mod(1,2))){")
@@ -1016,10 +1020,13 @@ _cb = _core_page.split("<body>", 1)[1]
 _copen = re.match(r'.*?</header>\n<main id="content"><header><h1>Civilization Zero — The Invariant Core</h1><p>The One-Page Manifesto · <code>CZ-CORE 1\.0</code> · Coordinate Zero: <time datetime="2022-11-30">30 November 2022</time></p>'
                   r'<p class="forms" lang="en" dir="ltr">This page as <a href="/core\.md" type="text/markdown">Markdown</a> · <a href="/core\.txt" type="text/plain">text</a> · <a href="/core\.json" type="application/json">JSON</a></p>'
                   r'<details class="langs"><summary>The Core in 21 languages</summary><p>English · (.*?)\. <a href="#translations">About the translations</a>\.</p></details>'
+                  r'<details class="langs"><summary>The sixteen principles: contents</summary><ul>((?:<li><a href="#p\d+">[^<]+</a></li>){16})</ul></details>'
                   r'<p id="preamble">([^<]*)</p></header><section id="p0" aria-labelledby="h-p0"><h2 id="h-p0">§0\. Coordinate</h2><p id="p0-1">', _cb, re.S)
-check(_copen is not None and _html_mod.unescape(_copen.group(2)) == CORE_JSON["preamble"] and re.findall(r'<a href="/core\.([A-Za-z-]+)" lang="\1" hreflang="\1">[^<]+</a>', _copen.group(1)) == _trs and _copen.group(1).count(" · ") == len(_trs) - 1
+check(_copen is not None and _html_mod.unescape(_copen.group(3)) == CORE_JSON["preamble"]
+      and [(int(n), _html_mod.unescape(t)) for n, t in re.findall(r'<li><a href="#p(\d+)">([^<]+)</a></li>', _copen.group(2))] == [(int(p["n"]), f'§{p["n"]}. {p["title"]}') for p in CORE_JSON["principles"]]
+      and all(f'<h2 id="h-p{p["n"]}">§{p["n"]}. {esc(p["title"])}</h2>' in _cb for p in CORE_JSON["principles"]) and re.findall(r'<a href="/core\.([A-Za-z-]+)" lang="\1" hreflang="\1">[^<]+</a>', _copen.group(1)) == _trs and _copen.group(1).count(" · ") == len(_trs) - 1
       and _core_page.count("<header>") == 1 and "<aside class=\"tr-status\"" not in _core_page,
-      "/core: the title, the Core's own line, the forms, the languages folded to one line (all of them inside it) and the preamble, inside the main part; then §0's text at once")
+      "/core: the title, the Core's own line, the forms, the languages folded to one line (all of them inside it), the sixteen principles' headings folded to one line (each as it stands, the way to its principle) and the preamble, inside the main part; then §0's text at once")
 check(_cb.index("Section references: the Core's own numbers") > _cb.index('<h2 id="h-forms">Other forms</h2>') > _cb.index('id="integrity"') and "The text above is the canonical text, rendered" in _cb and "The text below" not in _cb,
       "/core: the site's note on anchors and numbering stands with the other forms, below the text, and says 'above'")
 _secs = re.findall(r'<section id="p(\d+)" aria-labelledby="h-p\1"><h2 id="h-p\1">§\1\. ([^<]+)</h2>(.*?)</section>', _cb, re.S)
@@ -1042,12 +1049,14 @@ _seal = re.search(r'<section id="integrity" aria-labelledby="h-int">\n<h2 id="h-
 _cells = [["0"] * 16 for _ in range(16)]
 for _x, _y, _n in re.findall(r"M(\d+) (\d+)h(\d+)v1h-\d+z", (re.search(r'<path d="([^"]+)" fill="currentColor"/>', _seal.group(1)) if _seal else re.search("()", "")).group(1)):
     for _k in range(int(_n)): _cells[int(_y)][int(_x) + _k] = "1"
-_left = re.findall(r'<tspan x="-.5" dy="1">([0-9a-f]{2})</tspan>', _seal.group(1) if _seal else ""); _right = re.findall(r'<tspan x="16.5" dy="1">([0-9a-f]{2})</tspan>', _seal.group(1) if _seal else "")
-check(_seal is not None and "".join("".join(r) for r in _cells) == "".join(f"{byte:08b}" for byte in _hb) and "".join(a + b for a, b in zip(_left, _right)) == _sha == sha256((PUBLIC / "core.txt").read_bytes()) and len(_left) == 16
+_left = re.findall(r'<tspan x="-.5" y="\d+\.8" text-anchor="end">([0-9a-f]{2})</tspan>', _seal.group(1) if _seal else ""); _right = re.findall(r'<tspan x="16.5" y="\d+\.8" text-anchor="start">([0-9a-f]{2})</tspan>', _seal.group(1) if _seal else "")
+# the labels stand row by row in one text, so that what a reader of the page's text gets, in order, is the hash itself
+_seal_text = re.search(r"<text>((?:<tspan[^>]*>[0-9a-f]{2}</tspan>){32})</text>", _seal.group(1) if _seal else "")
+check(_seal is not None and _seal_text is not None and re.sub(r"<[^>]+>", "", _seal_text.group(1)) == _sha and (_seal.group(1) if _seal else "").count("<text") == 1 and "".join("".join(r) for r in _cells) == "".join(f"{byte:08b}" for byte in _hb) and "".join(a + b for a, b in zip(_left, _right)) == _sha == sha256((PUBLIC / "core.txt").read_bytes()) and len(_left) == 16
       and all(a == int(_left[i], 16) and s == int(_right[i], 16) + 1 for i, (a, s, m) in enumerate(FIGURE.constants(_sha))) and FIGURE.cells(_sha).count("1") == sum(r.count("1") for r in _cells)
       and "<title id=\"seal-t\">The Core's SHA-256: 256 bits, sixteen by sixteen, the two bytes of each row beside it.</title>" in _seal.group(1) and 'role="img" aria-labelledby="seal-t"' in _seal.group(1),
       "/core: the Core's SHA-256 as 256 cells — the cells drawn, the two bytes beside each row, and each ring's start and step (the row's left byte; its right byte plus one), all recomputed from the Core's bytes; with a text alternative")
-check(_seal is not None and _html_mod.unescape(_seal.group(2)) == "The Core's SHA-256 as 256 cells, sixteen rows of sixteen bits. Each row gives one ring of the day's figure its place on Day 0 and its daily step."
+check(_seal is not None and _html_mod.unescape(_seal.group(2)) == "The Core's SHA-256 as 256 cells, sixteen rows of sixteen bits. Each row gives one ring of the day's figure its place on Day 0 and, plus one, its daily step."
       and [f.name for f in pages if "256 cells" in f.read_text("utf-8").split("</style>", 1)[1]] == ["core.html"] and _core_page.count('class="seal"') == 1 and "seal" not in (PUBLIC / "record.html").read_text("utf-8").split("</style>", 1)[1],
       "/core: under the seal the one sentence, word for word, and no other claim; the seal on /core only")
 # ---- every static page (rc-12; findings 12, 14, 24, 26, 29). The machine's forms in plain sight: one line under the title, of the forms
@@ -1100,8 +1109,8 @@ check(set(_df) == {"core_sha256", "html"} and _df["core_sha256"] == _sha == PUBL
       and all(x in fill(T["html"]) for x in ('viewBox="-192 -192 384 384"', '<g fill="none" stroke="currentColor" transform="rotate(-90)"><g class="trk" stroke-width="1">' + FIGURE.tracks() + '</g><g class="arc" stroke-width="4">'))
       and 'role="img" aria-label="The figure of Day __FIG_DAY__: sixteen rings round an empty centre, each carrying one arc."' in _dfh,
       "room/cz-bar.json, dayfigure: the frame of a day's figure — the first page's own geometry and tracks, one place for the arcs, the day's number, a text alternative — and the Core's SHA-256 from the Core's bytes")
-check(_h.unescape(re.search(r"<figcaption>(.*?)</figcaption>", _dfh).group(1)) == "Day __FIG_DAY__'s figure: computed from the day's number and the text of the sixteen principles."
-      and "computed, like today's, from the day's number and the text of the sixteen principles" in _h.unescape(T["html"]),
+check(_h.unescape(re.search(r"<figcaption>(.*?)</figcaption>", _dfh).group(1)) == "Day __FIG_DAY__'s figure: computed from the day's number and the text of the Core."
+      and "computed, like today's, from the day's number and the text of the Core" in _h.unescape(T["html"]),
       "a day's figure on /calendar: under it the one sentence, in the words the first page uses for tomorrow's")
 _cal0 = (PUBLIC / "calendar.html").read_text("utf-8")
 _fig_li = re.search(r'<li id="figure"><strong>Every day has a figure</strong>(.*?)</li>', _cal0, re.S)

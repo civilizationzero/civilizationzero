@@ -23,7 +23,7 @@ const ok = (c, m) => { if (c) pass++; else { fail++; console.log("FAIL", m); } }
     const r = await call(page, `/api/page?p=${p}`);
     ok(r.status === 200, p + " status " + r.status);
     const bar = (/<div class="cz-now"[\s\S]*?<\/div>/.exec(r.body) || [""])[0];
-    ok(bar === `<div class="cz-now" data-nosnippet><a href="/calendar">CZ calendar</a> · <time class="d" datetime="${CZ.isoDate(...CZ.toGregorian(today))}">Day <data value="${today}">${today.toLocaleString("en-US")}</data></time></div>`, p + " live day, in the first page's words");
+    ok(bar === `<div class="cz-now" data-nosnippet><a class="day" href="/calendar"><span class="w"><span class="n">CZ calendar</span> · </span><time class="d" datetime="${CZ.isoDate(...CZ.toGregorian(today))}">Day <data value="${today}">${today.toLocaleString("en-US")}</data></time></a></div>` && text(bar) === `CZ calendar · Day ${today.toLocaleString("en-US")}`, p + " live day, in the first page's words");
     ok(!bar.includes("<form") && !bar.includes("calendar#") && !/\b[Yy]ears?\b|UTC/.test(text(bar)) && r.body.includes(`</a>${bar}</div><nav class="site" aria-label="Site">`)
        && (r.body.match(/<div class="cz-now"/g) || []).length === 1, p + " the head's day: once, at the end of the head's first row, the day count only, no form");
     ok(!r.body.includes("__CZ_") && !r.body.includes('<a href="https://civilizationzero.ai/calendar">CZ calendar</a>'), p + " placeholders or fallback left");
@@ -110,6 +110,11 @@ const ok = (c, m) => { if (c) pass++; else { fail++; console.log("FAIL", m); } }
     ok(m && text(m[1]) === want, `leap/crossing ${d} ${t} ${z} -> ${m && text(m[1])} want ${want}`);
   }
   const tsel = await call(page, `/api/page?p=calendar&d=2026-10-30&t=13:30&z=Asia%2FTehran`); ok(tsel.body.includes('<option value="Asia/Tehran" selected>Tehran</option>'), "the zone stays chosen");
+  // a conversion's Markdown is the conversion's: its links and its own address carry the date converted (the review of rc-12)
+  { const cv = await call(page, "/api/page?p=calendar&d=2026-10-30&c=gregorian"), cm = await call(page, "/api/page?p=calendar&d=2026-10-30&c=gregorian&f=md"), pl = await call(page, "/api/page?p=calendar");
+    ok((cv.body.match(/href="\/calendar\.md\?d=2026-10-30&amp;c=gregorian"/g) || []).length === 3 && !cv.body.includes('href="/calendar.md"') && (pl.body.match(/href="\/calendar\.md"/g) || []).length === 3, "a converted page links its own Markdown (head, under the title, foot); the plain page its own");
+    ok(cm.status === 200 && /markdown/.test(cm.headers["content-type"]) && cm.body.includes("/calendar.md?d=2026-10-30&c=gregorian") && cm.body.includes("30 October 2026 = CZ 1430"), "that Markdown names its own address and holds the result");
+    const odd = await call(page, "/api/page?p=calendar&d=" + encodeURIComponent('"><b>x') + "&c=gregorian"); ok(!odd.body.includes('"><b>x') && odd.body.includes('href="/calendar.md?d=%22%3E%3Cb%3Ex&amp;c=gregorian"'), "what was typed is written into that address encoded, never as markup"); }
   // the JSON API
   const j = await call(cal, "/api/calendar?d=1405-08-08&c=solar-hijri"); const o = JSON.parse(j.body);
   ok(j.status === 200 && o.cz.date === "CZ 1430" && o.cz.machine === "CZ+1430" && Object.keys(o.cz).join() === "date,machine,day" && o.cz.day === 1430 && o.gregorian.date === "2026-10-30"

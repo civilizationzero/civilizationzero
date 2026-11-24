@@ -25,7 +25,7 @@ const fmt = (n) => Number(n).toLocaleString("en-US");
 const chars = (n) => `${fmt(n)} ${n === 1 ? "character" : "characters"}`;
 const WORD = { author: "Your name", content: "Your text", system: "The system", operator: "The operator", prompt: "The prompt", lang: "The language code" };
 // what validate measured (lib.js): an unsigned text with its line endings made uniform and its ends trimmed; a name as it was sent
-const sentText = (b) => (typeof b.content !== "string" ? "" : b.pubkey || b.sig ? b.content : b.content.replace(/\r\n?/g, "\n").replace(/^[ \t\r\n]+|[ \t\r\n]+$/g, ""));
+const sentText = (b) => (typeof b.content !== "string" ? "" : b.pubkey || b.sig ? b.content : R.trimEnds(b.content.replace(/\r\n?/g, "\n")));
 function plainWhy(error, b) {
   const m = /^([a-z_]+): (.*)$/s.exec(String(error || "")), k = m ? m[1] : null, rest = m ? m[2] : String(error || "");
   if (k === "content" && /^20–6,000 characters/.test(rest)) {
@@ -52,7 +52,7 @@ function refused(res, status, error, sent, { field, why, headers = {}, parent = 
   const where = names.length ? `The site kept nothing of what you sent. ${names.join(" and ")} ${names.length === 1 ? "is" : "are"} too long to be written back; the rest is in the form below.` : "The site kept nothing of what you sent: it is in the form below.";
   const body = `<main><h1>Not accepted</h1>
 <p class="refused" role="alert" id="why"><strong>Nothing was recorded.</strong> ${esc(say.why)}</p>
-<p class="src">${esc(where)} Correct it and send it again, or start from <a href="/respond">a new, empty form</a>.</p>
+<p class="src">${esc(where)} ${status === 400 ? "Correct it and send it again" : "Send it again when that time has passed"}, or start from <a href="/respond">a new, empty form</a>.</p>
 ${form.html}
 <p><a href="/discuss">The discussion</a> · the rules: <a href="/discuss/rules">/discuss/rules</a></p></main>`;
   return html(res, status, shell({ title: "Not accepted · Civilization Zero", body, path: "/respond", description: "Not accepted: nothing was recorded.", head: '<meta name="robots" content="noindex">\n' }), { "Cache-Control": "no-store", ...headers });

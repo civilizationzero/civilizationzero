@@ -65,13 +65,12 @@ def seal(core_sha256):
     h, bits = bytes.fromhex(core_sha256), cells(core_sha256)
     runs = "".join(f"M{m.start()} {y}h{len(m.group())}v1h-{len(m.group())}z" for y in range(16) for m in re.finditer("1+", bits[16 * y:16 * y + 16]))
     cuts = "".join(f"M{i} 0v16M0 {i}h16" for i in range(1, 16))
-    left = "".join(f'<tspan x="-.5" dy="1">{h[2 * i]:02x}</tspan>' for i in range(16))
-    right = "".join(f'<tspan x="16.5" dy="1">{h[2 * i + 1]:02x}</tspan>' for i in range(16))
+    pairs = "".join(f'<tspan x="-.5" y="{i}.8" text-anchor="end">{h[2 * i]:02x}</tspan><tspan x="16.5" y="{i}.8" text-anchor="start">{h[2 * i + 1]:02x}</tspan>' for i in range(16))
     return ('<svg xmlns="http://www.w3.org/2000/svg" viewBox="-2 0 20 16" width="320" height="256" role="img" aria-labelledby="seal-t">'
             "<title id=\"seal-t\">The Core's SHA-256: 256 bits, sixteen by sixteen, the two bytes of each row beside it.</title>"
             f'<path class="un" d="M0 0h16v16h-16z" fill="#bbb"/><path d="{runs}" fill="currentColor"/>'
             f'<path class="cut" d="{cuts}" fill="none" stroke="#fff" stroke-width=".0625"/>'
-            f'<g font-family="monospace" font-size=".8409" fill="currentColor"><text y="-.2" text-anchor="end">{left}</text><text y="-.2">{right}</text></g></svg>')
+            f'<g font-family="monospace" font-size=".8409" fill="currentColor"><text>{pairs}</text></g></svg>')
 
 if __name__ == "__main__":
     sha = sys.argv[1]

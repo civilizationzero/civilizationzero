@@ -47,20 +47,20 @@ test("the frame for /calendar (room/cz-bar.json, dayfigure): the first page's ge
   assert.ok(f.html.includes(`<g class="trk" stroke-width="1">${FIG.tracks()}</g><g class="arc" stroke-width="4">__FIG_RINGS__</g>`) && HOME.html.includes(`<g class="trk" stroke-width="1">${FIG.tracks()}</g><g class="arc" stroke-width="4">__FIG_RINGS__</g>`), "the first page's tracks and the place for the arcs");
   assert.equal((f.html.match(/__FIG_RINGS__/g) || []).length, 1);
   assert.equal((f.html.match(/__FIG_DAY__/g) || []).length, 2);
-  assert.equal(unesc(/<figcaption>(.*?)<\/figcaption>/.exec(f.html)[1]), "Day __FIG_DAY__'s figure: computed from the day's number and the text of the sixteen principles.");
+  assert.equal(unesc(/<figcaption>(.*?)<\/figcaption>/.exec(f.html)[1]), "Day __FIG_DAY__'s figure: computed from the day's number and the text of the Core.");
   assert.ok(!/<script|\son\w+=|href=|src=/.test(f.html), "nothing that runs and nothing that loads");
 });
 
-test("api/page.js, where it writes the figure (dayFigure): a conversion's result carries the figure of the day converted", async (t) => {
+test("api/page.js, where it writes the figure (dayFigure): a conversion's result carries the figure of the day converted", async () => {
   const page = require("../api/page.js");
-  if (typeof page.dayFigure !== "function") return t.skip("api/page.js does not write the figure yet (rc12/X-NEEDS.md, 1)");
+  assert.equal(typeof page.dayFigure, "function", "api/page.js writes the figure");
   const call = (url) => new Promise((resolve) => { const res = { statusCode: 200, headers: {}, setHeader(k, v) { this.headers[k.toLowerCase()] = v; }, getHeader(k) { return this.headers[k.toLowerCase()]; }, end(b) { resolve({ status: this.statusCode, body: b || "" }); } }; page({ url, method: "GET", headers: {} }, res); });
   for (const [q, day, shown] of [["d=2026-10-30&c=gregorian", 1430, "1,430"], ["d=CZ%201461&c=cz", 1461, "1,461"], ["d=CZ%20-1997&c=cz", -1997, "−1,997"], ["d=2022-11-30&c=gregorian", 0, "0"], ["d=1969-07-20&c=gregorian", -19491, "−19,491"]]) {
     const r = await call(`/api/page?p=calendar&${q}`);
     const m = /<h3 id="h-result">[\s\S]*?<\/h3>\n(<figure class="dayfig">[\s\S]*?<\/figure>)\n<table class="cz-result">/.exec(r.body);
     assert.ok(r.status === 200 && m, `${q}: the figure stands under the result's heading, before the table`);
     assert.equal(m[1], BAR.dayfigure.html.replace("__FIG_RINGS__", FIG.rings(day, K)).replace(/__FIG_DAY__/g, shown), `${q}: the figure of day ${day}`);
-    assert.ok(unesc(m[1]).includes(`<figcaption>Day ${shown}'s figure: computed from the day's number and the text of the sixteen principles.</figcaption>`), `${q}: the sentence names the day as prose writes it`);
+    assert.ok(unesc(m[1]).includes(`<figcaption>Day ${shown}'s figure: computed from the day's number and the text of the Core.</figcaption>`), `${q}: the sentence names the day as prose writes it`);
     assert.ok(!r.body.includes("__FIG_"), `${q}: no placeholder left`);
   }
   const plain = await call("/api/page?p=calendar"), bad = await call("/api/page?p=calendar&d=not-a-date&c=gregorian");

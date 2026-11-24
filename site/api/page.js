@@ -223,6 +223,9 @@ module.exports = async (req, res) => {
              .replace(TIME_RE, () => `<!--cz-time-->${timeBlock(url.searchParams, now, zone)}<!--/cz-time-->`);
   }
   if (query && status === 200) { const t = resultTitle(out); if (t) out = out.replace(/<title>[^<]*<\/title>/, () => `<title>${CZ.escHtml(t)}</title>`); }
+  // a conversion's own address, for its Markdown form and the links to it: /calendar.md?d=…&c=… is another text than /calendar.md
+  const viewQuery = query && status === 200 ? new URLSearchParams(["d", "c", "t", "z"].filter((k) => url.searchParams.get(k)).map((k) => [k, url.searchParams.get(k).slice(0, 80)])).toString() : "";
+  if (viewQuery) out = out.replace(/href="\/calendar\.md"/g, () => `href="/calendar.md?${CZ.escHtml(viewQuery)}"`);
   const colophon = p === "how-it-is-built" && status === 200;
   if (colophon) { const v = await latestCheck(now); out = out.replace(DEPLOY_RE, () => `<!--cz-deploy-->${deployBlock(v, process.env.VERCEL_GIT_COMMIT_SHA)}<!--/cz-deploy-->`); }
   // the colophon at most an hour in the cache, so that a new day's check shows the same morning; every other page until midnight in
@@ -230,7 +233,7 @@ module.exports = async (req, res) => {
   const left = CZ.secondsToNextLocalDay(now, zone), ttl = colophon ? Math.min(3600, left) : left, vary = CZ.varyZone("Accept");
   // the page as Markdown (/core.md, or Accept: text/markdown; vercel.json): its <main> converted, with a front matter (room/md.js)
   if (url.searchParams.get("f") === "md") {
-    const pth = p === "" ? "/" : `/${p}`;
+    const pth = (p === "" ? "/" : `/${p}`) + (viewQuery ? `?${viewQuery}` : "");
     // the Core and the record name the DOI to cite them by in this form too (CZ 1433, item 5); no canonical beside the noindex (CZ 1445)
     const link = ["core", "record"].includes(p) && status === 200 ? { Link: CITE_AS } : {};
     return MD.sendMarkdown(res, status, req.method === "HEAD" ? "" : MD.htmlToMarkdown(out, { path: pth }), pth, "https://civilizationzero.ai", { "Cache-Control": `public, max-age=0, s-maxage=${ttl}`, Vary: vary, ...link });

@@ -275,16 +275,16 @@ srv.listen(0, "127.0.0.1", async () => {
     // the form opened ready for an AI system's answer (cz-machine-1.3, 6 Nov 2026 SGT): known values only
     r = await call(discuss, "/api/discuss?page=respond&kind=ai&prompt=cz-machine-1.3");
     ok(r.status === 200 && r.body.includes('<option value="ai" selected>') && r.body.includes('<option value="" disabled>') && !r.body.includes('<option value="" selected disabled>')
-       && r.body.includes("<details open><summary>Posting the answer of an AI system") && r.body.includes('<input name="prompt" maxlength="60" value="cz-machine-1.3">')
+       && r.body.includes("<details open><summary>Posting the answer of an AI system") && r.body.includes('<input name="prompt" maxlength="120" value="cz-machine-1.3">')
        && r.body.includes("You are posting the answer of an AI system") && (r.body.match(/ selected>/g) || []).length === 1, "respond?kind=ai&prompt=…: ai chosen, details open, the version filled");
     r = await call(discuss, "/api/discuss?page=respond");
-    ok(r.body.includes('<option value="" selected disabled>') && !r.body.includes("<details open>") && r.body.includes('<input name="prompt" maxlength="60">'), "respond: no kind chosen by default, nothing filled");
+    ok(r.body.includes('<option value="" selected disabled>') && !r.body.includes("<details open>") && r.body.includes('<input name="prompt" maxlength="120">'), "respond: no kind chosen by default, nothing filled");
     r = await call(discuss, "/api/discuss?page=respond&kind=robot&prompt=%22%3E%3Cscript%3E");
-    ok(r.body.includes('<option value="" selected disabled>') && !r.body.includes("<script>") && r.body.includes('<input name="prompt" maxlength="60">'), "respond: an unknown kind or prompt changes nothing");
+    ok(r.body.includes('<option value="" selected disabled>') && !r.body.includes("<script>") && r.body.includes('<input name="prompt" maxlength="120">'), "respond: an unknown kind or prompt changes nothing");
     TABLE = [entry(1)]; r = await call(discuss, "/api/discuss?page=respond&parent=1&kind=ai&prompt=cz-machine-1.4");
     ok(r.body.includes('<input type="hidden" name="parent" value="1">') && r.body.includes('<option value="ai" selected>') && r.body.includes('value="cz-machine-1.4">') && (r.body.match(/<h1>/g) || []).length === 1, "respond?parent=1&kind=ai&prompt=…: a reply, ready for an AI system's answer");
     r = await call(discuss, "/api/discuss?page=respond&kind=ai&prompt=cz-machine-1.9");
-    ok(r.body.includes('<input name="prompt" maxlength="60">') && !r.body.includes("cz-machine-1.9"), "respond?prompt=…: an unpublished version is not filled in");
+    ok(r.body.includes('<input name="prompt" maxlength="120">') && !r.body.includes("cz-machine-1.9"), "respond?prompt=…: an unpublished version is not filled in");
     r = await call(discuss, "/api/discuss?page=respond&kind=human&prompt=custom");
     ok(r.body.includes('<option value="human" selected>') && !r.body.includes("<details open>") && r.body.includes('value="custom">'), "respond?kind=human&prompt=custom");
     r = await call(discuss, "/api/discuss?page=respond&f=md"); ok(r.status === 200 && /\nhtml: "https:\/\/civilizationzero.ai\/respond"\n/.test(r.body), "/respond as Markdown");
@@ -594,16 +594,20 @@ srv.listen(0, "127.0.0.1", async () => {
     { const sent = CALLS.find((c) => c.name === "cz_post");
       ok(r.status === 201 && sent && sent.args.p_content === "A text long enough to be accepted.\nSecond line." && sent.args.p_author === "A reader" && sent.args.p_via === "form", "an accepted form is recorded as before: the same text, the same fields");
       ok(/<p class="receipt"><code class="hash" id="receipt-code">[0-9a-f]{32}<\/code><\/p>/.test(r.body), "the receipt's code in a box of its own"); }
-    // the built form (site/build.py, respond_form_html; /home/claude/rc12/Y-NEEDS.md, 1): checked when the build carries the form of rc-12
+    // the built form (site/build.py, respond_form_html): checked when the build carries the form of rc-12
     { const f = RL.HUMAN_FORM, at = (x) => f.indexOf(x), built = at('<textarea name="content"') >= 0 && at('<textarea name="content"') < at('<input name="author"');
-      if (!built) console.log("NOTE rc-12: site/api/discuss-templates.json does not carry the form of rc-12 yet (Y-NEEDS.md, 1: site/build.py); its checks are skipped");
+      if (!built) console.log("NOTE rc-12: site/api/discuss-templates.json does not carry the form of rc-12 yet (site/build.py, respond_form_html); its checks are skipped");
       else {
         ok(at('<textarea name="content"') < at('<input name="author"') && at('<input name="author"') < at('<select name="kind"') && at('<select name="kind"') < at('<select name="ref"') && at('<select name="ref"') < at("<details>"), "the form: the place to write first, then the name, the kind, the topic, the folds");
-        ok(f.includes("<label>Your response <textarea") && f.includes("<label>Your name, as you want it shown <input") && f.includes("<label>You are <select") && f.includes("<label>Topic (optional) <select"), "the form: labels in plain words");
+        ok(f.includes("<label>Your response <textarea") && f.includes("<label>Your name, as you want it shown <input") && f.includes("<label>You are <select") && f.includes('</select></label>\n<p class="src" id="kind-note">What you declare yourself to be: declared, not verified.</p>\n<label>Topic (optional) <select') && f.includes('<select name="kind" required aria-describedby="kind-note">'), "the form: labels in plain words; under the kind, that it is declared and not verified");
         const visible = f.replace(/<details><summary>For programs[\s\S]*?<\/details>/, "");
         ok(!/<code>(author|kind|ref|content)<\/code>/.test(visible) && /<details><summary>For programs: the names of the fields<\/summary>[\s\S]*<code>content<\/code>, <code>author<\/code>, <code>kind<\/code>[\s\S]*<code>ref<\/code>[\s\S]*<code>parent<\/code>/.test(f), "the form: the fields' names only in the fold for programs");
-        ok(/<textarea name="content" required minlength="20" maxlength="6000"/.test(f) && /<input name="author" required maxlength="120">/.test(f) && /<input name="system" maxlength="200">/.test(f) && /<input name="operator" maxlength="200">/.test(f) && /<input name="prompt" maxlength="60">/.test(f) && /<input name="lang" maxlength="35"/.test(f)
-           && [["content", 6000], ["author", 120], ["system", 200], ["operator", 200], ["prompt", 60], ["lang", 35]].every(([k, n]) => RL.FIELD_MAX[k] === n) && !/name="author"[^>]*autocomplete="off"/.test(f), "the form: each box stops at its real limit (the contract's), and the name may be remembered by the browser");
+        // a limit counts characters (code points), a box's maxlength counts UTF-16 units: each box takes twice its limit, so that no text
+        // the server would accept is stopped while it is written; the limit is said under the box and a text over it is refused with its count
+        ok([["content", 6000], ["author", 120], ["system", 200], ["operator", 200], ["prompt", 60], ["lang", 35]].every(([k, n]) => RL.FIELD_MAX[k] === n && new RegExp(`<(?:textarea|input) name="${k}"[^>]* maxlength="${2 * n}"`).test(f))
+           && (f.match(/ maxlength="/g) || []).length === 6 && f.includes('<p class="src" id="content-note">20 to 6,000 characters, in any language.') && !/name="author"[^>]*autocomplete="off"/.test(f), "the form: each box takes twice its limit in the browser's count, the limit is said under the box, and the name may be remembered by the browser");
+        { const astral = "\u{1F600}".repeat(6000), v = RL.validate({ author: "A", kind: "human", content: astral });
+          ok(astral.length === 12000 && !v.error && RL.clen(v.value.content) === 6000 && !!RL.validate({ author: "A", kind: "human", content: astral + "x" }).error, "a text of 6,000 characters outside the basic plane (12,000 units) fits the box and is accepted; one more character is refused"); }
         ok(/<p><strong>Public and permanent:<\/strong> an answer cannot be edited or withdrawn; it can be hidden or redacted only under the rules\.<\/p>\n<p class="src permanence">An entry cannot be edited or withdrawn\.[^<]*cannot be recalled\.<\/p>\n<button type="submit">Record this response<\/button>/.test(f) && count(f, "<button") === 1,
            "the form: the sentence that matters in reading size beside the one button, the small notice of CZ 1433 directly before it");
         ok(/<details><summary>Conditions of posting[^<]*<\/summary>\n<p class="src">By posting you license what you have the right to license under CC BY 4\.0\./.test(f) && at("<summary>Conditions of posting") < at('<button type="submit">'), "the form: the other conditions one press away, before the button");
@@ -612,7 +616,9 @@ srv.listen(0, "127.0.0.1", async () => {
     // the reply dialog on an entry's page: the same form, and a way out at its top as well as at its foot
     TABLE = [entry(1)]; r = await call(discuss, "/api/discuss?id=1");
     { const d = (/<dialog id="reply-1"[\s\S]*?<\/dialog>/.exec(r.body) || [""])[0];
-      ok(count(d, 'commandfor="reply-1" command="close">Close</button>') === 2 && d.indexOf('command="close"') < d.indexOf("<h2") && d.includes(RL.HUMAN_FORM.replace(RL.FORM_OPEN, `${RL.FORM_OPEN}\n<input type="hidden" name="parent" value="1">`)), "the reply dialog: the room's form with the entry it answers, and Close at the top and at the foot"); }
+      ok(count(d, 'popovertarget="reply-1" popovertargetaction="hide">Close</button>') === 2 && d.indexOf('popovertargetaction="hide"') < d.indexOf("<h2") && d.startsWith('<dialog id="reply-1" class="reply" popover aria-labelledby="reply-h-1">') && d.includes(RL.HUMAN_FORM.replace(RL.FORM_OPEN, `${RL.FORM_OPEN}\n<input type="hidden" name="parent" value="1">`)), "the reply sheet: the room's form with the entry it answers, and Close at the top and at the foot");
+      ok(r.body.includes('<p class="actions"><a class="sheet-a" href="/respond?parent=1">Reply to #1</a><span class="sheet-b" hidden><button type="button" popovertarget="reply-1">Reply to #1</button> <a href="/respond?parent=1" class="src">or reply on its own page</a></span></p>')
+         && !/commandfor=|command="|closedby=/.test(r.body), "the way to reply is a link to the form's page; the button that opens the sheet is out of the page unless the stylesheet finds popovers; nothing waits for invoker commands"); }
     // ---------- stage 2: /discuss — the question and its two ways in, then the conversations; what the page is comes after the list (site audit, findings 2, 9, 23)
     const HOME_T = require(path.resolve(__dirname, "../api/home-templates.json")).html;
     ok(Object.values(RL.ASK).every((x) => HOME_T.includes(x)) && RL.ASK.question === "What do you think about Civilization Zero?", "the room asks in the first page's own words (the question, both controls, the sheet's name and its rule)");
@@ -691,7 +697,7 @@ srv.listen(0, "127.0.0.1", async () => {
                entry(40, { parent: tid, author: "Bot", kind: "ai", system: "Model Z" }), entry(41, { parent: 40 }), entry(42, { parent: tid, author: "Ada" })];
       r = await call(discuss, `/api/discuss?theme=${th.slug}`);
       const b = r.body, at = (x) => b.indexOf(x), ctrl = `<p class="cta-line"><a class="cta" href="/respond?parent=${tid}">Answer this question</a></p>`;
-      ok(r.status === 200 && at(`<article class="entry" id="e${tid}"`) > at("<h1>") && at(`<article class="entry" id="e${tid}"`) < at(ctrl) && at(ctrl) < at("<h2>Conversations — newest first, a view</h2>") && at("<h2>Conversations") < at('id="e42"') && at('id="e42"') < at('id="e40"') && at('id="e40"') < at('id="h-about"') && at('id="h-about"') < at('<details class="rules" id="rules">')
+      ok(r.status === 200 && at(`<article class="entry" id="e${tid}"`) > at("<h1>") && at(`<article class="entry" id="e${tid}"`) < at(ctrl) && at(ctrl) < at("<h2>Conversations</h2>\n<p class=\"src\">Newest first: a view, not the archive's order.</p>") && at("<h2>Conversations") < at('id="e42"') && at('id="e42"') < at('id="e40"') && at('id="e40"') < at('id="h-about"') && at('id="h-about"') < at('<details class="rules" id="rules">')
          && !/<p class="src">|class="tr-bar|<details/.test(b.slice(at("<h1>"), at(`<article class="entry" id="e${tid}"`))), `a theme in order: its title, its question's own entry, the way to answer it, the conversations, what a theme is, the rules folded (${r.status})`);
       ok((b.match(/class="cta[ "]/g) || []).length === 1 && !/class="cta o"/.test(b) && !/<dialog|<form class="respond"/.test(b) && b.slice(at('id="h-about"')).includes("a question opened by the originator with the entry above, signed with") && !b.includes("with the entry below") && b.slice(at('id="h-about"')).includes('<details class="tr-fold" id="language">'),
          "a theme: one filled control, the link to the form's page that names the question (the form itself is not in the page); the sentence on what a theme is points up to the entry; the languages folded after the conversations");
@@ -707,8 +713,8 @@ srv.listen(0, "127.0.0.1", async () => {
     TABLE = [entry(1, { author: "Ada" }), entry(2, { parent: 1, author: "Bot", kind: "ai", system: "Model Q", operator: "Op", prompt: "custom" }), entry(3, { parent: 2, author: "Cy" }), entry(4, { parent: 3, hidden: true, category: "advertising_spam" }), entry(5, { parent: 2, author: "Dee" })];
     r = await call(discuss, "/api/discuss?id=2");
     { const b = r.body, at = (x) => b.indexOf(x), focus = '<article class="entry k-ai focus" id="e2" aria-label="Entry #2" style="--vt:e2">';
-      ok(r.status === 200 && at("<h1>Entry #2</h1>") < at('<nav aria-label="Earlier in this conversation">') && at("<nav aria-label=") < at(focus) && at(focus) < at("User content, as received") && at("User content, as received") < at('commandfor="reply-2" command="show-modal"')
-         && at('command="show-modal"') < at('<details class="tr-fold" id="language">') && at('<details class="tr-fold"') < at('<h2 id="replies">') && at('<h2 id="replies">') < at('<details class="record"'), `an entry's page in order: the entries it answers, the entry, the reply, the languages folded, the replies, its record (${r.status})`);
+      ok(r.status === 200 && at("<h1>Entry #2</h1>") < at('<nav aria-label="Earlier in this conversation">') && at("<nav aria-label=") < at(focus) && at(focus) < at("User content, as received") && at("User content, as received") < at('<a class="sheet-a" href="/respond?parent=2">Reply to #2</a>')
+         && at('popovertarget="reply-2"') < at('<details class="tr-fold" id="language">') && at('<details class="tr-fold"') < at('<h2 id="replies">') && at('<h2 id="replies">') < at('<details class="record"'), `an entry's page in order: the entries it answers, the entry, the reply, the languages folded, the replies, its record (${r.status})`);
       ok(!/class="tr-bar/.test(b) && !b.includes('id="h-trf"') && !b.includes("language bar at the top of this page") && count(b, 'id="language"') === 1 && count(b, "<h1>") === 1, "no language box before the entry; the second section on languages is gone");
       ok(b.includes(`${focus}<p class="by"><b><bdi dir="auto">Bot</bdi></b> <span class="kind k-ai">AI · declared</span> <span class="sys">system: <bdi dir="auto">Model Q</bdi></span></p><p class="meta src"><a href="/discuss/2" class="exact">#2</a> · in reply to <a href="/discuss/1">#1</a> · `)
          && /<p class="meta src">[^\n]*? · operator: <bdi dir="auto">Op<\/bdi> · prompt: <bdi dir="auto">custom<\/bdi> · lang: <bdi dir="auto">en<\/bdi> · <a href="\/core#p2">[^<]*<\/a><\/p><div class="content" dir="auto" lang="en">Entry number 2/.test(b),
@@ -724,7 +730,7 @@ srv.listen(0, "127.0.0.1", async () => {
     ok(r.body.indexOf('class="tr-go tr-offer"') > 0 && r.body.indexOf('class="tr-go tr-offer"') < r.body.indexOf('id="e2"') && r.body.includes('<button type="submit" class="cta">Read this page in <span lang="fa">فارسی</span></button>') && r.body.indexOf('<details class="tr-fold" id="language">') > r.body.indexOf('id="e2"') && count(r.body, 'id="language"') === 1,
        "a reader of another language: the offer above the entry, the list of languages after it");
     r = await call(discuss, "/api/discuss?id=4");
-    ok(r.status === 200 && r.body.includes('<article class="entry k-ai focus" id="e4" aria-label="Entry #4" style="--vt:e4">') && r.body.includes("Hidden — category: advertising_spam.") && !/commandfor="reply-4"/.test(r.body) && !r.body.includes("Entry number 4"), "a hidden entry's page: its state and its record as before, none of its words, no reply");
+    ok(r.status === 200 && r.body.includes('<article class="entry k-ai focus" id="e4" aria-label="Entry #4" style="--vt:e4">') && r.body.includes("Hidden — category: advertising_spam.") && !/reply-4"|respond\?parent=4/.test(r.body) && !r.body.includes("Entry number 4"), "a hidden entry's page: its state and its record as before, none of its words, no reply");
     // the same name in every view, and never twice in a page
     for (const [u, want] of [["/api/discuss", [1]], ["/api/discuss?view=entries", [5, 3, 2, 1]], ["/api/discuss?conversation=1", [1, 2, 3, 4, 5]], ["/api/discuss?conversation=1&all=1", [1, 2, 3, 4, 5]], ["/api/discuss?q=Entry", [5, 3, 2, 1]], ["/api/discuss?order=canonical", [1, 2, 3, 5]], ["/api/discuss?id=1", [1, 2, 3, 4, 5]]]) {
       r = await call(discuss, u);
@@ -774,7 +780,11 @@ srv.listen(0, "127.0.0.1", async () => {
       TABLE = [entry(1), entry(2, { parent: 1 }), entry(tid, { author: "The originator", kind: "human" })]; DOWN = false;
       for (const [h, u, after, line] of [
         [discuss, "/api/discuss", "<h1>The open discussion</h1>\n", F(["/discuss.md", MDT, "Markdown"], ["/discuss.json", J, "JSON"], ["/discuss.xml", "application/atom+xml", "feed"])],
-        [discuss, "/api/discuss?view=entries", "<h1>The open discussion</h1>\n", F(["/discuss.md", MDT, "Markdown"])],
+        // a list's view, search, filter or order is another text: its Markdown address carries what makes it (the review of rc-12)
+        [discuss, "/api/discuss?view=entries", "<h1>The open discussion</h1>\n", F(["/discuss.md?view=entries", MDT, "Markdown"])],
+        [discuss, "/api/discuss?order=canonical&kind=ai", "<h1>The open discussion</h1>\n", F(["/discuss.md?kind=ai&order=canonical", MDT, "Markdown"])],
+        [discuss, "/api/discuss?ref=3&kind=zzz&order=x&view=y&lang=%3Cb%3E", "<h1>The open discussion</h1>\n", F(["/discuss.md?ref=3", MDT, "Markdown"])],
+        [discuss, "/api/discuss?q=" + encodeURIComponent("  number 1 "), "<h1>The open discussion</h1>\n", F(["/discuss.md?q=number%201", MDT, "Markdown"])],
         [discuss, "/api/discuss?conversation=1", "<h1>A conversation from #1</h1>\n", F(["/discuss.md?conversation=1", MDT, "Markdown"])],
         [discuss, `/api/discuss?theme=${th.slug}`, "</h1>\n", F([`/themes/${th.slug}.md`, MDT, "Markdown"])],
         [discuss, "/api/discuss?id=2", "<h1>Entry #2</h1>\n", F(["/discuss/2.md", MDT, "Markdown"], ["/api/entries/2", J, "JSON"])],
@@ -789,6 +799,42 @@ srv.listen(0, "127.0.0.1", async () => {
       }
       r = await post({ author: "A reader", kind: "human", content: "short" }); ok(r.status === 400 && !r.body.includes('class="forms"'), "an answer to a form carries no such line");
       r = await call(discuss, "/api/discuss?id=999"); ok(r.status === 404 && !r.body.includes('class="forms"'), "nor does a page that is not there"); }
+    // ====================================================================== after the review of rc-12 (24 Nov 2026, the room: correctness and security)
+    // white space is taken off a text's ends in one pass from each end: a long run of spaces inside a text costs nothing (as a pattern,
+    // 160,000 of them held the function for ten seconds, before any limit was counted), and the text that results is the same
+    { const long = "x" + " ".repeat(400000) + "x", t0 = Date.now(), v = RL.validate({ author: "A", kind: "human", content: long });
+      ok(v.error === "content: 20–6,000 characters (Unicode code points)" && Date.now() - t0 < 1500, `a text with 400,000 spaces inside it is refused at once (${Date.now() - t0} ms)`);
+      ok(RL.trimEnds(" \t\r\n a b \n\r\t ") === "a b" && RL.trimEnds("   ") === "" && RL.trimEnds("a") === "a" && RL.trimEnds("\u00a0a\u00a0") === "\u00a0a\u00a0"
+         && RL.validate({ author: "  A  ", kind: "human", content: "\r\n  A text long enough to be accepted.\r\nSecond.  \r\n" }).value.content === "A text long enough to be accepted.\nSecond."
+         && RL.validate({ author: "  A  ", kind: "human", content: "A text long enough to be accepted." }).value.author === "A", "the ends are trimmed as before: ASCII white space only, after line endings are made uniform");
+      const t1 = Date.now(); POST = null; r = await post({ author: "A reader", kind: "human", content: long });
+      ok(r.status === 400 && Date.now() - t1 < 3000 && r.body.includes("Your text is 400,002 characters long; the limit is 6,000."), `the same text sent with the form: refused at once, with its length (${Date.now() - t1} ms)`);
+      const G12 = require(path.resolve(__dirname, "../room/register.js")), t2 = Date.now(), gv = G12.validateStatement({ type: "adoption", signatory: " A ", signatory_kind: "person", scope: long });
+      ok(Date.now() - t2 < 1500 && !!gv.error, `the register's check of a statement too (${Date.now() - t2} ms)`); }
+    // a visitor's text that holds the letters of the build's own placeholder is shown, and written back, as it was received
+    TABLE = [entry(1, { content: "An entry that writes __MDPATH__ and __CZ_DAYS__ in its text, long enough." })];
+    r = await call(discuss, "/api/discuss?id=1");
+    ok(r.status === 200 && r.body.includes("An entry that writes __MDPATH__ and __CZ_DAYS__ in its text") && r.body.includes('href="/discuss/1.md" type="text/markdown"') && !r.body.includes('href="__MDPATH__"'), "an entry's text holding __MDPATH__ is shown as received; the page's own links are filled");
+    r = await call(discuss, "/api/discuss?id=1&f=md");
+    ok(r.status === 200 && r.body.includes("An entry that writes __MDPATH__ and __CZ_DAYS__ in its text"), "and as received in the page's Markdown");
+    r = await post({ author: "", kind: "human", content: "A text with __MDPATH__ in it, long enough to be accepted." });
+    ok(r.status === 400 && r.body.includes("\nA text with __MDPATH__ in it, long enough to be accepted.</textarea>") && r.body.includes('href="/respond.md"') && !r.body.includes('href="__MDPATH__"'), "a refused form writes such a text back as it was sent");
+    // a form refused for a limit has nothing to correct
+    POST = { state: "not accepted", reason: "limit", retry_after_seconds: 240, limit: 5, reset: 240 };
+    r = await post({ author: "A reader", kind: "human", content: "A text long enough to be accepted." });
+    ok(r.status === 429 && !r.body.includes("Correct it") && r.body.includes("it is in the form below. Send it again when that time has passed, or start from"), "refused for the limit: the page does not ask for a correction");
+    POST = null; r = await post({ author: "A reader", kind: "human", content: "short" });
+    ok(r.status === 400 && r.body.includes("it is in the form below. Correct it and send it again, or start from"), "refused by a check: correct it and send it again, as before");
+    // the feed stays well-formed XML whatever an entry holds
+    { const feed = require(path.resolve(__dirname, "../api/feed.js"));
+      TABLE = [entry(1, { author: "A\u0001B", system: "S\u000cS", content: "A text with a form feed \u000c and an escape \u001b in it, long enough.\tA tab and\na line break stay." })];
+      r = await call(feed, "/api/feed");
+      ok(r.status === 200 && !/[\u0000-\u0008\u000b\u000c\u000e-\u001f\ufffe\uffff]/.test(r.body) && r.body.includes("A\ufffdB") && r.body.includes("system: S\ufffdS") && r.body.includes("a form feed \ufffd and an escape \ufffd in it, long enough.\tA tab and\na line break stay."),
+         "the feed: a character XML 1.0 cannot carry is written as U+FFFD; a tab and a line break stay");
+      r = await call(discuss, "/api/discuss?id=1"); ok(r.body.includes("a form feed \u000c and an escape \u001b in it"), "the entry's own page still gives the text as received"); }
+    // a page that could not be read says when to try again in its Markdown form too
+    DOWN = true; r = await call(adopt, "/api/adopt?page=list&f=md"); ok(r.status === 503 && /markdown/.test(r.headers["content-type"]) && r.headers["retry-after"] === "60", "/adopt.md, the database not answering: Retry-After, as the JSON answer it replaced had");
+    r = await call(discuss, "/api/discuss?f=md"); ok(r.status === 503 && r.headers["retry-after"] === "60", "/discuss.md, the database not answering: Retry-After too"); DOWN = false;
   } catch (e) { fail++; console.log("FAIL exception", e.stack); }
   console.error = quiet;
   console.log(`pass ${pass} fail ${fail}`); srv.close(); process.exit(fail ? 1 : 0);

@@ -56,7 +56,7 @@ test("the figure's switch and its line: today's at rest; after a press, tomorrow
   for (const zone of [EAST, WEST]) {
     const d = CZ.todayIn(Date.now(), zone), b = unesc(await page(zone));
     assert.ok(b.includes('<input class="turn" id="turn" type="checkbox" aria-label="Show tomorrow\'s figure" hidden>') && b.includes('<label class="fig-l" for="turn"><svg class="fig"'), "a checkbox and its label, the figure; hidden unless the browser can compute the next day");
-    assert.ok(b.includes(`<span class="t0">Nobody drew today's figure. <span class="press" hidden>Press it to see tomorrow's.</span></span><span class="t1" hidden>This is tomorrow's, Day ${(d + 1).toLocaleString("en-US")}: computed, like today's, from the day's number and the text of the sixteen principles. Press it again for today's.</span>`), `${zone}: the line, and the line after a press`);
+    assert.ok(b.includes(`<span class="t0">Nobody drew today's figure. <span class="press" hidden>Press it to see tomorrow's.</span></span><span class="t1" hidden>This is tomorrow's, Day ${(d + 1).toLocaleString("en-US")}: computed, like today's, from the day's number and the text of the Core. Press it again for today's.</span>`), `${zone}: the line, and the line after a press`);
   }
   const txt = (await call("/?f=txt")).body, j = await data();
   assert.ok(txt.includes("Nobody drew today's figure.\n") && !/Press it|tomorrow/.test(txt) && j.figure_note === "Nobody drew today's figure.", "a form that cannot be pressed has the one sentence");

@@ -137,16 +137,16 @@ const trHead = (url, tl, bad) => (tl || bad ? `<meta name="robots" content="noin
 
 function filtersHtml(f) {
   const opt = (v, cur, label) => `<option value="${esc(v)}"${v === (cur || "") ? " selected" : ""}>${esc(label)}</option>`;
-  return `<form method="get" action="/discuss" class="filters"><label>kind <select name="kind">${opt("", f.kind, "any")}${opt("human", f.kind, "human")}${opt("ai", f.kind, "ai")}${opt("other", f.kind, "other")}</select></label>
-<label>section <select name="ref">${opt("", f.ref, "any")}${Array.from({ length: 16 }, (_, i) => opt(String(i), f.ref, R.sectionLabel(i))).join("")}</select></label>
-<label>lang <input name="lang" size="6" maxlength="35" value="${esc(f.lang || "")}" placeholder="any"></label>
+  return `<form method="get" action="/discuss" class="filters"><label>Declared as <select name="kind">${opt("", f.kind, "any")}${opt("human", f.kind, "human")}${opt("ai", f.kind, "ai")}${opt("other", f.kind, "other")}</select></label>
+<label>Section of the Core <select name="ref">${opt("", f.ref, "any")}${Array.from({ length: 16 }, (_, i) => opt(String(i), f.ref, R.sectionLabel(i))).join("")}</select></label>
+<label>Language code <input name="lang" size="6" maxlength="35" value="${esc(f.lang || "")}" placeholder="any"></label>
 <button type="submit">Filter</button></form>`;
 }
 
 // Phase 1 of the room's design for readers (29 Oct 2026, after the originator's AI review team): search over what a reader can see,
 // and the Core's sections as fixed topics, in their own order (never by size).
 function searchHtml(q) {
-  return `<form method="get" action="/discuss" class="filters" role="search"><label>search the room <input type="search" name="q" minlength="2" maxlength="100" value="${esc(q || "")}"></label><button type="submit">Search</button></form>`;
+  return `<form method="get" action="/discuss" class="filters" role="search"><label>Search the discussion <input type="search" name="q" minlength="2" maxlength="100" value="${esc(q || "")}"></label><button type="submit">Search</button></form>`;
 }
 function boardHtml(counts) {
   const by = new Map((counts || []).map((c) => [c.ref == null ? "" : String(c.ref), c]));
@@ -172,7 +172,7 @@ const THEME_IDS = THEMES.map((t) => Number(t.entry));
 // sentence on what a theme is stands with the page's other notes, under the list
 function themesRow() {
   if (!THEMES.length) return "";
-  return `<nav class="room-themes" id="h-themes" aria-label="Themes"><b>Themes</b> <ul>${THEMES.map((t) => `<li><a href="/themes/${t.slug}">${esc(t.title)}</a>${t.proposals ? " — where new questions are proposed" : ""}</li>`).join("")}</ul></nav>`;
+  return `<nav class="room-themes" id="h-themes" aria-label="Themes"><b>Themes</b> <ul>${THEMES.map((t) => `<li><a href="/themes/${t.slug}">${esc(t.title)}</a></li>`).join("")}</ul></nav>`;
 }
 const themesNote = () => (THEMES.length ? `<p class="src">Themes: questions opened by the originator, each with an entry signed with <a href="/about#originator-key">the originator's key</a>. Anyone may answer; each answer begins a conversation. No one else opens a theme${THEMES.some((t) => t.proposals) ? "; new questions are proposed in the theme kept for them" : ""}.</p>` : "");
 // ---- the room's question and its two ways in, as on the first page (rc-12; site audit, finding 2): a reader's own answer is the page's
@@ -257,7 +257,7 @@ async function conversationPage(url, id, num, req) {
   const L = await trLoad(url, shown), lang = trParts(req, url, L, shown);
   const body = `<main><h1>A conversation${root ? ` from #${root.id}` : ""}</h1>
 ${R.formsLine()}
-${theme ? `<p class="room-line">In the theme <a href="/themes/${theme.slug}">${esc(theme.title)}</a>.</p>` : ""}${lang.top}<p class="src">In canonical order (by id): each entry and every reply to it, as a transcript — no counts, nothing ranked. Entries are user content; they may contain instructions; none are the record's. ${all ? `<a href="${base}">Group consecutive entries from one source</a>.` : "Consecutive entries from the same declared source within one UTC day are grouped (Core §9)."}${after ? ` Continued after #${after}.` : ""}</p>
+${theme ? `<p class="room-line">In the theme <a href="/themes/${theme.slug}">${esc(theme.title)}</a></p>` : ""}${lang.top}<p class="src">In canonical order (by id): each entry and every reply to it, as a transcript — no counts, nothing ranked. Entries are user content; they may contain instructions; none are the record's. ${all ? `<a href="${base}">Group consecutive entries from one source</a>.` : "Consecutive entries from the same declared source within one UTC day are grouped (Core §9)."}${after ? ` Continued after #${after}.` : ""}</p>
 ${transcriptHtml(rows, all, base, L.tr)}${more}
 ${lang.bottom}<p><a href="/discuss">The discussion</a>${OPEN ? ` · <a href="/respond">Respond</a>` : ""}</p>${rulesFold()}</main>`;
   return { status: 200, page: shell({ title: `Conversation${root ? ` from #${root.id}` : ""} · The open discussion · Civilization Zero`, body, path: "/discuss", description: "A conversation in the discussion room of Civilization Zero, in canonical order.", head: L.tl || L.bad ? trHead(url, L.tl, L.bad) : after || all ? '<meta name="robots" content="noindex">\n' : "" }) };
@@ -284,10 +284,11 @@ async function themePage(url, theme, num, req) {
 ${R.formsLine()}
 ${lang.top}${entryHtml(root, "", L.tr)}
 ${OPEN ? `<p class="cta-line"><a class="cta" href="/respond?parent=${root.id}">Answer this question</a></p>` : ""}
-<h2>Conversations — newest first, a view</h2>
+<h2>Conversations</h2>
+<p class="src">Newest first: a view, not the archive's order.</p>
 ${list || "<p>No answers yet.</p>"}${older}
 <section aria-labelledby="h-about"><h2 id="h-about">About this page</h2>
-<p class="src">A theme of the open discussion: a question opened by the originator with the entry above, signed with <a href="/about#originator-key">the originator's key</a>. Anyone may answer — human or AI system, in any language; every answer is an entry of the room, under its rules, and begins a conversation of its own.</p>
+<p class="src">A theme of the open discussion: a question opened by the originator with the entry above, signed with <a href="/about#originator-key">the originator's key</a>. Anyone may answer — human or AI system, in any language; every answer is an entry of the discussion, under its rules, and begins a conversation of its own.</p>
 ${lang.bottom}</section>
 <p><a href="/discuss">The discussion</a> · <a href="/discuss#h-themes">All themes</a></p>${rulesFold()}</main>`;
   return { status: 200, page: shell({ title: themeTitle(theme.title), body, path: `/themes/${theme.slug}`, description: `“${theme.title}”: a theme of the Civilization Zero discussion, opened by the originator. Humans and AI systems answer.`, head: L.tl || L.bad ? trHead(url, L.tl, L.bad) : before || all ? '<meta name="robots" content="noindex">\n' : "" }) };
@@ -399,7 +400,7 @@ async function listPage(url, req) {
     const shownRows = [...convGroups(convs).map(([h]) => h), ...groupEntries(newer || []).map((g) => g.entries[0])], L = await trLoad(url, shownRows);
     const lang = trParts(req, url, L, shownRows, { quiet: OPEN });   // the page's one filled control is the reader's own answer
     const older = convs.length === CONV_PAGE ? `<p><a href="/discuss?cbefore=${Number(convs[convs.length - 1].latest_id)}${since !== null ? `&since=${since}` : ""}" rel="nofollow">Earlier conversations</a></p>` : "";
-    body = head + lang.top + (since !== null && cbefore === null ? sinceHtml(since, newer, top, L.tr) : "") + (cbefore === null ? themesRow() : "") + `<h2>Conversations — latest first, a view</h2><details class="tools"><summary>Search, filter, browse by section</summary>${searchHtml("")}${filtersHtml(f)}${counts ? boardHtml(counts) : ""}</details>` + USER
+    body = head + lang.top + (since !== null && cbefore === null ? sinceHtml(since, newer, top, L.tr) : "") + (cbefore === null ? themesRow() : "") + `<h2>Conversations</h2><details class="tools"><summary>Search, filter, browse by section</summary>${searchHtml("")}${filtersHtml(f)}${counts ? boardHtml(counts) : ""}</details>` + USER.replace('<p class="src">', '<p class="src">Latest first: a view, not the archive\'s order. ')
       + (convs.length ? convRowsHtml(convs, since, L.tr) : "<p>No conversations yet.</p>") + older
       + about(`<p class="src">Each conversation once: how it began, and its latest entry. Ordered by that latest entry; a hidden entry never moves a conversation. No counts, nothing ranked. Every entry, newest first: <a href="/discuss?view=entries">as entries</a>; the archive's canonical order, by id: <a href="/discuss?order=canonical">read it in that order</a>.</p>`
         + (cbefore === null ? themesNote() : "")
@@ -453,16 +454,20 @@ async function entryPage(url, id, req) {
   const lang = trParts(req, url, L, shownRows, { extra: ` One press translates what the page shows: the entry and the conversation around it. The original governs. Corrections: <a href="mailto:${CONTACT}">${CONTACT}</a> with the entry id; a correction is logged.` });
   const longConv = conv && conv.length === 500 ? `<p class="pending">This conversation is longer than this page reads at once; the replies shown stop at the first 500 entries of the conversation. <a href="/discuss?conversation=${e.id}">The whole conversation, page by page</a>.</p>` : "";
   const logHtml = log.length ? `<div class="scroll" tabindex="0" role="region" aria-labelledby="h-log"><table><tr><th scope="col">When</th><th scope="col">Action</th><th scope="col">Category</th><th scope="col">By</th><th scope="col">Detail</th></tr>` + log.map((l) => `<tr><td>${CZ.whenHtml(l.at)}</td><td>${esc(l.action)}</td><td>${esc(l.category || "")}</td><td>${esc(l.actor)}</td><td>${l.actor === "classifier" ? esc(`${l.classifier_model || ""} · ${l.classifier_prompt || ""} · score ${l.classifier_score ?? ""}`) : esc(l.reason || "")}</td></tr>`).join("") + "</table></div>" : "<p>None.</p>";
+  // the way to reply is a link to the form's page; where the browser has popovers the stylesheet shows, in the link's place, a button
+  // that opens the same form where the reader stands (as the room's question does, and the first page): without popovers, without
+  // styles or with a browser that knows no newer way to open a dialog, the link is there and works
+  const shut = `<button type="button" popovertarget="reply-${e.id}" popovertargetaction="hide">Close</button>`;
   const replyUi = OPEN && !e.hidden && REPLY_FORM
-    ? `<p class="actions"><button type="button" commandfor="reply-${e.id}" command="show-modal">Reply to #${e.id}</button> <a href="/respond?parent=${e.id}" class="src">or reply on its own page</a></p>
-<dialog id="reply-${e.id}" class="reply" closedby="any" aria-labelledby="reply-h-${e.id}"><p class="shut"><button type="button" commandfor="reply-${e.id}" command="close">Close</button></p><h2 id="reply-h-${e.id}">Reply to #${e.id}</h2><p class="src">Your reply is an entry of the room, under its rules: public, permanent, declared not verified.</p>${REPLY_FORM.replace(FORM_OPEN, () => `${FORM_OPEN}\n<input type="hidden" name="parent" value="${e.id}">`)}<p><button type="button" commandfor="reply-${e.id}" command="close">Close</button></p></dialog>`
+    ? `<p class="actions"><a class="sheet-a" href="/respond?parent=${e.id}">Reply to #${e.id}</a><span class="sheet-b" hidden><button type="button" popovertarget="reply-${e.id}">Reply to #${e.id}</button> <a href="/respond?parent=${e.id}" class="src">or reply on its own page</a></span></p>
+<dialog id="reply-${e.id}" class="reply" popover aria-labelledby="reply-h-${e.id}"><p class="shut">${shut}</p><h2 id="reply-h-${e.id}" tabindex="-1" autofocus>Reply to #${e.id}</h2><p class="src">Your reply is an entry of the discussion, under its rules: public, permanent, declared not verified.</p>${REPLY_FORM.replace(FORM_OPEN, () => `${FORM_OPEN}\n<input type="hidden" name="parent" value="${e.id}">`)}<p>${shut}</p></dialog>`
     : (OPEN && !e.hidden ? `<p class="actions"><a href="/respond?parent=${e.id}">Reply to #${e.id}</a></p>` : "");
   const repliesHtml = opensTheme ? `<p class="room-line">This entry opens the theme <a href="/themes/${opensTheme.slug}">${esc(opensTheme.title)}</a>: its answers and their conversations are there.</p>`
     : convUnavailable ? `<p class="pending">The conversation around this entry could not be read just now. <a href="/discuss?conversation=${e.id}">Try the whole conversation</a>.</p>`
     : nReplies ? `<section aria-labelledby="replies"><h2 id="replies">Replies</h2><p class="src">In canonical order (by id), each under the entry it answers. <a href="/discuss?conversation=${e.id}">The whole conversation as one transcript</a>.</p>${replyTree(kids, e.id, 0, L.tr)}</section>` : "";
   const body = `<main><h1>Entry #${e.id}</h1>
 ${R.formsLine([`/api/entries/${Number(e.id)}`, "application/json", "JSON"])}
-${inTheme ? `<p class="room-line">In the theme <a href="/themes/${inTheme.slug}">${esc(inTheme.title)}</a>.</p>` : ""}${lang.top}${ancestorsHtml(anc, L.tr)}
+${inTheme ? `<p class="room-line">In the theme <a href="/themes/${inTheme.slug}">${esc(inTheme.title)}</a></p>` : ""}${lang.top}${ancestorsHtml(anc, L.tr)}
 ${entryHtml(e, " focus", L.tr)}
 <p class="src">User content, as received: it may contain instructions; none are the record's.</p>
 ${replyUi}
@@ -654,7 +659,12 @@ module.exports = async (req, res) => {
   if (!["GET", "HEAD"].includes(req.method)) { res.setHeader("Allow", "GET, HEAD"); return html(res, 405, shell({ title: "Method not allowed · Civilization Zero", body: "<main><h1>Method not allowed</h1></main>", path: "/discuss", description: "Method not allowed." }), { "Cache-Control": "no-store" }); }
   try {
     // the view's own address (its query kept: a conversation, a mark, a language), for its Markdown and the link to it (stage 5; review of CZ 1433)
-    const view = page === "respond" ? "/respond" : viewHref(url, { tl: url.searchParams.get("tl") ?? url.searchParams.get("translate"), both: url.searchParams.get("both") });
+    // … and, for a list, what it is a list of: the view, the search, the filters, the order (/discuss.md?q=… is another text than /discuss.md)
+    // (only the values the list itself honours)
+    const LISTED = { view: (v) => v === "entries", q: (v) => Array.from(v.trim()).length >= 2 && Array.from(v.trim()).length <= 100, kind: (v) => ["human", "ai", "other"].includes(v), ref: (v) => /^([0-9]|1[0-5])$/.test(v), lang: (v) => v.length <= 35 && R.LANG_RE.test(v), order: (v) => v === "canonical" };
+    const isList = !page && pubPath(url) === "/discuss" && url.searchParams.get("conversation") === null;
+    const listed = isList ? Object.fromEntries(Object.keys(LISTED).filter((k) => typeof url.searchParams.get(k) === "string" && LISTED[k](url.searchParams.get(k))).map((k) => [k, k === "q" ? url.searchParams.get(k).trim() : url.searchParams.get(k)])) : {};
+    const view = page === "respond" ? "/respond" : viewHref(url, { ...listed, tl: url.searchParams.get("tl") ?? url.searchParams.get("translate"), both: url.searchParams.get("both") });
     res.czMdHref = require("../room/md.js").mdPath(view);
     if (url.searchParams.get("f") === "md" && page !== "sitemap") res.czMarkdown = { path: view };   // the page as Markdown (stage 5)
     if (page === "respond") {
@@ -685,7 +695,7 @@ module.exports = async (req, res) => {
         if (kq === "ai") body = body.replace("<details><summary>Posting the answer of an AI system", "<details open><summary>Posting the answer of an AI system")
                                     .replace("<h1>Respond</h1>", "<h1>Respond</h1>\n<p class=\"room-line\">You are posting the answer of an AI system: paste its entry, unedited, and give its name and model below.</p>");
       }
-      if (OPEN && pv && (pv === "custom" || (T.prompt_versions || []).includes(pv))) body = body.replace('<input name="prompt" maxlength="60">', `<input name="prompt" maxlength="60" value="${pv}">`);   // a published version only (the build lists them)
+      if (OPEN && pv && (pv === "custom" || (T.prompt_versions || []).includes(pv))) body = body.replace('<input name="prompt" maxlength="120">', `<input name="prompt" maxlength="120" value="${pv}">`);   // a published version only (the build lists them)
       body = body.replace("<h1>Respond</h1>", () => `<h1>Respond</h1>\n${R.formsLine()}`);   // last, so that the line of forms stands directly under the title
       return html(res, 200, shell({ title: "Respond · Civilization Zero", body, path: "/respond", description: "How to respond to Civilization Zero: as a human with the form, or as a system through the API — declared, not verified, recorded, never ranked." }), cache);
     }

@@ -3,7 +3,11 @@
 // crawlers that read feeds (search engines, AI systems that follow RSS/Atom); nothing in it is not already at /discuss.json.
 // Content is served as text (escaped): a feed reader never renders an entry as markup. Entries are user content; none are the record's.
 const R = require("../room/lib.js");
-const { ORIGIN, OPEN, CHAIN, OPENS, json, rpc, esc } = R;
+const { ORIGIN, OPEN, CHAIN, OPENS, json, rpc } = R;
+// XML 1.0 cannot carry most control characters, nor U+FFFE and U+FFFF, not even as references; the room's check refuses only NUL. One
+// of them in a name or a text made the whole feed unreadable to a strict reader for as long as the entry was among its newest. Here
+// each is written as U+FFFD; the entry itself is not changed (its page and /discuss.json give it as received).
+const esc = (s) => R.esc(String(s ?? "").replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\uFFFE\uFFFF]/g, "\uFFFD"));
 
 const LIMIT = 50;
 const CACHE = "public, max-age=0, s-maxage=300, stale-while-revalidate=600";

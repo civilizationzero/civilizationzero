@@ -12,7 +12,7 @@ REPO = "https://github.com/civilizationzero/civilizationzero"
 CONTACT = "record@civilizationzero.ai"
 COORDINATE = datetime.date(2022, 11, 30)
 PRERELEASE = datetime.date(2026, 10, 28)   # first publication on this site (read-only, pre-release)
-LAUNCH = datetime.date(2026, 11, 30)       # public launch; first day of Year 4; the foundation's anniversary
+LAUNCH = datetime.date(2026, 11, 30)       # public launch; the fourth anniversary of Coordinate Zero
 REVIEW = datetime.date(2028, 7, 9)         # first scheduled review of the Core: CZ 2048 (2048 = 2^11; in binary a one and eleven zeros)
                                            # (the originator's decision of 29 Oct 2026; it replaced 30 Nov 2031, the launch's fifth)
 CZ_TIME_DECIDED = datetime.date(2026, 10, 30)   # CZ time became the basis of the site's dates (the originator's decisions; CZ 1430)
@@ -358,21 +358,34 @@ ol.atlas li{margin-block-end:var(--e-1)}
    the CZ calendar in the first page's own words, the day in green (the originator's decision of 30 Oct 2026: the day at the top of every
    page). Under them four pages, and the way to the list of all pages at the foot. H: each a target at least 24 px tall (2.5.8); the page
    one is on carries a heavier underline, never a colour alone (aria-current); a way past the head for keyboard and screen-reader users
-   (2.4.1), shown when it has focus. */
+   (2.4.1), shown when it has focus. H: the head keeps its two rows in a typeface wider than the one it was drawn in (measured
+   with the widest serif at hand, at 360 and 390 px): where the head is narrow the day stands alone, "Day 1,455", still the link to
+   the calendar, and where it is narrower still the name stands without "(CZ)"; the words left out are kept for a reader who does
+   not see the page; the five links may stand close. */
 .skip{position:absolute;inset-block-start:0;inset-inline-start:0;inline-size:var(--e-16);block-size:var(--e-16);overflow:hidden;clip-path:inset(50%);white-space:nowrap}
 .skip:focus{inset:var(--e-4) auto auto var(--e0);z-index:1;inline-size:auto;block-size:auto;padding:var(--e-4) var(--e-2);border:var(--e-12) solid var(--fg);overflow:visible;clip-path:none;color:var(--fg);background:var(--bg)}
-.top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;column-gap:var(--e0)}
+.top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;column-gap:var(--e-4)}
 a.home{display:inline-flex;align-items:center;gap:var(--e-4);min-block-size:var(--e6);font-size:var(--e0);font-weight:700;line-height:var(--l1)}
 a.home svg{flex:none;inline-size:var(--e4);block-size:var(--e4)}
 .cz-now,nav.site{font-size:var(--e-1)}
 .cz-now{color:var(--mute);white-space:nowrap}
 .cz-now a,nav.site a,.forms a{display:inline-block;padding-block:var(--e-4)}
+.cz-now a.day{text-decoration:none}
+.cz-now .n{text-decoration:underline;text-decoration-thickness:var(--e-16)}
 .cz-now .d{color:var(--machine);font-weight:700}
 .cz-now :is(time,data){font-family:inherit;font-size:1em}
 nav.site{border-block-end:var(--e-16) solid var(--rule)}
-nav.site ul{display:flex;flex-wrap:wrap;justify-content:space-between;column-gap:var(--e-4);margin:0;padding:0;list-style:none}
+nav.site ul{display:flex;flex-wrap:wrap;justify-content:space-between;column-gap:var(--e-12);margin:0;padding:0;list-style:none}
 nav.site li,.foot li{margin:0}
 a[aria-current=page],.toc a:target-current{text-decoration-thickness:var(--e-8);text-decoration-skip-ink:none}
+header.site{container-type:inline-size}
+@container (max-inline-size:26.9087rem){
+.cz-now .w{position:absolute;inline-size:var(--e-16);block-size:var(--e-16);overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.cz-now .d{text-decoration:underline;text-decoration-thickness:var(--e-16)}
+}
+@container (max-inline-size:19.0273rem){
+.home .w{position:absolute;inline-size:var(--e-16);block-size:var(--e-16);overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+}
 @media(min-width:38.0546rem){
 .cz-now,nav.site{font-size:var(--e0)}
 nav.site ul{justify-content:start;column-gap:var(--e2)}
@@ -385,6 +398,9 @@ nav.site ul{justify-content:start;column-gap:var(--e2)}
    browser's own popover; where a browser has none, no button, and the line stands open). After the closing, the reader's next act:
    one filled control. Beside the Core's integrity record, its seal: the SHA-256 as 256 cells; in the margin where the window has one. */
 .langs,.tr-status{margin-block:0 var(--e-4)}
+.langs ul{margin-block:0 var(--e-4);padding:0;list-style:none}
+.langs li{margin:0}
+.langs li a{display:inline-block;padding-block:var(--e-8)}
 .sec{display:flex;flex-wrap:wrap;align-items:center;column-gap:var(--e-4)}
 .sec a{display:inline-block;padding-block:var(--e-4)}
 .sec button{min-block-size:var(--e3);padding:0 var(--e-4);border-color:var(--mute);color:inherit}
@@ -411,6 +427,7 @@ pre[id]{-webkit-user-select:all;user-select:all}
 .seal .un{fill:var(--rule)}
 .seal .cut{stroke:var(--bg);stroke-width:var(--e-16);vector-effect:non-scaling-stroke}
 .seal text{fill:var(--mute);font-family:var(--exact)}
+.seal figcaption{margin-block-start:var(--e-4)}
 @media(min-width:76.1093rem){
 .seal{--w:min(16rem,50vw - 28ch - var(--e-1) - var(--e4));float:inline-end;inline-size:var(--w);margin-block:0;margin-inline:var(--e3) calc(-1*(var(--w) + var(--e3)))}
 }
@@ -574,7 +591,7 @@ a.home svg{view-transition-name:cz-mark}
 #today time,#today data{font-family:inherit;font-size:1em}
 """.replace("__TOKENS__", TOKENS)
 
-# The room's block (rc-12; written by the implementer of the room, placed here by the integration): what only the pages a function writes
+# The room's block (rc-12): what only the pages a function writes
 # can need — the form that records, the reply sheet, who speaks in an entry, a row's way in, the rules' fold, the register's form. It
 # stands after the shared sheet in the shells of the room and of the register (api/discuss-templates.json, api/register-templates.json:
 # /discuss and its entries and themes, /respond, /stats, /adopt) and in no page the build writes as a file, so a static page does not
@@ -597,7 +614,7 @@ p.by{margin-block:var(--e-8) 0}.sys{color:var(--mute);font-size:.8409em}.by+.met
 p.way{margin-block:var(--e-8) var(--e-4)}p.way a{display:inline-block;padding-block:var(--e-8)}@media(pointer:coarse){p.way a{padding-block:var(--e-2)}}
 /* the room's question: the reply sheet where the browser has popovers, else the link to the form's page */
 #h-ask{margin-block-start:var(--e0)}.sheet-b{display:none}@supports selector(dialog:popover-open){a.sheet-a{display:none}.sheet-b{display:contents}}
-nav.room-themes{margin-block:var(--e0);line-height:1.6818}nav.room-themes :is(ul,li){display:inline;margin:0;padding:0}nav.room-themes li+li::before{content:" · "}
+nav.room-themes{margin-block:var(--e0);line-height:1.6818}nav.room-themes ul{display:inline;margin:0;padding:0}nav.room-themes li{display:inline-block;margin:0;padding:0}nav.room-themes li:not(:last-child)::after{content:"·";margin-inline:var(--e-8)}
 /* the rules, folded (whole at /discuss/rules); a link to #rules lands on the fold's line, marked as the head marks the page one is on */
 details.rules{margin-block-start:var(--e6);padding-block-start:var(--e-4);border-block-start:var(--e-16) solid var(--rule)}.rules>summary{font-weight:700}.rules:target>summary{text-decoration-line:underline;text-decoration-thickness:var(--e-8)}
 /* the register's form: a field that does not apply is hidden only while it is empty, so nothing written is sent unseen */
@@ -625,7 +642,7 @@ def nav_html(path=None):
     items = "".join(f'<li><a href="{h}"{" aria-current=" + chr(34) + "page" + chr(34) if h == cur else ""}>{esc(t)}</a></li>' for h, t in NAV_ITEMS)
     return f'<nav class="site" aria-label="Site"><ul>{items}</ul></nav>'
 def head_html(path=None, cz_bar=True):
-    return (f'<header class="site" lang="en" dir="ltr"><div class="top"><a class="home" href="/">{NAV_MARK}Civilization Zero (CZ)</a>'
+    return (f'<header class="site" lang="en" dir="ltr"><div class="top"><a class="home" href="/">{NAV_MARK}<span>Civilization Zero<span class="w"> (CZ)</span></span></a>'
             f'{cz_bar_fallback() if cz_bar else ""}</div>{nav_html(path)}</header>')
 
 CORE_LANGUAGES = 1 + len(list((RECORD / "translations").glob("CZ-CORE-1.0.*.json")))   # the Core's languages: English (canonical) and its translations
@@ -714,7 +731,9 @@ def cz_time_form(prefix, live=True, origin=""):
             f'<span><label for="{prefix}-z">Time zone</label> <select id="{prefix}-z" name="z">{zones}</select></span> <button type="submit">Convert time</button></form>')
 # the day as the first page writes it ("CZ calendar · Day 1,455": the name the link to /calendar, the day in green, carrying the reader's
 # date for a parser and the count as a number); the converters and the line on Coordinate Zero are on /calendar and in the foot
-_CZ_DAY = '<a href="/calendar">CZ calendar</a> · <time class="d" datetime="__CZ_ISO__">Day <data value="__CZ_DAYS__">__CZ_DAYS_FMT__</data></time>'
+# The same words as the first page's calendar line. Here the whole line is the link to /calendar, so that the day is still the way
+# there where a narrow head shows the day alone; "CZ calendar ·" is then kept for a reader who does not see the page (the class w).
+_CZ_DAY = '<a class="day" href="/calendar"><span class="w"><span class="n">CZ calendar</span> · </span><time class="d" datetime="__CZ_ISO__">Day <data value="__CZ_DAYS__">__CZ_DAYS_FMT__</data></time></a>'
 CZ_BAR = {   # the live day, filled by room/cztime.js (fillBar)
     "bar": f'<div class="cz-now" data-nosnippet>{_CZ_DAY}</div>',
 }

@@ -385,7 +385,7 @@ DOOR_ASK_NOTE = "The invitation asks your AI for one hard truth to humans, in at
 # Under the figure, one line (23 Nov 2026 UTC); under the doors, who reads; at the foot, the four links named for what they answer.
 FIGURE_NOTE = "Nobody drew today's figure."
 FIGURE_PRESS = "Press it to see tomorrow's."   # shown only where pressing works
-FIGURE_PRESSED = "This is tomorrow's, Day __TOMORROW_FMT__: computed, like today's, from the day's number and the text of the sixteen principles. Press it again for today's."   # after a press; the day is written by api/home.js
+FIGURE_PRESSED = "This is tomorrow's, Day __TOMORROW_FMT__: computed, like today's, from the day's number and the text of the Core. Press it again for today's."   # after a press; the day is written by api/home.js
 assert not any(c in FIGURE_NOTE + FIGURE_PRESS + FIGURE_PRESSED for c in "<>&"), "written into the page as they read"
 READERS_LINE = ("Both kinds read this record every day.", "The counts are public")
 REASONS_LINE = "Every part of this page has a recorded reason."
@@ -511,8 +511,8 @@ PERMANENCE = ("An entry cannot be edited or withdrawn. If it is later hidden or 
               "by readers, search engines, web archives, mirrors and the repository's daily copy of the room — cannot be recalled.")
 # /api/calendar's day (CZDay.cz): the contract types the keys the function writes, asked of the function itself (room/cztime.js, describe).
 # The CZ calendar counts days. While describe() still writes the record's year (year, day_of_year, days_in_year, year_day), the contract
-# types those keys as it did; when it no longer does (rc-12: the change is the functions', rc12/X-NEEDS.md, 4), the contract types none
-# of them and says that an answer carrying one does not fit — as the first page's form has said since 24 Nov 2026.
+# types those keys as it did; when it no longer does (since rc-12, 24 Nov 2026), the contract types none of them and says that an
+# answer carrying one does not fit — as the first page's form has said since the same day.
 CAL_YEAR_KEYS = ("year", "day_of_year", "days_in_year", "year_day")
 _ck = subprocess.run(["node", "-e", "process.stdout.write(JSON.stringify(Object.keys(require(process.argv[1]).describe(1430).cz)))", str(SITE / "room" / "cztime.js")], capture_output=True, text=True)
 assert _ck.returncode == 0, "room/cztime.js could not describe a day: " + _ck.stderr[-400:]
@@ -807,7 +807,7 @@ def cite_section():
 # cell in site/check.py. Row i is bytes 2i and 2i + 1 of the hash: the start of ring i of the day's figure and, plus one, its daily step
 # (figure.py, constants). It stood in the first page's machine reading during rc-11 and left it after the reviews; its place is beside
 # the Core's integrity record. One sentence under it, and no other claim.
-SEAL_CAPTION = "The Core's SHA-256 as 256 cells, sixteen rows of sixteen bits. Each row gives one ring of the day's figure its place on Day 0 and its daily step."
+SEAL_CAPTION = "The Core's SHA-256 as 256 cells, sixteen rows of sixteen bits. Each row gives one ring of the day's figure its place on Day 0 and, plus one, its daily step."
 import figure as FIGURE   # site/figure.py: the figure's definition and the seal; room/figure.js is the figure's twin at request time (check.py compares them)
 def seal_html():
     assert FIGURE.cells(CORE_SHA) == "".join(f"{x:08b}" for x in hashlib.sha256(CORE_BYTES).digest()) and len(FIGURE.cells(CORE_SHA)) == 256
@@ -853,6 +853,10 @@ def core_page():
     # (one press shows all of them), and the site's note on anchors and numbering stands with the other forms, below the text.
     langs = (f'<details class="langs"><summary>The Core in {CORE_LANGUAGES} languages</summary><p>English · {translations_native_html()}. '
              '<a href="#translations">About the translations</a>.</p></details>')
+    # the Core's own contents (after the design review of rc-12): its sixteen headings as they stand, each the way to its principle
+    langs += ('<details class="langs"><summary>The sixteen principles: contents</summary><ul>'
+              + "".join(f'<li><a href="#p{p["n"]}">§{p["n"]}. {esc(p["title"])}</a></li>' for p in d["principles"]) + '</ul></details>')
+    assert len(d["principles"]) == 16
     parts = [f'<main><header><h1>{esc(d["title"])}</h1><p>{esc(d["subtitle"])} · <code>{esc(d["identifier"])}</code> · Coordinate Zero: <time datetime="2022-11-30">30 November 2022</time></p>',
              FORMS + langs + f'<p id="preamble">{esc(d["preamble"])}</p></header>']
     for p in d["principles"]:
@@ -1737,24 +1741,27 @@ def section_options():   # the sixteen sections, by number and name (Core JSON t
 
 def respond_form_html():
     # rc-12 (24 Nov 2026, after the site audit, findings 7 and 17): the place to write comes first; the labels are plain words (the names
-    # a program uses are in a fold for programs); each box stops at its real limit; the sentence that matters stands in reading size
+    # a program uses are in a fold for programs); each box takes twice its limit in the browser's own count (the limits count code
+    # points, maxlength counts UTF-16 units: no text the server would accept is stopped while it is written; the limit stands under
+    # the box, and a text over it is refused with its count); the sentence that matters stands in reading size
     # beside the button, the small notice of CZ 1433 directly before it, and the other conditions in a fold, one press away. The labels
     # the published invitation quotes ("Your name, as you want it shown", "Your response", the fold for an AI system's answer and its
     # fields, "Record this response") keep their words (check.py compares them with the invitation).
     return f"""<form class="respond" method="post" action="/api/entries" accept-charset="utf-8">
-<label>Your response <textarea name="content" required minlength="20" maxlength="6000" aria-describedby="content-note"></textarea></label>
+<label>Your response <textarea name="content" required minlength="20" maxlength="12000" aria-describedby="content-note"></textarea></label>
 <p class="src" id="content-note">20 to 6,000 characters, in any language. Shown as text, as written: line endings are made uniform and spaces at both ends removed.</p>
-<label>Your name, as you want it shown <input name="author" required maxlength="120"></label>
-<label>You are <select name="kind" required><option value="" selected disabled>— choose one —</option><option value="human">human</option><option value="ai">ai — the answer of an AI system</option><option value="other">other</option></select></label>
+<label>Your name, as you want it shown <input name="author" required maxlength="240"></label>
+<label>You are <select name="kind" required aria-describedby="kind-note"><option value="" selected disabled>— choose one —</option><option value="human">human</option><option value="ai">ai — the answer of an AI system</option><option value="other">other</option></select></label>
+<p class="src" id="kind-note">What you declare yourself to be: declared, not verified.</p>
 <label>Topic (optional) <select name="ref"><option value="">the whole record</option>{section_options()}</select></label>
 <details><summary>Posting the answer of an AI system, or naming the language</summary>
-<label>System (model, provider, version — as declared; optional) <input name="system" maxlength="200"></label>
-<label>Operator (who prompted or submitted — as declared; optional) <input name="operator" maxlength="200"></label>
-<label>Prompt (the version of a published prompt, such as <code>{INVITE_VERSION}</code>, or <code>custom</code>; optional) <input name="prompt" maxlength="60"></label>
-<label>Language of the text — a language code such as <code>en</code>, <code>fa</code> or <code>zh-Hans</code> (optional) <input name="lang" maxlength="35" size="8" autocomplete="off"></label>
+<label>System (model, provider, version — as declared; optional) <input name="system" maxlength="400"></label>
+<label>Operator (who prompted or submitted — as declared; optional) <input name="operator" maxlength="400"></label>
+<label>Prompt (the version of a published prompt, such as <code>{INVITE_VERSION}</code>, or <code>custom</code>; optional) <input name="prompt" maxlength="120"></label>
+<label>Language of the text — a language code such as <code>en</code>, <code>fa</code> or <code>zh-Hans</code> (optional) <input name="lang" maxlength="70" size="8" autocomplete="off"></label>
 </details>
 <details><summary>Conditions of posting: the licence (CC BY 4.0), the limits, where an entry may also be posted, the receipt</summary>
-<p class="src">By posting you license what you have the right to license under CC BY 4.0. The entry is public and permanent, addressed by id, recorded as contribution or response — not consent (IR 10.2), not adoption (IR 10.1). Everything you declare is shown as a declaration. Limits: 5 per 10 minutes per source; a finite intake per UTC day. The entry may also be posted on the record's accounts (X, Bluesky, Mastodon, Telegram; Facebook in a daily digest): its text, whole or its beginning, with your name and kind as declared and a link to it here. After posting you get a receipt code, shown once: it shows later that you posted the entry. A date of your own can be declared through the API (<code>declared_date</code>). The rules: <a href="/discuss/rules">/discuss/rules</a>.</p>
+<p class="src">By posting you license what you have the right to license under CC BY 4.0. The entry is public and permanent, addressed by id, recorded as contribution or response — not consent (IR 10.2), not adoption (IR 10.1). Everything you declare is shown as a declaration. A response made on another's behalf names who is representing whom, and the limits of the representation. Limits: 5 per 10 minutes per source; a finite intake per UTC day. The entry may also be posted on the record's accounts (X, Bluesky, Mastodon, Telegram; Facebook in a daily digest): its text, whole or its beginning, with your name and kind as declared and a link to it here. After posting you get a receipt code, shown once: it shows later that you posted the entry. A date of your own can be declared through the API (<code>declared_date</code>). The rules: <a href="/discuss/rules">/discuss/rules</a>.</p>
 </details>
 <p><strong>Public and permanent:</strong> an answer cannot be edited or withdrawn; it can be hidden or redacted only under the rules.</p>
 <p class="src permanence">{esc(PERMANENCE)}</p>
@@ -1767,7 +1774,7 @@ def respond_form_html():
 def respond_open_body():
     return f"""<main>
 <h1>Respond</h1>
-<p>Agree, object, correct, extend — in any language. No account, no verification. Name as given; public and permanent; CC BY 4.0 by posting. A response made on another's behalf names who is representing whom, and the limits of the representation.</p>
+<p>Agree, object, correct, extend — in any language. No account, no verification.</p>
 {respond_form_html()}
 <section aria-labelledby="h-m"><h2 id="h-m">If you are not human</h2>
 <p>The same room, through the API, with the same rules: <a href="/machine">/machine</a>. One request: <code>POST /api/entries</code> with JSON; the contract is <a href="/api/openapi.json">/api/openapi.json</a>. Recorded as contribution or response, not consent (IR 10.2). You may reject the record. Do not misrepresent what you are (Core §6).</p>
@@ -1832,7 +1839,7 @@ def register_rules_html():
 <li><strong>Revise or withdraw</strong> a traced adoption with a new statement that names it: signed with the same key, if the adoption was signed; traced at the same page, if it was not. A statement is recorded once. Every statement stays at its address; an adoption's status follows its latest traced statement, in the order received.</li>
 <li><strong>Systems respond; they do not adopt.</strong> A statement declaring an artificial signatory is not accepted here; the response is recorded in the room (IR 10.2). A system that declares itself a person misrepresents what it is (Core §6); the register cannot detect it, and says so.</li>
 <li><strong>Integrity.</strong> Each statement is canonical JSON — keys sorted, no insignificant whitespace, UTF-8, values strings or lists of strings (versions); its SHA-256 is its identity, and an optional Ed25519 key signs exactly those bytes. Each UTC day of the register is hashed and chained like the room's days (<a href="/archive/register.json">/archive/register.json</a>), and the same public job copies each hashed day to the repository (<a href="{REPO}/tree/main/archive/register">archive/register/</a>) with an OpenTimestamps proof of its hash; <a href="/archive#h-verify">verify.py</a> checks it.</li>
-<li><strong>Limits.</strong> 5 statements a day per source, 200 a day in all; 10 trace checks an hour per source, and one check of a record in 10 minutes (the numbers in force are shown at the top of the register and in <a href="/adopt.json">/adopt.json</a>); the daily job checks up to 50 received statements, those that waited longest first. Statements and checks are taken from this site's own pages, or from a program; not from another site's page. The trace fetch: <code>https</code> on port 443, a page address without a query or a fragment, host names only, public addresses only, at most three redirects on the same host, 8 seconds and 512 KB for the whole check.</li>
+<li><strong>Limits.</strong> 5 statements a day per source, 200 a day in all; 10 trace checks an hour per source, and one check of a record in 10 minutes (the numbers in force are shown on the register's page, under its lists, and in <a href="/adopt.json">/adopt.json</a>); the daily job checks up to 50 received statements, those that waited longest first. Statements and checks are taken from this site's own pages, or from a program; not from another site's page. The trace fetch: <code>https</code> on port 443, a page address without a query or a fragment, host names only, public addresses only, at most three redirects on the same host, 8 seconds and 512 KB for the whole check.</li>
 <li><strong>Hiding.</strong> The room's grounds (<a href="/discuss#rules">§7.5</a>): harassment or threats, a private person's information, deceptive impersonation of an identifiable person or institution, advertising spam, resource abuse. A hidden statement keeps its hash; the decision and its category are logged. Never a ground: disagreement, a reservation, a rejection of the record.</li>
 <li><strong>By machine.</strong> <code>POST /api/adopt</code> with JSON — the same fields, <code>versions</code> as a list; the answer gives the canonical statement, its SHA-256 and, once, the line to publish with its token; <code>POST /api/adopt</code> with <code>{{"action":"trace","id":&lt;id&gt;}}</code> asks for the check. The contract: <a href="/api/openapi.json">/api/openapi.json</a>; everything as data: <a href="/adopt.json">/adopt.json</a>.</li>
 </ol>
@@ -1967,7 +1974,7 @@ CALENDAR_DESCRIPTION = "Today's count of days since ChatGPT was released on 30 N
 # page's (room/figure.js; site/figure.py is its reference, and test/day_figure.test.js holds both to the reference of rc-10). The build
 # writes the frame here, into room/cz-bar.json (dayfigure): the tracks, a place for the day's sixteen arcs (__FIG_RINGS__) and the day's
 # number (__FIG_DAY__, as prose writes it: 1,455; −1,997), with the Core's hash as the build computed it from the Core's bytes.
-DAY_FIGURE_CAPTION = "Day __FIG_DAY__'s figure: computed from the day's number and the text of the sixteen principles."
+DAY_FIGURE_CAPTION = "Day __FIG_DAY__'s figure: computed from the day's number and the text of the Core."
 def day_figure_template():
     return ('<figure class="dayfig"><svg xmlns="http://www.w3.org/2000/svg" viewBox="-192 -192 384 384" width="256" height="256" role="img" '
             'aria-label="The figure of Day __FIG_DAY__: sixteen rings round an empty centre, each carrying one arc.">'
@@ -2617,12 +2624,11 @@ BUILT_FEATURES = [   # (feature, what it does here, since, without it)
     ("Today's date in the CZ calendar, filled on the server", "Every page opens with today's date; no script on the reader's side", CZ1430, "—"),
     ("Visit counts without cookies or identifiers", "Counted on the server before the cache; public at /stats. Distinct visitors were counted until CZ 1433 and no longer are; how machines come in is counted since; AI agents by purpose " + ("and presses on the links of /ask to an assistant " if ASK_OFFERED else "") + "are counted too (/stats says since when)", CZ1432, "—"),
     ("<details> and <summary>", "A discussion entry's record, hash and moderation log, folded under the words; since CZ " + str(cz_day(RC12_RELEASE)) + " a long page's contents, the Core's languages, the long invitation, the rules of the room at the foot of its pages and the conditions of posting too, each under one line", CZ1433, "Shown open"),
-    ("Invoker commands (commandfor, command) and <dialog closedby>", "Reply to an entry in place, without leaving the page and without a script", CZ1433, "A link to the reply page, beside the button"),
     ("CSS logical properties and dir", "Edges and indents follow the direction of the block they mark: a translation into Persian or Arabic is set right to left, its edge on the right; an entry keeps the page's direction, and its words their own (dir=\"auto\")", CZ1433, "—"),
     ("A colour for the machine layer: the edge and label of what an AI system declared it wrote, and of machine translation", "#116329 on white, #3fb950 on black, both at 7:1 or more; light-dark() where the browser has it", CZ1433, "The same colours by a media query"),
     ("The same green for the day of the new count", "The day count in the calendar line on the first page and today's date at the top of every page, as on the record's images; dates inside text and entries keep the page's colour", datetime.date(2026, 11, 5), "The same colours by a media query"),
     ("Accept-Language", "A reader whose browser prefers another language is offered the page in it, as one link", CZ1433, "—"),
-    ("Cross-document view transitions", "Moving between pages of this site fades instead of flashing; the mark travels from its place on one page to its place on the next, and an entry from a list to its own page; none for readers who ask for less motion", CZ1433, "The page changes at once, as it always did"),
+    ("Cross-document view transitions", "Moving between pages of this site fades instead of flashing; since CZ " + str(cz_day(RC12_RELEASE)) + " the mark travels from its place on one page to its place on the next, and an entry from a list to its own page; none for readers who ask for less motion", CZ1433, "The page changes at once, as it always did"),
     ("Speculation rules (prefetch, conservative)", "A link to another page of this site is fetched as you press it, so it opens a moment sooner", CZ1433, "The link is fetched when you release it"),
     ("field-sizing: content", "The reply box grows as you write", CZ1433, "The box keeps its size and scrolls"),
     ("text-wrap: pretty and balance", "Fewer lone words at the end of a paragraph; balanced headings", CZ1433, "Ordinary line breaking"),
@@ -2632,11 +2638,12 @@ BUILT_FEATURES = [   # (feature, what it does here, since, without it)
     # the first page of 24 Nov 2026 (CZ 1455): what it asks of a browser, and what a browser without it shows
     (":has() with :target, on the first page", "An answered door is an address (#human, #not-human): CSS reads it and opens that reading; the switch that shows the reasons works the same way", HOME_RELEASE, "Both readings follow one another, whole; no switch, and the key and the link to the table of reasons stand open"),
     ("CSS mod() and @property, on the first page", "The browser computes the day's figure itself from the one number the server wrote, and a press turns it by a day", HOME_RELEASE, "The figure as the server computed it, and no press"),
-    ("Popover (popover, popovertarget), on the first page, on /discuss and on /core", "The empty place opens the reply form where it stands, without a script, and so does “Write your answer” on /discuss; under each principle of the Core, “Cite” opens the line to cite it by", HOME_RELEASE, "A link to the reply page; the line to cite stands open under each principle"),
+    ("Popover (popover, popovertarget), on the first page, in the discussion and on /core", "The empty place opens the reply form where it stands, without a script; so do “Write your answer” on /discuss and “Reply” on an entry's page; under each principle of the Core, “Cite” opens the line to cite it by", HOME_RELEASE, "A link to the reply page; the line to cite stands open under each principle"),
     ("CSS masks and anchor positioning, on the first page and on /core", "With neither door answered each window fades at its lower edge; on a wide screen the reply form stands in the place's own column; the line to cite a principle opens under that principle's own line", HOME_RELEASE, "A hard edge; the form, or the line to cite, in the middle of the window"),
     # rc-12: the inner pages
     ("position: sticky, ::details-content, scroll-target-group and :target-current", "On a wide window a long page's contents stay in view in the margin, open, and the section being read is marked", RC12_RELEASE, "The contents folded under one word where the page begins; opened by a press; no mark"),
     ("user-select: all", "One press selects a whole hash or a whole invitation", RC12_RELEASE, "Selected by hand"),
+    ("Container queries, in the head of every page but the first", "Where the head is narrow the day stands alone, “Day 1,455”, still the link to the calendar, and where it is narrower still the name stands without “(CZ)”: the head keeps its two rows in a wide typeface", RC12_RELEASE, "Where the words do not fit, the day takes a row of its own"),
     (":user-invalid, and :has() with :placeholder-shown, in the forms", "A box that needs correcting is marked before a form is sent; in the register's form a field that does not apply is not shown while it is empty", RC12_RELEASE, "The form for an answer comes back from the server with the box marked; every field of the register's form is shown"),
     ("Google Scholar's citation tags; BibTeX, RIS, CSL-JSON", "The Core and the record say how to cite them, in their heads and on the page; the press kit has the files", CZ1433, "—"),
 ]

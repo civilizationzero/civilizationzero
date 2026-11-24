@@ -42,6 +42,10 @@ function canonLang(tag) {
 }
 // Lengths are counted in characters (Unicode code points), as the database and the contract count them, not in UTF-16 units (R3-15).
 const clen = (s) => [...String(s)].length;
+// ASCII white space off both ends of a text, one pass from each end, never a pattern: /[ \t\r\n]+$/ tries a long run of spaces
+// inside a text from every one of its positions and gives each up at the run's end (160,000 spaces between two letters held the
+// function for ten seconds, before any limit is counted). The same text as the pattern gave.
+const trimEnds = (t, ws = " \t\r\n") => { let a = 0, b = t.length; while (a < b && ws.includes(t[a])) a++; while (b > a && ws.includes(t[b - 1])) b--; return t.slice(a, b); };
 // Base64 exactly as RFC 4648 writes it, with padding, decoding to the expected number of bytes and re-encoding to the same text:
 // what the offline verifier accepts is all this site accepts (R3-10; a key ending in "=!" was taken by the lenient decoder).
 const b64Exact = (s, bytes) => typeof s === "string" && /^[A-Za-z0-9+/]+={0,2}$/.test(s) && s.length % 4 === 0
@@ -106,7 +110,9 @@ function html(res, status, page, headers = {}) {
   // the page's own Markdown address (a view's, with its query, when the handler set one; otherwise from its canonical address)
   const canon = ((/<link rel="canonical" href="https?:\/\/[^/"]+(\/[^"]*)">/.exec(String(page)) || [])[1]) || "/";
   const mdHref = res.czMdHref || require("./md.js").mdPath(canon);
-  page = String(page).replace(/__MDPATH__/g, () => mdHref);
+  // only where the build and formsLine wrote it, as a link's address: a visitor's text is escaped, so it can hold the letters
+  // __MDPATH__ but never href="__MDPATH__", and it is shown (and written back into a refused form) as it was received
+  page = String(page).replace(/href="__MDPATH__"/g, () => `href="${mdHref}"`);
   // the page as Markdown when it was asked for (a handler sets res.czMarkdown from ?f=md: /discuss.md, /discuss/7.md, Accept: text/markdown)
   // today's date at the top turns at midnight where the reader is (the originator's decision of CZ 1438): the time zone of the reader's
   // network, from the header the host adds (room/cztime.js, readerZone), read here and kept nowhere; the page is cached apart per zone
@@ -114,7 +120,7 @@ function html(res, status, page, headers = {}) {
   if (res.czMarkdown) {
     const MDm = require("./md.js"), now = Date.now();
     const out = MDm.htmlToMarkdown(CZ.fillBar(page, CZ.localMs(now, zone)), { path: res.czMarkdown.path || "/", meta: res.czMarkdown.meta || {} });
-    const extra = {}; for (const [k, v] of Object.entries(headers)) if (k.toLowerCase() === "cache-control") extra[k] = CZ.capCache(v, now, zone);
+    const extra = {}; for (const [k, v] of Object.entries(headers)) { const l = k.toLowerCase(); if (l === "cache-control") extra[k] = CZ.capCache(v, now, zone); else if (l === "retry-after") extra[k] = v; }
     extra.Vary = CZ.varyZone(headers.Vary || headers.vary || "Accept");   // Accept-Language too, where the page offers a language (review of CZ 1433)
     return MDm.sendMarkdown(res, status, out, res.czMarkdown.path || "/", ORIGIN, extra);
   }
@@ -242,10 +248,10 @@ function verifySignature(pubkeyB64, sigB64, content) {
 // Unsigned content: CRLF → LF and ASCII whitespace trimmed at both ends. Signed content: stored and verified exactly as sent (R-3).
 const BAD_TEXT = /\u0000|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/;
 function validate(b) {
-  const s = (v, max) => (v == null ? "" : typeof v === "string" ? (clen(v) <= max ? v.replace(/^[ \t\r\n]+|[ \t\r\n]+$/g, "") : null) : null);
+  const s = (v, max) => (v == null ? "" : typeof v === "string" ? (clen(v) <= max ? trimEnds(v) : null) : null);
   const signed = !!(b.pubkey || b.sig);
   const rawContent = typeof b.content === "string" ? b.content : null;
-  const content = rawContent == null ? null : signed ? rawContent : rawContent.replace(/\r\n?/g, "\n").replace(/^[ \t\r\n]+|[ \t\r\n]+$/g, "");
+  const content = rawContent == null ? null : signed ? rawContent : trimEnds(rawContent.replace(/\r\n?/g, "\n"));
   const out = { author: s(b.author, 120), kind: typeof b.kind === "string" ? b.kind.trim() : "", system: s(b.system, 200), operator: s(b.operator, 200), prompt: s(b.prompt, 60),
                 lang: s(b.lang, 35), ref: b.ref == null ? "" : String(b.ref).trim(), content, declared_date: s(b.declared_date, 40), pubkey: s(b.pubkey, 128), sig: s(b.sig, 128),
                 parent: parentId(b.parent) };
@@ -783,4 +789,4 @@ const validDate =(s) => { if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false; cons
 
 module.exports = { translations, sameLang, translationStates, claim, parseTs, alreadyIn, translateOne, translateMany, checkTranslation, inBackground, deadlineOf, normText, note, TR_FAST, TR_STRONG, prefLang, primaryLang, langName, trContent, trExcerpt, mtLabel, ORIGIN, CONTACT, OPEN, CHAIN, OPENS, TOKEN, T, esc, kindTag, kindClass, contentHtml, log, json, html, shell, fill, rpc, rest, sourceHash, sourceOf, tokenEquals, verifySignature, fullOrderKey, validate, classify, classifierAnswer, translate,
                    allowance, groupEntries, groupKey, entryHtml, metaHtml, previewHtml, example, exampleHtml, exampleHtmlOf, exampleText, excerpt, SECTIONS, sectionLabel, parentId, fmtTime, isoTime, isoFull, validDate, LANG_RE, canonLang, clen, b64Exact, visible, decl, ORIGINATOR, nameKey, reservedName, reservedField, reservedDetail, MODERATION_PROMPT_VERSION, CATEGORIES,
-                   FORM_OPEN, HUMAN_FORM, FIELD_MAX, formWith, whoHtml, vtName, formsLine, ASK };
+                   FORM_OPEN, HUMAN_FORM, FIELD_MAX, formWith, whoHtml, vtName, formsLine, ASK, trimEnds };

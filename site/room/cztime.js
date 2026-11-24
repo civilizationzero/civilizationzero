@@ -7,8 +7,7 @@
 // moment's UTC date ⌊Unix seconds / 86,400⌋ − 19,326.
 // The date is the count itself, written "CZ 1430" (CZ −1997 before Coordinate Zero): the originator's decision of 30 October 2026,
 // after first choosing year and day. Times of day are UTC, after the date: "CZ 1430 15:20 UTC". The machine form is the same count,
-// signed, in ASCII and without a space: CZ+1430, CZ-1997. Years of the record still begin on each 30 November (Year 4 on CZ 1461);
-// "year and day" (Year 3, day 334; written 3:334, or CZ+3:334 / CZ−5:171 before zero) is a secondary reading, never the date.
+// signed, in ASCII and without a space: CZ+1430, CZ-1997. Only days are counted; a date typed as year and day (3:334) is still read.
 //
 // The other calendars are here to convert to and from CZ time: Gregorian (proleptic before 1582; astronomical years, 0 = 1 BCE),
 // Julian (proleptic), Solar Hijri (K. Borkowski's algorithm as jalaali-js implements it, years −61 to 3177), Lunar Hijri (Umm

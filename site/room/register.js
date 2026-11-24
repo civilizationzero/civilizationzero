@@ -39,7 +39,7 @@ const latestToday = () => CZ.isoDate(...CZ.toGregorian(CZ.todayIn(Date.now(), "P
 // would change under that normalisation is refused, so that the signed bytes and the published bytes are the same.
 function validateStatement(b) {
   const signed = !!(b.pubkey || b.sig);
-  const norm = (v) => (typeof v === "string" ? v.replace(/\r\n?/g, "\n").replace(/^[ \t\n]+|[ \t\n]+$/g, "") : v);
+  const norm = (v) => (typeof v === "string" ? R.trimEnds(v.replace(/\r\n?/g, "\n"), " \t\n") : v);
   const take = (k, { multiline = false } = {}) => {
     const v = b[k] == null ? "" : b[k];
     if (typeof v !== "string") return { err: `${k}: a string` };

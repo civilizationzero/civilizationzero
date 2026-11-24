@@ -437,7 +437,7 @@
       "destination": "/api/entries?id=:id"
     },
     {
-      "source": "/discuss/:id(\\d{1,12})",
+      "source": "/discuss/:id(\\d{1,12}|rules)",
       "has": [
         {
           "type": "header",
