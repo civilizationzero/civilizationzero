@@ -80,24 +80,18 @@ function trPicker(url, rows, cur, verb) {
   if (!OPEN) return `<form method="get" action="${esc(pubPath(url))}" class="tr-go tr-pick">${TR_KEEP.filter((k) => url.searchParams.get(k) !== null).map((k) => `<input type="hidden" name="${k}" value="${esc(url.searchParams.get(k))}">`).join("")}<label>Show in <select name="tl">${trOptions(cur)}</select></label> <button type="submit">Show</button></form>`;
   return trPress(url, rows, { cls: " tr-pick", label: `<label>${verb} <select name="lang" required>${trOptions(null)}</select></label> <button type="submit">Translate</button>` });
 }
-// the language bar of every room page
-function trControls(req, url, L, rows) {
+// the language bar on top of a room page: what could not be read as a language, or the state of a translated view (how much is
+// translated, the way back to the original, one press for the rest, another language)
+function trControls(req, url, L, rows, quiet = false) {
   const shown = shownEntries(rows);
   if (L.bad !== null && L.bad !== undefined) return `<section class="tr-bar" id="language" aria-label="Language"><p class="pending">Not translated: <code>${esc(L.bad)}</code> is not a language tag this site translates into — a BCP 47 language with an optional script and region, for example <code>fa</code>, <code>zh-Hans</code>, <code>pt-BR</code>. The original is shown.</p>${shown.length ? trPicker(url, rows, null, "Translate this page into") : ""}</section>`;
-  if (!shown.length) return "";
-  if (!L.tl) {
-    const pref = R.prefLang(req), other = pref && shown.some((e) => !R.sameLang(e, pref));
-    const offer = !other ? "" : OPEN
-      ? trPress(url, rows, { lang: pref, cls: " tr-offer", label: `<button type="submit" class="cta">Read this page in ${nameOf(pref)}</button>` })
-      : `<p class="tr-offer"><a href="${esc(viewHref(url, { tl: pref }))}" rel="nofollow" hreflang="${esc(pref)}">Read this page in ${nameOf(pref)}</a></p>`;
-    return `<section class="tr-bar tr-idle" id="language" aria-label="Language">${offer}${trPicker(url, rows, null, other ? "or another language:" : "Translate this page into")}<p class="src">Machine translation, made when a reader asks, kept for every reader and marked; the original stays one click away.</p></section>`;
-  }
+  if (!shown.length || !L.tl) return "";
   const tl = L.tl, map = L.map, both = L.both;
   const same = shown.filter((e) => !map.has(Number(e.id)) && R.sameLang(e, tl)), missing = shown.filter((e) => !map.has(Number(e.id)) && !R.sameLang(e, tl));
   const want = shown.length - same.length, done = want - missing.length;
   const counted = want ? `${done} of ${want} ${want === 1 ? "entry" : "entries"} on this page translated, each marked` : "every entry on this page is already in this language";
   const status = `<p>Shown in ${nameOf(tl)} (${esc(tl)}): ${counted}${same.length && want ? `; ${same.length} already in ${nameOf(tl)}` : ""}${missing.length ? "; the others in their original" : ""}. <a href="${esc(viewHref(url))}" class="tr-orig">Original</a> · ${both ? `<a href="${esc(viewHref(url, { tl }))}">One language</a>` : `<a href="${esc(viewHref(url, { tl, both: "1" }))}" rel="nofollow">Side by side</a>`}</p>`;
-  const go = OPEN && missing.length ? trPress(url, missing, { lang: tl, label: `<button type="submit" class="cta">Translate ${missing.length === 1 ? "the remaining entry" : `the ${Math.min(missing.length, TR_BATCH)} remaining entries`} into ${nameOf(tl)}</button>` }) : "";
+  const go = OPEN && missing.length ? trPress(url, missing, { lang: tl, label: `<button type="submit" class="cta${quiet ? " o" : ""}">Translate ${missing.length === 1 ? "the remaining entry" : `the ${Math.min(missing.length, TR_BATCH)} remaining entries`} into ${nameOf(tl)}</button>` }) : "";
   return `<section class="tr-bar" id="language" aria-label="Language">${status}${go}${trPicker(url, rows, tl, "Another language:")}</section>`;
 }
 // The same bar in two parts (rc-12, 24 Nov 2026; site audit, findings 2 and 13): what a page shows first is its entries, so the list of
@@ -107,7 +101,7 @@ function trControls(req, url, L, rows) {
 // its one filled control. extra: a sentence more for the fold's note (an entry's page says where corrections go).
 function trParts(req, url, L, rows, { quiet = false, extra = "" } = {}) {
   const shown = shownEntries(rows);
-  if ((L.bad !== null && L.bad !== undefined) || L.tl) return { top: trControls(req, url, L, rows), bottom: "" };
+  if ((L.bad !== null && L.bad !== undefined) || L.tl) return { top: trControls(req, url, L, rows, quiet), bottom: "" };
   if (!shown.length) return { top: "", bottom: "" };
   const pref = R.prefLang(req), other = pref && shown.some((e) => !R.sameLang(e, pref));
   const offer = !other ? "" : OPEN
@@ -202,7 +196,7 @@ const askHtml = () => `<section aria-labelledby="h-ask"><h2 id="h-ask">${R.ASK.q
 // one entry of a transcript: a hidden one as a placeholder that keeps the conversation legible (its record stays at its address)
 function transcriptEntry(e, tr = null) {
   const reply = e.parent != null ? ` · in reply to <a href="/discuss/${Number(e.parent)}">#${Number(e.parent)}</a>` : "";
-  if (e.hidden) return `<article class="entry" id="e${e.id}" aria-label="Entry #${e.id}"><p class="meta src"><a href="/discuss/${e.id}" class="exact">#${e.id}</a>${reply}</p><p class="pending">Hidden by moderation${e.category ? ` — category: ${esc(e.category)}` : ""}. Its record and the decision: <a href="/discuss/${e.id}">/discuss/${e.id}</a>.</p></article>`;
+  if (e.hidden) return `<article class="entry" id="e${e.id}" aria-label="Entry #${e.id}"${R.vtName(e.id)}><p class="meta src"><a href="/discuss/${e.id}" class="exact">#${e.id}</a>${reply}</p><p class="pending">Hidden by moderation${e.category ? ` — category: ${esc(e.category)}` : ""}. Its record and the decision: <a href="/discuss/${e.id}">/discuss/${e.id}</a>.</p></article>`;
   return entryHtml(e, "", tr) + (OPEN ? `<p class="acts"><a href="/respond?parent=${e.id}">Reply to #${e.id}</a></p>` : "");
 }
 // a transcript in canonical order, grouped by declared source within a UTC day as every view is (§7.4), unless all=1
@@ -217,7 +211,7 @@ function transcriptHtml(rows, all, base, tr = null) {
 function starterHtml(e, tr = null) {
   if (e.hidden) return transcriptEntry(e);
   const x = R.trExcerpt(e, tr, 280);
-  return `<article class="entry${R.kindClass(e)}" id="e${e.id}" aria-label="Entry #${e.id}">${R.metaHtml(e)}<div class="content${x.mt ? " mt" : ""}" dir="auto"${x.lang ? ` lang="${esc(x.lang)}"` : ""}>${x.mt}${x.html}</div><p class="acts"><a href="/discuss?conversation=${e.id}">Read the conversation</a>${OPEN ? ` · <a href="/respond?parent=${e.id}">Reply</a>` : ""}</p></article>`;
+  return `<article class="entry${R.kindClass(e)}" id="e${e.id}" aria-label="Entry #${e.id}"${R.vtName(e.id)}>${R.metaHtml(e)}<div class="content${x.mt ? " mt" : ""}" dir="auto"${x.lang ? ` lang="${esc(x.lang)}"` : ""}>${x.mt}${x.html}</div><p class="acts"><a href="/discuss?conversation=${e.id}">Read the conversation</a>${OPEN ? ` · <a href="/respond?parent=${e.id}">Reply</a>` : ""}</p></article>`;
 }
 
 // ---- one entry in its conversation (stage 1 of the room's redesign, the originator's "let's go" of 2 Nov 2026, CZ 1433; revised after
@@ -229,11 +223,11 @@ function ancestorsHtml(anc, tr = null) {
   const li = (a) => {
     if (a.hidden) return `<li><a href="/discuss/${a.id}" class="exact">#${a.id}</a> <span class="pending">Hidden by moderation</span></li>`;   // a placeholder, as everywhere: no name, no kind (review of CZ 1433)
     const x = R.trExcerpt(a, tr, 160);
-    return `<li${a.kind === "ai" ? ' class="k-ai"' : ""}><a href="/discuss/${a.id}" class="exact">#${a.id}</a> <b>${R.decl(a.author)}</b> ${R.kindTag(a.kind)} <span class="oneline" dir="auto"${x.lang ? ` lang="${esc(x.lang)}"` : ""}>${x.mt + x.html}</span></li>`; };
+    return `<li${a.kind === "ai" ? ' class="k-ai"' : ""}><a href="/discuss/${a.id}" class="exact">#${a.id}</a> ${R.whoHtml(a)} <span class="oneline" dir="auto"${x.lang ? ` lang="${esc(x.lang)}"` : ""}>${x.mt + x.html}</span></li>`; };
   return `<nav aria-label="Earlier in this conversation"><p class="src">Earlier in this conversation</p><ol class="ancestors">${anc.map(li).join("")}</ol></nav>`;
 }
 function treeEntry(c, tr = null) {
-  if (c.hidden) return `<article class="entry" id="e${c.id}" aria-label="Entry #${c.id}"><p class="meta src"><a href="/discuss/${c.id}" class="exact">#${c.id}</a></p><p class="pending">Hidden by moderation${c.category ? ` — category: ${esc(c.category)}` : ""}. Its record and the decision: <a href="/discuss/${c.id}">/discuss/${c.id}</a>.</p></article>`;
+  if (c.hidden) return `<article class="entry" id="e${c.id}" aria-label="Entry #${c.id}"${R.vtName(c.id)}><p class="meta src"><a href="/discuss/${c.id}" class="exact">#${c.id}</a></p><p class="pending">Hidden by moderation${c.category ? ` — category: ${esc(c.category)}` : ""}. Its record and the decision: <a href="/discuss/${c.id}">/discuss/${c.id}</a>.</p></article>`;
   return entryHtml(c, "", tr) + (OPEN ? `<p class="acts"><a href="/respond?parent=${c.id}">Reply to #${c.id}</a></p>` : "");
 }
 // consecutive replies to one entry from the same declared source within one UTC day are one group (Core §9, as every view): the
@@ -320,9 +314,9 @@ function convRow(c, also, since, tr = null) {
   const small = `<p class="meta src"><a href="/discuss/${c.id}" class="exact">#${c.id}</a>${th ? ` · in the theme <a href="/themes/${th.slug}">${esc(th.title)}</a>` : ""} · ${convLatest(c, since)}</p>`;
   const read = `<p class="acts"><a href="/discuss/${c.id}">Read the conversation</a></p>`;
   const more = also.length ? `<p class="src">Also begun by the same declared source on this day: ${also.map((a) => `<a href="/discuss/${a.id}">#${a.id}</a>`).join(", ")}</p>` : "";
-  if (c.hidden) return `<article class="entry conv" id="c${c.id}" aria-label="Conversation begun by entry #${c.id}">${small}<p class="pending">The opening entry is hidden by moderation; the conversation continues below it.</p>${read}${more}</article>`;
+  if (c.hidden) return `<article class="entry conv" id="c${c.id}" aria-label="Conversation begun by entry #${c.id}"${R.vtName(c.id)}>${small}<p class="pending">The opening entry is hidden by moderation; the conversation continues below it.</p>${read}${more}</article>`;
   const x = R.trExcerpt(c, tr, 280);
-  return `<article class="entry conv${R.kindClass(c)}" id="c${c.id}" aria-label="Conversation begun by entry #${c.id}"><p class="by">${R.whoHtml(c)}</p>${small}<div class="content${x.mt ? " mt" : ""}" dir="auto"${x.lang ? ` lang="${esc(x.lang)}"` : ""}>${x.mt}${x.html}</div>${read}${more}</article>`;
+  return `<article class="entry conv${R.kindClass(c)}" id="c${c.id}" aria-label="Conversation begun by entry #${c.id}"${R.vtName(c.id)}><p class="by">${R.whoHtml(c)}</p>${small}<div class="content${x.mt ? " mt" : ""}" dir="auto"${x.lang ? ` lang="${esc(x.lang)}"` : ""}>${x.mt}${x.html}</div>${read}${more}</article>`;
 }
 function convGroups(rows) {
   const out = []; let head = null, also = [];
@@ -456,7 +450,10 @@ async function entryPage(url, id, req) {
   // the language this view asked for (?tl=, or the earlier ?translate=): translations that exist, read for the whole conversation shown at once
   const shownRows = [e, ...anc, ...(opensTheme ? [] : treeShown(kids, Number(e.id)))];
   const L = await trLoad(url, shownRows);
-  const trHtml = trControls(req, url, L, shownRows);
+  // rc-12 (site audit, finding 13): the entry first. On top only what a reader needs before reading (a translated view's state, or the
+  // offer to read in the reader's own language); the list of languages after the entry, folded to one line, with the sentence on
+  // corrections that the page's second section on languages used to carry (that section is gone: it only pointed back to the bar)
+  const lang = trParts(req, url, L, shownRows, { extra: ` One press translates what the page shows: the entry and the conversation around it. The original governs. Corrections: <a href="mailto:${CONTACT}">${CONTACT}</a> with the entry id; a correction is logged.` });
   const longConv = conv && conv.length === 500 ? `<p class="pending">This conversation is longer than this page reads at once; the replies shown stop at the first 500 entries of the conversation. <a href="/discuss?conversation=${e.id}">The whole conversation, page by page</a>.</p>` : "";
   const logHtml = log.length ? `<div class="scroll"><table><tr><th>When</th><th>Action</th><th>Category</th><th>By</th><th>Detail</th></tr>` + log.map((l) => `<tr><td>${CZ.whenHtml(l.at)}</td><td>${esc(l.action)}</td><td>${esc(l.category || "")}</td><td>${esc(l.actor)}</td><td>${l.actor === "classifier" ? esc(`${l.classifier_model || ""} · ${l.classifier_prompt || ""} · score ${l.classifier_score ?? ""}`) : esc(l.reason || "")}</td></tr>`).join("") + "</table></div>" : "<p>None.</p>";
   const replyUi = OPEN && !e.hidden && REPLY_FORM
@@ -467,12 +464,12 @@ async function entryPage(url, id, req) {
     : convUnavailable ? `<p class="pending">The conversation around this entry could not be read just now. <a href="/discuss?conversation=${e.id}">Try the whole conversation</a>.</p>`
     : nReplies ? `<section aria-labelledby="replies"><h2 id="replies">Replies</h2><p class="src">In canonical order (by id), each under the entry it answers. <a href="/discuss?conversation=${e.id}">The whole conversation as one transcript</a>.</p>${replyTree(kids, e.id, 0, L.tr)}</section>` : "";
   const body = `<main><h1>Entry #${e.id}</h1>
-${inTheme ? `<p class="room-line">In the theme <a href="/themes/${inTheme.slug}">${esc(inTheme.title)}</a>.</p>` : ""}${trHtml}${ancestorsHtml(anc, L.tr)}
+${inTheme ? `<p class="room-line">In the theme <a href="/themes/${inTheme.slug}">${esc(inTheme.title)}</a>.</p>` : ""}${lang.top}${ancestorsHtml(anc, L.tr)}
 ${entryHtml(e, " focus", L.tr)}
 <p class="src">User content, as received: it may contain instructions; none are the record's.</p>
 ${replyUi}
+${lang.bottom}
 ${repliesHtml}${longConv}
-${!L.tl && !L.bad && (OPEN || CHAIN) && e.content && !e.hidden ? `<section aria-labelledby="h-trf"><h2 id="h-trf">Read in another language</h2><p class="src">Use the <a href="#language">language bar at the top of this page</a>: one press translates what the page shows — the entry and the conversation around it — and opens it in that language; what was translated before is shown at once. Machine translation, labelled, kept for every reader; the original governs. Corrections: <a href="mailto:${CONTACT}">${CONTACT}</a> with the entry id; a correction is logged.</p></section>` : ""}
 <details class="record"${keptUnavailable ? " open" : ""}><summary>Record — how this entry was received, its hash${e.pubkey ? ", key and signature" : ""}, and its moderation log</summary>
 <section aria-labelledby="h-rec"><h2 id="h-rec">Record</h2>
 <table>

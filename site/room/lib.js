@@ -652,8 +652,15 @@ function kindTag(kind) {
   return `<span class="kind k-${k}">${KINDS[k]} · declared</span>`;
 }
 const kindClass = (e) => (e.kind === "ai" ? " k-ai" : "");
+// From a list to an entry's page the entry travels to its place (rc-12; site audit, finding 32): every view of an entry carries the
+// entry's own name for a view transition, the same on every page — written here as a custom property in its tag (the security policy
+// allows a style attribute), not as the name itself. The stylesheet gives an entry its name only while it is the one in use (pointed
+// at, or holding the focus) and on its own page, so at most a few elements are named at a time however long a list is: a browser
+// takes a picture of every named element, on the screen or not (tried in Chromium 153 with a list of 200). Without the stylesheet's
+// rule, or for a reader who asks for less motion, nothing moves.
+const vtName = (id) => (/^[1-9]\d{0,14}$/.test(String(id)) ? ` style="--vt:e${id}"` : "");
 function entryHtml(e, extra = "", tr = null) {
-  return `<article class="entry${kindClass(e)}${extra}" id="e${e.id}" aria-label="Entry #${e.id}">${metaHtml(e)}${tr ? trContent(e, tr) : contentHtml(e)}</article>`;
+  return `<article class="entry${kindClass(e)}${extra}" id="e${e.id}" aria-label="Entry #${e.id}"${vtName(e.id)}>${metaHtml(e)}${tr ? trContent(e, tr) : contentHtml(e)}</article>`;
 }
 
 // ---------------------------------------------------------------- the first page's preview (Phase 1 of the room's design for readers,
@@ -771,4 +778,4 @@ const validDate =(s) => { if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false; cons
 
 module.exports = { translations, sameLang, translationStates, claim, parseTs, alreadyIn, translateOne, translateMany, checkTranslation, inBackground, deadlineOf, normText, note, TR_FAST, TR_STRONG, prefLang, primaryLang, langName, trContent, trExcerpt, mtLabel, ORIGIN, CONTACT, OPEN, CHAIN, OPENS, TOKEN, T, esc, kindTag, kindClass, contentHtml, log, json, html, shell, fill, rpc, rest, sourceHash, sourceOf, tokenEquals, verifySignature, fullOrderKey, validate, classify, classifierAnswer, translate,
                    allowance, groupEntries, groupKey, entryHtml, metaHtml, previewHtml, example, exampleHtml, exampleHtmlOf, exampleText, excerpt, SECTIONS, sectionLabel, parentId, fmtTime, isoTime, isoFull, validDate, LANG_RE, canonLang, clen, b64Exact, visible, decl, ORIGINATOR, nameKey, reservedName, reservedField, reservedDetail, MODERATION_PROMPT_VERSION, CATEGORIES,
-                   FORM_OPEN, HUMAN_FORM, FIELD_MAX, formWith, whoHtml, ASK };
+                   FORM_OPEN, HUMAN_FORM, FIELD_MAX, formWith, whoHtml, vtName, ASK };

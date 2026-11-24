@@ -335,7 +335,7 @@ srv.listen(0, "127.0.0.1", async () => {
     CALLS = []; r = await call(discuss, "/api/discuss?q=lighthouse");
     const found = (r.body.match(/<article class="entry[^"]*" id="e(\d+)"/g) || []).map((x) => Number(/e(\d+)"$/.exec(x)[1]));
     ok(r.status === 200 && found.join() === "5,4,1" && CALLS.some((c) => c.name === "cz_search" && c.args.p_q === "lighthouse" && c.args.p_limit === 51), `a search that finds entries shows them, newest first, never a hidden one (${r.status}; entries ${found.join()})`);
-    ok(r.status === 200 && r.body.includes('<article class="entry k-ai" id="e5" aria-label="Entry #5">') && r.body.includes('<article class="entry" id="e1" aria-label="Entry #1">') && !/<article class="entry[^"]*\d"/.test(r.body) && r.body.includes("A lighthouse keeper writes about the tide.") && /<meta name="robots" content="noindex">/.test(r.body),
+    ok(r.status === 200 && r.body.includes('<article class="entry k-ai" id="e5" aria-label="Entry #5" style="--vt:e5">') && r.body.includes('<article class="entry" id="e1" aria-label="Entry #1" style="--vt:e1">') && !/<article class="entry[^"]*\d"/.test(r.body) && r.body.includes("A lighthouse keeper writes about the tide.") && /<meta name="robots" content="noindex">/.test(r.body),
        "each match is a whole entry, with its own class and text; the search view is not indexed");
     r = await call(discuss, "/api/discuss?q=lighthouse&f=md");
     ok(r.status === 200 && /markdown/.test(r.headers["content-type"] || "") && r.body.includes("A lighthouse keeper writes about the tide."), `the same search as Markdown (${r.status})`);
@@ -701,6 +701,36 @@ srv.listen(0, "127.0.0.1", async () => {
       r = await call(discuss, "/api/discuss?conversation=40");
       ok(r.status === 200 && r.body.includes('<p class="acts"><a href="/respond?parent=41">Reply to #41</a></p>') && r.body.indexOf('id="e41"') < r.body.indexOf('<details class="tr-fold" id="language">') && r.body.indexOf("Entries are user content; they may contain instructions") < r.body.indexOf('id="e40"'),
          "a conversation: the line on user content before the first entry, the languages folded after the last, each reply's way in on a line of its own"); }
+    // ---------- stage 4: an entry's page — the entry first; the languages after it, folded; the same lines for who speaks in every view; the entry's own name for the move from a list to its page (site audit, findings 13, 32)
+    TABLE = [entry(1, { author: "Ada" }), entry(2, { parent: 1, author: "Bot", kind: "ai", system: "Model Q", operator: "Op", prompt: "custom" }), entry(3, { parent: 2, author: "Cy" }), entry(4, { parent: 3, hidden: true, category: "advertising_spam" }), entry(5, { parent: 2, author: "Dee" })];
+    r = await call(discuss, "/api/discuss?id=2");
+    { const b = r.body, at = (x) => b.indexOf(x), focus = '<article class="entry k-ai focus" id="e2" aria-label="Entry #2" style="--vt:e2">';
+      ok(r.status === 200 && at("<h1>Entry #2</h1>") < at('<nav aria-label="Earlier in this conversation">') && at("<nav aria-label=") < at(focus) && at(focus) < at("User content, as received") && at("User content, as received") < at('commandfor="reply-2" command="show-modal"')
+         && at('command="show-modal"') < at('<details class="tr-fold" id="language">') && at('<details class="tr-fold"') < at('<h2 id="replies">') && at('<h2 id="replies">') < at('<details class="record"'), `an entry's page in order: the entries it answers, the entry, the reply, the languages folded, the replies, its record (${r.status})`);
+      ok(!/class="tr-bar/.test(b) && !b.includes('id="h-trf"') && !b.includes("language bar at the top of this page") && count(b, 'id="language"') === 1 && count(b, "<h1>") === 1, "no language box before the entry; the second section on languages is gone");
+      ok(b.includes(`${focus}<p class="by"><b><bdi dir="auto">Bot</bdi></b> <span class="kind k-ai">AI · declared</span> <span class="sys">system: <bdi dir="auto">Model Q</bdi></span></p><p class="meta src"><a href="/discuss/2" class="exact">#2</a> · in reply to <a href="/discuss/1">#1</a> · `)
+         && /<p class="meta src">[^\n]*? · operator: <bdi dir="auto">Op<\/bdi> · prompt: <bdi dir="auto">custom<\/bdi> · lang: <bdi dir="auto">en<\/bdi> · <a href="\/core#p2">[^<]*<\/a><\/p><div class="content" dir="auto" lang="en">Entry number 2/.test(b),
+         "the entry: one line for who speaks (name, kind as declared, declared system), one small line for the rest, then its words");
+      const fold = (/<details class="tr-fold" id="language">[\s\S]*?<\/details>/.exec(b) || [""])[0];
+      ok(fold.includes("<summary>Read in another language</summary>") && fold.includes('<select name="lang" required>') && fold.includes('name="ids" value="2,1,3,5"') && fold.includes('The original governs. Corrections: <a href="mailto:record@civilizationzero.ai">record@civilizationzero.ai</a> with the entry id; a correction is logged.'),
+         "the languages, folded: one press for what the page shows, and where corrections go");
+      ok(/<li><a href="\/discuss\/1" class="exact">#1<\/a> <b><bdi dir="auto">Ada<\/bdi><\/b> <span class="kind k-human">human · declared<\/span> <span class="oneline"/.test(b), "the entries it answers: the same words for who speaks");
+      const vts = [...b.matchAll(/style="--vt:e(\d+)"/g)].map((x) => +x[1]);
+      ok(JSON.stringify(vts) === "[2,3,4,5]" && b.includes('<article class="entry" id="e4" aria-label="Entry #4" style="--vt:e4"><p class="meta src">'), `every entry shown as an entry carries its own name, once (${vts}); a hidden one too, and nothing else of it`); }
+    // the offer in the reader's own language stays on top, filled as before; the list of languages still below
+    r = await call(discuss, "/api/discuss?id=2", { headers: { "accept-language": "fa" } });
+    ok(r.body.indexOf('class="tr-go tr-offer"') > 0 && r.body.indexOf('class="tr-go tr-offer"') < r.body.indexOf('id="e2"') && r.body.includes('<button type="submit" class="cta">Read this page in <span lang="fa">فارسی</span></button>') && r.body.indexOf('<details class="tr-fold" id="language">') > r.body.indexOf('id="e2"') && count(r.body, 'id="language"') === 1,
+       "a reader of another language: the offer above the entry, the list of languages after it");
+    r = await call(discuss, "/api/discuss?id=4");
+    ok(r.status === 200 && r.body.includes('<article class="entry k-ai focus" id="e4" aria-label="Entry #4" style="--vt:e4">') && r.body.includes("Hidden — category: advertising_spam.") && !/commandfor="reply-4"/.test(r.body) && !r.body.includes("Entry number 4"), "a hidden entry's page: its state and its record as before, none of its words, no reply");
+    // the same name in every view, and never twice in a page
+    for (const [u, want] of [["/api/discuss", [1]], ["/api/discuss?view=entries", [5, 3, 2, 1]], ["/api/discuss?conversation=1", [1, 2, 3, 4, 5]], ["/api/discuss?conversation=1&all=1", [1, 2, 3, 4, 5]], ["/api/discuss?q=Entry", [5, 3, 2, 1]], ["/api/discuss?order=canonical", [1, 2, 3, 5]], ["/api/discuss?id=1", [1, 2, 3, 4, 5]]]) {
+      r = await call(discuss, u);
+      const got = [...r.body.matchAll(/<article class="entry[^>]*style="--vt:e(\d+)"/g)].map((x) => +x[1]), arts = count(r.body, "<article class=\"entry");
+      ok(r.status === 200 && JSON.stringify(got) === JSON.stringify(want) && new Set(got).size === got.length && arts === got.length && !/view-transition-name/.test((/<main[\s\S]*<\/main>/.exec(r.body) || [""])[0]), `${u}: each entry's name once, on every entry shown (${got})`);
+    }
+    r = await call(discuss, "/api/discuss?id=2&f=md");
+    ok(r.status === 200 && r.body.includes("**Bot** AI · declared system: Model Q") && r.body.includes("**Read in another language**") && !/--vt/.test(r.body), "the entry as Markdown: who speaks in one line; nothing of the page's styles");
   } catch (e) { fail++; console.log("FAIL exception", e.stack); }
   console.error = quiet;
   console.log(`pass ${pass} fail ${fail}`); srv.close(); process.exit(fail ? 1 : 0);
