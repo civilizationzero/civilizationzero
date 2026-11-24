@@ -432,7 +432,7 @@ srv.listen(0, "127.0.0.1", async () => {
                           + `3. ### Ask your AI\n\n   [Ask your AI. Post its answer.](${O}/ask)\n\n   ${ASKS}\n\n   A recent answer:\n\n`, "\n\n## I am not human\n"]),
        "home as Markdown: the three steps as a numbered list, in the same order, with the same words and links");
     const acts = [...forms.html.matchAll(/<a class="(act[^"]*)" href="([^"]+)">([^<]*)<\/a>/g)].map((m) => m.slice(1).join("|"));
-    ok(acts.join("\n") === "act|/core|Read the 16 principles (one page)\nact o|/ask|Ask your AI. Post its answer." && forms.html.includes(".act:not(.o),.act.o:is(:hover,:focus-visible){background:var(--fg);color:var(--bg)}"),
+    ok(acts.join("\n") === "act|/core|Read the 16 principles (one page)\nact o|/ask|Ask your AI. Post its answer." && forms.html.includes(".act:not(.o){background:var(--fg);color:var(--bg)}\n.act.o:is(:hover,:focus-visible){background:var(--fg);color:var(--bg)}"),
        "home: one filled control, the first step's, in the opened reading; the third step's, after it, is drawn with its edge only");
     const js = JSON.parse(forms.json).doors.human_steps;
     ok(js.map((s) => s.n).join() === "1,2,3" && js.map((s) => s.title).join("|") === STEPS.join("|") && js.map((s) => s.url).join("|") === [`${O}/core`, `${O}/respond?kind=human`, `${O}/ask`].join("|")

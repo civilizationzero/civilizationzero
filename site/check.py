@@ -781,7 +781,7 @@ for _form in ("txt", "md"):
     check(all(p >= 0 for p in _p2) and _p2 == sorted(_p2), f"home as {_form}: the same three steps, in the same order and words {_p2}")
 _acts = re.findall(r'<a class="(act[^"]*)" href="([^"]+)">([^<]*)</a>', _pbody)
 _filled = [sel for sel, body in re.findall(r"([^{}]+)\{([^{}]*)\}", _nocom) if "background:var(--fg)" in body]
-check(_acts == [("act", "/core", "Read the 16 principles (one page)"), ("act o", "/ask", "Ask your AI. Post its answer.")] and len(_filled) >= 1 and _filled[0].strip().startswith(".act:not(.o),")
+check(_acts == [("act", "/core", "Read the 16 principles (one page)"), ("act o", "/ask", "Ask your AI. Post its answer.")] and len(_filled) >= 1 and _filled[0].strip() == ".act:not(.o)"
       and all(":hover" in s or ":focus-visible" in s or ".act:not(.o)" in s for sel in _filled for s in sel.split(",")) and "<button" not in fill(T["html"]).replace("<button class=\"open\"", "").replace("<button type=\"submit\"", "").replace("<button type=\"button\" popovertarget=\"reply\" popovertargetaction=\"hide\"", ""),
       f"home: one filled control, the first step's, in the opened reading; the third step's is drawn with its edge only; nothing else is filled unless the reader points at it {_filled}")
 # with neither door answered a window shows no control (three reviews, 23 Nov 2026 UTC): each step is its title and then, in .more, its
@@ -1123,7 +1123,7 @@ check(_ctoc is not None and re.findall(r'<li><a href="#([^"]+)">([^<]+)</a></li>
       and len(re.findall(r"<li><a href=\"#", _ctoc.group(1))) == _cal0.count("<h2 ") == 10 and _cal0.count("<details") == 1,
       "/calendar: its contents, folded under one word before the converter — every section, by its own heading, linked to its address")
 check(re.search(r'<div class="scroll" tabindex="0" role="region" aria-labelledby="h-ex"><table>\n<thead><tr><th scope="col">CZ</th><th scope="col">Gregorian</th><th scope="col">Note</th></tr></thead>', _cal0) is not None
-      and ".nw,a.cz-date time,data,th[scope=col]{white-space:nowrap}\ntime:not(a time),code:not(.hash,a code){display:inline-block;max-inline-size:100%}" in _snocom and "overflow-wrap:anywhere" not in "".join(b for s, b in re.findall(r"([^{}]+)\{([^{}]*)\}", _snocom) if re.fullmatch(r"\s*(td|th|th,td|td,th)\s*", s)),
+      and ".nw,a.cz-date time,.scroll time,data,th[scope=col]{white-space:nowrap}\ntime:not(a time){display:inline-block;max-inline-size:100%}" in _snocom and "overflow-wrap:anywhere" not in "".join(b for s, b in re.findall(r"([^{}]+)\{([^{}]*)\}", _snocom) if re.fullmatch(r"\s*(td|th|th,td|td,th)\s*", s)),
       "/calendar, the examples: column headings with their scope, a region that takes the keyboard and has a name; a date is never cut in two by a line (the shared stylesheet), and no cell breaks a word anywhere")
 for _n in ("calform", "timeform"):
     _lab = re.findall(r'<label for="([^"]+)">', BAR[_n])
@@ -1256,6 +1256,37 @@ check(("`cz.day`, `cz.year`" in _spec5) == _counts and ("Years of the record" in
       "the year's keys of a day: the function, the sentence api/calendar.js gives as the definition, and design/CZ-TIME.md agree (all three count the year, or none does)")
 check("years" not in man["cz_time"] and not re.search(r"\byears?\b|\d:\d{3}", json.dumps(man["cz_time"], ensure_ascii=False), re.I) and {"decided", "epoch", "day", "today", "date", "machine", "page", "api", "spec"} == set(man["cz_time"]),
       "the manifest: cz_time has no key and no sentence that counts years")
+# a selector an engine does not know drops the whole rule it stands in (the review of rc-12): in the three sheets no list of selectors
+# mixes a newer pseudo-class or pseudo-element with a selector that lacks it — what stands inside :is() or :where() apart, which forgive
+def _split_top(sel):
+    out, depth, cur = [], 0, ""
+    for ch in sel:
+        depth += ch in "(["; depth -= ch in ")]"
+        if ch == "," and depth == 0: out.append(cur.strip()); cur = ""
+        else: cur += ch
+    return out + [cur.strip()]
+def _outer(part):   # the selector with the insides of :is() and :where() taken out
+    out, i = "", 0
+    while i < len(part):
+        m = re.match(r":(is|where)\(", part[i:])
+        if m:
+            j, d = i + m.end(), 1
+            while j < len(part) and d: d += part[j] == "("; d -= part[j] == ")"; j += 1
+            out += ":is()"; i = j
+        else: out += part[i]; i += 1
+    return out
+_NEWER = r":is\(|:where\(|:focus-visible|:has\(|:target-current|::details-content|:popover-open|:user-invalid|::backdrop|:not\([^()]*[, ]"
+_LATER = {":has(", ":target-current", "::details-content", ":popover-open", ":user-invalid"}
+_mixed = []
+for _nm, _sheet in (("the shared sheet", CSS), ("the room's block", ROOM_CSS), ("home.css", (SITE / "home.css").read_text("utf-8"))):
+    for _sel in re.findall(r"(?:^|[{}])\s*([^{}@]+?)\s*\{", re.sub(r"/\*.*?\*/", "", _sheet, flags=re.S)):
+        _ps = [set(re.findall(_NEWER, _outer(x))) for x in _split_top(_sel)]
+        # an engine that knows a selector of the last years (:has(), :user-invalid, :popover-open, ::details-content, :target-current) knows the earlier ones
+        _ps = [tuple(sorted(q & _LATER if q & _LATER else q)) for q in _ps]
+        if len(set(_ps)) > 1: _mixed.append((_nm, _sel[:90]))
+check(not _mixed and "a[aria-current=page]{text-decoration-thickness:var(--e-8);text-decoration-skip-ink:none}" in _snocom and ".toc a:target-current{text-decoration-thickness:var(--e-8);text-decoration-skip-ink:none}" in _snocom
+      and "\n.act:not(.o){background:var(--fg);color:var(--bg)}\n" in (SITE / "home.css").read_text("utf-8"),
+      f"no rule shares a newer selector with an older one: the page one is on is marked, and the first page's control filled, in an engine that knows nothing newer {_mixed}")
 # on paper (finding 27): no control and no navigation; what a fold holds is printed open, since paper cannot be pressed
 _pr = re.search(r"@media print\{(.*?)\n@supports selector\(::details-content\)\{summary\{list-style:none\}\}\}\n", _scss, re.S)
 check(_pr and _scss.count("@media print") == 1 and re.match(r"\.skip,nav\.site,form,dialog,button,\.filters,\.tr-bar,p\.actions,\.sec,\.next,\.forms,footer nav\{display:none!important\}", _pr.group(1))

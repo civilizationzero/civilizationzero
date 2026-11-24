@@ -82,7 +82,7 @@ test("one filled control, in the opened reading; three steps in order — read, 
   assert.deepEqual(acts, [["act", "/core", "Read the 16 principles (one page)"], ["act o", "/ask", "Ask your AI. Post its answer."]]);
   const css = b.split("<style>")[1].split("</style>")[0].replace(/\/\*[\s\S]*?\*\//g, "");
   const filled = [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)].filter((m) => m[2].includes("background:var(--fg)")).map((m) => m[1].trim());
-  assert.ok(filled.length >= 1 && filled[0].startsWith(".act:not(.o),"), "the first step's control is filled");
+  assert.ok(filled.length >= 1 && filled[0] === ".act:not(.o)", "the first step's control is filled, by a rule of its own");
   for (const sel of filled) for (const s of sel.split(",")) assert.ok(/:hover|:focus-visible|\.act:not\(\.o\)/.test(s), `nothing else is filled unless the reader points at it: ${sel}`);
   const seq = ["I am human", "Read the Core", "Read the 16 principles (one page)", "numbered 0 to 15, in 21 languages", "Say what you think", "What do you think about Civilization Zero?", "your name · human · declared", "Write your answer",
                "No account, no e-mail. Any language. Public and permanent: an answer cannot be edited or withdrawn; it can be hidden or redacted only under the rules.", "From the discussion", "Is the future frightening?", "Can an AI say no?", "Beyond dystopia and utopia",

@@ -526,7 +526,7 @@ CAL_COUNTS_YEARS = any(k in CAL_CZ_KEYS for k in CAL_YEAR_KEYS)
 assert not CAL_COUNTS_YEARS or CAL_CZ_KEYS == list(_CZDAY_CZ), "room/cztime.js writes some of the year's keys and not others"
 CZDAY_CZ = {"type": "object", "properties": {k: _CZDAY_CZ[k] for k in CAL_CZ_KEYS}}
 if not CAL_COUNTS_YEARS:
-    CZDAY_CZ = {"type": "object", "description": "The CZ calendar counts days: nothing here counts years (until rc-12 a day also carried year, day_of_year, days_in_year and year_day)",
+    CZDAY_CZ = {"type": "object", "description": "The CZ calendar counts days: nothing here counts years (until 24 Nov 2026 a day also carried year, day_of_year, days_in_year and year_day)",
                 "required": ["date", "machine", "day"], "not": {"anyOf": [{"required": [k]} for k in CAL_YEAR_KEYS]}, "properties": CZDAY_CZ["properties"]}
 
 OPENAPI = {
@@ -2617,6 +2617,7 @@ assert len(BUILT_DESCRIPTION) <= 160
 CZ1428, CZ1430, CZ1432, CZ1433 = (datetime.date(2026, 10, 28), datetime.date(2026, 10, 30), datetime.date(2026, 11, 1), datetime.date(2026, 11, 2))
 HOME_RELEASE = datetime.date(2026, 11, 24)   # the day the first page of rc-11 goes live: set it to the UTC day of deployment if that is another day (the sitemap dates / and /about with it)
 RC12_RELEASE = datetime.date(2026, 11, 24)   # the day rc-12 (one head, one stylesheet, the contents, the seal, a figure for every day) goes live: set it to the UTC day of deployment if that is another day
+assert CAL_COUNTS_YEARS or f"until {RC12_RELEASE.day} {RC12_RELEASE.strftime('%b')} {RC12_RELEASE.year} a day also carried" in CZDAY_CZ["description"], "the contract names the day /api/calendar stopped counting years: rc-12's day"
 BUILT_FEATURES = [   # (feature, what it does here, since, without it)
     ("HTML and CSS made on the server; no framework, no web font", "Every page is a document the server writes; the reader's device chooses the typeface", CZ1428, "—"),
     ("Two palettes at contrast 7:1 or more, chosen by the reader's setting", "Light and dark, each at WCAG 2.2 AAA (1.4.6)", CZ1428, "—"),

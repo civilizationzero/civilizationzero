@@ -830,7 +830,7 @@
         "properties": {
           "cz": {
             "type": "object",
-            "description": "The CZ calendar counts days: nothing here counts years (until rc-12 a day also carried year, day_of_year, days_in_year and year_day)",
+            "description": "The CZ calendar counts days: nothing here counts years (until 24 Nov 2026 a day also carried year, day_of_year, days_in_year and year_day)",
             "required": [
               "date",
               "machine",

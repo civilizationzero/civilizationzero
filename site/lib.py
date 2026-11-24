@@ -343,10 +343,13 @@ pre{padding:var(--e-2);border:var(--e-16) solid var(--rule);white-space:pre-wrap
 hr{margin:var(--e5) 0 var(--e0);border:0;border-block-start:var(--e-16) solid var(--fg)}
 .pending{padding:var(--e-4) var(--e-2);border:var(--e-16) dashed var(--mute)}
 summary{padding-block:var(--e-4);cursor:pointer}
-/* M: an exact value (a date, a number, a code) is not cut in two by a line: a short one never; a longer one only where it is wider than
-   its line; a hash, longer than any line of a phone, breaks where it must, and one press selects the whole of it. */
-.nw,a.cz-date time,data,th[scope=col]{white-space:nowrap}
-time:not(a time),code:not(.hash,a code){display:inline-block;max-inline-size:100%}
+/* M: a date or a number is not cut in two by a line: a short one never (nor in a table that scrolls); a longer one only where it is wider
+   than its line. A code wraps as text does, so that the punctuation after it stays with it; a hash, longer than any line of a phone,
+   breaks where it must, and one press selects the whole of it. */
+.nw,a.cz-date time,.scroll time,data,th[scope=col]{white-space:nowrap}
+time:not(a time){display:inline-block;max-inline-size:100%}
+/* a window narrower than sixteen modules (a phone, its text doubled): a moment may break at its spaces (1.4.10) */
+@media not all and (min-width:16rem){a.cz-date time{white-space:normal}}
 a.cz-date{text-decoration-color:var(--mute)}
 code.hash{overflow-wrap:anywhere;-webkit-user-select:all;user-select:all}
 figure{margin-inline:0}
@@ -377,7 +380,10 @@ a.home svg{flex:none;inline-size:var(--e4);block-size:var(--e4)}
 nav.site{border-block-end:var(--e-16) solid var(--rule)}
 nav.site ul{display:flex;flex-wrap:wrap;justify-content:space-between;column-gap:var(--e-12);margin:0;padding:0;list-style:none}
 nav.site li,.foot li{margin:0}
-a[aria-current=page],.toc a:target-current{text-decoration-thickness:var(--e-8);text-decoration-skip-ink:none}
+a[aria-current=page]{text-decoration-thickness:var(--e-8);text-decoration-skip-ink:none}
+/* apart: an engine without :target-current drops the whole rule that names it (so with every newer selector in this sheet: it shares
+   a rule only with selectors of its own age) */
+.toc a:target-current{text-decoration-thickness:var(--e-8);text-decoration-skip-ink:none}
 header.site{container-type:inline-size}
 @container (max-inline-size:26.9087rem){
 .cz-now .w{position:absolute;inline-size:var(--e-16);block-size:var(--e-16);overflow:hidden;clip-path:inset(50%);white-space:nowrap}
@@ -473,15 +479,17 @@ td.num,th.num{text-align:end;font-variant-numeric:tabular-nums}
    reading size, so that a phone does not zoom in when one is tapped; field borders and placeholders at 3:1 or more (1.4.11). E: one
    filled control for the act a page asks for; pointed at, it shows its edge only. */
 button,input,select,textarea{font:inherit;color:var(--fg);background:var(--bg)}
-button,select,input:not([type=checkbox],[type=radio]){box-sizing:border-box;min-block-size:var(--e6);max-inline-size:100%}
+button,select,input:not([type=checkbox]):not([type=radio]){box-sizing:border-box;min-block-size:var(--e6);max-inline-size:100%}
 input,select,textarea{padding:var(--e-4);border:var(--e-16) solid var(--mute)}
 button{padding:var(--e-4) var(--e0);border:var(--e-16) solid var(--fg);cursor:pointer}
 ::placeholder{color:var(--mute);opacity:1}
 input:is([type=radio],[type=checkbox]){accent-color:var(--fg)}
 label{min-inline-size:0}
 a.cta,button.cta{display:inline-flex;align-items:center;box-sizing:border-box;min-block-size:var(--e6);padding:calc(var(--e-2) - var(--e-12)) var(--e0);border:var(--e-12) solid var(--fg);background:var(--fg);color:var(--bg);font-weight:700;line-height:var(--l1);text-decoration:none}
-:is(a.cta,button.cta):is(:hover,:focus-visible),button.cta.done,a.cta.o{background:var(--bg);color:var(--fg)}
-a.cta.o:is(:hover,:focus-visible),button.done:not(.cta){background:var(--fg);color:var(--bg)}
+button.cta.done,a.cta.o{background:var(--bg);color:var(--fg)}
+:is(a.cta,button.cta):is(:hover,:focus-visible){background:var(--bg);color:var(--fg)}
+button.done:not(.cta){background:var(--fg);color:var(--bg)}
+a.cta.o:is(:hover,:focus-visible){background:var(--fg);color:var(--bg)}
 p.cta-line{display:flex;flex-wrap:wrap;align-items:center;gap:var(--e-4) var(--e-2)}
 .cta-note{flex-basis:100%}
 .cta-note:empty{display:none}
@@ -515,7 +523,7 @@ form.cz-conv input{inline-size:15ch}
 .entry .meta{margin:var(--e-8) 0}
 .group{margin-block-end:var(--e-4)}
 .kind,.mtag,.new{display:inline-block;padding-inline:var(--e-8);border:var(--e-16) solid var(--mute);border-radius:var(--e-8);font-size:var(--e-1);line-height:var(--l2);white-space:nowrap}
-.kind:is(.k-ai,.ai),.mtag{border-color:var(--machine);color:var(--machine);font-weight:700}
+.kind.k-ai,.kind.ai,.mtag{border-color:var(--machine);color:var(--machine);font-weight:700}
 .mtag{margin-inline-end:var(--e-8);border-style:dashed}
 .new{border-color:var(--fg);font-weight:700}
 .entry.k-ai{padding-inline-start:var(--e-2);border-inline-start:var(--e-8) solid var(--machine)}
@@ -532,6 +540,7 @@ ol.thread ol.thread{margin-inline-start:var(--e-4);padding-inline-start:var(--e0
 ol.thread ol.thread>li::before{content:"";position:absolute;inset-block-start:var(--e1);inset-inline-start:calc(-1*var(--e0));inline-size:var(--e-2);border-block-start:var(--e-16) solid var(--rule)}
 ol.thread .entry{margin:var(--e0) 0 var(--e-8)}
 p.actions{display:flex;flex-wrap:wrap;align-items:center;gap:var(--e-4) var(--e0);margin-block:var(--e-4) var(--e0)}
+p.actions a{display:inline-block;padding-block:var(--e-8)}
 details.record{margin-block-start:var(--e5);padding-block-start:var(--e-4);border-block-start:var(--e-16) solid var(--rule)}
 details.record>summary{font-weight:700}
 dialog.reply{box-sizing:border-box;inline-size:min(var(--e21),100% - 2*var(--e0));max-block-size:calc(100% - 2*var(--e0));padding:var(--e0);border:var(--e-12) solid var(--fg);color:var(--fg);background:var(--bg)}
@@ -600,7 +609,8 @@ a.home svg{view-transition-name:cz-mark}
 ROOM_CSS = """/* rc-12 room */
 /* a form that records: one filled button; a box to correct is marked, by the browser before sending and by the server after */
 form.respond [type=submit]{padding-inline:var(--e1);border-width:var(--e-12);background:var(--fg);color:var(--bg);font-weight:700}
-form.respond [type=submit]:is(:hover,:focus-visible),button.cta.o{background:var(--bg);color:var(--fg)}
+button.cta.o{background:var(--bg);color:var(--fg)}
+form.respond [type=submit]:is(:hover,:focus-visible){background:var(--bg);color:var(--fg)}
 button.cta.o:is(:hover,:focus-visible){background:var(--fg);color:var(--bg)}
 form.respond :is(:user-invalid,[aria-invalid=true]){border-color:var(--fg);border-inline-start-width:var(--e-4)}
 p.refused,p.receipt{padding:var(--e-4) var(--e-2);border:var(--e-12) solid var(--fg)}
@@ -609,7 +619,7 @@ dialog.reply .shut{float:inline-end;margin:0 0 var(--e-4) var(--e-4)}
 /* in the form the sentence that matters is the one in reading size; the notice of CZ 1433 under it stays small */
 form.respond .permanence{color:var(--mute);font-size:.8409em}
 /* who speaks, in one line shared by every view of an entry; under it one small line, its exact values not shrunk twice */
-p.by{margin-block:var(--e-8) 0}.sys{color:var(--mute);font-size:.8409em}.by+.meta{margin-block:0 var(--e-4)}.meta :is(time,code,.exact),form.respond .src code{font-size:1em}
+p.by{margin-block:var(--e-8) 0}.sys{color:var(--mute);font-size:.8409em}.by+.meta{margin-block:0 var(--e-4)}.meta time,.meta code,.meta .exact,form.respond .src code{font-size:1em}
 /* a row's way in: taller than 24 pixels (2.5.8), a thumb's height on a touch screen */
 p.way{margin-block:var(--e-8) var(--e-4)}p.way a{display:inline-block;padding-block:var(--e-8)}@media(pointer:coarse){p.way a{padding-block:var(--e-2)}}
 /* the room's question: the reply sheet where the browser has popovers, else the link to the form's page */
