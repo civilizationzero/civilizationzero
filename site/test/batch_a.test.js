@@ -46,11 +46,12 @@ const pub = (f) => fs.readFileSync(`${SITE}/public/${f}`, "utf8");
   for (const f of fs.readdirSync(`${SITE}/public`).filter((x) => /^core\.[A-Za-z-]+\.json$/.test(x) && x !== "core.schema.json")) {
     const l = f.slice(5, -5), j = JSON.parse(pub(f)), m = (await call(page, `/api/page?p=core.${l}&f=md`)).body, body = m.slice(m.indexOf("\n---\n") + 5);
     ok(body.trimStart().startsWith(j.label_native) && body.split(j.label_native).length === 2, `core.${l}.md: the label in its language, first and once`);
-    ok(/\*\*Machine translation\*\* — [^\n]*, unreviewed\. The English text is canonical/.test(body), `core.${l}.md: the label in English`);
+    ok(/\n# [^\n]+\n/.test(body) && body.indexOf(j.label_native) < body.indexOf("\n# " ) && /\*\*Machine translation — [^\n]*, unreviewed\.\*\*\n\nThe English text is canonical/.test(body) && body.indexOf("\n# ") < body.indexOf("**Machine translation — "), `core.${l}.md: the title after the label, then the English notice (rc-12: folded on the page under its status, open here)`);
     ok(body.split(j.preamble).length === 2 && body.indexOf(j.preamble) < body.indexOf("## §0."), `core.${l}.md: the preamble, once, before §0`);
   }
   { const m = (await call(page, "/api/page?p=core&f=md")).body, pre = JSON.parse(pub("core.json")).preamble;
-    ok(m.split(pre).length === 2 && m.indexOf(pre) < m.indexOf("## §0."), "core.md: the preamble, once, before §0"); }
+    ok(m.split(pre).length === 2 && m.indexOf(pre) < m.indexOf("## §0."), "core.md: the preamble, once, before §0");
+    ok(m.includes("\n---\n\n# Civilization Zero — The Invariant Core\n\nThe One-Page Manifesto · ` CZ-CORE 1.0 ` · Coordinate Zero: 30 November 2022\n"), "core.md: begins with the title and the Core's own line (rc-12, finding 6)"); }
 
   // 4. the colophon: the deployment and the latest check
   process.env.VERCEL_GIT_COMMIT_SHA = "a".repeat(40);
@@ -91,7 +92,7 @@ const pub = (f) => fs.readFileSync(`${SITE}/public/${f}`, "utf8");
   ok(new Set(ids).size === ids.length, "15: no anchor twice on /core");
   ok((core.match(/<p class="src cite">Cite: Civilization Zero \(2026\), CZ-CORE 1\.0, §\d+ /g) || []).length === 16, "5: a line to cite each section §0–§15");
   ok(core.includes('<meta name="citation_title" content="Civilization Zero — The Invariant Core (CZ-CORE 1.0): The One-Page Manifesto">') && core.includes('<link rel="cite-as" href="https://doi.org/10.5281/zenodo.23740317">'), "5: citation_* and cite-as on /core");
-  ok(rec.includes('<meta name="citation_author" content="Civilization Zero">') && rec.includes("<tr><th>Cite as</th>"), "5: /record");
+  ok(rec.includes('<meta name="citation_author" content="Civilization Zero">') && rec.includes('<tr><th scope="row">Cite as</th>'), "5: /record");
   const press = pub("press.html");
   ok(press.includes('<h2 id="cite">How to cite</h2>') && press.includes("The deposit.") && press.includes("The discussion.") && press.includes("&#123;"), "5: the press kit tells the three apart");
   const csl = JSON.parse(pub("cite/civilization-zero.csl.json"));

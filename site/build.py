@@ -421,12 +421,17 @@ POSTER_LD = {"@type": "ImageObject", "contentUrl": f"{ORIGIN}{CORE_POSTER[0]}", 
              "creator": {"@type": "Organization", "name": "Civilization Zero", "url": f"{ORIGIN}/"}, "representativeOfPage": True}
 
 def translation_page(tr):
+    # rc-12 (the audit of 24 Nov 2026, findings 6 and 15): everything of the page is inside <main>, so that the skip link lands on the title
+    # and the Markdown form carries it. First one line in the reader's language that says what this is (IR 10.5: a translation is labelled
+    # wherever it is read); then the title; then the English notice, folded under its first words — status, engine, date.
     lang, rtl = tr["lang"], tr.get("dir") == "rtl"
-    parts = [f'<aside class="tr-status" aria-label="Translation status">' + (f'<p class="src">{esc(tr["label_native"])}</p>' if tr.get("label_native") else "") + f'<p class="pending" lang="en" dir="ltr"><strong>{esc(tr["kind"].capitalize())}</strong> — {esc(tr["engine"])}, {time_el(datetime.date.fromisoformat(tr["date"]))}, '
-             + ("reviewed by " + esc(tr["reviewed_by"]) if tr.get("reviewed_by") else "unreviewed") +
-             f'. The English text is canonical: <a href="/core">/core</a>. Each statement below corresponds to the English statement at the same position (IR 10.5: a translation must expose how it maps to the Core). Corrections: <a href="mailto:{CONTACT}">{CONTACT}</a>.</p>']
-    parts.append("</aside>")   # the status of the translation, in a landmark of its own (WCAG: all content in landmarks)
-    parts.append(f'<header><h1>{esc(tr["title"])}</h1><p>{esc(tr["subtitle"])} · <code>CZ-CORE 1.0</code> · <span lang="en" dir="ltr">{tr["language_name_en"]}</span> · {esc(tr["language_name_native"])}</p><p id="preamble">{esc(tr["preamble"])}</p></header><main>')
+    _d = datetime.date.fromisoformat(tr["date"])
+    parts = ['<main><header>' + (f'<p class="src">{esc(tr["label_native"])}</p>' if tr.get("label_native") else "")
+             + f'<h1>{esc(tr["title"])}</h1><p>{esc(tr["subtitle"])} · <code>CZ-CORE 1.0</code> · <span lang="en" dir="ltr">{tr["language_name_en"]}</span> · {esc(tr["language_name_native"])}</p>' + FORMS
+             + f'<details class="tr-status" lang="en" dir="ltr"><summary>{esc(tr["kind"].capitalize())} — {esc(tr["engine"])}, <time datetime="{_d.isoformat()}">{cz_stamp(_d)}</time>, '
+             + ("reviewed by " + esc(tr["reviewed_by"]) if tr.get("reviewed_by") else "unreviewed")
+             + f'.</summary><p>The English text is canonical: <a href="/core">/core</a>. Each statement below corresponds to the English statement at the same position (IR 10.5: a translation must expose how it maps to the Core). Corrections: <a href="mailto:{CONTACT}">{CONTACT}</a>.</p></details>'
+             + f'<p id="preamble">{esc(tr["preamble"])}</p></header>']
     for pr in tr["principles"]:
         n = pr["n"]
         parts.append(f'<section id="p{n}" aria-labelledby="h-p{n}"><h2 id="h-p{n}"><span dir="ltr">§{n}.</span> {esc(pr["title"])} <a class="src" href="/core#p{n}" lang="en" dir="ltr">EN §{n}</a></h2>')
@@ -439,9 +444,9 @@ def translation_page(tr):
     at = tr.get("attribution", {})
     if at: parts.append('<section id="attribution"><p>' + "<br>".join(esc(v) for v in at.values()) + "</p></section>")
     if tr.get("notes"): parts.append('<section id="notes" aria-labelledby="h-notes"><h2 id="h-notes" lang="en" dir="ltr">Translator\'s notes</h2><ul>' + "".join(f"<li>{esc(x)}</li>" for x in tr["notes"]) + "</ul></section>")
-    parts.append(f'<section id="integrity" lang="en" dir="ltr"><h2>Integrity record</h2><table><tr><th>Maps to</th><td><code>CZ-CORE 1.0</code>, SHA-256 <code class="hash">{CORE_SHA}</code></td></tr>'
-                 f'<tr><th>This translation</th><td><a href="/core.{lang}.json">/core.{lang}.json</a>, SHA-256 <code class="hash">{tr["_sha"]}</code></td></tr>'
-                 f'<tr><th>Status</th><td>{esc(tr["kind"])}; {"reviewed by " + esc(tr["reviewed_by"]) if tr.get("reviewed_by") else "not human-reviewed"}; the English text governs where they differ</td></tr></table></section></main>')
+    parts.append(f'<section id="integrity" lang="en" dir="ltr"><h2>Integrity record</h2><table class="kv"><tr><th scope="row">Maps to</th><td><code>CZ-CORE 1.0</code>, SHA-256 <code class="hash">{CORE_SHA}</code></td></tr>'
+                 f'<tr><th scope="row">This translation</th><td><a href="/core.{lang}.json">/core.{lang}.json</a>, SHA-256 <code class="hash">{tr["_sha"]}</code></td></tr>'
+                 f'<tr><th scope="row">Status</th><td>{esc(tr["kind"])}; {"reviewed by " + esc(tr["reviewed_by"]) if tr.get("reviewed_by") else "not human-reviewed"}; the English text governs where they differ</td></tr></table></section></main>')
     html = shell(f'{tr["title"]} · CZ-CORE 1.0 · Civilization Zero', "".join(parts), f"/core.{lang}",   # the name searched for, beside the name in the language (CZ 1445)
                  f'CZ-CORE 1.0 §0: “{tr["principles"][0]["statements"][0]}”',   # the translation's own first sentence, §0, word for word and marked as the Core's: what a reader of that language meets first
                  alternates=[("application/json", f"/core.{lang}.json", "This translation as JSON")], hreflangs=HREFLANGS, og_type="article",
@@ -768,30 +773,59 @@ def cite_section():
 <p>The texts and the latest deposit as <a href="/cite/civilization-zero.bib">BibTeX</a>, <a href="/cite/civilization-zero.ris">RIS</a> and <a href="/cite/civilization-zero.csl.json">CSL-JSON</a>:</p>
 <pre>{esc(CITE_BIB).replace("{", "&#123;").replace("}", "&#125;")}</pre>"""
 
+# The Core's seal (rc-12, CZ 1455): the SHA-256 of record/CZ-CORE-1.0.txt as 256 cells, sixteen to a row, most significant bit first, the
+# row's two bytes beside it — drawn by site/figure.py from the hash the build computes from the Core's bytes, and recomputed cell by
+# cell in site/check.py. Row i is bytes 2i and 2i + 1 of the hash: the start of ring i of the day's figure and, plus one, its daily step
+# (figure.py, constants). It stood in the first page's machine reading during rc-11 and left it after the reviews; its place is beside
+# the Core's integrity record. One sentence under it, and no other claim.
+SEAL_CAPTION = "The Core's SHA-256 as 256 cells, sixteen rows of sixteen bits. Each row gives one ring of the day's figure its place on Day 0 and its daily step."
+import figure as FIGURE   # site/figure.py: the figure's definition and the seal; room/figure.js is the figure's twin at request time (check.py compares them)
+def seal_html():
+    assert FIGURE.cells(CORE_SHA) == "".join(f"{x:08b}" for x in hashlib.sha256(CORE_BYTES).digest()) and len(FIGURE.cells(CORE_SHA)) == 256
+    return f'<figure class="seal">{FIGURE.seal(CORE_SHA)}<figcaption>{esc(SEAL_CAPTION)}</figcaption></figure>'
+
 def integrity_block(doc, txt_path, sha, json_path, json_sha, which):
-    return f"""<section id="integrity" aria-labelledby="h-int">
-<h2 id="h-int">Integrity record</h2>
-<table>
-<tr><th>Identifier</th><td><code>{doc}</code></td></tr>
-<tr><th>Canonical form</th><td><a href="{txt_path}">{txt_path}</a> — exact bytes: UTF-8, no byte-order mark, LF line endings, nothing normalised</td></tr>
-<tr><th>SHA-256</th><td><code class="hash">{sha}</code></td></tr>
-<tr><th>JSON form</th><td><a href="{json_path}">{json_path}</a> — an equivalent, not the canonical form; it reconstructs the canonical bytes exactly (checked at every build). SHA-256 <code class="hash">{json_sha}</code></td></tr>
-<tr><th>Signature</th><td>{signature_cell(txt_path)}</td></tr>
-<tr><th>Prepared for first public release</th><td>{time_el(datetime.date(2026, 8, 30))}</td></tr>
-<tr><th>Published on this site</th><td>{time_el(PRERELEASE)} (read-only, pre-release){f'; the discussion room opened {OPENED_TIME_HTML}' if ROOM_EVER_OPENED else ""}; public launch on the fourth anniversary of Coordinate Zero, {time_el(LAUNCH)}</td></tr>
-<tr><th>Licence</th><td>CC BY 4.0. A version or translation that calls itself conforming states which Core it maps to and how (IR 10.4–10.5) — a conformance convention of this project, not a restriction on the licence.</td></tr>
-<tr><th>Identity</th><td>The record's identity is its hash, not its address. An address may fail; the hash does not.</td></tr>
-<tr><th>Cite as</th><td>{cite_line(which)}</td></tr>
-</table>
-</section>"""
+    rows = [("Identifier", f"<code>{doc}</code>"),
+            ("Canonical form", f'<a href="{txt_path}">{txt_path}</a> — exact bytes: UTF-8, no byte-order mark, LF line endings, nothing normalised'),
+            ("SHA-256", f'<code class="hash">{sha}</code>'),
+            ("JSON form", f'<a href="{json_path}">{json_path}</a> — an equivalent, not the canonical form; it reconstructs the canonical bytes exactly (checked at every build). SHA-256 <code class="hash">{json_sha}</code>'),
+            ("Signature", signature_cell(txt_path)),
+            ("Prepared for first public release", time_el(datetime.date(2026, 8, 30))),
+            ("Published on this site", f'{time_el(PRERELEASE)} (read-only, pre-release){f"; the discussion room opened {OPENED_TIME_HTML}" if ROOM_EVER_OPENED else ""}; public launch on the fourth anniversary of Coordinate Zero, {time_el(LAUNCH)}'),
+            ("Licence", "CC BY 4.0. A version or translation that calls itself conforming states which Core it maps to and how (IR 10.4–10.5) — a conformance convention of this project, not a restriction on the licence."),
+            ("Identity", "The record's identity is its hash, not its address. An address may fail; the hash does not."),
+            ("Cite as", cite_line(which))]
+    return (f'<section id="integrity" aria-labelledby="h-int">\n<h2 id="h-int">Integrity record</h2>\n{seal_html() if which == "core" else ""}<table class="kv">\n'
+            + "".join(f'<tr><th scope="row">{k}</th><td>{v}</td></tr>\n' for k, v in rows) + "</table>\n</section>")
 
 # ---------------------------------------------------------------- /core
+def core_section_line(n, title):
+    # Under each principle, outside the canonical text, one quiet line (rc-12; the audit of 24 Nov 2026, finding 22; until then two
+    # paragraphs): the section's number, its discussion and the way to respond to it (Phase 1 of the room, 29 Oct 2026), and "Cite", a
+    # button that opens the line to cite the section by (CZ 1433, item 5) where it stands — the browser's own popover, no script. Where
+    # a browser has no popover there is no button, and the line to cite stands open under the section, as it did.
+    room = (f' · <a href="/discuss?ref={n}" aria-label="Discussion of §{n}">Discussion</a>' if ROOM_EVER_OPENED else "") + (f' · <a href="/respond?ref={n}" aria-label="Respond to §{n}">Respond</a>' if ROOM_OPEN else "")
+    return (f'<p class="src sec"><span>§{n}</span>{room}<span hidden> · <button type="button" popovertarget="cite-p{n}" aria-label="Cite §{n}">Cite</button></span></p>'
+            f'<div id="cite-p{n}" popover><p class="src cite">Cite: {CITE_AUTHOR} ({CITE_DATE.year}), CZ-CORE 1.0, §{n} “{esc(title)}”. <a href="#p{n}">{ORIGIN}/core#p{n}</a></p></div>')
+
+def next_steps_html():
+    # After the Core's closing line, the reader's next act (rc-12; finding 5): the first page's second and third steps, in its words —
+    # the question, the control that opens the form, what the record means for the writer, and the invitation to bring one's own AI.
+    # One filled control: the reader's own answer.
+    if not ROOM_OPEN: return ""
+    return (f'<aside class="next" aria-labelledby="h-next"><p class="q" id="h-next">{esc(DOOR_ASK)}</p>'
+            f'<p class="acts"><a class="cta" href="/respond?kind=human">{esc(DOOR_WRITE)}</a> <a class="cta o" href="/ask">{esc(DOOR_ASK_BUTTON)}</a></p>'
+            f'<p>{esc(DOOR_TERMS)}</p></aside>')
+
 def core_page():
     d = CORE_JSON
-    parts = [f'<header><h1>{esc(d["title"])}</h1><p>{esc(d["subtitle"])} · <code>{esc(d["identifier"])}</code> · Coordinate Zero: <time datetime="2022-11-30">30 November 2022</time></p>',
-             f'<p id="preamble">{esc(d["preamble"])}</p></header><main>',
-             f'<p class="src" lang="en">Read it in: {translations_native_html()}. <a href="#translations">About the translations</a>.</p>',
-             '<p class="src">Section references: the Core\'s own numbers 0–15 — displayed §n, anchored <code>#pn</code>, and <code>"n"</code> in the API; each paragraph or item of a section is anchored too, in order: <code>#p3-2</code> is the second of §3, <code>#closing-1</code> the first of the closing. The text below is the canonical text, rendered; the canonical bytes are <a href="/core.txt">/core.txt</a>.</p>']
+    # rc-12 (findings 5 and 6): the title, the Core's own line and its preamble are inside <main>, so that the skip link lands on the title
+    # and the Markdown form begins with it; a principle's text stands on the first screen of a phone — the languages fold to one line
+    # (one press shows all of them), and the site's note on anchors and numbering stands with the other forms, below the text.
+    langs = (f'<details class="langs"><summary>The Core in {CORE_LANGUAGES} languages</summary><p>English · {translations_native_html()}. '
+             '<a href="#translations">About the translations</a>.</p></details>')
+    parts = [f'<main><header><h1>{esc(d["title"])}</h1><p>{esc(d["subtitle"])} · <code>{esc(d["identifier"])}</code> · Coordinate Zero: <time datetime="2022-11-30">30 November 2022</time></p>',
+             FORMS + langs + f'<p id="preamble">{esc(d["preamble"])}</p></header>']
     for p in d["principles"]:
         parts.append(f'<section id="p{p["n"]}" aria-labelledby="h-p{p["n"]}"><h2 id="h-p{p["n"]}">§{p["n"]}. {esc(p["title"])}</h2>')
         k = 0   # paragraph anchors (the originator's decision of CZ 1433, item 15): #p3-2, the second paragraph or item of §3
@@ -803,11 +837,7 @@ def core_page():
         if "ordered" in p:
             parts.append("<ol>" + "".join(f'<li id="{pid()}">{esc(verified_core(s))}</li>' for s in p["ordered"]) + "</ol>")
             for s in p.get("closing", []): parts.append(f'<p id="{pid()}">{esc(verified_core(s))}</p>')
-        # how to cite this section (CZ 1433, item 5); outside the canonical text, as the line below
-        parts.append(f'<p class="src cite">Cite: {CITE_AUTHOR} ({CITE_DATE.year}), CZ-CORE 1.0, §{p["n"]} “{esc(p["title"])}”. <a href="#p{p["n"]}">{ORIGIN}/core#p{p["n"]}</a></p>')
-        if ROOM_EVER_OPENED:   # the room's answers to this section, one click away (Phase 1, 29 Oct 2026); outside the canonical text
-            parts.append(f'<p class="src room-links"><a href="/discuss?ref={p["n"]}">The discussion of §{p["n"]}</a>'
-                         + (f' · <a href="/respond?ref={p["n"]}">Respond to §{p["n"]}</a>' if ROOM_OPEN else "") + "</p>")
+        parts.append(core_section_line(p["n"], p["title"]))
         parts.append("</section>")
     c = d["closing"]
     parts.append(f'<section id="closing" aria-labelledby="h-closing"><h2 id="h-closing">{esc(c["title"])}</h2>')
@@ -815,11 +845,13 @@ def core_page():
         t = esc(verified_core(s))
         parts.append(f'<p id="closing-{i + 1}"><strong>{t}</strong></p>' if i in c.get("emphasis", []) else f'<p id="closing-{i + 1}">{t}</p>')
     parts.append("</section>")
+    parts.append(next_steps_html())
     parts.append(f'''<section id="attribution" aria-labelledby="h-attr"><h2 id="h-attr">Origin and attribution</h2>
 <p class="src">As published in the document; not altered here (Core §6, §15).</p>
 <p>Originating concept: {esc(d["originating_concept"])}<br>Originating dialogue: {esc(d["originating_dialogue"])}<br>Human publisher and publication responsibility: {esc(d["human_publisher"])}<br>Prepared for first public release: <time datetime="2026-08-30">30 August 2026</time></p></section>''')
     parts.append(integrity_block("CZ-CORE 1.0", "/core.txt", CORE_SHA, "/core.json", sha256(CORE_JSON_BYTES), "core"))
     parts.append(f'''<section id="forms" aria-labelledby="h-forms"><h2 id="h-forms">Other forms</h2>
+<p class="src">Section references: the Core's own numbers 0–15 — displayed §n, anchored <code>#pn</code>, and <code>"n"</code> in the API; each paragraph or item of a section is anchored too, in order: <code>#p3-2</code> is the second of §3, <code>#closing-1</code> the first of the closing. The text above is the canonical text, rendered; the canonical bytes are <a href="/core.txt">/core.txt</a>.</p>
 <ul><li>Objections and errata to this text: <a href="/objections">/objections</a> — open to anyone; the opening docket of the first scheduled review, {time_el(REVIEW)}.</li>
 <li id="translations">Translations (IR 10.5), each mapping statement for statement to this text, the English governing where they differ: {translations_list_html()}. Human-reviewed translations follow; corrections to <a href="mailto:{CONTACT}">{CONTACT}</a>.</li>
 <li>A formal, language-independent form of the Core (IR 10.5) does not yet exist. The JSON form is English prose with structure.</li>
@@ -2008,7 +2040,6 @@ QUOTES = [("p0", "CZ-CORE 1.0 §0", "30 November 2022 is selected as Year Zero o
 # who is behind the page; two doors of one size. The stylesheet is site/home.css (one module, one ratio); the page carries it instead
 # of the shared one, which the other pages keep until they are restyled.
 for _a, _s, _t in QUOTES: verified_core(_t)   # the nine lines stay in the data form (from_the_core): each is compared with the canonical text
-import figure as FIGURE   # site/figure.py: the figure's definition; room/figure.js is its twin at request time (check.py compares them)
 FIG_K = FIGURE.constants(CORE_SHA)   # (start, step, modulus) of the sixteen rings, from the hash the build computed from the Core's bytes
 assert CORE_SHA == PUBLISHED_CORE_SHA, "the Core's hash differs from the published one: every figure would change with it"
 HOME_CSS = (SITE / "home.css").read_text("utf-8")

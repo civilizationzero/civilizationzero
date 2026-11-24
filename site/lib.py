@@ -332,6 +332,7 @@ li{margin-block:var(--e-8)}
 /* H: small grey print for sources and captions only; what a reader must know is set at the reading size. */
 .src,figcaption,.forms{color:var(--mute)}
 .src,figcaption{font-size:.8409em}
+:is(h2,h3) .src{font-size:.5946em;font-weight:400}
 blockquote{margin-inline:0;padding-inline-start:var(--e0);border-inline-start:var(--e-16) solid var(--fg)}
 blockquote p{margin:var(--e-8) 0}
 pre{padding:var(--e-2);border:var(--e-16) solid var(--rule);white-space:pre-wrap;overflow-wrap:anywhere}
@@ -339,7 +340,7 @@ hr{margin:var(--e5) 0 var(--e0);border:0;border-block-start:var(--e-16) solid va
 .pending{padding:var(--e-4) var(--e-2);border:var(--e-16) dashed var(--mute)}
 summary{padding-block:var(--e-4);cursor:pointer}
 /* M: a date, a number or a hash is never cut in two by a line; one press selects a whole hash. */
-.nw,a.cz-date time,td :is(time,data),th[scope=col],#how code{white-space:nowrap}
+.nw,time,data,th[scope=col],#how code{white-space:nowrap}
 a.cz-date{text-decoration-color:var(--mute)}
 code.hash{overflow-wrap:anywhere;user-select:all}
 figure{margin-inline:0}
@@ -371,14 +372,48 @@ a[aria-current=page]{text-decoration-thickness:var(--e-8)}
 nav.site ul{justify-content:start;column-gap:var(--e2)}
 }
 /* M: the machine's forms in plain sight: under a page's title one line, in the machine's face, of the forms this address really has. */
-.forms{margin-block:0 var(--e0)}
+.forms{margin-block:0 var(--e-4)}
 
-/* 4 TABLES. Two kinds. A table of labels and values has one label column of one width; on a narrow screen each label stands over its
+/* 4 THE RECORD'S PAGES. R: the Core's and the record's words are set as they stand; what the site adds stands apart from them. Under each
+   principle one quiet line: its number, its discussion, the way to respond, and a button that opens the line to cite it by (the
+   browser's own popover; where a browser has none, no button, and the line stands open). After the closing, the reader's next act:
+   one filled control. Beside the Core's integrity record, its seal: the SHA-256 as 256 cells; in the margin where the window has one. */
+.langs,.tr-status{margin-block:0 var(--e-4)}
+.sec{display:flex;flex-wrap:wrap;align-items:center;column-gap:var(--e-4)}
+.sec a{display:inline-block;padding-block:var(--e-4)}
+.sec button{min-block-size:var(--e3);padding:0 var(--e-4);border-color:var(--mute);color:inherit}
+div[popover]{box-sizing:border-box;max-inline-size:calc(100% - 2*var(--e-1));padding:var(--e-4) var(--e-2);border:var(--e-16) solid var(--fg);color:var(--fg);background:var(--bg)}
+div[popover] p{margin:0}
+@supports selector(:popover-open){
+.sec [hidden]{display:inline}
+div:popover-open p{color:var(--fg);font-size:1em}
+/* where the browser can anchor it, the line to cite stands under its own section's line, as wide as the column; elsewhere, in the middle of the window */
+@supports (anchor-scope:--a){
+section{anchor-scope:--sec}
+.sec{anchor-name:--sec}
+div[popover]{position-anchor:--sec;inset:anchor(bottom) auto auto anchor(left);margin:0;max-inline-size:anchor-size(width);position-try-fallbacks:flip-block}
+}
+}
+.next{margin-block:var(--e5)}
+.next p{margin-block:var(--e-2)}
+.q{font-size:1.1892em;font-weight:700;line-height:var(--l1)}
+.acts{display:flex;flex-wrap:wrap;gap:var(--e-4) var(--e-2)}
+.seal svg{display:block;inline-size:min(100%,20*var(--e0));block-size:auto}
+.seal .un{fill:var(--rule)}
+.seal .cut{stroke:var(--bg);stroke-width:var(--e-16);vector-effect:non-scaling-stroke}
+.seal text{fill:var(--mute);font-family:var(--exact)}
+@media(min-width:76.1093rem){
+.seal{--w:min(16rem,50vw - 28ch - var(--e-1) - var(--e4));float:inline-end;inline-size:var(--w);margin-block:0;margin-inline:var(--e3) calc(-1*(var(--w) + var(--e3)))}
+}
+/* what a reader must know is never small print: what permanence means, where a person writes or a system posts */
+.permanence{color:var(--fg);font-size:1em}
+
+/* 5 TABLES. Two kinds. A table of labels and values has one label column of one width; on a narrow screen each label stands over its
    value. A table of rows keeps its columns where they fit; on a narrow screen each row is a block, its first cell in bold and each
    further cell under the name of its column. H: a word is hyphenated or kept whole, never cut anywhere; only an address or a code may
    break where it must; a region that scrolls sideways takes the keyboard and has a name (2.1.1). */
 table{inline-size:100%;border-collapse:collapse;font-size:.8409em}
-th,td{padding:var(--e-4) 0;padding-inline-end:var(--e-2);border-block-end:var(--e-16) solid var(--rule);text-align:start;vertical-align:top;hyphens:auto}
+th,td{padding:var(--e-4) 0;padding-inline-end:var(--e-2);border-block-end:var(--e-16) solid var(--rule);text-align:start;vertical-align:top;hyphens:auto;hyphenate-limit-chars:10 4 4}
 td :is(a,code){overflow-wrap:anywhere}
 td.num,th.num{text-align:end;font-variant-numeric:tabular-nums}
 .scroll{overflow-x:auto}
@@ -394,7 +429,7 @@ td.num,th.num{text-align:end;font-variant-numeric:tabular-nums}
 .rows td[data-th]::before{content:attr(data-th) ": ";color:var(--mute)}
 }
 
-/* 5 CONTROLS. H: every control at least e6 tall (2.5.8 and the platforms' touch guidance) and no wider than its line; fields at the
+/* 6 CONTROLS. H: every control at least e6 tall (2.5.8 and the platforms' touch guidance) and no wider than its line; fields at the
    reading size, so that a phone does not zoom in when one is tapped; field borders and placeholders at 3:1 or more (1.4.11). E: one
    filled control for the act a page asks for; pointed at, it shows its edge only. */
 button,input,select,textarea{font:inherit;color:var(--fg);background:var(--bg)}
@@ -405,8 +440,8 @@ button{padding:var(--e-4) var(--e0);border:var(--e-16) solid var(--fg);cursor:po
 input:is([type=radio],[type=checkbox]){accent-color:var(--fg)}
 label{min-inline-size:0}
 a.cta,button.cta{display:inline-block;box-sizing:border-box;min-block-size:var(--e6);padding:calc(var(--e-2) - var(--e-12)) var(--e0);border:var(--e-12) solid var(--fg);background:var(--fg);color:var(--bg);font-weight:700;line-height:var(--l1);text-decoration:none}
-:is(a.cta,button.cta):is(:hover,:focus-visible),button.cta.done{background:var(--bg);color:var(--fg)}
-button.done:not(.cta){background:var(--fg);color:var(--bg)}
+:is(a.cta,button.cta):is(:hover,:focus-visible),button.cta.done,a.cta.o{background:var(--bg);color:var(--fg)}
+a.cta.o:is(:hover,:focus-visible),button.done:not(.cta){background:var(--fg);color:var(--bg)}
 p.cta-line{display:flex;flex-wrap:wrap;align-items:center;gap:var(--e-4) var(--e-2)}
 .cta-note{flex-basis:100%}
 .cta-note:empty{display:none}
@@ -427,7 +462,7 @@ form.cz-conv span{flex-wrap:nowrap}
 form.cz-conv input{inline-size:15ch}
 .cz-native{font-family:var(--human)}
 
-/* 6 THE ROOM. Blueprint §7: an entry is user content, shown as text, its words unchanged. The machine layer (the originator's decision of
+/* 7 THE ROOM. Blueprint §7: an entry is user content, shown as text, its words unchanged. The machine layer (the originator's decision of
    CZ 1433): green is for what a machine wrote, an AI system's entry (its tag and its edge) and a machine translation (a dashed edge and a
    tag), and for the day of the CZ count; the tag's words always say it too (1.4.1). The tag keeps its size inside small print. */
 .entry{margin:var(--e2) 0;padding-block-start:var(--e-4);border-block-start:var(--e-16) solid var(--rule)}
@@ -481,7 +516,7 @@ ol.tr-items li.tr-fail{border-inline-start-style:dashed}
 .tr-done .tr-st{color:var(--machine);font-weight:700}
 .tr-snip{color:var(--mute)}
 
-/* 7 FOOT. C: where everything is (the list the head's "All pages" leads to), the licence, what the site does not do, what the page weighs. */
+/* 8 FOOT. C: where everything is (the list the head's "All pages" leads to), the licence, what the site does not do, what the page weighs. */
 footer{padding-block-end:var(--e4);color:var(--mute)}
 footer :is(p,.src,.foot){font-size:var(--e-1)}
 .foot{columns:2 var(--e14);column-gap:var(--e3);margin-block:var(--e0);padding:0;list-style:none;color:var(--fg)}
@@ -489,10 +524,10 @@ footer :is(p,.src,.foot){font-size:var(--e-1)}
 .foot a{display:inline-block;padding-block:var(--e-8)}
 .cz-weight{font-variant-numeric:tabular-nums}
 
-/* 8 PRINT. On paper: the name and the day, the text, the foot's words; no control and no navigation. */
-@media print{.skip,nav.site,form,dialog,button,.filters,.tr-bar,p.actions,.room-links,.forms,footer nav{display:none!important}a{text-decoration:none}header.site,main,footer{max-inline-size:none}}
+/* 9 PRINT. On paper: the name and the day, the text, the foot's words; no control and no navigation. */
+@media print{.skip,nav.site,form,dialog,button,.filters,.tr-bar,p.actions,.sec,.next,.forms,footer nav{display:none!important}a{text-decoration:none}header.site,main,footer{max-inline-size:none}}
 
-/* 9 MOTION. E: between two pages of the site the page fades and the mark travels from its place on one to its place on the other
+/* 10 MOTION. E: between two pages of the site the page fades and the mark travels from its place on one to its place on the other
    (cross-document view transitions); a translation in progress shows a sweep and a turning ring. H: none of it for a reader who asks for
    less motion (2.3.3); the pages are whole without it. */
 @media(prefers-reduced-motion:no-preference){
@@ -642,9 +677,21 @@ def cz_bar_fallback():   # for copies that serve the files as they are: no day, 
 GOOGLE_SITE_VERIFICATION = "Hf73qd5zTa6JZ_-O6QM0JBYPSqxOdIM-M33lsIGihhg"   # Google Search Console ("HTML tag" method), property https://civilizationzero.ai/, added by the originator on 29 Oct 2026; keep it, or the property loses its verification
 OG_IMAGE = ("/civilization-zero.png", 1200, 630, "The mark CZ, a zero in which C and Z share their strokes, and the words: Civilization Zero names the beginning of a civilization in which humans may no longer be at the centre. Coordinate Zero, 30 November 2022.")
 
+# The machine's forms in plain sight (rc-12; the audit of 24 Nov 2026, finding 26): under a page's title one quiet line, in the machine's
+# face, of the forms this address really has — its Markdown (every page has one), and its text and its JSON where the page names them as
+# alternates in its head (the same list: nothing is offered here that the head does not declare). A page marks the place with FORMS.
+FORMS = "<!--forms-->"
+_FORM_NAMES = {"text/plain": "text", "application/json": "JSON"}
+def forms_line(path, alternates=()):
+    links = [f'<a href="{md_path(path)}" type="text/markdown">Markdown</a>']
+    links += [f'<a href="{h}" type="{t}">{_FORM_NAMES[t]}</a>' for k in _FORM_NAMES for t, h, _ in alternates if t == k]
+    return f'<p class="forms" lang="en" dir="ltr">This page as {" · ".join(links)}</p>'
+
 def shell(title, body, path, description, alternates=(), ldjson=None, nav=True, extra_head="", hreflangs=(), og_type="website", robots=None, crumbs=True, cz_bar=True, footer_extra="", crumb=None, og_image=None, css=None, footer=None):
     # css, footer: a page that carries its own stylesheet and its own foot (the first page, since 24 Nov 2026); every other page takes the shared ones
     assert "Year Zero" not in title and (path == "__PATH__" or "Year Zero" not in description), f"{path}: the site counts days; \"Year Zero\" is the Core's phrase, quoted as the Core's and never a title or a description"
+    assert body.count(FORMS) <= 1
+    body = body.replace(FORMS, forms_line(path, alternates))
     ogi = og_image or OG_IMAGE
     alt = "".join(f'<link rel="alternate" type="{t}" href="{h}" title="{esc(n)}">' for t, h, n in alternates)
     hl = "".join(f'<link rel="alternate" hreflang="{l}" href="{ORIGIN}{h}">' for l, h in hreflangs)

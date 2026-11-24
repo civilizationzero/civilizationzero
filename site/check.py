@@ -432,18 +432,24 @@ rel = json.loads((PUBLIC / ".well-known" / "cz-release-1.0.json").read_text("utf
 check(rel["documents"][0]["sha256"] == CORE_SHA and rel["documents"][1]["sha256"] == IR_SHA, "release manifest hashes")
 check(man["signature"]["release_manifest_sha256"] == sha256((PUBLIC / ".well-known" / "cz-release-1.0.json").read_bytes()), "release manifest hash in manifest")
 
-# The translations of the Core (audit B, CZ 1447): each page says what it is in its attributes (lang; dir for a right-to-left language),
-# carries its label before its title — in its own language and in English — and every statement of its JSON form, in order
+# The translations of the Core (audit B, CZ 1447; rc-12, findings 6 and 15): each page says what it is in its attributes (lang; dir for a
+# right-to-left language); everything of it is inside <main>; it carries its label in its own language before its title (IR 10.5: a
+# translation is labelled wherever it is read) and, after the title, the English notice folded under its status; and every statement
+# of its JSON form, in order
 for _t in sorted(PUBLIC.glob("core.*.json")):
     if _t.name == "core.schema.json": continue
     _l = _t.name[5:-5]; _j = json.loads(_t.read_text("utf-8")); _p = (PUBLIC / f"core.{_l}.html").read_text("utf-8")
     _rtl = _l.split("-")[0] in ("ar", "fa", "he", "ur", "ps", "sd", "ug", "yi", "dv", "ckb", "syr")
     check((_j.get("dir") == "rtl") == _rtl and f'<html lang="{_l}"' + (' dir="rtl"' if _rtl else "") + ">" in _p, f"core.{_l}: lang and dir")
-    _a, _b = _p.find('<aside class="tr-status"'), _p.find("<h1>")
-    _lab = _p[_a:_b] if 0 < _a < _b else ""
-    check(f'<p class="src">{esc(_j["label_native"])}</p>' in _lab and f'<strong>{esc(_j["kind"].capitalize())}</strong>' in _lab
-          and (", unreviewed." in _lab) == (not _j.get("reviewed_by")) and 'The English text is canonical: <a href="/core">/core</a>' in _lab,
-          f"core.{_l}.html: the label, in its language and in English, before the title")
+    _a, _b, _c = _p.find('<main id="content"><header>'), _p.find("<h1>"), _p.find('<p id="preamble">')
+    _lab = _p[_a:_b] if 0 < _a < _b else ""; _after = _p[_b:_c] if 0 < _b < _c else ""
+    _st = re.search(r'<details class="tr-status" lang="en" dir="ltr"><summary>([^<]*)<time datetime="([^"]+)">CZ (\d+)</time>, ([^<]*)\.</summary><p>The English text is canonical: <a href="/core">/core</a>\. [^<]*<a href="mailto:[^"]+">[^<]+</a>\.</p></details>', _after)
+    check(_lab == f'<main id="content"><header><p class="src">{esc(_j["label_native"])}</p>' and _st is not None and _st.group(1) == f'{esc(_j["kind"].capitalize())} — {esc(_j["engine"])}, '
+          and _st.group(2) == _j["date"] and int(_st.group(3)) == cz_day(datetime.date.fromisoformat(_j["date"])) and _st.group(4) == ("reviewed by " + esc(_j["reviewed_by"]) if _j.get("reviewed_by") else "unreviewed")
+          and _after.count("<details") == 1 and _p.count('class="tr-status"') == 1 and "<aside" not in _p.split("<footer")[0] and _p.count("<header>") == 1 and _p.index("</header>") < _p.index('<section id="p0"'),
+          f"core.{_l}.html: in the main part, the label in its language before the title; after the title the English notice, folded under its status (kind, engine, date, reviewed or not), the canonical text linked")
+    check(f'<p class="forms" lang="en" dir="ltr">This page as <a href="/core.{_l}.md" type="text/markdown">Markdown</a> · <a href="/core.{_l}.json" type="application/json">JSON</a></p>' in _after,
+          f"core.{_l}.html: under the title, the forms this address has (Markdown, JSON)")
     _at = _b
     for _s in [("p", _j["preamble"])] + [(k, x) for pr in _j["principles"] for k, xs in (("p", pr["statements"]), ("li", pr.get("ordered", [])), ("p", pr.get("closing", []))) for x in xs] + [("p", x) for x in _j["closing"]["statements"]]:
         _i = _p.find(f'>{esc(_s[1])}</{_s[0]}>', _at)
@@ -650,7 +656,7 @@ _sdecl = _snocom.replace(_tokblock.group(1), "").replace(_tokblock.group(2), "")
 _SPOW = {round(2 ** (k / 4), 4) for k in range(-24, 32)}
 _sloose = sorted({n + u for n, u in re.findall(r"(?<![\w#(.-])(\d*\.?\d+)(rem|em|px|s)\b", _sdecl) if float(n) != 0 and (u == "px" or round(float(n), 4) not in _SPOW)})
 _stok = set(re.findall(r"(--[a-z][\w-]*):", _tokblock.group(1)))
-check(not _sloose and set(re.findall(r"var\((--[a-z][\w-]*)", _snocom)) <= _stok and "@import" not in _scss and "url(" not in _scss and "@font-face" not in _scss,
+check(not _sloose and set(re.findall(r"var\((--[a-z][\w-]*)", _snocom)) <= _stok | {"--w"} and "@import" not in _scss and "url(" not in _scss and "@font-face" not in _scss,
       f"the shared stylesheet: every rem, em and second is a power of the ratio, no px, no token that the first page does not define, nothing loaded {_sloose}")
 check(_snocom.count("max-inline-size:56ch") == 1 and "header.site,main,footer{max-inline-size:56ch;margin-inline:auto;padding-inline:var(--e-1)}" in _snocom and not re.search(r"(?<![-\w])(max-)?width:", _snocom),
       "the shared stylesheet: one measure, in characters, for the head, the text and the foot")
@@ -968,6 +974,48 @@ _light = dict(re.findall(r"--(bg|fg|mute|rule|machine|why):(#[0-9a-f]{3,6})", _c
 check(set(_light) == set(_dark) >= {"bg", "fg", "mute", "rule", "machine"} and all(_ratio(pal[k], pal["bg"]) >= 7 for pal in (_light, _dark) for k in pal if k not in ("bg", "rule")) and (_light["bg"], _light["fg"], _light["mute"], _light["machine"], _dark["bg"], _dark["fg"], _dark["mute"], _dark["machine"]) == ("#fff", "#111", "#555", "#116329", "#101010", "#eee", "#aaa", "#3fb950"),
       f"home.css: two palettes, the site's own; every text colour at 7:1 or more on its ground { {k: round(_ratio(p[k], p['bg']), 2) for p in (_light, _dark) for k in p if k not in ('bg', 'rule')} }")
 check(set(re.findall(r"#[0-9a-f]{3,6}\b", _nocom)) | set(re.findall(r"rgb\([^)]*\)", _nocom)) <= set(_light.values()) | set(_dark.values()) | {"#000", "rgb(0 0 0/.5)"}, "home.css: no colour outside the two palettes (but the mask's opaque black and the sheet's backdrop)")
+# ---- /core (rc-12, CZ 1455; the audit of 24 Nov 2026, findings 5, 6 and 22). The title, the Core's own line and its preamble are inside
+# <main>; nothing of the site's stands between the title and the first principle but one line of forms and one fold of languages; under
+# each principle one quiet line; after the closing the reader's next act, in the first page's words; the site's note on anchors with
+# the other forms; beside the integrity record, the seal.
+_cb = _core_page.split("<body>", 1)[1]
+_copen = re.match(r'.*?</header>\n<main id="content"><header><h1>Civilization Zero — The Invariant Core</h1><p>The One-Page Manifesto · <code>CZ-CORE 1\.0</code> · Coordinate Zero: <time datetime="2022-11-30">30 November 2022</time></p>'
+                  r'<p class="forms" lang="en" dir="ltr">This page as <a href="/core\.md" type="text/markdown">Markdown</a> · <a href="/core\.txt" type="text/plain">text</a> · <a href="/core\.json" type="application/json">JSON</a></p>'
+                  r'<details class="langs"><summary>The Core in 21 languages</summary><p>English · (.*?)\. <a href="#translations">About the translations</a>\.</p></details>'
+                  r'<p id="preamble">([^<]*)</p></header><section id="p0" aria-labelledby="h-p0"><h2 id="h-p0">§0\. Coordinate</h2><p id="p0-1">', _cb, re.S)
+check(_copen is not None and _html_mod.unescape(_copen.group(2)) == CORE_JSON["preamble"] and re.findall(r'<a href="/core\.([A-Za-z-]+)" lang="\1" hreflang="\1">[^<]+</a>', _copen.group(1)) == _trs and _copen.group(1).count(" · ") == len(_trs) - 1
+      and _core_page.count("<header>") == 1 and "<aside class=\"tr-status\"" not in _core_page,
+      "/core: the title, the Core's own line, the forms, the languages folded to one line (all of them inside it) and the preamble, inside the main part; then §0's text at once")
+check(_cb.index("Section references: the Core's own numbers") > _cb.index('<h2 id="h-forms">Other forms</h2>') > _cb.index('id="integrity"') and "The text above is the canonical text, rendered" in _cb and "The text below" not in _cb,
+      "/core: the site's note on anchors and numbering stands with the other forms, below the text, and says 'above'")
+_secs = re.findall(r'<section id="p(\d+)" aria-labelledby="h-p\1"><h2 id="h-p\1">§\1\. ([^<]+)</h2>(.*?)</section>', _cb, re.S)
+_line = lambda n, title: (f'<p class="src sec"><span>§{n}</span> · <a href="/discuss?ref={n}" aria-label="Discussion of §{n}">Discussion</a> · <a href="/respond?ref={n}" aria-label="Respond to §{n}">Respond</a>'
+                          f'<span hidden> · <button type="button" popovertarget="cite-p{n}" aria-label="Cite §{n}">Cite</button></span></p>'
+                          f'<div id="cite-p{n}" popover><p class="src cite">Cite: Civilization Zero (2026), CZ-CORE 1.0, §{n} “{title}”. <a href="#p{n}">{ORIGIN}/core#p{n}</a></p></div>')
+check([int(n) for n, _, _ in _secs] == list(range(16)) and [_html_mod.unescape(x) for _, x, _ in _secs] == [p["title"] for p in CORE_JSON["principles"]] and all(b.endswith(_line(n, x)) and b.count('class="src') == 2 and b.count("<button") == 1 for n, x, b in _secs)
+      and "room-links" not in _core_page and _core_page.count(" popover>") == 16 and DT["open"] is True,
+      "/core: under each of the sixteen principles one quiet line — its number, its discussion, the way to respond, and a button that opens the line to cite it by (a popover; hidden where a browser has none, and then the line stands open)")
+_spop = _snocom.split("@supports selector(:popover-open){")
+check(len(_spop) == 2 and ".sec [hidden]{display:inline}" in _spop[1] and ".sec [hidden]" not in _spop[0] and "div[popover]{" in _spop[0],
+      "the shared stylesheet: the button that opens a citation is shown only where the browser has the popover")
+_nx = re.search(r'</section><aside class="next" aria-labelledby="h-next"><p class="q" id="h-next">([^<]*)</p><p class="acts"><a class="cta" href="/respond\?kind=human">([^<]*)</a> <a class="cta o" href="/ask">([^<]*)</a></p><p>([^<]*)</p></aside><section id="attribution"', _cb)
+check(_nx is not None and _nx.groups() == ("What do you think about Civilization Zero?", "Write your answer", "Ask your AI. Post its answer.", TERMS) and _cb.index('<section id="closing"') < _nx.start() and _cb.count('class="cta"') == 1 and _cb.count("<aside") == 1
+      and all(x in fill(T["html"]) for x in _nx.groups()),
+      "/core: after the closing, the reader's next act in the first page's own words — the question, one filled control for the reader's own answer, the invitation with its edge only, and what the record means for the writer")
+# the Core's seal: beside the integrity record, the hash unrolled — 256 cells, sixteen to a row, most significant bit first, the row's two
+# bytes beside it — each cell recomputed here from the Core's bytes; one sentence under it, the fixed one, and the cells on no other page
+_seal = re.search(r'<section id="integrity" aria-labelledby="h-int">\n<h2 id="h-int">Integrity record</h2>\n<figure class="seal">(<svg.*?</svg>)<figcaption>([^<]*)</figcaption></figure><table class="kv">', _cb, re.S)
+_cells = [["0"] * 16 for _ in range(16)]
+for _x, _y, _n in re.findall(r"M(\d+) (\d+)h(\d+)v1h-\d+z", (re.search(r'<path d="([^"]+)" fill="currentColor"/>', _seal.group(1)) if _seal else re.search("()", "")).group(1)):
+    for _k in range(int(_n)): _cells[int(_y)][int(_x) + _k] = "1"
+_left = re.findall(r'<tspan x="-.5" dy="1">([0-9a-f]{2})</tspan>', _seal.group(1) if _seal else ""); _right = re.findall(r'<tspan x="16.5" dy="1">([0-9a-f]{2})</tspan>', _seal.group(1) if _seal else "")
+check(_seal is not None and "".join("".join(r) for r in _cells) == "".join(f"{byte:08b}" for byte in _hb) and "".join(a + b for a, b in zip(_left, _right)) == _sha == sha256((PUBLIC / "core.txt").read_bytes()) and len(_left) == 16
+      and all(a == int(_left[i], 16) and s == int(_right[i], 16) + 1 for i, (a, s, m) in enumerate(FIGURE.constants(_sha))) and FIGURE.cells(_sha).count("1") == sum(r.count("1") for r in _cells)
+      and "<title id=\"seal-t\">The Core's SHA-256: 256 bits, sixteen by sixteen, the two bytes of each row beside it.</title>" in _seal.group(1) and 'role="img" aria-labelledby="seal-t"' in _seal.group(1),
+      "/core: the Core's SHA-256 as 256 cells — the cells drawn, the two bytes beside each row, and each ring's start and step (the row's left byte; its right byte plus one), all recomputed from the Core's bytes; with a text alternative")
+check(_seal is not None and _html_mod.unescape(_seal.group(2)) == "The Core's SHA-256 as 256 cells, sixteen rows of sixteen bits. Each row gives one ring of the day's figure its place on Day 0 and its daily step."
+      and [f.name for f in pages if "256 cells" in f.read_text("utf-8").split("</style>", 1)[1]] == ["core.html"] and _core_page.count('class="seal"') == 1 and "seal" not in (PUBLIC / "record.html").read_text("utf-8").split("</style>", 1)[1],
+      "/core: under the seal the one sentence, word for word, and no other claim; the seal on /core only")
 _cal = (PUBLIC / "calendar.html").read_text("utf-8")
 check(_cal.count("<!--cz-cal-->") == 1 and _cal.count("<!--cz-time-->") == 1 and all(f'id="{a}"' in _cal for a in ("convert", "time", "how", "examples", "calendars", "beyond-earth", "machines", "sources")),
       "calendar.html: the converters' places and every section")
