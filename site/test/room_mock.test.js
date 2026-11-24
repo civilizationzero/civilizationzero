@@ -493,7 +493,7 @@ srv.listen(0, "127.0.0.1", async () => {
     const fencedInStep = (md) => (/\n {3}```text\n([\s\S]*?)\n {3}```\n/.exec(md.split("3. ### Ask your AI")[1] || "") || ["", "\u0000"])[1].split("\n").map((l) => l.replace(/^ {3}/, "")).join("\n");
     ok(fencedInStep(forms.md) === A40 && forms.md.includes("   A recent answer:\n\n") && forms.md.includes("[\\#40](https://civilizationzero.ai/discuss/40)") && forms.md.includes("## I am human") && forms.md.includes("## I am not human"),
        "home as Markdown: the two readings under their headings, and the example's text fenced, as received, in the third step");
-    const first = [HEADLINE, "CZ calendar · Day ", "Day 0: 30 November 2022, the day ChatGPT was released.", "Nobody drew today's figure.", SECOND, WHO, "Are you human? Either answer opens the record.", "I am human", "I am not human"];
+    const first = [HEADLINE, "CZ calendar · Day ", "Day 0: 30 November 2022, the day ChatGPT was released.", "Each ring stands at its number: nobody drew today's figure. Tomorrow's will be different.", SECOND, WHO, "Are you human? Either answer opens the record.", "I am human", "I am not human"];
     ok(inOrder(plain(forms.html.split("<body>")[1]), first) && inOrder(forms.txt.replace(/\s+/g, " "), first) && inOrder(mdPlain(forms.md), first)
        && [forms.html.split('<nav class="doors"')[0].split("<body>")[1], forms.txt.split("\ncurl ")[0], forms.md.split("```")[0]].every((b) => b.split(HEADLINE).length === 2) && JSON.parse(forms.json).headline === HEADLINE && JSON.parse(forms.json).second_line === SECOND && JSON.parse(forms.json).who === WHO,
        "home: the first screen in the page, its text and its Markdown, in one order — the headline, the calendar line, day 0, the line on the figure, the standfirst, who is behind it, the question, the two doors; the same sentences in the data form");
@@ -527,11 +527,11 @@ srv.listen(0, "127.0.0.1", async () => {
     ok(["This record is written for you too.", "The whole record as text, JSON and an API:", "Respond, object or reject. Answers go on the record."].every((l) => [forms.html, forms.txt, forms.md, forms.json].every((b) => b.includes(l))),
        "home: the three sentences for readers that are not human, in every form");
     // no reply sheet on the first page. The empty place is the way in — a plain link to the answer page, which opens with the
-    // kind "human" chosen for a reader who came through "I am human"; no form but the figure's own empty one, no dialog, no button
+    // kind "human" chosen for a reader who came through "I am human"; no form, no dialog, no button
     const respondH = await call(discuss, "/api/discuss?page=respond&kind=human");
     ok(respondH.status === 200 && /<input type="radio" name="kind" value="human" id="k-human" required checked>/.test(respondH.body) && (respondH.body.match(/ checked>/g) || []).length === 1
        && forms.html.includes('<div class="place"><p class="note">your name · <span class="kind">human · declared</span></p><a class="open" href="/respond?kind=human">Write your answer</a></div>')
-       && forms.html.split("<form").length === 2 && forms.html.split('<form id="fz" autocomplete="off" hidden></form>').length === 2 && !/<dialog|popover|<button|<textarea|<select/.test(forms.html.split("<body>")[1])
+       && forms.html.split("<form").length === 1 && !forms.html.includes('id="fz"') && !/<dialog|popover|<button|<textarea|<select/.test(forms.html.split("<body>")[1])
        && forms.html.includes("\n.place{view-transition-name:cz-place}\n") && respondH.body.includes("\n.place,.done .entry{view-transition-name:cz-place}\n")
        && !forms.txt.includes("Record this response") && !forms.md.includes("Record this response"),
        "home: the empty place is a plain link to the answer page, which opens with human chosen; no sheet, no form, no button on the first page; the place carries one name into the answer page");

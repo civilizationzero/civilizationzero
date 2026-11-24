@@ -1,4 +1,4 @@
-// The first page, filled at request time: the day, the day's figure and the as-of time must be right for every reader at every
+// The first page, filled at request time: the day, the day's figure, its sixteen numbers and the as-of time must be right for every reader at every
 // moment, with no script on the reader's side (Blueprint 1.3.1 §5.1). Everything else on the page is static and comes from
 // site/build.py via home-templates.json. CZ time counts days: nothing here counts years (24 Nov 2026, CZ 1455).
 const T = require("./home-templates.json");
@@ -14,7 +14,8 @@ const fmt = (n) => n.toLocaleString("en-US");
 function clock(now, local, zone) {
   const f = CZ.fields(local), D = f.D;
   return {
-    "__TOTAL__": String(D), "__TOTAL_FMT__": fmt(D), "__TOMORROW_FMT__": fmt(D + 1),   // the next day: the figure's line names it after a press
+    ...Object.fromEntries(FIG.places(D, K).map((p, i) => [`__FIG_A${i}__`, p])),   // each ring's place that day, as a number
+    "__TOTAL__": String(D), "__TOTAL_FMT__": fmt(D),
     "__ASOF_ISO__": `${now.getUTCFullYear()}-${pad(now.getUTCMonth() + 1)}-${pad(now.getUTCDate())}T${pad(now.getUTCHours())}:${pad(now.getUTCMinutes())}Z`,
     "__CZ_ISO__": f.ISO, "__CZ_STAMP__": f.STAMP, "__CZ_ZONE__": zone, "__CZ_UTC_ISO__": now.toISOString().slice(0, 10),
     "__FIG_RINGS__": FIG.rings(D, K),                             // the page: the sixteen arcs of the reader's day

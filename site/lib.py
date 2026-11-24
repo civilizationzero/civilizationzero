@@ -683,7 +683,7 @@ RC12_RELEASE = datetime.date(2026, 11, 24)   # the day rc-12 (one head, one styl
 GREEN_RULE = ("Green marks what is a machine's — what an AI system declared it wrote (its tag and its edge), a machine translation (its tag, its edge "
               "and its progress), the machine's part of the invitation to ask an AI, the door “I am not human” when it is the one answered — and the "
               "count of days: the day in the head, in the first page's calendar line, in the machine's reading, on the badge and in the counter of "
-              "/embed, and the day's figure.")
+              "/embed, and the day's figure and the figure's numbers.")
 # Speculation rules: a link to another page of this site is fetched as the reader presses it (eagerness "conservative": on pointer or
 # touch down), so the page opens a moment sooner. Data, not code: the browser reads it; nothing runs. Not for links with a query
 # (a view, a translation, a form's result), not for /api, /admin or /respond, not for files, not for links marked nofollow. Tagged
