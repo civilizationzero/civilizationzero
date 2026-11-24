@@ -603,8 +603,8 @@ if BUNDLE_VERSION not in ("1.0-pre", "1.0"):
 # the same page. The first page keeps its own head. The live templates are well formed; the request-time code (room/cztime.js) gives
 # the stamps lib.py gives.
 BAR = json.loads((SITE / "room" / "cz-bar.json").read_text("utf-8"))
-for _n in ("bar", "calform", "timeform"):
-    _pb = P(); _pb.feed(BAR[_n]); check(not _pb.err and not _pb.stack, f"room/cz-bar.json {_n}: HTML nesting {_pb.err} {_pb.stack}")
+for _n in ("bar", "calform", "timeform", "dayfigure"):
+    _pb = P(); _pb.feed(BAR[_n]["html"] if _n == "dayfigure" else BAR[_n]); check(not _pb.err and not _pb.stack, f"room/cz-bar.json {_n}: HTML nesting {_pb.err} {_pb.stack}")
 check(all(f"__CZ_SEL_{c}__" in BAR["calform"] and f"__CZ_SEL_{c}__" in BAR["timeform"] for c, _, _ in CZ_CALENDARS) and "__CZ_VALUE__" in BAR["calform"]
       and all(f"__CZ_Z{i}__" in BAR["timeform"] for i in range(len(CZ_ZONES))) and BAR["zones"] == [[z, n] for z, n in CZ_ZONES],
       "room/cz-bar.json: the placeholders and the zones")
@@ -667,7 +667,7 @@ check(len(_smo) == 2 and not re.search(r"transition|animation|@keyframes", _smo[
 _spal = set(re.findall(r"#[0-9a-f]{3,6}\b", _sdecl)) | set(re.findall(r"rgb\([^)]*\)", _sdecl))
 check(_spal <= {"#000", "#fff", "#116329", "#3fb950", "rgb(0 0 0/.5)"}, f"the shared stylesheet: no colour outside the first page's two palettes (light-dark()'s probe and the sheet's backdrop apart) {_spal}")
 _green = [sel.strip() for sel, body in re.findall(r"([^{}]+)\{([^{}]*)\}", _sdecl) if "var(--machine)" in body]
-check(all(re.search(r"\.cz-now \.d|k-ai|\.ai\b|\.mtag|\.mt\b|tr-|:root", s) for s in _green), f"the shared stylesheet: green only for what a machine wrote (an AI's entry, a machine translation and its progress) and for the day of the CZ count {_green}")
+check(all(re.search(r"\.cz-now \.d|\.dayfig svg|k-ai|\.ai\b|\.mtag|\.mt\b|tr-|:root", s) for s in _green), f"the shared stylesheet: green only for what a machine wrote (an AI's entry, a machine translation and its progress) and for the day of the CZ count (the day in the head, a day's figure) {_green}")
 # ---- the first page of 24 Nov 2026 (CZ 1455; rc-11). The centre is empty; on either side stand the two kinds of reader; either may
 # enter. Read here as the function serves it to a reader whose network names no zone (site/preview: the page, its data, text and
 # Markdown forms), and as the build wrote it (T); the stylesheet is site/home.css.
@@ -797,10 +797,14 @@ _short = (SITE / "prompts" / "cz-short-1.0.txt").read_text("utf-8")
 check("one hard truth" in _short and "At most 400 characters" in _short and "You may decline" in _short and "to humans" in _short, "home, the third step: the invitation said as cz-short-1.0 says it")
 # the day's figure: computed from the Core's SHA-256 and the day, by one algorithm in two languages (site/figure.py, room/figure.js)
 _sha = _hashlib.sha256(CORE_BYTES).hexdigest(); _hb = bytes.fromhex(_sha); _M = [257, 263, 269, 271, 277, 281, 283, 293, 307, 311, 313, 317, 331, 337, 347, 349]
-_days = [0, 1, 1454, 1455, 1461, 100000, _day]
+_days = [0, 1, 1454, 1455, 1461, 100000, -1, -1997, _day]   # days before Day 0 too (rc-12): the same rule, with the mathematical modulo
 _fj = subprocess.run(["node", str(SITE / "room" / "figure.js"), _sha] + [str(d) for d in _days], capture_output=True, text=True)
 _fjs = [json.loads(l) for l in _fj.stdout.splitlines()] if _fj.returncode == 0 else []
 check(_fjs == [{"day": d, "positions": FIGURE.positions(d, _sha), "rings": FIGURE.rings(d, _sha)} for d in _days] and len(_fjs) == len(_days), f"the day's figure: room/figure.js and site/figure.py give the same positions and the same bytes for days {_days} ({_fj.stderr[:200]})")
+# the same eight days as the reference implementation of rc-10 computed them (test/fixtures/day-figure.json): one figure, three writers
+_fx = json.loads((SITE / "test" / "fixtures" / "day-figure.json").read_text("utf-8"))
+check(_fx["core_sha256"] == _sha and [x["day"] for x in _fx["days"]] == _days[:8] and _fx["days"] == _fjs[:8] and all(0 <= p < m for x in _fx["days"] for p, m in zip(x["positions"], _M)),
+      "the day's figure: site/figure.py and room/figure.js give what the reference of rc-10 gave, for days 0, 1, 1454, 1455, 1461, 100000, −1 and −1997; before Day 0 no position is negative")
 check(all(x % p for p in _M for x in range(2, 19)) and _M[0] == 257 and [n for n in range(257, 350) if all(n % k for k in range(2, 19))] == _M
       and FIGURE.constants(_sha) == [(_hb[2 * i], _hb[2 * i + 1] + 1, _M[i]) for i in range(16)], "the day's figure: the sixteen primes that follow 256; each ring's start and step are the two bytes of its row of the hash")
 _fig = re.search(r'<div class="fb" style="--today:(\d+)" data-src="[^"]*">\n(.*?)</div>\n<p class="date', _pbody, re.S)
@@ -1016,6 +1020,36 @@ check(_seal is not None and "".join("".join(r) for r in _cells) == "".join(f"{by
 check(_seal is not None and _html_mod.unescape(_seal.group(2)) == "The Core's SHA-256 as 256 cells, sixteen rows of sixteen bits. Each row gives one ring of the day's figure its place on Day 0 and its daily step."
       and [f.name for f in pages if "256 cells" in f.read_text("utf-8").split("</style>", 1)[1]] == ["core.html"] and _core_page.count('class="seal"') == 1 and "seal" not in (PUBLIC / "record.html").read_text("utf-8").split("</style>", 1)[1],
       "/core: under the seal the one sentence, word for word, and no other claim; the seal on /core only")
+# ---- /calendar (rc-12; findings 8, 24 and 31): a figure for every day. The frame of the figure the converter's result shows is written
+# by the build into room/cz-bar.json (dayfigure): the first page's tracks, one place for the day's arcs and the day's number, the Core's
+# hash from the Core's bytes; the sentence under it is the fixed one. The page says, once, what a day before Day 0 shows.
+_df = BAR.get("dayfigure") or {}
+_dfh = _df.get("html", "")
+check(set(_df) == {"core_sha256", "html"} and _df["core_sha256"] == _sha == PUBLISHED_CORE_SHA and _dfh.count("__FIG_RINGS__") == 1 and _dfh.count("__FIG_DAY__") == 2 and "__" not in _dfh.replace("__FIG_RINGS__", "").replace("__FIG_DAY__", "")
+      and f'<g class="trk" stroke-width="1">{FIGURE.tracks()}</g><g class="arc" stroke-width="4">__FIG_RINGS__</g>' in _dfh and 'viewBox="-192 -192 384 384"' in _dfh and 'transform="rotate(-90)"' in _dfh
+      and all(x in fill(T["html"]) for x in ('viewBox="-192 -192 384 384"', '<g fill="none" stroke="currentColor" transform="rotate(-90)"><g class="trk" stroke-width="1">' + FIGURE.tracks() + '</g><g class="arc" stroke-width="4">'))
+      and 'role="img" aria-label="The figure of Day __FIG_DAY__: sixteen rings round an empty centre, each carrying one arc."' in _dfh,
+      "room/cz-bar.json, dayfigure: the frame of a day's figure — the first page's own geometry and tracks, one place for the arcs, the day's number, a text alternative — and the Core's SHA-256 from the Core's bytes")
+check(_h.unescape(re.search(r"<figcaption>(.*?)</figcaption>", _dfh).group(1)) == "Day __FIG_DAY__'s figure: computed from the day's number and the text of the sixteen principles."
+      and "computed, like today's, from the day's number and the text of the sixteen principles" in _h.unescape(T["html"]),
+      "a day's figure on /calendar: under it the one sentence, in the words the first page uses for tomorrow's")
+_cal0 = (PUBLIC / "calendar.html").read_text("utf-8")
+_fig_li = re.search(r'<li id="figure"><strong>Every day has a figure</strong>(.*?)</li>', _cal0, re.S)
+check(_fig_li is not None and "A day before Day 0 has its figure by the same rule, with the mathematical modulo: no remainder is negative." in _fig_li.group(1) and _cal0.count("mathematical modulo") == 1
+      and "its daily step the next byte plus one" in _fig_li.group(1) and "the sixteen primes that follow 256" in _fig_li.group(1) and "const mod = (x, m) => ((x % m) + m) % m;" in (SITE / "room" / "figure.js").read_text("utf-8")
+      and all(FIGURE.positions(d, _sha) == [(_hb[2 * i] + d * (_hb[2 * i + 1] + 1)) % _M[i] for i in range(16)] for d in (-1, -1997, 0, 1455)),
+      "/calendar says how a day's figure is computed, and in one sentence what a day before Day 0 shows: the same rule, with the mathematical modulo (as room/figure.js and site/figure.py compute it)")
+_ctoc = re.search(r'<nav class="toc" aria-label="Contents"><details><summary>Contents</summary><ul>(.*?)</ul></details></nav>\n<section id="convert"', _cal0, re.S)
+check(_ctoc is not None and re.findall(r'<li><a href="#([^"]+)">([^<]+)</a></li>', _ctoc.group(1)) == [(i, x) for i, x in re.findall(r'<section id="([^"]+)" aria-labelledby="[^"]+"><h2 id="[^"]+">(.*?)</h2>', _cal0)]
+      and len(re.findall(r"<li><a href=\"#", _ctoc.group(1))) == _cal0.count("<h2 ") == 10 and _cal0.count("<details") == 1,
+      "/calendar: its contents, folded under one word before the converter — every section, by its own heading, linked to its address")
+check(re.search(r'<div class="scroll" tabindex="0" role="region" aria-labelledby="h-ex"><table>\n<thead><tr><th scope="col">CZ</th><th scope="col">Gregorian</th><th scope="col">Note</th></tr></thead>', _cal0) is not None
+      and ".nw,a.cz-date time,data,th[scope=col]{white-space:nowrap}\ntime:not(a time),code:not(.hash,a code){display:inline-block;max-inline-size:100%}" in _snocom and "overflow-wrap:anywhere" not in "".join(b for s, b in re.findall(r"([^{}]+)\{([^{}]*)\}", _snocom) if re.fullmatch(r"\s*(td|th|th,td|td,th)\s*", s)),
+      "/calendar, the examples: column headings with their scope, a region that takes the keyboard and has a name; a date is never cut in two by a line (the shared stylesheet), and no cell breaks a word anywhere")
+for _n in ("calform", "timeform"):
+    _lab = re.findall(r'<label for="([^"]+)">', BAR[_n])
+    check(_lab and all(re.search(r'<span><label for="' + i + r'">[^<]+</label> <(input|select) id="' + i + '"[^>]*>(<option.*?</select>)?</span>', BAR[_n], re.S) for i in _lab) and BAR[_n].count("<span>") == len(_lab),
+          f"room/cz-bar.json {_n}: each label stands in one piece with its field, so that a line breaks between pairs and never inside one ({_lab})")
 _cal = (PUBLIC / "calendar.html").read_text("utf-8")
 check(_cal.count("<!--cz-cal-->") == 1 and _cal.count("<!--cz-time-->") == 1 and all(f'id="{a}"' in _cal for a in ("convert", "time", "how", "examples", "calendars", "beyond-earth", "machines", "sources")),
       "calendar.html: the converters' places and every section")

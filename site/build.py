@@ -1916,13 +1916,26 @@ CALENDAR_FIRST = "The CZ calendar counts the days since ChatGPT was released on 
 CALENDAR_TITLE = "Days since ChatGPT was released · Civilization Zero calendar"   # the question first, then the name: sixty characters
 assert len(CALENDAR_TITLE) == 60
 CALENDAR_DESCRIPTION = "Today's count of days since ChatGPT was released on 30 November 2022, day 0 of the CZ calendar, with a date converter and a time converter."
+# A figure for every day (rc-12, CZ 1455): the converter's result for a date shows that day's figure, drawn by the same function as the first
+# page's (room/figure.js; site/figure.py is its reference, and test/day_figure.test.js holds both to the reference of rc-10). The build
+# writes the frame here, into room/cz-bar.json (dayfigure): the tracks, a place for the day's sixteen arcs (__FIG_RINGS__) and the day's
+# number (__FIG_DAY__, as prose writes it: 1,455; −1,997), with the Core's hash as the build computed it from the Core's bytes.
+DAY_FIGURE_CAPTION = "Day __FIG_DAY__'s figure: computed from the day's number and the text of the sixteen principles."
+def day_figure_template():
+    return ('<figure class="dayfig"><svg xmlns="http://www.w3.org/2000/svg" viewBox="-192 -192 384 384" width="256" height="256" role="img" '
+            'aria-label="The figure of Day __FIG_DAY__: sixteen rings round an empty centre, each carrying one arc.">'
+            f'<g fill="none" stroke="currentColor" transform="rotate(-90)"><g class="trk" stroke-width="1">{FIGURE.tracks()}</g><g class="arc" stroke-width="4">__FIG_RINGS__</g></g></svg>'
+            f'<figcaption>{esc(DAY_FIGURE_CAPTION)}</figcaption></figure>')
+
 def calendar_page():
     ex_rows = "".join(f'<tr><td><data value="{cz_day(d)}">{cz_stamp(d)}</data></td>'
                       f'<td><time datetime="{d.isoformat()}">{gregorian_text(d)}</time></td><td>{esc(w)}</td></tr>' for d, w in CZ_EXAMPLES)
+    assert FIGURE.positions(-1, CORE_SHA) == [(a - s) % m for a, s, m in FIG_K] and min(FIGURE.positions(-1997, CORE_SHA)) >= 0, "a day before Day 0: the same rule, no position negative"
     body = f"""<main>
 <h1>CZ calendar: days since ChatGPT was released</h1>
 <p id="today"><strong><!--cz-day-->{CALENDAR_FIRST}<!--/cz-day--></strong></p>
 <p>CZ 0 is that day: the public threshold the record calls Coordinate Zero. Every date on this site is counted from Coordinate Zero. Today's date in CZ time is at the top of every page; this page says how it is counted, and converts dates and times to it. The exceptions are deliberate: quotations of the canonical texts keep their own words, the press kit uses ordinary dates for its readers, the infographic's history uses ordinary years, and the evidence atlas keeps its sources' dates.</p>
+<!--toc-->
 <section id="convert" aria-labelledby="h-convert"><h2 id="h-convert">Date converter</h2>
 <!--cz-cal-->{cz_form("cal", origin=ORIGIN)}<p class="src">Today's date and the conversions are computed at <a href="{ORIGIN}/calendar">{ORIGIN}/calendar</a>.</p><!--/cz-cal-->
 <p class="src">A date can be written 2026-10-30, 2026/10/30, 20261030, 30/10/2026 or 30 October 2026; in Persian or Arabic digits and month names too.</p>
@@ -1944,13 +1957,14 @@ def calendar_page():
 <li><strong>Only days are counted.</strong> A CZ date has no months and no years. The anniversaries of Coordinate Zero still fall on each 30 November: the fourth, the public launch, is <code>CZ 1461</code>. The first review of the Core is on <code>CZ 2048</code>.</li>
 <li><strong>The machine form</strong> is the count with its sign, in ASCII and without a space: <code>CZ+1430</code>, <code>CZ-1997</code>. It converts exactly, but as text it does not sort in time order (CZ+10 comes before CZ+2, and CZ-1 after both): to order dates, sort by the day count as a number. The conversion: day = Julian Day Number − 2,459,914 = Modified Julian Date − 59,913; for a moment, its UTC date is ⌊Unix time ÷ 86,400⌋ − 19,326. In pages, the ISO date stays beside it for machines (<code>&lt;time datetime&gt;</code>).</li>
 <li><strong>The weekday</strong>: day 0 was a Wednesday; the ISO weekday of day D is ((D + 2) mod 7) + 1, Monday = 1.</li>
+<li id="figure"><strong>Every day has a figure</strong>: sixteen rings round an empty centre, each carrying one arc. Ring i stands at (its place on Day 0 + the day's number × its daily step) mod its modulus, and its arc runs from where it stood the day before. A ring's place on Day 0 is one byte of the SHA-256 of the Core's text, its daily step the next byte plus one; the moduli are the sixteen primes that follow 256. A day before Day 0 has its figure by the same rule, with the mathematical modulo: no remainder is negative. The first page shows today's; the rule as data: <a href="/index.json">/index.json</a>, under <code>figure</code>.</li>
 </ul>
 </section>
 
 <section id="examples" aria-labelledby="h-ex"><h2 id="h-ex">Examples</h2>
-<div class="scroll"><table>
-<tr><th>CZ</th><th>Gregorian</th><th>Note</th></tr>
-{ex_rows}
+<div class="scroll" tabindex="0" role="region" aria-labelledby="h-ex"><table>
+<thead><tr><th scope="col">CZ</th><th scope="col">Gregorian</th><th scope="col">Note</th></tr></thead>
+<tbody>{ex_rows}</tbody>
 </table></div>
 </section>
 
@@ -2526,6 +2540,7 @@ write(ATLAS_PATH + ".html", atlas_page())               # served by api/page.js
 write(IMAGES_PATH + ".html", images_page())             # served by api/page.js
 # the live bar at the top of every page and the calendar page's form, filled at request time by room/cztime.js
 (SITE / "room" / "cz-bar.json").write_text(json.dumps({**CZ_BAR, "calform": cz_form("cal", selected=None, value=None), "timeform": cz_time_form("tim"),
+                                                       "dayfigure": {"core_sha256": CORE_SHA, "html": day_figure_template()},
                                                        "zones": [[z, n] for z, n in CZ_ZONES], "calendars": [[c, n, l] for c, n, l in CZ_CALENDARS]}, ensure_ascii=False, indent=1) + "\n", "utf-8")
 (SITE / "api" / "discuss-templates.json").write_text(json.dumps(discuss_templates(), ensure_ascii=False, indent=1) + "\n", "utf-8")  # api/discuss.js serves /discuss, /discuss/{id}, /respond
 (SITE / "api" / "register-templates.json").write_text(json.dumps(register_templates(), ensure_ascii=False, indent=1) + "\n", "utf-8")  # api/adopt.js serves /adopt, /adopt/{id}, /adopt.json

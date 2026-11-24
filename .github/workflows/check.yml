@@ -22,7 +22,7 @@ jobs:
           set -euo pipefail
           python3 -m venv "$RUNNER_TEMP/cz-venv"   # the runner's own Python refuses a plain pip install (PEP 668)
           "$RUNNER_TEMP/cz-venv/bin/pip" install -q jsonschema convertdate==2.5.1 hijridate==2.6.0 jdatetime
-          node --test site/test/badge.test.js site/test/csp_inline.test.js site/test/reader_day.test.js site/test/home.test.js
+          node --test site/test/badge.test.js site/test/csp_inline.test.js site/test/reader_day.test.js site/test/home.test.js site/test/day_figure.test.js
           for t in batch_a batch_b classify_stub cztime_functions entries_filters reserved_names room_mock; do node "site/test/$t.test.js"; done
           node site/test/visits.test.mjs
           "$RUNNER_TEMP/cz-venv/bin/python" site/test/schema_test.py

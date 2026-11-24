@@ -1,0 +1,182 @@
+{
+ "what": "The day's figure for eight days, as the reference implementation of rc-10 computes it (prelaunch/ux-first-page/rc10/a-day-figure/figure.py, positions() and rings(live=True)); written on 24 Nov 2026 (CZ 1455). site/figure.py and room/figure.js must give the same positions and the same bytes. A day before Day 0 follows the same rule, with the mathematical modulo: no position is negative.",
+ "core_sha256": "92a8d1e2a1604c25b432685673be78184bf05c3b166893c437e0895b7b2d724a",
+ "days": [
+  {
+   "day": 0,
+   "positions": [
+    146,
+    209,
+    161,
+    76,
+    180,
+    104,
+    115,
+    120,
+    75,
+    92,
+    22,
+    147,
+    55,
+    137,
+    123,
+    114
+   ],
+   "rings": "<circle r=\"68\" pathLength=\"257\" stroke-dasharray=\"169 88\" stroke-dashoffset=\"-234\" style=\"--a:146;--s:169;--m:257\"/><circle r=\"76\" pathLength=\"263\" stroke-dasharray=\"227 36\" stroke-dashoffset=\"-245\" style=\"--a:209;--s:227;--m:263\"/><circle r=\"84\" pathLength=\"269\" stroke-dasharray=\"97 172\" stroke-dashoffset=\"-64\" style=\"--a:161;--s:97;--m:269\"/><circle r=\"92\" pathLength=\"271\" stroke-dasharray=\"38 233\" stroke-dashoffset=\"-38\" style=\"--a:76;--s:38;--m:271\"/><circle r=\"100\" pathLength=\"277\" stroke-dasharray=\"51 226\" stroke-dashoffset=\"-129\" style=\"--a:180;--s:51;--m:277\"/><circle r=\"108\" pathLength=\"281\" stroke-dasharray=\"87 194\" stroke-dashoffset=\"-17\" style=\"--a:104;--s:87;--m:281\"/><circle r=\"116\" pathLength=\"283\" stroke-dasharray=\"191 92\" stroke-dashoffset=\"-207\" style=\"--a:115;--s:191;--m:283\"/><circle r=\"124\" pathLength=\"293\" stroke-dasharray=\"25 268\" stroke-dashoffset=\"-95\" style=\"--a:120;--s:25;--m:293\"/><circle r=\"132\" pathLength=\"307\" stroke-dasharray=\"241 66\" stroke-dashoffset=\"-141\" style=\"--a:75;--s:241;--m:307\"/><circle r=\"140\" pathLength=\"311\" stroke-dasharray=\"60 251\" stroke-dashoffset=\"-32\" style=\"--a:92;--s:60;--m:311\"/><circle r=\"148\" pathLength=\"313\" stroke-dasharray=\"105 208\" stroke-dashoffset=\"-230\" style=\"--a:22;--s:105;--m:313\"/><circle r=\"156\" pathLength=\"317\" stroke-dasharray=\"197 120\" stroke-dashoffset=\"-267\" style=\"--a:147;--s:197;--m:317\"/><circle r=\"164\" pathLength=\"331\" stroke-dasharray=\"225 106\" stroke-dashoffset=\"-161\" style=\"--a:55;--s:225;--m:331\"/><circle r=\"172\" pathLength=\"337\" stroke-dasharray=\"92 245\" stroke-dashoffset=\"-45\" style=\"--a:137;--s:92;--m:337\"/><circle r=\"180\" pathLength=\"347\" stroke-dasharray=\"46 301\" stroke-dashoffset=\"-77\" style=\"--a:123;--s:46;--m:347\"/><circle r=\"188\" pathLength=\"349\" stroke-dasharray=\"75 274\" stroke-dashoffset=\"-39\" style=\"--a:114;--s:75;--m:349\"/>"
+  },
+  {
+   "day": 1,
+   "positions": [
+    58,
+    173,
+    258,
+    114,
+    231,
+    191,
+    23,
+    145,
+    9,
+    152,
+    127,
+    27,
+    280,
+    229,
+    169,
+    189
+   ],
+   "rings": "<circle r=\"68\" pathLength=\"257\" stroke-dasharray=\"169 88\" stroke-dashoffset=\"-146\" style=\"--a:146;--s:169;--m:257\"/><circle r=\"76\" pathLength=\"263\" stroke-dasharray=\"227 36\" stroke-dashoffset=\"-209\" style=\"--a:209;--s:227;--m:263\"/><circle r=\"84\" pathLength=\"269\" stroke-dasharray=\"97 172\" stroke-dashoffset=\"-161\" style=\"--a:161;--s:97;--m:269\"/><circle r=\"92\" pathLength=\"271\" stroke-dasharray=\"38 233\" stroke-dashoffset=\"-76\" style=\"--a:76;--s:38;--m:271\"/><circle r=\"100\" pathLength=\"277\" stroke-dasharray=\"51 226\" stroke-dashoffset=\"-180\" style=\"--a:180;--s:51;--m:277\"/><circle r=\"108\" pathLength=\"281\" stroke-dasharray=\"87 194\" stroke-dashoffset=\"-104\" style=\"--a:104;--s:87;--m:281\"/><circle r=\"116\" pathLength=\"283\" stroke-dasharray=\"191 92\" stroke-dashoffset=\"-115\" style=\"--a:115;--s:191;--m:283\"/><circle r=\"124\" pathLength=\"293\" stroke-dasharray=\"25 268\" stroke-dashoffset=\"-120\" style=\"--a:120;--s:25;--m:293\"/><circle r=\"132\" pathLength=\"307\" stroke-dasharray=\"241 66\" stroke-dashoffset=\"-75\" style=\"--a:75;--s:241;--m:307\"/><circle r=\"140\" pathLength=\"311\" stroke-dasharray=\"60 251\" stroke-dashoffset=\"-92\" style=\"--a:92;--s:60;--m:311\"/><circle r=\"148\" pathLength=\"313\" stroke-dasharray=\"105 208\" stroke-dashoffset=\"-22\" style=\"--a:22;--s:105;--m:313\"/><circle r=\"156\" pathLength=\"317\" stroke-dasharray=\"197 120\" stroke-dashoffset=\"-147\" style=\"--a:147;--s:197;--m:317\"/><circle r=\"164\" pathLength=\"331\" stroke-dasharray=\"225 106\" stroke-dashoffset=\"-55\" style=\"--a:55;--s:225;--m:331\"/><circle r=\"172\" pathLength=\"337\" stroke-dasharray=\"92 245\" stroke-dashoffset=\"-137\" style=\"--a:137;--s:92;--m:337\"/><circle r=\"180\" pathLength=\"347\" stroke-dasharray=\"46 301\" stroke-dashoffset=\"-123\" style=\"--a:123;--s:46;--m:347\"/><circle r=\"188\" pathLength=\"349\" stroke-dasharray=\"75 274\" stroke-dashoffset=\"-114\" style=\"--a:114;--s:75;--m:349\"/>"
+  },
+  {
+   "day": 1454,
+   "positions": [
+    180,
+    202,
+    243,
+    44,
+    98,
+    152,
+    206,
+    138,
+    202,
+    252,
+    261,
+    17,
+    177,
+    116,
+    36,
+    276
+   ],
+   "rings": "<circle r=\"68\" pathLength=\"257\" stroke-dasharray=\"169 88\" stroke-dashoffset=\"-11\" style=\"--a:146;--s:169;--m:257\"/><circle r=\"76\" pathLength=\"263\" stroke-dasharray=\"227 36\" stroke-dashoffset=\"-238\" style=\"--a:209;--s:227;--m:263\"/><circle r=\"84\" pathLength=\"269\" stroke-dasharray=\"97 172\" stroke-dashoffset=\"-146\" style=\"--a:161;--s:97;--m:269\"/><circle r=\"92\" pathLength=\"271\" stroke-dasharray=\"38 233\" stroke-dashoffset=\"-6\" style=\"--a:76;--s:38;--m:271\"/><circle r=\"100\" pathLength=\"277\" stroke-dasharray=\"51 226\" stroke-dashoffset=\"-47\" style=\"--a:180;--s:51;--m:277\"/><circle r=\"108\" pathLength=\"281\" stroke-dasharray=\"87 194\" stroke-dashoffset=\"-65\" style=\"--a:104;--s:87;--m:281\"/><circle r=\"116\" pathLength=\"283\" stroke-dasharray=\"191 92\" stroke-dashoffset=\"-15\" style=\"--a:115;--s:191;--m:283\"/><circle r=\"124\" pathLength=\"293\" stroke-dasharray=\"25 268\" stroke-dashoffset=\"-113\" style=\"--a:120;--s:25;--m:293\"/><circle r=\"132\" pathLength=\"307\" stroke-dasharray=\"241 66\" stroke-dashoffset=\"-268\" style=\"--a:75;--s:241;--m:307\"/><circle r=\"140\" pathLength=\"311\" stroke-dasharray=\"60 251\" stroke-dashoffset=\"-192\" style=\"--a:92;--s:60;--m:311\"/><circle r=\"148\" pathLength=\"313\" stroke-dasharray=\"105 208\" stroke-dashoffset=\"-156\" style=\"--a:22;--s:105;--m:313\"/><circle r=\"156\" pathLength=\"317\" stroke-dasharray=\"197 120\" stroke-dashoffset=\"-137\" style=\"--a:147;--s:197;--m:317\"/><circle r=\"164\" pathLength=\"331\" stroke-dasharray=\"225 106\" stroke-dashoffset=\"-283\" style=\"--a:55;--s:225;--m:331\"/><circle r=\"172\" pathLength=\"337\" stroke-dasharray=\"92 245\" stroke-dashoffset=\"-24\" style=\"--a:137;--s:92;--m:337\"/><circle r=\"180\" pathLength=\"347\" stroke-dasharray=\"46 301\" stroke-dashoffset=\"-337\" style=\"--a:123;--s:46;--m:347\"/><circle r=\"188\" pathLength=\"349\" stroke-dasharray=\"75 274\" stroke-dashoffset=\"-201\" style=\"--a:114;--s:75;--m:349\"/>"
+  },
+  {
+   "day": 1455,
+   "positions": [
+    92,
+    166,
+    71,
+    82,
+    149,
+    239,
+    114,
+    163,
+    136,
+    1,
+    53,
+    214,
+    71,
+    208,
+    82,
+    2
+   ],
+   "rings": "<circle r=\"68\" pathLength=\"257\" stroke-dasharray=\"169 88\" stroke-dashoffset=\"-180\" style=\"--a:146;--s:169;--m:257\"/><circle r=\"76\" pathLength=\"263\" stroke-dasharray=\"227 36\" stroke-dashoffset=\"-202\" style=\"--a:209;--s:227;--m:263\"/><circle r=\"84\" pathLength=\"269\" stroke-dasharray=\"97 172\" stroke-dashoffset=\"-243\" style=\"--a:161;--s:97;--m:269\"/><circle r=\"92\" pathLength=\"271\" stroke-dasharray=\"38 233\" stroke-dashoffset=\"-44\" style=\"--a:76;--s:38;--m:271\"/><circle r=\"100\" pathLength=\"277\" stroke-dasharray=\"51 226\" stroke-dashoffset=\"-98\" style=\"--a:180;--s:51;--m:277\"/><circle r=\"108\" pathLength=\"281\" stroke-dasharray=\"87 194\" stroke-dashoffset=\"-152\" style=\"--a:104;--s:87;--m:281\"/><circle r=\"116\" pathLength=\"283\" stroke-dasharray=\"191 92\" stroke-dashoffset=\"-206\" style=\"--a:115;--s:191;--m:283\"/><circle r=\"124\" pathLength=\"293\" stroke-dasharray=\"25 268\" stroke-dashoffset=\"-138\" style=\"--a:120;--s:25;--m:293\"/><circle r=\"132\" pathLength=\"307\" stroke-dasharray=\"241 66\" stroke-dashoffset=\"-202\" style=\"--a:75;--s:241;--m:307\"/><circle r=\"140\" pathLength=\"311\" stroke-dasharray=\"60 251\" stroke-dashoffset=\"-252\" style=\"--a:92;--s:60;--m:311\"/><circle r=\"148\" pathLength=\"313\" stroke-dasharray=\"105 208\" stroke-dashoffset=\"-261\" style=\"--a:22;--s:105;--m:313\"/><circle r=\"156\" pathLength=\"317\" stroke-dasharray=\"197 120\" stroke-dashoffset=\"-17\" style=\"--a:147;--s:197;--m:317\"/><circle r=\"164\" pathLength=\"331\" stroke-dasharray=\"225 106\" stroke-dashoffset=\"-177\" style=\"--a:55;--s:225;--m:331\"/><circle r=\"172\" pathLength=\"337\" stroke-dasharray=\"92 245\" stroke-dashoffset=\"-116\" style=\"--a:137;--s:92;--m:337\"/><circle r=\"180\" pathLength=\"347\" stroke-dasharray=\"46 301\" stroke-dashoffset=\"-36\" style=\"--a:123;--s:46;--m:347\"/><circle r=\"188\" pathLength=\"349\" stroke-dasharray=\"75 274\" stroke-dashoffset=\"-276\" style=\"--a:114;--s:75;--m:349\"/>"
+  },
+  {
+   "day": 1461,
+   "positions": [
+    78,
+    213,
+    115,
+    39,
+    178,
+    199,
+    128,
+    20,
+    47,
+    50,
+    57,
+    128,
+    97,
+    86,
+    11,
+    103
+   ],
+   "rings": "<circle r=\"68\" pathLength=\"257\" stroke-dasharray=\"169 88\" stroke-dashoffset=\"-166\" style=\"--a:146;--s:169;--m:257\"/><circle r=\"76\" pathLength=\"263\" stroke-dasharray=\"227 36\" stroke-dashoffset=\"-249\" style=\"--a:209;--s:227;--m:263\"/><circle r=\"84\" pathLength=\"269\" stroke-dasharray=\"97 172\" stroke-dashoffset=\"-18\" style=\"--a:161;--s:97;--m:269\"/><circle r=\"92\" pathLength=\"271\" stroke-dasharray=\"38 233\" stroke-dashoffset=\"-1\" style=\"--a:76;--s:38;--m:271\"/><circle r=\"100\" pathLength=\"277\" stroke-dasharray=\"51 226\" stroke-dashoffset=\"-127\" style=\"--a:180;--s:51;--m:277\"/><circle r=\"108\" pathLength=\"281\" stroke-dasharray=\"87 194\" stroke-dashoffset=\"-112\" style=\"--a:104;--s:87;--m:281\"/><circle r=\"116\" pathLength=\"283\" stroke-dasharray=\"191 92\" stroke-dashoffset=\"-220\" style=\"--a:115;--s:191;--m:283\"/><circle r=\"124\" pathLength=\"293\" stroke-dasharray=\"25 268\" stroke-dashoffset=\"-288\" style=\"--a:120;--s:25;--m:293\"/><circle r=\"132\" pathLength=\"307\" stroke-dasharray=\"241 66\" stroke-dashoffset=\"-113\" style=\"--a:75;--s:241;--m:307\"/><circle r=\"140\" pathLength=\"311\" stroke-dasharray=\"60 251\" stroke-dashoffset=\"-301\" style=\"--a:92;--s:60;--m:311\"/><circle r=\"148\" pathLength=\"313\" stroke-dasharray=\"105 208\" stroke-dashoffset=\"-265\" style=\"--a:22;--s:105;--m:313\"/><circle r=\"156\" pathLength=\"317\" stroke-dasharray=\"197 120\" stroke-dashoffset=\"-248\" style=\"--a:147;--s:197;--m:317\"/><circle r=\"164\" pathLength=\"331\" stroke-dasharray=\"225 106\" stroke-dashoffset=\"-203\" style=\"--a:55;--s:225;--m:331\"/><circle r=\"172\" pathLength=\"337\" stroke-dasharray=\"92 245\" stroke-dashoffset=\"-331\" style=\"--a:137;--s:92;--m:337\"/><circle r=\"180\" pathLength=\"347\" stroke-dasharray=\"46 301\" stroke-dashoffset=\"-312\" style=\"--a:123;--s:46;--m:347\"/><circle r=\"188\" pathLength=\"349\" stroke-dasharray=\"75 274\" stroke-dashoffset=\"-28\" style=\"--a:114;--s:75;--m:349\"/>"
+  },
+  {
+   "day": 100000,
+   "positions": [
+    83,
+    153,
+    21,
+    114,
+    56,
+    63,
+    162,
+    244,
+    268,
+    280,
+    124,
+    182,
+    330,
+    37,
+    291,
+    104
+   ],
+   "rings": "<circle r=\"68\" pathLength=\"257\" stroke-dasharray=\"169 88\" stroke-dashoffset=\"-171\" style=\"--a:146;--s:169;--m:257\"/><circle r=\"76\" pathLength=\"263\" stroke-dasharray=\"227 36\" stroke-dashoffset=\"-189\" style=\"--a:209;--s:227;--m:263\"/><circle r=\"84\" pathLength=\"269\" stroke-dasharray=\"97 172\" stroke-dashoffset=\"-193\" style=\"--a:161;--s:97;--m:269\"/><circle r=\"92\" pathLength=\"271\" stroke-dasharray=\"38 233\" stroke-dashoffset=\"-76\" style=\"--a:76;--s:38;--m:271\"/><circle r=\"100\" pathLength=\"277\" stroke-dasharray=\"51 226\" stroke-dashoffset=\"-5\" style=\"--a:180;--s:51;--m:277\"/><circle r=\"108\" pathLength=\"281\" stroke-dasharray=\"87 194\" stroke-dashoffset=\"-257\" style=\"--a:104;--s:87;--m:281\"/><circle r=\"116\" pathLength=\"283\" stroke-dasharray=\"191 92\" stroke-dashoffset=\"-254\" style=\"--a:115;--s:191;--m:283\"/><circle r=\"124\" pathLength=\"293\" stroke-dasharray=\"25 268\" stroke-dashoffset=\"-219\" style=\"--a:120;--s:25;--m:293\"/><circle r=\"132\" pathLength=\"307\" stroke-dasharray=\"241 66\" stroke-dashoffset=\"-27\" style=\"--a:75;--s:241;--m:307\"/><circle r=\"140\" pathLength=\"311\" stroke-dasharray=\"60 251\" stroke-dashoffset=\"-220\" style=\"--a:92;--s:60;--m:311\"/><circle r=\"148\" pathLength=\"313\" stroke-dasharray=\"105 208\" stroke-dashoffset=\"-19\" style=\"--a:22;--s:105;--m:313\"/><circle r=\"156\" pathLength=\"317\" stroke-dasharray=\"197 120\" stroke-dashoffset=\"-302\" style=\"--a:147;--s:197;--m:317\"/><circle r=\"164\" pathLength=\"331\" stroke-dasharray=\"225 106\" stroke-dashoffset=\"-105\" style=\"--a:55;--s:225;--m:331\"/><circle r=\"172\" pathLength=\"337\" stroke-dasharray=\"92 245\" stroke-dashoffset=\"-282\" style=\"--a:137;--s:92;--m:337\"/><circle r=\"180\" pathLength=\"347\" stroke-dasharray=\"46 301\" stroke-dashoffset=\"-245\" style=\"--a:123;--s:46;--m:347\"/><circle r=\"188\" pathLength=\"349\" stroke-dasharray=\"75 274\" stroke-dashoffset=\"-29\" style=\"--a:114;--s:75;--m:349\"/>"
+  },
+  {
+   "day": -1,
+   "positions": [
+    234,
+    245,
+    64,
+    38,
+    129,
+    17,
+    207,
+    95,
+    141,
+    32,
+    230,
+    267,
+    161,
+    45,
+    77,
+    39
+   ],
+   "rings": "<circle r=\"68\" pathLength=\"257\" stroke-dasharray=\"169 88\" stroke-dashoffset=\"-65\" style=\"--a:146;--s:169;--m:257\"/><circle r=\"76\" pathLength=\"263\" stroke-dasharray=\"227 36\" stroke-dashoffset=\"-18\" style=\"--a:209;--s:227;--m:263\"/><circle r=\"84\" pathLength=\"269\" stroke-dasharray=\"97 172\" stroke-dashoffset=\"-236\" style=\"--a:161;--s:97;--m:269\"/><circle r=\"92\" pathLength=\"271\" stroke-dasharray=\"38 233\" stroke-dashoffset=\"0\" style=\"--a:76;--s:38;--m:271\"/><circle r=\"100\" pathLength=\"277\" stroke-dasharray=\"51 226\" stroke-dashoffset=\"-78\" style=\"--a:180;--s:51;--m:277\"/><circle r=\"108\" pathLength=\"281\" stroke-dasharray=\"87 194\" stroke-dashoffset=\"-211\" style=\"--a:104;--s:87;--m:281\"/><circle r=\"116\" pathLength=\"283\" stroke-dasharray=\"191 92\" stroke-dashoffset=\"-16\" style=\"--a:115;--s:191;--m:283\"/><circle r=\"124\" pathLength=\"293\" stroke-dasharray=\"25 268\" stroke-dashoffset=\"-70\" style=\"--a:120;--s:25;--m:293\"/><circle r=\"132\" pathLength=\"307\" stroke-dasharray=\"241 66\" stroke-dashoffset=\"-207\" style=\"--a:75;--s:241;--m:307\"/><circle r=\"140\" pathLength=\"311\" stroke-dasharray=\"60 251\" stroke-dashoffset=\"-283\" style=\"--a:92;--s:60;--m:311\"/><circle r=\"148\" pathLength=\"313\" stroke-dasharray=\"105 208\" stroke-dashoffset=\"-125\" style=\"--a:22;--s:105;--m:313\"/><circle r=\"156\" pathLength=\"317\" stroke-dasharray=\"197 120\" stroke-dashoffset=\"-70\" style=\"--a:147;--s:197;--m:317\"/><circle r=\"164\" pathLength=\"331\" stroke-dasharray=\"225 106\" stroke-dashoffset=\"-267\" style=\"--a:55;--s:225;--m:331\"/><circle r=\"172\" pathLength=\"337\" stroke-dasharray=\"92 245\" stroke-dashoffset=\"-290\" style=\"--a:137;--s:92;--m:337\"/><circle r=\"180\" pathLength=\"347\" stroke-dasharray=\"46 301\" stroke-dashoffset=\"-31\" style=\"--a:123;--s:46;--m:347\"/><circle r=\"188\" pathLength=\"349\" stroke-dasharray=\"75 274\" stroke-dashoffset=\"-313\" style=\"--a:114;--s:75;--m:349\"/>"
+  },
+  {
+   "day": -1997,
+   "positions": [
+    94,
+    39,
+    132,
+    70,
+    269,
+    23,
+    172,
+    5,
+    174,
+    7,
+    47,
+    135,
+    228,
+    78,
+    216,
+    60
+   ],
+   "rings": "<circle r=\"68\" pathLength=\"257\" stroke-dasharray=\"169 88\" stroke-dashoffset=\"-182\" style=\"--a:146;--s:169;--m:257\"/><circle r=\"76\" pathLength=\"263\" stroke-dasharray=\"227 36\" stroke-dashoffset=\"-75\" style=\"--a:209;--s:227;--m:263\"/><circle r=\"84\" pathLength=\"269\" stroke-dasharray=\"97 172\" stroke-dashoffset=\"-35\" style=\"--a:161;--s:97;--m:269\"/><circle r=\"92\" pathLength=\"271\" stroke-dasharray=\"38 233\" stroke-dashoffset=\"-32\" style=\"--a:76;--s:38;--m:271\"/><circle r=\"100\" pathLength=\"277\" stroke-dasharray=\"51 226\" stroke-dashoffset=\"-218\" style=\"--a:180;--s:51;--m:277\"/><circle r=\"108\" pathLength=\"281\" stroke-dasharray=\"87 194\" stroke-dashoffset=\"-217\" style=\"--a:104;--s:87;--m:281\"/><circle r=\"116\" pathLength=\"283\" stroke-dasharray=\"191 92\" stroke-dashoffset=\"-264\" style=\"--a:115;--s:191;--m:283\"/><circle r=\"124\" pathLength=\"293\" stroke-dasharray=\"25 268\" stroke-dashoffset=\"-273\" style=\"--a:120;--s:25;--m:293\"/><circle r=\"132\" pathLength=\"307\" stroke-dasharray=\"241 66\" stroke-dashoffset=\"-240\" style=\"--a:75;--s:241;--m:307\"/><circle r=\"140\" pathLength=\"311\" stroke-dasharray=\"60 251\" stroke-dashoffset=\"-258\" style=\"--a:92;--s:60;--m:311\"/><circle r=\"148\" pathLength=\"313\" stroke-dasharray=\"105 208\" stroke-dashoffset=\"-255\" style=\"--a:22;--s:105;--m:313\"/><circle r=\"156\" pathLength=\"317\" stroke-dasharray=\"197 120\" stroke-dashoffset=\"-255\" style=\"--a:147;--s:197;--m:317\"/><circle r=\"164\" pathLength=\"331\" stroke-dasharray=\"225 106\" stroke-dashoffset=\"-3\" style=\"--a:55;--s:225;--m:331\"/><circle r=\"172\" pathLength=\"337\" stroke-dasharray=\"92 245\" stroke-dashoffset=\"-323\" style=\"--a:137;--s:92;--m:337\"/><circle r=\"180\" pathLength=\"347\" stroke-dasharray=\"46 301\" stroke-dashoffset=\"-170\" style=\"--a:123;--s:46;--m:347\"/><circle r=\"188\" pathLength=\"349\" stroke-dasharray=\"75 274\" stroke-dashoffset=\"-334\" style=\"--a:114;--s:75;--m:349\"/>"
+  }
+ ]
+}

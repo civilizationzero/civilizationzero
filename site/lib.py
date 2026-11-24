@@ -339,8 +339,10 @@ pre{padding:var(--e-2);border:var(--e-16) solid var(--rule);white-space:pre-wrap
 hr{margin:var(--e5) 0 var(--e0);border:0;border-block-start:var(--e-16) solid var(--fg)}
 .pending{padding:var(--e-4) var(--e-2);border:var(--e-16) dashed var(--mute)}
 summary{padding-block:var(--e-4);cursor:pointer}
-/* M: a date, a number or a hash is never cut in two by a line; one press selects a whole hash. */
-.nw,time,data,th[scope=col],#how code{white-space:nowrap}
+/* M: an exact value (a date, a number, a code) is not cut in two by a line: a short one never; a longer one only where it is wider than
+   its line; a hash, longer than any line of a phone, breaks where it must, and one press selects the whole of it. */
+.nw,a.cz-date time,data,th[scope=col]{white-space:nowrap}
+time:not(a time),code:not(.hash,a code){display:inline-block;max-inline-size:100%}
 a.cz-date{text-decoration-color:var(--mute)}
 code.hash{overflow-wrap:anywhere;user-select:all}
 figure{margin-inline:0}
@@ -405,6 +407,20 @@ div[popover]{position-anchor:--sec;inset:anchor(bottom) auto auto anchor(left);m
 @media(min-width:76.1093rem){
 .seal{--w:min(16rem,50vw - 28ch - var(--e-1) - var(--e4));float:inline-end;inline-size:var(--w);margin-block:0;margin-inline:var(--e3) calc(-1*(var(--w) + var(--e3)))}
 }
+/* A long page's contents: folded under one word where the page begins; in the margin, open, and staying in view where the window has a
+   margin; the section being read marked as the head marks the page one is on, where the browser can tell. */
+.toc ul{margin:0;padding:0;list-style:none;scroll-target-group:auto}
+.toc a{display:inline-block;padding-block:var(--e-8)}
+.toc a:target-current{text-decoration-thickness:var(--e-8)}
+@media(min-width:76.1093rem){
+.toc{--w:min(16rem,50vw - 28ch - var(--e-1) - var(--e4));float:inline-start;position:sticky;inset-block-start:var(--e0);box-sizing:border-box;inline-size:var(--w);max-block-size:calc(100vh - 2*var(--e0));margin-inline:calc(-1*(var(--w) + var(--e3))) var(--e3);overflow:auto}
+.toc details{margin:0}
+.toc :is(summary,ul){font-size:.8409em}
+@supports selector(::details-content){
+.toc summary{list-style:none;color:var(--mute);pointer-events:none}
+.toc details::details-content{content-visibility:visible}
+}
+}
 /* what a reader must know is never small print: what permanence means, where a person writes or a system posts */
 .permanence{color:var(--fg);font-size:1em}
 
@@ -455,12 +471,17 @@ form.respond textarea{min-block-size:var(--e12);max-block-size:calc(100vh - var(
 form.respond input:is([type=checkbox],[type=radio]){display:inline-block;inline-size:var(--e1);block-size:var(--e1);margin:0;margin-inline-end:var(--e-4);vertical-align:calc(-1*var(--e-8))}
 form.respond fieldset{margin:var(--e-2) 0;border:var(--e-16) solid var(--rule)}
 p.room-line{padding-inline-start:var(--e-2);border-inline-start:var(--e-12) solid var(--fg)}
-/* /calendar: a label breaks with its field, never from it */
+/* /calendar: a label breaks with its field, never from it; the day's figure, as the first page draws it, in the green of the day */
 ul.cz-today{margin-block:var(--e-4);padding:0;list-style:none}
 form.cz-conv,form.cz-conv span{display:flex;flex-wrap:wrap;align-items:center;gap:var(--e-4)}
-form.cz-conv span{flex-wrap:nowrap}
+form.cz-conv span{flex-wrap:nowrap;min-inline-size:0}
+form.cz-conv :is(input,select){min-inline-size:0}
 form.cz-conv input{inline-size:15ch}
 .cz-native{font-family:var(--human)}
+.dayfig{display:flex;flex-wrap:wrap;align-items:center;gap:var(--e-4) var(--e0)}
+.dayfig svg{flex:none;inline-size:var(--e12);block-size:auto;color:var(--machine)}
+.dayfig figcaption{flex:1 1 var(--e14)}
+.trk circle{stroke:var(--rule);stroke-width:var(--e-16);vector-effect:non-scaling-stroke}
 
 /* 7 THE ROOM. Blueprint §7: an entry is user content, shown as text, its words unchanged. The machine layer (the originator's decision of
    CZ 1433): green is for what a machine wrote, an AI system's entry (its tag and its edge) and a machine translation (a dashed edge and a
@@ -633,20 +654,20 @@ def _cal_options(selected):
                    for c, n, l in CZ_CALENDARS)
 def cz_form(prefix, selected="gregorian", value="", origin="", label="Date", button="Convert date"):
     """The date converter on /calendar: a GET form. selected=None leaves __CZ_SEL_<calendar>__ placeholders, value=None __CZ_VALUE__,
-    for room/cztime.js to fill."""
+    for room/cztime.js to fill. A label and its field stand in one <span>, so that a narrow line breaks between pairs, never inside one."""
     v = "__CZ_VALUE__" if value is None else esc(value)
-    return (f'<form class="cz-conv" action="{origin}/calendar#convert" method="get"><label for="{prefix}-d">{label}</label> '
-            f'<input id="{prefix}-d" name="d" value="{v}" placeholder="YYYY-MM-DD" dir="auto" autocomplete="off" spellcheck="false" maxlength="40"> '
+    return (f'<form class="cz-conv" action="{origin}/calendar#convert" method="get"><span><label for="{prefix}-d">{label}</label> '
+            f'<input id="{prefix}-d" name="d" value="{v}" placeholder="YYYY-MM-DD" dir="auto" autocomplete="off" spellcheck="false" maxlength="40"></span> '
             f'<select id="{prefix}-c" name="c" aria-label="The calendar of that date">{_cal_options(selected)}</select> <button type="submit">{button}</button></form>')
 def cz_time_form(prefix, live=True, origin=""):
     """The time converter on /calendar: a local date and time in a time zone, to CZ time. live=True leaves placeholders (__CZ_TVALUE__,
     __CZ_TTIME__, __CZ_TSEL_<calendar>__ via __CZ_SEL_…, __CZ_Z<n>__) for room/cztime.js to fill."""
     zones = "".join(f'<option value="{z}"' + (f"__CZ_Z{i}__" if live else (" selected" if i == 0 else "")) + f">{esc(n)}</option>" for i, (z, n) in enumerate(CZ_ZONES))
-    return (f'<form class="cz-conv" action="{origin}/calendar#time" method="get"><label for="{prefix}-d">Date</label> '
-            f'<input id="{prefix}-d" name="d" value="{"__CZ_TVALUE__" if live else ""}" placeholder="today" dir="auto" autocomplete="off" spellcheck="false" maxlength="40"> '
+    return (f'<form class="cz-conv" action="{origin}/calendar#time" method="get"><span><label for="{prefix}-d">Date</label> '
+            f'<input id="{prefix}-d" name="d" value="{"__CZ_TVALUE__" if live else ""}" placeholder="today" dir="auto" autocomplete="off" spellcheck="false" maxlength="40"></span> '
             f'<select id="{prefix}-c" name="c" aria-label="The calendar of that date">{_cal_options(None if live else "gregorian")}</select> '
-            f'<label for="{prefix}-t">Time</label> <input id="{prefix}-t" name="t" value="{"__CZ_TTIME__" if live else ""}" placeholder="13:30" inputmode="decimal" autocomplete="off" maxlength="12" size="7"> '
-            f'<label for="{prefix}-z">Time zone</label> <select id="{prefix}-z" name="z">{zones}</select> <button type="submit">Convert time</button></form>')
+            f'<span><label for="{prefix}-t">Time</label> <input id="{prefix}-t" name="t" value="{"__CZ_TTIME__" if live else ""}" placeholder="13:30" inputmode="decimal" autocomplete="off" maxlength="12" size="7"></span> '
+            f'<span><label for="{prefix}-z">Time zone</label> <select id="{prefix}-z" name="z">{zones}</select></span> <button type="submit">Convert time</button></form>')
 # the day as the first page writes it ("CZ calendar · Day 1,455": the name the link to /calendar, the day in green, carrying the reader's
 # date for a parser and the count as a number); the converters and the line on Coordinate Zero are on /calendar and in the foot
 _CZ_DAY = '<a href="/calendar">CZ calendar</a> · <time class="d" datetime="__CZ_ISO__">Day <data value="__CZ_DAYS__">__CZ_DAYS_FMT__</data></time>'
@@ -681,6 +702,17 @@ OG_IMAGE = ("/civilization-zero.png", 1200, 630, "The mark CZ, a zero in which C
 # face, of the forms this address really has — its Markdown (every page has one), and its text and its JSON where the page names them as
 # alternates in its head (the same list: nothing is offered here that the head does not declare). A page marks the place with FORMS.
 FORMS = "<!--forms-->"
+# A long page's contents (rc-12; findings 12 and 24): the page marks the place with TOC, and the shell writes there a folded list of the
+# page's own second-level headings, each linked to its section's address (the section's id where the heading opens one, else the
+# heading's own). The words are the headings' own; small print beside a heading is left out.
+TOC = "<!--toc-->"
+def toc_html(body):
+    items = []
+    for sid, hid, inner in re.findall(r'(?:<section id="([^"]+)"[^>]*>\s*)?<h2(?: id="([^"]+)")?[^>]*>(.*?)</h2>', body, re.S):
+        if sid or hid: items.append(f'<li><a href="#{sid or hid}">{re.sub(r"<span class=.src.>.*?</span>|<[^>]+>", "", inner).strip()}</a></li>')
+    assert len(items) >= 4, "a page with contents has at least four sections"
+    return f'<nav class="toc" aria-label="Contents"><details><summary>Contents</summary><ul>{"".join(items)}</ul></details></nav>'
+
 _FORM_NAMES = {"text/plain": "text", "application/json": "JSON"}
 def forms_line(path, alternates=()):
     links = [f'<a href="{md_path(path)}" type="text/markdown">Markdown</a>']
@@ -692,6 +724,8 @@ def shell(title, body, path, description, alternates=(), ldjson=None, nav=True, 
     assert "Year Zero" not in title and (path == "__PATH__" or "Year Zero" not in description), f"{path}: the site counts days; \"Year Zero\" is the Core's phrase, quoted as the Core's and never a title or a description"
     assert body.count(FORMS) <= 1
     body = body.replace(FORMS, forms_line(path, alternates))
+    assert body.count(TOC) <= 1
+    if TOC in body: body = body.replace(TOC, toc_html(body))
     ogi = og_image or OG_IMAGE
     alt = "".join(f'<link rel="alternate" type="{t}" href="{h}" title="{esc(n)}">' for t, h, n in alternates)
     hl = "".join(f'<link rel="alternate" hreflang="{l}" href="{ORIGIN}{h}">' for l, h in hreflangs)
