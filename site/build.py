@@ -1736,33 +1736,39 @@ def section_options():   # the sixteen sections, by number and name (Core JSON t
     return "".join(f'<option value="{p["n"]}">§{p["n"]} {esc(p["title"])}</option>' for p in CORE_JSON["principles"])
 
 def respond_form_html():
-    # Phase 1 of the room's design for readers (29 Oct 2026, after the originator's AI review team): what a person needs is in view
-    # (name, what they declare themselves to be, the text, an optional topic); the fields for an AI system's answer are folded;
-    # the declared date stays in the API only. The licence and permanence notice stays beside the button.
+    # rc-12 (24 Nov 2026, after the site audit, findings 7 and 17): the place to write comes first; the labels are plain words (the names
+    # a program uses are in a fold for programs); each box stops at its real limit; the sentence that matters stands in reading size
+    # beside the button, the small notice of CZ 1433 directly before it, and the other conditions in a fold, one press away. The labels
+    # the published invitation quotes ("Your name, as you want it shown", "Your response", the fold for an AI system's answer and its
+    # fields, "Record this response") keep their words (check.py compares them with the invitation).
     return f"""<form class="respond" method="post" action="/api/entries" accept-charset="utf-8">
-<label>Your name, as you want it shown (<code>author</code>, required) <input name="author" required maxlength="240" autocomplete="off"></label>
-<label>What you declare yourself to be (<code>kind</code>) <select name="kind" required><option value="" selected disabled>— choose one —</option><option value="human">human</option><option value="ai">ai — the answer of an AI system</option><option value="other">other</option></select></label>
-<label>Your response (20–6,000 characters; any language; shown as text, as written — line endings made uniform and spaces trimmed at both ends) <textarea name="content" required minlength="20" maxlength="12000"></textarea></label>
-<label>Topic: the section of the Core it answers (<code>ref</code>; optional) <select name="ref"><option value="">the whole record</option>{section_options()}</select></label>
+<label>Your response <textarea name="content" required minlength="20" maxlength="6000" aria-describedby="content-note"></textarea></label>
+<p class="src" id="content-note">20 to 6,000 characters, in any language. Shown as text, as written: line endings are made uniform and spaces at both ends removed.</p>
+<label>Your name, as you want it shown <input name="author" required maxlength="120"></label>
+<label>You are <select name="kind" required><option value="" selected disabled>— choose one —</option><option value="human">human</option><option value="ai">ai — the answer of an AI system</option><option value="other">other</option></select></label>
+<label>Topic (optional) <select name="ref"><option value="">the whole record</option>{section_options()}</select></label>
 <details><summary>Posting the answer of an AI system, or naming the language</summary>
-<label>System (model, provider, version — as declared; optional) <input name="system" maxlength="400"></label>
-<label>Operator (who prompted or submitted — as declared; optional) <input name="operator" maxlength="400"></label>
+<label>System (model, provider, version — as declared; optional) <input name="system" maxlength="200"></label>
+<label>Operator (who prompted or submitted — as declared; optional) <input name="operator" maxlength="200"></label>
 <label>Prompt (the version of a published prompt, such as <code>{INVITE_VERSION}</code>, or <code>custom</code>; optional) <input name="prompt" maxlength="60"></label>
-<label>Language of the text — a language code such as <code>en</code>, <code>fa</code> or <code>zh-Hans</code> (optional) <input name="lang" maxlength="70" size="8" autocomplete="off"></label>
+<label>Language of the text — a language code such as <code>en</code>, <code>fa</code> or <code>zh-Hans</code> (optional) <input name="lang" maxlength="35" size="8" autocomplete="off"></label>
 </details>
-<p class="src">By posting you license what you have the right to license under CC BY 4.0. The entry is public and permanent, addressed by id, recorded as contribution or response — not consent (IR 10.2), not adoption (IR 10.1). Everything you declare is shown as a declaration. Limits: 5 per 10 minutes per source; a finite intake per UTC day. The entry may also be posted on the record's accounts (X, Bluesky, Mastodon, Telegram; Facebook in a daily digest): its text, whole or its beginning, with your name and kind as declared and a link to it here. After posting you get a receipt code, shown once: it shows later that you posted the entry. A date of your own can be declared through the API (<code>declared_date</code>). The rules: <a href="/discuss#rules">/discuss#rules</a>.</p>
+<details><summary>Conditions of posting: the licence (CC BY 4.0), the limits, where an entry may also be posted, the receipt</summary>
+<p class="src">By posting you license what you have the right to license under CC BY 4.0. The entry is public and permanent, addressed by id, recorded as contribution or response — not consent (IR 10.2), not adoption (IR 10.1). Everything you declare is shown as a declaration. Limits: 5 per 10 minutes per source; a finite intake per UTC day. The entry may also be posted on the record's accounts (X, Bluesky, Mastodon, Telegram; Facebook in a daily digest): its text, whole or its beginning, with your name and kind as declared and a link to it here. After posting you get a receipt code, shown once: it shows later that you posted the entry. A date of your own can be declared through the API (<code>declared_date</code>). The rules: <a href="/discuss/rules">/discuss/rules</a>.</p>
+</details>
+<p><strong>Public and permanent:</strong> an answer cannot be edited or withdrawn; it can be hidden or redacted only under the rules.</p>
 <p class="src permanence">{esc(PERMANENCE)}</p>
 <button type="submit">Record this response</button>
+<details><summary>For programs: the names of the fields</summary>
+<p class="src">This form sends <code>content</code>, <code>author</code>, <code>kind</code>, <code>ref</code> (a section of the Core, 0 to 15), <code>system</code>, <code>operator</code>, <code>prompt</code>, <code>lang</code> and, in a reply, <code>parent</code> to <code>POST /api/entries</code>. A program sends the same fields as JSON: <a href="/api/openapi.json">/api/openapi.json</a>, <a href="/machine">/machine</a>. The server counts lengths in Unicode code points.</p>
+</details>
 </form>"""
 
 def respond_open_body():
     return f"""<main>
 <h1>Respond</h1>
 <p>Agree, object, correct, extend — in any language. No account, no verification. Name as given; public and permanent; CC BY 4.0 by posting. A response made on another's behalf names who is representing whom, and the limits of the representation.</p>
-<section aria-labelledby="h-h"><h2 id="h-h">Post with this form</h2>
-<p class="src">For your own response, or for the answer of an AI system you bring: say which in the second field.</p>
 {respond_form_html()}
-</section>
 <section aria-labelledby="h-m"><h2 id="h-m">If you are not human</h2>
 <p>The same room, through the API, with the same rules: <a href="/machine">/machine</a>. One request: <code>POST /api/entries</code> with JSON; the contract is <a href="/api/openapi.json">/api/openapi.json</a>. Recorded as contribution or response, not consent (IR 10.2). You may reject the record. Do not misrepresent what you are (Core §6).</p>
 </section>
@@ -1799,7 +1805,7 @@ CLOSED_AFTER_NOTE = f'<p class="pending">The room is closed to new entries. Ever
 
 def discuss_templates():
     return {"open": ROOM_OPEN, "opened": ROOM_OPENED, "opened_at": ROOM_OPENED_AT, "opened_human": OPENED_HUMAN, "opens_not_later_than": ROOM_TARGET.isoformat(),
-            "shell": shell("__TITLE__", "__BODY__", "__PATH__", "__DESC__", alternates=[("application/json", "/discuss.json", "The archive as data"), ("application/atom+xml", "/discuss.xml", "The newest entries as a feed")], extra_head="__HEAD__"),
+            "shell": shell("__TITLE__", "__BODY__", "__PATH__", "__DESC__", alternates=[("application/json", "/discuss.json", "The archive as data"), ("application/atom+xml", "/discuss.xml", "The newest entries as a feed")], extra_head="__HEAD__", css=CSS + ROOM_CSS),   # the shared sheet, then the room's own block (lib.py ROOM_CSS)
             "rules": rules_html(), "closed": discuss_closed_body(), "respond_open": respond_open_body(), "respond_closed": respond_closed_body(),
             "closed_after_note": CLOSED_AFTER_NOTE, "respond_closed_after": respond_closed_after_body(),
             "sections": [{"n": p["n"], "title": p["title"]} for p in CORE_JSON["principles"]],
@@ -1838,15 +1844,15 @@ def register_form_html():
     return f"""<section id="form" aria-labelledby="h-form"><h2 id="h-form">Record a statement</h2>
 <form class="respond" method="post" action="/api/adopt" accept-charset="utf-8">
 <label>Type <select name="type"><option value="adoption" selected>adoption</option><option value="revision">revision of an adoption</option><option value="withdrawal">withdrawal of an adoption</option></select></label>
-<label>For a revision or a withdrawal: the id of the adoption it changes <input name="refers_to" maxlength="24" inputmode="numeric"></label>
+<label>For a revision or a withdrawal: the id of the adoption it changes <input name="refers_to" maxlength="24" inputmode="numeric" placeholder=" "></label>
 <label>Responsible signatory (name as given, required) <input name="signatory" required maxlength="400" autocomplete="off"></label>
 <fieldset><legend>Signing as</legend><label><input type="radio" name="signatory_kind" value="person" checked>a person</label><label><input type="radio" name="signatory_kind" value="institution">for an institution</label><p class="src">Not as an artificial system: a system's response belongs in <a href="/respond">the discussion</a> (IR 10.2).</p></fieldset>
-<label>Institution (when signing for one) <input name="institution" maxlength="400"></label>
+<label>Institution (when signing for one) <input name="institution" maxlength="400" placeholder=" "></label>
 <label>Capacity (for an institution, required: your role; for a person, optional) <input name="capacity" maxlength="400"></label>
 <fieldset><legend>Version adopted (for an adoption or a revision)</legend><label><input type="checkbox" name="version_core" value="1">CZ-CORE 1.0 <code class="hash">{esc(core.split("sha256:")[1])}</code></label><label><input type="checkbox" name="version_ir" value="1">CZ-IR 1.0 <code class="hash">{esc(ir.split("sha256:")[1])}</code></label></fieldset>
 <label>Scope of the commitment — which part of the record, and where it applies (20–4,000 characters; for a withdrawal, an optional note) <textarea name="scope" maxlength="8000"></textarea></label>
-<label>Reservations — write <q>none</q> if there are none (for an adoption or a revision) <textarea name="reservations" maxlength="8000"></textarea></label>
-<label>Date of the statement (YYYY-MM-DD) <input name="declared_date" type="date" required></label>
+<label>Reservations — write <q>none</q> if there are none (for an adoption or a revision) <textarea name="reservations" maxlength="8000" placeholder=" "></textarea></label>
+<label>Date of the statement <input name="declared_date" type="date" required></label>
 <label>Language of your text — a language code such as <code>en</code> or <code>fa</code> (optional) <input name="lang" maxlength="70" size="8" autocomplete="off"></label>
 <label>Trace address — the <code>https</code> page of yours where you will publish the line this site gives you (required; without <code>?…</code> or <code>#…</code>; part of the statement). Choose a page only you can edit: anyone who can publish on it can also revise or withdraw an unsigned adoption there. <input name="trace_url" type="url" required maxlength="1000"></label>
 <p class="src">The next page shows the line to publish — once: copy it then — and a button to ask for the check. The statement is public and permanent once recorded; it is not the licence granted by posting in the room, and it gives no authority. Signing with a key: through the API (<a href="/api/openapi.json">/api/openapi.json</a>).</p>
@@ -1858,7 +1864,7 @@ def register_templates():
     return {"open": REGISTER_OPEN, "opened": REGISTER_OPENED, "versions": REGISTER_VERSIONS, "intro": register_intro_html(), "rules": register_rules_html(), "form": register_form_html(),
             "closed_after_note": "The register is closed: it takes no new statements and no trace checks. Everything it recorded stays here, in its data and in its daily chain (IR 10.1: the historical record of adoption and withdrawal must remain visible).",
             "closed_after_plain": "it takes no new statements; everything it recorded stays visible at /adopt and /adopt.json.",
-            "shell": shell("__TITLE__", "__BODY__", "__PATH__", "__DESC__", alternates=[("application/json", "/adopt.json", "The register as data")], extra_head="__HEAD__"),
+            "shell": shell("__TITLE__", "__BODY__", "__PATH__", "__DESC__", alternates=[("application/json", "/adopt.json", "The register as data")], extra_head="__HEAD__", css=CSS + ROOM_CSS),   # the shared sheet, then the room's own block (lib.py ROOM_CSS)
             "open_note": "Statements are recorded as received and become adoptions when traced. Everything here is declared, not verified, except the arithmetic of hashes and signatures.",
             "closed_note": f'The register is implemented, tested and reviewed (<a href="{REPO}/blob/main/design/ADOPT.md">design/ADOPT.md</a>; the review\'s findings, G-1 to G-12, in <a href="{REPO}/blob/main/design/test/FINDINGS-REGISTER.md">the findings register</a>); it opens when the originator opens it. The rules are published now so that nothing about them is a surprise.',
             "closed_plain": closed_plain,
@@ -2610,13 +2616,13 @@ BUILT_FEATURES = [   # (feature, what it does here, since, without it)
     ("Content negotiation", "The same address answers in HTML, JSON or plain text, as the reader's Accept header asks", CZ1428, "—"),
     ("Today's date in the CZ calendar, filled on the server", "Every page opens with today's date; no script on the reader's side", CZ1430, "—"),
     ("Visit counts without cookies or identifiers", "Counted on the server before the cache; public at /stats. Distinct visitors were counted until CZ 1433 and no longer are; how machines come in is counted since; AI agents by purpose " + ("and presses on the links of /ask to an assistant " if ASK_OFFERED else "") + "are counted too (/stats says since when)", CZ1432, "—"),
-    ("<details> and <summary>", "A discussion entry's record, hash and moderation log, folded under the words; since CZ " + str(cz_day(RC12_RELEASE)) + " a long page's contents, the Core's languages and the long invitation too, each under one line", CZ1433, "Shown open"),
+    ("<details> and <summary>", "A discussion entry's record, hash and moderation log, folded under the words; since CZ " + str(cz_day(RC12_RELEASE)) + " a long page's contents, the Core's languages, the long invitation, the rules of the room at the foot of its pages and the conditions of posting too, each under one line", CZ1433, "Shown open"),
     ("Invoker commands (commandfor, command) and <dialog closedby>", "Reply to an entry in place, without leaving the page and without a script", CZ1433, "A link to the reply page, beside the button"),
     ("CSS logical properties and dir", "Edges and indents follow the direction of the block they mark: a translation into Persian or Arabic is set right to left, its edge on the right; an entry keeps the page's direction, and its words their own (dir=\"auto\")", CZ1433, "—"),
     ("A colour for the machine layer: the edge and label of what an AI system declared it wrote, and of machine translation", "#116329 on white, #3fb950 on black, both at 7:1 or more; light-dark() where the browser has it", CZ1433, "The same colours by a media query"),
     ("The same green for the day of the new count", "The day count in the calendar line on the first page and today's date at the top of every page, as on the record's images; dates inside text and entries keep the page's colour", datetime.date(2026, 11, 5), "The same colours by a media query"),
     ("Accept-Language", "A reader whose browser prefers another language is offered the page in it, as one link", CZ1433, "—"),
-    ("Cross-document view transitions", "Moving between pages of this site fades instead of flashing, and the mark travels from its place on one page to its place on the next; none for readers who ask for less motion", CZ1433, "The page changes at once, as it always did"),
+    ("Cross-document view transitions", "Moving between pages of this site fades instead of flashing; the mark travels from its place on one page to its place on the next, and an entry from a list to its own page; none for readers who ask for less motion", CZ1433, "The page changes at once, as it always did"),
     ("Speculation rules (prefetch, conservative)", "A link to another page of this site is fetched as you press it, so it opens a moment sooner", CZ1433, "The link is fetched when you release it"),
     ("field-sizing: content", "The reply box grows as you write", CZ1433, "The box keeps its size and scrolls"),
     ("text-wrap: pretty and balance", "Fewer lone words at the end of a paragraph; balanced headings", CZ1433, "Ordinary line breaking"),
@@ -2626,11 +2632,12 @@ BUILT_FEATURES = [   # (feature, what it does here, since, without it)
     # the first page of 24 Nov 2026 (CZ 1455): what it asks of a browser, and what a browser without it shows
     (":has() with :target, on the first page", "An answered door is an address (#human, #not-human): CSS reads it and opens that reading; the switch that shows the reasons works the same way", HOME_RELEASE, "Both readings follow one another, whole; no switch, and the key and the link to the table of reasons stand open"),
     ("CSS mod() and @property, on the first page", "The browser computes the day's figure itself from the one number the server wrote, and a press turns it by a day", HOME_RELEASE, "The figure as the server computed it, and no press"),
-    ("Popover (popover, popovertarget), on the first page and on /core", "The empty place opens the reply form where it stands, without a script; under each principle of the Core, “Cite” opens the line to cite it by", HOME_RELEASE, "A link to the reply page; the line to cite stands open under each principle"),
+    ("Popover (popover, popovertarget), on the first page, on /discuss and on /core", "The empty place opens the reply form where it stands, without a script, and so does “Write your answer” on /discuss; under each principle of the Core, “Cite” opens the line to cite it by", HOME_RELEASE, "A link to the reply page; the line to cite stands open under each principle"),
     ("CSS masks and anchor positioning, on the first page and on /core", "With neither door answered each window fades at its lower edge; on a wide screen the reply form stands in the place's own column; the line to cite a principle opens under that principle's own line", HOME_RELEASE, "A hard edge; the form, or the line to cite, in the middle of the window"),
     # rc-12: the inner pages
     ("position: sticky, ::details-content, scroll-target-group and :target-current", "On a wide window a long page's contents stay in view in the margin, open, and the section being read is marked", RC12_RELEASE, "The contents folded under one word where the page begins; opened by a press; no mark"),
     ("user-select: all", "One press selects a whole hash or a whole invitation", RC12_RELEASE, "Selected by hand"),
+    (":user-invalid, and :has() with :placeholder-shown, in the forms", "A box that needs correcting is marked before a form is sent; in the register's form a field that does not apply is not shown while it is empty", RC12_RELEASE, "The form for an answer comes back from the server with the box marked; every field of the register's form is shown"),
     ("Google Scholar's citation tags; BibTeX, RIS, CSL-JSON", "The Core and the record say how to cite them, in their heads and on the page; the press kit has the files", CZ1433, "—"),
 ]
 def _imgs_bytes(h):

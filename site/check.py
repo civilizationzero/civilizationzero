@@ -40,7 +40,7 @@ class P(HTMLParser):
         if self.stack and self.stack[-1] == t: self.stack.pop()
         else: self.err.append((t, self.stack[-3:]))
 
-FUNCTION_ROUTES = {"/", "/sitemap-discussion.xml", "/stats", "/stats.json", "/index.json", "/index.txt", "/api/entries", "/discuss", "/discuss.json", "/discuss.xml", "/respond", "/api/moderation", "/api/cron/daily", "/archive/entries.json",
+FUNCTION_ROUTES = {"/", "/sitemap-discussion.xml", "/stats", "/stats.json", "/index.json", "/index.txt", "/api/entries", "/discuss", "/discuss/rules", "/discuss.json", "/discuss.xml", "/respond", "/api/moderation", "/api/cron/daily", "/archive/entries.json",
                    "/adopt", "/adopt.json", "/api/adopt", "/archive/register.json", "/api/calendar", "/calendar.json"}
 FUNCTION_ROUTES |= {f"/ask/open/{k}" for k in json.loads((SITE / "api/ask-open.json").read_text("utf-8"))["to"]}   # /ask's links to the assistants: api/page.js redirects (checked below)
 def resolves(path):
@@ -669,8 +669,18 @@ _hcss = (SITE / "home.css").read_text("utf-8")
 _tokblock = re.search(r"^(:root\{.*?\})\n(@media\(prefers-color-scheme:dark\)\{:root\{[^}]*\}\})$", _hcss, re.S | re.M)
 check(_scss == CSS and _tokblock is not None and _scss.count(_tokblock.group(1) + "\n" + _tokblock.group(2)) == 1 and _scss.count(":root{") == 3,
       "the shared stylesheet opens with the first page's tokens, byte for byte (home.css, block 1), and defines no other scale")
-check(all(f.read_text("utf-8").count(f"<style>{CSS}</style>") == 1 for f in pages if f.name != "index.html") and all(s.count(f"<style>{CSS}</style>") == 1 for s in _shells.values()),
-      "every page but the first carries the shared stylesheet, once")
+check(all(f.read_text("utf-8").count(f"<style>{CSS}</style>") == 1 and "rc-12 room" not in f.read_text("utf-8") for f in pages if f.name != "index.html") and all(s.count(f"<style>{CSS}{ROOM_CSS}</style>") == 1 and s.count("<style>") == 1 for s in _shells.values()),
+      "every page but the first carries the shared stylesheet, once; the shells of the room and the register carry the room's block after it, and no page the build writes as a file does")
+# the room's block (lib.py ROOM_CSS): the same discipline as the sheet it follows — the scale, the tokens (and an entry's own name, --vt,
+# which its tag carries), logical sizes, no colour of its own, no green, its motion in a block for a reader who has not asked for less
+_rnocom = re.sub(r"/\*.*?\*/", "", ROOM_CSS, flags=re.S)
+_rloose = sorted({n + u for n, u in re.findall(r"(?<![\w#(.-])(\d*\.?\d+)(rem|em|px|s)\b", _rnocom) if float(n) != 0 and (u == "px" or round(float(n), 4) not in {round(2 ** (k / 4), 4) for k in range(-24, 32)})})
+_rmo = _rnocom.split("@media(prefers-reduced-motion:no-preference){")
+check(ROOM_CSS.startswith("/* rc-12 room */\n") and ROOM_CSS.count("/* rc-12 room */") == 1 and not _rloose and set(re.findall(r"var\((--[a-z][\w-]*)", _rnocom)) <= set(re.findall(r"(--[a-z][\w-]*):", _tokblock.group(1))) | {"--vt"}
+      and not re.search(r"(?<![-\w])(max-|min-)?(width|height):|#[0-9a-f]{3,6}\b|rgb\(|var\(--machine\)|@import|url\(|@font-face|:root", _rnocom)
+      and len(_rmo) == 2 and not re.search(r"transition|animation|@keyframes", _rmo[0]) and _rmo[1].strip() == ".entry:is(:hover,:focus-within,.focus){view-transition-name:var(--vt,none)}}"
+      and "form.respond .permanence{color:var(--mute);font-size:.8409em}" in _rnocom,
+      f"the room's block: on the first page's scale and tokens, no size in px, no colour of its own and no green, its one motion for a reader who has not asked for less; in the form the long notice stays small {_rloose}")
 _snocom = re.sub(r"/\*.*?\*/", "", _scss, flags=re.S)
 _sdecl = _snocom.replace(_tokblock.group(1), "").replace(_tokblock.group(2), "")
 _SPOW = {round(2 ** (k / 4), 4) for k in range(-24, 32)}

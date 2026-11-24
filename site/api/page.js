@@ -9,6 +9,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const CZ = require("../room/cztime.js");
 const MD = require("../room/md.js");
+const FIG = require("../room/figure.js");   // the day's figure (rc-12): the converter's result shows the figure of the day converted
 const { fillWeight } = require("../room/weight.js");
 const crypto = require("node:crypto");
 // The same policy as the room's pages: nothing loads from elsewhere, no page can frame these, forms post here only. The one inline script
@@ -56,11 +57,21 @@ const lunarCell = (lh) => `<bdi class="cz-native" lang="ar" dir="rtl">${esc(lh.n
 const czLink = (D, text) => `<a class="cz-date" href="${CZ.converterHref(D)}">${esc(text)}</a>`;
 
 function rows(list) { return `<table class="cz-result">${list.map(([k, v]) => `<tr><th scope="row">${k}</th><td>${v}</td></tr>`).join("")}</table>`; }
+// A figure for every day (rc-12): the frame is the build's (room/cz-bar.json, dayfigure: the first page's tracks, and the Core's SHA-256 as
+// the build computed it from the Core's bytes); the sixteen arcs are computed here for the day converted, by the first page's own function
+// (room/figure.js). A day before Day 0 has its figure by the same rule (the mathematical modulo). Nothing if the frame is missing.
+function dayFigure(day) {
+  const f = CZ.barTemplates().dayfigure;
+  if (!f || typeof f.html !== "string" || !/^[0-9a-f]{64}$/.test(String(f.core_sha256))) return "";
+  const rings = FIG.rings(day, FIG.constants(f.core_sha256)), n = CZ.fmtInt(day);
+  return f.html.replace(/__FIG_(RINGS|DAY)__/g, (m0, k) => (k === "RINGS" ? rings : n));
+}
 function dateResult(r, today) {
   const x = CZ.describe(r.day), g = x.gregorian, sh = x.solar_hijri, lh = x.lunar_hijri;
   const head = r.today ? `Today is ${esc(x.cz.date)}` : r.calendar === "cz" ? `${esc(r.native)} is ${esc(`${x.weekday}, ${g.text}`)}` : `${nativeOf(r)} = ${esc(x.cz.date)}`;
   const data = `/api/calendar?d=${encodeURIComponent(x.cz.machine)}&c=cz`;
   return `<section id="result" aria-labelledby="h-result"><h3 id="h-result">${head}</h3>
+${dayFigure(r.day)}
 ${rows([
     ["CZ", `<strong><data value="${r.day}">${esc(x.cz.date)}</data></strong> — ${esc(since(r.day))} · machine form <code>${esc(x.cz.machine)}</code>`],
     ["Gregorian", g.year >= 1 && g.year <= 9999 ? `<time datetime="${g.date}">${esc(`${x.weekday}, ${g.text}`)}</time>` : esc(`${x.weekday}, ${g.text}`)],
@@ -239,6 +250,7 @@ module.exports = async (req, res) => {
 module.exports.calendarBlock = calendarBlock;
 module.exports.timeBlock = timeBlock;
 module.exports.dayLine = dayLine;
+module.exports.dayFigure = dayFigure;
 module.exports.linkFor = linkFor;
 module.exports.deployBlock = deployBlock;
 module.exports.OPEN = OPEN;
