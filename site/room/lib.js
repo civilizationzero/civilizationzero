@@ -639,6 +639,11 @@ function metaHtml(e) {
   return `<p class="by">${whoHtml(e)}</p><p class="meta src">${parts.join(" · ")}</p>`;
 }
 
+// Under a page's title, one quiet line of the forms that address really has (rc-12; site audit, finding 26): the words and the markup
+// the build gives the pages it writes (site/lib.py, forms_line), here for the pages the functions write. The Markdown is the view's own
+// address (the shell's __MDPATH__, which html() fills); more: [address, media type, name] for each further form the page has.
+const formsLine = (...more) => `<p class="forms" lang="en" dir="ltr">This page as ${[["__MDPATH__", "text/markdown", "Markdown"], ...more].map(([h, t, n]) => `<a href="${h}" type="${t}">${n}</a>`).join(" · ")}</p>`;
+
 // The room's question and the words of its two ways in (rc-12): the first page's own — the originator's heading, a reader's own answer
 // first, their AI's second (site/build.py: DOOR_ASK, DOOR_WRITE, DOOR_ASK_BUTTON, SHEET_NAME, SHEET_RULE; a test compares them).
 const ASK = { question: "What do you think about Civilization Zero?", write: "Write your answer", ai: "Ask your AI. Post its answer.",
@@ -778,4 +783,4 @@ const validDate =(s) => { if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false; cons
 
 module.exports = { translations, sameLang, translationStates, claim, parseTs, alreadyIn, translateOne, translateMany, checkTranslation, inBackground, deadlineOf, normText, note, TR_FAST, TR_STRONG, prefLang, primaryLang, langName, trContent, trExcerpt, mtLabel, ORIGIN, CONTACT, OPEN, CHAIN, OPENS, TOKEN, T, esc, kindTag, kindClass, contentHtml, log, json, html, shell, fill, rpc, rest, sourceHash, sourceOf, tokenEquals, verifySignature, fullOrderKey, validate, classify, classifierAnswer, translate,
                    allowance, groupEntries, groupKey, entryHtml, metaHtml, previewHtml, example, exampleHtml, exampleHtmlOf, exampleText, excerpt, SECTIONS, sectionLabel, parentId, fmtTime, isoTime, isoFull, validDate, LANG_RE, canonLang, clen, b64Exact, visible, decl, ORIGINATOR, nameKey, reservedName, reservedField, reservedDetail, MODERATION_PROMPT_VERSION, CATEGORIES,
-                   FORM_OPEN, HUMAN_FORM, FIELD_MAX, formWith, whoHtml, vtName, ASK };
+                   FORM_OPEN, HUMAN_FORM, FIELD_MAX, formWith, whoHtml, vtName, formsLine, ASK };

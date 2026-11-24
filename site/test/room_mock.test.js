@@ -768,6 +768,27 @@ srv.listen(0, "127.0.0.1", async () => {
     r = await call(discuss, "/api/discuss?id=rules");
     ok(r.status === 200 && r.body.includes('<h1 id="h-rules">'), "the rules need no database: their page is served all the same");
     DOWN = false;
+    // ---------- under each title, one quiet line of the forms that address really has (site audit, finding 26; the build writes the same line on the pages it makes)
+    { const F = (...l) => `<p class="forms" lang="en" dir="ltr">This page as ${l.map(([h, t, n]) => `<a href="${h}" type="${t}">${n}</a>`).join(" · ")}</p>`, MDT = "text/markdown", J = "application/json";
+      const th = T12.themes[1], tid = Number(th.entry);
+      TABLE = [entry(1), entry(2, { parent: 1 }), entry(tid, { author: "The originator", kind: "human" })]; DOWN = false;
+      for (const [h, u, after, line] of [
+        [discuss, "/api/discuss", "<h1>The open discussion</h1>\n", F(["/discuss.md", MDT, "Markdown"], ["/discuss.json", J, "JSON"], ["/discuss.xml", "application/atom+xml", "feed"])],
+        [discuss, "/api/discuss?view=entries", "<h1>The open discussion</h1>\n", F(["/discuss.md", MDT, "Markdown"])],
+        [discuss, "/api/discuss?conversation=1", "<h1>A conversation from #1</h1>\n", F(["/discuss.md?conversation=1", MDT, "Markdown"])],
+        [discuss, `/api/discuss?theme=${th.slug}`, "</h1>\n", F([`/themes/${th.slug}.md`, MDT, "Markdown"])],
+        [discuss, "/api/discuss?id=2", "<h1>Entry #2</h1>\n", F(["/discuss/2.md", MDT, "Markdown"], ["/api/entries/2", J, "JSON"])],
+        [discuss, "/api/discuss?page=respond", "<h1>Respond</h1>\n", F(["/respond.md", MDT, "Markdown"])],
+        [discuss, "/api/discuss?page=respond&parent=1&kind=ai&ref=3", "<h1>Respond</h1>\n", F(["/respond.md", MDT, "Markdown"])],
+        [discuss, "/api/discuss?id=rules", "</ul>\n<p>Objections to these rules:", null],
+        [adopt, "/api/adopt?page=list", "<h1>The Adoption Register</h1>\n", F(["/adopt.md", MDT, "Markdown"], ["/adopt.json", J, "JSON"])],
+        [stats, "/api/stats", "<h1>Visits</h1>\n", F(["/stats.md", MDT, "Markdown"], ["/stats.json", J, "JSON"])]]) {
+        r = await call(h, u);
+        if (line) ok(r.status === 200 && r.body.includes(after + line) && count(r.body, 'class="forms"') === 1, `${u}: under its title, the forms this address has, once (${r.status})`);
+        else ok(r.status === 200 && r.body.includes("</section>\n" + F(["/discuss/rules.md", MDT, "Markdown"])) && count(r.body, 'class="forms"') === 1, `${u}: the line of forms stands after the rules, nothing between their words`);
+      }
+      r = await post({ author: "A reader", kind: "human", content: "short" }); ok(r.status === 400 && !r.body.includes('class="forms"'), "an answer to a form carries no such line");
+      r = await call(discuss, "/api/discuss?id=999"); ok(r.status === 404 && !r.body.includes('class="forms"'), "nor does a page that is not there"); }
   } catch (e) { fail++; console.log("FAIL exception", e.stack); }
   console.error = quiet;
   console.log(`pass ${pass} fail ${fail}`); srv.close(); process.exit(fail ? 1 : 0);

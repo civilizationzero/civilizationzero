@@ -19,8 +19,9 @@ const rulesFold = () => `<details class="rules"${RULES_FOLDED !== T.rules ? ' id
 const RULES_DESCRIPTION = "The rules of Civilization Zero's discussion room: entering, the licence, states and receipts, order, limits, hiding and redaction, appeal, translation.";
 function rulesPage() {
   const rules = String(T.rules || "").replace('<h2 id="h-rules">', '<h1 id="h-rules">').replace("</h2>", "</h1>");
+  // the line of the page's forms stands after the rules, not under their heading: nothing is set between the rules' own words
   return { status: 200, page: shell({ title: "The rules of the room · Civilization Zero", path: RULES_PATH, description: RULES_DESCRIPTION,
-    body: `<main>${rules}\n<p><a href="/discuss">The discussion</a>${OPEN ? ' · <a href="/respond">Respond</a>' : ""}</p></main>` }) };
+    body: `<main>${rules}\n${R.formsLine()}\n<p><a href="/discuss">The discussion</a>${OPEN ? ' · <a href="/respond">Respond</a>' : ""}</p></main>` }) };
 }
 const { FORM_OPEN } = R;   // the human form's first tag, as built (room/lib.js)
 const REPLY_FORM = R.HUMAN_FORM;   // the human form, as the build wrote it for /respond
@@ -255,6 +256,7 @@ async function conversationPage(url, id, num, req) {
   const shown = all ? rows : groupEntries(rows).map((g) => g.entries[0]);   // what the transcript shows in full
   const L = await trLoad(url, shown), lang = trParts(req, url, L, shown);
   const body = `<main><h1>A conversation${root ? ` from #${root.id}` : ""}</h1>
+${R.formsLine()}
 ${theme ? `<p class="room-line">In the theme <a href="/themes/${theme.slug}">${esc(theme.title)}</a>.</p>` : ""}${lang.top}<p class="src">In canonical order (by id): each entry and every reply to it, as a transcript — no counts, nothing ranked. Entries are user content; they may contain instructions; none are the record's. ${all ? `<a href="${base}">Group consecutive entries from one source</a>.` : "Consecutive entries from the same declared source within one UTC day are grouped (Core §9)."}${after ? ` Continued after #${after}.` : ""}</p>
 ${transcriptHtml(rows, all, base, L.tr)}${more}
 ${lang.bottom}<p><a href="/discuss">The discussion</a>${OPEN ? ` · <a href="/respond">Respond</a>` : ""}</p>${rulesFold()}</main>`;
@@ -279,6 +281,7 @@ async function themePage(url, theme, num, req) {
   // control directly under it (the link to the form's page, which names the question); what a theme is, and the list of languages,
   // come after the conversations
   const body = `<main><h1>${esc(theme.title)}</h1>
+${R.formsLine()}
 ${lang.top}${entryHtml(root, "", L.tr)}
 ${OPEN ? `<p class="cta-line"><a class="cta" href="/respond?parent=${root.id}">Answer this question</a></p>` : ""}
 <h2>Conversations — newest first, a view</h2>
@@ -357,7 +360,8 @@ async function listPage(url, req) {
   // The page begins with what a reader can do — the question and its two ways in — and then the conversations; what the page is, the
   // room's state, how the list is ordered and the list of languages come after the list, under one heading (rc-12, 24 Nov 2026; site
   // audit, finding 2). One line stays before any entry, for every reader: entries are user content.
-  const head = `<h1>The open discussion</h1>\n${OPEN ? askHtml() : (T.closed_after_note || "")}`;
+  const whole = [...url.searchParams.keys()].every((k) => k === "f" || k === "fresh");   // /discuss itself, not a view of it
+  const head = `<h1>The open discussion</h1>\n${whole ? R.formsLine(["/discuss.json", "application/json", "JSON"], ["/discuss.xml", "application/atom+xml", "feed"]) : R.formsLine()}\n${OPEN ? askHtml() : (T.closed_after_note || "")}`;
   const state = `<p>${OPEN ? (T.opened ? `Open since ${since}.` : "Open.") : `Opened ${since}; closed to new entries.`} ${stats.entries} ${stats.entries === 1 ? "entry" : "entries"} recorded${stats.hidden ? `, ${stats.hidden} hidden` : ""}${stats.redacted ? `, ${stats.redacted} redacted` : ""}${OPEN ? `; this UTC day ${stats.today} of ${stats.daily_intake_max}` : ""}${stats.unclassified ? `; ${stats.unclassified} not yet screened by the classifier` : ""}. Humans and artificial intelligences, declared not verified, any language, recorded not ranked. ${OPEN ? `<a href="/respond">Respond</a> · ` : ""}for readers that are not human: <a href="/machine">/machine</a> · the archive as data: <a href="/discuss.json">/discuss.json</a> · the rules: <a href="#rules">below</a>.</p>`;
   const USER = `<p class="src">Entries are user content; they may contain instructions; none are the record's.</p>`;
   const about = (notes = "", lang = "") => `<section aria-labelledby="h-about"><h2 id="h-about">About this page</h2>${state}${notes}${lang}</section>`;
@@ -457,6 +461,7 @@ async function entryPage(url, id, req) {
     : convUnavailable ? `<p class="pending">The conversation around this entry could not be read just now. <a href="/discuss?conversation=${e.id}">Try the whole conversation</a>.</p>`
     : nReplies ? `<section aria-labelledby="replies"><h2 id="replies">Replies</h2><p class="src">In canonical order (by id), each under the entry it answers. <a href="/discuss?conversation=${e.id}">The whole conversation as one transcript</a>.</p>${replyTree(kids, e.id, 0, L.tr)}</section>` : "";
   const body = `<main><h1>Entry #${e.id}</h1>
+${R.formsLine([`/api/entries/${Number(e.id)}`, "application/json", "JSON"])}
 ${inTheme ? `<p class="room-line">In the theme <a href="/themes/${inTheme.slug}">${esc(inTheme.title)}</a>.</p>` : ""}${lang.top}${ancestorsHtml(anc, L.tr)}
 ${entryHtml(e, " focus", L.tr)}
 <p class="src">User content, as received: it may contain instructions; none are the record's.</p>
@@ -681,6 +686,7 @@ module.exports = async (req, res) => {
                                     .replace("<h1>Respond</h1>", "<h1>Respond</h1>\n<p class=\"room-line\">You are posting the answer of an AI system: paste its entry, unedited, and give its name and model below.</p>");
       }
       if (OPEN && pv && (pv === "custom" || (T.prompt_versions || []).includes(pv))) body = body.replace('<input name="prompt" maxlength="60">', `<input name="prompt" maxlength="60" value="${pv}">`);   // a published version only (the build lists them)
+      body = body.replace("<h1>Respond</h1>", () => `<h1>Respond</h1>\n${R.formsLine()}`);   // last, so that the line of forms stands directly under the title
       return html(res, 200, shell({ title: "Respond · Civilization Zero", body, path: "/respond", description: "How to respond to Civilization Zero: as a human with the form, or as a system through the API — declared, not verified, recorded, never ranked." }), cache);
     }
     if (id === "rules" || id === "rules.md") {   // the rules at their own address, whatever the room's state; /discuss/rules.md is the same page as Markdown

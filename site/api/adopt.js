@@ -36,6 +36,7 @@ const page = (title, body, path, description, alt, head) => {
   return R.fill(shellFor, { TITLE: esc(`${title} · Civilization Zero`), DESC: esc(description), PATH: esc(path), HEAD: head || "", BODY: `<main id="content">${body}</main>` })
     .replace('<li><a href="/adopt">', () => '<li><a href="/adopt" aria-current="page">');
 };
+const FORMS = R.formsLine(["/adopt.json", "application/json", "JSON"]);   // under the title: the forms the register's address has (rc-12)
 const stateLine = () => (G.OPEN ? `<p><strong>Open.</strong> ${RT.open_note}</p>`
   : G.CHAIN ? `<p class="pending"><strong>Closed.</strong> ${RT.closed_after_note}</p>` : `<p class="pending"><strong>Not open yet.</strong> ${RT.closed_note}</p>`);
 const traceLine = (id, token) => `civilizationzero.ai/adopt/${id} trace:${token}`;
@@ -77,7 +78,7 @@ function summaryHtml(root, st) {
 async function registerPage() {
   // rc-12 (24 Nov 2026; site audit, finding 11): the page leads with what adopting is, in the record's own words (IR 10.1); whether the
   // register takes statements comes after that, and its numbers and limits under the three lists (each says "None." when it is empty)
-  if (!G.CHAIN) return { status: 200, page: page("The Adoption Register", `<h1>The Adoption Register</h1>${RT.intro}${stateLine()}${RT.rules}`, "/adopt", RT.description) };
+  if (!G.CHAIN) return { status: 200, page: page("The Adoption Register", `<h1>The Adoption Register</h1>${FORMS}${RT.intro}${stateLine()}${RT.rules}`, "/adopt", RT.description) };
   const [{ rows: all, complete }, stats] = await Promise.all([allRecords(), rpc("cz_register_stats", {})]);
   const roots = all.filter((r) => r.type === "adoption" && r.state === "traced");
   const withStatus = roots.map((r) => ({ r, st: G.statusOf(r, all) }));
@@ -88,6 +89,7 @@ async function registerPage() {
   const hidden = all.filter((r) => r.hidden);
   const list = (xs) => xs.length ? xs.map((x) => summaryHtml(x.r, x.st)).join("") : "<p>None.</p>";
   const body = `<h1>The Adoption Register</h1>
+${FORMS}
 ${RT.intro}
 ${stateLine()}${complete ? "" : `
 <p><strong>This page shows the first ${all.length.toLocaleString("en")} records only;</strong> every record is in <a href="/adopt.json">/adopt.json</a>, page by page.</p>`}
@@ -155,6 +157,7 @@ ${G.OPEN ? `<form method="post" action="/api/adopt"><input type="hidden" name="a
   const logHtml = log.length ? `<div class="scroll" tabindex="0" role="region" aria-labelledby="h-log"><table><tr><th scope="col">When</th><th scope="col">What</th><th scope="col">By</th><th scope="col">HTTP</th><th scope="col">SHA-256 of the bytes fetched</th><th scope="col">Detail</th></tr>${log.map((l) => `<tr><td>${CZ.whenHtml(l.at)}</td><td>${esc(l.action)}${l.category ? ` — ${esc(l.category)}` : ""}</td><td>${esc(l.actor)}</td><td>${esc(l.http_status || "")}</td><td><code>${esc((l.body_sha256 || "").slice(0, 16))}${l.body_sha256 ? "…" : ""}</code></td><td>${esc(l.detail || "")}</td></tr>`).join("")}</table></div>` : "<p>None yet.</p>";
   const linked = d.linked.length > 1 ? `<section aria-labelledby="h-ln"><h2 id="h-ln">The adoption and its changes</h2>${d.linked_more ? `<p class="src">The first ${LINKED_SHOWN.toLocaleString("en")} records; every record is in <a href="/adopt.json">/adopt.json</a>. The status above follows the whole history.</p>` : ""}<ul>${d.linked.map((x) => `<li><a href="/adopt/${x.id}">#${x.id}</a> · ${esc(x.type)} · ${who(x)} · from ${esc(x.declared_date)} · ${esc(x.state)}</li>`).join("")}</ul></section>` : "";
   const body = `<h1>Record #${r.id} — ${esc(r.type)}</h1>
+${R.formsLine([`/api/adopt?id=${Number(r.id)}`, "application/json", "JSON"])}
 <table class="kv">${rows.join("")}</table>
 ${next}${stmt}${linked}
 <section aria-labelledby="h-log"><h2 id="h-log">Log of this record</h2>${d.log_more ? `<p class="src">The newest ${LOG_SHOWN} rows; the whole log, oldest first, page by page: <a href="/api/adopt?id=${r.id}&amp;log_after=0">/api/adopt?id=${r.id}&amp;log_after=0</a>.</p>` : ""}${logHtml}<p class="src">Every trace check and every decision is logged. A traced record is not checked again: a line later removed from its page is not a withdrawal (a withdrawal is a statement).</p></section>
