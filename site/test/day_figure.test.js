@@ -71,3 +71,55 @@ test("api/page.js, where it writes the figure (dayFigure): a conversion's result
   assert.ok(!plain.body.includes('class="dayfig"') && !bad.body.includes('class="dayfig"'), "no figure without a day converted");
   assert.equal(page.dayFigure(1455), BAR.dayfigure.html.replace("__FIG_RINGS__", FIG.rings(1455, K)).replace(/__FIG_DAY__/g, CZ.fmtInt(1455)));
 });
+
+// ---- the sixteen (/civilization-zero-images, rc-16): the places stand by their rings' numbers that day, written in that order
+test("the sixteen: the order of a day — lowest number first, a tie inner ring first", () => {
+  const page = require("../api/page.js");
+  assert.deepEqual(page.sixteenOrder(["005", "003", "003", "001"]), [3, 1, 2, 0]);
+  assert.deepEqual(page.sixteenOrder(Array(16).fill("000")), [...Array(16).keys()], "all equal: ring order");
+  const K16 = FIG.constants(require("../room/cz-bar.json").dayfigure.core_sha256);
+  assert.deepEqual(FIG.places(1455, K16), "092 166 071 082 149 239 114 163 136 001 053 214 071 208 082 002".split(" "), "Day 1455's numbers, ring 0 first");
+  assert.deepEqual(page.sixteenOrder(FIG.places(1455, K16)), [9, 15, 10, 2, 12, 3, 14, 0, 6, 8, 4, 7, 1, 13, 11, 5], "Day 1455: rings 2 and 12 both stand at 071, ring 2 first; so 3 and 14 at 082");
+});
+
+test("the sixteen: the page function writes the places in the day's order, each with its number, and the day's unit", () => {
+  const page = require("../api/page.js"), fs = require("node:fs"), path = require("node:path");
+  const built = fs.readFileSync(path.join(__dirname, "..", "public", "civilization-zero-images.html"), "utf8");
+  const places = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "sixteen.json"), "utf8")).places;
+  const K16 = FIG.constants(require("../room/cz-bar.json").dayfigure.core_sha256);
+  assert.equal(places.length, 16); assert.equal(new Set(places.filter(Boolean).map((p) => p.sentence)).size, places.filter(Boolean).length, "every held place its own sentence");
+  for (const p of places.filter(Boolean)) for (const f of [`cz-16-${p.file}.jpg`, `cz-16-${p.file}-540.jpg`]) assert.ok(fs.existsSync(path.join(__dirname, "..", "assets", f)), f);
+  // as built: ring order, no number, no word of today
+  assert.deepEqual([...built.matchAll(/<li id="p(\d+)">/g)].map((m) => +m[1]), [...Array(16).keys()]);
+  assert.ok(built.includes("The places stand here in the order of their rings, the innermost first.") && !/today/.test(built.slice(built.indexOf("<main"), built.indexOf("</main>"))) && (built.match(/<b><\/b>/g) || []).length === 16);
+  let openFirst = null;
+  for (const day of [0, 1, 1454, 1455, 1456, 1461, 100000, -3]) {
+    const out = page.sixteen(built, day), nums = FIG.places(day, K16);
+    const li = [...out.matchAll(/<li id="p(\d+)"><figure[^>]*><figcaption><b>(\d{3})<\/b>/g)].map((m) => [+m[1], m[2]]);
+    assert.equal(li.length, 16, `day ${day}: sixteen places`);
+    assert.deepEqual(li.map(([k]) => k).slice().sort((a, b) => a - b), [...Array(16).keys()], `day ${day}: every place once`);
+    for (const [k, n] of li) assert.equal(n, nums[k], `day ${day}: place ${k} carries its ring's number`);
+    for (let i = 1; i < 16; i++) assert.ok(+li[i - 1][1] < +li[i][1] || (li[i - 1][1] === li[i][1] && li[i - 1][0] < li[i][0]), `day ${day}: ascending, a tie inner ring first`);
+    const unit = /<!--cz-16u-->([\s\S]*?)<!--\/cz-16u-->/.exec(out)[1];
+    assert.deepEqual([...unit.matchAll(/<a href="#p(\d+)">(\d{3})<\/a>/g)].map((m) => [+m[1], m[2]]), li, `day ${day}: the unit's numbers are the places, in their order, each a link to its place`);
+    assert.ok(unit.includes(`<g class="arc" stroke-width="4">${FIG.rings(day, K16)}</g>`) && unit.includes(`<b class="d">Day ${day < 0 ? "−" + (-day).toLocaleString("en-US") : day.toLocaleString("en-US")}</b>`) || day < 0, `day ${day}: the day's figure and the day`);
+    assert.ok(unit.replace(/<[^>]+>/g, "").includes("Nobody set today's order: each place stands by its ring's number, lowest first. Tomorrow the numbers will be different.") && out.includes(`aria-label="The sixteen places, in today's order"`));
+    const imgs = [...out.matchAll(/<img [^>]*>/g)].map((m) => / loading="lazy"/.test(m[0]));
+    assert.deepEqual(imgs, imgs.map((_, i) => i >= 2), `day ${day}: the first two frames are asked for at once, the others when they come near`);
+    assert.equal(out.replace(/<!--cz-16-->[\s\S]*?<!--\/cz-16-->/, "").replace(/<!--cz-16u-->[\s\S]*?<!--\/cz-16u-->/, ""), built.replace(/<!--cz-16-->[\s\S]*?<!--\/cz-16-->/, "").replace(/<!--cz-16u-->[\s\S]*?<!--\/cz-16u-->/, ""), `day ${day}: nothing else in the page changes`);
+    if (openFirst === null && places[li[0][0]] === null) openFirst = day;
+  }
+  // a day on which an open place stands first: it is written first, an empty frame with its number
+  let d = 1455; while (places[page.sixteenOrder(FIG.places(d, K16))[0]] !== null) d += 1;
+  const o = page.sixteen(built, d), first = /<li id="p(\d+)">(<figure class="o"><figcaption><b>(\d{3})<\/b> open<\/figcaption><\/figure>)<\/li>/.exec(o);
+  assert.ok(first && o.indexOf(first[0]) < o.indexOf("<img ") && first[3] === FIG.places(d, K16)[+first[1]], `day ${d}: an open place stands first`);
+  // a day with all sixteen held: every place a frame, fourteen of them asked for when they come near
+  const held = built.match(/<li id="p0">[\s\S]*?<\/li>/)[0];
+  const full = built.replace(/<li id="p(\d+)"><figure class="o">[\s\S]*?<\/li>/g, (m0, k) => held.replace('id="p0"', `id="p${k}"`));
+  const f = page.sixteen(full, 1455);
+  assert.equal((f.match(/<img /g) || []).length, 16); assert.equal((f.match(/ loading="lazy"/g) || []).length, 14);
+  assert.deepEqual([...f.matchAll(/<li id="p(\d+)">/g)].map((m) => +m[1]), page.sixteenOrder(FIG.places(1455, K16)));
+  // a page without the build's markers, or with a place missing, is served as it is
+  assert.equal(page.sixteen(built.replace("<!--cz-16-->", ""), 1455), built.replace("<!--cz-16-->", ""));
+  assert.equal(page.sixteen(built.replace(/<li id="p7">[\s\S]*?<\/li>/, ""), 1455), built.replace(/<li id="p7">[\s\S]*?<\/li>/, ""));
+});

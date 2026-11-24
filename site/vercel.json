@@ -991,6 +991,15 @@
       ]
     },
     {
+      "source": "/civilization-zero-:frame([a-z0-9-]+).jpg",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=86400"
+        }
+      ]
+    },
+    {
       "source": "/.well-known/atproto-did",
       "headers": [
         {

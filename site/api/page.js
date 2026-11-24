@@ -65,6 +65,32 @@ function dayFigure(day) {
   const rings = FIG.rings(day, FIG.constants(f.core_sha256)), n = CZ.fmtInt(day);
   return f.html.replace(/__FIG_(RINGS|DAY)__/g, (m0, k) => (k === "RINGS" ? rings : n));
 }
+// The sixteen (/civilization-zero-images, rc-16): sixteen places, one for each ring of the day's figure. The page as built stands in ring
+// order (place k is ring k) with no numbers; here each ring's number that day is computed by the first page's own function
+// (room/figure.js), the places are written in that order — lowest number first, a tie inner ring first — so that the order read is the
+// order seen, each with its number; the first two frames are asked for at once and the others when they come near; and the day's unit
+// (the figure, the day, the sixteen numbers lowest first, each a link to its place) stands in the place the build left for it. Nothing
+// is changed if the frame of the figure or the build's markers are missing: the page as built is true of what it shows.
+function sixteenOrder(nums) { return nums.map((n, k) => k).sort((a, b) => (Number(nums[a]) - Number(nums[b])) || (a - b)); }
+const WALL_RE = /(<!--cz-16--><ol[^>]*>)([\s\S]*?)(<\/ol><!--\/cz-16-->)/, UNIT_RE = /<!--cz-16u-->[\s\S]*?<!--\/cz-16u-->/;
+function sixteen(html, day) {
+  const T = CZ.barTemplates(), f = T.dayfigure, u = T.sixteen;
+  if (!f || !u || typeof u.unit !== "string" || !/^[0-9a-f]{64}$/.test(String(f.core_sha256))) return html;
+  const m = WALL_RE.exec(html); if (!m) return html;
+  const items = m[2].match(/<li id="p\d+">[\s\S]*?<\/li>/g) || [];
+  if (items.length !== 16 || items.join("") !== m[2]) return html;
+  const K = FIG.constants(f.core_sha256), nums = FIG.places(day, K), order = sixteenOrder(nums);
+  let held = 0;
+  const places = order.map((k) => {
+    let it = items[k].replace("<b></b>", `<b>${nums[k]}</b>`).replace(' loading="lazy"', "");
+    if (it.includes("<img ")) { held += 1; if (held > 2) it = it.replace(/(<img [^>]*?)>/, '$1 loading="lazy">'); }
+    return it;
+  }).join("");
+  const links = order.map((k) => `<a href="#p${k}">${nums[k]}</a>`);
+  const fours = [0, 4, 8, 12].map((j) => links.slice(j, j + 4).join("&nbsp;")).join(" ");
+  const unit = u.unit.replace(/__(FIG_RINGS|DAY|NUMS)__/g, (m0, k) => (k === "FIG_RINGS" ? FIG.rings(day, K) : k === "DAY" ? CZ.fmtInt(day) : fours));
+  return html.replace(WALL_RE, () => m[1].replace('aria-label="The sixteen places"', `aria-label="The sixteen places, in today's order"`) + places + m[3]).replace(UNIT_RE, () => `<!--cz-16u-->${unit}<!--/cz-16u-->`);
+}
 function dateResult(r, today) {
   const x = CZ.describe(r.day), g = x.gregorian, sh = x.solar_hijri, lh = x.lunar_hijri;
   const head = r.today ? `Today is ${esc(x.cz.date)}` : r.calendar === "cz" ? `${esc(r.native)} is ${esc(`${x.weekday}, ${g.text}`)}` : `${nativeOf(r)} = ${esc(x.cz.date)}`;
@@ -226,6 +252,7 @@ module.exports = async (req, res) => {
   // a conversion's own address, for its Markdown form and the links to it: /calendar.md?d=…&c=… is another text than /calendar.md
   const viewQuery = query && status === 200 ? new URLSearchParams(["d", "c", "t", "z"].filter((k) => url.searchParams.get(k)).map((k) => [k, url.searchParams.get(k).slice(0, 80)])).toString() : "";
   if (viewQuery) out = out.replace(/href="\/calendar\.md"/g, () => `href="/calendar.md?${CZ.escHtml(viewQuery)}"`);
+  if (p === "civilization-zero-images" && status === 200) out = sixteen(out, CZ.fields(CZ.localMs(now, zone)).D);
   const colophon = p === "how-it-is-built" && status === 200;
   if (colophon) { const v = await latestCheck(now); out = out.replace(DEPLOY_RE, () => `<!--cz-deploy-->${deployBlock(v, process.env.VERCEL_GIT_COMMIT_SHA)}<!--/cz-deploy-->`); }
   // the colophon at most an hour in the cache, so that a new day's check shows the same morning; every other page until midnight in
@@ -253,6 +280,8 @@ module.exports.calendarBlock = calendarBlock;
 module.exports.timeBlock = timeBlock;
 module.exports.dayLine = dayLine;
 module.exports.dayFigure = dayFigure;
+module.exports.sixteen = sixteen;
+module.exports.sixteenOrder = sixteenOrder;
 module.exports.linkFor = linkFor;
 module.exports.deployBlock = deployBlock;
 module.exports.OPEN = OPEN;

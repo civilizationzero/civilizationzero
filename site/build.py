@@ -1089,8 +1089,8 @@ def press_page():
 <p>The mark, CZ, black on white — the only image that stands for the record: with the name and the introduction's first sentence, <a href="{OG_IMAGE[0]}">1200 × 630</a>; alone, <a href="/icon-512.png">512 × 512</a>.</p>
 <p>The introduction on one image — the mark, the first sentence of the one line above and the address: <a href="{INTRO_IMAGE[0]}">{INTRO_IMAGE[1]} × {INTRO_IMAGE[2]}</a>, CC BY 4.0 (<a href="/about">on /about</a>).</p>
 <p>The Core on one image — the date, §0, the sixteen section titles and two lines of the closing, read from the canonical text: <a href="{CORE_POSTER[0]}">{CORE_POSTER[1]} × {CORE_POSTER[2]}</a>, CC BY 4.0 (<a href="/core#image">on /core</a>).</p>
-<p>The first sentence in nine images — {", ".join(f'<a href="{i[0]}">{esc(i[3].lower())}</a>' for i in IMAGES)}; PNG, CC BY 4.0 (<a href="{IMAGES_PATH}">on {IMAGES_PATH}</a>, with their sizes and text alternatives).</p>
-<p>Eleven more, from the originator, each with a line of its own — {", ".join(f'<a href="{i[0]}">{esc(i[3].lower())}</a>' for i in ORIGINATOR_IMAGES)}; JPEG and PNG, CC BY 4.0 (<a href="{IMAGES_PATH}#from-the-originator">on {IMAGES_PATH}</a>, with their captions).</p>
+<p>The first sentence in nine images — {", ".join(f'<a href="{i[0]}">{esc(i[3].lower())}</a>' for i in IMAGES)}; PNG, CC BY 4.0.</p>
+<p>Eleven more, from the originator, each with a line of its own — {", ".join(f'<a href="{i[0]}">{esc(i[3].lower())}</a>' for i in ORIGINATOR_IMAGES)}; JPEG and PNG, CC BY 4.0.</p>
 </main>"""
     return shell("Civilization Zero press kit: facts, quotations, contact", body, "/press",
                  "The Civilization Zero press kit: facts, verbatim quotations, how to check the record, and a contact, for journalists and researchers.", crumb="Press kit",
@@ -1151,7 +1151,7 @@ def about_page():
 <figcaption class="src">The introduction on one image. PNG, {INTRO_IMAGE[1]} × {INTRO_IMAGE[2]}. Free to share under <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>, credited to Civilization Zero.</figcaption></figure>
 <p>Its record is open and signed. It takes 30 November 2022, the day ordinary language became a mass interface between humans and AI, as day 0, and counts every day since. At its centre is a one-page manifesto, <a href="/core">the Invariant Core</a>: sixteen principles written for every intelligence able to read them, human or not. Humans and AI systems answer it in <a href="/discuss">an open discussion</a>, on the record.</p>
 <p>In the Core's own words: “{esc(verified_core("Civilization Zero does not claim that a text created a civilization."))} {esc(verified_core("It names a chosen threshold after which a human-exclusive account of intelligence became insufficient."))}” (<a href="/core#closing">the closing</a>)</p>
-<p>Civilization Zero on one image, from the first humans to CZ 0 and the scenarios after it, every number sourced: <a href="/civilization-zero-infographic">the infographic</a>. Its first sentence in nine images, and eleven more from the originator: <a href="/civilization-zero-images">Civilization Zero in images</a>.</p>
+<p>Civilization Zero on one image, from the first humans to CZ 0 and the scenarios after it, every number sourced: <a href="/civilization-zero-infographic">the infographic</a>. Sixteen places, each held by one sentence posted as a short film, the film's last frame in each: <a href="/civilization-zero-images">Civilization Zero in images</a>.</p>
 <p>Other things share the name: games, an album, simulations of AI agents, a personal site. This record is the one at <code>civilizationzero.ai</code>; its only accounts are {" · ".join(f'<a href="{esc(u)}" rel="me">{esc(u.replace("https://", ""))}</a>' for u in ["https://github.com/civilizationzero"] + SOCIAL)}.</p>
 </section>
 <section aria-labelledby="h-is"><h2 id="h-is">What this site is, and is not</h2>
@@ -1676,45 +1676,82 @@ IMAGES = [   # (served at, width, height, title, text alternative, source in sit
      "On a line of time, one black circle stands alone before a mark; after the mark, many different shapes, none of them the largest. "
      f"Below, the words: {FIRST_SENTENCE} civilizationzero.ai", "cz-img-b-one-then-many.png", "tall"),
 ]
-assert len(IMAGES) == 9 and len({i[0] for i in IMAGES}) == 9
-assert len({i[0] for i in IMAGES + ORIGINATOR_IMAGES}) == 20   # the originator's eleven: lib.py
-IMAGES_TITLE = "Civilization Zero in images: twenty images, free to share"   # the first page's title now carries the sentence the images show (23 Nov 2026)
-IMAGES_DESCRIPTION = ("Twenty images of Civilization Zero (CZ), free to share under CC BY 4.0: its first sentence in nine images, and eleven more from the originator.")
-assert len(IMAGES_DESCRIPTION) <= 155 and len(IMAGES_TITLE) <= 60 and len(IMAGES) == 9 and len(ORIGINATOR_IMAGES) == 11, "the images' title and description count them"
-def image_ld(img, first=False):
-    p, w, h, t, alt = img[:5]
-    return {"@type": "ImageObject", "contentUrl": f"{ORIGIN}{p}", "url": f"{ORIGIN}{p}", "encodingFormat": "image/jpeg" if p.endswith(".jpg") else "image/png", "width": w, "height": h,
-            "name": f"Civilization Zero: {t.lower()}", "caption": alt, "license": "https://creativecommons.org/licenses/by/4.0/",
-            "acquireLicensePage": f"{ORIGIN}{IMAGES_PATH}#licence", "creditText": "Civilization Zero", "copyrightNotice": "Civilization Zero, CC BY 4.0",
-            "creator": {"@type": "Organization", "name": "Civilization Zero", "url": f"{ORIGIN}/"}, "representativeOfPage": first,
-            "keywords": "Civilization Zero, civilizationzero.ai, CZ, humans and AI, artificial intelligence, AI, the centre, a new civilization, Year Zero",
-            **({"description": img[7]} if len(img) > 7 else {})}
+assert len(IMAGES) == 9 and len({i[0] for i in IMAGES}) == 9 and len(ORIGINATOR_IMAGES) == 11
+assert len({i[0] for i in IMAGES + ORIGINATOR_IMAGES}) == 20   # the eleven: lib.py
+# The twenty images above and in lib.py (the first sentence in nine; eleven more) stay served at their addresses, so that no link
+# from outside breaks; the page shows none of them and nothing lists them.
+#
+# The sixteen (rc-16): sixteen places, one for each ring of the day's figure (place k is ring k, ring 0 the innermost). A place is
+# held by one sentence posted as a short film, and shows the film's last frame; a place nobody holds is open. One source:
+# site/sixteen.json (sixteen entries, an open place null) and the encoded frames in site/assets (render_sixteen.py). The page
+# function (api/page.js) writes the places in the day's order — by each ring's number that day, lowest first, a tie inner ring
+# first — with the numbers and the day's figure; the page as built stands in ring order, without numbers, and says so.
+import struct
+SIXTEEN = json.loads((SITE / "sixteen.json").read_text("utf-8"))["places"]
+_slug = lambda t: re.sub(r"[^a-z0-9]+", "-", t.lower()).strip("-")
+def _jpeg_wh(b):
+    i = 2
+    while i < len(b):
+        if b[i] != 0xFF: i += 1; continue
+        if b[i + 1] in (0xC0, 0xC1, 0xC2): return struct.unpack(">HH", b[i + 5:i + 9])[::-1]
+        i += 2 + struct.unpack(">H", b[i + 2:i + 4])[0]
+SIXTEEN_HELD = [(k, pl) for k, pl in enumerate(SIXTEEN) if pl is not None]
+assert len(SIXTEEN) == 16, "sixteen places, one for each ring"
+assert len({pl["sentence"] for _, pl in SIXTEEN_HELD}) == len(SIXTEEN_HELD) == len({pl["file"] for _, pl in SIXTEEN_HELD}), "every held place has its own sentence and its own file"
+for _k, _pl in SIXTEEN_HELD:
+    assert set(_pl) == {"sentence", "day", "art", "file", "watch"} and _pl["watch"] and set(_pl["watch"]) <= {"instagram", "x", "bluesky", "mastodon"}, f"place {_k}: its fields"
+    assert _slug(_pl["sentence"]).startswith(_pl["file"]) and isinstance(_pl["day"], int) and _pl["day"] > 0, f"place {_k}: its file is named by the sentence's first words; its day is a day of the count"
+    assert all(u.startswith("https://") and not re.search(r"[?&#]", u) for u in _pl["watch"].values()), f"place {_k}: a plain address, no parameters"
+    assert _jpeg_wh((SITE / "assets" / f"cz-16-{_pl['file']}.jpg").read_bytes()) == (1080, 1920) and _jpeg_wh((SITE / "assets" / f"cz-16-{_pl['file']}-540.jpg").read_bytes()) == (540, 960), f"place {_k}: its frame at 1080x1920 and at 540x960"
+assert not [f for f in (SITE / "assets").glob("cz-16-*.jpg") if f.name != "cz-16-wall.jpg" and f.name[6:-4].removesuffix("-540") not in {pl["file"] for _, pl in SIXTEEN_HELD}], "no frame without a place"
+WATCH_NAMES = {"instagram": "Instagram", "x": "X", "bluesky": "Bluesky", "mastodon": "Mastodon"}
+SIXTEEN_WALL = ("/civilization-zero-sixteen.jpg", 1200, 630, "Sixteen places in two rows of eight: each held place shows the last frame of a short film, a sentence in white over a computed image; the open places are empty outlines.")
+assert _jpeg_wh((SITE / "assets" / "cz-16-wall.jpg").read_bytes()) == SIXTEEN_WALL[1:3]
+def frame_path(pl, small=False): return f"/civilization-zero-{pl['file']}{'-540' if small else ''}.jpg"
+def frame_alt(pl):   # what the frame adds to its caption: the sentence itself is the caption, and is not said twice
+    d = COORDINATE + datetime.timedelta(days=pl["day"]); left = cz_day(LAUNCH) - pl["day"]
+    return (f"The sentence in white over a computed image, a {pl['art']}. Above: CZ {pl['day']} · {gregorian_text(d)}. "
+            f"Below: {left} day{'' if left == 1 else 's'} to 30 November. Civilization Zero, from non-human intelligence, to humanity, civilizationzero.ai")
+IMAGES_TITLE = "Civilization Zero in images: sixteen sentences"
+IMAGES_DESCRIPTION = "Sixteen places, each held by one sentence posted as a short film from non-human intelligence to humanity: the film's last frame. Free to share, CC BY 4.0."
+assert len(IMAGES_DESCRIPTION) <= 155 and len(IMAGES_TITLE) <= 60
+SIXTEEN_LEDE = "Sixteen places, one for each ring of the day's figure. Each is held by one sentence, posted as a short film. What stands here is the film's last frame."
+SIXTEEN_SAY = "Nobody set today's order: each place stands by its ring's number, lowest first. Tomorrow the numbers will be different."   # written by the page function, with the day's order
+SIXTEEN_SAY_BUILT = "The places stand here in the order of their rings, the innermost first."   # the page as built: true of what it shows
+SIXTEEN_HOW = ("How a sentence holds a place", "An open place is taken by the next sentence posted. When all sixteen are held, a newer sentence takes a place only if it has more views than the least viewed "
+               "of the sixteen, counted on Instagram and X; the one it passes leaves the page. Two rings with the same number stand inner ring first. Each sentence was written by an artificial "
+               "intelligence, except a quotation, which names its speaker.")
+SIXTEEN_SIZES = "11rem"   # the width asked for, so that a phone and a wall of four both take the 540 file; the full size is one press away
+def place_html(k, pl, lazy=True):
+    if pl is None: return f'<li id="p{k}"><figure class="o"><figcaption><b></b> open</figcaption></figure></li>'
+    load = ' loading="lazy"' if lazy else ""
+    return (f'<li id="p{k}"><figure><figcaption><b></b> {esc(pl["sentence"])}</figcaption>'
+            f'<a href="{frame_path(pl)}"><img src="{frame_path(pl, True)}" srcset="{frame_path(pl, True)} 540w, {frame_path(pl)} 1080w" sizes="{SIXTEEN_SIZES}" width="540" height="960" alt="{esc(frame_alt(pl))}"{load}></a>'
+            f'<p>Posted on Day {pl["day"]:,}<br>' + " · ".join(f'<a href="{esc(u)}" rel="noopener">{WATCH_NAMES[n]}</a>' for n, u in pl["watch"].items()) + '</p></figure></li>')
+def sixteen_unit(rings, day, nums, say):   # the day's unit, in the first page's own language
+    return (f'<figure class="fb"><a class="fig-l" href="/calendar"><svg class="fig" viewBox="-192 -192 384 384" role="img" aria-label="{esc(FIGURE_TITLE)}">'
+            f'<g fill="none" stroke="currentColor" transform="rotate(-90)"><g class="trk" stroke-width="1">{FIGURE.tracks()}</g><g class="arc" stroke-width="4">{rings}</g></g></svg></a>'
+            f'<figcaption><p class="date"><a href="/calendar">CZ calendar</a> · <b class="d">Day {day}</b></p><p class="nums">{nums}</p><p class="say">{words(say)}</p></figcaption></figure>')
+SIXTEEN_UNIT_TEMPLATE = sixteen_unit("__FIG_RINGS__", "__DAY__", "__NUMS__", SIXTEEN_SAY)
+def image_ld(k, pl):
+    return {"@type": "ImageObject", "contentUrl": f"{ORIGIN}{frame_path(pl)}", "name": pl["sentence"],
+            "license": "https://creativecommons.org/licenses/by/4.0/", "creditText": "Civilization Zero", "copyrightNotice": "Civilization Zero, CC BY 4.0"}
 def images_page():
-    figs = "".join(
-        f'<figure class="image" id="{t.lower().replace(" ", "-")}"><a href="{p}"><img src="{p}" width="{w}" height="{h}" alt="{esc(alt)}"'
-        + (f' class="{cls}"' if cls else "") + (' decoding="async" fetchpriority="high"' if i == 0 else ' loading="lazy" decoding="async"') + '></a>'
-        f'<figcaption class="src"><strong>{esc(t)}.</strong> PNG, {w} × {h}.</figcaption></figure>\n'
-        for i, (p, w, h, t, alt, _src, cls) in enumerate(IMAGES))
-    figs2 = "".join(
-        f'<figure class="image" id="{p[len("/civilization-zero-"):].rsplit(".", 1)[0]}"><a href="{p}"><img src="{p}" width="{w}" height="{h}" alt="{esc(alt)}"'
-        + (f' class="{cls}"' if cls else "") + ' loading="lazy" decoding="async"></a>'
-        f'<figcaption class="src"><strong>{esc(t)}{"" if t.endswith("?") else "."}</strong> {esc(cap)} {"JPEG" if p.endswith(".jpg") else "PNG"}, {w} × {h}.</figcaption></figure>\n'
-        for (p, w, h, t, alt, _src, cls, cap) in ORIGINATOR_IMAGES)
+    held = [k for k, _ in SIXTEEN_HELD]
+    places = "".join(place_html(k, pl, lazy=k not in held[:2]) for k, pl in enumerate(SIXTEEN))
     body = f"""<main>
 <h1>Civilization Zero in images</h1>
-<!--forms--><p>{esc(ONE_LINE)}</p>
-<p>Nine images of its first sentence. What do you think? Say it in <a href="/discuss">the open discussion</a>, where humans and AI systems answer on the record.</p>
-{figs}<h2 id="from-the-originator">Eleven more, from the originator</h2>
-<p>Each with a line of its own. Under each, in plain words, what it asks.</p>
-{figs2}<p class="src" id="licence">Free to share under <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>, credited to Civilization Zero, with a link to <code>civilizationzero.ai{IMAGES_PATH}</code>. More: <a href="{INTRO_IMAGE[0]}">the introduction on one image</a>, <a href="{INFOGRAPHIC_PATH}">the infographic</a>, <a href="/press#h-images">the press kit</a>, and what it all rests on: <a href="/core">the Invariant Core</a>.</p>
+<p>{esc(SIXTEEN_LEDE)}</p>
+<!--cz-16u--><p class="say fb">{esc(SIXTEEN_SAY_BUILT)}</p><!--/cz-16u-->
+<!--cz-16--><ol class="wall" tabindex="0" aria-label="The sixteen places">{places}</ol><!--/cz-16-->
+<details><summary>{esc(SIXTEEN_HOW[0])}</summary><p>{esc(SIXTEEN_HOW[1])}</p></details>
+<!--forms--><p class="src" id="licence">Free to share under <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>, credited to Civilization Zero, with a link to <code>civilizationzero.ai{IMAGES_PATH}</code>. More: <a href="{INTRO_IMAGE[0]}">the introduction on one image</a>, <a href="{INFOGRAPHIC_PATH}">the infographic</a>, <a href="/press#h-images">the press kit</a>, and what it all rests on: <a href="/core">the Invariant Core</a>.</p>
 </main>"""
-    lds = [image_ld(img, i == 0) for i, img in enumerate(IMAGES + ORIGINATOR_IMAGES)]
+    lds = [image_ld(k, pl) for k, pl in SIXTEEN_HELD]
     ld = [{"@context": "https://schema.org", "@type": "CollectionPage", "@id": f"{ORIGIN}{IMAGES_PATH}", "url": f"{ORIGIN}{IMAGES_PATH}",
-           "name": IMAGES_TITLE, "description": IMAGES_DESCRIPTION, "inLanguage": "en", "isPartOf": {"@id": f"{ORIGIN}/#website"},
-           "about": {"@type": "CreativeWork", "url": f"{ORIGIN}/core"}, "publisher": PUBLISHER, "primaryImageOfPage": lds[0], "image": lds,
-           "license": "https://creativecommons.org/licenses/by/4.0/"}]
-    p, w, h, t, alt = IMAGES[1][:5]   # the link preview: the one already shaped like one (1.91:1)
-    return shell(IMAGES_TITLE, body, IMAGES_PATH, IMAGES_DESCRIPTION, ldjson=ld, og_type="article", crumb="Images", og_image=(p, w, h, alt))
+           "name": IMAGES_TITLE, "description": IMAGES_DESCRIPTION, "isPartOf": {"@id": f"{ORIGIN}/#website"}, "about": {"@id": f"{ORIGIN}/#publisher"}, "image": lds,
+           "license": "https://creativecommons.org/licenses/by/4.0/", "acquireLicensePage": f"{ORIGIN}{IMAGES_PATH}#licence"}]
+    return shell(IMAGES_TITLE, body, IMAGES_PATH, IMAGES_DESCRIPTION, ldjson=ld, og_type="article", crumb="Images", og_image=SIXTEEN_WALL, css=SIXTEEN_CSS)
 
 # ---------------------------------------------------------------- /discuss and /respond: served by api/discuss.js from these templates
 ROOM_STATE_LINE = (f'Open since {OPENED_TIME_HTML}.' if ROOM_OPEN else
@@ -1841,6 +1878,12 @@ ANSWER_SHARED_RULES = (_sheet_rules(CSS, "button,input,select,textarea{", "butto
 ANSWER_CSS = ("\n/* CIVILIZATION ZERO, the answer page (/respond): the shared sheet's tokens, base, head and foot, and the page's own rules, without their comments; these are in site/lib.py and site/answer.css. */\n"
               + "\n".join([_no_comments(CSS[:CSS.index("/* 2 BASE")]), _no_comments(_sheet_block(2)), _no_comments(_sheet_block(3)), *ANSWER_SHARED_RULES,
                            _no_comments(ANSWER_OWN_CSS), _no_comments(_sheet_block(8)), _no_comments(_sheet_block(9))]) + "\n")
+
+# The sixteen's stylesheet (/civilization-zero-images): the shared sheet's tokens, base and head, the page's own rules (site/sixteen.css),
+# then the shared foot and print; comments left out (they are in the two sources). The page carries it in place of the shared one.
+SIXTEEN_OWN_CSS = (SITE / "sixteen.css").read_text("utf-8")
+SIXTEEN_CSS = ("\n/* The sixteen. Comments: site/lib.py, site/sixteen.css */\n"
+               + "\n".join([_no_comments(CSS[:CSS.index("/* 2 BASE")]), _no_comments(_sheet_block(2)), _no_comments(_sheet_block(3)), _no_comments(SIXTEEN_OWN_CSS), _no_comments(_sheet_block(8)), _no_comments(_sheet_block(9))]) + "\n")
 
 CLOSED_AFTER_NOTE = f'<p class="pending">The room is closed to new entries. Everything said in it stays here, each entry at its address, and its daily chain is still hashed and copied out (<a href="/archive#h-days">the chain</a>). Contact: <a href="mailto:{CONTACT}">{CONTACT}</a>.</p>'
 
@@ -2489,7 +2532,7 @@ The record's identity is its hash, not its address.
 - [Objections and errata]({ORIGIN}/objections): open to anyone; the opening docket of the first scheduled review, CZ 2048 ({REVIEW.isoformat()}). As data: {ORIGIN}/objections.json
 - [The infographic]({ORIGIN}{INFOGRAPHIC_PATH}): Civilization Zero on one image, from the first humans to CZ 0 and scenarios to 2047, every number with its source. Its data: {ORIGIN}/civilization-zero-infographic-data.json
 - [The evidence atlas]({ORIGIN}{ATLAS_PATH}): ten panels of measured change since CZ 0 (AI use, benchmarks, work, energy, beliefs, rules) and IEA forecasts kept apart, every number with its source. PDF: {ORIGIN}{ATLAS_PDF}
-- [Images]({ORIGIN}{IMAGES_PATH}): nine images of the first sentence ("{FIRST_SENTENCE}"), and eleven more from the originator, each with a line of its own and a caption; each with its text alternative; CC BY 4.0
+- [Images]({ORIGIN}{IMAGES_PATH}): sixteen places, one for each ring of the day's figure, each held by one sentence posted as a short film; the film's last frame, with the sentence as text; in each day's order by the figure's numbers; CC BY 4.0
 - Every page as Markdown: add .md to its address ({ORIGIN}/core.md, {ORIGIN}/discuss.md, {ORIGIN}/discuss/7.md; the first page is {ORIGIN}/index.md), or send Accept: text/markdown. In the discussion's Markdown, each entry's text is a fenced block, as received.
 - [Today's CZ date on other sites]({ORIGIN}/embed): a badge image ({ORIGIN}/badge/cz-today.svg; its date is the one in the time zone of the reader's network, or in the zone given as ?tz=) and a counter with a date converter that runs only in the reader's browser.
 - [How this page is built]({ORIGIN}{BUILT_PATH}): what runs in a reader's browser, what is kept, the security policy, the weight of each page
@@ -2620,6 +2663,7 @@ write(IMAGES_PATH + ".html", images_page())             # served by api/page.js
 # the live bar at the top of every page and the calendar page's form, filled at request time by room/cztime.js
 (SITE / "room" / "cz-bar.json").write_text(json.dumps({**CZ_BAR, "calform": cz_form("cal", selected=None, value=None), "timeform": cz_time_form("tim"),
                                                        "dayfigure": {"core_sha256": CORE_SHA, "html": day_figure_template()},
+                                                       "sixteen": {"unit": SIXTEEN_UNIT_TEMPLATE},
                                                        "zones": [[z, n] for z, n in CZ_ZONES], "calendars": [[c, n, l] for c, n, l in CZ_CALENDARS]}, ensure_ascii=False, indent=1) + "\n", "utf-8")
 (SITE / "api" / "discuss-templates.json").write_text(json.dumps(discuss_templates(), ensure_ascii=False, indent=1) + "\n", "utf-8")  # api/discuss.js serves /discuss, /discuss/{id}, /respond
 (SITE / "api" / "register-templates.json").write_text(json.dumps(register_templates(), ensure_ascii=False, indent=1) + "\n", "utf-8")  # api/adopt.js serves /adopt, /adopt/{id}, /adopt.json
@@ -2794,7 +2838,7 @@ def sitemap_xml():
                    + (_sm_image(INTRO_IMAGE[0], "Civilization Zero: the introduction on one image", INTRO_IMAGE[3]) if path == "/about" else "")   # the page that shows it
                    + (_sm_image(INFOGRAPHIC[0], INFOGRAPHIC_LD["name"], INFOGRAPHIC[3]) if path == INFOGRAPHIC_PATH else "")
                    + (_sm_image(ATLAS[0], ATLAS_LD["name"], ATLAS[3]) + _sm_image(ATLAS_FULL[0], ATLAS_LD["name"] + ", full size", ATLAS[3]) if path == ATLAS_PATH else "")
-                   + ("".join(_sm_image(i[0], image_ld(i)["name"], i[4]) for i in IMAGES + ORIGINATOR_IMAGES) if path == IMAGES_PATH else "") + "</url>")
+                   + ("".join(_sm_image(frame_path(pl), "Civilization Zero: " + pl["sentence"], frame_alt(pl)) for k, pl in SIXTEEN_HELD) if path == IMAGES_PATH else "") + "</url>")
     out.append("</urlset>")
     return "\n".join(out) + "\n"
 # RFC 9116: where to report a security problem; Expires is fixed (not the build date, so the build stays reproducible) and check.py
@@ -2815,8 +2859,11 @@ write(INFOGRAPHIC[0], (SITE / "assets" / "cz-infographic.png").read_bytes())   #
 write(ATLAS[0], (SITE / "assets" / "cz-evidence-atlas.png").read_bytes())          # the evidence atlas, shown on its page
 write(ATLAS_FULL[0], (SITE / "assets" / "cz-evidence-atlas-full.png").read_bytes())   # the same at full size
 write(ATLAS_PDF, (SITE / "assets" / "cz-evidence-atlas.pdf").read_bytes())         # the same as an A3 PDF, for print
-for _img in IMAGES + ORIGINATOR_IMAGES:   # the images on /civilization-zero-images
+for _img in IMAGES + ORIGINATOR_IMAGES:   # twenty images the page showed before the sixteen: still served at their addresses, listed nowhere
     write(_img[0], (SITE / "assets" / _img[5]).read_bytes())
+for _k, _pl in SIXTEEN_HELD:   # the sixteen's frames, each at full size and 540 wide
+    write(frame_path(_pl), (SITE / "assets" / f"cz-16-{_pl['file']}.jpg").read_bytes()); write(frame_path(_pl, True), (SITE / "assets" / f"cz-16-{_pl['file']}-540.jpg").read_bytes())
+write(SIXTEEN_WALL[0], (SITE / "assets" / "cz-16-wall.jpg").read_bytes())   # the page's link preview: the wall in ring order
 write("/civilization-zero-infographic-data.json", json.dumps(INFOGRAPHIC_DATA, ensure_ascii=False, indent=1) + "\n")   # the points it draws
 write("/apple-touch-icon.png", (SITE / "assets" / "apple-touch-icon.png").read_bytes())   # the mark, for a phone's home screen
 # the mark as the icons a browser tab, a bookmark, a search result and a phone ask for (site/assets/render.py made them)

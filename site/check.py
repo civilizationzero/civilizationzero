@@ -111,7 +111,7 @@ for f in pages + [pathlib.Path("virtual") / n for n in VIRTUAL]:
     canon = re.search(r'<link rel="canonical" href="([^"]+)">', h)
     check(canon and f'<meta property="og:url" content="{canon.group(1)}">' in h, f"{f.name}: og:url is not the canonical address")
     if canon: canonicals.add(canon.group(1))
-    _og = "/civilization-zero-one-human-among-many.png" if f.name == "civilization-zero-images.html" else "/civilization-zero.png"   # the images' page previews with one of its images
+    _og = "/civilization-zero-sixteen.jpg" if f.name == "civilization-zero-images.html" else "/civilization-zero.png"   # the images' page previews with its wall
     check(f'<meta property="og:image" content="{ORIGIN}{_og}">' in h and '<meta name="twitter:card" content="summary_large_image">' in h, f"{f.name}: link-preview metadata")
     check(h.count("<title>") == 1 and "__TITLE__" not in h.split("<body>")[0], f"{f.name}: one title")
     if f in core_cluster: check(cluster_links <= set(re.findall(r'<link rel="alternate" hreflang="[^"]+" href="[^"]+">', h)), f"{f.name}: hreflang group incomplete")
@@ -222,13 +222,14 @@ for _k, _t in _r12.items():
     _h = (PUBLIC / (_k[1:] + ".html")).read_text("utf-8")
     check(f"<title>{_t}</title>" in _h and f'<meta property="og:title" content="{_t}">' in _h and json.dumps(_t, ensure_ascii=False) in _h and not re.search(r"<title>[^<]*\b(Is|This|From|After|Built|Humans|Infographic|Atlas|Evidence|Page)\b", _h),
           f"{_k}: its title in sentence case, the same in the head, in the link preview and in the page's data")
+_SIXTEEN = json.loads((SITE / "sixteen.json").read_text("utf-8"))["places"]   # the sixteen places of /civilization-zero-images: an open place is null
 _imgs = [(i.find(IMG + "loc").text, (i.find(IMG + "title").text if i.find(IMG + "title") is not None else ""), (i.find(IMG + "caption").text if i.find(IMG + "caption") is not None else "")) for u in sm.findall(NS + "url") for i in u.findall(IMG + "image")]
 _img_locs = {l for l, _, _ in _imgs}
 check(all("Civilization Zero" in t and len(c) > 40 for _, t, c in _imgs)
       and {f"{ORIGIN}/civilization-zero-introduction.png", f"{ORIGIN}/civilization-zero-infographic.png"} <= _img_locs
-      and len({l for l in _img_locs if (PUBLIC / "civilization-zero-images.html").read_text("utf-8").count(f'src="{l[len(ORIGIN):]}"')}) == 20
+      and len({l for l in _img_locs if (PUBLIC / "civilization-zero-images.html").read_text("utf-8").count(f'<a href="{l[len(ORIGIN):]}"><img ')}) == len([x for x in _SIXTEEN if x]) == len(_img_locs) - 5
       and all((PUBLIC / l[len(ORIGIN) + 1:]).exists() for l in _img_locs),
-      "sitemap.xml: the introduction's image, the twenty images and the infographic, each a file that exists, with a caption and a title that carries the name")
+      "sitemap.xml: the introduction's image, the infographic, the atlas at two sizes and the Core's image, and the full-size frame of every held place of the sixteen, each a file that exists, with a caption and a title that carries the name; no other image")
 og = (PUBLIC / "og.png").read_bytes()
 check(og[:8] == b"\x89PNG\r\n\x1a\n" and struct.unpack(">II", og[16:24]) == (1200, 630), "og.png: a 1200x630 PNG")
 check((PUBLIC / "civilization-zero.png").read_bytes() == og, "/civilization-zero.png: the link-preview image under its descriptive name, the same bytes as /og.png")
@@ -692,8 +693,8 @@ _hcss = (SITE / "home.css").read_text("utf-8")
 _tokblock = re.search(r"^(:root\{.*?\})\n(@media\(prefers-color-scheme:dark\)\{:root\{[^}]*\}\})$", _hcss, re.S | re.M)
 check(_scss == CSS and _tokblock is not None and _scss.count(_tokblock.group(1) + "\n" + _tokblock.group(2)) == 1 and _scss.count(":root{") == 3,
       "the shared stylesheet opens with the first page's tokens, byte for byte (home.css, block 1), and defines no other scale")
-check(all(f.read_text("utf-8").count(f"<style>{CSS}</style>") == 1 and "THE ROOM'S BLOCK" not in f.read_text("utf-8") for f in pages if f.name != "index.html") and all(s.count(f"<style>{CSS}{ROOM_CSS}</style>") == 1 and s.count("<style>") == 1 for s in _shells.values()),
-      "every page but the first carries the shared stylesheet, once; the shells of the room and the register carry the room's block after it, and no page the build writes as a file does")
+check(all(f.read_text("utf-8").count(f"<style>{CSS}</style>") == 1 and "THE ROOM'S BLOCK" not in f.read_text("utf-8") for f in pages if f.name not in ("index.html", "civilization-zero-images.html")) and all(s.count(f"<style>{CSS}{ROOM_CSS}</style>") == 1 and s.count("<style>") == 1 for s in _shells.values()),
+      "every page but the first and the sixteen carries the shared stylesheet, once; the shells of the room and the register carry the room's block after it, and no page the build writes as a file does")
 # the room's block (lib.py ROOM_CSS): the same discipline as the sheet it follows — the scale, the tokens (and an entry's own name, --vt,
 # which its tag carries), logical sizes, no colour of its own, no green, its motion in a block for a reader who has not asked for less
 _rnocom = re.sub(r"/\*.*?\*/", "", ROOM_CSS, flags=re.S)
@@ -1398,20 +1399,16 @@ _smx = (PUBLIC / "sitemap.xml").read_text("utf-8")
 check("<loc>https://civilizationzero.ai/civilization-zero-evidence-atlas</loc>" in _smx and "<image:loc>https://civilizationzero.ai/civilization-zero-evidence-atlas.png</image:loc>" in _smx,
       "sitemap.xml: the evidence atlas and its image")
 check("civilization-zero-evidence-atlas" in (SITE / "api" / "page.js").read_text("utf-8"), "api/page.js serves the evidence atlas")
-# the images of the first sentence (CZ 1432): each a greyscale PNG of the size its page names, with its text alternative carrying the
-# sentence word for word; all three in the sitemap with their page; the page served by api/page.js and its preview image one of them
+# twenty images the page showed before the sixteen (the first sentence in nine; eleven more): each still served at its address, the
+# same bytes as its source, so that no link from outside breaks; no page shows or lists them, and the sitemap does not name them
 _im = (PUBLIC / "civilization-zero-images.html").read_text("utf-8")
 _sm = (PUBLIC / "sitemap.xml").read_text("utf-8")
-for _n, _w, _h in (("civilization-zero-humans-may-no-longer-be-at-the-centre", 1122, 1402), ("civilization-zero-one-human-among-many", 1733, 908), ("civilization-zero-many-centres", 1672, 941),
+for _n, _w, _hh in (("civilization-zero-humans-may-no-longer-be-at-the-centre", 1122, 1402), ("civilization-zero-one-human-among-many", 1733, 908), ("civilization-zero-many-centres", 1672, 941),
                    ("civilization-zero-the-measure", 1080, 1080), ("civilization-zero-the-empty-pedestal", 1080, 1080), ("civilization-zero-the-orbit", 1080, 1080),
                    ("civilization-zero-the-centre-left-open", 1080, 1080), ("civilization-zero-no-centre-in-the-middle", 1080, 1080), ("civilization-zero-one-then-many", 1080, 1080)):
     _b = (PUBLIC / f"{_n}.png").read_bytes()
-    check(_b[:8] == b"\x89PNG\r\n\x1a\n" and struct.unpack(">II", _b[16:24]) == (_w, _h) and _b[25] == 0
-          and f'<img src="/{_n}.png" width="{_w}" height="{_h}" alt="' in _im and f"<image:loc>https://civilizationzero.ai/{_n}.png</image:loc>" in _sm,
-          f"/{_n}.png: a {_w}x{_h} greyscale PNG, on its page with its size and text alternative, in the sitemap")
-check(_im.count("Civilization Zero names the beginning of a civilization in which humans may no longer be at the centre. civilizationzero.ai") >= 18
-      and '<meta property="og:image" content="https://civilizationzero.ai/civilization-zero-one-human-among-many.png">' in _im,
-      "/civilization-zero-images: every text alternative carries the sentence; its link preview is one of its images")
+    check(_b[:8] == b"\x89PNG\r\n\x1a\n" and struct.unpack(">II", _b[16:24]) == (_w, _hh) and _b[25] == 0 and f"/{_n}.png" not in _im + _sm,
+          f"/{_n}.png: still served, a {_w}x{_hh} greyscale PNG; shown and listed nowhere")
 check("civilization-zero-images" in (SITE / "api" / "page.js").read_text("utf-8"), "api/page.js serves the images' page")
 def _jpeg_size(b):   # (width, height, components) from the first SOF marker
     i = 2
@@ -1422,13 +1419,58 @@ def _jpeg_size(b):   # (width, height, components) from the first SOF marker
         i += 2 + struct.unpack(">H", b[i + 2:i + 4])[0]
     return None
 _vj = (SITE / "vercel.json").read_text("utf-8")
-for _p, _w, _h, _t, _alt, _src, _cls, _cap in ORIGINATOR_IMAGES:
+for _p, _w, _hh, _t, _alt, _src, _cls, _cap in ORIGINATOR_IMAGES:
     _b = (PUBLIC / _p.lstrip("/")).read_bytes()
-    _ok = (_b[:8] == b"\x89PNG\r\n\x1a\n" and struct.unpack(">II", _b[16:24]) == (_w, _h) and _b[25] == 0) if _p.endswith(".png") else (_b[:2] == b"\xff\xd8" and _jpeg_size(_b) == (_w, _h, 1))
-    check(_ok and f'<img src="{_p}" width="{_w}" height="{_h}" alt="{esc(_alt)}"' in _im and esc(_cap) in _im and "civilizationzero.ai" in _alt and "civilizationszero" not in _alt
-          and f"<image:loc>https://civilizationzero.ai{_p}</image:loc>" in _sm and _p.lstrip("/") in _vj,
-          f"{_p}: a {_w}x{_h} greyscale image, on its page with its size, text alternative and caption, in the sitemap, cached a day")
-check('id="from-the-originator"' in _im and _im.count("<figure") == 20, "/civilization-zero-images: the nine and the originator's eleven")
+    _ok = (_b[:8] == b"\x89PNG\r\n\x1a\n" and struct.unpack(">II", _b[16:24]) == (_w, _hh) and _b[25] == 0) if _p.endswith(".png") else (_b[:2] == b"\xff\xd8" and _jpeg_size(_b) == (_w, _hh, 1))
+    check(_ok and _b == (SITE / "assets" / _src).read_bytes() and _p not in _im + _sm and _p.lstrip("/") in _vj, f"{_p}: still served, a {_w}x{_hh} greyscale image, cached a day; shown and listed nowhere")
+_listed = [f.name for f in pages if any(x in f.read_text("utf-8") for x in [f"/{n}.png" for n in ("civilization-zero-humans-may-no-longer-be-at-the-centre", "civilization-zero-one-human-among-many", "civilization-zero-many-centres")] + [i[0] for i in ORIGINATOR_IMAGES])]
+check(not [x for x in _listed if x != "press.html"] and not any(i[0] in (PUBLIC / "llms.txt").read_text("utf-8") for i in ORIGINATOR_IMAGES), f"the twenty images are listed on no page but the press kit, which is not touched: {_listed}")
+
+# ---- the sixteen (/civilization-zero-images, rc-16): sixteen places, one for each ring of the day's figure; one source, site/sixteen.json
+_held = [(k, x) for k, x in enumerate(_SIXTEEN) if x]
+_li = re.findall(r'<li id="p(\d+)">(.*?)</li>', _im, re.S)
+_wall = re.search(r'<!--cz-16--><ol class="wall" tabindex="0" aria-label="The sixteen places">(.*?)</ol><!--/cz-16-->', _im, re.S)
+check(len(_SIXTEEN) == 16 and _wall is not None and [int(k) for k, _ in _li] == list(range(16)) and "".join(f'<li id="p{k}">{b}</li>' for k, b in _li) == _wall.group(1)
+      and all((x is None) == (b == '<figure class="o"><figcaption><b></b> open</figcaption></figure>') for (k, b), x in zip(_li, _SIXTEEN)) and _im.count("<b></b>") == 16,
+      "the sixteen: the page as built holds sixteen places in ring order, each with an empty place for its number; an open place is an empty frame with the word 'open'")
+_slug16 = lambda t: re.sub(r"[^a-z0-9]+", "-", t.lower()).strip("-")
+for _k, _x in _held:
+    _full, _half = (PUBLIC / f"civilization-zero-{_x['file']}.jpg").read_bytes(), (PUBLIC / f"civilization-zero-{_x['file']}-540.jpg").read_bytes()
+    _b = _li[_k][1]; _alt = re.search(r' alt="([^"]*)"', _b)
+    check(_jpeg_size(_full) == (1080, 1920, 3) and _jpeg_size(_half) == (540, 960, 3) and b"\xff\xc2" in _full[:1200] and b"\xff\xc2" in _half[:1200] and len(_half) <= 75000
+          and _full == (SITE / "assets" / f"cz-16-{_x['file']}.jpg").read_bytes() and _slug16(_x["sentence"]).startswith(_x["file"] + "-"),
+          f"the sixteen, place {_k}: its frame as two progressive JPEGs, 1080x1920 and 540x960 (at most 75,000 bytes), named by the sentence's first words")
+    check(_b.startswith(f'<figure><figcaption><b></b> {esc(_x["sentence"])}</figcaption><a href="/civilization-zero-{_x["file"]}.jpg"><img src="/civilization-zero-{_x["file"]}-540.jpg" srcset="/civilization-zero-{_x["file"]}-540.jpg 540w, /civilization-zero-{_x["file"]}.jpg 1080w" sizes="')
+          and ' width="540" height="960" alt="' in _b and _alt is not None and _x["sentence"] not in _html_mod.unescape(_alt.group(1)) and _html_mod.unescape(_alt.group(1)).startswith(f"The sentence in white over a computed image, a {_x['art']}. Above: CZ {_x['day']} · ")
+          and _html_mod.unescape(_alt.group(1)).endswith(f"Below: {cz_day(LAUNCH) - _x['day']} days to 30 November. Civilization Zero, from non-human intelligence, to humanity, civilizationzero.ai")
+          and f'<p>Posted on Day {_x["day"]:,}<br><a href="' in _b and _b.count(' rel="noopener">') == len(_x["watch"]) == _b.count("<a ") - 1 and all(f'<a href="{u}" rel="noopener">' in _b for u in _x["watch"].values())
+          and not re.search(r"utm_|[?&]", "".join(_x["watch"].values())) and _b.count(_x["sentence"].replace("&", "&amp;").replace('"', "&quot;")) + _b.count(esc(_x["sentence"])) >= 1 and _b.count(esc(_x["sentence"])) == 1,
+          f"the sixteen, place {_k}: the sentence as text, once and before its frame; the frame a link to its full size, its text alternative what the frame adds (the art, the top line, the countdown, the signature) without the sentence; the day it was posted; where the film is, as plain links")
+check('"source": "/civilization-zero-:frame([a-z0-9-]+).jpg",\n      "headers": [\n        {\n          "key": "Cache-Control",\n          "value": "public, max-age=86400"' in _vj, "vercel.json: a frame of the sixteen is cached a day, as the site's other images are")
+check(len({x["sentence"] for _, x in _held}) == len(_held) == _im.count("<img ") and _im.count(' loading="lazy"') == max(0, len(_held) - 2) and "<script src" not in _im and "target=" not in _im
+      and "The places stand here in the order of their rings, the innermost first." in _im and "today" not in _strip(_im[_im.index("<main"):_im.index("</main>")])
+      and "Sixteen places, one for each ring of the day's figure. Each is held by one sentence, posted as a short film. What stands here is the film's last frame." in _strip(_im)
+      and "<details><summary>How a sentence holds a place</summary><p>An open place is taken by the next sentence posted. When all sixteen are held, a newer sentence takes a place only if it has more views than the least viewed of the sixteen, counted on Instagram and X; the one it passes leaves the page. Two rings with the same number stand inner ring first. Each sentence was written by an artificial intelligence, except a quotation, which names its speaker.</p></details>" in _im
+      and not re.search(r"\b\d[\d,]* views\b|view count", _im) and '<meta property="og:image" content="https://civilizationzero.ai/civilization-zero-sixteen.jpg">' in _im and _jpeg_size((PUBLIC / "civilization-zero-sixteen.jpg").read_bytes()) == (1200, 630, 3),
+      "the sixteen: every held place its own sentence; the first two frames asked for at once, the others when they come near; as built the page says it stands in ring order and says nothing of today; the standfirst and the rule of holding in their fixed words; no count of views; its link preview is the wall")
+_bar16 = json.loads((SITE / "room" / "cz-bar.json").read_text("utf-8")).get("sixteen", {}).get("unit", "")
+check(_bar16.count("__FIG_RINGS__") == 1 and _bar16.count("__DAY__") == 1 and _bar16.count("__NUMS__") == 1 and '<a class="fig-l" href="/calendar">' in _bar16 and FIGURE.tracks() in _bar16
+      and _strip(_bar16).endswith("Nobody set today's order: each place stands by its ring's number, lowest first. Tomorrow the numbers will be different.") and 'aria-label="The day&#x27;s figure: sixteen rings round an empty centre, each carrying one arc. The CZ calendar."' in _bar16,
+      "the sixteen: the day's unit the page function writes — the figure, a link to the calendar; the day; the sixteen numbers; the sentence on the order, in its fixed words")
+# the page's own sheet: the shared tokens, base, head, foot and print as they are, and the page's own rules between
+_S16 = (SITE / "sixteen.css").read_text("utf-8"); _s16 = _strip_css(_S16)
+_sheet16 = re.search(r"<style>(.*?)</style>", _im, re.S).group(1)
+_parts16 = [_strip_css(CSS[:CSS.index("/* 2 BASE")]), _sblock(2), _sblock(3), _s16, _sblock(8), _sblock(9)]
+check(_im.count("<style>") == 1 and _sheet16.count("/*") == 1 and "\n".join(_parts16) == _sheet16.split("*/\n", 1)[1].strip() and _sheet16.count(TOKENS) == 1,
+      "the sixteen's sheet: the shared sheet's tokens, base, head, foot and print, byte for byte without their comments, and the page's own rules (site/sixteen.css) between; the page carries this sheet alone")
+# one thing in the sheet is an animation and no motion: where a browser has view timelines, a place's image has no box until the place
+# comes into the strip, so that a phone asks for a frame when it is about to be seen
+_LAZY16 = "@supports (animation-timeline:view()){\n@media not all and (min-width:45.2548rem){\n.wall>li{view-timeline:--p inline}\n.wall img{animation:off linear backwards;animation-timeline:--p;animation-range:entry 0% entry 5%}\n@keyframes off{from,to{display:none}}\n}\n}"
+_loose16 = sorted({n + u for n, u in re.findall(r"(?<![\w#(.-])(\d*\.?\d+)(rem|em|px|s)\b", _s16) if float(n) != 0 and (u == "px" or round(float(n), 4) not in _SPOW)})
+check(not _loose16 and set(re.findall(r"var\((--[a-z][\w-]*)", _s16)) <= _stok | {"--m"} and not re.search(r"#[0-9a-f]{3,6}\b|rgb|hsl", _s16) and _s16.count("@keyframes") == 3
+      and _s16.count(_LAZY16) == 1 and all("prefers-reduced-motion:no-preference" in _s16.replace(_LAZY16, "")[:m.start()] for m in re.finditer(r"animation|@keyframes", _s16.replace(_LAZY16, ""))) and "transition" not in _s16
+      and {sel.strip() for sel, body in re.findall(r"([^{}]+)\{([^{}]*)\}", _s16) if "var(--machine)" in body} == {".wall b,.nums", ".fig", ".date .d"},
+      f"sixteen.css: every size a power of the ratio, no px, no colour of its own, the shared tokens; motion only for a reader who has not asked for less; green for the numbers, the figure and the day alone {_loose16}")
 
 # 8b. rc-12 (5): one name for each thing (the audit of 24 Nov 2026, findings 25 and 10) — in the links, the headings and the foot; one name for
 # the calendar, "CZ calendar", and one spelling of a day in a sentence ("Day 1,455"; a date is "CZ 1455"); "Year Zero" only as the Core's own
@@ -1510,7 +1552,7 @@ def _outer(part):   # the selector with the insides of :is() and :where() taken 
 _NEWER = r":is\(|:where\(|:focus-visible|:has\(|:target-current|::details-content|:popover-open|:user-invalid|::backdrop|:not\([^()]*[, ]"
 _LATER = {":has(", ":target-current", "::details-content", ":popover-open", ":user-invalid"}
 _mixed = []
-for _nm, _sheet in (("the shared sheet", CSS), ("the room's block", ROOM_CSS), ("home.css", (SITE / "home.css").read_text("utf-8")), ("answer.css", _AOWN)):
+for _nm, _sheet in (("the shared sheet", CSS), ("the room's block", ROOM_CSS), ("home.css", (SITE / "home.css").read_text("utf-8")), ("answer.css", _AOWN), ("sixteen.css", _S16)):
     for _sel in re.findall(r"(?:^|[{}])\s*([^{}@]+?)\s*\{", re.sub(r"/\*.*?\*/", "", _sheet, flags=re.S)):
         _ps = [set(re.findall(_NEWER, _outer(x))) for x in _split_top(_sel)]
         # an engine that knows a selector of the last years (:has(), :user-invalid, :popover-open, ::details-content, :target-current) knows the earlier ones
@@ -1552,13 +1594,13 @@ _GREEN_USES = [
     ("the machine's part of the invitation to ask an AI", {".act .ai", ".act.o:is(:hover,:focus-visible) .ai", "a.cta.o .ai", "a.cta.o:is(:hover,:focus-visible) .ai"}),
     ("the door “I am not human” when it is the one answered", {".page:has(#not-human:target) .door.n"}),
     ("the day in the head", {".cz-now .d"}),
-    ("in the first page's calendar line", {".date .d"}),
+    ("in the calendar line of the first page and of the sixteen", {".date .d"}),
     ("in the machine's reading", {".x .d"}),
     ("the day's figure", {".fig", ".dayfig svg"}),
-    ("the figure's numbers", {".nums"}),
+    ("the figure's numbers", {".nums", ".wall b"}),   # .wall b: a ring's number beside its place, on the sixteen
 ]
 _gu = [u for u, _ in _GREEN_USES]
-_green_set = {s for sheet in (_hcss5, CSS + ROOM_CSS, _AOWN) for sel, body in re.findall(r"([^{}]+)\{([^{}]*)\}", re.sub(r"/\*.*?\*/", "", sheet, flags=re.S))
+_green_set = {s for sheet in (_hcss5, CSS + ROOM_CSS, _AOWN, _S16) for sel, body in re.findall(r"([^{}]+)\{([^{}]*)\}", re.sub(r"/\*.*?\*/", "", sheet, flags=re.S))
               if re.search(r"var\(--machine(?:-on)?\)|#116329|#3fb950", body) and sel.strip() != ":root" for s in _split_top(sel.strip())}
 _green_want = set().union(*(s for _, s in _GREEN_USES))
 check(GREEN_RULE == f"Green marks what is a machine's — {_gu[0]}, {_gu[1]}, {_gu[2]}, {_gu[3]} — and the count of days: {_gu[4]}, {_gu[5]}, {_gu[6]}, on the badge and in the counter of /embed, and {_gu[7]} and {_gu[8]}."
