@@ -51,6 +51,8 @@ module.exports = async (req, res) => {
   try { s = await rpc("cz_visit_stats", { p_days: 30 }); }
   catch (err) {
     R.log("stats", err);
+    // a program that asked for the data gets JSON, with the time to wait (rc-12; site audit, finding 20); a reader gets the page
+    if (url.searchParams.get("f") === "json") return json(res, 503, { error: "unavailable", note: "the counts cannot be read right now; try again shortly" }, { "Retry-After": "60", "Cache-Control": "no-store" });
     return html(res, 503, shell({ title: "Visits · Civilization Zero", body: "<main><h1>Visits</h1><p>The counts cannot be read right now. Try again shortly.</p></main>", path: "/stats", description: "Visits to Civilization Zero." }), { "Retry-After": "60", "Cache-Control": "no-store" });
   }
   if (url.searchParams.get("f") === "json") {

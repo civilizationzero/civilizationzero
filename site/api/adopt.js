@@ -75,7 +75,9 @@ function summaryHtml(root, st) {
 
 // ---------------------------------------------------------------- the register page
 async function registerPage() {
-  if (!G.CHAIN) return { status: 200, page: page("The Adoption Register", `<h1>The Adoption Register</h1>${stateLine()}${RT.intro}${RT.rules}`, "/adopt", RT.description) };
+  // rc-12 (24 Nov 2026; site audit, finding 11): the page leads with what adopting is, in the record's own words (IR 10.1); whether the
+  // register takes statements comes after that, and its numbers and limits under the three lists (each says "None." when it is empty)
+  if (!G.CHAIN) return { status: 200, page: page("The Adoption Register", `<h1>The Adoption Register</h1>${RT.intro}${stateLine()}${RT.rules}`, "/adopt", RT.description) };
   const [{ rows: all, complete }, stats] = await Promise.all([allRecords(), rpc("cz_register_stats", {})]);
   const roots = all.filter((r) => r.type === "adoption" && r.state === "traced");
   const withStatus = roots.map((r) => ({ r, st: G.statusOf(r, all) }));
@@ -85,14 +87,16 @@ async function registerPage() {
   const awaiting = received.filter((r) => recent(r.received)), expired = received.length - awaiting.length;
   const hidden = all.filter((r) => r.hidden);
   const list = (xs) => xs.length ? xs.map((x) => summaryHtml(x.r, x.st)).join("") : "<p>None.</p>";
-  const body = `<h1>The Adoption Register</h1>${stateLine()}
-<p>${stats.traced} traced, ${stats.received} received and not traced${stats.hidden ? `, ${stats.hidden} hidden` : ""}${G.OPEN ? `; this UTC day ${stats.today} of ${stats.daily_intake_max}. Limits in force: ${stats.rate_per_day} statements a day per source, ${stats.daily_intake_max} in all; ${stats.checks_per_hour} checks an hour per source; one check of a record in 10 minutes` : ""}. Canonical order by id; as data: <a href="/adopt.json">/adopt.json</a>; the daily chain: <a href="/archive/register.json">/archive/register.json</a>.${complete ? "" : ` <strong>This page shows the first ${all.length.toLocaleString("en")} records only;</strong> every record is in /adopt.json, page by page.`}</p>
+  const body = `<h1>The Adoption Register</h1>
 ${RT.intro}
+${stateLine()}${complete ? "" : `
+<p><strong>This page shows the first ${all.length.toLocaleString("en")} records only;</strong> every record is in <a href="/adopt.json">/adopt.json</a>, page by page.</p>`}
 <section aria-labelledby="h-in"><h2 id="h-in">Adoptions in force</h2>${list(inForce)}</section>
 <section aria-labelledby="h-wd"><h2 id="h-wd">Withdrawn</h2><p class="src">An adopter may withdraw; the record of adoption and withdrawal stays visible (IR 10.1).</p>${list(withdrawn)}</section>
 <section aria-labelledby="h-rc"><h2 id="h-rc">Received, awaiting a trace</h2><p class="src">A statement that has not been found at the address it names is not an adoption in this register. It can be traced for ${UNTRACED_DAYS} days after receipt — the daily job and anyone who asks check it — and stays at its address afterwards.${expired ? ` ${expired} older statement${expired === 1 ? " was" : "s were"} never traced; ${expired === 1 ? "it is" : "they are"} in <a href="/adopt.json">/adopt.json</a>.` : ""}</p>
 ${awaiting.length ? `<ul>${awaiting.map((r) => `<li><a href="/adopt/${r.id}">#${r.id}</a> · ${esc(r.type)}${r.refers_to ? ` of <a href="/adopt/${r.refers_to}">#${r.refers_to}</a>` : ""} · ${who(r)} · received ${CZ.whenHtml(day(r.received))} · to be traced at <b>${esc(r.trace_host)}</b></li>`).join("")}</ul>` : "<p>None.</p>"}</section>
 ${hidden.length ? `<section aria-labelledby="h-hd"><h2 id="h-hd">Hidden</h2><ul>${hidden.map((r) => `<li><a href="/adopt/${r.id}">#${r.id}</a> · ${esc(r.category || "unspecified")} · SHA-256 of the statement <code class="hash">${esc(r.statement_sha256)}</code></li>`).join("")}</ul></section>` : ""}
+<p>${stats.traced} traced, ${stats.received} received and not traced${stats.hidden ? `, ${stats.hidden} hidden` : ""}${G.OPEN ? `; this UTC day ${stats.today} of ${stats.daily_intake_max}. Limits in force: ${stats.rate_per_day} statements a day per source, ${stats.daily_intake_max} in all; ${stats.checks_per_hour} checks an hour per source; one check of a record in 10 minutes` : ""}. Canonical order by id; as data: <a href="/adopt.json">/adopt.json</a>; the daily chain: <a href="/archive/register.json">/archive/register.json</a>.</p>
 ${G.OPEN ? RT.form : ""}
 ${RT.rules}`;
   return { status: 200, page: page("The Adoption Register", body, "/adopt", RT.description) };
@@ -306,6 +310,9 @@ module.exports = async (req, res) => {
     R.log("adopt", req.method, url.search, err);
     if (method === "POST" && isForm(req)) return formError(res, 503, "The register could not be reached", "Nothing was recorded this time. Try again in a minute; if it persists, write to " + CONTACT + ".", { "Retry-After": "60" });
     if (method === "POST") return jsonPost(res, 503, { error: "unavailable", note: "nothing was recorded this time; try again in a minute" }, { "Retry-After": "60" });
+    // a reader who asked for a page gets the site's page with one sentence, as /discuss answers (rc-12; site audit, finding 20); a
+    // program that asked for data gets JSON, as before
+    if (method === "GET" && (p === "list" || p === "record")) return html(res, 503, page("The register could not be read", `<h1>The register could not be read</h1><p>The Adoption Register is unavailable right now; nothing is lost: every statement is recorded with its id and its hash. Try again shortly. Contact: <a href="mailto:${CONTACT}">${CONTACT}</a>.</p>`, "/adopt", "The Adoption Register is unavailable right now."), { "Retry-After": "60", ...NO_STORE });
     return json(res, 503, { error: "unavailable", note: method === "POST" ? "nothing was recorded this time; try again in a minute" : undefined }, { "Retry-After": "60", "Cache-Control": "no-store" });
   }
 };

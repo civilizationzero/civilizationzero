@@ -229,7 +229,7 @@ for (const k of ["openai", "anthropic", "perplexity", "meta", "duckduckgo"])
 ok(page.botName("__proto__", null) === "__proto__" && page.botName("constructor", "2026-11-16") === "constructor", "a key from the object's prototype is shown as itself");
 const call = (url) => new Promise((resolve) => { const res = { statusCode: 200, h: {}, setHeader(k, v) { this.h[k.toLowerCase()] = v; }, getHeader(k) { return this.h[k.toLowerCase()]; }, end(b) { resolve({ s: this.statusCode, h: this.h, b: String(b || "") }); } }; page({ url, method: "GET", headers: {} }, res); });
 o = await call("/api/stats");
-ok(o.s === 200 && /<h1>Visits<\/h1>/.test(o.b) && o.b.includes('<td class="num">30</td>') && o.b.includes("x.com") && o.b.includes("&lt;b&gt;evil.com") && !o.b.includes("<b>evil.com") && o.b.includes("Scripts and checks") && /s-maxage=300/.test(o.h["cache-control"]), "the page shows the counts, escaped, cached five minutes");
+ok(o.s === 200 && /<h1>Visits<\/h1>/.test(o.b) && o.b.includes('<td class="num">30</td>') && o.b.includes("x.com") && o.b.includes("&lt;b&gt;evil.com") && !o.b.includes("<b>evil.com") && o.b.includes("Scripts and checks") && /s-maxage=(300|[1-9]\d?|[12]\d\d)\b/.test(o.h["cache-control"]), "the page shows the counts, escaped, cached five minutes (less in a day's last five minutes: the cache ends when the day turns)");
 o = await call("/api/stats?f=json"); const j = JSON.parse(o.b);
 ok(o.s === 200 && j.days.length === 2 && j.first_day === "2026-11-01" && /without cookies or identifiers/.test(j.what), "/stats.json");
 o = await call("/api/stats?x=1"); ok(o.s === 400, "/stats refuses parameters");

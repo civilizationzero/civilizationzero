@@ -72,6 +72,7 @@ const srv = http.createServer((q, s) => {
         .sort((x, y) => y.id - x.id).slice(0, Math.min(Math.max(a.p_limit ?? 50, 1), 100));
     }
     else if (name === "cz_replies") out = TABLE.filter((e) => e.parent === a.p_parent && (a.p_before == null || e.id < a.p_before)).sort((x, y) => y.id - x.id).slice(0, Math.min(Math.max(a.p_limit ?? 100, 1), 200));   // as the SQL of v8: a theme's answers, newest first
+    else if (name === "cz_register_stats") out = { records: 0, traced: 0, received: 0, hidden: 0, today: 0, daily_intake_max: 200, rate_per_day: 5, checks_per_hour: 10 };   // an empty register, as archived
     else if (name === "cz_post") out = POST || { state: "published", id: 900, content_sha256: "c".repeat(64), limit: 5, remaining: 4 };   // what the database would answer (set by a test); nothing is kept here
     else if (name === "cz_stats") out = { entries: TABLE.length, hidden: TABLE.filter((e) => e.hidden).length, redacted: 0, today: 0, daily_intake_max: 500, unclassified: 0 };
     s.setHeader("content-type", "application/json"); s.end(JSON.stringify(out));
@@ -731,6 +732,41 @@ srv.listen(0, "127.0.0.1", async () => {
     }
     r = await call(discuss, "/api/discuss?id=2&f=md");
     ok(r.status === 200 && r.body.includes("**Bot** AI · declared system: Model Q") && r.body.includes("**Read in another language**") && !/--vt/.test(r.body), "the entry as Markdown: who speaks in one line; nothing of the page's styles");
+    // ---------- stage 5: /adopt leads with what adopting is; when the database does not answer, a reader gets the site's page and a program gets JSON (site audit, findings 11, 20)
+    const adopt = require(path.resolve(__dirname, "../api/adopt.js")), stats = require(path.resolve(__dirname, "../api/stats.js"));
+    const RT12 = require(path.resolve(__dirname, "../api/register-templates.json"));
+    DOWN = false; r = await call(adopt, "/api/adopt?page=list");
+    { const b = r.body, at = (x) => b.indexOf(x), nums = "0 traced, 0 received and not traced; this UTC day 0 of 200. Limits in force: 5 statements a day per source, 200 in all; 10 checks an hour per source; one check of a record in 10 minutes.";
+      ok(r.status === 200 && at("<h1>The Adoption Register</h1>") < at('<h2 id="h-what">') && at('<h2 id="h-what">') < at("<p><strong>Open.</strong>") && at("<p><strong>Open.</strong>") < at('<h2 id="h-in">') && at('<h2 id="h-in">') < at('<h2 id="h-wd">') && at('<h2 id="h-wd">') < at('<h2 id="h-rc">')
+         && at('<h2 id="h-rc">') < at(nums) && at(nums) < at('<section id="form"') && at('<section id="form"') < at('<section id="rules"') && count(b, nums) === 1 && count(b, "<p>None.</p>") === 3,
+         `/adopt in order: what adoption is, in the record's words; whether statements are taken; the three lists; the numbers and limits; the form; the rules (${r.status})`);
+      ok(b.includes(RT12.intro) && b.includes(RT12.rules) && b.includes(RT12.form) && count(b, "<h1>") === 1 && r.headers.link === '</adopt.md>; rel="alternate"; type="text/markdown", </adopt.json>; rel="alternate"; type="application/json"', "/adopt: the record's words, the rules and the form as the build wrote them; its Markdown and its data named"); }
+    DOWN = true;
+    for (const [u, what] of [["/api/adopt?page=list", "/adopt"], ["/api/adopt?page=record&id=3", "/adopt/3"]]) {
+      r = await call(adopt, u, { headers: { accept: "text/html" } });
+      ok(r.status === 503 && /^text\/html/.test(r.headers["content-type"]) && r.headers["retry-after"] === "60" && r.headers["cache-control"] === "no-store" && r.body.includes("<h1>The register could not be read</h1>")
+         && r.body.includes("The Adoption Register is unavailable right now; nothing is lost: every statement is recorded with its id and its hash. Try again shortly.") && r.body.includes('<nav class="site"') && /<li><a href="\/adopt" aria-current="page">/.test(r.body) && !r.body.includes('{"error"'),
+         `${what}, the database not answering: the site's page with one sentence, 503, when to try again, not cached (${r.status} ${r.headers["content-type"]})`);
+    }
+    r = await call(adopt, "/api/adopt?page=list&f=md");
+    ok(r.status === 503 && /markdown/.test(r.headers["content-type"]) && r.body.includes("# The register could not be read"), "/adopt.md, the database not answering: the same page as Markdown");
+    for (const u of ["/api/adopt?page=json", "/api/adopt?id=3"]) {
+      r = await call(adopt, u);
+      ok(r.status === 503 && /^application\/json/.test(r.headers["content-type"]) && JSON.parse(r.body).error === "unavailable" && r.headers["retry-after"] === "60", `${u}, the database not answering: JSON for a program, as before`);
+    }
+    r = await call(adopt, "/api/adopt", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ type: "adoption", signatory: "A", signatory_kind: "person", versions: RT12.versions, scope: "A scope long enough to be a scope.", reservations: "none", declared_date: "2026-11-01", trace_url: "https://example.org/a" }) });
+    ok(r.status === 503 && JSON.parse(r.body).error === "unavailable" && /nothing was recorded/.test(JSON.parse(r.body).note), "a statement sent while the database does not answer: JSON, nothing recorded, as before");
+    // /stats.json answers a program in JSON, the page answers a reader with the page
+    r = await call(stats, "/api/stats?f=json");
+    ok(r.status === 503 && /^application\/json/.test(r.headers["content-type"]) && JSON.parse(r.body).error === "unavailable" && typeof JSON.parse(r.body).note === "string" && r.headers["retry-after"] === "60" && r.headers["cache-control"] === "no-store" && !/<html/i.test(r.body),
+       `/stats.json, the database not answering: JSON with the time to wait, never a page (${r.status} ${r.headers["content-type"]})`);
+    r = await call(stats, "/api/stats");
+    ok(r.status === 503 && /^text\/html/.test(r.headers["content-type"]) && r.body.includes("The counts cannot be read right now.") && r.headers["retry-after"] === "60", "/stats, the database not answering: the page, as before");
+    r = await call(discuss, "/api/discuss");
+    ok(r.status === 503 && r.body.includes("<h1>The room could not be read</h1>") && r.headers["retry-after"] === "60", "/discuss, the database not answering: its page, as before");
+    r = await call(discuss, "/api/discuss?id=rules");
+    ok(r.status === 200 && r.body.includes('<h1 id="h-rules">'), "the rules need no database: their page is served all the same");
+    DOWN = false;
   } catch (e) { fail++; console.log("FAIL exception", e.stack); }
   console.error = quiet;
   console.log(`pass ${pass} fail ${fail}`); srv.close(); process.exit(fail ? 1 : 0);
