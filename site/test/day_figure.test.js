@@ -23,7 +23,7 @@ test("the reference of rc-10, site/figure.py and room/figure.js: the same positi
   const py = execFileSync("python3", [path.join(SITE, "figure.py"), SHA, ...DAYS.map(String)], { encoding: "utf8" }).trim().split("\n").map((l) => JSON.parse(l));
   assert.deepEqual(js, FX.days, "room/figure.js gives what the reference gave");
   assert.deepEqual(py, FX.days, "site/figure.py gives what the reference gave");
-  // the places as the first page writes them under the figure (rc-14): the reference's positions, each in three digits, ring 0 first
+  // the places as the first page writes them with the figure (rc-14): the reference's positions, each in three digits, ring 0 first
   for (const x of FX.days) assert.deepEqual(FIG.places(x.day, K), x.positions.map((p) => String(p).padStart(3, "0")), `day ${x.day}: the sixteen places`);
   assert.equal(FIG.places(1455, K).join(" "), "092 166 071 082 149 239 114 163 136 001 053 214 071 208 082 002");
   assert.equal(FIG.places(1456, K).join(" "), "004 130 168 120 200 045 022 188 070 061 158 094 296 300 128 077");

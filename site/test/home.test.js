@@ -61,7 +61,7 @@ test("the figure's switch and its line: today's at rest; after a press, tomorrow
     // the sixteen rings' places as numbers: the day's, and the next day's for after a press — the positions the data form gives
     const N = (day) => FIG.places(day, K).map((p) => `<span>${p}</span>`).join(" "), j = await data(zone);
     assert.ok(b.includes(`<p class="nums"><span class="t0">${N(d)}</span><span class="t1" hidden>${N(d + 1)}</span></p>`), `${zone}: the day's sixteen numbers, and the next day's`);
-    assert.deepEqual(FIG.places(d, K).map(Number), j.figure.position, `${zone}: the numbers under the figure are the data form's positions`);
+    assert.deepEqual(FIG.places(d, K).map(Number), j.figure.position, `${zone}: the numbers written with the figure are the data form's positions`);
     assert.deepEqual(FIG.places(d + 1, K).map(Number), j.figure.start.map((a, i) => (a + (d + 1) * j.figure.step[i]) % j.figure.modulus[i]), `${zone}: the next day's, by the rule the data form gives`);
     assert.ok(FIG.places(d, K).every((p) => /^\d{3}$/.test(p)));
     const t = (await call("/?f=txt", { "x-vercel-ip-timezone": zone })).body, m = (await call("/index.md?f=md", { "x-vercel-ip-timezone": zone })).body;

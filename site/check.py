@@ -884,14 +884,17 @@ check(len(_m5) == 2 and ".arc circle{stroke-dashoffset:calc(-1*mod(var(--a) + mo
       and '@property --day{syntax:"<number>";inherits:true;initial-value:0}' in _css and all(f'style="--a:{a};--s:{s};--m:{m}"' in _fig.group(2) for a, s, m in FIGURE.constants(_sha)),
       "home.css: where the browser has mod() it computes the figure itself from --today and each ring's three constants (the same formula as figure.py), and a press moves the day by one and shows the next day's numbers and sentence; without mod() there is no switch, no second sentence and no second set of numbers")
 # the unit (rc-14): one hairline above and one below, equal space inside, no frame and no ground of its own; what the machine writes in
-# the machine's face, small; the numbers eight to a row, sixteen where the measure allows
+# the machine's face, small; the numbers eight to a row, sixteen where the measure allows. In a narrow window the figure stands at the
+# side of its readings (the day, Day 0, the numbers: each keeps clear of it by the figure's width and one space) and the sentence
+# under both, clear of the figure; from the wide measure the figure stands over its lines, on the axis
 _n5 = re.sub(r"/\*.*?\*/", "", _m5[0], flags=re.S)
-check(".fb{margin:0;padding-block:var(--e-4);border-block:var(--e-16) solid var(--mute)}" in _n5 and "background" not in _n5[_n5.index(".fb{"):] and ".nums,.say{font-family:var(--exact);font-size:var(--e-2);color:var(--mute)}" in _n5
-      and ".nums{max-inline-size:32ch;margin:0 auto;line-height:var(--l1)}" in _n5 and "display:grid" not in _n5[_n5.index(".fb{"):]
-      and "@media(min-width:38.0546rem){\n.fb{padding-block:var(--e0)}\n.fig-l{inline-size:var(--e14)}\n.nums,.say{font-size:var(--e-1)}\n.nums{max-inline-size:64ch}\n}" in _n5
+check(".fb{margin:0;padding-block:var(--e-8);border-block:var(--e-16) solid var(--mute);text-align:start}" in _n5 and "background" not in _n5[_n5.index(".fb{"):] and ".nums,.say{font-family:var(--exact);font-size:var(--e-2);color:var(--mute)}" in _n5
+      and ".fig-l{display:block;float:left;inline-size:var(--e10);margin-right:var(--e-2);border-radius:50%}" in _n5 and ".date,.zero,.nums{margin:0 0 0 calc(var(--e10) + var(--e-2))}\n.say{clear:left;margin:0;padding-block-start:var(--e-8)}" in _n5
+      and ".nums{max-inline-size:32ch;line-height:var(--l1)}" in _n5 and "display:grid" not in _n5[_n5.index(".fb{"):]
+      and "@media(min-width:38.0546rem){\n.fb{padding-block:var(--e0);text-align:center}\n.fig-l{float:none;inline-size:var(--e14);margin:0 auto var(--e-4)}\n.date,.zero,.nums{margin:0 auto}\n.say{padding:0}\n.nums,.say{font-size:var(--e-1)}\n.nums{max-inline-size:64ch}\n}" in _n5
       and sorted(set(re.findall(r"[\d.]+ch\b", _nocom))) == ["32ch", "64ch"] and (32 + 1) // (3 + 1) == 8 and (64 + 1) // (3 + 1) == 16
       and ".date{color:var(--mute)}" in _n5 and re.search(r"\.(date|zero)[^{]*\{[^}]*font-family", _n5) is None,
-      "home.css: the figure and its lines between two hairlines of the page's one weight, equal space inside, no frame, no ground; the numbers and the sentence in the machine's face, small; the numbers eight to a row and sixteen from the wide measure (a line 32 or 64 characters wide holds 8 or 16 numbers of three digits and the spaces between them, and not one more), and fewer to a row where a reader's larger type leaves less room; the calendar line and the Day 0 line as they were")
+      "home.css: the figure and its lines between two hairlines of the page's one weight, equal space inside, no frame, no ground; in a narrow window the figure at the side of the day, Day 0 and the numbers, the sentence under both, and from the wide measure the figure over its lines, on the axis; the numbers and the sentence in the machine's face, small; the numbers eight to a row and sixteen from the wide measure (a line 32 or 64 characters wide holds 8 or 16 numbers of three digits and the spaces between them, and not one more), and fewer to a row where a reader's larger type leaves less room; the calendar line and the Day 0 line as they were")
 # nothing moves for a reader who asks for less motion: every transition and animation stands inside the one block that asks for the preference
 _mo = _nocom.split("@media(prefers-reduced-motion:no-preference){")
 check(len(_mo) == 2 and not re.search(r"transition|animation|@keyframes|@view-transition", _mo[0]) and _mo[1].rstrip().endswith("}") and "/* 10 MOTION." in _css and _css.index("/* 10 MOTION.") < _css.index("@media(prefers-reduced-motion:no-preference){")

@@ -1,13 +1,13 @@
 /* CIVILIZATION ZERO, the page at /. ONE MODULE, ONE RATIO: the module is the root em, the ratio the sixteenth root of sixteen (1.1892:
    four steps double a size); --eN is the module times ratio^N; every size, space, width, breakpoint and duration below is one of
    them or a whole multiple of one (a row of numbers apart, block 5); line heights are the ratio and its square. THE FORM: an inscription; the day's figure, its
-   centre empty; what is here, and who is behind it; two doors, one on either side of the figure's axis.
+   centre empty; what is here, and who is behind it; two doors, one on either side of the page's axis.
    R the record · M the machine reader · H a standard for human reading · C a constraint · E a choice. */
 
 /* 1 TOKENS. C: the scale. H: two palettes, every text colour at 7:1 or more (WCAG 2.2, 1.4.6); green marks what is a machine's, and
    the count of days; blue, a reason. C: no typeface is shipped: the reader's serif for people, its monospace for what is exact. */
 :root{--e-16:.0625rem;--e-12:.125rem;--e-8:.25rem;--e-4:.5rem;--e-2:.7071rem;--e-1:.8409rem;--e0:1rem;--e1:1.1892rem;--e2:1.4142rem;
---e3:1.6818rem;--e4:2rem;--e5:2.3784rem;--e6:2.8284rem;--e12:8rem;--e14:11.3137rem;--e18:22.6274rem;--e21:38.0546rem;--e22:45.2548rem;
+--e3:1.6818rem;--e4:2rem;--e5:2.3784rem;--e6:2.8284rem;--e10:5.6569rem;--e12:8rem;--e14:11.3137rem;--e18:22.6274rem;--e21:38.0546rem;--e22:45.2548rem;
 --l1:1.1892;--l2:1.4142;color-scheme:light dark;--bg:#fff;--fg:#111;--mute:#555;--rule:#bbb;--machine:#116329;--why:#0f4c81;--fill-on:#111;--machine-on:#3fb950;
 --human:Charter,"Bitstream Charter","Sitka Text",Cambria,serif;--exact:ui-monospace,"Cascadia Mono",Consolas,"SF Mono",Menlo,monospace}
 @media(prefers-color-scheme:dark){:root{--bg:#101010;--fg:#eee;--mute:#aaa;--rule:#444;--machine:#3fb950;--why:#91c3f6;--fill-on:#fff;--machine-on:#116329}}
@@ -41,24 +41,30 @@ p,li{text-wrap:pretty}
 }
 
 /* 5 FIGURE. E: the figure and its lines, one thing between two hairlines. R: sixteen rings round an empty centre, each carrying the
-   arc it travelled since the day before, computed from the Core's SHA-256 and the day (room/figure.js); under them the day,
+   arc it travelled since the day before, computed from the Core's SHA-256 and the day (room/figure.js); with them the day,
    Day 0 and, in the machine's face, each ring's place as a number (eight to a row: a width counted in characters) and one
-   sentence. M: the attributes are the figure for every browser; with CSS mod() the browser computes it itself from --today, the
-   one number the server wrote, and each ring's three constants; --day is registered as a number so that it can move, and a press
-   (a checkbox, no script) moves it by one day and shows the next day's numbers and sentence. */
-.fb{margin:0;padding-block:var(--e-4);border-block:var(--e-16) solid var(--mute)}
-.fig-l{display:block;inline-size:calc(3*var(--e4));margin:0 auto var(--e-4);border-radius:50%}
+   sentence. E: in a narrow window the figure stands at the side of its readings, as a dial does, and the sentence under both:
+   the unit is lower so, and the doors stand higher on the first screen; from e21 the figure stands over its lines, on the axis.
+   C: the page is written left to right, and a float is the oldest way to stand one thing beside another. M: the attributes are
+   the figure for every browser; with CSS mod() the browser computes it itself from --today, the one number the server wrote, and
+   each ring's three constants; --day is registered as a number so that it can move, and a press (a checkbox, no script) moves it
+   by one day and shows the next day's numbers and sentence. */
+.fb{margin:0;padding-block:var(--e-8);border-block:var(--e-16) solid var(--mute);text-align:start}
+.fig-l{display:block;float:left;inline-size:var(--e10);margin-right:var(--e-2);border-radius:50%}
 .fig{display:block;inline-size:100%;block-size:auto;color:var(--machine)}
 .trk circle{stroke:var(--rule);stroke-width:var(--e-16);vector-effect:non-scaling-stroke}
-.date,.zero,.say{margin:0}
+.date,.zero,.nums{margin:0 0 0 calc(var(--e10) + var(--e-2))}
+.say{clear:left;margin:0;padding-block-start:var(--e-8)}
 .date{color:var(--mute)}
 .date .d{color:var(--machine);font-weight:700;white-space:nowrap}
 .axis :is(time,data){font-family:inherit;font-size:1em;white-space:nowrap}
 .nums,.say{font-family:var(--exact);font-size:var(--e-2);color:var(--mute)}
-.nums{max-inline-size:32ch;margin:0 auto;line-height:var(--l1)}
+.nums{max-inline-size:32ch;line-height:var(--l1)}
 @media(min-width:38.0546rem){
-.fb{padding-block:var(--e0)}
-.fig-l{inline-size:var(--e14)}
+.fb{padding-block:var(--e0);text-align:center}
+.fig-l{float:none;inline-size:var(--e14);margin:0 auto var(--e-4)}
+.date,.zero,.nums{margin:0 auto}
+.say{padding:0}
 .nums,.say{font-size:var(--e-1)}
 .nums{max-inline-size:64ch}
 }
@@ -68,13 +74,13 @@ p,li{text-wrap:pretty}
 .arc circle{stroke-dashoffset:calc(-1*mod(var(--a) + mod(var(--day) - 1,var(--m))*var(--s),var(--m)))}   /* the inner mod() keeps every product small */
 .turn:checked~.fb .fig{--day:calc(var(--today) + 1)}
 .turn{display:block;position:absolute;inline-size:var(--e-16);block-size:var(--e-16);margin:0;opacity:0}
-.turn:focus-visible~.fb .fig-l{outline:var(--e-12) solid var(--fg);outline-offset:var(--e-8)}
+.turn:focus-visible~.fb .fig-l{outline:var(--e-12) solid var(--fg);outline-offset:var(--e-12)}
 .fig-l{cursor:pointer}
 .t0 [hidden],.turn:checked~.fb .t1{display:inline}
 .turn:checked~.fb .t0{display:none}
 }
 
-/* 6 DOORS. E: the web's question, with both answers open: two doors of one size, one frame cut in two on the figure's axis. M: two
+/* 6 DOORS. E: the web's question, with both answers open: two doors of one size, one frame cut in two on the page's axis. M: two
    plain links; the answer is kept in the address (#human, #not-human), so Back undoes it. One registered number, --open, says where the line stands: .5
    with neither answered, 1 for a human, 0 for a reader that is not. Without :has() the two readings follow one another, whole. */
 .ask{margin:var(--e0) 0 var(--e-4)}
