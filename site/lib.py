@@ -771,7 +771,6 @@ CZ_EXAMPLES = [
     (datetime.date(2022, 11, 29), "the day before Coordinate Zero"),
     (COORDINATE, "Coordinate Zero (Core §0)"),
     (PRERELEASE, "this site is published; the open discussion opens"),
-    (CZ_TIME_DECIDED, "the CZ calendar becomes the basis of this site's dates"),
     (LAUNCH, "public launch, on the fourth anniversary of Coordinate Zero"),
     (datetime.date(2027, 11, 30), "the fifth anniversary of Coordinate Zero"),
     (REVIEW, "the first scheduled review of the Core: 2048 = 2¹¹, in binary a one and eleven zeros"),
