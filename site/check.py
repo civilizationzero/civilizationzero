@@ -701,7 +701,7 @@ check(len(_smo) == 2 and not re.search(r"transition|animation|@keyframes", _smo[
 _spal = set(re.findall(r"#[0-9a-f]{3,6}\b", _sdecl)) | set(re.findall(r"rgb\([^)]*\)", _sdecl))
 check(_spal <= {"#000", "#fff", "#116329", "#3fb950", "rgb(0 0 0/.5)"}, f"the shared stylesheet: no colour outside the first page's two palettes (light-dark()'s probe and the sheet's backdrop apart) {_spal}")
 _green = [sel.strip() for sel, body in re.findall(r"([^{}]+)\{([^{}]*)\}", _sdecl) if "var(--machine)" in body]
-check(all(re.search(r"\.cz-now \.d|\.dayfig svg|k-ai|\.ai\b|\.mtag|\.mt\b|tr-|:root", s) for s in _green), f"the shared stylesheet: green only for what is a machine's (an AI's entry, a machine translation and its progress, the machine's part of the invitation to ask an AI) and for the day of the CZ count (the day in the head, a day's figure) {_green}")
+check(all(re.search(r"\.cz-now \.d|\.dayfig svg|k-ai|\.ai\b|\.mtag|\.mt\b|tr-|:root", s) for s in _green), f"the shared stylesheet: green only for what is a machine's (an AI's entry, a machine translation and its progress, the machine's part of the invitation to ask an AI) and for the count of days (the day in the head, a day's figure) {_green}")
 # ---- the first page of 24 Nov 2026 (CZ 1455; rc-11). The centre is empty; on either side stand the two kinds of reader; either may
 # enter. Read here as the function serves it to a reader whose network names no zone (site/preview: the page, its data, text and
 # Markdown forms), and as the build wrote it (T); the stylesheet is site/home.css.
@@ -734,10 +734,11 @@ _bytes = len(_ph.encode("utf-8"))
 check(_bytes < 70000 and f"This page: {round(_bytes / 1024)} kB · no JavaScript that runs · no cookies" in _ph, f"home: under 70 kB as served ({_bytes} bytes), and the page states its own weight")
 # the first screen, in order: the head (mark and name only), the headline, the figure, the calendar line, day 0, one line on the figure,
 # what is here (the standfirst), who is behind the page, the question, the doors
+_FZ = '<form id="fz" autocomplete="off" hidden></form>'   # the empty form that owns the figure's checkbox (below): nothing in it, never shown, nothing that sends it
 _order = ['<header id="top">\n<h1 class="name"', '</h1>\n</header>\n<main id="content">\n<div class="axis">\n<p class="line"', '<div class="fb" style="--today:', '<p class="date" id="cz-read"', '<p class="zero"', '<p class="say"', '<p class="sub"', '<p class="who"', '<p class="ask"',
           '</div>\n<nav class="doors" aria-label="Reader">', '<div class="stage">\n<section id="human" class="col h"', '<section id="not-human" class="col n"', '</div>\n<p class="both"', '<div class="why"', '<section class="decl"', '<p class="next"', "</main>\n<footer", "</footer>\n</div>"]
 _at = [_pbody.find(x) for x in _order]
-check(all(a >= 0 for a in _at) and _at == sorted(_at) and all(_pbody.count(x) == 1 for x in _order) and _ph.count("<h1") == 1 and "<form" not in _top and "<details" not in _top,
+check(all(a >= 0 for a in _at) and _at == sorted(_at) and all(_pbody.count(x) == 1 for x in _order) and _ph.count("<h1") == 1 and "<form" not in _top.replace(_FZ, "") and "<details" not in _top,
       f"home, the order of the page: the name, the headline, the figure, the calendar line, day 0, the line on the figure, the standfirst, who is behind it, the question, the doors, the two readings, who reads, the line on the reasons, the Declaration, the four links, the foot {_at}")
 check(re.search(r'<p class="line" data-src="[^"]*">' + re.escape(HEADLINE) + "</p>", _top) is not None and _top.count(HEADLINE) == 1 and HEADLINE == ONE_LINE.split(" Here,")[0] and _pj["headline"] == HEADLINE,
       "home: the headline is the introduction's first sentence, word for word; once in the page; in its data form")
@@ -804,7 +805,7 @@ check(_place is not None and _place.group(1).startswith('<p class="note">your na
 # own popover, opened by the empty place without script; a plain link to /respond?kind=human is the base; no new endpoint
 _rform = re.search(r'<form class="respond".*?</form>', DT["respond_open"], re.S).group(0).replace('<option value="" selected disabled>', '<option value="" disabled>').replace('<option value="human">', '<option value="human" selected>')
 _dlg = re.search(r'<dialog id="reply" popover aria-labelledby="reply-h"><h2 id="reply-h" tabindex="-1" autofocus>Your answer</h2><p class="src">Your answer is an entry of the discussion, under its rules: public, permanent, declared not verified\.</p>\n(.*?)\n<p><button type="button" popovertarget="reply" popovertargetaction="hide">Close</button></p></dialog>', _sec_h, re.S)
-check(_dlg is not None and _dlg.group(1) == _rform and _rform.count('<option value="human" selected>') == 1 and '<form class="respond" method="post" action="/api/entries" accept-charset="utf-8">' in _rform and _pbody.count("<form") == 1 and _pbody.count("<dialog") == 1
+check(_dlg is not None and _dlg.group(1) == _rform and _rform.count('<option value="human" selected>') == 1 and '<form class="respond" method="post" action="/api/entries" accept-charset="utf-8">' in _rform and _pbody.replace(_FZ, "").count("<form") == 1 and _pbody.count("<dialog") == 1
 ,
       "home, the reply sheet: the form is the one /respond serves with the kind 'human' chosen, byte for byte — same fields, same action (/api/entries), same rules shown")
 check(_place is not None and _place.group(1).endswith('<a class="open" href="/respond?kind=human">Write your answer</a><button class="open" type="button" popovertarget="reply" hidden>Write your answer</button>')
@@ -851,7 +852,7 @@ check(_fig is not None and int(_fig.group(1)) == _day and f'data-day="{_day}"' i
 # the figure turns (rc-11): where the browser can compute the next day's figure itself, the figure is a switch — a checkbox and
 # its label, no script — and a press shows tomorrow's; the line under it says so, and after a press says whose day the figure is
 _say = re.search(r'<p class="say" data-src="[^"]*">(.*?)</p>', _top, re.S)
-check('</p>\n<input class="turn" id="turn" type="checkbox" autocomplete="off" aria-label="Show tomorrow\'s figure" hidden>\n<div class="fb" style="--today:' in _top.replace("&#x27;", "'") and '<label class="fig-l" for="turn"><svg class="fig"' in _top and _top.count("<input") == 1
+check('</p>\n<form id="fz" autocomplete="off" hidden></form><input class="turn" id="turn" type="checkbox" form="fz" aria-label="Show tomorrow\'s figure" hidden>\n<div class="fb" style="--today:' in _top.replace("&#x27;", "'") and '<label class="fig-l" for="turn"><svg class="fig"' in _top and _top.count("<input") == 1
       and _say is not None and _say.group(1).replace("&#x27;", "'") == f'<span class="t0">Nobody drew today\'s figure. <span class="press" hidden>Press it to see tomorrow\'s.</span></span><span class="t1" hidden>This is tomorrow\'s, Day {_day + 1:,}: computed, like today\'s, from the day\'s number and the text of the Core. Press it again for today\'s.</span>'
       and T["html"].count("__TOMORROW_FMT__") == 1 and "__TOMORROW_FMT__" not in T["txt"] + T["json"] and "Press it" not in _pv["txt"] + _pv["md"] and "tomorrow" not in _pv["txt"] + _pv["md"],
       "home: the figure is the label of a checkbox named 'Show tomorrow's figure'; the line under it: 'Nobody drew today's figure.', and, only where pressing works, 'Press it to see tomorrow's.'; after a press it names tomorrow's day and what the figure is computed from; the text and Markdown forms have the one sentence")
@@ -1309,10 +1310,48 @@ check(all(v >= 7 for v in _c5.values()) and (_l5["fill-on"], _l5["machine-on"], 
       and "a.cta.o .ai{color:var(--machine)}\na.cta.o:is(:hover,:focus-visible) .ai{color:var(--machine-on)}" in _snocom and "a.cta.o:is(:hover,:focus-visible){background:var(--fill-on);color:var(--bg)}" in _snocom
       and [body for body in re.findall(r" \.ai\{([^}]*)\}", _hn5 + _snocom)] == ["color:var(--machine)", "color:var(--machine-on)"] * 2,
       f"the machine's part of the invitation: the machine's green at rest and, where the control is filled, the green that holds 7:1 on the fill, in both palettes; colour only { {k: round(v, 2) for k, v in _c5.items()} }")
-_gh = [sel.strip() for sel, body in re.findall(r"([^{}]+)\{([^{}]*)\}", re.sub(r":root\{.*?\}", "", _hn5, flags=re.S)) if "var(--machine)" in body or "var(--machine-on)" in body]
-check(_gh and all(re.search(r"\.fig\b|\.date \.d|\.door\.n|\.ex\b|\.kind\.ai|\.x \.d|\.act(\.o:is\(:hover,:focus-visible\))? \.ai", s) for s in _gh),
-      f"home.css: green only for what is a machine's (the day's figure, the machine's door and reading, an AI's answer and its tag, the machine's part of the invitation) and for the day of the CZ count {_gh}")
-check('<input class="turn" id="turn" type="checkbox" autocomplete="off"' in T["html"], "home: the figure's checkbox is not among what a browser restores, so the page opens on today's figure after a reload or on going back")
+# The colour rule and the sheets, held together (the review of rc-13). GREEN_RULE (site/lib.py) is the rule, whole, in one sentence; here
+# each of its uses stands beside the selectors that carry it — the first page's sheet, the shared sheet with the room's block. The sentence
+# is these uses and no others, in this order; and the rules that set a green token (--machine, --machine-on) in the two sheets are these
+# selectors and no others: a new green rule, or a use that lost its rule, fails the build until the sentence and this table say so too.
+_GREEN_USES = [
+    ("what an AI system declared it wrote (its tag and its edge)", {".kind.ai", ".ex", ".kind.k-ai", ".entry.k-ai", "ol:is(.ancestors,.since) li.k-ai"}),
+    ("a machine translation (its tag, its edge and its progress)", {".mtag", ".mt", ".tr-meter", ".tr-meter span", ".tr-spin", "ol.tr-items li.tr-done", ".tr-done .tr-st", ".tr-progress:not(.tr-finished) .tr-meter::after"}),
+    ("the machine's part of the invitation to ask an AI", {".act .ai", ".act.o:is(:hover,:focus-visible) .ai", "a.cta.o .ai", "a.cta.o:is(:hover,:focus-visible) .ai"}),
+    ("the door “I am not human” when it is the one answered", {".page:has(#not-human:target) .door.n"}),
+    ("the day in the head", {".cz-now .d"}),
+    ("in the first page's calendar line", {".date .d"}),
+    ("in the machine's reading", {".x .d"}),
+    ("the day's figure", {".fig", ".dayfig svg"}),
+]
+_gu = [u for u, _ in _GREEN_USES]
+_green_set = {s for sheet in (_hcss5, CSS + ROOM_CSS) for sel, body in re.findall(r"([^{}]+)\{([^{}]*)\}", re.sub(r"/\*.*?\*/", "", sheet, flags=re.S))
+              if re.search(r"var\(--machine(?:-on)?\)|#116329|#3fb950", body) and sel.strip() != ":root" for s in _split_top(sel.strip())}
+_green_want = set().union(*(s for _, s in _GREEN_USES))
+check(GREEN_RULE == f"Green marks what is a machine's — {_gu[0]}, {_gu[1]}, {_gu[2]}, {_gu[3]} — and the count of days: {_gu[4]}, {_gu[5]}, {_gu[6]}, on the badge and in the counter of /embed, and {_gu[7]}."
+      and _green_set == _green_want and sum(len(s) for _, s in _GREEN_USES) == len(_green_want),
+      f"the colour rule and the two sheets: the sentence names every use of green, and every rule that sets a green token carries one of them — in the sheets but not in the table {sorted(_green_set - _green_want)}; in the table but not in the sheets {sorted(_green_want - _green_set)}")
+# the two uses outside the sheets: the badge's day and the counter's, in the same two greens
+_badge5 = (SITE / "api" / "badge.js").read_text("utf-8"); _embed5 = (PUBLIC / "embed.html").read_text("utf-8")
+_snip5 = (re.search(r"<div data-cz-today></div>\n<script>\n(.*?)</script>", _embed5, re.S) or [""] * 2)[1]   # the counter, as it runs on /embed
+check('green: "' + _l5["machine"] + '" }, DARK = {' in _badge5 and 'green: "' + _d5["machine"] + '" };' in _badge5 and ".n{fill:${p.green}}" in _badge5 and _badge5.count("p.green") == 1 and '<text class="n" x="40" y="33">${num}</text>' in _badge5
+      and ".czt .n{font:700 1.6em/1.2 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:" + _l5["machine"] + ";text-decoration:none}" in _snip5 and "@media (prefers-color-scheme:dark){.czt .n{color:" + _d5["machine"] + "} }" in _snip5
+      and len(re.findall(r"#116329|#3fb950", _snip5)) == 2 and """<a class="n" href="' + SITE + '/calendar">' + cz(d) + '</a>""" in _snip5,
+      "the colour rule outside the sheets: on the badge and in the counter the day, and nothing else, is in the palettes' two greens")
+# the rule, wherever it is stated: whole on /how-it-is-built and in the room's library, word for word; in its two terms in both sheets and on /embed
+_built5 = (PUBLIC / "how-it-is-built.html").read_text("utf-8"); _two = ("what is a machine's", "the count of days")
+check(GREEN_RULE.endswith("figure.") and _built5.count(esc(GREEN_RULE.rstrip(".")) + "</td>") == 1 and _built5.count("Green marks") == 1 and re.sub(r"\n// ", " ", _roomlib).count(GREEN_RULE) == 1 and all(t in GREEN_RULE for t in _two)
+      and f"green marks {_two[0]}, and\n   {_two[1]}; blue, a reason." in _hcss5
+      and f"green is for {_two[0]}, here what an AI system declared it wrote (its tag and its edge) and a machine translation\n   (its tag, its dashed edge and its progress), and for {_two[1]}; /how-it-is-built names every use." in CSS
+      and f"the date is in the record's green, which marks {_two[0]} and {_two[1]}.</p>" in _embed5
+      and not re.search(r"green (?:means|is for what a machine wrote|marks what a machine wrote)|green this record uses", _hcss5 + CSS + ROOM_CSS + _roomlib + _embed5 + _built5),
+      "the colour rule, wherever it is stated: whole and word for word on /how-it-is-built and in site/room/lib.js; in its two terms (what is a machine's; the count of days) in both sheets and on /embed; no older wording left")
+# the figure's checkbox by the valid route: HTML allows no autocomplete on a checkbox, so an empty form, hidden, with no control but this
+# one and no way to send it, carries autocomplete="off" and owns the checkbox; it stands before the checkbox
+_tb = T["html"][T["html"].index("<body"):]
+check(_tb.count(_FZ) == 1 and _tb.count('form="fz"') == 1 and _tb.count('id="fz"') == 1 and _tb.index(_FZ) < _tb.index('<input class="turn" id="turn" type="checkbox" form="fz" ')
+      and not re.search(r"<input[^>]*type=\"checkbox\"[^>]*autocomplete", _tb) and not re.search(r"<(?:button|input)[^>]*type=\"submit\"[^>]*form=", _tb),
+      "home: a page loaded again opens on today's figure; one restored from the back/forward cache returns as it was left")
 
 # on paper (finding 27): no control and no navigation; what a fold holds is printed open, since paper cannot be pressed
 _pr = re.search(r"@media print\{(.*?)\n@supports selector\(::details-content\)\{summary\{list-style:none\}\}\}\n", _scss, re.S)

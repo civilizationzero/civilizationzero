@@ -92,7 +92,7 @@ function trControls(req, url, L, rows, quiet = false) {
   const want = shown.length - same.length, done = want - missing.length;
   const counted = want ? `${done} of ${want} ${want === 1 ? "entry" : "entries"} on this page translated, each marked` : "every entry on this page is already in this language";
   const status = `<p>Shown in ${nameOf(tl)} (${esc(tl)}): ${counted}${same.length && want ? `; ${same.length} already in ${nameOf(tl)}` : ""}${missing.length ? "; the others in their original" : ""}. <a href="${esc(viewHref(url))}" class="tr-orig">Original</a> · ${both ? `<a href="${esc(viewHref(url, { tl }))}">One language</a>` : `<a href="${esc(viewHref(url, { tl, both: "1" }))}" rel="nofollow">Side by side</a>`}</p>`;
-  const go = OPEN && missing.length ? trPress(url, missing, { lang: tl, label: `<button type="submit" class="cta${quiet ? " o" : ""}">Translate ${missing.length === 1 ? "the remaining entry" : `the ${Math.min(missing.length, TR_BATCH)} remaining entries`} into ${nameOf(tl)}</button>` }) : "";
+  const go = OPEN && missing.length ? trPress(url, missing, { lang: tl, label: `<button type="submit" class="cta${quiet ? " o" : ""}"><span>Translate ${missing.length === 1 ? "the remaining entry" : `the ${Math.min(missing.length, TR_BATCH)} remaining entries`} into ${nameOf(tl)}</span></button>` }) : "";   // one piece inside the control, as in the offer below
   return `<section class="tr-bar" id="language" aria-label="Language">${status}${go}${trPicker(url, rows, tl, "Another language:")}</section>`;
 }
 // The same bar in two parts (rc-12, 24 Nov 2026; site audit, findings 2 and 13): what a page shows first is its entries, so the list of

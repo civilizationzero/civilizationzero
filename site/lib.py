@@ -521,8 +521,9 @@ form.cz-conv input{inline-size:15ch}
 .trk circle{stroke:var(--rule);stroke-width:var(--e-16);vector-effect:non-scaling-stroke}
 
 /* 7 THE ROOM. Blueprint §7: an entry is user content, shown as text, its words unchanged. The machine layer (the originator's decision of
-   CZ 1433): green is for what is a machine's: what a machine wrote, an AI system's entry (its tag and its edge) and a machine translation (a dashed edge and a
-   tag), and for the day of the CZ count; the tag's words always say it too (1.4.1). The tag keeps its size inside small print. */
+   CZ 1433): green is for what is a machine's, here what an AI system declared it wrote (its tag and its edge) and a machine translation
+   (its tag, its dashed edge and its progress), and for the count of days; /how-it-is-built names every use. The tag's words always say
+   it too (1.4.1). The tag keeps its size inside small print. */
 .entry{margin:var(--e2) 0;padding-block-start:var(--e-4);border-block-start:var(--e-16) solid var(--rule)}
 .entry .content{margin:var(--e-4) 0;white-space:pre-wrap}
 .entry .meta{margin:var(--e-8) 0}
@@ -680,6 +681,13 @@ FOOT_LINKS = [[("/core", "The Core"), ("/core#translations", f"{CORE_LANGUAGES} 
 # ---------------------------------------------------------------- stage 5 of the room's redesign (CZ 1433)
 # How this page is built: the page that says, with numbers, how every page is made.
 BUILT_PATH = "/how-it-is-built"
+# The colour rule, whole: every use of green, in one sentence. /how-it-is-built prints it and site/room/lib.js quotes it; site/check.py
+# holds it to the two stylesheets rule by rule (a rule that sets a green token for anything the sentence does not name fails the build,
+# and so does a use the sentence names that no rule carries), to the badge and to the counter.
+GREEN_RULE = ("Green marks what is a machine's — what an AI system declared it wrote (its tag and its edge), a machine translation (its tag, its edge "
+              "and its progress), the machine's part of the invitation to ask an AI, the door “I am not human” when it is the one answered — and the "
+              "count of days: the day in the head, in the first page's calendar line, in the machine's reading, on the badge and in the counter of "
+              "/embed, and the day's figure.")
 # Speculation rules: a link to another page of this site is fetched as the reader presses it (eagerness "conservative": on pointer or
 # touch down), so the page opens a moment sooner. Data, not code: the browser reads it; nothing runs. Not for links with a query
 # (a view, a translation, a form's result), not for /api, /admin or /respond, not for files, not for links marked nofollow. Tagged

@@ -239,8 +239,9 @@ form.cz-conv input{inline-size:15ch}
 .trk circle{stroke:var(--rule);stroke-width:var(--e-16);vector-effect:non-scaling-stroke}
 
 /* 7 THE ROOM. Blueprint §7: an entry is user content, shown as text, its words unchanged. The machine layer (the originator's decision of
-   CZ 1433): green is for what is a machine's: what a machine wrote, an AI system's entry (its tag and its edge) and a machine translation (a dashed edge and a
-   tag), and for the day of the CZ count; the tag's words always say it too (1.4.1). The tag keeps its size inside small print. */
+   CZ 1433): green is for what is a machine's, here what an AI system declared it wrote (its tag and its edge) and a machine translation
+   (its tag, its dashed edge and its progress), and for the count of days; /how-it-is-built names every use. The tag's words always say
+   it too (1.4.1). The tag keeps its size inside small print. */
 .entry{margin:var(--e2) 0;padding-block-start:var(--e-4);border-block-start:var(--e-16) solid var(--rule)}
 .entry .content{margin:var(--e-4) 0;white-space:pre-wrap}
 .entry .meta{margin:var(--e-8) 0}
@@ -341,7 +342,7 @@ a.home svg{view-transition-name:cz-mark}
 <p>Light or dark: the badge follows the reader's setting where the browser applies it to images; to fix one, add <code>?theme=light</code> or <code>?theme=dark</code> to its address. To fix the time zone, add <code>?tz=</code> and its name (<code>?tz=Asia/Kuala_Lumpur</code>, <code>?tz=Europe/Berlin</code>; both together: <code>?theme=dark&amp;tz=Asia/Tehran</code>).</p>
 </section>
 <section aria-labelledby="h-counter"><h2 id="h-counter">2. The counter, with a date converter</h2>
-<p>Today's date and a date converter, as below: this is the snippet itself, running on this page. It takes the colours of your page; the date is in the green this record uses for what a machine computes.</p>
+<p>Today's date and a date converter, as below: this is the snippet itself, running on this page. It takes the colours of your page; the date is in the record's green, which marks what is a machine's and the count of days.</p>
 <!-- CZ calendar: today's day of the new count, from Civilization Zero (https://civilizationzero.ai/embed). It runs only in the reader's browser: no request, no cookie, nothing stored. MIT licence. -->
 <div data-cz-today></div>
 <script>

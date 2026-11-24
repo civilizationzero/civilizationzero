@@ -1949,7 +1949,7 @@ def embed_page():
 <p>Light or dark: the badge follows the reader's setting where the browser applies it to images; to fix one, add <code>?theme=light</code> or <code>?theme=dark</code> to its address. To fix the time zone, add <code>?tz=</code> and its name (<code>?tz=Asia/Kuala_Lumpur</code>, <code>?tz=Europe/Berlin</code>; both together: <code>?theme=dark&amp;tz=Asia/Tehran</code>).</p>
 </section>
 <section aria-labelledby="h-counter"><h2 id="h-counter">2. The counter, with a date converter</h2>
-<p>Today's date and a date converter, as below: this is the snippet itself, running on this page. It takes the colours of your page; the date is in the green this record uses for what a machine computes.</p>
+<p>Today's date and a date converter, as below: this is the snippet itself, running on this page. It takes the colours of your page; the date is in the record's green, which marks what is a machine's and the count of days.</p>
 {CZ_SNIPPET}
 <details><summary>Show the code ({len(CZ_SNIPPET):,} characters)</summary>
 <pre id="code-counter">{esc(CZ_SNIPPET)}</pre>
@@ -2213,7 +2213,11 @@ def home_template():
 """)
     # ---- the day's figure: __FIG_RINGS__ is the day's sixteen arcs, written by api/home.js (room/figure.js). The figure is the label of a
     # checkbox, shown and used only where the browser can compute the next day's figure itself (CSS mod()): a press turns it by one day.
-    A(f"""<input class="turn" id="turn" type="checkbox" autocomplete="off" aria-label="Show tomorrow's figure" hidden>
+    # A browser keeps what a reader entered and writes it back when the page is loaded again; HTML lets a page decline that with
+    # autocomplete="off", which it does not allow on a checkbox itself: so an empty form, never shown and with nothing that sends it,
+    # carries the attribute and owns the checkbox (form="fz"); it stands before the checkbox, so that it is there when the checkbox is read.
+    # A page the browser kept whole (the back/forward cache) returns as it was left: no attribute changes that.
+    A(f"""<form id="fz" autocomplete="off" hidden></form><input class="turn" id="turn" type="checkbox" form="fz" aria-label="Show tomorrow's figure" hidden>
 <div class="fb" style="--today:__TOTAL__"{W("the day's figure", "E: " + DECIDED + " — the calendar made visible, and nothing standing in its centre; R: CZ-CORE 1.0, by its SHA-256, and the count of days (R §0): each ring is one row of that hash set sixteen by sixteen — its place on Day 0 is the row's left byte, its daily step the right byte plus one; M: the same figure as numbers in the reading for readers that are not human")}>
 <label class="fig-l" for="turn"><svg class="fig" xmlns="http://www.w3.org/2000/svg" viewBox="-192 -192 384 384" width="256" height="256" role="img" aria-labelledby="fig-t" data-day="__TOTAL__"><title id="fig-t">The day's figure: sixteen rings round an empty centre, each carrying one arc.</title><g fill="none" stroke="currentColor" transform="rotate(-90)"><g class="trk" stroke-width="1">{FIGURE.tracks()}</g><g class="arc" stroke-width="4">__FIG_RINGS__</g></g></svg></label>
 </div>
@@ -2634,7 +2638,7 @@ BUILT_FEATURES = [   # (feature, what it does here, since, without it)
     ("CSS logical properties and dir", "Edges and indents follow the direction of the block they mark: a translation into Persian or Arabic is set right to left, its edge on the right; an entry keeps the page's direction, and its words their own (dir=\"auto\")", CZ1433, "—"),
     ("A colour for the machine layer: the edge and label of what an AI system declared it wrote, and of machine translation", "#116329 on white, #3fb950 on black, both at 7:1 or more; light-dark() where the browser has it", CZ1433, "The same colours by a media query"),
     ("The same green for the day of the new count", "The day count in the calendar line on the first page and today's date at the top of every page, as on the record's images; dates inside text and entries keep the page's colour", datetime.date(2026, 11, 5), "The same colours by a media query"),
-    ("The same green for the machine's part of the invitation to ask an AI", "In the control “Ask your AI. Post its answer.” — on the first page, on /discuss and after the Core's closing — the words “your AI. Post its answer.” stand in the machine's colour and “Ask” in the page's; colour only. Pointed at, the control is filled and the words take the green that holds 7:1 there: #3fb950 on #111, and #116329 on white (in the dark palette that control's fill is then white, since neither green holds 7:1 on #eee)", RC13_RELEASE, "—"),
+    ("The same green for the machine's part of the invitation to ask an AI", "In the control “Ask your AI. Post its answer.” — on the first page, on /discuss and after the Core's closing — the words “your AI. Post its answer.” stand in the machine's colour and “Ask” in the page's; colour only. Pointed at, the control is filled and the words take the green that holds 7:1 there: #3fb950 on #111, and #116329 on white (in the dark palette that control's fill is then white, since neither green holds 7:1 on #eee). " + GREEN_RULE.rstrip("."), RC13_RELEASE, "—"),   # a cell of this table ends without a full stop
     ("Accept-Language", "A reader whose browser prefers another language is offered the page in it, as one link", CZ1433, "—"),
     ("Cross-document view transitions", "Moving between pages of this site fades instead of flashing; since CZ " + str(cz_day(RC12_RELEASE)) + " the mark travels from its place on one page to its place on the next, and an entry from a list to its own page; none for readers who ask for less motion", CZ1433, "The page changes at once, as it always did"),
     ("Speculation rules (prefetch, conservative)", "A link to another page of this site is fetched as you press it, so it opens a moment sooner", CZ1433, "The link is fetched when you release it"),
