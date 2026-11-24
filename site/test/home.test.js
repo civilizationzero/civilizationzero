@@ -41,7 +41,7 @@ test("the day's figure in the page and in the data form is the reader's day's", 
   for (const [zone, d] of [[EAST, dE], [WEST, dW]]) {
     const b = await page(zone), j = await data(zone);
     assert.ok(b.includes(`<g class="arc" stroke-width="4">${FIG.rings(d, K)}</g>`), `${zone}: the sixteen arcs of day ${d}`);
-    assert.ok(b.includes(`style="--today:${d}"`) && b.includes(`data-day="${d}"`) && b.replace(/&#x27;/g, "'").includes(`<title id="fig-t">The day's figure: sixteen rings round an empty centre, each carrying one arc.</title>`));
+    assert.ok(!b.includes("--today") && b.includes(`data-day="${d}"`) && b.replace(/&#x27;/g, "'").includes(`<title id="fig-t">The day's figure: sixteen rings round an empty centre, each carrying one arc. The CZ calendar.</title>`));
     assert.ok(b.includes(`<time class="d" datetime="${CZ.isoDate(...CZ.toGregorian(d))}">Day <data value="${d}">${d.toLocaleString("en-US")}</data></time>`), "the calendar line names the same day");
     assert.equal(j.cz_time.day, d); assert.equal(j.figure.day, d);
     assert.deepEqual(j.figure.position, FIG.positions(d, K));
@@ -52,23 +52,26 @@ test("the day's figure in the page and in the data form is the reader's day's", 
   assert.ok(!/__[A-Z][A-Z0-9_]*__/.test((await page()).replace(/https?:\/\/\S+/g, "")) && !/__[A-Z][A-Z0-9_]*__/.test((await call("/?f=txt")).body.replace(/https?:\/\/\S+/g, "")), "no placeholder left, in the page or in its text form");
 });
 
-test("the figure's switch and its line: today's at rest; after a press, tomorrow's day, named for the reader's zone", async () => {
+test("the figure and its line: today's figure and no other; the figure a plain link to the calendar; every ring moves every day", async () => {
+  const NOTE = "Each ring stands at its number: nobody drew today's figure. Tomorrow's will be different.";
   for (const zone of [EAST, WEST]) {
-    const d = CZ.todayIn(Date.now(), zone), b = unesc(await page(zone));
-    assert.ok(b.includes('<form id="fz" autocomplete="off" hidden></form><input class="turn" id="turn" type="checkbox" form="fz" aria-label="Show tomorrow\'s figure" hidden>') && !/<input[^>]*type="checkbox"[^>]*autocomplete/.test(b) && b.includes('<label class="fig-l" for="turn"><svg class="fig"'), "a checkbox and its label, the figure; hidden unless the browser can compute the next day");
-    const W = (s, attr = "") => s.split(" ").map((w) => `<span${attr}>${w}</span>`).join(" ");   // each word an element of its own, plain
-    assert.ok(b.includes(`<p class="say"><span class="t0">${W("Nobody drew today's figure: each ring stands at its number.")} ${W("Press it to see tomorrow's.", " hidden")}</span><span class="t1" hidden>${W(`This is tomorrow's, Day ${(d + 1).toLocaleString("en-US")}: computed, like today's, from the day's number and the text of the Core. Press it again for today's.`)}</span></p>\n</figcaption>\n</figure>`), `${zone}: the line, and the line after a press`);
-    // the sixteen rings' places as numbers: the day's, and the next day's for after a press — the positions the data form gives
-    const N = (day) => FIG.places(day, K).map((p) => `<span>${p}</span>`).join(" "), j = await data(zone);
-    assert.ok(b.includes(`<p class="nums"><span class="t0">${N(d)}</span><span class="t1" hidden>${N(d + 1)}</span></p>`), `${zone}: the day's sixteen numbers, and the next day's`);
+    const d = CZ.todayIn(Date.now(), zone), b = unesc(await page(zone)), top = b.slice(b.indexOf("<main"), b.indexOf('<nav class="doors"'));
+    assert.ok(/<a class="fig-l" href="\/calendar"><svg class="fig"[^>]* role="img" aria-labelledby="fig-t"[^>]*><title id="fig-t">The day's figure: sixteen rings round an empty centre, each carrying one arc\. The CZ calendar\.<\/title>/.test(top), `${zone}: the figure is a link to the calendar, named by its text alternative and where it leads`);
+    assert.ok(!/<(input|label|form|button)\b/.test(top) && !/id="turn"|id="fz"|--today|hidden/.test(top) && !/[Pp]ress (it|again)/.test(top), `${zone}: no control in the first screen's unit, nothing hidden for a second state, no sentence that tells the reader to press`);
+    const W = (s) => s.split(" ").map((w) => `<span>${w}</span>`).join(" ");   // each word an element of its own, plain
+    assert.ok(b.includes(`<p class="say">${W(NOTE)}</p>\n</figcaption>\n</figure>`), `${zone}: the line`);
+    // the sixteen rings' places as numbers, in fours that no line breaks: the positions the data form gives; no other day's
+    const N = (day) => [0, 4, 8, 12].map((k) => FIG.places(day, K).slice(k, k + 4).map((p) => `<span>${p}</span>`).join("&nbsp;")).join(" "), j = await data(zone);
+    assert.ok(b.includes(`<p class="nums">${N(d)}</p>`) && !b.includes(N(d + 1)), `${zone}: the day's sixteen numbers, and not the next day's`);
     assert.deepEqual(FIG.places(d, K).map(Number), j.figure.position, `${zone}: the numbers written with the figure are the data form's positions`);
-    assert.deepEqual(FIG.places(d + 1, K).map(Number), j.figure.start.map((a, i) => (a + (d + 1) * j.figure.step[i]) % j.figure.modulus[i]), `${zone}: the next day's, by the rule the data form gives`);
     assert.ok(FIG.places(d, K).every((p) => /^\d{3}$/.test(p)));
     const t = (await call("/?f=txt", { "x-vercel-ip-timezone": zone })).body, m = (await call("/index.md?f=md", { "x-vercel-ip-timezone": zone })).body;
-    for (const [form, x] of [["text", t], ["Markdown", m]]) assert.ok(x.includes(`\n\n${FIG.places(d, K).join(" ")}\n\nNobody drew today's figure: each ring stands at its number.\n\n`) && !x.includes(FIG.places(d + 1, K).join(" ")), `${zone}, ${form}: the day's sixteen numbers on one line, over the sentence; not the next day's`);
+    for (const [form, x] of [["text", t], ["Markdown", m]]) assert.ok(x.includes(`\n\n${FIG.places(d, K).join(" ")}\n\n${NOTE}\n\n`) && !x.includes(FIG.places(d + 1, K).join(" ")), `${zone}, ${form}: the day's sixteen numbers on one line, over the sentence; not the next day's`);
+    assert.equal(j.figure_note, NOTE, `${zone}: the data form has the same sentence`);
+    // "Tomorrow's will be different": no ring stands still from one day to the next
+    assert.ok(j.figure.step.every((s, i) => s >= 1 && s <= 256 && j.figure.modulus[i] > 256 && s % j.figure.modulus[i] !== 0), `${zone}: every step is between 1 and 256, under its modulus`);
+    assert.ok(FIG.places(d + 1, K).every((p, i) => p !== FIG.places(d, K)[i]), `${zone}: every ring stands elsewhere the next day`);
   }
-  const txt = (await call("/?f=txt")).body, j = await data();
-  assert.ok(txt.includes("Nobody drew today's figure: each ring stands at its number.\n") && !/Press it|tomorrow/.test(txt) && j.figure_note === "Nobody drew today's figure: each ring stands at its number.", "a form that cannot be pressed has the one sentence");
 });
 
 test("the Markdown converter and a caption: a caption of words alone is one paragraph, as before; one that holds paragraphs gives each of them", () => {

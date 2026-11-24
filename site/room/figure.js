@@ -5,7 +5,7 @@
 //   ring i shows the arc from pos(i, day - 1) to pos(i, day), in m[i]-ths of a turn, clockwise from the top.
 // Nothing is hashed at request time and the hash is typed nowhere: the build computes it from the Core's bytes and writes it into
 // api/home-templates.json (figure.core_sha256). A request costs sixteen multiplications and remainders and one string of 1.9 kB;
-// the first page also writes the sixteen positions as numbers, the day's and the next day's.
+// the first page also writes the day's sixteen positions as numbers.
 "use strict";
 const M = [257, 263, 269, 271, 277, 281, 283, 293, 307, 311, 313, 317, 331, 337, 347, 349];
 const mod = (x, m) => ((x % m) + m) % m;   // the remainder with the sign of the divisor, as Python's % and CSS mod()
@@ -16,7 +16,7 @@ function constants(coreSha256) {
   return M.map((m, i) => [h[2 * i], h[2 * i + 1] + 1, m]);   // [a, s, m] for ring i
 }
 const positions = (day, K) => K.map(([a, s, m]) => mod(a + day * s, m));
-const places = (day, K) => positions(day, K).map((p) => String(p).padStart(3, "0"));   // as the first page writes them under the figure: three digits, ring 0 first
+const places = (day, K) => positions(day, K).map((p) => String(p).padStart(3, "0"));   // as the first page writes them with the figure: three digits, ring 0 (the innermost) first
 const radius = (i) => 68 + 8 * i;   // the middle of ring i's unit, in a square of 48 units of 8
 // the sixteen arcs; each carries its three constants, from which a browser with CSS mod() computes the same arc for any day
 const rings = (day, K) => K.map(([a, s, m], i) =>

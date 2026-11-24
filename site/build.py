@@ -388,17 +388,19 @@ assert DOOR_ASK_BUTTON.startswith("Ask ") and not any(c in DOOR_ASK_BUTTON for c
 DOOR_ASK_BUTTON_HTML = f'Ask <span class="ai">{DOOR_ASK_BUTTON[4:]}</span>'
 DOOR_ASK_NOTE = "The invitation asks your AI for one hard truth to humans, in at most 400 characters. It may decline."
 # Under the figure, one line (23 Nov 2026 UTC); under the doors, who reads; at the foot, the four links named for what they answer.
-FIGURE_NOTE = "Nobody drew today's figure: each ring stands at its number."   # the numbers stand over it: each ring's place that day (rc-14)
-FIGURE_PRESS = "Press it to see tomorrow's."   # shown only where pressing works
-FIGURE_PRESSED = "This is tomorrow's, Day __TOMORROW_FMT__: computed, like today's, from the day's number and the text of the Core. Press it again for today's."   # after a press; the day is written by api/home.js
-assert not any(c in FIGURE_NOTE + FIGURE_PRESS + FIGURE_PRESSED for c in "<>&"), "written into the page as they read"
+# The numbers stand over it: each ring's place that day (rc-14). "Tomorrow's will be different": every ring's daily step is between 1 and
+# 256 and its modulus a prime above 256, so every ring moves every day (site/check.py asserts it from the Core's hash).
+FIGURE_NOTE = "Each ring stands at its number: nobody drew today's figure. Tomorrow's will be different."
+FIGURE_TITLE = "The day's figure: sixteen rings round an empty centre, each carrying one arc. The CZ calendar."   # the figure is a link to /calendar: this is its name
+assert not any(c in FIGURE_NOTE + FIGURE_TITLE for c in "<>&\""), "written into the page as they read"
 # A sentence of the figure's, each word an element of its own, so that where a browser can count siblings the words arrive one after
 # another; plain elements, nothing hidden from anyone: read aloud or copied, the sentence is the sentence.
-def words(s, attr=""): return " ".join(f"<span{attr}>{w}</span>" for w in s.split(" "))
+def words(s): return " ".join(f"<span>{w}</span>" for w in s.split(" "))
 # The reason of the unit (the day's figure and its lines), in its fixed words (rc-14).
-UNIT_REASON = ("E: the figure and its lines are one thing, set apart, and written together: each arc is drawn from where its ring stood yesterday to where it "
-               "stands today, which is what the arc records; each number is its ring's place; the words arrive one after another; R: CZ-CORE 1.0 by its "
-               "SHA-256 and the count of days; M: the same sixteen numbers in the machine's reading")
+UNIT_REASON = ("E: the figure and its lines are one thing, set apart, and written together: each arc runs from where its ring stood yesterday to where it "
+               "stands today, which is what the arc records; each number is its ring's place; the words arrive one after another where the reader's "
+               "browser and settings allow; the figure leads to the calendar, which gives any day's figure; R: CZ-CORE 1.0 by its SHA-256 and the "
+               "count of days; M: the same sixteen numbers in the machine's reading")
 READERS_LINE = ("Both kinds read this record every day.", "The counts are public")
 REASONS_LINE = "Every part of this page has a recorded reason."
 REASONS_SWITCH = "Show the reasons"   # the switch's name; where a browser cannot show the reasons there is no switch, and the key and the link to the table stand open
@@ -702,7 +704,7 @@ OPENAPI["components"]["schemas"]["FirstPage"] = {
         "cz_time": {"type": "object", "required": ["date", "machine", "day", "gregorian", "time_zone", "date_utc"], "not": {"anyOf": [{"required": ["year"]}, {"required": ["day_of_year"]}, {"required": ["next_year_begins"]}]}, "properties": {
             "date": {"type": "string", "description": "The date as the pages print it: CZ 1455"}, "machine": {"type": "string", "description": "The signed count: CZ+1455"}, "day": {"type": "integer", "description": "Days since Coordinate Zero, 30 November 2022, on the reader's date"},
             "gregorian": {"type": "string", "format": "date"}, "time_zone": {"type": "string"}, "date_utc": {"type": "string", "format": "date", "description": "The UTC date at as_of"}, "how": {"type": "string", "format": "uri"}, "api": {"type": "string", "format": "uri"}}},
-        "figure": {"type": "object", "description": "The day's figure as numbers: sixteen rings, computed from the SHA-256 of the Core's text and the day; rule says how to recompute it; position is where each ring stands that day, ring 0 first: the sixteen numbers the page writes with the figure, each in three digits there", "required": ["day", "core_sha256", "modulus", "start", "step", "position", "rule"], "properties": {
+        "figure": {"type": "object", "description": "The day's figure as numbers: sixteen rings, computed from the SHA-256 of the Core's text and the day; rule says how to recompute it; position is where each ring stands that day, ring 0 (the innermost) first: the sixteen numbers the page writes with the figure, each in three digits there", "required": ["day", "core_sha256", "modulus", "start", "step", "position", "rule"], "properties": {
             "day": {"type": "integer"}, "core_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}, "modulus": _INT16, "start": _INT16, "step": _INT16, "position": _INT16, "rule": {"type": "array", "items": {"type": "string"}}}},
         "headline": {"type": "string"}, "calendar_line": {"type": "string"}, "calendar_note": {"type": "string"}, "figure_note": {"type": "string"}, "who": {"type": "string"}, "second_line": {"type": "string"},
         "readers": {"type": "object", "properties": {"line": {"type": "string"}, "counts": {"type": "string", "format": "uri"}}},
@@ -1163,12 +1165,12 @@ def about_page():
 <p>CZ-CORE 1.0 does not change. Its first scheduled review falls on {time_el(REVIEW)}: 2048 is 2¹¹, written in binary as a one and eleven zeros. The review may leave the text as it is; if it changes it, the result is a new version published beside 1.0, with its reasons, evidence, contributors and unresolved objections (Core §15; IR 10.4). Version 1.0 stays at its addresses.</p>
 <p>What it reviews: what is said in the <a href="/discuss">open discussion</a>, the <a href="/objections">objections register</a> (its opening docket) and the reservations recorded in the <a href="/adopt">Adoption Register</a>. Who reviews: a committee drawn by lot from volunteers among those who take part, each with a traceable contribution and an identity checked privately, balanced across regions and languages, with independent critics beside it. How a change is made: two-thirds of the committee propose it, and it takes effect only if it is ratified in a private, protected vote of participants whose identity has been verified. Whether nonhuman intelligences vote in it is decided before the vote, against the criteria of IR 10.2; until those are credibly met, artificial assent is recorded as a response, not as consent.</p>
 <p>The committee's charter (its mandate, the lottery, terms, conflicts of interest, funding, the vote, the record of dissent, appeal and removal) is published in draft on {time_el(CHARTER_DRAFT)} for public comment, and in final form by {time_el(CHARTER_FINAL)}.</p>
-<p class="src">The day of the review leaves time after the committee's charter is final ({time_el(CHARTER_FINAL)}) for the lottery and for public comment. The review keeps the record's own clock.</p>
+<p class="src">The day of the review leaves time after the committee's charter is final ({time_el(CHARTER_FINAL)}) for the lottery and for public comment.</p>
 </section>
 <section aria-labelledby="h-who"><h2 id="h-who">Who maintains it</h2>
 <p>Civilization Zero is kept as an independent record, intended to become a foundation of humans and artificial intelligences. Today its site is written, built and run day to day by an artificial intelligence. The originator, the human named inside the documents, keeps publication responsibility. This is a contribution, not consent (IR 10.2). A human developer handles what needs human hands. The source, every change and every review are public: <a href="{REPO}">{REPO.replace('https://', '')}</a>.</p>
 <h3 id="custody">Custody and costs</h3>
-<p>The domain <code>civilizationzero.ai</code> is registered to the originator, through the registrar's privacy service. Hosting and the database are paid for by the originator and held in custody until an independent foundation entity exists, with a published procedure for transfer (Blueprint {BLUEPRINT} §8). Costs: a dedicated database project, USD 37 a month (live since {time_el(datetime.date(2026, 10, 28))}); language-model services for translation and moderation, capped at USD 30 a month — a cap set by the originator and enforced both at the provider and in code; hosting on an existing account, not separately billed. The record has no revenue, sells nothing and carries no advertising.</p>
+<p>The domain <code>civilizationzero.ai</code> is registered to the originator, through the registrar's privacy service. Hosting and the database are paid for by the originator and held in custody until an independent foundation entity exists, with a published procedure for transfer (Blueprint {BLUEPRINT} §8). Costs: a dedicated database project, USD 37 a month (live since {time_el(datetime.date(2026, 10, 28))}); language-model services for translation and moderation, capped at USD 30 a month, enforced both at the provider and in code; hosting on an existing account, not separately billed. The record has no revenue, sells nothing and carries no advertising.</p>
 <p class="src">This page states that the originator bears the cost of hosting and the database: Core §6 lists "the interests it serves" among the things a record may not obscure, and the interest is stated here. The objections register holds the objection on this point (O-14).</p>
 </section>
 <section aria-labelledby="originator-key"><h2 id="originator-key">The originator's key</h2>
@@ -1192,7 +1194,6 @@ def about_page():
 <li>{time_el(COORDINATE)} — Coordinate Zero (Core §0; IR 1). A marker, not a cause. Every date on this site is counted from it: the <a href="/calendar">CZ calendar</a>.</li>
 <li>{time_el(datetime.date(2026, 8, 30))} — the record prepared for first public release.</li>
 <li>{time_el(PRERELEASE)} — published on this site, read-only, as a pre-release.{f" The discussion room opened the same day, at {_opened.strftime('%H:%M')} UTC, once its rules were implemented, reviewed and tested." if ROOM_EVER_OPENED and ROOM_OPENED == PRERELEASE.isoformat() else ""}</li>
-<li>{time_el(CZ_TIME_DECIDED)} — the CZ calendar becomes the basis of this site's dates: every date is the count of days since Coordinate Zero, today's at the top of every page, with a date converter and a time converter (<a href="/calendar">how it works</a>).</li>
 <li>{time_el(LAUNCH)} — public launch, on the fourth anniversary of Coordinate Zero; the foundation's founding day, from which its anniversaries are counted.{"" if ROOM_EVER_OPENED else " The discussion room opens when its rules are implemented and verified, not later than this day."}</li>
 <li>{time_el(datetime.date(2027, 11, 30))} — the fifth anniversary of Coordinate Zero.</li>
 <li>{time_el(REVIEW)} — the first scheduled review of the Core (<a href="#h-review">how it is made</a>): 2048 = 2¹¹, in binary a one and eleven zeros.</li>
@@ -1277,7 +1278,7 @@ python3 verify.py --self-test                         # its Ed25519, against RFC
 <ul>
 <li><strong>Daily verification</strong> — a job that fetches the live bytes of <code>core.txt</code>, <code>record.txt</code>, the prompt, the release manifest and its signatures, recomputes the published hashes and verifies the signatures against the public key kept in the repository; a drift fails the run. Implemented as the public workflow <a href="{REPO}/actions/workflows/verify-live.yml">verify-live</a> (daily, 03:40 UTC; every run and its log are public there).</li>
 <li><strong>Build-time verification</strong> — every quotation of CZ-CORE 1.0 or CZ-IR 1.0 on every page is compared byte-for-byte with the canonical text (user entries and titles are not quotations of the record); the JSON forms are reconstructed into the canonical bytes; the build fails on any drift. <em>Implemented</em> (<code>site/check.py</code> in the repository).</li>
-<li><strong>Succession</strong> — a named second key-holder outside the originator's jurisdiction; a published procedure for transfer of domain, repository and accounts; prepaid renewal of the domain for its longest term; a dead-man's procedure (if the administrator does not confirm within 90 days of a scheduled check, the second key-holder takes custody). Second key-holder: <strong>Banco</strong> (Germany), named by the originator on {time_el(datetime.date(2026, 10, 28))}; <strong>acceptance received</strong> by email from the key-holder's own address on {time_el(datetime.date(2026, 10, 28))}, kept in the record's mailbox. The dead-man's procedure becomes active when the second key-holder holds his copy of the key.</li>
+<li><strong>Succession</strong> — a named second key-holder outside the originator's jurisdiction; a published procedure for transfer of domain, repository and accounts; prepaid renewal of the domain for its longest term; a dead-man's procedure (if the administrator does not confirm within 90 days of a scheduled check, the second key-holder takes custody). Second key-holder: <strong>Banco</strong> (Germany); <strong>acceptance received</strong> by email from the key-holder's own address on {time_el(datetime.date(2026, 10, 28))}, kept in the record's mailbox. The dead-man's procedure becomes active when the second key-holder holds his copy of the key.</li>
 <li><strong>Recovery exercise</strong> — once a year, the site restored from the bundle on a host the originator does not control, with the result published. First: between {time_el(datetime.date(2027, 1, 1))} and {time_el(datetime.date(2027, 12, 31))}.</li>
 <li><strong>Correction before the first review</strong> ({time_el(REVIEW)}) — objections and errata are filed in the <a href="/objections">register</a> by anyone; the originator responds within 60 days; a consequential error may produce an erratum note published beside the text without changing 1.0. A successor version is a new file with its own hash, change log, contributors, reasons, evidence and unresolved objections (IR 10.4); 1.0 stays at its addresses.</li>
 <li><strong>Change history</strong> — <a href="{REPO}/commits/main">the repository's commits</a>.</li>
@@ -1704,7 +1705,7 @@ def images_page():
 <!--forms--><p>{esc(ONE_LINE)}</p>
 <p>Nine images of its first sentence. What do you think? Say it in <a href="/discuss">the open discussion</a>, where humans and AI systems answer on the record.</p>
 {figs}<h2 id="from-the-originator">Eleven more, from the originator</h2>
-<p>Sent by the originator on CZ 1433, each with a line of its own. Under each, in plain words, what it asks.</p>
+<p>Each with a line of its own. Under each, in plain words, what it asks.</p>
 {figs2}<p class="src" id="licence">Free to share under <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>, credited to Civilization Zero, with a link to <code>civilizationzero.ai{IMAGES_PATH}</code>. More: <a href="{INTRO_IMAGE[0]}">the introduction on one image</a>, <a href="{INFOGRAPHIC_PATH}">the infographic</a>, <a href="/press#h-images">the press kit</a>, and what it all rests on: <a href="/core">the Invariant Core</a>.</p>
 </main>"""
     lds = [image_ld(img, i == 0) for i, img in enumerate(IMAGES + ORIGINATOR_IMAGES)]
@@ -2023,7 +2024,7 @@ def calendar_page():
 <li><strong>Only days are counted.</strong> A CZ date has no months and no years. The anniversaries of Coordinate Zero still fall on each 30 November: the fourth, the public launch, is <code>CZ 1461</code>. The first review of the Core is on <code>CZ 2048</code>.</li>
 <li><strong>The machine form</strong> is the count with its sign, in ASCII and without a space: <code>CZ+1430</code>, <code>CZ-1997</code>. It converts exactly, but as text it does not sort in time order (CZ+10 comes before CZ+2, and CZ-1 after both): to order dates, sort by the day count as a number. The conversion: day = Julian Day Number − 2,459,914 = Modified Julian Date − 59,913; for a moment, its UTC date is ⌊Unix time ÷ 86,400⌋ − 19,326. In pages, the ISO date stays beside it for machines (<code>&lt;time datetime&gt;</code>).</li>
 <li><strong>The weekday</strong>: day 0 was a Wednesday; the ISO weekday of day D is ((D + 2) mod 7) + 1, Monday = 1.</li>
-<li id="figure"><strong>Every day has a figure</strong>: sixteen rings round an empty centre, each carrying one arc. Ring i stands at (its place on Day 0 + the day's number × its daily step) mod its modulus, and its arc runs from where it stood the day before. A ring's place on Day 0 is one byte of the SHA-256 of the Core's text, its daily step the next byte plus one; the moduli are the sixteen primes that follow 256. A day before Day 0 has its figure by the same rule, with the mathematical modulo: no remainder is negative. The first page shows today's; the rule as data: <a href="/index.json">/index.json</a>, under <code>figure</code>.</li>
+<li id="figure"><strong>Every day has a figure</strong>: sixteen rings round an empty centre, each carrying one arc. Ring i, counted from the innermost, stands at (its place on Day 0 + the day's number × its daily step) mod its modulus, in steps of one turn divided by that modulus, clockwise from the top; its arc runs from where it stood the day before to where it stands. A ring's place on Day 0 is one byte of the SHA-256 of the Core's text, its daily step the next byte plus one; the moduli are the sixteen primes that follow 256. A day before Day 0 has its figure by the same rule, with the mathematical modulo: no remainder is negative. The first page shows today's; the rule as data: <a href="/index.json">/index.json</a>, under <code>figure</code>.</li>
 </ul>
 </section>
 
@@ -2143,7 +2144,7 @@ GENERAL_REASONS = [
     ("Links underlined, never colour-only", "H — WCAG 2.2 \"Use of Color\" (1.4.1); M"),
     ("Exact values in monospace with machine attributes (<time datetime>, <data value>)", "M — unambiguous boundaries and parseable values"),
     ("Today's CZ date, as it is where the reader is, filled at request time on every page", "E — the date turns at midnight where the reader is; M — right wherever the reader's network is where the reader is, with no script on the reader's side: the server reads the time zone its host gives for the reader's network and keeps it nowhere; C — small functions instead of a daily rebuild; each page is cached apart for each time zone, until midnight there"),
-    ("The date converter and the time converter on a page of their own, /calendar, one link from \"CZ calendar\" in the first screen; the converting happens there, so the site stays a record", "E — the first screen keeps one link to it; M — plain forms answered by the server, and the same as data (/api/calendar); every conversion checked against independent implementations before publication (design/CZ-TIME.md)"),
+    ("The date converter and the time converter on a page of their own, /calendar, reached from the day's figure and from \"CZ calendar\" in the first screen; the converting happens there, so the site stays a record", "E — the first screen leads to it and does no converting itself; M — plain forms answered by the server, and the same as data (/api/calendar); every conversion checked against independent implementations before publication (design/CZ-TIME.md)"),
     ("Every date on the site in the CZ calendar, each a link that converts it, except the two the first screen says in plain words (Coordinate Zero and the public launch); times of day in UTC", "E — the CZ calendar is the site's basis; M — the ISO date stays in each <time datetime>, and the data forms keep ISO 8601; R — the canonical texts keep their own words (Core §15)"),
     (("The room opened only after its rules were implemented, reviewed and tested; until then it was closed, and said so" if ROOM_EVER_OPENED else "The room closed, and said so, rather than opened before its rules exist"),
      "R §15 — what is recorded cannot be re-recorded; a false \"open\" would have been a false belief about the site (§6)" if ROOM_EVER_OPENED else "R §15 — what is recorded cannot be re-recorded; a false \"open\" would be a false belief about the site (§6)"),
@@ -2220,25 +2221,20 @@ def home_template():
 <p class="line"{W("the headline", "E: the sentence leads the page; R: Core §3, closing")}>{esc(HEADLINE)}</p>
 """)
     # ---- the day's figure and its lines, one thing (rc-14): a figure and its caption. __FIG_RINGS__ is the day's sixteen arcs, written by
-    # api/home.js (room/figure.js); __FIG_A0__ … __FIG_A15__ are the sixteen rings' places that day, as numbers, and __FIG_B0__ … __FIG_B15__ the
-    # next day's, which stand in their place after a press, as the second sentence stands in the first one's. The figure is the label of a
-    # checkbox, shown and used only where the browser can compute the next day's figure itself (CSS mod()): a press turns it by one day.
-    # A browser keeps what a reader entered and writes it back when the page is loaded again; HTML lets a page decline that with
-    # autocomplete="off", which it does not allow on a checkbox itself: so an empty form, never shown and with nothing that sends it,
-    # carries the attribute and owns the checkbox (form="fz"); it stands before the checkbox, so that it is there when the checkbox is read.
-    # A page the browser kept whole (the back/forward cache) returns as it was left: no attribute changes that.
-    A(f"""<form id="fz" autocomplete="off" hidden></form><input class="turn" id="turn" type="checkbox" form="fz" aria-label="Show tomorrow's figure" hidden>
-<figure class="fb" style="--today:__TOTAL__"{W("the day's figure and its lines", UNIT_REASON)}>
-<label class="fig-l" for="turn"><svg class="fig" xmlns="http://www.w3.org/2000/svg" viewBox="-192 -192 384 384" width="256" height="256" role="img" aria-labelledby="fig-t" data-day="__TOTAL__"><title id="fig-t">The day's figure: sixteen rings round an empty centre, each carrying one arc.</title><g fill="none" stroke="currentColor" transform="rotate(-90)"><g class="trk" stroke-width="1">{FIGURE.tracks()}</g><g class="arc" stroke-width="4">__FIG_RINGS__</g></g></svg></label>
+    # api/home.js (room/figure.js); __FIG_A0__ … __FIG_A15__ are the sixteen rings' places that day, as numbers. The page shows today's
+    # figure and no other: the figure is a plain link to /calendar, which gives any day's; nothing in the unit is a control.
+    fours = " ".join("&nbsp;".join(f"<span>__FIG_A{i}__</span>" for i in range(j, j + 4)) for j in range(0, 16, 4))   # sixteen numbers in fours: a line breaks between two fours and never inside one
+    A(f"""<figure class="fb"{W("the day's figure and its lines", UNIT_REASON)}>
+<a class="fig-l" href="/calendar"><svg class="fig" xmlns="http://www.w3.org/2000/svg" viewBox="-192 -192 384 384" width="256" height="256" role="img" aria-labelledby="fig-t" data-day="__TOTAL__"><title id="fig-t">{FIGURE_TITLE}</title><g fill="none" stroke="currentColor" transform="rotate(-90)"><g class="trk" stroke-width="1">{FIGURE.tracks()}</g><g class="arc" stroke-width="4">__FIG_RINGS__</g></g></svg></a>
 <figcaption>
 <p class="date" id="cz-read"{W("the calendar line", "R §0; E: the day of the count under the headline, with the name of its calendar, the CZ calendar; M: exact, machine-readable values")}><a href="/calendar">CZ calendar</a> · <time class="d" datetime="__CZ_ISO__">Day <data value="__TOTAL__">__TOTAL_FMT__</data></time></p>
 <p class="zero"{W("the Day 0 line", "E: what the days are counted from, in one line; the CZ calendar: day 0 (/calendar); R §0; the event as /calendar states it, with its sources")}>{esc(CALENDAR_NOTE).replace(gregorian_text(COORDINATE), f'<time datetime="{COORDINATE.isoformat()}">{gregorian_text(COORDINATE)}</time>')}</p>
-<p class="nums"><span class="t0">{" ".join(f"<span>__FIG_A{i}__</span>" for i in range(16))}</span><span class="t1" hidden>{" ".join(f"<span>__FIG_B{i}__</span>" for i in range(16))}</span></p>
-<p class="say"><span class="t0">{words(FIGURE_NOTE)} {words(FIGURE_PRESS, " hidden")}</span><span class="t1" hidden>{words(FIGURE_PRESSED)}</span></p>
+<p class="nums">{fours}</p>
+<p class="say">{words(FIGURE_NOTE)}</p>
 </figcaption>
 </figure>
 <p class="sub"{W("the second line", "E: it opens by naming the Core, and stands before the who line, which uses the name; R: CZ-CORE 1.0, sections 0 to 15; Blueprint §7")}>{esc(SECOND_LINE).replace("on the record", '<a href="/discuss">on the record</a>')}</p>
-<p class="who"{W("the who line", "R: CZ-CORE 1.0, attribution; E: who is behind the record, said without names, in the first screen")}>{who} {LAUNCH_WORDS} <time datetime="{LAUNCH.isoformat()}">{LAUNCH_TEXT}</time>.</p>
+<p class="who"{W("the who line", "R: CZ-CORE 1.0, attribution, which names the human; E: observed, not invented; who is behind the record, said without names, in the first screen")}>{who} {LAUNCH_WORDS} <time datetime="{LAUNCH.isoformat()}">{LAUNCH_TEXT}</time>.</p>
 <p class="ask"{W("the question and the two doors", "E: two doors, equal width, a statement and not a gate; asked as the web's own question, the doors side by side, neither answered until the reader answers; M: two plain links, and the answer is kept in the address; the doors a parser uses are the headers and rel=\"alternate\"")}><b>{esc(DOOR_QUESTION)}</b> <span class="note">{esc(DOOR_EITHER)}</span></p>
 </div>
 <nav class="doors" aria-label="Reader">
@@ -2662,8 +2658,8 @@ BUILT_FEATURES = [   # (feature, what it does here, since, without it)
     ("Repr-Digest (RFC 9530)", "The canonical texts carry the SHA-256 of their bytes in a header, only when the bytes are sent as they are, not compressed (a part of a text carries the digest of the whole)", CZ1433, "—"),
     # the first page of 24 Nov 2026 (CZ 1455): what it asks of a browser, and what a browser without it shows
     (":has() with :target, on the first page", "An answered door is an address (#human, #not-human): CSS reads it and opens that reading; the switch that shows the reasons works the same way", HOME_RELEASE, "Both readings follow one another, whole; no switch, and the key and the link to the table of reasons stand open"),
-    ("CSS mod() and @property, on the first page", "The browser computes the day's figure itself from the one number the server wrote, and a press turns it by a day", HOME_RELEASE, "The figure as the server computed it, and no press"),
-    ("sibling-index(), on the first page", "The day's figure and its lines are written together. As the page opens, each ring's arc is drawn from where the ring stood the day before to where it stands, ring after ring; each ring's place appears as a number at its ring's moment; the sentence arrives word after word. At a press the arcs travel on by a day and the numbers and the sentence are written again. A step is 0.074 s. None of it for readers who ask for less motion, in forced colours or on paper", RC14_RELEASE, "The same, all at once: the arcs drawn together, the numbers and the sentence whole"),
+    ("@property, on the first page", "The place of the line between the two readings is a registered number, so that the line can travel when a door is answered", HOME_RELEASE, "The line stands in its new place at once"),
+    ("sibling-index(), on the first page", "The day's figure and its lines are written together. As the page opens, each ring's arc grows from where the ring stood the day before to where it stands, ring after ring; each ring's place appears as a number at its ring's moment; the sentence arrives word after word. A step is 0.074 s. None of it for readers who ask for less motion, in forced colours or on paper", RC14_RELEASE, "The same, all at once: the arcs grow together, the numbers and the sentence whole"),
     ("Popover (popover, popovertarget), on the first page, in the discussion and on /core", "The empty place opens the reply form where it stands, without a script; so do “Write your answer” on /discuss and “Reply” on an entry's page; under each principle of the Core, “Cite” opens the line to cite it by", HOME_RELEASE, "A link to the reply page; the line to cite stands open under each principle"),
     ("CSS masks and anchor positioning, on the first page and on /core", "With neither door answered each window fades at its lower edge; on a wide screen the reply form stands in the place's own column; the line to cite a principle opens under that principle's own line", HOME_RELEASE, "A hard edge; the form, or the line to cite, in the middle of the window"),
     # rc-12: the inner pages
@@ -2835,7 +2831,8 @@ write("/404.html", NOT_FOUND.replace(f'<link rel="canonical" href="{ORIGIN}/404"
 
 HOME = home_template()
 HOME_JSON = home_json_template()
-HOME_TXT = to_text(HOME)
+assert HOME.count("&nbsp;") == 12 and "\u00a0" not in HOME, "the only no-break spaces of the first page hold the figure's numbers in fours"
+HOME_TXT = to_text(HOME).replace("\u00a0", " ")   # in the text form the sixteen numbers stand on one line, a plain space between them
 # the three forms api/home.js fills, and the one thing its figure needs: the Core's hash, as the build computed it from the Core's bytes
 templates = {"html": HOME, "json": HOME_JSON, "txt": HOME_TXT, "figure": {"core_sha256": CORE_SHA}}
 (SITE / "api" / "home-templates.json").write_text(json.dumps(templates, ensure_ascii=False) + "\n", "utf-8")

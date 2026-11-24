@@ -30,60 +30,52 @@ p,li{text-wrap:pretty}
 .name a{display:inline-flex;align-items:center;gap:var(--e-4);min-block-size:var(--e6)}
 .name svg{flex:none;inline-size:var(--e4);block-size:var(--e4)}
 
-/* 4 INSCRIPTION. E: the statement leads, the largest words of the page, on the axis; then the day, what is here, who is behind it. */
+/* 4 INSCRIPTION. E: the statement leads, the largest words of the page, on the axis; then the day, what is here, who is behind it.
+   C: in a narrow window these blocks stand closer, so that the doors are on the first screen of a short one. */
 .axis{text-align:center}
-.line{margin:0 0 var(--e-2);font-size:var(--e3);line-height:var(--l1);text-wrap:balance}
-.sub{margin:var(--e-2) 0;font-size:var(--e1);text-wrap:balance}
+.line{margin:0 0 var(--e-4);font-size:var(--e3);line-height:var(--l1);text-wrap:balance}
+.sub{margin:var(--e-4) 0;font-size:var(--e1);text-wrap:balance}
 .who{margin:0;text-wrap:balance}
 @media(min-width:38.0546rem){
-.line{font-size:var(--e5)}
-.sub{font-size:var(--e2)}
+.line{margin-block-end:var(--e-2);font-size:var(--e5)}
+.sub{margin-block:var(--e-2);font-size:var(--e2)}
 }
 
 /* 5 FIGURE. E: the figure and its lines, one thing between two hairlines. R: sixteen rings round an empty centre, each carrying the
-   arc it travelled since the day before, computed from the Core's SHA-256 and the day (room/figure.js); with them the day,
-   Day 0 and, in the machine's face, each ring's place as a number (eight to a row: a width counted in characters) and one
-   sentence. E: in a narrow window the figure stands at the side of its readings, as a dial does, and the sentence under both:
-   the unit is lower so, and the doors stand higher on the first screen; from e21 the figure stands over its lines, on the axis.
-   C: the page is written left to right, and a float is the oldest way to stand one thing beside another. M: the attributes are
-   the figure for every browser; with CSS mod() the browser computes it itself from --today, the one number the server wrote, and
-   each ring's three constants; --day is registered as a number so that it can move, and a press (a checkbox, no script) moves it
-   by one day and shows the next day's numbers and sentence. */
+   arc it travelled since the day before, computed from the Core's SHA-256 and the day (room/figure.js); with them the day, Day 0,
+   each ring's place as a number and one sentence, these two in the machine's face. E: the numbers in the figure's colour: they
+   are the figure, as numbers; written in fours, eight to a row where eight fit, otherwise four, sixteen from e21. E: in a narrow
+   window the figure stands at the side of its readings, as a dial does, and the sentence under both: the doors stand higher on
+   the first screen; from e21 the figure stands over its lines, on the axis. C: a float, CSS's oldest way to stand one thing
+   beside another (the page is written left to right); the narrow figure is half as wide (e10 is e14 halved) and its tracks half
+   as heavy. M: the attributes are the figure, for every browser, and each ring carries its three constants (--a where it stood
+   on Day 0, --s its daily step, --m its modulus), as the data form does. E: today's figure and no other; the figure is a link
+   to the calendar, which gives any day's. */
 .fb{margin:0;padding-block:var(--e-8);border-block:var(--e-16) solid var(--mute);text-align:start}
 .fig-l{display:block;float:left;inline-size:var(--e10);margin-right:var(--e-2);border-radius:50%}
 .fig{display:block;inline-size:100%;block-size:auto;color:var(--machine)}
-.trk circle{stroke:var(--rule);stroke-width:var(--e-16);vector-effect:non-scaling-stroke}
+.trk circle{stroke:var(--rule);stroke-width:calc(var(--e-16)/2);vector-effect:non-scaling-stroke}
 .date,.zero,.nums{margin:0 0 0 calc(var(--e10) + var(--e-2))}
 .say{clear:left;margin:0;padding-block-start:var(--e-8)}
 .date{color:var(--mute)}
 .date .d{color:var(--machine);font-weight:700;white-space:nowrap}
 .axis :is(time,data){font-family:inherit;font-size:1em;white-space:nowrap}
 .nums,.say{font-family:var(--exact);font-size:var(--e-2);color:var(--mute)}
-.nums{max-inline-size:32ch;line-height:var(--l1)}
+.nums{max-inline-size:32ch;line-height:var(--l1);color:var(--machine)}
 @media(min-width:38.0546rem){
 .fb{padding-block:var(--e0);text-align:center}
 .fig-l{float:none;inline-size:var(--e14);margin:0 auto var(--e-4)}
+.trk circle{stroke-width:var(--e-16)}
 .date,.zero,.nums{margin:0 auto}
 .say{padding:0}
-.nums,.say{font-size:var(--e-1)}
-.nums{max-inline-size:64ch}
-}
-@property --day{syntax:"<number>";inherits:true;initial-value:0}
-@supports (stroke-dashoffset:calc(mod(1,2))){
-.fig{--day:var(--today)}
-.arc circle{stroke-dashoffset:calc(-1*mod(var(--a) + mod(var(--day) - 1,var(--m))*var(--s),var(--m)))}   /* the inner mod() keeps every product small */
-.turn:checked~.fb .fig{--day:calc(var(--today) + 1)}
-.turn{display:block;position:absolute;inline-size:var(--e-16);block-size:var(--e-16);margin:0;opacity:0}
-.turn:focus-visible~.fb .fig-l{outline:var(--e-12) solid var(--fg);outline-offset:var(--e-12)}
-.fig-l{cursor:pointer}
-.t0 [hidden],.turn:checked~.fb .t1{display:inline}
-.turn:checked~.fb .t0{display:none}
+.nums{max-inline-size:64ch;margin-block:var(--e-8)}
 }
 
 /* 6 DOORS. E: the web's question, with both answers open: two doors of one size, one frame cut in two on the page's axis. M: two
    plain links; the answer is kept in the address (#human, #not-human), so Back undoes it. One registered number, --open, says where the line stands: .5
    with neither answered, 1 for a human, 0 for a reader that is not. Without :has() the two readings follow one another, whole. */
-.ask{margin:var(--e0) 0 var(--e-4)}
+.ask{margin:var(--e-4) 0 var(--e-8)}
+@media(min-width:38.0546rem){.ask{margin-block:var(--e0) var(--e-4)}}
 .ask b{font-size:var(--e1)}
 .doors{display:grid;grid-template-columns:1fr 1fr}
 .door{display:grid;place-items:center;min-block-size:var(--e6);border:var(--e-12) solid var(--fg);font-size:var(--e1);font-weight:700;line-height:var(--l1)}
@@ -246,23 +238,24 @@ footer .src{font-size:1em}
 
 /* 10 MOTION. E: as the page opens the figure and its lines are written, once: each arc from where its ring stood the day before
    to where it stands, ring after ring; each number at its ring's moment; the sentence word after word. Then nothing moves unless
-   the reader moves it: at a press the arcs travel on a day and the numbers and the sentence are written again; a door moves the
-   line between the readings; between pages the site's own fade, and the mark travels to its place. H: none of it for a reader
-   who asks for less motion (2.3.3); the writing only on a screen that keeps its own colours, its steps only where a browser can
-   count siblings. */
+   the reader moves it: a door moves the line between the readings; between pages the site's own fade, and the mark travels to
+   its place. H: none of it for a reader who asks for less motion (2.3.3); the writing only where the page keeps its own colours,
+   its steps only where a browser can count siblings; on paper everything stands written, and nothing is written again after a
+   preview. */
 @media(prefers-reduced-motion:no-preference){
 @view-transition{navigation:auto}
 .name svg{view-transition-name:cz-mark}
 .page{transition:--open .8409s cubic-bezier(.6,0,.2,1)}
 .col{transition:visibility 0s .8409s}
 .page:not(:has(#human:target)) .col.n,.page:not(:has(#not-human:target)) .col.h{transition-delay:0s}
-@media screen and (forced-colors:none){
-.arc circle{transition:--day .5s ease-out;animation:draw .5s ease-out backwards}
-.t0 span,.t1 span{animation:on 0s backwards}
+@media(forced-colors:none){
+.arc circle{animation:draw .5s ease-out backwards}
+.nums span,.say span{animation:on 0s backwards}
 @keyframes draw{from{stroke-dasharray:0 var(--m)}}
 @keyframes on{from{opacity:0}}
 @supports (order:sibling-index()){
-.arc circle,.t0 span,.t1 span{--w:calc((sibling-index() - 1)*.0743s);transition-delay:var(--w);animation-delay:var(--w)}
+.arc circle,.nums span,.say span{animation-delay:calc((sibling-index() - 1)*.0743s)}
 }
+@media print{.arc circle,.nums span,.say span{animation-duration:0s;animation-delay:0s}}
 }
 }

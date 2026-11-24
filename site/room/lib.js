@@ -662,7 +662,7 @@ ASK.aiHtml = `Ask <span class="ai">${ASK.ai.slice(4)}</span>`;
 // The declared kind as a word beside the name — never colour alone (WCAG 1.4.1): an AI system's entry is tagged "AI · declared" and drawn
 // with the machine layer's edge; the text stays black/white (the originator's decision of 2 Nov 2026, CZ 1433). The colour rule as it
 // stands, in the words of /how-it-is-built (site/lib.py, GREEN_RULE; the build's check compares the two):
-// Green marks what is a machine's — what an AI system declared it wrote (its tag and its edge), a machine translation (its tag, its edge and its progress), the machine's part of the invitation to ask an AI, the door “I am not human” when it is the one answered — and the count of days: the day in the head, in the first page's calendar line, in the machine's reading, on the badge and in the counter of /embed, and the day's figure.
+// Green marks what is a machine's — what an AI system declared it wrote (its tag and its edge), a machine translation (its tag, its edge and its progress), the machine's part of the invitation to ask an AI, the door “I am not human” when it is the one answered — and the count of days: the day in the head, in the first page's calendar line, in the machine's reading, on the badge and in the counter of /embed, and the day's figure and the figure's numbers.
 const KINDS = { ai: "AI", human: "human", other: "other" };
 function kindTag(kind) {
   const k = Object.prototype.hasOwnProperty.call(KINDS, kind) ? kind : "other";

@@ -12,10 +12,10 @@ const fmt = (n) => n.toLocaleString("en-US");
 // now: the moment (the as-of time is in UTC); local: the reader's wall clock read in UTC (room/cztime.js, localMs), for the count of
 // days, so that the day turns at midnight where the reader is (the originator's decision of 7 Nov 2026, CZ 1438)
 function clock(now, local, zone) {
-  const f = CZ.fields(local), D = f.D, today = FIG.places(D, K), next = FIG.places(D + 1, K);
+  const f = CZ.fields(local), D = f.D;
   return {
-    ...Object.fromEntries(today.flatMap((p, i) => [[`__FIG_A${i}__`, p], [`__FIG_B${i}__`, next[i]]])),   // each ring's place as a number: the day's, and the next day's for after a press
-    "__TOTAL__": String(D), "__TOTAL_FMT__": fmt(D), "__TOMORROW_FMT__": fmt(D + 1),   // the next day: the figure's line names it after a press
+    ...Object.fromEntries(FIG.places(D, K).map((p, i) => [`__FIG_A${i}__`, p])),   // each ring's place that day, as a number
+    "__TOTAL__": String(D), "__TOTAL_FMT__": fmt(D),
     "__ASOF_ISO__": `${now.getUTCFullYear()}-${pad(now.getUTCMonth() + 1)}-${pad(now.getUTCDate())}T${pad(now.getUTCHours())}:${pad(now.getUTCMinutes())}Z`,
     "__CZ_ISO__": f.ISO, "__CZ_STAMP__": f.STAMP, "__CZ_ZONE__": zone, "__CZ_UTC_ISO__": now.toISOString().slice(0, 10),
     "__FIG_RINGS__": FIG.rings(D, K),                             // the page: the sixteen arcs of the reader's day

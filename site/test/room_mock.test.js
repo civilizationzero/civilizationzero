@@ -407,7 +407,7 @@ srv.listen(0, "127.0.0.1", async () => {
     const fencedInStep = (md) => (/\n {3}```text\n([\s\S]*?)\n {3}```\n/.exec(md.split("3. ### Ask your AI")[1] || "") || ["", "\u0000"])[1].split("\n").map((l) => l.replace(/^ {3}/, "")).join("\n");
     ok(fencedInStep(forms.md) === A40 && forms.md.includes("   A recent answer:\n\n") && forms.md.includes("[\\#40](https://civilizationzero.ai/discuss/40)") && forms.md.includes("## I am human") && forms.md.includes("## I am not human"),
        "home as Markdown: the two readings under their headings, and the example's text fenced, as received, in the third step");
-    const first = [HEADLINE, "CZ calendar · Day ", "Day 0: 30 November 2022, the day ChatGPT was released.", "Nobody drew today's figure: each ring stands at its number.", SECOND, WHO, "Are you human? Either answer opens the record.", "I am human", "I am not human"];
+    const first = [HEADLINE, "CZ calendar · Day ", "Day 0: 30 November 2022, the day ChatGPT was released.", "Each ring stands at its number: nobody drew today's figure. Tomorrow's will be different.", SECOND, WHO, "Are you human? Either answer opens the record.", "I am human", "I am not human"];
     ok(inOrder(plain(forms.html.split("<body>")[1]), first) && inOrder(forms.txt.replace(/\s+/g, " "), first) && inOrder(mdPlain(forms.md), first)
        && [forms.html.split('<nav class="doors"')[0].split("<body>")[1], forms.txt.split("\ncurl ")[0], forms.md.split("```")[0]].every((b) => b.split(HEADLINE).length === 2) && JSON.parse(forms.json).headline === HEADLINE && JSON.parse(forms.json).second_line === SECOND && JSON.parse(forms.json).who === WHO,
        "home: the first screen in the page, its text and its Markdown, in one order — the headline, the calendar line, day 0, the line on the figure, the standfirst, who is behind it, the question, the two doors; the same sentences in the data form");
@@ -444,7 +444,7 @@ srv.listen(0, "127.0.0.1", async () => {
     const respondH = await call(discuss, "/api/discuss?page=respond&kind=human");
     const formOf = (b) => (/<form class="respond"[\s\S]*?<\/form>/.exec(b) || [""])[0];
     ok(respondH.status === 200 && formOf(respondH.body).length > 1500 && formOf(forms.html) === formOf(respondH.body) && formOf(forms.html).includes('<option value="human" selected>') && formOf(forms.html).includes('action="/api/entries"')
-       && forms.html.split("<form").length === 3 && forms.html.split('<form id="fz" autocomplete="off" hidden></form>').length === 2 && /<dialog id="reply" popover aria-labelledby="reply-h"><h2 id="reply-h" tabindex="-1" autofocus>Your answer<\/h2>/.test(forms.html)
+       && forms.html.split("<form").length === 2 && !forms.html.includes('id="fz"') && /<dialog id="reply" popover aria-labelledby="reply-h"><h2 id="reply-h" tabindex="-1" autofocus>Your answer<\/h2>/.test(forms.html)
        && forms.html.includes('<a class="open" href="/respond?kind=human">Write your answer</a><button class="open" type="button" popovertarget="reply" hidden>Write your answer</button>')
        && forms.html.includes('<p><button type="button" popovertarget="reply" popovertargetaction="hide">Close</button></p></dialog>') && !forms.txt.includes("Record this response") && !forms.md.includes("Record this response"),
        "home: the reply sheet holds the form /respond?kind=human serves, byte for byte; the place opens it with the popover API, and is a plain link to that page where there is none");
