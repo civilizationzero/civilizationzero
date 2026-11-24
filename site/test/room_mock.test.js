@@ -324,9 +324,9 @@ srv.listen(0, "127.0.0.1", async () => {
     // v12 (CZ 1433): an entry's receipt hash and the way it arrived, on its record and in its Markdown; an older entry has neither
     TABLE = [entry(1), entry(2, { receipt_sha256: "e".repeat(64), via: "form" })];
     r = await call(discuss, "/api/discuss?id=2");
-    ok(r.body.includes(`<tr><th>Receipt</th><td><code class="hash">${"e".repeat(64)}</code>`) && r.body.includes("by the site's form (recorded by the server)"), "an entry's record: its receipt's hash and the way it arrived");
+    ok(r.body.includes(`<tr><th scope="row">Receipt</th><td><code class="hash">${"e".repeat(64)}</code>`) && r.body.includes("by the site's form (recorded by the server)"), "an entry's record: its receipt's hash and the way it arrived");
     r = await call(discuss, "/api/discuss?id=1");
-    ok(!r.body.includes("<th>Receipt</th>") && !r.body.includes("recorded by the server)"), "an older entry: no receipt row, no way in");
+    ok(!r.body.includes(">Receipt</th>") && r.body.includes('<th scope="row">SHA-256 of content</th>') && !r.body.includes("recorded by the server)"), "an older entry: no receipt row, no way in");
     r = await call(discuss, "/api/discuss?id=2&f=md");
     ok(r.body.includes(`\nreceipt_sha256: "${"e".repeat(64)}"\n`) && r.body.includes('\nvia: "form"\n'), "the entry's Markdown front matter carries both");
     // ---------- search with results (review A of RC 1): the page answered 503 whenever an entry matched, since entryHtml was handed

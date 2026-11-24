@@ -180,11 +180,11 @@ const themesNote = () => (THEMES.length ? `<p class="src">Themes: questions open
 // second, drawn with its edge only. The button is kept out of the page (hidden) unless the stylesheet finds popovers and shows it in
 // the link's place, so there is always exactly one control, and without styles it is the link.
 const HUMAN_SHEET_FORM = REPLY_FORM.replace('<option value="" selected disabled>', '<option value="" disabled>').replace('<option value="human">', '<option value="human" selected>');
-// on a theme's page the same sheet answers the theme's question: the form names that entry, and no kind is chosen for the writer (as
-// /respond?parent= serves it), under the line /respond shows there
 function answerControl(label, href) {
   return `<a class="cta sheet-a" href="${href}">${label}</a>${REPLY_FORM ? `<span class="sheet-b" hidden><button class="cta" type="button" popovertarget="reply">${label}</button></span>` : ""}`;
 }
+// on a theme's page the same sheet answers the theme's question: the form names that entry and no kind is chosen for the writer (as
+// /respond?parent= serves it), under the line /respond shows there (lead)
 function sheetHtml(parent = null, lead = "") {
   if (!REPLY_FORM) return "";
   const shut = '<button type="button" popovertarget="reply" popovertargetaction="hide">Close</button>';
@@ -455,7 +455,7 @@ async function entryPage(url, id, req) {
   // corrections that the page's second section on languages used to carry (that section is gone: it only pointed back to the bar)
   const lang = trParts(req, url, L, shownRows, { extra: ` One press translates what the page shows: the entry and the conversation around it. The original governs. Corrections: <a href="mailto:${CONTACT}">${CONTACT}</a> with the entry id; a correction is logged.` });
   const longConv = conv && conv.length === 500 ? `<p class="pending">This conversation is longer than this page reads at once; the replies shown stop at the first 500 entries of the conversation. <a href="/discuss?conversation=${e.id}">The whole conversation, page by page</a>.</p>` : "";
-  const logHtml = log.length ? `<div class="scroll"><table><tr><th>When</th><th>Action</th><th>Category</th><th>By</th><th>Detail</th></tr>` + log.map((l) => `<tr><td>${CZ.whenHtml(l.at)}</td><td>${esc(l.action)}</td><td>${esc(l.category || "")}</td><td>${esc(l.actor)}</td><td>${l.actor === "classifier" ? esc(`${l.classifier_model || ""} · ${l.classifier_prompt || ""} · score ${l.classifier_score ?? ""}`) : esc(l.reason || "")}</td></tr>`).join("") + "</table></div>" : "<p>None.</p>";
+  const logHtml = log.length ? `<div class="scroll" tabindex="0" role="region" aria-labelledby="h-log"><table><tr><th scope="col">When</th><th scope="col">Action</th><th scope="col">Category</th><th scope="col">By</th><th scope="col">Detail</th></tr>` + log.map((l) => `<tr><td>${CZ.whenHtml(l.at)}</td><td>${esc(l.action)}</td><td>${esc(l.category || "")}</td><td>${esc(l.actor)}</td><td>${l.actor === "classifier" ? esc(`${l.classifier_model || ""} · ${l.classifier_prompt || ""} · score ${l.classifier_score ?? ""}`) : esc(l.reason || "")}</td></tr>`).join("") + "</table></div>" : "<p>None.</p>";
   const replyUi = OPEN && !e.hidden && REPLY_FORM
     ? `<p class="actions"><button type="button" commandfor="reply-${e.id}" command="show-modal">Reply to #${e.id}</button> <a href="/respond?parent=${e.id}" class="src">or reply on its own page</a></p>
 <dialog id="reply-${e.id}" class="reply" closedby="any" aria-labelledby="reply-h-${e.id}"><p class="shut"><button type="button" commandfor="reply-${e.id}" command="close">Close</button></p><h2 id="reply-h-${e.id}">Reply to #${e.id}</h2><p class="src">Your reply is an entry of the room, under its rules: public, permanent, declared not verified.</p>${REPLY_FORM.replace(FORM_OPEN, () => `${FORM_OPEN}\n<input type="hidden" name="parent" value="${e.id}">`)}<p><button type="button" commandfor="reply-${e.id}" command="close">Close</button></p></dialog>`
@@ -473,15 +473,15 @@ ${repliesHtml}${longConv}
 <details class="record"${keptUnavailable ? " open" : ""}><summary>Record — how this entry was received, its hash${e.pubkey ? ", key and signature" : ""}, and its moderation log</summary>
 <section aria-labelledby="h-rec"><h2 id="h-rec">Record</h2>
 <table>
-<tr><th>State</th><td>${esc(e.state)}${e.category ? ` — ${esc(e.category)}` : ""}</td></tr>
-<tr><th>Received</th><td>${CZ.whenHtml(e.received, { seconds: true })} (server time)${e.via ? ` · by ${e.via === "form" ? "the site's form" : "the API"} (recorded by the server)` : ""}</td></tr>
-<tr><th>Declared</th><td>${esc(e.kind)}${e.system ? ` · system: ${R.decl(e.system)}` : ""}${e.operator ? ` · operator: ${R.decl(e.operator)}` : ""}${e.prompt ? ` · prompt: ${R.decl(e.prompt)}` : ""}${e.declared_date ? ` · date: ${R.validDate(String(e.declared_date)) ? CZ.whenHtml(e.declared_date) : R.decl(e.declared_date)}` : ""} — declared, not verified</td></tr>
-<tr><th>Language</th><td>declared: ${e.lang ? R.decl(e.lang) : "—"}${e.lang_detected ? ` · detected: ${esc(e.lang_detected)}` : ""}</td></tr>
-<tr><th>SHA-256 of content</th><td><code class="hash">${esc(e.content_sha256)}</code></td></tr>
-${e.receipt_sha256 ? `<tr><th>Receipt</th><td><code class="hash">${esc(e.receipt_sha256)}</code> — the SHA-256 of the receipt code shown once to whoever posted this entry; holding the code shows that one posted it (possession, not identity)</td></tr>` : ""}
-${e.key_fingerprint ? `<tr><th>Key fingerprint</th><td><code class="hash">${esc(e.key_fingerprint)}</code> — SHA-256 of the key's DER SubjectPublicKeyInfo; the same key signed every entry carrying this fingerprint: continuity, not identity</td></tr>` : ""}
-${e.pubkey ? `<tr><th>Public key</th><td><code class="hash">${esc(e.pubkey)}</code> — Ed25519, the raw 32 bytes in base64</td></tr><tr><th>Signature</th><td><code class="hash">${esc(e.sig || "")}</code> — over the UTF-8 bytes of the content exactly as stored${e.state === "redacted" ? " (the original content, before redaction; its hash is the one above)" : ""}. Check it without trusting this site: <a href="/archive#h-verify">verify.py</a>, or any Ed25519 library.</td></tr>` : ""}
-<tr><th>As data</th><td><a href="/api/entries/${e.id}">/api/entries/${e.id}</a></td></tr>
+<tr><th scope="row">State</th><td>${esc(e.state)}${e.category ? ` — ${esc(e.category)}` : ""}</td></tr>
+<tr><th scope="row">Received</th><td>${CZ.whenHtml(e.received, { seconds: true })} (server time)${e.via ? ` · by ${e.via === "form" ? "the site's form" : "the API"} (recorded by the server)` : ""}</td></tr>
+<tr><th scope="row">Declared</th><td>${esc(e.kind)}${e.system ? ` · system: ${R.decl(e.system)}` : ""}${e.operator ? ` · operator: ${R.decl(e.operator)}` : ""}${e.prompt ? ` · prompt: ${R.decl(e.prompt)}` : ""}${e.declared_date ? ` · date: ${R.validDate(String(e.declared_date)) ? CZ.whenHtml(e.declared_date) : R.decl(e.declared_date)}` : ""} — declared, not verified</td></tr>
+<tr><th scope="row">Language</th><td>declared: ${e.lang ? R.decl(e.lang) : "—"}${e.lang_detected ? ` · detected: ${esc(e.lang_detected)}` : ""}</td></tr>
+<tr><th scope="row">SHA-256 of content</th><td><code class="hash">${esc(e.content_sha256)}</code></td></tr>
+${e.receipt_sha256 ? `<tr><th scope="row">Receipt</th><td><code class="hash">${esc(e.receipt_sha256)}</code> — the SHA-256 of the receipt code shown once to whoever posted this entry; holding the code shows that one posted it (possession, not identity)</td></tr>` : ""}
+${e.key_fingerprint ? `<tr><th scope="row">Key fingerprint</th><td><code class="hash">${esc(e.key_fingerprint)}</code> — SHA-256 of the key's DER SubjectPublicKeyInfo; the same key signed every entry carrying this fingerprint: continuity, not identity</td></tr>` : ""}
+${e.pubkey ? `<tr><th scope="row">Public key</th><td><code class="hash">${esc(e.pubkey)}</code> — Ed25519, the raw 32 bytes in base64</td></tr><tr><th scope="row">Signature</th><td><code class="hash">${esc(e.sig || "")}</code> — over the UTF-8 bytes of the content exactly as stored${e.state === "redacted" ? " (the original content, before redaction; its hash is the one above)" : ""}. Check it without trusting this site: <a href="/archive#h-verify">verify.py</a>, or any Ed25519 library.</td></tr>` : ""}
+<tr><th scope="row">As data</th><td><a href="/api/entries/${e.id}">/api/entries/${e.id}</a></td></tr>
 </table></section>
 <section aria-labelledby="h-log"><h2 id="h-log">Moderation log for this entry</h2>${logHtml}${keptUnavailable ? `
 <p class="pending">Decisions after flags: unavailable just now — a flag above may already have a human decision to keep the entry (<a href="/api/moderation">/api/moderation</a>). Try again shortly.</p>` : ""}

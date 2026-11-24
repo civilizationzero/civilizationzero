@@ -10,7 +10,8 @@ const CZ = require("../room/cztime.js");
 const { esc, rpc, json, html, shell } = R;
 
 const n = (x) => Number(x || 0).toLocaleString("en-US");
-const table = (head, rows) => rows.length ? `<div class="scroll"><table><thead><tr>${head.map((h, i) => `<th scope="col"${i ? ' class="num"' : ""}>${h}</th>`).join("")}</tr></thead><tbody>${rows.join("")}</tbody></table></div>` : "<p>None yet.</p>";
+// a table that may scroll sideways on a phone: a region the keyboard can reach, named by the heading above it (site audit, finding 29)
+const table = (by, head, rows) => rows.length ? `<div class="scroll" tabindex="0" role="region" aria-labelledby="${by}"><table><thead><tr>${head.map((h, i) => `<th scope="col"${i ? ' class="num"' : ""}>${h}</th>`).join("")}</tr></thead><tbody>${rows.join("")}</tbody></table></div>` : "<p>None yet.</p>";
 // The AI companies' agents by purpose (middleware.js, BOTS, names the companies' own pages for each token). The day the middleware began
 // to count them apart is the database's: the first day a key of the new kind was counted (cz_visit_stats, agents_by_purpose_since,
 // v15), so that it is right whatever day the change is deployed (review 1-2 A). The company keys of before stay in the table for 30
@@ -71,25 +72,25 @@ module.exports = async (req, res) => {
 ${until ? `<p id="visitors">Until ${CZ.whenHtml(until)} the server also counted distinct visitors: for the current day only it kept a hash of each address and browser under a salt made for that day, and at the end of the day it kept the number and deleted the hashes and the salt. On ${CZ.whenHtml(untilDay)} the originator stopped it. A count of people needs something about each person, even for one day; a count of pages needs nothing. Since then no address and no description of a browser is kept or counted. The numbers counted until then stay below, in the column of visitors${(days.find((d) => d.day === untilDay) || {}).visitors != null ? "; the last day's is partial" : ""}.</p>` : ""}
 <h2 id="h-days">The last 30 days</h2>
 <p class="src">${n(tot.v)} page views by browsers; ${n(tot.a)} automated requests.${until ? " Visitors: counted until the count stopped, once per day (the same person on two days was two); — since." : " A visitor is counted once per day: the same person on two days is two."}</p>
-${table(["Day", "Page views", "Visitors", "Automated"], days.map((d) => `<tr><td>${CZ.whenHtml(d.day)}${d.day === today ? " (this UTC day, still counting)" : ""}</td><td class="num">${n(d.views)}</td><td class="num">${visitorsCell(d)}</td><td class="num">${n(d.automated)}</td></tr>`))}
+${table("h-days", ["Day", "Page views", "Visitors", "Automated"], days.map((d) => `<tr><td>${CZ.whenHtml(d.day)}${d.day === today ? " (this UTC day, still counting)" : ""}</td><td class="num">${n(d.views)}</td><td class="num">${visitorsCell(d)}</td><td class="num">${n(d.automated)}</td></tr>`))}
 <h2 id="h-pages">Pages</h2>
 <p class="src">Since CZ 1447 only this site's own addresses are counted by name, and anything else asked for is counted as (other); rows from before that day may still show other addresses until they leave the 30 days.</p>
-${table(["Page", "Views"], (s.pages || []).map((p) => `<tr><td>${/^\/(?!\/)/.test(p.key) ? `<a href="${esc(p.key)}">${esc(p.key)}</a>` : esc(p.key)}</td><td class="num">${n(p.n)}</td></tr>`))}
+${table("h-pages", ["Page", "Views"], (s.pages || []).map((p) => `<tr><td>${/^\/(?!\/)/.test(p.key) ? `<a href="${esc(p.key)}">${esc(p.key)}</a>` : esc(p.key)}</td><td class="num">${n(p.n)}</td></tr>`))}
 <h2 id="h-refs">Where readers came from</h2>
 <p class="src">The domain of the page a reader followed a link from, when the browser said so. Most visits say nothing (typed, bookmarked, or from an app).</p>
-${table(["Site", "Visits"], (s.refs || []).map((r) => `<tr><td>${esc(r.key)}</td><td class="num">${n(r.n)}</td></tr>`))}
+${table("h-refs", ["Site", "Visits"], (s.refs || []).map((r) => `<tr><td>${esc(r.key)}</td><td class="num">${n(r.n)}</td></tr>`))}
 <h2 id="h-countries">Countries</h2>
-${table(["Country", "Page views"], (s.countries || []).map((c) => `<tr><td>${esc(c.key)}</td><td class="num">${n(c.n)}</td></tr>`))}
+${table("h-countries", ["Country", "Page views"], (s.countries || []).map((c) => `<tr><td>${esc(c.key)}</td><td class="num">${n(c.n)}</td></tr>`))}
 <h2 id="h-automated">Automated clients</h2>
 <p class="src" id="by-purpose">${since ? `Since ${CZ.whenHtml(since)} the agents` : "The agents"} of the AI companies that publish one name per purpose are ${since ? "" : "now "}counted apart, by company and purpose: training, search, a page fetched because a person asked, a browser an AI drives for a person (Claude-Agent in its user agent, ChatGPT agent by the signature it sends), link previews, AI-assisted answers, other agents. ${since ? "Until that day " : "Before, "}each company's were counted together, except Claude-Agent and ChatGPT agent, counted as page views by browsers; Amazonbot and Amzn-SearchBot, counted as other crawlers; and Amzn-User and Mistral's agents, counted as scripts. Each is named by the user agent it sends, which any client can imitate.</p>
 <p class="src">${since ? "The same day" : "At the same time"} link previews that name other companies' crawlers (iMessage's, until then counted as Meta's, and Telegram's, as X's) began to be counted as link previews, and browsers inside apps on iPhone and iPad (Facebook's, Instagram's, LinkedIn's), until then counted as scripts, as browsers.</p>
-${table(["Kind", "Requests"], (s.automated || []).map((b) => `<tr><td>${esc(botName(b.key, since))}</td><td class="num">${n(b.n)}</td></tr>`))}
+${table("h-automated", ["Kind", "Requests"], (s.automated || []).map((b) => `<tr><td>${esc(botName(b.key, since))}</td><td class="num">${n(b.n)}</td></tr>`))}
 <h2 id="h-entrances">How machines come in</h2>
 <p class="src">Requests for a page as Markdown (<code>.md</code>), for <a href="/llms.txt">/llms.txt</a> and for the canonical texts (<a href="/core.txt">/core.txt</a>, <a href="/record.txt">/record.txt</a>), by address and kind of client, in the last 30 days — every entry's Markdown counted as one address. ${s.entrances_since ? `Counted since ${CZ.whenHtml(s.entrances_since)}; n` : "N"}othing else about the client is kept. Only these addresses are in this table: a page asked for at its own address with <code>Accept: text/markdown</code> is not.</p>
-${table(["Address", "Client", "Requests"], (s.entrances || []).map((e) => `<tr><td class="nw"><code>${esc(e.path)}</code></td><td>${esc(kindName(e.agent))}</td><td class="num">${n(e.n)}</td></tr>`))}
+${table("h-entrances", ["Address", "Client", "Requests"], (s.entrances || []).map((e) => `<tr><td><code>${esc(e.path)}</code></td><td>${esc(kindName(e.agent))}</td><td class="num">${n(e.n)}</td></tr>`))}
 ${OFFERED.length || askOpen.length ? `<h2 id="h-ask-open">Opened from /ask in an assistant</h2>
 <p class="src">Presses on the links of <a href="/ask">/ask</a> that open another company's assistant with the short invitation filled in, in the last 30 days, by link${typeof s.ask_open_since === "string" ? `, counted since ${CZ.whenHtml(s.ask_open_since)}` : ""}. Only the link pressed is counted, and only when a browser opens it itself, as its user agent says (which any client can imitate): nothing about who pressed it.</p>
-${table(["Link", "Presses"], askOpen.map((a) => `<tr><td>${esc(own(OPEN_NAMES, a.key) ? OPEN_NAMES[a.key] : String(a.key))}</td><td class="num">${n(a.n)}</td></tr>`))}` : ""}
+${table("h-ask-open", ["Link", "Presses"], askOpen.map((a) => `<tr><td>${esc(own(OPEN_NAMES, a.key) ? OPEN_NAMES[a.key] : String(a.key))}</td><td class="num">${n(a.n)}</td></tr>`))}` : ""}
 </main>`;
   return html(res, 200, shell({ title: "Visits · Civilization Zero", body, path: "/stats", description: "How much Civilization Zero is read: page views per day and how machines come in, counted by the server without cookies or identifiers, and published." }), cache);
 };
