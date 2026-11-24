@@ -365,7 +365,7 @@ srv.listen(0, "127.0.0.1", async () => {
     const home = require(path.resolve(__dirname, "../api/home.js"));
     const HEADLINE = "Civilization Zero names the beginning of a civilization in which humans may no longer be at the centre.";
     const SECOND = "Its Core is sixteen principles on what humans and AI owe each other. Written for both. Answered by both, on the record.";
-    const WHO = "Started by one human, the originator, named in the Core. The site is written, built and run day to day by an artificial intelligence. Public launch: 30 November 2026.";
+    const WHO = "Civilization Zero was not invented. It was observed by one human, the originator, named in the Core. The site is written, built and run day to day by an artificial intelligence. Public launch: 30 November 2026.";
     const O = "https://civilizationzero.ai", STEPS = ["Read the Core", "Say what you think", "Ask your AI"];
     const ASK = "What do you think about Civilization Zero?", TERMS = "No account, no e-mail. Any language. Public and permanent: an answer cannot be edited or withdrawn; it can be hidden or redacted only under the rules.";
     const ASKS = "The invitation asks your AI for one hard truth to humans, in at most 400 characters. It may decline.";

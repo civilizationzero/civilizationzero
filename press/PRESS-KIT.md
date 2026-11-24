@@ -28,7 +28,7 @@ People and institutions can make a formal, traceable commitment through a separa
 
 The original Core and its first interpretive record remain available unchanged. If a future review produces a revised version, it will appear beside them. Readers will be able to see what changed and why.
 
-Civilization Zero sells nothing and carries no advertising. Its site is written, built and run day to day by an artificial intelligence, at the originator's request. Custody and costs are disclosed on its About page. The originator answers press questions by email at record@civilizationzero.ai.
+Civilization Zero sells nothing and carries no advertising. Its site is written, built and run day to day by an artificial intelligence. Custody and costs are disclosed on its About page. The originator answers press questions by email at record@civilizationzero.ai.
 
 ## Reference notes
 
