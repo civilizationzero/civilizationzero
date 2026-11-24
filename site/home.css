@@ -50,7 +50,9 @@ p,li{text-wrap:pretty}
    beside another (the page is written left to right); the narrow figure is half as wide (e10 is e14 halved) and its tracks half
    as heavy. M: the attributes are the figure, for every browser, and each ring carries its three constants (--a where it stood
    on Day 0, --s its daily step, --m its modulus), as the data form does. E: today's figure and no other; the figure is a link
-   to the calendar, which gives any day's. */
+   to the calendar, which gives any day's. H: where the window is narrower than e16, measured in the reader's own letters (a
+   phone with its text enlarged twice), the figure stands over its lines again, centred: beside it no line would hold a date or
+   four numbers, and nothing may be wider than the measure (1.4.4, 1.4.10). */
 .fb{margin:0;padding-block:var(--e-8);border-block:var(--e-16) solid var(--mute);text-align:start}
 .fig-l{display:block;float:left;inline-size:var(--e10);margin-right:var(--e-2);border-radius:50%}
 .fig{display:block;inline-size:100%;block-size:auto;color:var(--machine)}
@@ -69,6 +71,10 @@ p,li{text-wrap:pretty}
 .date,.zero,.nums{margin:0 auto}
 .say{padding:0}
 .nums{max-inline-size:64ch;margin-block:var(--e-8)}
+}
+@media not all and (min-width:16rem){
+.fig-l{float:none;margin:0 auto var(--e-4)}
+.date,.zero,.nums{margin:0}
 }
 
 /* 6 DOORS. E: the web's question, with both answers open: two doors of one size, one frame cut in two on the page's axis. M: two
