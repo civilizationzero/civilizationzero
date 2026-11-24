@@ -1,93 +1,95 @@
 {
  "what": "The daily check of the live site by site/verify/live-check.mjs: what the site sends and how it answers, against what its pages say. The record's own checks are verify.py's.",
- "checked_at": "2026-11-23T13:37:35Z",
+ "checked_at": "2026-11-24T14:14:30Z",
  "site": "https://civilizationzero.ai",
- "commit": "e1012562bc38d066e5c02d040c154c03ba046f1d",
- "passed": 48,
+ "commit": "11ae3b11c90b6bd7255839a62524b0d9a2737040",
+ "passed": 47,
  "total": 48,
- "failed": [],
- "run": "https://github.com/civilizationzero/civilizationzero/actions/runs/45185706792",
+ "failed": [
+  "the forms say an entry cannot be recalled (/respond, the reply dialog), where the room takes entries"
+ ],
+ "run": "https://github.com/civilizationzero/civilizationzero/actions/runs/45411831108",
  "script": "site/verify/live-check.mjs",
  "checks": [
   {
    "name": "/: HTML with its policy, no cookie, its weight, its Markdown linked",
    "ok": true,
-   "detail": "45345 bytes"
+   "detail": "60613 bytes"
   },
   {
    "name": "/core: HTML with its policy, no cookie, its weight, its Markdown linked",
    "ok": true,
-   "detail": "52866 bytes"
+   "detail": "69363 bytes"
   },
   {
    "name": "/record: HTML with its policy, no cookie, its weight, its Markdown linked",
    "ok": true,
-   "detail": "72679 bytes"
+   "detail": "82892 bytes"
   },
   {
    "name": "/about: HTML with its policy, no cookie, its weight, its Markdown linked",
    "ok": true,
-   "detail": "39659 bytes"
+   "detail": "52770 bytes"
   },
   {
    "name": "/machine: HTML with its policy, no cookie, its weight, its Markdown linked",
    "ok": true,
-   "detail": "37610 bytes"
+   "detail": "46621 bytes"
   },
   {
    "name": "/ask: HTML with its policy, no cookie, its weight, its Markdown linked",
    "ok": true,
-   "detail": "49358 bytes"
+   "detail": "57701 bytes"
   },
   {
    "name": "/embed: HTML with its policy, no cookie, its weight, its Markdown linked",
    "ok": true,
-   "detail": "34519 bytes"
+   "detail": "43056 bytes"
   },
   {
    "name": "/archive: HTML with its policy, no cookie, its weight, its Markdown linked",
    "ok": true,
-   "detail": "42471 bytes"
+   "detail": "51454 bytes"
   },
   {
    "name": "/calendar: HTML with its policy, no cookie, its weight, its Markdown linked",
    "ok": true,
-   "detail": "39824 bytes"
+   "detail": "49601 bytes"
   },
   {
    "name": "/objections: HTML with its policy, no cookie, its weight, its Markdown linked",
    "ok": true,
-   "detail": "41434 bytes"
+   "detail": "50767 bytes"
   },
   {
    "name": "/press: HTML with its policy, no cookie, its weight, its Markdown linked",
    "ok": true,
-   "detail": "35686 bytes"
+   "detail": "43913 bytes"
   },
   {
    "name": "/how-it-is-built: HTML with its policy, no cookie, its weight, its Markdown linked",
    "ok": true,
-   "detail": "56307 bytes"
+   "detail": "64477 bytes"
   },
   {
    "name": "/discuss: HTML with its policy, no cookie, its weight, its Markdown linked",
    "ok": true,
-   "detail": "61998 bytes"
+   "detail": "74442 bytes"
   },
   {
    "name": "/stats: HTML with its policy, no cookie, its weight, its Markdown linked",
    "ok": true,
-   "detail": "47228 bytes"
+   "detail": "57715 bytes"
   },
   {
    "name": "/respond: HTML with its policy, no cookie, its weight, its Markdown linked",
    "ok": true,
-   "detail": "27642 bytes"
+   "detail": "27565 bytes"
   },
   {
    "name": "/adopt: HTML with its policy, no cookie, its weight, its Markdown linked",
    "ok": true,
-   "detail": "33842 bytes"
+   "detail": "44572 bytes"
   },
   {
    "name": "security headers on every page (HSTS, nosniff, frame, referrer)",
@@ -97,7 +99,7 @@
   {
    "name": "the date at the top of the pages is today's, in the time zone of this network",
    "ok": true,
-   "detail": "America/New_York: today is CZ 1454; /index.json 1454, / 1454, /core 1454, /about 1454, /press 1454, /discuss 1454"
+   "detail": "America/Chicago: today is CZ 1455; /index.json 1455, / 1455, /core 1455, /about 1455, /press 1455, /discuss 1455"
   },
   {
    "name": "/core.txt: the canonical bytes, with a Repr-Digest that matches them",
@@ -222,7 +224,7 @@
   {
    "name": "GET of a translation only reads (never asks the engine)",
    "ok": true,
-   "detail": "qkt"
+   "detail": "qht"
   },
   {
    "name": "a translation asked for from another site's page is refused",
@@ -231,7 +233,7 @@
   },
   {
    "name": "the forms say an entry cannot be recalled (/respond, the reply dialog), where the room takes entries",
-   "ok": true,
+   "ok": false,
    "detail": ""
   },
   {
@@ -247,7 +249,7 @@
   {
    "name": "/how-it-is-built names the commit it was deployed from",
    "ok": true,
-   "detail": "e1012562bc38d066e5c02d040c154c03ba046f1d"
+   "detail": "11ae3b11c90b6bd7255839a62524b0d9a2737040"
   }
  ]
 }
