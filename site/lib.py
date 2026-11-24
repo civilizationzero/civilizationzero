@@ -549,9 +549,6 @@ p.actions{display:flex;flex-wrap:wrap;align-items:center;gap:var(--e-4) var(--e0
 p.actions a{display:inline-block;padding-block:var(--e-8)}
 details.record{margin-block-start:var(--e5);padding-block-start:var(--e-4);border-block-start:var(--e-16) solid var(--rule)}
 details.record>summary{font-weight:700}
-dialog.reply{box-sizing:border-box;inline-size:min(var(--e21),100% - 2*var(--e0));max-block-size:calc(100% - 2*var(--e0));padding:var(--e0);border:var(--e-12) solid var(--fg);color:var(--fg);background:var(--bg)}
-dialog.reply::backdrop{background:rgb(0 0 0/.5)}
-dialog.reply h2{margin-block-start:0}
 /* reading in another language: the original is the record; a translation is marked as the machine's */
 .mt{margin-block:var(--e-8);padding-inline-start:var(--e-2);border-inline-start:var(--e-12) dashed var(--machine)}
 .mt-label{margin-block:var(--e-8)}
@@ -607,7 +604,7 @@ a.home svg{view-transition-name:cz-mark}
 """.replace("__TOKENS__", TOKENS)
 
 # The room's block (rc-12): what only the pages a function writes
-# can need — the form that records, the reply sheet, who speaks in an entry, a row's way in, the rules' fold, the register's form. It
+# can need — the register's form, who speaks in an entry, a row's way in, the rules' fold. It
 # stands after the shared sheet in the shells of the room and of the register (api/discuss-templates.json, api/register-templates.json:
 # /discuss and its entries and themes, /respond, /stats, /adopt) and in no page the build writes as a file, so a static page does not
 # carry it. The same tokens and the same discipline as the sheet it follows (site/check.py holds it to them); its one moving thing, an
@@ -619,17 +616,12 @@ button.cta.o{background:var(--bg);color:var(--fg)}
 form.respond [type=submit]:is(:hover,:focus-visible){background:var(--bg);color:var(--fg)}
 button.cta.o:is(:hover,:focus-visible){background:var(--fg);color:var(--bg)}
 form.respond :is(:user-invalid,[aria-invalid=true]){border-color:var(--fg);border-inline-start-width:var(--e-4)}
-p.refused,p.receipt{padding:var(--e-4) var(--e-2);border:var(--e-12) solid var(--fg)}
-p.receipt code{font-size:1em;font-weight:700}
-dialog.reply .shut{float:inline-end;margin:0 0 var(--e-4) var(--e-4)}
-/* in the form the sentence that matters is the one in reading size; the notice of CZ 1433 under it stays small */
-form.respond .permanence{color:var(--mute);font-size:.8409em}
 /* who speaks, in one line shared by every view of an entry; under it one small line, its exact values not shrunk twice */
 p.by{margin-block:var(--e-8) 0}.sys{color:var(--mute);font-size:.8409em}.by+.meta{margin-block:0 var(--e-4)}.meta time,.meta code,.meta .exact,form.respond .src code{font-size:1em}
 /* a row's way in: taller than 24 pixels (2.5.8), a thumb's height on a touch screen */
 p.way{margin-block:var(--e-8) var(--e-4)}p.way a{display:inline-block;padding-block:var(--e-8)}@media(pointer:coarse){p.way a{padding-block:var(--e-2)}}
-/* the room's question: the reply sheet where the browser has popovers, else the link to the form's page */
-#h-ask{margin-block-start:var(--e0)}.sheet-b{display:none}@supports selector(dialog:popover-open){a.sheet-a{display:none}.sheet-b{display:contents}}
+/* the room's question: one filled control, a plain link to the page where the answer is written */
+#h-ask{margin-block-start:var(--e0)}
 nav.room-themes{margin-block:var(--e0);line-height:1.6818}nav.room-themes ul{display:inline;margin:0;padding:0}nav.room-themes li{display:inline-block;margin:0;padding:0}nav.room-themes li:not(:last-child)::after{content:"·";margin-inline:var(--e-8)}
 /* the rules, folded (whole at /discuss/rules); a link to #rules lands on the fold's line, marked as the head marks the page one is on */
 details.rules{margin-block-start:var(--e6);padding-block-start:var(--e-4);border-block-start:var(--e-16) solid var(--rule)}.rules>summary{font-weight:700}.rules:target>summary{text-decoration-line:underline;text-decoration-thickness:var(--e-8)}

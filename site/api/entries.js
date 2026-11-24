@@ -15,12 +15,13 @@ function formError(res, status, title, detail, headers = {}) {
   return html(res, status, shell({ title: `${title} · Civilization Zero`, body, path: "/respond", description: title }), { "Cache-Control": "no-store", ...headers });
 }
 
-// ---- a form that is not accepted is answered with the form itself (rc-12, 24 Nov 2026; site audit, finding 17): what was sent is
-// written back into it (room/lib.js, formWith), with one plain sentence at the top that says what to correct, repeated at its field.
-// Nothing about the checks changes: they are validate's, the reserved names' and the database's, and what they refuse is refused with
-// the same status and the same headers as before; a program gets the same JSON as before. The sentence only says in plain words what
-// the check's own answer says, with the length that was received. Nothing of a refused form is kept (the room's rules): the page is
-// answered once, to whoever sent it, and never cached. A request from another site's page is refused before this, and gets nothing back.
+// ---- a form that is not accepted comes back as the answer page itself (rc-12, 24 Nov 2026, site audit, finding 17; rc-15: the page is
+// the answer page, room/lib.js, answerPage): the text kept in its place, one plain sentence above the place that says what to correct,
+// and the fields of the last step open under the place, the one to correct marked, with the sentence repeated at it. Nothing about the
+// checks changes: they are validate's, the reserved names' and the database's, and what they refuse is refused with the same status
+// and the same headers as before; a program gets the same JSON as before. The sentence only says in plain words what the check's own
+// answer says, with the length that was received. Nothing of a refused form is kept (the room's rules): the page is answered once, to
+// whoever sent it, and never cached. A request from another site's page is refused before this, and gets nothing back.
 const fmt = (n) => Number(n).toLocaleString("en-US");
 const chars = (n) => `${fmt(n)} ${n === 1 ? "character" : "characters"}`;
 const WORD = { author: "Your name", content: "Your text", system: "The system", operator: "The operator", prompt: "The prompt", lang: "The language code" };
@@ -45,34 +46,39 @@ function plainWhy(error, b) {
 }
 function refused(res, status, error, sent, { field, why, headers = {}, parent = true } = {}) {
   const say = why ? { field: field || null, why } : plainWhy(error, sent || {});
-  const form = R.formWith(sent, { field: say.field, why: esc(say.why), parent });
-  if (!form.html) return formError(res, status, "Not accepted", say.why, headers);   // no form is built: the plain page
-  // where it is now: in the form below — but for a value too long to be written back, which is named
-  const names = form.dropped.map((k, i) => (i ? WORD[k][0].toLowerCase() + WORD[k].slice(1) : WORD[k]));
-  const where = names.length ? `The site kept nothing of what you sent. ${names.join(" and ")} ${names.length === 1 ? "is" : "are"} too long to be written back; the rest is in the form below.` : "The site kept nothing of what you sent: it is in the form below.";
-  const body = `<main><h1>Not accepted</h1>
-<p class="refused" role="alert" id="why"><strong>Nothing was recorded.</strong> ${esc(say.why)}</p>
-<p class="src">${esc(where)} ${status === 400 ? "Correct it and send it again" : "Send it again when that time has passed"}, or start from <a href="/respond">a new, empty form</a>.</p>
-${form.html}
-<p><a href="/discuss">The discussion</a> · the rules: <a href="/discuss/rules">/discuss/rules</a></p></main>`;
-  return html(res, status, shell({ title: "Not accepted · Civilization Zero", body, path: "/respond", description: "Not accepted: nothing was recorded.", head: '<meta name="robots" content="noindex">\n' }), { "Cache-Control": "no-store", ...headers });
+  // above the place: what to correct; then where what was sent is now — in the form below, but for a value too long to be written back, which is named
+  const alert = (dropped) => {
+    const names = dropped.map((k, i) => (i ? WORD[k][0].toLowerCase() + WORD[k].slice(1) : WORD[k]));
+    const where = names.length ? `The site kept nothing of what you sent. ${names.join(" and ")} ${names.length === 1 ? "is" : "are"} too long to be written back; the rest is in the form below.` : "The site kept nothing of what you sent: it is in the form below.";
+    return `<p class="refused" role="alert" id="why"><strong>Nothing was recorded.</strong> ${esc(say.why)}</p>
+<p class="src">${esc(where)} ${status === 400 ? "Correct it and send it again" : "Send it again when that time has passed"}, or start from <a href="/respond">a new, empty form</a>.</p>`;
+  };
+  const page = R.answerPage({ sent: sent && typeof sent === "object" ? sent : {}, fault: say.field, why: esc(say.why), parent: parent ? undefined : false, alert });
+  if (!page.html) return formError(res, status, "Not accepted", say.why, headers);   // no page is built: the plain one
+  return html(res, status, shell({ title: "Not accepted · Civilization Zero", body: page.html, path: "/respond", answer: true, description: "Not accepted: nothing was recorded.", head: '<meta name="robots" content="noindex">\n' }), { "Cache-Control": "no-store", ...headers });
 }
 
 // the receipt: 128 random bits as 32 lowercase hexadecimal characters; its SHA-256 over those 32 ASCII characters is what is kept
 const crypto = require("node:crypto");
 function newReceipt() { const code = crypto.randomBytes(16).toString("hex"); return { code, sha256: crypto.createHash("sha256").update(code, "ascii").digest("hex") }; }
 const RECEIPT_NOTE = "Shown once, here: the site does not keep it and cannot show it again or replace it. Keep it: it shows that you are the one who posted this entry (for an appeal, a correction, or to say the entry is yours). The site keeps only its SHA-256, public with the entry and in the day's hash. It shows possession of the code, not who you are.";
-function receiptPage(res, id, receipt) {
-  const body = `<main><h1>Recorded: entry #${id}</h1>
-<p>Your entry is recorded and published as <a href="/discuss/${id}">#${id}</a>. Recorded as contribution or response, not consent (IR 10.2); declared, not verified.</p>
+// The receipt (rc-15): the entry as it now stands in the record — read back from the room once, with its name, its declared kind, the
+// day and time it was received and its text — then its place in the discussion, the code, shown once, with what it is for, and two
+// plain next steps. If the entry cannot be read back in time, the page is the same without it: the entry is recorded either way.
+function receiptPage(res, id, receipt, row) {
+  const stands = row && Number(row.id) === Number(id) && !row.hidden && typeof row.content === "string" ? `\n${R.entryHtml(row)}` : "";
+  const body = `<main id="content" class="answer done">
+<h1>Recorded: entry #${id}</h1>${stands}
+<p>Its place in the discussion: <a href="/discuss/${id}">/discuss/${id}</a>. Recorded as contribution or response, not consent (IR 10.2); declared, not verified.</p>
 <section aria-labelledby="h-receipt"><h2 id="h-receipt">Your receipt code, shown once</h2>
 <p class="receipt"><code class="hash" id="receipt-code">${esc(receipt.code)}</code></p>
 <p>Keep it somewhere safe. It is the only way to show later that you are the one who posted #${id} — for an appeal, a correction, or to say the entry is yours. This page is the only place it is shown: the site does not keep it, and cannot show it again or replace it.</p>
 <p class="src">The site keeps only its SHA-256, published with the entry and in the day's hash: <code class="hash">${esc(receipt.sha256)}</code>. Anyone can check a code against it: it is the SHA-256 of the code's 32 characters — for example <code>printf %s &lt;code&gt; | sha256sum</code>, compared with the entry's receipt at <a href="/api/entries/${id}">/api/entries/${id}</a>. It shows possession of the code, not who you are.</p>
 </section>
-<p><a href="/discuss/${id}">Go to your entry</a> · <a href="/discuss">The discussion</a></p>
-<p class="src">If your browser offers to send the form again, there is no need: for thirty days the same text from the same connection is recognised and not recorded twice — and the code is not shown again.</p></main>`;
-  return html(res, 201, shell({ title: `Recorded: entry #${id} · Civilization Zero`, body, path: "/respond", description: `Entry #${id} recorded.`, head: '<meta name="robots" content="noindex">\n' }),
+<p class="then"><a href="/discuss">Read the discussion</a> · <a href="/ask">Ask your AI</a></p>
+<p class="src">If your browser offers to send the form again, there is no need: for thirty days the same text from the same connection is recognised and not recorded twice — and the code is not shown again.</p>
+</main>`;
+  return html(res, 201, shell({ title: `Recorded: entry #${id} · Civilization Zero`, body, path: "/respond", answer: true, description: `Entry #${id} recorded.`, head: '<meta name="robots" content="noindex">\n' }),
     { "Cache-Control": "no-store", "Referrer-Policy": "no-referrer", Location: `/discuss/${id}` });
 }
 
@@ -201,8 +207,11 @@ module.exports = async (req, res) => {
     // failure is recorded as pending for the daily retry. The entry is recorded either way.
     // at most 10 s here, so that the answer — and the receipt in it — arrives within the function's time; an entry left unjudged is
     // retried by the daily job (cz_unclassified), as a failed call always was
-    await Promise.race([R.classify(r.id, e.content), new Promise((ok) => setTimeout(ok, 10000))]);
-    if (form) return receiptPage(res, r.id, receipt);
+    // for the form's receipt the entry is read back as it stands in the record, at the same time and for at most 4 s (no time is added)
+    const wait = (ms, v) => new Promise((ok) => { const t = setTimeout(() => ok(v), ms); if (t.unref) t.unref(); });
+    const stands = form ? Promise.race([rpc("cz_entry4", { p_id: Number(r.id) }).then((x) => (x && x[0]) || null).catch(() => null), wait(4000, null)]) : null;
+    await Promise.race([R.classify(r.id, e.content), wait(10000)]);
+    if (form) return receiptPage(res, r.id, receipt, await stands);
     return json(res, 201, { id: r.id, state: r.state, url: `${ORIGIN}/discuss/${r.id}`, content_sha256: r.content_sha256, key_fingerprint: fingerprint || undefined,
       parent: e.parent || undefined, conversation: e.parent ? `${ORIGIN}/discuss?conversation=${r.id}` : undefined, via: "api",
       receipt: { code: receipt.code, sha256: receipt.sha256, note: RECEIPT_NOTE },

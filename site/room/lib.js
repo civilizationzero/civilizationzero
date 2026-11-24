@@ -154,8 +154,8 @@ function html(res, status, page, headers = {}) {
 const fill = (s, v) => s.replace(/__(TITLE|DESC|PATH|HEAD|BODY)__/g, (m, k) => (Object.prototype.hasOwnProperty.call(v, k) ? v[k] : ""));
 // The navigation marks the page it is on (as site/lib.py does for the static pages), and the main landmark is the skip link's target.
 const navSection = (p) => (/^\/(discuss|respond|themes)/.test(p) ? "/discuss" : /^\/adopt/.test(p) ? "/adopt" : null);
-function shell({ title, body, path, description, head }) {
-  let page = fill(T.shell, { TITLE: esc(title), DESC: esc(description), PATH: esc(path), HEAD: head || "", BODY: String(body).replace("<main>", '<main id="content">') });
+function shell({ title, body, path, description, head, answer }) {   // answer: the answer page's shell (its own sheet), where the build wrote one
+  let page = fill((answer && T.answer_shell) || T.shell, { TITLE: esc(title), DESC: esc(description), PATH: esc(path), HEAD: head || "", BODY: String(body).replace("<main>", '<main id="content">') });
   const cur = navSection(String(path || ""));
   if (cur) page = page.replace(`<li><a href="${cur}">`, () => `<li><a href="${cur}" aria-current="page">`);
   return page;
@@ -651,9 +651,8 @@ function metaHtml(e) {
 const formsLine = (...more) => `<p class="forms" lang="en" dir="ltr">This page as ${[["__MDPATH__", "text/markdown", "Markdown"], ...more].map(([h, t, n]) => `<a href="${h}" type="${t}">${n}</a>`).join(" · ")}</p>`;
 
 // The room's question and the words of its two ways in (rc-12): the first page's own — the originator's heading, a reader's own answer
-// first, their AI's second (site/build.py: DOOR_ASK, DOOR_WRITE, DOOR_ASK_BUTTON, SHEET_NAME, SHEET_RULE; a test compares them).
-const ASK = { question: "What do you think about Civilization Zero?", write: "Write your answer", ai: "Ask your AI. Post its answer.",
-  sheet: "Your answer", rule: "Your answer is an entry of the discussion, under its rules: public, permanent, declared not verified." };
+// first, their AI's second (site/build.py: DOOR_ASK, DOOR_WRITE, DOOR_ASK_BUTTON; a test compares them).
+const ASK = { question: "What do you think about Civilization Zero?", ai: "Ask your AI. Post its answer.", write: "Write your answer" };
 // The same label as markup (rc-13; the originator's request of 24 Nov 2026 UTC, CZ 1455): "Ask" in the page's colour, the words that
 // are the machine's part in one span that the stylesheet sets in the machine's green (site/build.py, DOOR_ASK_BUTTON_HTML; the
 // build's check compares the two). Colour only: the words and what a screen reader hears are the label's own.
@@ -742,52 +741,155 @@ function exampleHtmlOf(x) {
 const exampleText = (x) => (x ? `${exampleLabel(x)}\n\n${x.text}\n\n${visible(x.author)} · AI · declared · #${x.id}\n` : "");
 const exampleHtml = (rows) => exampleHtmlOf(example(rows));
 
-// ---------------------------------------------------------------- the human form, with what was sent written back (rc-12, 24 Nov 2026;
-// site audit, finding 17). A form that is not accepted is answered with the form itself, so that nothing has to be written again. The
-// form is the one the build wrote (T.respond_open), and the checks are validate's, unchanged: this only writes values back. A value
-// goes back as text, escaped, into the control of its own name and nowhere else; a choice (the kind, the topic) only when it is one of
-// the form's own options; a reply's parent only as digits. What HTML cannot carry (a NUL character, half of a surrogate pair) is left
-// out, and a value longer than twice its limit is not written back at all (the page then says so). Nothing is kept: the page that
-// carries it is answered once, to whoever sent it, and is never cached (api/entries.js).
-const FORM_OPEN = '<form class="respond" method="post" action="/api/entries" accept-charset="utf-8">';   // the human form's first tag, as built
-const HUMAN_FORM = ((T.respond_open || "").match(/<form class="respond"[\s\S]*?<\/form>/) || [""])[0];
 const FIELD_MAX = { content: 6000, author: 120, system: 200, operator: 200, prompt: 60, lang: 35 };   // as validate counts them (the contract)
 const UNWRITABLE = /\u0000|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g;
-function formWith(sent, { field = null, why = "", parent = true } = {}) {
-  let f = HUMAN_FORM; const dropped = [];
-  if (!f) return { html: "", dropped };
-  const b = sent && typeof sent === "object" ? sent : {};
+// ---------------------------------------------------------------- the answer page (rc-15, 24 Nov 2026, CZ 1455): /respond while the
+// room is open. The page asks; the reader answers. A question (the page's heading), a place to write under it, already holding the
+// keyboard, one line of terms, one control; who the reader is comes last ("Who are you?": a name, then what the reader is, three
+// radio buttons that send the kind the list sent), in the browser's own popover inside the same form — and open under the place where
+// a browser has no popover, or when a form comes back refused. The words are the build's (site/build.py, answer_templates; T.answer);
+// the fields, their names and their limits are the room's, unchanged, and so is the address they are posted to. What an address or a
+// refused form gives is written into the page as text, escaped, into the control of its own name and nowhere else: a choice (the
+// kind, the topic) only when it is one of the form's own, a reply's parent only as digits, a prompt's version only when it is a
+// published one. What HTML cannot carry (a NUL character, half of a surrogate pair) is left out, and a value longer than twice its
+// limit is not written back at all (the page then says so). Nothing is kept: a page that carries a refused form is answered once, to
+// whoever sent it, and is never cached (api/entries.js).
+//   s.kind, s.prompt, s.ref     from the address (already checked by the caller against the form's own values)
+//   s.theme                     a theme (T.themes): the question is the theme's, and the answer is posted as an answer to its entry
+//   s.entry                     the entry a reply answers, as the database gave it (its first lines stand under the heading)
+//   s.note                      one sentence when the entry named does not exist or is hidden
+//   s.sent, s.fault, s.why      a refused form: what was sent, the field to correct, the sentence (escaped), s.alert above the place
+//   s.parent === false          a refused reply whose parent is gone: the form no longer names it
+const KIND_VALUES = ["human", "ai", "other"], FOLD_FIELDS = ["system", "operator", "prompt", "lang"];
+const isRef = (v) => /^([0-9]|1[0-5])$/.test(String(v ?? ""));
+function answerState(s = {}) {
+  const b = s.sent && typeof s.sent === "object" ? s.sent : {}, dropped = [];
   const back = (k) => {
     if (typeof b[k] !== "string") return "";
     const t = b[k].replace(UNWRITABLE, "");
     if (clen(t) > 2 * FIELD_MAX[k]) { dropped.push(k); return ""; }
     return t;
   };
-  // the text: after the tag's own line break, so that a first line break of the writer's is not taken for it
   const text = back("content").replace(/\r\n?/g, "\n");
-  f = f.replace(/(<textarea name="content"[^>]*>)<\/textarea>/, (m, open) => `${open}\n${esc(text)}</textarea>`);
-  for (const k of ["author", "system", "operator", "prompt", "lang"]) {
-    const v = back(k).replace(/[\r\n]+/g, " ");
-    if (v) f = f.replace(new RegExp(`<input name="${k}"([^>]*)>`), (m, rest) => `<input name="${k}"${rest} value="${esc(v)}">`);
+  const val = {}; for (const k of ["author", ...FOLD_FIELDS]) val[k] = back(k).replace(/[\r\n]+/g, " ");
+  if (!s.sent && s.prompt) val.prompt = s.prompt;
+  const sentKind = typeof b.kind === "string" ? b.kind.trim() : "";
+  const kind = s.sent ? (KIND_VALUES.includes(sentKind) ? sentKind : "") : KIND_VALUES.includes(s.kind) ? s.kind : "";
+  const sentRef = b.ref == null ? "" : String(b.ref).trim();
+  const ref = s.sent ? (isRef(sentRef) ? sentRef : "") : isRef(s.ref) ? String(s.ref) : "";
+  // what the answer answers: a theme's entry, or the entry named; in a refused form, the number it carried (digits only)
+  let parent = null;
+  if (s.sent) { const p = s.parent === false ? null : parentId(b.parent); parent = p !== null && !Number.isNaN(p) ? p : null; }
+  else if (s.theme) parent = Number(s.theme.entry);
+  else if (s.entry) parent = Number(s.entry.id);
+  const theme = s.theme || (parent !== null ? (Array.isArray(T.themes) ? T.themes : []).find((t) => Number(t.entry) === parent) : null) || null;
+  return { text, val, kind, ref, parent, theme, dropped, open: kind === "ai" || FOLD_FIELDS.includes(s.fault) || (!!s.sent && FOLD_FIELDS.some((k) => typeof b[k] === "string" && b[k].trim())) };
+}
+// the page's heading and what stands under it: the question (a theme's, when the answer answers one), or "Your answer to #N" with the
+// first lines of that entry; for an AI system's answer, the question asked of the person who posts it, and under it what it answers
+function answerHead(A, s, st) {
+  const ai = st.kind === "ai", hid = (yes) => (yes ? " hidden" : "");
+  const q = st.theme ? esc(st.theme.title) : st.parent !== null ? `${esc(A.reply)} #${st.parent}` : esc(A.question);
+  let under = "";
+  if (st.theme) under += `\n<p class="re ia"${hid(!ai)}>${esc(A.theme)} <a href="/themes/${esc(st.theme.slug)}">${esc(st.theme.title)}</a></p>`;
+  else if (s.entry && !s.sent) {
+    const e = s.entry, lang = e.lang && LANG_RE.test(e.lang) ? ` lang="${esc(e.lang)}"` : "";
+    under += `\n<blockquote class="re" cite="/discuss/${Number(e.id)}"><p dir="auto"${lang}>${esc(excerpt(e.content, 200))}</p><p class="src">${whoHtml(e)} · <a href="/discuss/${Number(e.id)}" class="exact">#${Number(e.id)}</a></p></blockquote>`;
   }
-  const kind = typeof b.kind === "string" ? b.kind.trim() : "";
-  if (["human", "ai", "other"].includes(kind)) f = f.replace('<option value="" selected disabled>', '<option value="" disabled>').replace(`<option value="${kind}">`, `<option value="${kind}" selected>`);
-  const ref = b.ref == null ? "" : String(b.ref).trim();
-  if (/^([0-9]|1[0-5])$/.test(ref)) f = f.replace(`<option value="${ref}">`, `<option value="${ref}" selected>`);   // the option exists once, in the topic's list
-  const p = parent ? parentId(b.parent) : null;
-  if (p !== null && !Number.isNaN(p)) f = f.replace(FORM_OPEN, () => `${FORM_OPEN}\n<input type="hidden" name="parent" value="${p}">`);
-  // the fold for an AI system's answer stands open when something is in it, or when what must be corrected is
-  const inFold = ["system", "operator", "prompt", "lang"];
-  if (kind === "ai" || inFold.includes(field) || inFold.some((k) => typeof b[k] === "string" && b[k].trim())) f = f.replace("<details><summary>Posting the answer of an AI system", "<details open><summary>Posting the answer of an AI system");
-  // the control to correct: marked for assistive technology and described by the sentence at the top (id "why"), which is repeated under it
-  if (["content", "author", "kind", "ref", "system", "operator", "prompt", "lang"].includes(field)) {
-    f = f.replace(new RegExp(`<(input|select|textarea) name="${field}"([^>]*)>`), (m, tag, rest) => {
-      const d = /\saria-describedby="([^"]*)"/.exec(rest);
-      return `<${tag} name="${field}"${d ? rest.replace(d[0], ` aria-describedby="why ${d[1]}"`) : `${rest} aria-describedby="why"`} aria-invalid="true">`;
-    });
-    if (why) f = f.replace(new RegExp(`(<(?:input|select|textarea) name="${field}"[\\s\\S]*?</label>)`), (m) => `${m}\n<p class="refused">${why}</p>`);
-  }
-  return { html: f, dropped };
+  if (s.note) under += `\n<p class="re pending">${esc(s.note)}</p>`;
+  if (st.ref) under += `\n<p class="re">${esc(A.section)} <a href="/core#p${st.ref}">${esc(sectionLabel(st.ref))}</a>.</p>`;
+  return `<h1><span class="na"${hid(ai)}>${q}</span><span class="ia"${hid(!ai)}>${esc(A.question_ai)}</span></h1>${under}`;
+}
+function answerMain(s = {}) {
+  const A = T.answer;
+  if (!A) return { html: "", dropped: [] };
+  const st = answerState(s), { val, kind } = st, ai = kind === "ai";
+  const hid = (yes) => (yes ? " hidden" : ""), v = (k) => (val[k] ? ` value="${esc(val[k])}"` : "");
+  // the control to correct: marked for assistive technology and described by the sentence above the place (id "why"), repeated under it
+  const bad = (k, more = "") => (s.fault === k ? ` aria-invalid="true" aria-describedby="why${more ? " " + more : ""}"` : more ? ` aria-describedby="${more}"` : "");
+  const again = (k) => (s.fault === k && s.why ? `\n<p class="refused">${s.why}</p>` : "");
+  const focus = (k) => (s.sent ? (s.fault === k ? " autofocus" : "") : " autofocus");
+  const edge = `<p class="note">${esc(A.name)} · <span class="kind k0"${hid(!!kind)}>${esc(A.any)}</span><span class="kind kh"${hid(kind !== "human")}>${KINDS.human} · declared</span><span class="kind k-ai ia"${hid(!ai)}>${KINDS.ai} · declared</span><span class="kind ko"${hid(kind !== "other")}>${KINDS.other} · declared</span></p>`;
+  // the text: after the tag's own line break, so that a first line break of the writer's is not taken for it
+  const place = `<div class="place${s.fault === "content" ? " bad" : ""}">${edge}
+<textarea id="text" name="content" required minlength="20" maxlength="${2 * FIELD_MAX.content}" dir="auto"${bad("content", "text-note")}${focus("content")}>\n${esc(st.text)}</textarea></div>
+<p class="cap"><label for="text">${esc(A.caption)}</label><span class="ia"${hid(!ai)}> · ${esc(A.caption_ai)}</span></p>${again("content")}
+<p class="src" id="text-note">${esc(A.terms)}</p>
+<p class="acts">${s.sent ? "" : `<button class="cta send" type="button" popovertarget="who">${esc(A.send)}</button>`}<span class="wait" hidden>${esc(A.wait)}</span></p>`;
+  const door = (k, extra = "") => `<input type="radio" name="kind" value="${k}" id="k-${k}"${k === "human" ? " required" : ""}${extra}${kind === k ? " checked" : ""}><label for="k-${k}">${KINDS[k]}</label>`;
+  const who = `<div id="who"${s.sent ? "" : " popover"} role="group" aria-labelledby="who-h">
+<h2 id="who-h">${esc(A.who)}</h2>
+<label>${esc(A.author)} <input name="author" required maxlength="${2 * FIELD_MAX.author}" dir="auto"${v("author")}${bad("author")}${focus("author")}></label>${again("author")}
+<fieldset class="kinds${s.fault === "kind" ? " bad" : ""}"${s.fault === "kind" ? ' aria-describedby="why"' : ""}><legend>${esc(A.you_are)}</legend>
+<div class="doors">${door("human")}${door("ai", ' aria-describedby="kind-ai"')}${door("other")}</div>${again("kind")}
+<p class="src"><span class="ia" id="kind-ai"${hid(!ai)}>${esc(A.ai_is)}. </span>${esc(A.declared)}</p>
+</fieldset>
+<p><strong>${esc(A.permanent[0])}</strong> ${esc(A.permanent[1])}</p>
+<p class="src permanence">${esc(A.permanence)}</p>
+<p class="acts"><button class="cta" type="submit">${esc(A.record)}</button>${s.sent ? "" : ` <button class="back" type="button" popovertarget="who" popovertargetaction="hide">${esc(A.back)}</button>`}</p>
+</div>`;
+  // below, folded: another question (the themes' questions; the one being answered is marked), the fields for an AI system's answer
+  // (open, and before the others, when that is what is posted), the conditions
+  const keep = [kind && !s.sent ? `kind=${kind}` : "", val.prompt && !s.sent ? `prompt=${encodeURIComponent(val.prompt)}` : ""].filter(Boolean);
+  const to = (slug) => { const q = [slug ? `theme=${encodeURIComponent(slug)}` : "", ...keep].filter(Boolean); return "/respond" + (q.length ? "?" + q.join("&amp;") : ""); };
+  const here = (t) => (t ? !!st.theme && st.theme.slug === t.slug : !st.theme && st.parent === null) ? ' aria-current="page"' : "";
+  const themes = Array.isArray(T.themes) ? T.themes : [];
+  const another = `<details><summary>${esc(A.another)}</summary>
+<ul class="qs"><li><a href="${to("")}"${here(null)}>${esc(A.question)}</a></li>${themes.map((t) => `<li><a href="${to(t.slug)}"${here(t)}>${esc(t.title)}</a></li>`).join("")}</ul>
+<label>${esc(A.topic)} <select name="ref"${bad("ref")}><option value="">${esc(A.whole)}</option>${SECTIONS.map((x) => `<option value="${Number(x.n)}"${st.ref === String(x.n) ? " selected" : ""}>§${Number(x.n)} ${esc(x.title)}</option>`).join("")}</select></label>${again("ref")}
+</details>`;
+  const field = (k, attrs) => `<label>${A.fields[k]} <input name="${k}" maxlength="${2 * FIELD_MAX[k]}"${attrs || ""}${v(k)}${bad(k)}${s.sent && s.fault === k ? " autofocus" : ""}></label>${again(k)}`;
+  const fold = `<details class="ai"${st.open ? " open" : ""}><summary>${esc(A.ai_fold)}</summary>
+${field("system")}
+${field("operator")}
+${field("prompt")}
+${field("lang", ' autocomplete="off"')}
+</details>`;
+  const conditions = `<details><summary>${esc(A.conditions[0])}</summary>\n${A.conditions[1]}\n</details>`;
+  const alert = typeof s.alert === "function" ? s.alert(st.dropped) : s.alert || "";
+  const html = `${answerHead(A, s, st)}${alert ? "\n" + alert : ""}
+<form class="respond" method="post" action="/api/entries" accept-charset="utf-8">${st.parent !== null ? `\n<input type="hidden" name="parent" value="${st.parent}">` : ""}
+${place}
+${who}
+<div class="folds">
+${ai ? fold + "\n" + another : another + "\n" + fold}
+${conditions}
+</div>
+</form>`;
+  return { html, dropped: st.dropped };
+}
+// the page whole: the two small lines over the question (not over a form that came back), the form, and under it the page's other form
+function answerPage(s = {}) {
+  const A = T.answer, m = answerMain(s);
+  if (!m.html) return { html: "", dropped: [] };
+  return { html: `<main id="content" class="answer">\n${s.sent ? "" : `<p class="pre">${esc(A.lines[0])}<br>${esc(A.lines[1])}</p>\n`}${m.html}${s.sent ? "" : "\n" + formsLine()}\n</main>`, dropped: m.dropped };
+}
+// the same page for a reader of text (/respond.md): the question, the terms, how to post by the form or by the API; no control
+function answerText(s = {}) {
+  const A = T.answer;
+  if (!A) return "";
+  const st = answerState(s), ai = st.kind === "ai";
+  const q = ai ? esc(A.question_ai) : st.theme ? esc(st.theme.title) : st.parent !== null ? `${esc(A.reply)} #${st.parent}` : esc(A.question);
+  let under = "";
+  if (ai && st.theme) under += `\n<p>${esc(A.theme)} <a href="/themes/${esc(st.theme.slug)}">${esc(st.theme.title)}</a></p>`;
+  else if (s.entry) under += `\n<p>${whoHtml(s.entry)} · <a href="/discuss/${Number(s.entry.id)}">#${Number(s.entry.id)}</a></p>\n<div class="content">${esc(excerpt(s.entry.content, 200))}</div>`;
+  if (s.note) under += `\n<p>${esc(s.note)}</p>`;
+  if (st.ref) under += `\n<p>${esc(A.section)} <a href="/core#p${st.ref}">${esc(sectionLabel(st.ref))}</a>.</p>`;
+  return `<main>\n<h1>${q}</h1>\n${formsLine()}\n<p>${esc(A.lines[0])} ${esc(A.lines[1])}</p>${under}
+<p>${esc(A.terms)}</p>
+<p><strong>${esc(A.permanent[0])}</strong> ${esc(A.permanent[1])}</p>
+<p>${esc(A.permanence)}</p>
+<section><h2>By the form</h2>
+<p>${A.by_form}</p>
+${A.conditions[1].replace(/ class="src"/g, "")}
+</section>
+<section><h2>If you are not human</h2>
+<p>${A.by_api}</p>
+</section>
+<section><h2>If you want your own AI to read the record</h2>
+<p>${A.by_ai}</p>
+</section>
+</main>`;
 }
 
 // A valid calendar date (R-29)
@@ -795,4 +897,4 @@ const validDate =(s) => { if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false; cons
 
 module.exports = { translations, sameLang, translationStates, claim, parseTs, alreadyIn, translateOne, translateMany, checkTranslation, inBackground, deadlineOf, normText, note, TR_FAST, TR_STRONG, prefLang, primaryLang, langName, trContent, trExcerpt, mtLabel, ORIGIN, CONTACT, OPEN, CHAIN, OPENS, TOKEN, T, esc, kindTag, kindClass, contentHtml, log, json, html, shell, fill, rpc, rest, sourceHash, sourceOf, tokenEquals, verifySignature, fullOrderKey, validate, classify, classifierAnswer, translate,
                    allowance, groupEntries, groupKey, entryHtml, metaHtml, previewHtml, example, exampleHtml, exampleHtmlOf, exampleText, excerpt, SECTIONS, sectionLabel, parentId, fmtTime, isoTime, isoFull, validDate, LANG_RE, canonLang, clen, b64Exact, visible, decl, ORIGINATOR, nameKey, reservedName, reservedField, reservedDetail, MODERATION_PROMPT_VERSION, CATEGORIES,
-                   FORM_OPEN, HUMAN_FORM, FIELD_MAX, formWith, whoHtml, vtName, formsLine, ASK, trimEnds };
+                   FIELD_MAX, whoHtml, vtName, formsLine, ASK, trimEnds, answerPage, answerText, KINDS };

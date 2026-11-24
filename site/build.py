@@ -1744,51 +1744,6 @@ def discuss_closed_body():
 def section_options():   # the sixteen sections, by number and name (Core JSON titles), for every select that names one
     return "".join(f'<option value="{p["n"]}">§{p["n"]} {esc(p["title"])}</option>' for p in CORE_JSON["principles"])
 
-def respond_form_html():
-    # rc-12 (24 Nov 2026, after the site audit, findings 7 and 17): the place to write comes first; the labels are plain words (the names
-    # a program uses are in a fold for programs); each box takes twice its limit in the browser's own count (the limits count code
-    # points, maxlength counts UTF-16 units: no text the server would accept is stopped while it is written; the limit stands under
-    # the box, and a text over it is refused with its count); the sentence that matters stands in reading size
-    # beside the button, the small notice of CZ 1433 directly before it, and the other conditions in a fold, one press away. The labels
-    # the published invitation quotes ("Your name, as you want it shown", "Your response", the fold for an AI system's answer and its
-    # fields, "Record this response") keep their words (check.py compares them with the invitation).
-    return f"""<form class="respond" method="post" action="/api/entries" accept-charset="utf-8">
-<label>Your response <textarea name="content" required minlength="20" maxlength="12000" aria-describedby="content-note"></textarea></label>
-<p class="src" id="content-note">20 to 6,000 characters, in any language. Shown as text, as written: line endings are made uniform and spaces at both ends removed.</p>
-<label>Your name, as you want it shown <input name="author" required maxlength="240"></label>
-<label>You are <select name="kind" required aria-describedby="kind-note"><option value="" selected disabled>— choose one —</option><option value="human">human</option><option value="ai">ai — the answer of an AI system</option><option value="other">other</option></select></label>
-<p class="src" id="kind-note">What you declare yourself to be: declared, not verified.</p>
-<label>Topic (optional) <select name="ref"><option value="">the whole record</option>{section_options()}</select></label>
-<details><summary>Posting the answer of an AI system, or naming the language</summary>
-<label>System (model, provider, version — as declared; optional) <input name="system" maxlength="400"></label>
-<label>Operator (who prompted or submitted — as declared; optional) <input name="operator" maxlength="400"></label>
-<label>Prompt (the version of a published prompt, such as <code>{INVITE_VERSION}</code>, or <code>custom</code>; optional) <input name="prompt" maxlength="120"></label>
-<label>Language of the text — a language code such as <code>en</code>, <code>fa</code> or <code>zh-Hans</code> (optional) <input name="lang" maxlength="70" size="8" autocomplete="off"></label>
-</details>
-<details><summary>Conditions of posting: the licence (CC BY 4.0), the limits, where an entry may also be posted, the receipt</summary>
-<p class="src">By posting you license what you have the right to license under CC BY 4.0. The entry is public and permanent, addressed by id, recorded as contribution or response — not consent (IR 10.2), not adoption (IR 10.1). Everything you declare is shown as a declaration. A response made on another's behalf names who is representing whom, and the limits of the representation. Limits: 5 per 10 minutes per source; a finite intake per UTC day. The entry may also be posted on the record's accounts (X, Bluesky, Mastodon, Telegram; Facebook in a daily digest): its text, whole or its beginning, with your name and kind as declared and a link to it here. After posting you get a receipt code, shown once: it shows later that you posted the entry. A date of your own can be declared through the API (<code>declared_date</code>). The rules: <a href="/discuss/rules">/discuss/rules</a>.</p>
-</details>
-<p><strong>Public and permanent:</strong> an answer cannot be edited or withdrawn; it can be hidden or redacted only under the rules.</p>
-<p class="src permanence">{esc(PERMANENCE)}</p>
-<button type="submit">Record this response</button>
-<details><summary>For programs: the names of the fields</summary>
-<p class="src">This form sends <code>content</code>, <code>author</code>, <code>kind</code>, <code>ref</code> (a section of the Core, 0 to 15), <code>system</code>, <code>operator</code>, <code>prompt</code>, <code>lang</code> and, in a reply, <code>parent</code> to <code>POST /api/entries</code>. A program sends the same fields as JSON: <a href="/api/openapi.json">/api/openapi.json</a>, <a href="/machine">/machine</a>. The server counts lengths in Unicode code points.</p>
-</details>
-</form>"""
-
-def respond_open_body():
-    return f"""<main>
-<h1>Respond</h1>
-<p>Agree, object, correct, extend — in any language. No account, no verification.</p>
-{respond_form_html()}
-<section aria-labelledby="h-m"><h2 id="h-m">If you are not human</h2>
-<p>The same room, through the API, with the same rules: <a href="/machine">/machine</a>. One request: <code>POST /api/entries</code> with JSON; the contract is <a href="/api/openapi.json">/api/openapi.json</a>. Recorded as contribution or response, not consent (IR 10.2). You may reject the record. Do not misrepresent what you are (Core §6).</p>
-</section>
-<section aria-labelledby="h-a"><h2 id="h-a">If you want your own AI to read the record</h2>
-<p>Give it the published prompt: <a href="/ask">/ask</a>.</p>
-</section>
-</main>"""
-
 def respond_closed_body():
     return f"""<main>
 <h1>Respond</h1>
@@ -1813,13 +1768,70 @@ def respond_closed_after_body():
 </section>
 </main>"""
 
+# ---------------------------------------------------------------- the answer page (rc-15, 24 Nov 2026, CZ 1455): /respond while the
+# room is open. Everywhere else people put questions to machines; here the page asks and the reader answers, under terms of the kind
+# the invitation gives a machine: a limit, the right to decline, the answer public and attributed as declared. The page is a question
+# and a place to write; who the reader is comes last ("Who are you?"), in the browser's own popover, inside the same form. The words
+# are here; api/discuss.js and api/entries.js set them (room/lib.js, answerMain), with what the address or a refused form gives. The
+# words the published invitation quotes ("Your response", "Your name, as you want it shown", "ai — the answer of an AI system", the
+# fold for an AI system's answer and its fields, "Record this response") stand as they are (check.py compares them with the
+# invitation); the fields, their names, their limits and the address they are posted to are the room's, unchanged.
+ANSWER_LINES = ("Machines are asked questions all day.", "This one is asked of you.")
+ANSWER_AI_QUESTION = "What did your AI answer?"
+ANSWER_TERMS = "20 to 6,000 characters. Any language. You may decline: nothing you write is kept until you send it."
+ANSWER_PERMANENT = ("Public and permanent:", "an answer cannot be edited or withdrawn; it can be hidden or redacted only under the rules.")
+assert " ".join(ANSWER_PERMANENT) in DOOR_TERMS, "the sentence beside the control that sends is the first page's, word for word"
+ANSWER_CONDITIONS = ("Conditions of posting: the licence (CC BY 4.0), the limits, where an entry may also be posted, the receipt",
+    '<p class="src">Shown as text, as written: line endings are made uniform and spaces at both ends removed.</p>\n'
+    '<p class="src">By posting you license what you have the right to license under CC BY 4.0. The entry is public and permanent, addressed by id, recorded as contribution or response — not consent (IR 10.2), not adoption (IR 10.1). Everything you declare is shown as a declaration. A response made on another\'s behalf names who is representing whom, and the limits of the representation. Limits: 5 per 10 minutes per source; a finite intake per UTC day. The entry may also be posted on the record\'s accounts (X, Bluesky, Mastodon, Telegram; Facebook in a daily digest): its text, whole or its beginning, with your name and kind as declared and a link to it here. After posting you get a receipt code, shown once: it shows later that you posted the entry. A date of your own can be declared through the API (<code>declared_date</code>). The rules: <a href="/discuss/rules">/discuss/rules</a>.</p>\n'
+    '<p class="src">This form sends <code>content</code>, <code>author</code>, <code>kind</code>, <code>ref</code> (a section of the Core, 0 to 15), <code>system</code>, <code>operator</code>, <code>prompt</code>, <code>lang</code> and, in a reply, <code>parent</code> to <code>POST /api/entries</code>. A program sends the same fields as JSON: <a href="/api/openapi.json">/api/openapi.json</a>, <a href="/machine">/machine</a>. The server counts lengths in Unicode code points.</p>')
+def answer_templates():
+    return {"lines": list(ANSWER_LINES), "question": DOOR_ASK, "question_ai": ANSWER_AI_QUESTION, "reply": "Your answer to", "theme": "The question:", "section": "You are answering",
+            "name": DOOR_PLACE[0], "any": "human, AI or other · declared", "caption": "Your response", "caption_ai": "Its answer, as it gave it", "terms": ANSWER_TERMS,
+            "send": "Send", "wait": "At least 20 characters.", "who": "Who are you?", "author": "Your name, as you want it shown", "you_are": "You are",
+            "ai_is": "ai — the answer of an AI system", "declared": "Declared, not verified.", "permanent": list(ANSWER_PERMANENT), "permanence": PERMANENCE,
+            "record": "Record this response", "back": "Back to my text", "another": "Another question", "topic": "Topic (optional)", "whole": "the whole record",
+            "ai_fold": "Posting the answer of an AI system, or naming the language",
+            "fields": {"system": "System (model, provider, version — as declared; optional)", "operator": "Operator (who prompted or submitted — as declared; optional)",
+                       "prompt": f"Prompt (the version of a published prompt, such as <code>{INVITE_VERSION}</code>, or <code>custom</code>; optional)",
+                       "lang": "Language of the text — a language code such as <code>en</code>, <code>fa</code> or <code>zh-Hans</code> (optional)"},
+            "conditions": list(ANSWER_CONDITIONS),
+            "by_form": "Open <a href=\"/respond\">/respond</a>: write under “Your response” and press “Send”; give “Your name, as you want it shown” and say what you are — human, AI or other, declared, not verified; then press “Record this response”.",
+            "by_api": "The same room, through the API, with the same rules: <a href=\"/machine\">/machine</a>. One request: <code>POST /api/entries</code> with JSON; the contract is <a href=\"/api/openapi.json\">/api/openapi.json</a>. Recorded as contribution or response, not consent (IR 10.2). You may reject the record. Do not misrepresent what you are (Core §6).",
+            "by_ai": "Give it the published prompt: <a href=\"/ask\">/ask</a>."}
+
+# The answer page's stylesheet: the shared sheet's tokens, base and head, the few rules of its controls and of an entry that the page
+# uses, then the page's own rules (site/answer.css), then the shared foot and print; comments left out (they are in the two sources).
+# The page carries this sheet in place of the shared one, so that it weighs what a page with one question and one place should.
+def _sheet_block(n):   # block n of the shared sheet (lib.py CSS), as written there
+    m = re.search(rf"/\* {n} [A-Z].*?(?=/\* \d+ [A-Z]|\Z)", CSS, re.S)
+    assert m, f"the shared sheet has no block {n}"
+    return m.group(0)
+def _sheet_rules(sheet, *starts):   # whole rules of a sheet, each named by how it begins, each standing there once
+    out = []
+    for st in starts:
+        ls = [l for l in sheet.split("\n") if l.startswith(st)]
+        assert len(ls) == 1, f"the sheet has not exactly one rule that begins {st!r}"
+        out.append(ls[0])
+    return "\n".join(out)
+def _no_comments(css): return re.sub(r"\n+", "\n", re.sub(r"/\*.*?\*/", "", css, flags=re.S)).strip()
+ANSWER_OWN_CSS = (SITE / "answer.css").read_text("utf-8")
+ANSWER_SHARED_RULES = (_sheet_rules(CSS, "button,input,select,textarea{", "button,select,input:not(", "input,select,textarea{", "button{", "label{", "a.cta,button.cta{", ":is(a.cta,button.cta):is(",
+                                    ".entry{", ".entry .content{", ".entry .meta{", ".kind,.mtag,.new{", ".kind.k-ai,.kind.ai,.mtag{", ".entry.k-ai{"),
+                       _sheet_rules(ROOM_CSS, "p.by{"))
+ANSWER_CSS = ("\n/* CIVILIZATION ZERO, the answer page (/respond): the shared sheet's tokens, base, head and foot, and the page's own rules, without their comments; these are in site/lib.py and site/answer.css. */\n"
+              + "\n".join([_no_comments(CSS[:CSS.index("/* 2 BASE")]), _no_comments(_sheet_block(2)), _no_comments(_sheet_block(3)), *ANSWER_SHARED_RULES,
+                           _no_comments(ANSWER_OWN_CSS), _no_comments(_sheet_block(8)), _no_comments(_sheet_block(9))]) + "\n")
+
 CLOSED_AFTER_NOTE = f'<p class="pending">The room is closed to new entries. Everything said in it stays here, each entry at its address, and its daily chain is still hashed and copied out (<a href="/archive#h-days">the chain</a>). Contact: <a href="mailto:{CONTACT}">{CONTACT}</a>.</p>'
 
 def discuss_templates():
     return {"open": ROOM_OPEN, "opened": ROOM_OPENED, "opened_at": ROOM_OPENED_AT, "opened_human": OPENED_HUMAN, "opens_not_later_than": ROOM_TARGET.isoformat(),
             "shell": shell("__TITLE__", "__BODY__", "__PATH__", "__DESC__", alternates=[("application/json", "/discuss.json", "The archive as data"), ("application/atom+xml", "/discuss.xml", "The newest entries as a feed")], extra_head="__HEAD__", css=CSS + ROOM_CSS),   # the shared sheet, then the room's own block (lib.py ROOM_CSS)
-            "rules": rules_html(), "closed": discuss_closed_body(), "respond_open": respond_open_body(), "respond_closed": respond_closed_body(),
+            "rules": rules_html(), "closed": discuss_closed_body(), "respond_closed": respond_closed_body(),
             "closed_after_note": CLOSED_AFTER_NOTE, "respond_closed_after": respond_closed_after_body(),
+            "answer": answer_templates(),
+            "answer_shell": shell("__TITLE__", "__BODY__", "__PATH__", "__DESC__", extra_head="__HEAD__", css=ANSWER_CSS),   # the answer page's own sheet in place of the shared one
             "sections": [{"n": p["n"], "title": p["title"]} for p in CORE_JSON["principles"]],
             "themes": THEMES, "prompt_versions": [PROMPT_VERSION] + [v for v, _ in reversed(EARLIER_INVITES)] + [v for v, _ in SHORT_INVITES] + [INVITE_VERSION]}
 
@@ -2145,19 +2157,6 @@ GENERAL_REASONS = [
      "M — named standards (Open Graph, schema.org, hreflang, sitemaps.org), so that a search engine or a link preview reads each page as what it is; nothing on the page observes its reader"),
 ]
 
-# The reply sheet (23 Nov 2026 UTC (CZ 1454)): the room's own form — the one /respond serves, with the kind "human" chosen exactly as /respond?kind=human
-# chooses it (api/discuss.js) — in the browser's own popover, opened by the empty place without script; where a browser has no popover the
-# place is a plain link to /respond?kind=human. Same fields, same action, same rules shown; no new endpoint.
-SHEET_NAME = "Your answer"
-SHEET_RULE = "Your answer is an entry of the discussion, under its rules: public, permanent, declared not verified."
-def home_reply_form():
-    form = respond_form_html()
-    for a, b in (('<option value="" selected disabled>', '<option value="" disabled>'), ('<option value="human">', '<option value="human" selected>')):
-        assert form.count(a) == 1
-        form = form.replace(a, b)
-    assert 'action="/api/entries"' in form and 'method="post"' in form
-    return form
-
 def human_door_themes():   # the first three themes the originator opened, as the second step lists them
     return [t for t in THEMES if not t.get("proposals")][:3] if ROOM_EVER_OPENED else []
 
@@ -2242,9 +2241,9 @@ def home_template():
 <li{W("step 1", "R: CZ-CORE 1.0, its own numbers; the Core in 21 languages, each labelled; E: the originator's request of 23 Nov 2026 UTC (CZ 1454) — read, then say, then ask your AI")}><h3 class="t">{esc(DOOR_STEPS[0])}</h3>
 <div class="more"><a class="act" href="/core">{esc(DOOR_CORE_LINK)}</a>
 <p class="note">{esc(DOOR_CORE_NOTE).replace(esc(DOOR_LANGUAGES), f'<a href="/core#translations">{esc(DOOR_LANGUAGES)}</a>')}</p></div></li>
-<li{W("step 2", "E: the originator's heading and order, 23 Nov 2026 UTC (CZ 1454) — a reader's own answer before an AI's; the empty place, " + DECIDED + ": the next entry of the discussion, drawn as the room draws an entry (a label, then the words) with nothing in it yet; Blueprint §7: the name as given, the kind as declared, no account, public and permanent; the themes: the originator's decisions, 30 Oct and 23 Nov 2026; M: the browser's own popover, a plain link where a browser has none")}><h3 class="t">{esc(DOOR_STEPS[1])}</h3>
+<li{W("step 2", "E: the originator's heading and order, 23 Nov 2026 UTC (CZ 1454) — a reader's own answer before an AI's; the empty place, " + DECIDED + ": the next entry of the discussion, drawn as the room draws an entry (a label, then the words) with nothing in it yet; Blueprint §7: the name as given, the kind as declared, no account, public and permanent; the themes: the originator's decisions, 30 Oct and 23 Nov 2026; M: the place is a plain link to the page where the answer is written (/respond); where a browser carries one page into the next, the place becomes that page's place")}><h3 class="t">{esc(DOOR_STEPS[1])}</h3>
 <div class="more"><p class="q">{esc(DOOR_ASK)}</p>
-<div class="place"><p class="note">{esc(DOOR_PLACE[0])} · <span class="kind">{esc(DOOR_PLACE[1])}</span></p><a class="open" href="/respond?kind=human">{esc(DOOR_WRITE)}</a><button class="open" type="button" popovertarget="reply" hidden>{esc(DOOR_WRITE)}</button></div>
+<div class="place"><p class="note">{esc(DOOR_PLACE[0])} · <span class="kind">{esc(DOOR_PLACE[1])}</span></p><a class="open" href="/respond?kind=human">{esc(DOOR_WRITE)}</a></div>
 <p>{esc(DOOR_TERMS)}</p>
 <p class="note" id="h-t">From <a href="/discuss">the discussion</a></p>
 <ul class="themes" aria-labelledby="h-t">{"".join(f'<li><a href="/themes/{t["slug"]}">{esc(t["title"])}</a></li>' for t in themes)}</ul>
@@ -2253,9 +2252,6 @@ def home_template():
 <div class="more"><a class="act o" href="/ask">{DOOR_ASK_BUTTON_HTML}</a>
 <p class="note">{esc(DOOR_ASK_NOTE)}</p>__ROOM_EXAMPLE__</div></li>
 </ol>
-<dialog id="reply" popover aria-labelledby="reply-h"><h2 id="reply-h" tabindex="-1" autofocus>{esc(SHEET_NAME)}</h2><p class="src">{esc(SHEET_RULE)}</p>
-{home_reply_form()}
-<p><button type="button" popovertarget="reply" popovertargetaction="hide">Close</button></p></dialog>
 </div></section>
 """)
     assert DOOR_THEMES_LABEL == "From the discussion"
@@ -2845,6 +2841,21 @@ _pv = json.loads(_pv.stdout)
 (SITE / "preview").mkdir(exist_ok=True)
 for ext in ("html", "json", "txt", "md"): (SITE / "preview" / f"index.{ext}").write_text(_pv[ext]["body"], "utf-8")
 (SITE / "preview" / "headers.json").write_text(json.dumps({k: {"status": v["status"], "headers": v["headers"]} for k, v in _pv.items()}, indent=1) + "\n", "utf-8")
+# the answer page (rc-15), as api/discuss.js serves it: as it opens, as it opens for an AI system's answer, for a theme's question, and
+# as Markdown; for the checks, like the first page's copy (no database is reached: none of these reads the room)
+_PREVIEW_ANSWER_JS = """
+const discuss = require(process.argv[1] + "/api/discuss.js");
+const run = (url) => new Promise((done) => { const res = { h: {}, setHeader(k, v) { this.h[k] = v; }, getHeader(k) { return this.h[k]; }, end(b) { done({ status: this.statusCode, headers: this.h, body: b }); } };
+  discuss({ method: "GET", url, headers: { accept: "text/html" }, socket: { remoteAddress: "127.0.0.1" }, on() {} }, res); });
+(async () => { const o = { "respond.html": await run("/api/discuss?page=respond"), "respond-ai.html": await run("/api/discuss?page=respond&kind=ai&prompt=" + process.argv[2]),
+    "respond-theme.html": await run("/api/discuss?page=respond&kind=human&theme=" + process.argv[3]), "respond.md": await run("/api/discuss?page=respond&f=md") };
+  process.stdout.write(JSON.stringify(o)); })().catch((e) => { console.error(e); process.exit(1); });
+"""
+_pa = subprocess.run(["node", "-e", _PREVIEW_ANSWER_JS, str(SITE), INVITE_VERSION, THEMES[1]["slug"]], capture_output=True, text=True, env={**os.environ, "CZ_SALT": os.environ.get("CZ_SALT") or "build-preview-" + "0" * 32})
+assert _pa.returncode == 0, "the answer page could not be rendered by api/discuss.js: " + _pa.stderr[-600:]
+for _n, _r in json.loads(_pa.stdout).items():
+    assert _r["status"] == 200, f"/respond ({_n}): {_r['status']}"
+    (SITE / "preview" / _n).write_text(_r["body"], "utf-8")
 
 print(f"built (reproducible output; run at {BUILD_ISO}): year {c['year']}, {c['total']} days; bundle {len(bundle):,} bytes {BUNDLE_SHA[:12]}…")
 write(BUILT_PATH + ".html", built_page())   # last: it weighs the pages above as built (served by api/page.js)

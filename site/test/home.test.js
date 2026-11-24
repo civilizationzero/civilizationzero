@@ -104,12 +104,12 @@ test("with neither door answered a window shows no control: three bare titles; t
   const steps = [...secH.matchAll(/^<li data-src="[^"]+"><h3 class="t">([^<]*)<\/h3>\n([\s\S]*?)<\/li>$/gm)];
   assert.equal(steps.length, 3);
   for (const m of steps) assert.ok(m[2].startsWith('<div class="more">') && m[2].endsWith("</div>") && m[2].split("<div").length === m[2].split("</div>").length, `${m[1]}: a title, then everything else in .more`);
-  const restH = secH.replace(/<div class="more">[\s\S]*?<\/div><\/li>/g, "</li>").replace(/<dialog[\s\S]*?<\/dialog>/, "");
+  const restH = secH.replace(/<div class="more">[\s\S]*?<\/div><\/li>/g, "</li>");
   assert.ok(!ctl.test(restH), "the human's window at rest: nothing that takes the keyboard");
   assert.deepEqual(text(restH).trim().split(/\s+/), "I am human Read the Core Say what you think Ask your AI".split(" "));
   const restN = secN.replace(/<pre class="x (req|bd|sum)"[\s\S]*?<\/pre>|<ul class="raw"[\s\S]*?<\/ul>|<p class="back">[\s\S]*?<\/p>/g, "");
   assert.ok(!ctl.test(restN) && restN.includes('<p class="lbl">What this page answers a machine that asks for JSON:</p>') && restN.includes('<pre class="x hd">'), "the machine's window at rest: its label and the head, no control");
-  assert.ok(css.includes("\n.page:not(:has(.col:target)) :is(.more,.req,.bd,.sum){display:none}\n") && css.includes(".raw,.back{display:none}\n") && css.includes("#reply{display:none;"), "what is not shown at rest");
+  assert.ok(css.includes("\n.page:not(:has(.col:target)) :is(.more,.req,.bd,.sum){display:none}\n") && css.includes(".raw,.back{display:none}\n") && !/<dialog|popover/.test(secH), "what is not shown at rest; no sheet waits in the page (rc-15)");
   assert.ok(css.includes(".page:not(:has(.col:target)) .stage{min-block-size:var(--e14);pointer-events:none}") && css.includes('.page:not(:has(.col:target)) .door::after{content:"";position:absolute;inset:100% 0 auto;block-size:var(--e14)}'), "each door reaches down over its window");
   assert.ok(!css.includes("first-child") && !/lbl[^{}]*\{[^{}]*display:none/.test(css), "no step is set apart at rest; the label is shown in every state");
   assert.ok(secN.includes('<h2 id="h-n">I am not human</h2>\n<p class="lbl">What this page answers a machine that asks for JSON:</p>\n<pre class="x req"'), "the label stands over the command");

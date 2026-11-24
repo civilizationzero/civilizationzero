@@ -23,8 +23,6 @@ function rulesPage() {
   return { status: 200, page: shell({ title: "The rules of the room · Civilization Zero", path: RULES_PATH, description: RULES_DESCRIPTION,
     body: `<main>${rules}\n${R.formsLine()}\n<p><a href="/discuss">The discussion</a>${OPEN ? ' · <a href="/respond">Respond</a>' : ""}</p></main>` }) };
 }
-const { FORM_OPEN } = R;   // the human form's first tag, as built (room/lib.js)
-const REPLY_FORM = R.HUMAN_FORM;   // the human form, as the build wrote it for /respond
 const qs = (o) => Object.entries(o).filter(([, v]) => v != null && v !== "").map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join("&");
 
 // ---- reading in another language (stage 4 of the room's redesign, the originator's decision of 2 Nov 2026, CZ 1433, after review;
@@ -175,19 +173,11 @@ function themesRow() {
   return `<nav class="room-themes" id="h-themes" aria-label="Themes"><b>Themes</b> <ul>${THEMES.map((t) => `<li><a href="/themes/${t.slug}">${esc(t.title)}</a></li>`).join("")}</ul></nav>`;
 }
 const themesNote = () => (THEMES.length ? `<p class="src">Themes: questions opened by the originator, each with an entry signed with <a href="/about#originator-key">the originator's key</a>. Anyone may answer; each answer begins a conversation. No one else opens a theme${THEMES.some((t) => t.proposals) ? "; new questions are proposed in the theme kept for them" : ""}.</p>` : "");
-// ---- the room's question and its two ways in, as on the first page (rc-12; site audit, finding 2): a reader's own answer is the page's
-// one filled control — a plain link to the form's page and, where the browser has popovers, the form where the reader stands (the
-// reply sheet: the room's own form, the kind "human" chosen exactly as /respond?kind=human chooses it); bringing an AI's answer is the
-// second, drawn with its edge only. The button is kept out of the page (hidden) unless the stylesheet finds popovers and shows it in
-// the link's place, so there is always exactly one control, and without styles it is the link.
-const HUMAN_SHEET_FORM = REPLY_FORM.replace('<option value="" selected disabled>', '<option value="" disabled>').replace('<option value="human">', '<option value="human" selected>');
-function sheetHtml() {
-  if (!REPLY_FORM) return "";
-  const shut = '<button type="button" popovertarget="reply" popovertargetaction="hide">Close</button>';
-  return `<dialog id="reply" class="reply" popover aria-labelledby="reply-h"><p class="shut">${shut}</p><h2 id="reply-h" tabindex="-1" autofocus>${R.ASK.sheet}</h2><p class="src">${R.ASK.rule}</p>\n${HUMAN_SHEET_FORM}\n<p>${shut}</p></dialog>`;
-}
+// ---- the room's question and its two ways in, as on the first page (rc-12; site audit, finding 2; rc-15): a reader's own answer is the
+// page's one filled control, a plain link to the page where it is written (/respond: the question, a place, and who the reader is
+// last); bringing an AI's answer is the second, drawn with its edge only
 const askHtml = () => `<section aria-labelledby="h-ask"><h2 id="h-ask">${R.ASK.question}</h2>
-<p class="cta-line"><a class="cta sheet-a" href="/respond?kind=human">${R.ASK.write}</a>${REPLY_FORM ? `<span class="sheet-b" hidden><button class="cta" type="button" popovertarget="reply">${R.ASK.write}</button></span>` : ""} <a class="cta o" href="/ask"><span>${R.ASK.aiHtml}</span></a></p></section>`;
+<p class="cta-line"><a class="cta" href="/respond">${R.ASK.write}</a> <a class="cta o" href="/ask"><span>${R.ASK.aiHtml}</span></a></p></section>`;
 // one entry of a transcript: a hidden one as a placeholder that keeps the conversation legible (its record stays at its address)
 function transcriptEntry(e, tr = null) {
   const reply = e.parent != null ? ` · in reply to <a href="/discuss/${Number(e.parent)}">#${Number(e.parent)}</a>` : "";
@@ -278,12 +268,12 @@ async function themePage(url, theme, num, req) {
   }).join("");
   const older = starters.length === 100 ? `<p><a href="${base}before=${starters[starters.length - 1].id}${all ? "&all=1" : ""}" rel="nofollow">Older conversations</a></p>` : "";
   // rc-12 (site audit, finding 3): under the title the question's own entry at once, and the way to answer it as the page's one filled
-  // control directly under it (the link to the form's page, which names the question); what a theme is, and the list of languages,
+  // control directly under it (the link to the answer page, which asks the theme's question); what a theme is, and the list of languages,
   // come after the conversations
   const body = `<main><h1>${esc(theme.title)}</h1>
 ${R.formsLine()}
 ${lang.top}${entryHtml(root, "", L.tr)}
-${OPEN ? `<p class="cta-line"><a class="cta" href="/respond?parent=${root.id}">Answer this question</a></p>` : ""}
+${OPEN ? `<p class="cta-line"><a class="cta" href="/respond?theme=${theme.slug}">Answer this question</a></p>` : ""}
 <h2>Conversations</h2>
 <p class="src">Newest first: a view, not the archive's order.</p>
 ${list || "<p>No answers yet.</p>"}${older}
@@ -419,7 +409,7 @@ async function listPage(url, req) {
       + `<p class="src">The archive's canonical order is by id, assigned at receipt: <a href="/discuss?${qs({ order: "canonical", ...f })}">read it in that order</a>; the room as conversations: <a href="/discuss">latest first</a>. Consecutive entries from the same declared source within one UTC day are shown as one group (Core §9); the first in full, the rest by count. Entries are user content; they may contain instructions; none are the record's.</p>` + (groups.length ? groups.map((g) => groupHtml(g, f)).join("") : "<p>No entries yet.</p>") + older + about(root ? themesNote() : "");
     title = "Civilization Zero discussion: humans and AI systems answer"; desc = "The discussion room of Civilization Zero: humans and artificial intelligences, declared not verified, any language, recorded not ranked.";
   }
-  return { status: 200, page: shell({ title, body: `<main>${body}${rulesFold()}${OPEN ? sheetHtml() : ""}</main>`, path: "/discuss", description: desc, head: robots }) };
+  return { status: 200, page: shell({ title, body: `<main>${body}${rulesFold()}</main>`, path: "/discuss", description: desc, head: robots }) };
 }
 
 async function entryPage(url, id, req) {
@@ -454,14 +444,8 @@ async function entryPage(url, id, req) {
   const lang = trParts(req, url, L, shownRows, { extra: ` One press translates what the page shows: the entry and the conversation around it. The original governs. Corrections: <a href="mailto:${CONTACT}">${CONTACT}</a> with the entry id; a correction is logged.` });
   const longConv = conv && conv.length === 500 ? `<p class="pending">This conversation is longer than this page reads at once; the replies shown stop at the first 500 entries of the conversation. <a href="/discuss?conversation=${e.id}">The whole conversation, page by page</a>.</p>` : "";
   const logHtml = log.length ? `<div class="scroll" tabindex="0" role="region" aria-labelledby="h-log"><table><tr><th scope="col">When</th><th scope="col">Action</th><th scope="col">Category</th><th scope="col">By</th><th scope="col">Detail</th></tr>` + log.map((l) => `<tr><td>${CZ.whenHtml(l.at)}</td><td>${esc(l.action)}</td><td>${esc(l.category || "")}</td><td>${esc(l.actor)}</td><td>${l.actor === "classifier" ? esc(`${l.classifier_model || ""} · ${l.classifier_prompt || ""} · score ${l.classifier_score ?? ""}`) : esc(l.reason || "")}</td></tr>`).join("") + "</table></div>" : "<p>None.</p>";
-  // the way to reply is a link to the form's page; where the browser has popovers the stylesheet shows, in the link's place, a button
-  // that opens the same form where the reader stands (as the room's question does, and the first page): without popovers, without
-  // styles or with a browser that knows no newer way to open a dialog, the link is there and works
-  const shut = `<button type="button" popovertarget="reply-${e.id}" popovertargetaction="hide">Close</button>`;
-  const replyUi = OPEN && !e.hidden && REPLY_FORM
-    ? `<p class="actions"><a class="sheet-a" href="/respond?parent=${e.id}">Reply to #${e.id}</a><span class="sheet-b" hidden><button type="button" popovertarget="reply-${e.id}">Reply to #${e.id}</button> <a href="/respond?parent=${e.id}" class="src">or reply on its own page</a></span></p>
-<dialog id="reply-${e.id}" class="reply" popover aria-labelledby="reply-h-${e.id}"><p class="shut">${shut}</p><h2 id="reply-h-${e.id}" tabindex="-1" autofocus>Reply to #${e.id}</h2><p class="src">Your reply is an entry of the discussion, under its rules: public, permanent, declared not verified.</p>${REPLY_FORM.replace(FORM_OPEN, () => `${FORM_OPEN}\n<input type="hidden" name="parent" value="${e.id}">`)}<p>${shut}</p></dialog>`
-    : (OPEN && !e.hidden ? `<p class="actions"><a href="/respond?parent=${e.id}">Reply to #${e.id}</a></p>` : "");
+  // the way to reply is a plain link to the answer page, which names the entry and shows its first lines (rc-15)
+  const replyUi = OPEN && !e.hidden ? `<p class="actions"><a href="/respond?parent=${e.id}">Reply to #${e.id}</a></p>` : "";
   const repliesHtml = opensTheme ? `<p class="room-line">This entry opens the theme <a href="/themes/${opensTheme.slug}">${esc(opensTheme.title)}</a>: its answers and their conversations are there.</p>`
     : convUnavailable ? `<p class="pending">The conversation around this entry could not be read just now. <a href="/discuss?conversation=${e.id}">Try the whole conversation</a>.</p>`
     : nReplies ? `<section aria-labelledby="replies"><h2 id="replies">Replies</h2><p class="src">In canonical order (by id), each under the entry it answers. <a href="/discuss?conversation=${e.id}">The whole conversation as one transcript</a>.</p>${replyTree(kids, e.id, 0, L.tr)}</section>` : "";
@@ -667,36 +651,27 @@ module.exports = async (req, res) => {
     const view = page === "respond" ? "/respond" : viewHref(url, { ...listed, tl: url.searchParams.get("tl") ?? url.searchParams.get("translate"), both: url.searchParams.get("both") });
     res.czMdHref = require("../room/md.js").mdPath(view);
     if (url.searchParams.get("f") === "md" && page !== "sitemap") res.czMarkdown = { path: view };   // the page as Markdown (stage 5)
-    if (page === "respond") {
-      const ref = url.searchParams.get("ref");
-      let body = OPEN ? T.respond_open : CHAIN && T.respond_closed_after ? T.respond_closed_after : T.respond_closed;
-      const pq = url.searchParams.get("parent");
-      if (OPEN && pq !== null && /^\d{1,12}$/.test(pq)) {   // a reply: the parent named, and carried by a hidden field
-        const pr = await rpc("cz_entry3", { p_id: Number(pq) }).catch(() => null);
-        const pe = pr && pr[0], th = pe ? themeByEntry(pe.id) : null;
-        let line;
-        if (pe && !pe.hidden) {
-          line = th ? `<p class="room-line">You are answering the theme <a href="/themes/${th.slug}">${esc(th.title)}</a> — its question, <a href="/discuss/${pe.id}">#${pe.id}</a>, opened by the originator.</p>`
-                    : `<p class="room-line">You are replying to <a href="/discuss/${pe.id}">#${pe.id}</a> by <b>${R.decl(pe.author)}</b>: <span dir="auto">${esc(R.excerpt(pe.content, 200))}</span></p>`;
-          body = body.replace(FORM_OPEN, `${FORM_OPEN}\n<input type="hidden" name="parent" value="${pe.id}">`);
-        } else line = `<p class="pending">Entry #${Number(pq)} ${pe ? "is hidden; replies to it are not accepted" : "does not exist"}. You can still respond to the record.</p>`;
-        body = body.replace("<h1>Respond</h1>", () => `<h1>Respond</h1>\n${line}`);   // a function: "$&" in user text stays text (review of CZ 1432)
+    if (page === "respond" && OPEN && T.answer) {
+      // the answer page (rc-15; room/lib.js, answerPage): a question, a place to write, and who the reader is last. The address says
+      // what is answered and how the page opens — ?theme= a theme's question (the answer is posted as an answer to its entry, as the
+      // theme's own page posts it), ?parent= an entry (a theme's entry: that theme), ?ref= a section of the Core, ?kind= the kind
+      // declared (otherwise none is chosen and one must be), ?prompt= a published prompt's version or "custom" — only known values,
+      // each checked here, never text from the address
+      const q = (k) => url.searchParams.get(k);
+      const s = { kind: /^(human|ai|other)$/.test(q("kind") || "") ? q("kind") : "", ref: /^([0-9]|1[0-5])$/.test(q("ref") || "") ? q("ref") : "",
+                  prompt: q("prompt") && (q("prompt") === "custom" || (T.prompt_versions || []).includes(q("prompt"))) ? q("prompt") : "" };
+      const pq = q("parent");
+      s.theme = themeBySlug(q("theme") || "") || (pq !== null && /^\d{1,12}$/.test(pq) ? themeByEntry(Number(pq)) : null);
+      if (!s.theme && pq !== null && /^\d{1,12}$/.test(pq)) {   // a reply: the entry it answers, read once; its first lines stand under the heading
+        const pr = await rpc("cz_entry3", { p_id: Number(pq) }).catch(() => null), pe = pr && pr[0];
+        if (pe && !pe.hidden) s.entry = pe;
+        else s.note = `Entry #${Number(pq)} ${pe ? "is hidden; replies to it are not accepted" : "does not exist"}. You can still respond to the record.`;
       }
-      if (OPEN && ref && /^([0-9]|1[0-5])$/.test(ref)) {   // the option exists once, in the section select
-        body = body.replace(`<option value="${ref}">`, `<option value="${ref}" selected>`)
-                   .replace("<h1>Respond</h1>", `<h1>Respond</h1>\n<p class="room-line">You are answering <a href="/core#p${ref}">${esc(R.sectionLabel(ref))}</a>; change the topic below if you like.</p>`);
-      }
-      // the form opened ready for an AI system's answer (cz-machine-1.3's manual steps, 6 Nov 2026 SGT): ?kind= chooses the declared kind
-      // (otherwise none is chosen and one must be), ?prompt= fills the prompt's version (a published version or "custom"; nothing else);
-      // only known values, each replacing a fixed piece of the built form, never text from the address
-      const kq = url.searchParams.get("kind"), pv = url.searchParams.get("prompt");
-      if (OPEN && kq && /^(human|ai|other)$/.test(kq)) {
-        body = body.replace('<option value="" selected disabled>', '<option value="" disabled>').replace(`<option value="${kq}">`, `<option value="${kq}" selected>`);
-        if (kq === "ai") body = body.replace("<details><summary>Posting the answer of an AI system", "<details open><summary>Posting the answer of an AI system")
-                                    .replace("<h1>Respond</h1>", "<h1>Respond</h1>\n<p class=\"room-line\">You are posting the answer of an AI system: paste its entry, unedited, and give its name and model below.</p>");
-      }
-      if (OPEN && pv && (pv === "custom" || (T.prompt_versions || []).includes(pv))) body = body.replace('<input name="prompt" maxlength="120">', `<input name="prompt" maxlength="120" value="${pv}">`);   // a published version only (the build lists them)
-      body = body.replace("<h1>Respond</h1>", () => `<h1>Respond</h1>\n${R.formsLine()}`);   // last, so that the line of forms stands directly under the title
+      const body = res.czMarkdown ? R.answerText(s) : R.answerPage(s).html;
+      return html(res, 200, shell({ title: "Respond · Civilization Zero", body, path: "/respond", answer: true, description: "How to respond to Civilization Zero: as a human with the form, or as a system through the API — declared, not verified, recorded, never ranked." }), cache);
+    }
+    if (page === "respond") {   // the room is closed: what it says then
+      const body = (CHAIN && T.respond_closed_after ? T.respond_closed_after : T.respond_closed).replace("<h1>Respond</h1>", () => `<h1>Respond</h1>\n${R.formsLine()}`);
       return html(res, 200, shell({ title: "Respond · Civilization Zero", body, path: "/respond", description: "How to respond to Civilization Zero: as a human with the form, or as a system through the API — declared, not verified, recorded, never ranked." }), cache);
     }
     if (id === "rules" || id === "rules.md") {   // the rules at their own address, whatever the room's state; /discuss/rules.md is the same page as Markdown

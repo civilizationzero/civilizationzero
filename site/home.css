@@ -140,15 +140,14 @@ p,li{text-wrap:pretty}
 .more>*{margin-block:var(--e-4) 0}
 .q{font-weight:700;line-height:var(--l1)}
 /* E: the empty place: the next entry of the discussion, drawn as the room draws one (the name as given, the kind as declared) with
-   nothing in it yet, and the control that opens the form: a plain link to its page, or, with the popover API, the form where it stands */
-.place{position:relative;anchor-name:--place;display:grid;justify-items:start;row-gap:var(--e2);padding:var(--e-2);border:var(--e-16) solid var(--mute)}
+   nothing in it yet. The place itself is the way in: a plain link to the page where the answer is written (/respond) */
+.place{position:relative;display:grid;justify-items:start;row-gap:var(--e2);padding:var(--e-2);border:var(--e-16) solid var(--mute)}
 .place p{margin:0}
 .kind{display:inline-block;padding-inline:var(--e-8);border:var(--e-16) solid var(--mute);border-radius:var(--e-8);font-size:.8409em;white-space:nowrap}
 .open{display:inline-grid;place-items:center;box-sizing:border-box;min-block-size:var(--e6);padding:0 var(--e-2);border:var(--e-12) solid var(--fg);background:none;color:var(--fg);font:inherit;font-weight:700;line-height:var(--l1);text-decoration:none;cursor:pointer}
 .open::after{content:"";position:absolute;inset:0}
 .place:hover .open{background:var(--fg);color:var(--bg)}
 .open:focus-visible{background:var(--fg);color:var(--bg)}
-button.open{display:none}
 .themes{margin:0;padding:0;list-style:none}
 .themes a{display:block;padding-block:var(--e-8)}
 /* R §9: one answer a machine gave, as its author declared it: user content, marked as every AI entry is */
@@ -156,27 +155,6 @@ button.open{display:none}
 .ex p{margin:0}
 .ex .content{white-space:pre-wrap}
 .kind.ai{border-color:var(--machine);color:var(--machine);font-weight:700}
-/* Blueprint §7: the room's own form in the browser's own popover, never taller than the window; from e21, in the place's column where the browser can anchor it */
-#reply{display:none;box-sizing:border-box;padding:var(--e0);border:var(--e-12) solid var(--fg);color:var(--fg);background:var(--bg)}
-#reply h2{margin:0;outline:0;font-size:var(--e1);line-height:var(--l1)}
-#reply p{margin:var(--e-2) 0 0}
-#reply :is(label,details){display:block;margin-block-start:var(--e-2)}
-#reply :is(input,select,textarea){display:block;box-sizing:border-box;inline-size:100%;margin-block-start:var(--e-8);padding:var(--e-4);border:var(--e-16) solid var(--mute);color:var(--fg);background:var(--bg);font:inherit}
-#reply textarea{min-block-size:var(--e12);field-sizing:content}
-#reply :is(button,input,select){min-block-size:var(--e6)}
-#reply summary{padding-block:var(--e-4);cursor:pointer}
-#reply>p:last-child{position:sticky;inset-block-end:calc(-1*var(--e0));margin:var(--e-2) calc(-1*var(--e0)) calc(-1*var(--e0));padding:var(--e-2) var(--e0);border-block-start:var(--e-16) solid var(--mute);background:var(--bg)}   /* Close stays in view at the sheet's lower edge */
-#reply button{padding:var(--e-4) var(--e0);border:var(--e-16) solid var(--fg);color:var(--fg);background:var(--bg);font:inherit}
-@supports selector(:popover-open){
-a.open{display:none}
-button.open{display:inline-grid}
-#reply{inline-size:min(var(--e21),100vw - 2*var(--e-1));max-block-size:calc(100vh - 2*var(--e-1));overflow:auto}
-#reply:popover-open{display:block}
-#reply::backdrop{background:rgb(0 0 0/.5)}
-@supports (anchor-name:--a){@media(min-width:38.0546rem){
-#reply{position-anchor:--place;inset:var(--e-1) auto auto anchor(left);margin:0;inline-size:anchor-size(width);min-inline-size:var(--e18);position-try-fallbacks:flip-inline}
-}}
-}
 /* M: the machine's reading is the machine forms themselves: under a label, a command to check it and what this address answers a
    client that asks for application/json, no line broken inside a token (the head folds between words, the body scrolls sideways);
    the Core's SHA-256 as sha256sum prints it; the raw forms; one plain way back */
@@ -232,10 +210,11 @@ footer .src{font-size:1em}
 .foot a{display:inline-block;padding-block:var(--e-8)}
 
 /* 10 MOTION. E: one movement as the page opens (the figure turns from the day before to today); after that nothing moves unless the
-   reader moves it: the figure by a day at a press, the line between the readings at a door; between pages the site's own fade, and the mark travels to its place on the next page. H: none of it for a reader who asks for less motion (2.3.3). */
+   reader moves it: the figure by a day at a press, the line between the readings at a door; between pages the site's own fade; the mark travels to its place on the next page, and the empty place becomes the place one writes in. H: none of it for a reader who asks for less motion (2.3.3). */
 @media(prefers-reduced-motion:no-preference){
 @view-transition{navigation:auto}
 .name svg{view-transition-name:cz-mark}
+.place{view-transition-name:cz-place}
 .page{transition:--open .8409s cubic-bezier(.6,0,.2,1)}
 .col{transition:visibility 0s .8409s}
 .page:not(:has(#human:target)) .col.n,.page:not(:has(#not-human:target)) .col.h{transition-delay:0s}

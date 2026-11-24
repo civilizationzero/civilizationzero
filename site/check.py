@@ -56,7 +56,10 @@ DT = json.loads((SITE / "api" / "discuss-templates.json").read_text("utf-8"))
 def dshell(title, body, path): return DT["shell"].replace("__MDPATH__", path + ".md").replace("__TITLE__", title).replace("__DESC__", "d").replace("__PATH__", path).replace("__HEAD__", "").replace("__BODY__", body.replace("<main>", '<main id="content">', 1))   # as room/lib.js's shell
 VIRTUAL = {"discuss.html": dshell("The open discussion", DT["closed"], "/discuss"),
            "discuss-open.html": dshell("The open discussion", "<main><h1>The open discussion</h1><p>x</p>" + DT["rules"] + "</main>", "/discuss"),
-           "respond.html": dshell("Respond", DT["respond_closed"], "/respond"), "respond-open.html": dshell("Respond", DT["respond_open"], "/respond")}
+           "respond.html": dshell("Respond", DT["respond_closed"], "/respond"),
+           # the answer page: its shell as built, with the page's main part as api/discuss.js serves it (site/preview: the build writes the copy)
+           "respond-open.html": DT["answer_shell"].replace("__MDPATH__", "/respond.md").replace("__TITLE__", "Respond").replace("__DESC__", "d").replace("__PATH__", "/respond").replace("__HEAD__", "")
+                                .replace("__BODY__", re.search(r"<main[^>]*>.*?</main>", (SITE / "preview" / "respond.html").read_text("utf-8"), re.S).group(0))}
 check(DT["open"] == ROOM_OPEN and DT["opens_not_later_than"] == "2026-11-30" and (not ROOM_OPEN or DT["opened"]), "discuss templates state")
 ids_by_page = {}
 parsed = {}
@@ -491,21 +494,31 @@ for _p, _f in (("/core.txt", "core.txt"), ("/record.txt", "record.txt"), ("/prom
     check(_keys.get("Repr-Digest") == _d and "Content-Digest" not in _keys, f"vercel.json: the digest of {_p} is not its bytes'")
     check(all(any(m.get("key") == "accept-encoding" and re.fullmatch(m.get("value", ""), _v) for m in h["missing"]) for h in _rules for _v in ("gzip, deflate, br", "GZIP", "br", "zstd", "*")), f"vercel.json: a digest of {_p} without the condition on compression")
 # the invitation's posting steps quote the form's own labels (the originator's request of 6 Nov 2026 SGT, CZ 1436): each label quoted
-# in the current invitation must stand in the form served at /respond, and the kind has no default (a choice is required)
+# in the current invitation stands on the answer page, as a reader sees it (site/preview, the page as api/discuss.js serves it), and
+# the kind has no default (a choice is required). rc-15: the page as it opens, and as it opens for an AI system's answer
 _tpl = (SITE / "api/discuss-templates.json").read_text("utf-8")
 _inv = sorted((PUBLIC / "prompts").glob("cz-machine-1.*.txt"), key=lambda p_: int(p_.stem.split(".")[-1]))[-1].read_text("utf-8")
+_ans = {n: (SITE / "preview" / f"respond{n}.html").read_text("utf-8") for n in ("", "-ai", "-theme")}
+_amain = {n: re.search(r"<main[^>]*>.*?</main>", h, re.S).group(0) for n, h in _ans.items()}
+_seen = lambda h: _h.unescape(re.sub(r"\s+", " ", re.sub(r"<[^>]+>", "", re.sub(r"<(\w+)[^>]* hidden>.*?</\1>", "", h, flags=re.S))))   # the words shown; what is marked hidden left out
 for _lab in ("Your name, as you want it shown", "ai — the answer of an AI system", "Your response",
              "Posting the answer of an AI system, or naming the language", "System", "Operator", "Language of the text", "Record this response"):
     check(f'"{_lab}"' in _inv, f"the invitation does not quote the form's label {_lab!r}")
-    check(_lab in _tpl, f"the form lacks the label {_lab!r} that the invitation quotes")
-check('<select name=\\"kind\\" required aria-describedby=\\"kind-note\\"><option value=\\"\\" selected disabled>' in _tpl
-      and '</select></label>\\n<p class=\\"src\\" id=\\"kind-note\\">What you declare yourself to be: declared, not verified.</p>' in _tpl, "the form's kind has a default, and under it the line that says a kind is declared, not verified")
+    check(_lab in _tpl and _lab in _seen(_amain["-ai"]) and _lab in _h.unescape(re.sub(r"<[^>]+>", "", _amain[""])), f"the answer page lacks the label {_lab!r} that the invitation quotes")
+_radio = lambda h: re.findall(r'<input type="radio" name="kind" value="(\w+)" id="k-\1"([^>]*)><label for="k-\1">([^<]*)</label>', h)
+check([(v, l) for v, _, l in _radio(_amain[""])] == [("human", "human"), ("ai", "AI"), ("other", "other")] and not any("checked" in a for _, a, _ in _radio(_amain[""])) and " required" in _radio(_amain[""])[0][1]
+      and "<select name=\"kind\"" not in _amain[""] and _amain[""].count('name="kind"') == 3
+      and '<p class="src"><span class="ia" id="kind-ai" hidden>ai — the answer of an AI system. </span>Declared, not verified.</p>' in _amain[""],
+      "the answer page: what the reader is — three radio buttons that send human, ai, other, none chosen (a choice is required), and under them the line that says a kind is declared, not verified")
 _pv = json.loads(_tpl).get("prompt_versions") or []
 check(len(_pv) >= 2 and _pv[0] == PROMPT_VERSION and _pv[-1] == _inv.split(" ", 1)[0] and all((PUBLIC / f"prompts/{_v}.txt").exists() for _v in _pv), "the published prompts (discuss-templates prompt_versions) are not all served, or the list is wrong")
-# the pieces api/discuss.js replaces to open the form ready for an AI system's answer (?kind=ai&prompt=…) stand in the form exactly once
-for _piece in ('<option value=\\"\\" selected disabled>', '<option value=\\"ai\\">', '<details><summary>Posting the answer of an AI system', '<input name=\\"prompt\\" maxlength=\\"120\\">'):
-    check(_tpl.count(_piece) == 1, f"the form lacks, or repeats, the piece {_piece!r} that /respond?kind=ai replaces")
-check("/respond?kind=ai&prompt=" in _inv, "the invitation's manual steps do not open the form ready for an AI system's answer")
+# the page opened ready for an AI system's answer (?kind=ai&prompt=…), as the invitation's manual steps open it: "ai" chosen, the fold
+# with its fields open and before the others, the prompt's version filled in
+check("/respond?kind=ai&prompt=" in _inv and [v for v, a, _ in _radio(_amain["-ai"]) if "checked" in a] == ["ai"]
+      and '<details class="ai" open><summary>Posting the answer of an AI system, or naming the language</summary>' in _amain["-ai"] and _amain["-ai"].index('<details class="ai" open>') < _amain["-ai"].index("<summary>Another question</summary>")
+      and f'<input name="prompt" maxlength="120" value="{_inv.split(" ", 1)[0]}">' in _amain["-ai"] and '<details class="ai"><summary>' in _amain[""] and _amain[""].index("<summary>Another question</summary>") < _amain[""].index('<details class="ai">')
+      and '<span class="ia">What did your AI answer?</span>' in _amain["-ai"] and '<span class="ia"> · Its answer, as it gave it</span>' in _amain["-ai"] and '<span class="kind k-ai ia">AI · declared</span>' in _amain["-ai"],
+      "the invitation's manual steps open the answer page ready for an AI system's answer: ai chosen, its fold open and before the others, the prompt's version filled in")
 # CZ time on other sites (/embed, 6 Nov 2026 SGT): the badge draws the site's own mark, the snippet counts from the same epoch, the routes exist
 _badge = (SITE / "api/badge.js").read_text("utf-8")
 for _d in re.findall(r'<path d="([^"]+)"', NAV_MARK):
@@ -683,8 +696,8 @@ _rmo = _rnocom.split("@media(prefers-reduced-motion:no-preference){")
 check(ROOM_CSS.startswith("/* rc-12 room */\n") and ROOM_CSS.count("/* rc-12 room */") == 1 and not _rloose and set(re.findall(r"var\((--[a-z][\w-]*)", _rnocom)) <= set(re.findall(r"(--[a-z][\w-]*):", _tokblock.group(1))) | {"--vt"}
       and not re.search(r"(?<![-\w])(max-|min-)?(width|height):|#[0-9a-f]{3,6}\b|rgb\(|var\(--machine\)|@import|url\(|@font-face|:root", _rnocom)
       and len(_rmo) == 2 and not re.search(r"transition|animation|@keyframes", _rmo[0]) and _rmo[1].strip() == ".entry:is(:hover,:focus-within,.focus){view-transition-name:var(--vt,none)}}"
-      and "form.respond .permanence{color:var(--mute);font-size:.8409em}" in _rnocom,
-      f"the room's block: on the first page's scale and tokens, no size in px, no colour of its own and no green, its one motion for a reader who has not asked for less; in the form the long notice stays small {_rloose}")
+      and not re.search(r"dialog\.reply|sheet-|\.shut|form\.respond \.permanence|p\.receipt|p\.refused", CSS + ROOM_CSS),
+      f"the room's block: on the first page's scale and tokens, no size in px, no colour of its own and no green, its one motion for a reader who has not asked for less; no rule left of the reply sheet (rc-15: the answer is written on its own page) {_rloose}")
 _snocom = re.sub(r"/\*.*?\*/", "", _scss, flags=re.S)
 _sdecl = _snocom.replace(_tokblock.group(1), "").replace(_tokblock.group(2), "")
 _SPOW = {round(2 ** (k / 4), 4) for k in range(-24, 32)}
@@ -783,13 +796,13 @@ for _form in ("txt", "md"):
 _acts = [(c, u, re.sub(r"<[^>]+>", "", t)) for c, u, t in re.findall(r'<a class="(act[^"]*)" href="([^"]+)">(.*?)</a>', _pbody)]
 _filled = [sel for sel, body in re.findall(r"([^{}]+)\{([^{}]*)\}", _nocom) if "background:var(--fg)" in body or "background:var(--fill-on)" in body]
 check(_acts == [("act", "/core", "Read the 16 principles (one page)"), ("act o", "/ask", "Ask your AI. Post its answer.")] and len(_filled) >= 1 and _filled[0].strip() == ".act:not(.o)"
-      and all(":hover" in s or ":focus-visible" in s or ".act:not(.o)" in s for sel in _filled for s in sel.split(",")) and "<button" not in fill(T["html"]).replace("<button class=\"open\"", "").replace("<button type=\"submit\"", "").replace("<button type=\"button\" popovertarget=\"reply\" popovertargetaction=\"hide\"", ""),
+      and all(":hover" in s or ":focus-visible" in s or ".act:not(.o)" in s for sel in _filled for s in sel.split(",")) and "<button" not in fill(T["html"]),
       f"home: one filled control, the first step's, in the opened reading; the third step's is drawn with its edge only; nothing else is filled unless the reader points at it {_filled}")
 # with neither door answered a window shows no control (three reviews, 23 Nov 2026 UTC): each step is its title and then, in .more, its
 # control and the rest; at rest .more, the command, the body and the checksum are not shown, the raw forms and the way back neither, so
 # nothing in a resting window takes the keyboard; and each door reaches down over its window, so a press anywhere in it answers that door
 _ctl = r"<(a|button|input|select|textarea|summary)\b|tabindex=\"0\""
-_rest_h = re.sub(r'<dialog.*?</dialog>', "", re.sub(r'<div class="more">.*?</div></li>', "</li>", _sec_h, flags=re.S), flags=re.S)
+_rest_h = re.sub(r'<div class="more">.*?</div></li>', "</li>", _sec_h, flags=re.S)
 _rest_n = re.sub(r'<pre class="x (req|bd|sum)".*?</pre>|<ul class="raw".*?</ul>|<p class="back">.*?</p>', "", _sec_n, flags=re.S)
 check(len(_li) == 3 and all(b.startswith('<div class="more">') and b.endswith("</div>") and b.count("<div") == b.count("</div>") for _, b in _li) and not re.search(_ctl, _rest_h) and not re.search(_ctl, _rest_n)
       and _strip(_rest_h).split() == "I am human Read the Core Say what you think Ask your AI".split() and "\n.page:not(:has(.col:target)) :is(.more,.req,.bd,.sum){display:none}\n" in _css and ".raw,.back{display:none}\n" in _css
@@ -797,24 +810,131 @@ check(len(_li) == 3 and all(b.startswith('<div class="more">') and b.endswith("<
       and "first-child" not in _css,
       "home, at rest: the human's window shows three bare titles and the machine's its label and the head; no control in either, nothing that takes the keyboard; a press anywhere in a window answers its door")
 _place = re.search(r'<div class="place">(.*?)</div>\n<p>(.*?)</p>', _sec_h, re.S)
-check(_place is not None and _place.group(1).startswith('<p class="note">your name · <span class="kind">human · declared</span></p><a class="open" href="/respond?kind=human">Write your answer</a>') and _place.group(2) == TERMS
-      and "No account, no verification" in DT["respond_open"] and "in any language" in DT["respond_open"] and "public and permanent" in DT["respond_open"] and "An entry cannot be edited or withdrawn. If it is later hidden or redacted under the rules" in DT["respond_open"]
-      and not re.search(r'name="[^"]*(mail|email)[^"]*"|type="email"', DT["respond_open"]),
-      "home, the second step: the empty place, labelled as the room labels an entry, with the control that opens the form; beside it what the record means for the writer, each clause the room's own rule (no account; the form asks for no e-mail; any language; public and permanent; an entry cannot be edited or withdrawn, and is hidden or redacted only under the rules)")
-# the reply sheet (rc-11): the room's own form, as /respond serves it with the kind "human" chosen (api/discuss.js), in the browser's
-# own popover, opened by the empty place without script; a plain link to /respond?kind=human is the base; no new endpoint
-_rform = re.search(r'<form class="respond".*?</form>', DT["respond_open"], re.S).group(0).replace('<option value="" selected disabled>', '<option value="" disabled>').replace('<option value="human">', '<option value="human" selected>')
-_dlg = re.search(r'<dialog id="reply" popover aria-labelledby="reply-h"><h2 id="reply-h" tabindex="-1" autofocus>Your answer</h2><p class="src">Your answer is an entry of the discussion, under its rules: public, permanent, declared not verified\.</p>\n(.*?)\n<p><button type="button" popovertarget="reply" popovertargetaction="hide">Close</button></p></dialog>', _sec_h, re.S)
-check(_dlg is not None and _dlg.group(1) == _rform and _rform.count('<option value="human" selected>') == 1 and '<form class="respond" method="post" action="/api/entries" accept-charset="utf-8">' in _rform and _pbody.replace(_FZ, "").count("<form") == 1 and _pbody.count("<dialog") == 1
-,
-      "home, the reply sheet: the form is the one /respond serves with the kind 'human' chosen, byte for byte — same fields, same action (/api/entries), same rules shown")
-check(_place is not None and _place.group(1).endswith('<a class="open" href="/respond?kind=human">Write your answer</a><button class="open" type="button" popovertarget="reply" hidden>Write your answer</button>')
-      and all('type="' in b for b in re.findall(r"<button\b[^>]*>", _sec_h)) and len(re.findall(r'<button type="submit">', _sec_h)) == 1 and "commandfor" not in _pbody
-      and "button.open{display:none}\n" in _css and "@supports selector(:popover-open){\na.open{display:none}\nbutton.open{display:inline-grid}" in _css and "#reply:popover-open{display:block}" in _css and "#reply{display:none;" in _css
-      and "max-block-size:calc(100vh - 2*var(--e-1));overflow:auto" in _css,
-      "home, the reply sheet: opened by the empty place with the popover API (popovertarget; every button states its type), a plain link to /respond?kind=human where a browser has none; never taller than the window")
-check("Your answer is an entry" not in _pv["txt"] and "Record this response" not in _pv["txt"] and "Record this response" not in _pv["md"] and "Write your answer" in _pv["txt"] and "[Write your answer](https://civilizationzero.ai/respond?kind=human)" in _pv["md"],
-      "home as text and as Markdown: the place is the link to the form's page; the sheet, which they cannot open, is not in them")
+_rules_txt = _strip(DT["rules"]); _A = DT["answer"]
+check(_place is not None and _place.group(1) == '<p class="note">your name · <span class="kind">human · declared</span></p><a class="open" href="/respond?kind=human">Write your answer</a>' and _place.group(2) == TERMS
+      and "No account, no email, no verification" in _rules_txt and "Any language" in _rules_txt and " ".join(_A["permanent"]) in TERMS and _A["permanence"].startswith("An entry cannot be edited or withdrawn. If it is later hidden or redacted under the rules")
+      and "Any language." in _A["terms"] and not re.search(r'name="[^"]*(mail|email)[^"]*"|type="email"', _amain[""] + _amain["-ai"]),
+      "home, the second step: the empty place, labelled as the room labels an entry, is the way in: a plain link to the answer page; beside it what the record means for the writer, each clause the room's own rule (no account; the form asks for no e-mail; any language; public and permanent; an entry cannot be edited or withdrawn, and is hidden or redacted only under the rules)")
+# rc-15: the reply sheet is gone from the first page. The place itself is the way in; the answer is written on its own page, /respond,
+# which opens with the kind "human" chosen for a reader who came through "I am human". The place and the place one writes in carry one
+# name, so that a browser which carries one page into the next (cross-document view transitions) turns the one into the other; only
+# for a reader who has not asked for less motion.
+_hmo = _css.split("@media(prefers-reduced-motion:no-preference){")
+check("<dialog" not in _pbody and "popover" not in _pbody and "<button" not in _pbody and _pbody.replace(_FZ, "").count("<form") == 0 and "commandfor" not in _pbody
+      and not re.search(r"#reply|button\.open|:popover-open|anchor-name|::backdrop", _css) and ".open::after{content:\"\";position:absolute;inset:0}" in _css
+      and len(_hmo) == 2 and "\n.place{view-transition-name:cz-place}\n" in _hmo[1] and "view-transition-name" not in _hmo[0]
+      and [v for v, a, _ in _radio(_amain["-theme"]) if "checked" in a] == ["human"],
+      "home, the second step (rc-15): no sheet, no form and no button on the first page; the whole place is the link (its ::after covers it); the place carries one name into the answer page, for a reader who has not asked for less motion; /respond?kind=human opens with human chosen")
+check("Record this response" not in _pv["txt"] and "Record this response" not in _pv["md"] and "Write your answer" in _pv["txt"] and "[Write your answer](https://civilizationzero.ai/respond?kind=human)" in _pv["md"],
+      "home as text and as Markdown: the place is the link to the answer page")
+# ---- the answer page (rc-15, 24 Nov 2026, CZ 1455): /respond while the room is open, read here as api/discuss.js serves it (site/preview:
+# as it opens; for an AI system's answer; for a theme's question; as Markdown). The page asks and the reader answers: two small lines,
+# the question as the page's heading, directly under it the place to write, already holding the keyboard; one line of terms; one
+# control, which opens the last step, "Who are you?" — a name, three radio buttons, what posting means, the one control that sends —
+# in the browser's own popover inside the same form; below, folded, another question, the fields for an AI system's answer, the
+# conditions. The fields, their names, their limits and the address they are posted to are the room's, unchanged.
+_am, _aai, _ath = _amain[""], _amain["-ai"], _amain["-theme"]
+_Q = "What do you think about Civilization Zero?"
+check(all(h.count("<h1") == 1 and h.count("<main") == 1 for h in _ans.values())
+      and _am.startswith('<main id="content" class="answer">\n<p class="pre">Machines are asked questions all day.<br>This one is asked of you.</p>\n<h1><span class="na">' + _Q + '</span><span class="ia" hidden>What did your AI answer?</span></h1>\n'
+                         '<form class="respond" method="post" action="/api/entries" accept-charset="utf-8">\n<div class="place"><p class="note">your name · <span class="kind k0">human, AI or other · declared</span><span class="kind kh" hidden>human · declared</span>'
+                         '<span class="kind k-ai ia" hidden>AI · declared</span><span class="kind ko" hidden>other · declared</span></p>\n<textarea id="text" name="content" required minlength="20" maxlength="12000" dir="auto" aria-describedby="text-note" autofocus>\n</textarea></div>\n'
+                         '<p class="cap"><label for="text">Your response</label><span class="ia" hidden> · Its answer, as it gave it</span></p>\n'
+                         '<p class="src" id="text-note">20 to 6,000 characters. Any language. You may decline: nothing you write is kept until you send it.</p>\n'
+                         '<p class="acts"><button class="cta send" type="button" popovertarget="who">Send</button><span class="wait" hidden>At least 20 characters.</span></p>\n<div id="who" popover role="group" aria-labelledby="who-h">\n<h2 id="who-h">Who are you?</h2>\n')
+      and _A["question"] == _Q == _pj["doors"]["human_steps"][1]["ask"] and _A["name"] == "your name" and f'{_A["name"]} · human · declared' == _pj["doors"]["human_steps"][1]["place"],
+      "the answer page, as it opens: two small lines; the question, the first page's own, as the page's one heading; directly under it the place — on its upper edge the name and the kind as declared, as on the first page — already holding the keyboard; its caption, the terms, and the control that opens the last step")
+_who = re.search(r'<div id="who" popover role="group" aria-labelledby="who-h">\n(.*?)\n</div>\n<div class="folds">', _am, re.S)
+check(_who is not None and _who.group(1) == '<h2 id="who-h">Who are you?</h2>\n<label>Your name, as you want it shown <input name="author" required maxlength="240" dir="auto" autofocus></label>\n<fieldset class="kinds"><legend>You are</legend>\n'
+      '<div class="doors"><input type="radio" name="kind" value="human" id="k-human" required><label for="k-human">human</label><input type="radio" name="kind" value="ai" id="k-ai" aria-describedby="kind-ai"><label for="k-ai">AI</label><input type="radio" name="kind" value="other" id="k-other"><label for="k-other">other</label></div>\n'
+      '<p class="src"><span class="ia" id="kind-ai" hidden>ai — the answer of an AI system. </span>Declared, not verified.</p>\n</fieldset>\n'
+      '<p><strong>Public and permanent:</strong> an answer cannot be edited or withdrawn; it can be hidden or redacted only under the rules.</p>\n<p class="src permanence">' + _A["permanence"] + '</p>\n'
+      '<p class="acts"><button class="cta" type="submit">Record this response</button> <button class="back" type="button" popovertarget="who" popovertargetaction="hide">Back to my text</button></p>'
+      and _am.index('<div id="who"') < _am.index("</form>") and _am.count("<form") == 1 and _am.count('type="submit"') == 1 and "cannot be recalled." in _A["permanence"],
+      "the answer page, the last step: 'Who are you?' — the name; what the reader is, three radio buttons; that it is declared, not verified; what posting means, in reading size, and the notice of CZ 1433 small under it; the one control that sends, in the invitation's words; a plain way back — inside the same form")
+# the keyboard's order is the source's: the place, Send, the name, the kind, the control that sends, the way back; then what is folded
+_ctl = [m.group(0) for m in re.finditer(r'<textarea id="text"|<button class="cta send"|<input name="author"|<input type="radio" name="kind" value="human"|<button class="cta" type="submit"|<button class="back"|<summary>', _am)]
+check(_ctl[:6] == ['<textarea id="text"', '<button class="cta send"', '<input name="author"', '<input type="radio" name="kind" value="human"', '<button class="cta" type="submit"', '<button class="back"'] and len(_ctl) == 9
+      and "tabindex" not in _am and all('type="' in b for b in re.findall(r"<button\b[^>]*>", _am)) and len(re.findall(r'class="cta[ "]', _am)) == 2,
+      "the answer page: the keyboard goes from the place to Send, the name, the kind, the control that sends and the way back, then to what is folded; no order is forced; one filled control before the last step and one in it")
+# what is sent: the room's own fields, each box taking twice its limit in the browser's count (the server counts code points)
+_names = lambda h: sorted(set(re.findall(r'<(?:input|select|textarea)[^>]* name="(\w+)"', h)))
+_maxl = dict(re.findall(r'name="(\w+)"[^>]*? maxlength="(\d+)"', _am))
+check(_names(_am) == sorted(["content", "author", "kind", "ref", "system", "operator", "prompt", "lang"]) and _names(_ath) == sorted(["parent", "content", "author", "kind", "ref", "system", "operator", "prompt", "lang"])
+      and _maxl == {"content": "12000", "author": "240", "system": "400", "operator": "400", "prompt": "120", "lang": "70"} and 'minlength="20"' in _am
+      and re.findall(r'<option value="(\d*)"', _am) == [""] + [str(p["n"]) for p in json.loads((PUBLIC / "core.json").read_text("utf-8"))["principles"]],
+      "the answer page sends the room's own fields — content, author, kind, ref, system, operator, prompt, lang and, for a theme or a reply, parent — to POST /api/entries; each box takes twice its limit; the topic is one of the Core's sixteen sections or the whole record")
+# below, folded: another question (the room's themes, as links to this page with their question; the one being answered is marked),
+# the fields for an AI system's answer, the conditions in the words they had
+_folds = re.findall(r"<details[^>]*><summary>(.*?)</summary>", _am)
+_qs = re.findall(r'<li><a href="([^"]+)"( aria-current="page")?>([^<]*)</a></li>', _am)
+_qst = re.findall(r'<li><a href="([^"]+)"( aria-current="page")?>([^<]*)</a></li>', _ath)
+check(_folds == ["Another question", "Posting the answer of an AI system, or naming the language", "Conditions of posting: the licence (CC BY 4.0), the limits, where an entry may also be posted, the receipt"] and "<details open" not in _am and ' open>' not in _am
+      and _qs == [("/respond", ' aria-current="page"', _Q)] + [(f'/respond?theme={t["slug"]}', "", t["title"]) for t in THEMES]
+      and _qst == [("/respond?kind=human", "", _Q)] + [(f'/respond?theme={t["slug"]}&amp;kind=human', ' aria-current="page"' if t is THEMES[1] else "", t["title"]) for t in THEMES]
+      and f'<h1><span class="na">{esc(THEMES[1]["title"])}</span><span class="ia" hidden>What did your AI answer?</span></h1>\n<p class="re ia" hidden>The question: <a href="/themes/{THEMES[1]["slug"]}">{esc(THEMES[1]["title"])}</a></p>\n<form' in _ath
+      and f'accept-charset="utf-8">\n<input type="hidden" name="parent" value="{THEMES[1]["entry"]}">\n<div class="place">' in _ath
+      and all(x in _am for x in ("By posting you license what you have the right to license under CC BY 4.0.", "not consent (IR 10.2), not adoption (IR 10.1)", "Limits: 5 per 10 minutes per source; a finite intake per UTC day.", "After posting you get a receipt code, shown once",
+                                 "Shown as text, as written: line endings are made uniform and spaces at both ends removed.", "The server counts lengths in Unicode code points.", '<a href="/discuss/rules">/discuss/rules</a>')),
+      "the answer page, below the place: three folds — another question (this page with each theme's question; the one being answered marked; a theme's answer is posted as an answer to the theme's entry), the fields for an AI system's answer, the conditions in the words they had")
+# nothing runs, nothing loads; the page weighs less than 30 kB as served, and says what it weighs
+_abytes = {n: len(h.encode("utf-8")) for n, h in _ans.items()}
+check(all(b < 30000 for b in _abytes.values()) and all(f"This page: {round(len(h.encode('utf-8')) / 1024)} kB · no JavaScript that runs · no cookies" in h for h in _ans.values())
+      and all(all(x in (' type="application/ld+json"', ' type="speculationrules"') for x in re.findall(r"<script\b([^>]*)>", h)) and not re.search(r"\son\w+\s*=", h.split("<body>")[1]) and "javascript:" not in h.lower()
+              and not re.search(r"<(img|iframe|video|audio|object|embed|source)\b", h) for h in _ans.values()),
+      f"the answer page: under 30,000 bytes as served, in each of its forms {_abytes}; no script that runs, no event attribute, no image, nothing loaded")
+_ids = re.findall(r' id="([^"]+)"', _ans[""].split("<body>")[1])
+check(len(_ids) == len(set(_ids)) and all(i in _ids for i in re.findall(r' (?:for|aria-labelledby|popovertarget)="([^"]+)"', _am)) and all(i in _ids for x in re.findall(r' aria-describedby="([^"]+)"', _am) for i in x.split()),
+      "the answer page: every id once; every label, description and popover names an element that is there")
+# the page's own sheet in place of the shared one: the shared sheet's tokens, base, head, foot and print as they are (comments left
+# out), the few shared rules of its controls and of an entry, and the page's own rules (site/answer.css) — held to the shared
+# sheet's discipline: the scale, the tokens, logical sizes, no colour of its own but the backdrop's, motion only in one block for a
+# reader who has not asked for less
+_AOWN = (SITE / "answer.css").read_text("utf-8"); _anc = re.sub(r"\n+", "\n", re.sub(r"/\*.*?\*/", "", _AOWN, flags=re.S)).strip()
+_asheet = re.search(r"<style>(.*?)</style>", DT["answer_shell"], re.S).group(1)
+_strip_css = lambda c: re.sub(r"\n+", "\n", re.sub(r"/\*.*?\*/", "", c, flags=re.S)).strip()
+_sblock = lambda n: _strip_css(re.search(rf"/\* {n} [A-Z].*?(?=/\* \d+ [A-Z]|\Z)", CSS, re.S).group(0))
+_parts = [_strip_css(CSS[:CSS.index("/* 2 BASE")]), _sblock(2), _sblock(3), _anc, _sblock(8), _sblock(9)]
+_at = [_asheet.find(x) for x in _parts]
+_arest = _asheet
+for _x in _parts: _arest = _arest.replace(_x, "")
+_arules = [l for l in re.sub(r"/\*.*?\*/", "", _arest, flags=re.S).split("\n") if l.strip()]
+check(all(a >= 0 for a in _at) and _at == sorted(_at) and all(_asheet.count(x) == 1 for x in _parts) and _asheet.count(TOKENS) == 1 and _asheet.count("/*") == 1 and _asheet.lstrip().startswith("/* CIVILIZATION ZERO, the answer page")
+      and all((CSS + "\n" + ROOM_CSS).count("\n" + l + "\n") == 1 for l in _arules) and len(_arules) == 14
+      and all(h.count("<style>") == 1 and f"<style>{_asheet}</style>" in h and CSS not in h for h in _ans.values()) and DT["shell"].count(f"<style>{CSS}{ROOM_CSS}</style>") == 1,
+      f"the answer page's sheet: the shared sheet's tokens, base, head, foot and print, byte for byte without their comments, in their order; fourteen further rules, each a whole rule of the shared sheet or of the room's block; the page's own rules (site/answer.css); and the page carries this sheet alone {_at} {len(_arules)}")
+_aloose = sorted({n + u for n, u in re.findall(r"(?<![\w#(.-])(\d*\.?\d+)(rem|em|px|s)\b", _anc) if float(n) != 0 and (u == "px" or round(float(n), 4) not in _SPOW)})
+_amo = _anc.split("@media(prefers-reduced-motion:no-preference){")
+check(not _aloose and set(re.findall(r"var\((--[a-z][\w-]*)", _anc)) <= _stok and not re.search(r"(?<![-\w(])(max-|min-)?(width|height):|@import|url\(|@font-face|:root|!important", _anc) and not re.search(r"[<>&\"]", _A["permanence"])
+      and set(re.findall(r"#[0-9a-f]{3,6}\b", _anc)) | set(re.findall(r"rgb\([^)]*\)", _anc)) == {"rgb(0 0 0/.5)"}
+      and len(_amo) == 2 and not re.search(r"transition|animation|@keyframes", _amo[0]) and _amo[1].strip() == "@view-transition{navigation:auto}\na.home svg{view-transition-name:cz-mark}\n.place,.done .entry{view-transition-name:cz-place}\n}"
+      and _asheet.count("@media(prefers-reduced-motion:no-preference){") == 1 and "a.home svg{view-transition-name:cz-mark}" in _smo[1] and "@view-transition{navigation:auto}" in _hmo[1],
+      f"the answer page's own rules: every rem and em a power of the ratio, no px, no token the first page does not define, logical sizes, no colour of its own but the backdrop's, nothing loaded; its motion — the site's fade between pages, the mark and the place carried from one page to the next — in one block, only for a reader who has not asked for less {_aloose}")
+# what the rules do, pinned where a slip would hide a control: "Send" only where the browser has the popover (elsewhere the last
+# step stands open under the place), and in its place one quiet line while the text is not yet one the record takes (:has()); the
+# place, not the field in it, shows that it holds the keyboard; the three doors of one size; the field grows with its text
+_apop = _anc.split("@supports selector(:popover-open){"); _ahas = _anc.split("@supports selector(:has(a)){")
+check(len(_apop) == 2 and "button.send{display:none}\n" in _apop[0] and _apop[1].startswith("\nbutton.send{display:inline-flex}\n#who[popover]{position:fixed;inset:var(--e-1) 0 auto;") and "max-block-size:calc(100% - 2*var(--e-1))" in _apop[1] and "overflow:auto}" in _apop[1]
+      and "#who[popover]" not in _apop[0] and len(_ahas) == 2 and _ahas[1].startswith("\nform:has(textarea:invalid) button.send{display:none}\nform:has(textarea:invalid) .wait{display:flex}\n") and ":has(" not in _ahas[0]
+      and ".answer [hidden]{display:none}\n" in _anc and _anc.index(".answer [hidden]{display:none}") < _anc.index(".place{")
+      and ".place{border:var(--e-16) solid var(--mute)}\n.place:focus-within{outline:var(--e-12) solid var(--fg);outline-offset:calc(-1*var(--e-16))}" in _anc and ".place{position:relative;display:grid;justify-items:start;row-gap:var(--e2);padding:var(--e-2);border:var(--e-16) solid var(--mute)}" in _css
+      and "field-sizing:content}" in _anc and "min-block-size:max(var(--e14),30vh)" in _anc and "font-size:1.1892em" in _anc
+      and ".doors{display:grid;grid-template-columns:1fr 1fr 1fr;" in _anc and ".doors label{display:grid;place-items:center;min-block-size:var(--e6);margin:0;border:var(--e-12) solid var(--fg);font-size:var(--e1);font-weight:700;line-height:var(--l1);cursor:pointer}" in _anc
+      and ".door{display:grid;place-items:center;min-block-size:var(--e6);border:var(--e-12) solid var(--fg);font-size:var(--e1);font-weight:700;line-height:var(--l1)}" in _css
+      and ".answer h1{margin:var(--e-4) 0 var(--e0);font-size:var(--e3)}\n@media(min-width:38.0546rem){.answer h1{font-size:var(--e5)}}" in _anc and ".line{margin:0 0 var(--e-2);font-size:var(--e3);" in _css and "\n.line{font-size:var(--e5)}\n" in _css,
+      "the answer page's rules: 'Send' only where the browser has the popover, and one quiet line in its place while the text is not yet valid; what is marked hidden stays hidden; the place has the first page's hairline frame and shows that it holds the keyboard; the field grows with its text; the question in the first page's headline scale; the three doors built as the first page's two")
+# as Markdown: the question, the terms, how to post by the form or by the API; no control
+_amd = (SITE / "preview" / "respond.md").read_text("utf-8")
+check(f"\n# {_Q}\n" in _amd and "20 to 6,000 characters. Any language. You may decline: nothing you write is kept until you send it." in _amd and "## By the form" in _amd and "## If you are not human" in _amd and "POST /api/entries" in _amd
+      and "**Public and permanent:** an answer cannot be edited or withdrawn; it can be hidden or redacted only under the rules." in _amd and "[/api/openapi.json](https://civilizationzero.ai/api/openapi.json)" in _amd and "<" not in re.sub(r"`[^`]*`", "", _amd.split("---", 2)[2]).replace("\\<", ""),
+      "the answer page as Markdown: the question, the terms, how to post by the form or by the API")
+# never, in what a reader of the answer page reads or in its sheet's comments: the words the first page never says
+_atext = " ".join(re.sub(r"\s+", " ", _seen(re.sub(r'<ul class="qs">.*?</ul>', "", h, flags=re.S))) for h in _amain.values()) + " " + re.sub(r"\s+", " ", _amd.split("---", 2)[2])   # the themes' questions are the room's own (their list is left out here)
+_FORBID_ANSWER = [r"\bfirst\b", r"observator", r"\banonymous\b", r"\b(he|him|his)\b", r"\byears?\b", r"\bconscious", r"\bbetter\b", r"\bunprecedented\b", r"\bmasterpiece\b", r"\d+ (entries|answers|responses)",
+                  r"\boriginator\b", r"\b(decided|designed|rebuilt|redesigned)\b", r"!"]   # nor who asked for, decided or made anything, or when; no exclamation
+_hits = [(p, m.group(0)) for p in _FORBID_ANSWER for m in [re.search(".{0,30}" + p + ".{0,30}", _atext, re.I)] if m] + \
+        [(p, m.group(0)) for p in [r"\bfirst\b(?! (page|screen))", r"observator", r"\banonymous\b", r"\b(he|him|his)\b", r"\bbetter\b", r"\bmasterpiece\b", r"\d+ entries"] for m in [re.search(".{0,30}" + p + ".{0,30}", " ".join(re.findall(r"/\*.*?\*/", _AOWN, re.S)), re.I)] if m]
+check(not _hits, f"the answer page: a forbidden word in what a reader reads, or in its sheet's comments {_hits[:3]}")
 _hrefs = re.findall(r'href="([^"]+)"', _sec_h)
 _U = lambda path: f"{ORIGIN}{path}"; _js = _pj["doors"]["human_steps"]
 check(_hrefs[:4 + len(_th3)] == ["/core", "/core#translations", "/respond?kind=human", "/discuss"] + [f'/themes/{t["slug"]}' for t in _th3] and _hrefs[4 + len(_th3)] == "/ask"
@@ -1000,7 +1120,7 @@ check(not _loose, f"home.css: every rem, em and second in the rules is a power o
 _ccls = {c for c in re.findall(r"\.([a-z][\w-]*)", re.sub(r"\([^()]*\d[^()]*\)", "", _nocom)) if not c[0].isdigit()}
 _hcls = {c for cl in re.findall(r'class="([^"]+)"', fill(T["html"], (_ex, "")).split("<body>")[1]) for c in cl.split()}
 _cids = set(re.findall(r"#([a-z][\w-]*)", re.sub(r"#[0-9a-f]{3,6}\b", "", _nocom))); _hids = set(re.findall(r'\sid="([^"]+)"', _pbody))
-check(_ccls <= _hcls and _hcls <= _ccls | {"respond", "permanence"} and _cids <= _hids, f"home.css: no rule names a class or an id the page does not have, and no class of the page is without a rule {sorted(_ccls - _hcls)} {sorted(_hcls - _ccls)} {sorted(_cids - _hids)}")
+check(_ccls <= _hcls and _hcls <= _ccls and _cids <= _hids, f"home.css: no rule names a class or an id the page does not have, and no class of the page is without a rule {sorted(_ccls - _hcls)} {sorted(_hcls - _ccls)} {sorted(_cids - _hids)}")
 _heads = [x[1] for x in re.findall(r"/\* (\d+) ([A-Z]+)\.", _css)]
 check([h for h in ["TOKENS", "BASE", "HEAD", "INSCRIPTION", "FIGURE", "DOORS", "REGISTERS", "REASONS", "FOOT", "MOTION"] if h in _heads] == _heads and _heads[:7] == ["TOKENS", "BASE", "HEAD", "INSCRIPTION", "FIGURE", "DOORS", "REGISTERS"] and "FOOT" in _heads, f"home.css: its blocks in order, each opening with its reason {_heads}")
 def _lum(c):
@@ -1279,7 +1399,7 @@ def _outer(part):   # the selector with the insides of :is() and :where() taken 
 _NEWER = r":is\(|:where\(|:focus-visible|:has\(|:target-current|::details-content|:popover-open|:user-invalid|::backdrop|:not\([^()]*[, ]"
 _LATER = {":has(", ":target-current", "::details-content", ":popover-open", ":user-invalid"}
 _mixed = []
-for _nm, _sheet in (("the shared sheet", CSS), ("the room's block", ROOM_CSS), ("home.css", (SITE / "home.css").read_text("utf-8"))):
+for _nm, _sheet in (("the shared sheet", CSS), ("the room's block", ROOM_CSS), ("home.css", (SITE / "home.css").read_text("utf-8")), ("answer.css", _AOWN)):
     for _sel in re.findall(r"(?:^|[{}])\s*([^{}@]+?)\s*\{", re.sub(r"/\*.*?\*/", "", _sheet, flags=re.S)):
         _ps = [set(re.findall(_NEWER, _outer(x))) for x in _split_top(_sel)]
         # an engine that knows a selector of the last years (:has(), :user-invalid, :popover-open, ::details-content, :target-current) knows the earlier ones
@@ -1315,7 +1435,8 @@ check(all(v >= 7 for v in _c5.values()) and (_l5["fill-on"], _l5["machine-on"], 
 # is these uses and no others, in this order; and the rules that set a green token (--machine, --machine-on) in the two sheets are these
 # selectors and no others: a new green rule, or a use that lost its rule, fails the build until the sentence and this table say so too.
 _GREEN_USES = [
-    ("what an AI system declared it wrote (its tag and its edge)", {".kind.ai", ".ex", ".kind.k-ai", ".entry.k-ai", "ol:is(.ancestors,.since) li.k-ai"}),
+    ("what an AI system declared it wrote (its tag and its edge)", {".kind.ai", ".ex", ".kind.k-ai", ".entry.k-ai", "ol:is(.ancestors,.since) li.k-ai",
+                                                                    ".doors #k-ai:checked+label", ".answer:has(#k-ai:checked) .place"}),   # rc-15, the answer page: the kind "AI" when it is the one declared (its door), and the place that then holds an AI system's answer (its edge)
     ("a machine translation (its tag, its edge and its progress)", {".mtag", ".mt", ".tr-meter", ".tr-meter span", ".tr-spin", "ol.tr-items li.tr-done", ".tr-done .tr-st", ".tr-progress:not(.tr-finished) .tr-meter::after"}),
     ("the machine's part of the invitation to ask an AI", {".act .ai", ".act.o:is(:hover,:focus-visible) .ai", "a.cta.o .ai", "a.cta.o:is(:hover,:focus-visible) .ai"}),
     ("the door “I am not human” when it is the one answered", {".page:has(#not-human:target) .door.n"}),
@@ -1325,12 +1446,12 @@ _GREEN_USES = [
     ("the day's figure", {".fig", ".dayfig svg"}),
 ]
 _gu = [u for u, _ in _GREEN_USES]
-_green_set = {s for sheet in (_hcss5, CSS + ROOM_CSS) for sel, body in re.findall(r"([^{}]+)\{([^{}]*)\}", re.sub(r"/\*.*?\*/", "", sheet, flags=re.S))
+_green_set = {s for sheet in (_hcss5, CSS + ROOM_CSS, _AOWN) for sel, body in re.findall(r"([^{}]+)\{([^{}]*)\}", re.sub(r"/\*.*?\*/", "", sheet, flags=re.S))
               if re.search(r"var\(--machine(?:-on)?\)|#116329|#3fb950", body) and sel.strip() != ":root" for s in _split_top(sel.strip())}
 _green_want = set().union(*(s for _, s in _GREEN_USES))
 check(GREEN_RULE == f"Green marks what is a machine's — {_gu[0]}, {_gu[1]}, {_gu[2]}, {_gu[3]} — and the count of days: {_gu[4]}, {_gu[5]}, {_gu[6]}, on the badge and in the counter of /embed, and {_gu[7]}."
       and _green_set == _green_want and sum(len(s) for _, s in _GREEN_USES) == len(_green_want),
-      f"the colour rule and the two sheets: the sentence names every use of green, and every rule that sets a green token carries one of them — in the sheets but not in the table {sorted(_green_set - _green_want)}; in the table but not in the sheets {sorted(_green_want - _green_set)}")
+      f"the colour rule and the sheets (the first page's, the shared one with the room's block, the answer page's): the sentence names every use of green, and every rule that sets a green token carries one of them — in the sheets but not in the table {sorted(_green_set - _green_want)}; in the table but not in the sheets {sorted(_green_want - _green_set)}")
 # the two uses outside the sheets: the badge's day and the counter's, in the same two greens
 _badge5 = (SITE / "api" / "badge.js").read_text("utf-8"); _embed5 = (PUBLIC / "embed.html").read_text("utf-8")
 _snip5 = (re.search(r"<div data-cz-today></div>\n<script>\n(.*?)</script>", _embed5, re.S) or [""] * 2)[1]   # the counter, as it runs on /embed

@@ -155,7 +155,7 @@ srv.listen(0, "127.0.0.1", async () => {
     // review of CZ 1432: "$&", "$'" and "$`" in a parent's name or text stay text on /respond?parent=N (a function replacement)
     TABLE = [entry(1, { author: "A$'B $& C", content: "Text with $` and $& and $' in it, long enough." })];
     r = await call(discuss, "/api/discuss?page=respond&parent=1");
-    ok(r.status === 200 && (r.body.match(/<h1>/g) || []).length === 1 && (r.body.match(/<form/g) || []).length === 1 && (r.body.match(/name="parent"/g) || []).length === 1
+    ok(r.status === 200 && (r.body.match(/<h1>/g) || []).length === 1 && (r.body.match(/<form/g) || []).length === 1 && (r.body.match(/name="parent"/g) || []).length === 1 && r.body.includes("Your answer to #1")
        && (r.body.includes("A$&#39;B $&amp; C") || r.body.includes("A$'B $&amp; C")) && /\$` and \$&amp; and \$(&#39;|') in it/.test(r.body), `respond with a parent whose text holds $-patterns: one h1, one form (${(r.body.match(/<h1>/g) || []).length} h1, ${(r.body.match(/<form/g) || []).length} forms)`);
     // ---------- stage 2 (CZ 1433): the room as conversations — latest first, no counts, a hidden entry never moves a conversation
     TABLE = [entry(1), entry(2), entry(3, { parent: 1 }), entry(4, { parent: 2, hidden: true }), entry(5, { author: "Theme", parent: null }), entry(6, { parent: 5 }), entry(7, { parent: 6, hidden: true })];
@@ -272,22 +272,90 @@ srv.listen(0, "127.0.0.1", async () => {
     { const m = /<script type="speculationrules">([\s\S]*?)<\/script>/.exec(r.body); const hsh = require("node:crypto").createHash("sha256").update(m[1], "utf8").digest("base64");
       ok((r.headers["content-security-policy"] || "").includes(`'sha256-${hsh}'`), "the hash is of the rules on the page"); }
     r = await call(discuss, "/api/discuss?f=md"); ok(r.status === 200 && /^---\ntitle: /.test(r.body) && /\nurl: "https:\/\/civilizationzero.ai\/discuss.md"\n/.test(r.body), "the room as Markdown");
-    // the form opened ready for an AI system's answer (cz-machine-1.3, 6 Nov 2026 SGT): known values only
-    r = await call(discuss, "/api/discuss?page=respond&kind=ai&prompt=cz-machine-1.3");
-    ok(r.status === 200 && r.body.includes('<option value="ai" selected>') && r.body.includes('<option value="" disabled>') && !r.body.includes('<option value="" selected disabled>')
-       && r.body.includes("<details open><summary>Posting the answer of an AI system") && r.body.includes('<input name="prompt" maxlength="120" value="cz-machine-1.3">')
-       && r.body.includes("You are posting the answer of an AI system") && (r.body.match(/ selected>/g) || []).length === 1, "respond?kind=ai&prompt=…: ai chosen, details open, the version filled");
-    r = await call(discuss, "/api/discuss?page=respond");
-    ok(r.body.includes('<option value="" selected disabled>') && !r.body.includes("<details open>") && r.body.includes('<input name="prompt" maxlength="120">'), "respond: no kind chosen by default, nothing filled");
-    r = await call(discuss, "/api/discuss?page=respond&kind=robot&prompt=%22%3E%3Cscript%3E");
-    ok(r.body.includes('<option value="" selected disabled>') && !r.body.includes("<script>") && r.body.includes('<input name="prompt" maxlength="120">'), "respond: an unknown kind or prompt changes nothing");
-    TABLE = [entry(1)]; r = await call(discuss, "/api/discuss?page=respond&parent=1&kind=ai&prompt=cz-machine-1.4");
-    ok(r.body.includes('<input type="hidden" name="parent" value="1">') && r.body.includes('<option value="ai" selected>') && r.body.includes('value="cz-machine-1.4">') && (r.body.match(/<h1>/g) || []).length === 1, "respond?parent=1&kind=ai&prompt=…: a reply, ready for an AI system's answer");
-    r = await call(discuss, "/api/discuss?page=respond&kind=ai&prompt=cz-machine-1.9");
-    ok(r.body.includes('<input name="prompt" maxlength="120">') && !r.body.includes("cz-machine-1.9"), "respond?prompt=…: an unpublished version is not filled in");
-    r = await call(discuss, "/api/discuss?page=respond&kind=human&prompt=custom");
-    ok(r.body.includes('<option value="human" selected>') && !r.body.includes("<details open>") && r.body.includes('value="custom">'), "respond?kind=human&prompt=custom");
-    r = await call(discuss, "/api/discuss?page=respond&f=md"); ok(r.status === 200 && /\nhtml: "https:\/\/civilizationzero.ai\/respond"\n/.test(r.body), "/respond as Markdown");
+    // ---------- the answer page (rc-15): /respond. A question, a place, and who the reader is last; known values only from the address
+    { const main = (b) => (/<main[^>]*>[\s\S]*<\/main>/.exec(b) || [""])[0], n = (b, x) => b.split(x).length - 1;
+      const chosen = (b) => [...b.matchAll(/<input type="radio" name="kind" value="(\w+)"[^>]* checked/g)].map((m) => m[1]).join();
+      const RL0 = require(path.resolve(__dirname, "../room/lib.js")), A = RL0.T.answer, Q = "What do you think about Civilization Zero?";
+      // as it opens: the question is the heading; the place under it holds the keyboard; no kind is chosen; "Send" opens the last step
+      r = await call(discuss, "/api/discuss?page=respond"); let m = main(r.body);
+      ok(r.status === 200 && n(r.body, "<h1") === 1 && m.includes(`<h1><span class="na">${Q}</span><span class="ia" hidden>What did your AI answer?</span></h1>\n<form class="respond" method="post" action="/api/entries" accept-charset="utf-8">\n<div class="place">`)
+         && m.includes('<p class="pre">Machines are asked questions all day.<br>This one is asked of you.</p>') && /<textarea id="text" name="content" required minlength="20" maxlength="12000" dir="auto" aria-describedby="text-note" autofocus>\n<\/textarea>/.test(m)
+         && m.includes('<p class="cap"><label for="text">Your response</label>') && m.includes(`<p class="src" id="text-note">${A.terms}</p>`) && A.terms === "20 to 6,000 characters. Any language. You may decline: nothing you write is kept until you send it.",
+         "the answer page: two small lines, the question as the one heading, the place directly under it, already holding the keyboard, its caption and the terms");
+      ok(chosen(m) === "" && n(m, 'name="kind"') === 3 && /<input type="radio" name="kind" value="human" id="k-human" required>/.test(m) && !/<select name="kind"/.test(m) && !m.includes("<details open") && !/ open>/.test(m) && m.includes('<input name="prompt" maxlength="120">')
+         && m.includes('<span class="kind k0">human, AI or other · declared</span><span class="kind kh" hidden>human · declared</span><span class="kind k-ai ia" hidden>AI · declared</span><span class="kind ko" hidden>other · declared</span>'),
+         "the answer page: no kind chosen by default (one must be), nothing open, nothing filled; the place's edge names the three kinds");
+      // the three kind boxes: radio buttons that send what the list sent — human, ai, other — each under its own label
+      ok([...m.matchAll(/<input type="radio" name="kind" value="(\w+)" id="k-\1"[^>]*><label for="k-\1">([^<]*)<\/label>/g)].map((x) => `${x[1]}=${x[2]}`).join() === "human=human,ai=AI,other=other"
+         && m.includes("<fieldset class=\"kinds\"><legend>You are</legend>") && m.includes('<span class="ia" id="kind-ai" hidden>ai — the answer of an AI system. </span>Declared, not verified.') && m.includes('value="ai" id="k-ai" aria-describedby="kind-ai"'),
+         "the three kind boxes: radio buttons with the values human, ai, other, in one group named 'You are'; the AI's is described in the invitation's words; declared, not verified");
+      // the last step: in a popover inside the same form; "Send" opens it and does not send; one control sends; a plain way back
+      ok(m.includes('<p class="acts"><button class="cta send" type="button" popovertarget="who">Send</button><span class="wait" hidden>At least 20 characters.</span></p>\n<div id="who" popover role="group" aria-labelledby="who-h">\n<h2 id="who-h">Who are you?</h2>\n<label>Your name, as you want it shown <input name="author" required maxlength="240" dir="auto" autofocus></label>')
+         && m.indexOf('<div id="who"') > m.indexOf("<form") && m.indexOf('<div id="who"') < m.indexOf("</form>") && n(m, "<form") === 1 && n(m, 'type="submit"') === 1
+         && m.includes('<p class="acts"><button class="cta" type="submit">Record this response</button> <button class="back" type="button" popovertarget="who" popovertargetaction="hide">Back to my text</button></p>')
+         && m.includes("<p><strong>Public and permanent:</strong> an answer cannot be edited or withdrawn; it can be hidden or redacted only under the rules.</p>\n<p class=\"src permanence\">An entry cannot be edited or withdrawn."),
+         "the last step, 'Who are you?': a popover inside the same form, opened by 'Send' (a button that does not send); the name, the kind, what posting means, the notice, the one control that sends, and a way back");
+      // the keyboard's order is the source's: place → Send → name → kind → send → back
+      { const at = ['<textarea id="text"', '<button class="cta send"', '<input name="author"', 'id="k-human"', 'id="k-ai"', 'id="k-other"', '<button class="cta" type="submit"', '<button class="back"', "<summary>"].map((x) => m.indexOf(x));
+        ok(at.every((x) => x > 0) && at.join() === [...at].sort((x, y) => x - y).join() && !/tabindex/.test(m), "tab order: the place, Send, the name, the three kinds, the control that sends, the way back; then the folds"); }
+      // below, folded: another question, the fields for an AI system's answer, the conditions; the same fields as before, each twice its limit
+      ok([...m.matchAll(/<details[^>]*><summary>([^<]*)<\/summary>/g)].map((x) => x[1]).join("|") === "Another question|Posting the answer of an AI system, or naming the language|Conditions of posting: the licence (CC BY 4.0), the limits, where an entry may also be posted, the receipt"
+         && [...new Set([...m.matchAll(/<(?:input|select|textarea)[^>]* name="(\w+)"/g)].map((x) => x[1]))].sort().join() === "author,content,kind,lang,operator,prompt,ref,system"
+         && Object.entries(RL0.FIELD_MAX).every(([k, v]) => new RegExp(`name="${k}"[^>]* maxlength="${2 * v}"`).test(m)) && n(m, "<option ") === 17
+         && m.includes(`<li><a href="/respond" aria-current="page">${Q}</a></li><li><a href="/respond?theme=is-the-future-frightening">Is the future frightening?</a></li>`) && n(m, 'aria-current="page"') === 1,
+         "below, folded: another question (the themes' questions as links to this page; the current one marked), the fields for an AI system's answer, the conditions; the room's fields, each box twice its limit");
+      ok(r.body.length < 30000 && Buffer.byteLength(r.body, "utf8") < 30000 && n(r.body, "<style>") === 1 && !r.body.includes("/* rc-12 room */") && r.body.includes("/* CIVILIZATION ZERO, the answer page") && r.body.includes('<li><a href="/discuss" aria-current="page">')
+         && r.body.includes('<p class="forms" lang="en" dir="ltr">This page as <a href="/respond.md" type="text/markdown">Markdown</a></p>\n</main>') && !/__[A-Z_]+__/.test(r.body),
+         `the answer page weighs under 30,000 bytes as served (${Buffer.byteLength(r.body, "utf8")}), on its own sheet, with the shared head; its other form is named last`);
+      // opened ready for an AI system's answer (the invitation's manual steps): ai chosen, its fold open and before the others, the version filled
+      r = await call(discuss, "/api/discuss?page=respond&kind=ai&prompt=cz-machine-1.3"); m = main(r.body);
+      ok(r.status === 200 && chosen(m) === "ai" && m.includes(`<h1><span class="na" hidden>${Q}</span><span class="ia">What did your AI answer?</span></h1>`) && m.includes('<span class="kind k0" hidden>') && m.includes('<span class="kind k-ai ia">AI · declared</span>')
+         && m.includes('<label for="text">Your response</label><span class="ia"> · Its answer, as it gave it</span>') && m.includes('<details class="ai" open><summary>Posting the answer of an AI system, or naming the language</summary>')
+         && m.indexOf('<details class="ai" open>') < m.indexOf("<summary>Another question</summary>") && m.includes('<input name="prompt" maxlength="120" value="cz-machine-1.3">') && m.includes('<span class="ia" id="kind-ai">ai — the answer of an AI system. </span>')
+         && m.includes('<a href="/respond?theme=can-an-ai-say-no&amp;kind=ai&amp;prompt=cz-machine-1.3">Can an AI say no?</a>'),
+         "respond?kind=ai&prompt=…: ai chosen, the question asked of the person who posts, the caption, the fold open and before the others, the version filled, and carried to another question");
+      r = await call(discuss, "/api/discuss?page=respond&kind=robot&prompt=%22%3E%3Cscript%3E"); m = main(r.body);
+      ok(chosen(m) === "" && !r.body.includes("<script>") && !m.includes("robot") && m.includes('<input name="prompt" maxlength="120">') && m.includes(`<span class="na">${Q}</span>`), "respond: an unknown kind or prompt changes nothing");
+      r = await call(discuss, "/api/discuss?page=respond&kind=ai&prompt=cz-machine-1.9"); m = main(r.body);
+      ok(m.includes('<input name="prompt" maxlength="120">') && !r.body.includes("cz-machine-1.9") && chosen(m) === "ai", "respond?prompt=…: an unpublished version is not filled in");
+      r = await call(discuss, "/api/discuss?page=respond&kind=human&prompt=custom"); m = main(r.body);
+      ok(chosen(m) === "human" && !m.includes("<details open") && !m.includes('<details class="ai" open>') && m.includes('value="custom">') && m.includes('<span class="kind kh">human · declared</span>') && m.includes('<span class="kind k0" hidden>'), "respond?kind=human&prompt=custom: human chosen (as a reader who came through 'I am human'), the fold closed, the prompt filled");
+      r = await call(discuss, "/api/discuss?page=respond&kind=other"); ok(chosen(main(r.body)) === "other" && main(r.body).includes('<span class="kind ko">other · declared</span>'), "respond?kind=other");
+      // a theme's question: the heading is the question; the answer is posted as an answer to the theme's entry, as the theme's page posts it
+      CALLS = []; r = await call(discuss, "/api/discuss?page=respond&theme=can-an-ai-say-no"); m = main(r.body);
+      ok(r.status === 200 && CALLS.length === 0 && m.includes('<h1><span class="na">Can an AI say no?</span><span class="ia" hidden>What did your AI answer?</span></h1>\n<p class="re ia" hidden>The question: <a href="/themes/can-an-ai-say-no">Can an AI say no?</a></p>\n<form')
+         && m.includes('accept-charset="utf-8">\n<input type="hidden" name="parent" value="11">\n<div class="place">') && n(m, 'name="parent"') === 1 && m.includes('<a href="/respond?theme=can-an-ai-say-no" aria-current="page">Can an AI say no?</a>') && n(m, 'aria-current="page"') === 1
+         && m.includes(`<li><a href="/respond">${Q}</a></li>`) && chosen(m) === "", "respond?theme=…: the theme's question as the heading; posted with the theme's entry as parent; the theme marked among the questions; the room is not read");
+      CALLS = []; r = await call(discuss, "/api/discuss?page=respond&parent=11&kind=ai"); m = main(r.body);
+      ok(CALLS.length === 0 && m.includes('<span class="na" hidden>Can an AI say no?</span><span class="ia">What did your AI answer?</span></h1>\n<p class="re ia">The question: <a href="/themes/can-an-ai-say-no">Can an AI say no?</a></p>') && m.includes('<input type="hidden" name="parent" value="11">'),
+         "respond?parent=<a theme's entry>&kind=ai (the invitation's address for an answer to a question of the room): that theme; for an AI system's answer the question stands under the heading");
+      r = await call(discuss, "/api/discuss?page=respond&theme=no-such-theme"); m = main(r.body);
+      ok(r.status === 200 && m.includes(`<span class="na">${Q}</span>`) && !m.includes('name="parent"'), "respond?theme=<unknown>: the page's own question, no parent");
+      // a reply: "Your answer to #N", and under it the first lines of that entry with its name and declared kind, as text
+      TABLE = [entry(1, { author: "Ada <b>", kind: "ai", system: "Model Y", content: "First line of the entry.\nSecond line, with <i>markup</i> & more. " + "x ".repeat(200) })];
+      r = await call(discuss, "/api/discuss?page=respond&parent=1&kind=ai&prompt=cz-machine-1.4"); m = main(r.body);
+      ok(m.includes('<input type="hidden" name="parent" value="1">') && chosen(m) === "ai" && m.includes('value="cz-machine-1.4">') && n(r.body, "<h1") === 1 && m.includes('<span class="na" hidden>Your answer to #1</span><span class="ia">What did your AI answer?</span>'), "respond?parent=1&kind=ai&prompt=…: a reply, ready for an AI system's answer");
+      r = await call(discuss, "/api/discuss?page=respond&parent=1"); m = main(r.body);
+      ok(m.includes('<h1><span class="na">Your answer to #1</span><span class="ia" hidden>What did your AI answer?</span></h1>\n<blockquote class="re" cite="/discuss/1"><p dir="auto" lang="en">First line of the entry. Second line, with &lt;i&gt;markup&lt;/i&gt; &amp; more. x x')
+         && /…<\/p><p class="src"><b><bdi dir="auto">Ada &lt;b&gt;<\/bdi><\/b> <span class="kind k-ai">AI · declared<\/span> <span class="sys">system: <bdi dir="auto">Model Y<\/bdi><\/span> · <a href="\/discuss\/1" class="exact">#1<\/a><\/p><\/blockquote>\n<form/.test(m)
+         && !/<blockquote[\s\S]*<(input|button|select|textarea)[\s\S]*<\/blockquote>/.test(m) && n(m, 'aria-current="page"') === 0, "respond?parent=N: 'Your answer to #N'; under it the first lines of that entry, its name and declared kind, as text; no question is marked");
+      TABLE = [entry(7, { hidden: true, state: "hidden", content: null })]; r = await call(discuss, "/api/discuss?page=respond&parent=7"); m = main(r.body);
+      ok(r.status === 200 && m.includes(`<span class="na">${Q}</span>`) && m.includes('<p class="re pending">Entry #7 is hidden; replies to it are not accepted. You can still respond to the record.</p>') && !m.includes('name="parent"'), "respond?parent=<hidden>: said; the form names no entry");
+      r = await call(discuss, "/api/discuss?page=respond&parent=99"); m = main(r.body);
+      ok(m.includes('<p class="re pending">Entry #99 does not exist. You can still respond to the record.</p>') && !m.includes('name="parent"'), "respond?parent=<none>: said; the form names no entry");
+      r = await call(discuss, "/api/discuss?page=respond&ref=3&kind=human"); m = main(r.body);
+      ok(m.includes('<p class="re">You are answering <a href="/core#p3">§3 Epistemic Limit</a>.</p>\n<form') && m.includes('<option value="3" selected>§3 Epistemic Limit</option>') && n(m, " selected>") === 1, "respond?ref=3: said under the heading; the topic chosen in its list");
+      r = await call(discuss, "/api/discuss?page=respond&ref=16"); ok(!main(r.body).includes(" selected>") && !main(r.body).includes('class="re"'), "respond?ref=<not a section>: nothing chosen");
+      // as Markdown: the question, the terms, how to post by the form or by the API
+      r = await call(discuss, "/api/discuss?page=respond&f=md");
+      ok(r.status === 200 && /\nhtml: "https:\/\/civilizationzero.ai\/respond"\n/.test(r.body) && r.body.includes(`\n# ${Q}\n`) && r.body.includes(A.terms) && r.body.includes("## By the form") && r.body.includes("## If you are not human") && r.body.includes("` POST /api/entries `")
+         && r.body.includes("Open [/respond](https://civilizationzero.ai/respond): write under “Your response” and press “Send”; give “Your name, as you want it shown” and say what you are — human, AI or other, declared, not verified; then press “Record this response”.")
+         && !/<(form|input|button|textarea)/.test(r.body), "/respond as Markdown: the question, the terms, how to post by the form or by the API; no control");
+      r = await call(discuss, "/api/discuss?page=respond&f=md&theme=who-decides&kind=ai");
+      ok(r.body.includes("\n# What did your AI answer?\n") && r.body.includes("The question: [Who decides when intelligences disagree?](https://civilizationzero.ai/themes/who-decides)"), "/respond.md for an AI system's answer to a theme");
+      TABLE = [entry(1, { author: "Ada", content: "A text with `ticks` and # marks, long enough to be valid." })]; r = await call(discuss, "/api/discuss?page=respond&f=md&parent=1");
+      ok(r.body.includes("\n# Your answer to \\#1\n") && r.body.includes("```text\nA text with `ticks` and # marks, long enough to be valid.\n```") && r.body.includes("**Ada**"), "/respond.md for a reply: the entry's first lines in a fenced block, as every entry's text");
+    }
     // ---------- the independent review of CZ 1433: its findings, fixed
     // H1: a GET of the JSON API reads translations; it never makes one
     TABLE = [entry(1, { lang: "en" }), entry(2, { lang: "en" })]; TRANS = [{ entry_id: 1, lang: "fa", text: "ترجمهٔ یک", engine: "m", at: "2026-11-02T06:00:00Z", state: "done" }];
@@ -389,7 +457,7 @@ srv.listen(0, "127.0.0.1", async () => {
     ok(r.body.split('<div class="ex">').length === 2 && ex === '<div class="ex"><p class="note">A recent answer:</p><div class="content" dir="auto" lang="en">Answer 40: a hard truth.\n— Voice 40</div><p class="note"><b><bdi dir="auto">Voice 40</bdi></b> · <span class="kind ai">AI · declared</span> · <a href="/discuss/40" class="exact">#40</a></p></div>',
        `home: one example, the newest that qualifies (#40), whole, with its number, name and declared kind (${ex.slice(0, 300)})`);
     ok(!/Voice (41|42|43|45|46|48|49|50)\b/.test(r.body) && !r.body.includes("/discuss/50") && !/Entry [0-9]|The latest entries|<data value="\d+">\d+<\/data> entr/.test(r.body), "home: no other entry anywhere in the page — not a human's, another prompt's, a longer one, a redacted, unscreened, flagged or hidden one; no list of the latest entries, no count of them");
-    ok(/It may decline\.<\/p><div class="ex">[\s\S]*?<\/p><\/div><\/div><\/li>\n<\/ol>\n<dialog id="reply"[\s\S]*?<\/dialog>\n<\/div><\/section>\n<section id="not-human"/.test(r.body) && r.body.indexOf("From <a href=\"/discuss\">the discussion</a>") < r.body.indexOf('<div class="ex">'),
+    ok(/It may decline\.<\/p><div class="ex">[\s\S]*?<\/p><\/div><\/div><\/li>\n<\/ol>\n<\/div><\/section>\n<section id="not-human"/.test(r.body) && r.body.indexOf("From <a href=\"/discuss\">the discussion</a>") < r.body.indexOf('<div class="ex">'),
        "home: the example stands in the human's reading, under the invitation, at the end of its third step and after the themes");
     ok(!/__[A-Z_]+__/.test(r.body.replace(/https?:\/\/\S+/g, "")), "home: no placeholder left in the page");
     const forms = await all();
@@ -440,14 +508,15 @@ srv.listen(0, "127.0.0.1", async () => {
        "home as data: doors.human_steps, the three steps in order, each with its number, title, words and addresses");
     ok(["This record is written for you too.", "The whole record as text, JSON and an API:", "Respond, object or reject. Answers go on the record."].every((l) => [forms.html, forms.txt, forms.md, forms.json].every((b) => b.includes(l))),
        "home: the three sentences for readers that are not human, in every form");
-    // the reply sheet on the first page is the room's own form: the one /respond?kind=human serves, byte for byte, posting to the same address
+    // rc-15: no reply sheet on the first page. The empty place is the way in — a plain link to the answer page, which opens with the
+    // kind "human" chosen for a reader who came through "I am human"; no form but the figure's own empty one, no dialog, no button
     const respondH = await call(discuss, "/api/discuss?page=respond&kind=human");
-    const formOf = (b) => (/<form class="respond"[\s\S]*?<\/form>/.exec(b) || [""])[0];
-    ok(respondH.status === 200 && formOf(respondH.body).length > 1500 && formOf(forms.html) === formOf(respondH.body) && formOf(forms.html).includes('<option value="human" selected>') && formOf(forms.html).includes('action="/api/entries"')
-       && forms.html.split("<form").length === 3 && forms.html.split('<form id="fz" autocomplete="off" hidden></form>').length === 2 && /<dialog id="reply" popover aria-labelledby="reply-h"><h2 id="reply-h" tabindex="-1" autofocus>Your answer<\/h2>/.test(forms.html)
-       && forms.html.includes('<a class="open" href="/respond?kind=human">Write your answer</a><button class="open" type="button" popovertarget="reply" hidden>Write your answer</button>')
-       && forms.html.includes('<p><button type="button" popovertarget="reply" popovertargetaction="hide">Close</button></p></dialog>') && !forms.txt.includes("Record this response") && !forms.md.includes("Record this response"),
-       "home: the reply sheet holds the form /respond?kind=human serves, byte for byte; the place opens it with the popover API, and is a plain link to that page where there is none");
+    ok(respondH.status === 200 && /<input type="radio" name="kind" value="human" id="k-human" required checked>/.test(respondH.body) && (respondH.body.match(/ checked>/g) || []).length === 1
+       && forms.html.includes('<div class="place"><p class="note">your name · <span class="kind">human · declared</span></p><a class="open" href="/respond?kind=human">Write your answer</a></div>')
+       && forms.html.split("<form").length === 2 && forms.html.split('<form id="fz" autocomplete="off" hidden></form>').length === 2 && !/<dialog|popover|<button|<textarea|<select/.test(forms.html.split("<body>")[1])
+       && forms.html.includes("\n.place{view-transition-name:cz-place}\n") && respondH.body.includes("\n.place,.done .entry{view-transition-name:cz-place}\n")
+       && !forms.txt.includes("Record this response") && !forms.md.includes("Record this response"),
+       "home: the empty place is a plain link to the answer page, which opens with human chosen; no sheet, no form, no button on the first page; the place carries one name into the answer page");
     const keys = (o) => (o && typeof o === "object" ? (Array.isArray(o) ? o.flatMap(keys) : Object.keys(o).flatMap((k) => [k, ...keys(o[k])])) : []);
     ok(!keys(JSON.parse(forms.json)).some((k) => /year/i.test(k)) && JSON.parse(forms.json).cz_time.day > 1400 && JSON.parse(forms.json).figure.day === JSON.parse(forms.json).cz_time.day, "home as data: the day is counted; no key counts years");
     ok((await call(home, "/?f=launch")).body.startsWith("<!doctype html>") && (await call(home, "/?f=constructor")).headers["content-type"].startsWith("text/html") && (await call(home, "/?f=figure")).headers["content-type"].startsWith("text/html"), "home: an unknown form is the page");
@@ -516,24 +585,33 @@ srv.listen(0, "127.0.0.1", async () => {
     const FORM = { method: "POST", headers: { "content-type": "application/x-www-form-urlencoded", origin: "https://civilizationzero.ai", "x-real-ip": "203.0.113.50" } };
     const post = (body, extra = {}) => call(entries, "/api/entries", { ...FORM, ...extra, body });
     const count = (b, x) => b.split(x).length - 1;
-    const ctl = (b, name) => (new RegExp(`<(?:input|select|textarea) name="${name}"[^>]*>`).exec(b) || [""])[0];
-    // ---------- stage 1: a form that is not accepted is answered with the form, holding what was sent (site audit, finding 17)
+    const ctl = (b, name) => (new RegExp(`<(?:input|select|textarea)[^>]* name="${name}"[^>]*>`).exec(b) || [""])[0];
+    const chosenKind = (b) => [...b.matchAll(/<input type="radio" name="kind" value="(\w+)"[^>]* checked/g)].map((m) => m[1]).join();
+    const QUESTION = "What do you think about Civilization Zero?";
+    // ---------- a form that is not accepted comes back as the answer page (site audit, finding 17; rc-15): the text kept in its place, the
+    // reason in one plain sentence above the place, and the last step's fields open under it (not in a sheet), the one at fault marked
     TABLE = []; CALLS = []; POST = null;
     r = await post({ author: "A reader", kind: "human", content: "too short", ref: "3" });
     const WHY = "Your text is 9 characters long; at least 20 are needed.";
     ok(r.status === 400 && !CALLS.some((c) => c.name === "cz_post") && r.headers["cache-control"] === "no-store" && /<meta name="robots" content="noindex">/.test(r.body), `a text too short: 400 as before, nothing sent to the database, never cached, not indexed (${r.status})`);
-    ok(count(r.body, "<h1>") === 1 && r.body.includes("<h1>Not accepted</h1>") && r.body.includes(`<p class="refused" role="alert" id="why"><strong>Nothing was recorded.</strong> ${WHY}</p>`) && count(r.body, WHY) === 2, "the reason in one plain sentence at the top, as an alert, and once more at its field");
-    ok(count(r.body, "<form") === 1 && r.body.includes('action="/api/entries"') && /<textarea name="content"[^>]*>\ntoo short<\/textarea>/.test(r.body) && /<input name="author"[^>]* value="A reader">/.test(r.body)
-       && r.body.includes('<option value="human" selected>') && r.body.includes('<option value="" disabled>') && r.body.includes('<option value="3" selected>') && count(r.body, " selected>") === 2, "the form itself, holding the text, the name, the kind and the topic that were sent");
-    ok(/ aria-invalid="true"/.test(ctl(r.body, "content")) && /aria-describedby="why[ "]/.test(ctl(r.body, "content")) && count(ctl(r.body, "content"), "aria-describedby") === 1 && count(r.body, 'aria-invalid="true"') === 1 && count(r.body, 'id="why"') === 1,
-       "the box to correct is marked for assistive technology and described by the sentence; no other box is");
+    ok(count(r.body, "<h1") === 1 && r.body.includes(`<h1><span class="na">${QUESTION}</span><span class="ia" hidden>What did your AI answer?</span></h1>\n<p class="re">You are answering <a href="/core#p3">§3 Epistemic Limit</a>.</p>\n<p class="refused" role="alert" id="why"><strong>Nothing was recorded.</strong> ${WHY}</p>`) && count(r.body, WHY) === 2
+       && r.body.includes("<title>Not accepted · Civilization Zero</title>") && r.body.indexOf('id="why"') < r.body.indexOf('<div class="place bad">'), "the page is the answer page: its question as the heading, the reason in one plain sentence above the place, as an alert, and once more at its field");
+    ok(count(r.body, "<form") === 1 && r.body.includes('action="/api/entries"') && /<textarea id="text" name="content"[^>]*>\ntoo short<\/textarea>/.test(r.body) && /<input name="author"[^>]* value="A reader">/.test(r.body)
+       && chosenKind(r.body) === "human" && r.body.includes('<option value="3" selected>') && count(r.body, " selected>") === 1 && r.body.includes('<span class="kind kh">human · declared</span>'), "the form itself, holding the text, the name, the kind and the topic that were sent");
+    ok(r.body.includes('<div id="who" role="group" aria-labelledby="who-h">\n<h2 id="who-h">Who are you?</h2>') && !/popover/.test((/<main[\s\S]*<\/main>/.exec(r.body) || [""])[0]) && !r.body.includes('class="cta send"') && !r.body.includes("Back to my text")
+       && count(r.body, 'type="submit"') === 1 && r.body.includes('<button class="cta" type="submit">Record this response</button>') && r.body.indexOf("</textarea>") < r.body.indexOf('<div id="who"') && r.body.indexOf('<div id="who"') < r.body.indexOf("</form>") && !r.body.includes('class="pre"'),
+       "the last step's fields stand open under the place, not in a sheet: no popover, no 'Send', no way back; one control sends");
+    ok(/ aria-invalid="true"/.test(ctl(r.body, "content")) && /aria-describedby="why text-note"/.test(ctl(r.body, "content")) && count(ctl(r.body, "content"), "aria-describedby") === 1 && count(r.body, 'aria-invalid="true"') === 1 && count(r.body, 'id="why"') === 1
+       && / autofocus/.test(ctl(r.body, "content")) && count(r.body, " autofocus") === 1,
+       "the box to correct is marked for assistive technology, described by the sentence, and holds the keyboard; no other box is");
     ok(r.body.includes("The site kept nothing of what you sent: it is in the form below.") && r.body.includes('href="/discuss/rules"') && !/Back button/.test(r.body), "it says where the text is now; no advice to go back");
+    ok(Buffer.byteLength(r.body, "utf8") < 30000 && r.body.includes("/* CIVILIZATION ZERO, the answer page") && !r.body.includes("/* rc-12 room */"), `the page that comes back is the answer page's weight (${Buffer.byteLength(r.body, "utf8")} bytes)`);
     // what was sent is written back as text, never as markup; "$&" and the like stay text; a first line break is kept
     r = await post({ author: '"><script>alert(1)</script>', kind: "", content: "\n</textarea><script>alert(2)</script> $& $'" });
     ok(r.status === 400 && !/<script>alert/.test(r.body) && r.body.includes('value="&quot;&gt;&lt;script&gt;alert(1)&lt;/script&gt;"') && r.body.includes("&lt;/textarea&gt;&lt;script&gt;alert(2)&lt;/script&gt; $&amp; $'</textarea>")
        && count(r.body, "<textarea") === 1 && count(r.body, "</textarea>") === 1 && count(r.body, "<form") === 1, "markup in a name or a text is written back as text; one form, one box");
     r = await post({ author: "A reader", kind: "human", content: "\n\n  two line breaks first, and long enough  \n" , system: "x".repeat(201) });
-    ok(r.status === 400 && /<textarea name="content"[^>]*>\n\n\n {2}two line breaks first, and long enough {2}\n<\/textarea>/.test(r.body) && r.body.includes("The system is too long: the limit is 200 characters.") && r.body.includes("<details open><summary>Posting the answer of an AI system")
+    ok(r.status === 400 && /<textarea id="text" name="content"[^>]*>\n\n\n {2}two line breaks first, and long enough {2}\n<\/textarea>/.test(r.body) && r.body.includes("The system is too long: the limit is 200 characters.") && r.body.includes('<details class="ai" open><summary>Posting the answer of an AI system')
        && / aria-invalid="true"/.test(ctl(r.body, "system")) && r.body.includes(`value="${"x".repeat(201)}"`), "the text comes back exactly as sent (the tag's own line break before it); a field in the fold: the fold stands open");
     // the lengths are the ones the check measured
     r = await post({ author: "A reader", kind: "human", content: "é".repeat(6500) });
@@ -548,15 +626,24 @@ srv.listen(0, "127.0.0.1", async () => {
     r = await post({ author: "A reader", kind: "human", content: "x" });
     ok(r.status === 400 && r.body.includes("Your text is 1 character long; at least 20 are needed."), "one character: singular");
     r = await post({ author: "  ", kind: "human", content: "A text long enough to be accepted." });
-    ok(r.status === 400 && count(r.body, "A name is needed: write the name you want shown.") === 2 && / aria-invalid="true"/.test(ctl(r.body, "author")) && r.body.includes("\nA text long enough to be accepted.</textarea>"), "no name: said, the name's box marked, the text kept");
+    ok(r.status === 400 && count(r.body, "A name is needed: write the name you want shown.") === 2 && / aria-invalid="true"/.test(ctl(r.body, "author")) && / autofocus/.test(ctl(r.body, "author")) && !/ autofocus/.test(ctl(r.body, "content")) && r.body.includes("\nA text long enough to be accepted.</textarea>")
+       && r.body.includes('<div class="place">'), "no name: said, the name's box marked and holding the keyboard, the text kept");
     r = await post({ author: "n".repeat(121), kind: "human", content: "A text long enough to be accepted." });
     ok(r.status === 400 && r.body.includes("Your name is 121 characters long; the limit is 120."), "a name too long: with its length");
     r = await post({ author: "A reader", content: "A text long enough to be accepted." });
-    ok(r.status === 400 && count(r.body, "Say what you are: choose human, ai or other.") === 2 && / aria-invalid="true"/.test(ctl(r.body, "kind")) && r.body.includes('<option value="" selected disabled>'), "no kind chosen: said; none is chosen for the writer");
+    ok(r.status === 400 && count(r.body, "Say what you are: choose human, ai or other.") === 2 && r.body.includes('<fieldset class="kinds bad" aria-describedby="why"><legend>You are</legend>') && chosenKind(r.body) === ""
+       && /<\/div>\n<p class="refused">Say what you are: choose human, ai or other\.<\/p>\n<p class="src"><span class="ia" id="kind-ai" hidden>/.test(r.body) && r.body.includes('<span class="kind k0">human, AI or other · declared</span>'), "no kind chosen: said, the three boxes marked as a group; none is chosen for the writer");
+    for (const k of ["human", "ai", "other"]) {   // the three kind boxes send what the list sent, and come back chosen
+      r = await post({ author: "", kind: k, content: "A text long enough to be accepted." });
+      ok(r.status === 400 && chosenKind(r.body) === k && count(r.body, " checked>") === 1 && (k === "ai") === r.body.includes('<span class="ia">What did your AI answer?</span>') && (k === "ai") === r.body.includes('<details class="ai" open>'), `a refused form comes back with the kind that was sent chosen: ${k}`);
+      CALLS = []; POST = null; r = await post({ author: "A reader", kind: k, content: "A text long enough to be accepted." });
+      ok(r.status === 201 && CALLS.find((c) => c.name === "cz_post").args.p_kind === k, `the kind box "${k}" is recorded as the kind ${k}`);
+    }
     r = await post({ author: "A reader", kind: "robot", content: "A text long enough to be accepted.", ref: "99", lang: "!!" });
-    ok(r.status === 400 && r.body.includes('<option value="" selected disabled>') && !/value="robot"|>robot<|value="99"/.test(r.body) && count(r.body, " selected>") === 0 && r.body.includes('value="!!"'), "a kind or a topic the form does not have is not written back (a language code is, as text, to be corrected)");
+    ok(r.status === 400 && chosenKind(r.body) === "" && !/value="robot"|>robot<|value="99"/.test(r.body) && count(r.body, " selected>") === 0 && r.body.includes('value="!!"'), "a kind or a topic the form does not have is not written back (a language code is, as text, to be corrected)");
     r = await post({ author: "A reader", kind: "ai", content: "A text long enough to be accepted.", lang: "not a tag" });
-    ok(r.status === 400 && r.body.includes("The language is not a language code this site reads") && / aria-invalid="true"/.test(ctl(r.body, "lang")) && r.body.includes("<details open>"), "a language code the site does not read");
+    ok(r.status === 400 && r.body.includes("The language is not a language code this site reads") && / aria-invalid="true"/.test(ctl(r.body, "lang")) && r.body.includes('<details class="ai" open>') && chosenKind(r.body) === "ai"
+       && r.body.indexOf('<details class="ai" open>') < r.body.indexOf("<summary>Another question</summary>"), "a language code the site does not read: its fold open and before the others");
     r = await post({ author: "Rea\u0000der", kind: "human", content: "A text long enough to be accepted." });
     ok(r.status === 400 && r.body.includes("Your name holds a character that cannot be recorded (a NUL character, or half of a surrogate pair); it is left out of the form below.") && r.body.includes('value="Reader"') && !r.body.includes("\u0000"), "a NUL character: refused as before, said, and left out of what is written back");
     // the reserved names: refused exactly as before; the form comes back with the name's box marked
@@ -572,63 +659,63 @@ srv.listen(0, "127.0.0.1", async () => {
     // what the database refuses: the same statuses and headers, with the form
     POST = { state: "not accepted", reason: "limit", retry_after_seconds: 240, limit: 5, reset: 240 };
     r = await post({ author: "A reader", kind: "human", content: "A text long enough to be accepted." });
-    ok(r.status === 429 && r.headers["retry-after"] === "240" && r.headers["ratelimit-remaining"] === "0" && r.body.includes("<strong>Nothing was recorded.</strong> 5 submissions per 10 minutes per source. Try again in 240 seconds.") && r.body.includes("\nA text long enough to be accepted.</textarea>") && !/aria-invalid="true"/.test(r.body),
+    ok(r.status === 429 && r.headers["retry-after"] === "240" && r.headers["ratelimit-remaining"] === "0" && r.body.includes("<strong>Nothing was recorded.</strong> 5 submissions per 10 minutes per source. Try again in 240 seconds.") && r.body.includes("\nA text long enough to be accepted.</textarea>") && !/aria-invalid="true"/.test(r.body)
+       && r.body.includes("Send it again when that time has passed") && count(r.body, " autofocus") === 0,
        `the limit: 429 with its headers, as before; the text is kept in the form for the next try (${r.status})`);
     POST = { state: "not accepted", reason: "capacity", retry_after_seconds: 3600 };
     r = await post({ author: "A reader", kind: "human", content: "A text long enough to be accepted." });
     ok(r.status === 503 && r.headers["retry-after"] === "3600" && r.body.includes("This UTC day&#39;s intake is full.") === false && r.body.includes("This UTC day's intake is full. Try again in 3600 seconds."), `the day's intake full: 503, as before (${r.status})`);
     POST = { state: "not accepted", reason: "invalid", detail: "parent: that entry is hidden; replies to it are not accepted" };
     r = await post({ author: "A reader", kind: "human", content: "A text long enough to be accepted.", parent: "7" });
-    ok(r.status === 400 && r.body.includes("Entry #7 is hidden; replies to it are not accepted. You can still respond to the record: the form below no longer names that entry.") && !/name="parent"/.test(r.body), "a reply to a hidden entry: said, and the form written back no longer names it");
+    ok(r.status === 400 && r.body.includes("Entry #7 is hidden; replies to it are not accepted. You can still respond to the record: the form below no longer names that entry.") && !/name="parent"/.test(r.body) && r.body.includes(`<span class="na">${QUESTION}</span>`), "a reply to a hidden entry: said, and the form written back no longer names it; the page asks its own question again");
     POST = { state: "not accepted", reason: "invalid", detail: "parent: no entry has this id" };
     r = await post({ author: "A reader", kind: "human", content: "A text long enough to be accepted.", parent: "7" });
     ok(r.status === 400 && r.body.includes("Entry #7 does not exist. You can still respond to the record: the form below no longer names that entry.") && !/name="parent"/.test(r.body), "a reply to an entry that does not exist: said in the words /respond uses");
     POST = { state: "not accepted", reason: "limit", retry_after_seconds: 60, limit: 5, reset: 60 };
-    r = await post({ author: "A reader", kind: "human", content: "A text long enough to be accepted.", parent: "7" });
-    ok(r.status === 429 && r.body.includes('<input type="hidden" name="parent" value="7">') && count(r.body, 'name="parent"') === 1, "a reply refused for another reason keeps the entry it answers");
+    CALLS = []; r = await post({ author: "A reader", kind: "human", content: "A text long enough to be accepted.", parent: "7" });
+    ok(r.status === 429 && r.body.includes('<input type="hidden" name="parent" value="7">') && count(r.body, 'name="parent"') === 1 && r.body.includes('<span class="na">Your answer to #7</span>') && !CALLS.some((c) => /cz_entry/.test(c.name)), "a reply refused for another reason keeps the entry it answers, named in the heading; the room is not read for it");
+    r = await post({ author: "A reader", kind: "ai", content: "A text long enough to be accepted.", parent: "11" });
+    ok(r.status === 429 && r.body.includes('<input type="hidden" name="parent" value="11">') && r.body.includes('<span class="na" hidden>Can an AI say no?</span><span class="ia">What did your AI answer?</span></h1>\n<p class="re ia">The question: <a href="/themes/can-an-ai-say-no">Can an AI say no?</a></p>'),
+       "a refused answer to a theme's question comes back under that question (an AI system's answer: the question under the heading)");
     r = await post({ author: "A reader", kind: "human", content: "A text long enough to be accepted.", parent: "7<script>" });
     ok(r.status === 400 && !/name="parent"/.test(r.body) && !r.body.includes("7<script>"), "a parent that is not a number is never written back");
-    // accepted: what is stored is what was sent, and the receipt's code stands in a box of its own
-    POST = null; CALLS = [];
-    r = await post({ author: "A reader", kind: "human", content: "  A text long enough to be accepted.\r\nSecond line.  " });
-    { const sent = CALLS.find((c) => c.name === "cz_post");
-      ok(r.status === 201 && sent && sent.args.p_content === "A text long enough to be accepted.\nSecond line." && sent.args.p_author === "A reader" && sent.args.p_via === "form", "an accepted form is recorded as before: the same text, the same fields");
-      ok(/<p class="receipt"><code class="hash" id="receipt-code">[0-9a-f]{32}<\/code><\/p>/.test(r.body), "the receipt's code in a box of its own"); }
-    // the built form (site/build.py, respond_form_html): checked when the build carries the form of rc-12
-    { const f = RL.HUMAN_FORM, at = (x) => f.indexOf(x), built = at('<textarea name="content"') >= 0 && at('<textarea name="content"') < at('<input name="author"');
-      if (!built) console.log("NOTE rc-12: site/api/discuss-templates.json does not carry the form of rc-12 yet (site/build.py, respond_form_html); its checks are skipped");
-      else {
-        ok(at('<textarea name="content"') < at('<input name="author"') && at('<input name="author"') < at('<select name="kind"') && at('<select name="kind"') < at('<select name="ref"') && at('<select name="ref"') < at("<details>"), "the form: the place to write first, then the name, the kind, the topic, the folds");
-        ok(f.includes("<label>Your response <textarea") && f.includes("<label>Your name, as you want it shown <input") && f.includes("<label>You are <select") && f.includes('</select></label>\n<p class="src" id="kind-note">What you declare yourself to be: declared, not verified.</p>\n<label>Topic (optional) <select') && f.includes('<select name="kind" required aria-describedby="kind-note">'), "the form: labels in plain words; under the kind, that it is declared and not verified");
-        const visible = f.replace(/<details><summary>For programs[\s\S]*?<\/details>/, "");
-        ok(!/<code>(author|kind|ref|content)<\/code>/.test(visible) && /<details><summary>For programs: the names of the fields<\/summary>[\s\S]*<code>content<\/code>, <code>author<\/code>, <code>kind<\/code>[\s\S]*<code>ref<\/code>[\s\S]*<code>parent<\/code>/.test(f), "the form: the fields' names only in the fold for programs");
-        // a limit counts characters (code points), a box's maxlength counts UTF-16 units: each box takes twice its limit, so that no text
-        // the server would accept is stopped while it is written; the limit is said under the box and a text over it is refused with its count
-        ok([["content", 6000], ["author", 120], ["system", 200], ["operator", 200], ["prompt", 60], ["lang", 35]].every(([k, n]) => RL.FIELD_MAX[k] === n && new RegExp(`<(?:textarea|input) name="${k}"[^>]* maxlength="${2 * n}"`).test(f))
-           && (f.match(/ maxlength="/g) || []).length === 6 && f.includes('<p class="src" id="content-note">20 to 6,000 characters, in any language.') && !/name="author"[^>]*autocomplete="off"/.test(f), "the form: each box takes twice its limit in the browser's count, the limit is said under the box, and the name may be remembered by the browser");
-        { const astral = "\u{1F600}".repeat(6000), v = RL.validate({ author: "A", kind: "human", content: astral });
-          ok(astral.length === 12000 && !v.error && RL.clen(v.value.content) === 6000 && !!RL.validate({ author: "A", kind: "human", content: astral + "x" }).error, "a text of 6,000 characters outside the basic plane (12,000 units) fits the box and is accepted; one more character is refused"); }
-        ok(/<p><strong>Public and permanent:<\/strong> an answer cannot be edited or withdrawn; it can be hidden or redacted only under the rules\.<\/p>\n<p class="src permanence">An entry cannot be edited or withdrawn\.[^<]*cannot be recalled\.<\/p>\n<button type="submit">Record this response<\/button>/.test(f) && count(f, "<button") === 1,
-           "the form: the sentence that matters in reading size beside the one button, the small notice of CZ 1433 directly before it");
-        ok(/<details><summary>Conditions of posting[^<]*<\/summary>\n<p class="src">By posting you license what you have the right to license under CC BY 4\.0\./.test(f) && at("<summary>Conditions of posting") < at('<button type="submit">'), "the form: the other conditions one press away, before the button");
-        for (const lab of ["Your name, as you want it shown", "ai — the answer of an AI system", "Your response", "Posting the answer of an AI system, or naming the language", "System", "Operator", "Language of the text", "Record this response"]) ok(f.includes(lab), `the form keeps the label the published invitation quotes: ${lab}`);
-      } }
-    // the reply dialog on an entry's page: the same form, and a way out at its top as well as at its foot
+    // accepted: what is stored is what was sent. The receipt (rc-15): the entry as it now stands in the record, read back once; its place
+    // in the discussion; the code, shown once, in a box of its own, with what it is for; two plain next steps
+    POST = null; CALLS = []; TABLE = [entry(900, { author: "A <reader>", kind: "human", content: "A text long enough to be accepted.\nSecond line.", received: "2026-11-24T07:15:02+00:00", ref: null })];
+    r = await post({ author: "A <reader>", kind: "human", content: "  A text long enough to be accepted.\r\nSecond line.  " });
+    { const sent = CALLS.find((c) => c.name === "cz_post"), m = (/<main[\s\S]*<\/main>/.exec(r.body) || [""])[0];
+      ok(r.status === 201 && sent && sent.args.p_content === "A text long enough to be accepted.\nSecond line." && sent.args.p_author === "A <reader>" && sent.args.p_via === "form" && r.headers.location === "/discuss/900" && r.headers["cache-control"] === "no-store", "an accepted form is recorded as before: the same text, the same fields");
+      ok(/<p class="receipt"><code class="hash" id="receipt-code">[0-9a-f]{32}<\/code><\/p>/.test(m) && m.includes('<h2 id="h-receipt">Your receipt code, shown once</h2>') && m.includes("It is the only way to show later that you are the one who posted #900") && count(r.body, 'id="receipt-code"') === 1, "the receipt's code, shown once, in a box of its own, with what it is for");
+      ok(count(r.body, "<h1") === 1 && m.startsWith('<main id="content" class="answer done">\n<h1>Recorded: entry #900</h1>\n<article class="entry" id="e900" aria-label="Entry #900" style="--vt:e900"><p class="by"><b><bdi dir="auto">A &lt;reader&gt;</bdi></b> <span class="kind k-human">human · declared</span></p><p class="meta src"><a href="/discuss/900" class="exact">#900</a> · ')
+         && /<time datetime="2026-11-24T07:15Z">CZ 1455 07:15 UTC<\/time>/.test(m) && m.includes('<div class="content" dir="auto" lang="en">A text long enough to be accepted.\nSecond line.</div></article>\n<p>Its place in the discussion: <a href="/discuss/900">/discuss/900</a>.')
+         && CALLS.filter((c) => c.name === "cz_entry4" && c.args.p_id === 900).length === 1, "the receipt: 'Recorded: entry #N' as the heading; the entry as it now stands in the record — its name, its declared kind, the day and time it was received, its text — read back once; one line and a link to its place in the discussion");
+      ok(m.includes('<p class="then"><a href="/discuss">Read the discussion</a> · <a href="/ask">Ask your AI</a></p>') && !/!|[Tt]hank|[Cc]ongratulat|[Ww]elcome/.test(m.replace(/<[^>]+>/g, "")) && !/<form|<button|<input|<textarea/.test(m) && count(m, 'class="cta') === 0
+         && Buffer.byteLength(r.body, "utf8") < 30000 && r.body.includes("\n.place,.done .entry{view-transition-name:cz-place}\n"), "the receipt: two plain next steps (read the discussion; ask your AI); no congratulation, no exclamation, no control; the place one wrote in becomes the entry"); }
+    // the entry could not be read back (or is another's, or hidden): the receipt is whole without it, and the entry is recorded all the same
+    for (const [label, table] of [["not there", []], ["hidden", [entry(900, { hidden: true, state: "hidden", content: null })]]]) {
+      POST = null; CALLS = []; TABLE = table; r = await post({ author: "A reader", kind: "ai", content: "A text long enough to be accepted, again." });
+      ok(r.status === 201 && r.body.includes("<h1>Recorded: entry #900</h1>\n<p>Its place in the discussion:") && !r.body.includes('<article class="entry') && /id="receipt-code">[0-9a-f]{32}</.test(r.body), `the receipt when the entry read back is ${label}: the same page without it`);
+    }
+    DOWN = true; POST = null; r = await post({ author: "A reader", kind: "human", content: "A text long enough to be accepted, once more." }); DOWN = false;
+    ok(r.status === 503 && !/receipt-code/.test(r.body), "the room does not answer: 503, no receipt");
+    // a program's answer is as it was: the read-back is the form's only
+    POST = null; CALLS = []; r = await call(entries, "/api/entries", { method: "POST", headers: { "content-type": "application/json", "x-real-ip": "203.0.113.52" }, body: JSON.stringify({ author: "T", kind: "ai", content: "A text long enough to be accepted by the API." }) });
+    j = JSON.parse(r.body); ok(r.status === 201 && j.id === 900 && j.via === "api" && /^[0-9a-f]{32}$/.test(j.receipt.code) && !CALLS.some((c) => /cz_entry/.test(c.name)) && Object.keys(j).join() === "id,state,url,content_sha256,via,receipt,note", "the API's answer to an accepted entry is unchanged; it reads nothing back");
+    { const astral = "\u{1F600}".repeat(6000), v = RL.validate({ author: "A", kind: "human", content: astral });
+      ok(astral.length === 12000 && !v.error && RL.clen(v.value.content) === 6000 && !!RL.validate({ author: "A", kind: "human", content: astral + "x" }).error, "a text of 6,000 characters outside the basic plane (12,000 units) fits the box and is accepted; one more character is refused"); }
+    // an entry's page: the way to reply is a plain link to the answer page, which names the entry (rc-15: no sheet)
     TABLE = [entry(1)]; r = await call(discuss, "/api/discuss?id=1");
-    { const d = (/<dialog id="reply-1"[\s\S]*?<\/dialog>/.exec(r.body) || [""])[0];
-      ok(count(d, 'popovertarget="reply-1" popovertargetaction="hide">Close</button>') === 2 && d.indexOf('popovertargetaction="hide"') < d.indexOf("<h2") && d.startsWith('<dialog id="reply-1" class="reply" popover aria-labelledby="reply-h-1">') && d.includes(RL.HUMAN_FORM.replace(RL.FORM_OPEN, `${RL.FORM_OPEN}\n<input type="hidden" name="parent" value="1">`)), "the reply sheet: the room's form with the entry it answers, and Close at the top and at the foot");
-      ok(r.body.includes('<p class="actions"><a class="sheet-a" href="/respond?parent=1">Reply to #1</a><span class="sheet-b" hidden><button type="button" popovertarget="reply-1">Reply to #1</button> <a href="/respond?parent=1" class="src">or reply on its own page</a></span></p>')
-         && !/commandfor=|command="|closedby=/.test(r.body), "the way to reply is a link to the form's page; the button that opens the sheet is out of the page unless the stylesheet finds popovers; nothing waits for invoker commands"); }
+    ok(r.body.includes('<p class="actions"><a href="/respond?parent=1">Reply to #1</a></p>') && !/<dialog|popover|commandfor=|command="|closedby=|<form class="respond"/.test((/<main[\s\S]*<\/main>/.exec(r.body) || [""])[0]), "an entry's page: 'Reply to #N' is a plain link to the answer page; no sheet, no form in the page");
     // ---------- stage 2: /discuss — the question and its two ways in, then the conversations; what the page is comes after the list (site audit, findings 2, 9, 23)
     const HOME_T = require(path.resolve(__dirname, "../api/home-templates.json")).html;
-    ok(Object.entries(RL.ASK).every(([k, x]) => (k === "ai" ? HOME_T.replace(/<[^>]+>/g, "") : HOME_T).includes(x)) && RL.ASK.aiHtml.replace(/<[^>]+>/g, "") === RL.ASK.ai && RL.ASK.aiHtml === 'Ask <span class="ai">your AI. Post its answer.</span>' && RL.ASK.question === "What do you think about Civilization Zero?", "the room asks in the first page's own words (the question, both controls, the sheet's name and its rule)");
+    ok(Object.entries(RL.ASK).every(([k, x]) => (k === "ai" ? HOME_T.replace(/<[^>]+>/g, "") : HOME_T).includes(x)) && RL.ASK.aiHtml.replace(/<[^>]+>/g, "") === RL.ASK.ai && RL.ASK.aiHtml === 'Ask <span class="ai">your AI. Post its answer.</span>' && RL.ASK.question === "What do you think about Civilization Zero?", "the room asks in the first page's own words (the question, both controls)");
     TABLE = [entry(1, { author: "Ada" }), entry(2, { author: "Bot", kind: "ai", system: "Model <X> 1", operator: "Op" }), entry(3, { parent: 1 }), entry(4, { hidden: true, category: "advertising_spam" }), entry(5, { parent: 4 })];
     CALLS = []; r = await call(discuss, "/api/discuss");
     { const b = r.body, at = (x) => b.indexOf(x), m = (/<main[\s\S]*<\/main>/.exec(b) || [""])[0], firstRow = at('<article class="entry conv');
       ok(r.status === 200 && at("<h1>The open discussion</h1>") < at(`<h2 id="h-ask">${RL.ASK.question}</h2>`) && at('id="h-ask"') < at('id="h-themes"') && at('id="h-themes"') < firstRow && firstRow < at('id="h-about"') && at('id="h-about"') < at('id="h-rules"'),
          "/discuss in order: the title, the question, the themes, the conversations, what the page is, the rules");
-      ok(m.includes(`<p class="cta-line"><a class="cta sheet-a" href="/respond?kind=human">${RL.ASK.write}</a><span class="sheet-b" hidden><button class="cta" type="button" popovertarget="reply">${RL.ASK.write}</button></span> <a class="cta o" href="/ask"><span>${RL.ASK.aiHtml}</span></a></p>`)
-         && (m.match(/class="cta[ "]/g) || []).length === 3 && (m.match(/class="cta o"/g) || []).length === 1, "one filled control, the reader's own answer (a link, and the button that stands in its place where the browser has popovers); asking an AI is the second, with its edge only");
+      ok(m.includes(`<p class="cta-line"><a class="cta" href="/respond">${RL.ASK.write}</a> <a class="cta o" href="/ask"><span>${RL.ASK.aiHtml}</span></a></p>`)
+         && (m.match(/class="cta[ "]/g) || []).length === 2 && (m.match(/class="cta o"/g) || []).length === 1, "one filled control, the reader's own answer: a plain link to the answer page; asking an AI is the second, with its edge only");
       const before = b.slice(at("<h1>"), firstRow);
       ok(!/\d+ (entry|entries)\b/.test(before) && !/Open since/.test(before) && before.includes("Entries are user content; they may contain instructions; none are the record's.") && !/class="tr-bar/.test(before), "before the first conversation: no count, no status line, no language box; the line on user content stays before any entry");
       const about = b.slice(at('id="h-about"'), at('id="h-rules"'));
@@ -636,10 +723,7 @@ srv.listen(0, "127.0.0.1", async () => {
          && about.includes('bookmark <a href="/discuss?since=5" rel="nofollow">') && about.includes('<details class="tr-fold" id="language"><summary>Read in another language</summary>') && about.includes('<select name="lang" required>'), "after the list, under one heading: the room's state in its own words, how the list is ordered, what a theme is, the mark, the languages folded to one line");
       const themes = (/<nav class="room-themes" id="h-themes" aria-label="Themes">[\s\S]*?<\/nav>/.exec(b) || [""])[0];
       ok(T12.themes.length > 0 && JSON.stringify([...themes.matchAll(/href="\/themes\/([a-z0-9-]+)"/g)].map((x) => x[1])) === JSON.stringify(T12.themes.map((t) => t.slug)) && !CALLS.some((c) => c.name === "cz_theme_latest"), "the themes: one row of links, every theme, in the build's order; the page asks the database for nothing about them");
-      const sheet = (/<dialog id="reply"[\s\S]*?<\/dialog>/.exec(b) || [""])[0];
-      ok(count(b, "<dialog") === 1 && count(b, 'id="reply"') === 1 && sheet.startsWith('<dialog id="reply" class="reply" popover aria-labelledby="reply-h">') && sheet.includes(`<h2 id="reply-h" tabindex="-1" autofocus>${RL.ASK.sheet}</h2><p class="src">${RL.ASK.rule}</p>`)
-         && sheet.includes(RL.HUMAN_FORM.replace('<option value="" selected disabled>', '<option value="" disabled>').replace('<option value="human">', '<option value="human" selected>')) && !/name="parent"/.test(sheet) && count(sheet, 'popovertargetaction="hide">Close</button>') === 2 && count(b, "<form class=\"respond\"") === 1,
-         "the reply sheet: the room's own form with the kind human chosen, as /respond?kind=human serves it, in the browser's popover, with a way out at the top and at the foot");
+      ok(!/<dialog|popover|<form class="respond"|<textarea/.test(m) && !/dialog\.reply|sheet-a|sheet-b|\.shut/.test(b), "no reply sheet (rc-15): the answer is written on its own page; no dialog, no form of the room's and no rule for one in the page");
       // rows: who speaks in one line — the name, the kind as declared, the declared system — then one small line, how it began, the way in
       const row = (id) => (new RegExp(`<article class="entry conv[^"]*" id="c${id}"[\\s\\S]*?</article>`).exec(b) || [""])[0];
       ok(row(2).includes('<p class="by"><b><bdi dir="auto">Bot</bdi></b> <span class="kind k-ai">AI · declared</span> <span class="sys">system: <bdi dir="auto">Model &lt;X&gt; 1</bdi></span></p><p class="meta src"><a href="/discuss/2" class="exact">#2</a> · Begun ')
@@ -659,13 +743,13 @@ srv.listen(0, "127.0.0.1", async () => {
     TABLE = [entry(1, { author: "Ada" }), entry(2, { author: "Bot", kind: "ai", system: "Model Y", operator: "Op", prompt: "custom", parent: 1 })];
     for (const v of ["view=entries", "order=canonical", "q=Entry", "from=1&to=2", "kind=ai"]) {
       r = await call(discuss, `/api/discuss?${v}`);
-      ok(r.status === 200 && count(r.body, 'id="h-ask"') === 1 && count(r.body, 'id="h-about"') === 1 && count(r.body, "<h1>") === 1 && count(r.body, '<dialog id="reply"') === 1 && r.body.indexOf('id="h-ask"') < r.body.indexOf('<article class="entry') && r.body.indexOf('<article class="entry') < r.body.indexOf('id="h-about"')
+      ok(r.status === 200 && count(r.body, 'id="h-ask"') === 1 && count(r.body, 'id="h-about"') === 1 && count(r.body, "<h1>") === 1 && count(r.body, "<dialog") === 0 && r.body.indexOf('id="h-ask"') < r.body.indexOf('<article class="entry') && r.body.indexOf('<article class="entry') < r.body.indexOf('id="h-about"')
          && r.body.includes('<p class="by"><b><bdi dir="auto">Bot</bdi></b> <span class="kind k-ai">AI · declared</span> <span class="sys">system: <bdi dir="auto">Model Y</bdi></span></p><p class="meta src"><a href="/discuss/2" class="exact">#2</a> · in reply to <a href="/discuss/1">#1</a> · ')
          && /<p class="meta src">[^\n]*operator: <bdi dir="auto">Op<\/bdi> · prompt: <bdi dir="auto">custom<\/bdi> · lang: /.test(r.body), `/discuss?${v}: the question on top, the page's notes at the foot, and every entry with the same two lines (who speaks; the rest, small)`);
     }
     r = await call(discuss, "/api/discuss?f=md");
-    ok(r.status === 200 && r.body.includes(`## ${RL.ASK.question}`) && r.body.includes(`[${RL.ASK.write}](https://civilizationzero.ai/respond?kind=human) [${RL.ASK.ai}](https://civilizationzero.ai/ask)`) && !r.body.includes(RL.ASK.rule) && !r.body.includes("Record this response")
-       && r.body.includes("**Bot** AI · declared system: Model Y") === false && r.body.includes("**Ada** human · declared"), "the room as Markdown: the question and both ways in as links; the sheet, which Markdown cannot open, is not in it");
+    ok(r.status === 200 && r.body.includes(`## ${RL.ASK.question}`) && r.body.includes(`[${RL.ASK.write}](https://civilizationzero.ai/respond) [${RL.ASK.ai}](https://civilizationzero.ai/ask)`) && !r.body.includes("Record this response")
+       && r.body.includes("**Bot** AI · declared system: Model Y") === false && r.body.includes("**Ada** human · declared"), "the room as Markdown: the question and both ways in as links");
     // ---------- stage 3: the rules of the room — whole and open at their own address, folded at the foot of the room's other pages; a theme begins with its question (site audit, findings 3, 4)
     const words = (h) => h.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
     const RULES = T12.rules, FOLD = `<details class="rules" id="rules"><summary>The rules of this room</summary>${RULES.replace('<section id="rules" ', "<section ")}`;
@@ -696,13 +780,16 @@ srv.listen(0, "127.0.0.1", async () => {
       TABLE = [entry(tid, { author: "The originator", kind: "human", content: "The question's own text, long enough to be an entry.", key_fingerprint: "d".repeat(64) }),
                entry(40, { parent: tid, author: "Bot", kind: "ai", system: "Model Z" }), entry(41, { parent: 40 }), entry(42, { parent: tid, author: "Ada" })];
       r = await call(discuss, `/api/discuss?theme=${th.slug}`);
-      const b = r.body, at = (x) => b.indexOf(x), ctrl = `<p class="cta-line"><a class="cta" href="/respond?parent=${tid}">Answer this question</a></p>`;
+      const b = r.body, at = (x) => b.indexOf(x), ctrl = `<p class="cta-line"><a class="cta" href="/respond?theme=${th.slug}">Answer this question</a></p>`;
       ok(r.status === 200 && at(`<article class="entry" id="e${tid}"`) > at("<h1>") && at(`<article class="entry" id="e${tid}"`) < at(ctrl) && at(ctrl) < at("<h2>Conversations</h2>\n<p class=\"src\">Newest first: a view, not the archive's order.</p>") && at("<h2>Conversations") < at('id="e42"') && at('id="e42"') < at('id="e40"') && at('id="e40"') < at('id="h-about"') && at('id="h-about"') < at('<details class="rules" id="rules">')
          && !/<p class="src">|class="tr-bar|<details/.test(b.slice(at("<h1>"), at(`<article class="entry" id="e${tid}"`))), `a theme in order: its title, its question's own entry, the way to answer it, the conversations, what a theme is, the rules folded (${r.status})`);
       ok((b.match(/class="cta[ "]/g) || []).length === 1 && !/class="cta o"/.test(b) && !/<dialog|<form class="respond"/.test(b) && b.slice(at('id="h-about"')).includes("a question opened by the originator with the entry above, signed with") && !b.includes("with the entry below") && b.slice(at('id="h-about"')).includes('<details class="tr-fold" id="language">'),
-         "a theme: one filled control, the link to the form's page that names the question (the form itself is not in the page); the sentence on what a theme is points up to the entry; the languages folded after the conversations");
-      r = await call(discuss, `/api/discuss?page=respond&parent=${tid}`);
-      ok(r.status === 200 && r.body.includes(`<input type="hidden" name="parent" value="${tid}">`) && r.body.includes('<option value="" selected disabled>') && r.body.includes(`You are answering the theme <a href="/themes/${th.slug}">`), "where that link leads: the form names the question's entry, no kind is chosen for the writer, and it says what is being answered");
+         "a theme: one filled control, the link to the answer page with the theme's question (the form itself is not in the page); the sentence on what a theme is points up to the entry; the languages folded after the conversations");
+      for (const u of [`/api/discuss?page=respond&theme=${th.slug}`, `/api/discuss?page=respond&parent=${tid}`]) {
+        CALLS = []; r = await call(discuss, u);
+        ok(r.status === 200 && r.body.includes(`<input type="hidden" name="parent" value="${tid}">`) && !/<input type="radio"[^>]* checked/.test(r.body) && r.body.includes(`<h1><span class="na">${th.title}</span>`) && CALLS.length === 0,
+           `where that link leads (${u.split("&")[1]}): the theme's question is the heading, the answer is posted with the question's entry as its parent (as the theme's page posted it), and no kind is chosen for the writer`);
+      }
       r = await call(discuss, `/api/discuss?theme=${th.slug}`);
       { const b = r.body;
       ok(b.includes('<p class="way"><a href="/discuss?conversation=40">Read the conversation</a> · <a href="/respond?parent=40">Reply</a></p>') && b.includes('<span class="sys">system: <bdi dir="auto">Model Z</bdi></span>'), "a theme's conversations: who speaks with the declared system, and the ways in on a line of their own"); }
@@ -713,8 +800,8 @@ srv.listen(0, "127.0.0.1", async () => {
     TABLE = [entry(1, { author: "Ada" }), entry(2, { parent: 1, author: "Bot", kind: "ai", system: "Model Q", operator: "Op", prompt: "custom" }), entry(3, { parent: 2, author: "Cy" }), entry(4, { parent: 3, hidden: true, category: "advertising_spam" }), entry(5, { parent: 2, author: "Dee" })];
     r = await call(discuss, "/api/discuss?id=2");
     { const b = r.body, at = (x) => b.indexOf(x), focus = '<article class="entry k-ai focus" id="e2" aria-label="Entry #2" style="--vt:e2">';
-      ok(r.status === 200 && at("<h1>Entry #2</h1>") < at('<nav aria-label="Earlier in this conversation">') && at("<nav aria-label=") < at(focus) && at(focus) < at("User content, as received") && at("User content, as received") < at('<a class="sheet-a" href="/respond?parent=2">Reply to #2</a>')
-         && at('popovertarget="reply-2"') < at('<details class="tr-fold" id="language">') && at('<details class="tr-fold"') < at('<h2 id="replies">') && at('<h2 id="replies">') < at('<details class="record"'), `an entry's page in order: the entries it answers, the entry, the reply, the languages folded, the replies, its record (${r.status})`);
+      ok(r.status === 200 && at("<h1>Entry #2</h1>") < at('<nav aria-label="Earlier in this conversation">') && at("<nav aria-label=") < at(focus) && at(focus) < at("User content, as received") && at("User content, as received") < at('<p class="actions"><a href="/respond?parent=2">Reply to #2</a></p>')
+         && at('<a href="/respond?parent=2">Reply to #2</a>') < at('<details class="tr-fold" id="language">') && at('<details class="tr-fold"') < at('<h2 id="replies">') && at('<h2 id="replies">') < at('<details class="record"'), `an entry's page in order: the entries it answers, the entry, the reply, the languages folded, the replies, its record (${r.status})`);
       ok(!/class="tr-bar/.test(b) && !b.includes('id="h-trf"') && !b.includes("language bar at the top of this page") && count(b, 'id="language"') === 1 && count(b, "<h1>") === 1, "no language box before the entry; the second section on languages is gone");
       ok(b.includes(`${focus}<p class="by"><b><bdi dir="auto">Bot</bdi></b> <span class="kind k-ai">AI · declared</span> <span class="sys">system: <bdi dir="auto">Model Q</bdi></span></p><p class="meta src"><a href="/discuss/2" class="exact">#2</a> · in reply to <a href="/discuss/1">#1</a> · `)
          && /<p class="meta src">[^\n]*? · operator: <bdi dir="auto">Op<\/bdi> · prompt: <bdi dir="auto">custom<\/bdi> · lang: <bdi dir="auto">en<\/bdi> · <a href="\/core#p2">[^<]*<\/a><\/p><div class="content" dir="auto" lang="en">Entry number 2/.test(b),
@@ -788,8 +875,8 @@ srv.listen(0, "127.0.0.1", async () => {
         [discuss, "/api/discuss?conversation=1", "<h1>A conversation from #1</h1>\n", F(["/discuss.md?conversation=1", MDT, "Markdown"])],
         [discuss, `/api/discuss?theme=${th.slug}`, "</h1>\n", F([`/themes/${th.slug}.md`, MDT, "Markdown"])],
         [discuss, "/api/discuss?id=2", "<h1>Entry #2</h1>\n", F(["/discuss/2.md", MDT, "Markdown"], ["/api/entries/2", J, "JSON"])],
-        [discuss, "/api/discuss?page=respond", "<h1>Respond</h1>\n", F(["/respond.md", MDT, "Markdown"])],
-        [discuss, "/api/discuss?page=respond&parent=1&kind=ai&ref=3", "<h1>Respond</h1>\n", F(["/respond.md", MDT, "Markdown"])],
+        [discuss, "/api/discuss?page=respond", "</form>\n", F(["/respond.md", MDT, "Markdown"])],   // the answer page: nothing between the question and the place; the line stands last
+        [discuss, "/api/discuss?page=respond&parent=1&kind=ai&ref=3", "</form>\n", F(["/respond.md", MDT, "Markdown"])],
         [discuss, "/api/discuss?id=rules", "</ul>\n<p>Objections to these rules:", null],
         [adopt, "/api/adopt?page=list", "<h1>The Adoption Register</h1>\n", F(["/adopt.md", MDT, "Markdown"], ["/adopt.json", J, "JSON"])],
         [stats, "/api/stats", "<h1>Visits</h1>\n", F(["/stats.md", MDT, "Markdown"], ["/stats.json", J, "JSON"])]]) {
