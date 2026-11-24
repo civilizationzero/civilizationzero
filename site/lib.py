@@ -477,7 +477,10 @@ td.num,th.num{text-align:end;font-variant-numeric:tabular-nums}
 
 /* 6 CONTROLS. H: every control at least e6 tall (2.5.8 and the platforms' touch guidance) and no wider than its line; fields at the
    reading size, so that a phone does not zoom in when one is tapped; field borders and placeholders at 3:1 or more (1.4.11). E: one
-   filled control for the act a page asks for; pointed at, it shows its edge only. */
+   filled control for the act a page asks for; pointed at, it shows its edge only. E (the originator's request of 24 Nov 2026 UTC,
+   CZ 1455): in the invitation to ask an AI, the words that are the machine's part stand in the machine's colour; colour only.
+   Pointed at, that control is filled, and the words take the green that holds 7:1 on the fill; in the dark palette the fill is
+   then white, since on #eee neither green holds 7:1 (--fill-on, --machine-on; /how-it-is-built names the colours). */
 button,input,select,textarea{font:inherit;color:var(--fg);background:var(--bg)}
 button,select,input:not([type=checkbox]):not([type=radio]){box-sizing:border-box;min-block-size:var(--e6);max-inline-size:100%}
 input,select,textarea{padding:var(--e-4);border:var(--e-16) solid var(--mute)}
@@ -489,7 +492,9 @@ a.cta,button.cta{display:inline-flex;align-items:center;box-sizing:border-box;mi
 button.cta.done,a.cta.o{background:var(--bg);color:var(--fg)}
 :is(a.cta,button.cta):is(:hover,:focus-visible){background:var(--bg);color:var(--fg)}
 button.done:not(.cta){background:var(--fg);color:var(--bg)}
-a.cta.o:is(:hover,:focus-visible){background:var(--fg);color:var(--bg)}
+a.cta.o:is(:hover,:focus-visible){background:var(--fill-on);color:var(--bg)}
+a.cta.o .ai{color:var(--machine)}
+a.cta.o:is(:hover,:focus-visible) .ai{color:var(--machine-on)}
 p.cta-line{display:flex;flex-wrap:wrap;align-items:center;gap:var(--e-4) var(--e-2)}
 .cta-note{flex-basis:100%}
 .cta-note:empty{display:none}
@@ -516,7 +521,7 @@ form.cz-conv input{inline-size:15ch}
 .trk circle{stroke:var(--rule);stroke-width:var(--e-16);vector-effect:non-scaling-stroke}
 
 /* 7 THE ROOM. Blueprint §7: an entry is user content, shown as text, its words unchanged. The machine layer (the originator's decision of
-   CZ 1433): green is for what a machine wrote, an AI system's entry (its tag and its edge) and a machine translation (a dashed edge and a
+   CZ 1433): green is for what is a machine's: what a machine wrote, an AI system's entry (its tag and its edge) and a machine translation (a dashed edge and a
    tag), and for the day of the CZ count; the tag's words always say it too (1.4.1). The tag keeps its size inside small print. */
 .entry{margin:var(--e2) 0;padding-block-start:var(--e-4);border-block-start:var(--e-16) solid var(--rule)}
 .entry .content{margin:var(--e-4) 0;white-space:pre-wrap}

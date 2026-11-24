@@ -55,7 +55,7 @@ test("the day's figure in the page and in the data form is the reader's day's", 
 test("the figure's switch and its line: today's at rest; after a press, tomorrow's day, named for the reader's zone", async () => {
   for (const zone of [EAST, WEST]) {
     const d = CZ.todayIn(Date.now(), zone), b = unesc(await page(zone));
-    assert.ok(b.includes('<input class="turn" id="turn" type="checkbox" aria-label="Show tomorrow\'s figure" hidden>') && b.includes('<label class="fig-l" for="turn"><svg class="fig"'), "a checkbox and its label, the figure; hidden unless the browser can compute the next day");
+    assert.ok(b.includes('<input class="turn" id="turn" type="checkbox" autocomplete="off" aria-label="Show tomorrow\'s figure" hidden>') && b.includes('<label class="fig-l" for="turn"><svg class="fig"'), "a checkbox and its label, the figure; hidden unless the browser can compute the next day");
     assert.ok(b.includes(`<span class="t0">Nobody drew today's figure. <span class="press" hidden>Press it to see tomorrow's.</span></span><span class="t1" hidden>This is tomorrow's, Day ${(d + 1).toLocaleString("en-US")}: computed, like today's, from the day's number and the text of the Core. Press it again for today's.</span>`), `${zone}: the line, and the line after a press`);
   }
   const txt = (await call("/?f=txt")).body, j = await data();
@@ -78,10 +78,12 @@ test("three states, each an address: neither door answered, #human, #not-human",
 
 test("one filled control, in the opened reading; three steps in order — read, say, ask your AI — in every form", async () => {
   const b = await page(), txt = (await call("/?f=txt")).body, md = (await call("/index.md?f=md")).body, j = await data();
-  const acts = [...b.matchAll(/<a class="(act[^"]*)" href="([^"]+)">([^<]*)<\/a>/g)].map((m) => m.slice(1));
+  const acts = [...b.matchAll(/<a class="(act[^"]*)" href="([^"]+)">(.*?)<\/a>/g)].map((m) => [m[1], m[2], m[3].replace(/<[^>]+>/g, "")]);
   assert.deepEqual(acts, [["act", "/core", "Read the 16 principles (one page)"], ["act o", "/ask", "Ask your AI. Post its answer."]]);
+  // the machine's part of the invitation stands in one span (the stylesheet sets it in the machine's green); the words are the label's own
+  assert.ok(b.includes('<a class="act o" href="/ask">Ask <span class="ai">your AI. Post its answer.</span></a>') && !/aria-hidden/.test(b.split('<a class="act o"')[1].split("</a>")[0]), "the invitation: 'Ask', then the machine's part in one span");
   const css = b.split("<style>")[1].split("</style>")[0].replace(/\/\*[\s\S]*?\*\//g, "");
-  const filled = [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)].filter((m) => m[2].includes("background:var(--fg)")).map((m) => m[1].trim());
+  const filled = [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)].filter((m) => m[2].includes("background:var(--fg)") || m[2].includes("background:var(--fill-on)")).map((m) => m[1].trim());
   assert.ok(filled.length >= 1 && filled[0] === ".act:not(.o)", "the first step's control is filled, by a rule of its own");
   for (const sel of filled) for (const s of sel.split(",")) assert.ok(/:hover|:focus-visible|\.act:not\(\.o\)/.test(s), `nothing else is filled unless the reader points at it: ${sel}`);
   const seq = ["I am human", "Read the Core", "Read the 16 principles (one page)", "numbered 0 to 15, in 21 languages", "Say what you think", "What do you think about Civilization Zero?", "your name · human · declared", "Write your answer",

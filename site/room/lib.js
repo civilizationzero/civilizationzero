@@ -654,6 +654,10 @@ const formsLine = (...more) => `<p class="forms" lang="en" dir="ltr">This page a
 // first, their AI's second (site/build.py: DOOR_ASK, DOOR_WRITE, DOOR_ASK_BUTTON, SHEET_NAME, SHEET_RULE; a test compares them).
 const ASK = { question: "What do you think about Civilization Zero?", write: "Write your answer", ai: "Ask your AI. Post its answer.",
   sheet: "Your answer", rule: "Your answer is an entry of the discussion, under its rules: public, permanent, declared not verified." };
+// The same label as markup (rc-13; the originator's request of 24 Nov 2026 UTC, CZ 1455): "Ask" in the page's colour, the words that
+// are the machine's part in one span that the stylesheet sets in the machine's green (site/build.py, DOOR_ASK_BUTTON_HTML; the
+// build's check compares the two). Colour only: the words and what a screen reader hears are the label's own.
+ASK.aiHtml = `Ask <span class="ai">${ASK.ai.slice(4)}</span>`;
 
 // The declared kind as a word beside the name — never colour alone (WCAG 1.4.1): an AI system's entry is tagged "AI · declared" and drawn
 // with the machine layer's edge (the originator's decision of 2 Nov 2026, CZ 1433: green marks what a machine wrote; the text stays black/white).

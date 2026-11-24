@@ -20,9 +20,9 @@
    R the record · M the machine reader · H a standard for human reading · C a constraint · E a choice. */
 :root{--e-16:.0625rem;--e-12:.125rem;--e-8:.25rem;--e-4:.5rem;--e-2:.7071rem;--e-1:.8409rem;--e0:1rem;--e1:1.1892rem;--e2:1.4142rem;
 --e3:1.6818rem;--e4:2rem;--e5:2.3784rem;--e6:2.8284rem;--e12:8rem;--e14:11.3137rem;--e18:22.6274rem;--e21:38.0546rem;--e22:45.2548rem;
---l1:1.1892;--l2:1.4142;color-scheme:light dark;--bg:#fff;--fg:#111;--mute:#555;--rule:#bbb;--machine:#116329;--why:#0f4c81;
+--l1:1.1892;--l2:1.4142;color-scheme:light dark;--bg:#fff;--fg:#111;--mute:#555;--rule:#bbb;--machine:#116329;--why:#0f4c81;--fill-on:#111;--machine-on:#3fb950;
 --human:Charter,"Bitstream Charter","Sitka Text",Cambria,serif;--exact:ui-monospace,"Cascadia Mono",Consolas,"SF Mono",Menlo,monospace}
-@media(prefers-color-scheme:dark){:root{--bg:#101010;--fg:#eee;--mute:#aaa;--rule:#444;--machine:#3fb950;--why:#91c3f6}}
+@media(prefers-color-scheme:dark){:root{--bg:#101010;--fg:#eee;--mute:#aaa;--rule:#444;--machine:#3fb950;--why:#91c3f6;--fill-on:#fff;--machine-on:#116329}}
 /* the machine's green through light-dark() where a browser has it; the rule above stays for the others */
 @supports (color:light-dark(#000,#fff)){:root{--machine:light-dark(#116329,#3fb950)}}
 
@@ -195,7 +195,10 @@ td.num,th.num{text-align:end;font-variant-numeric:tabular-nums}
 
 /* 6 CONTROLS. H: every control at least e6 tall (2.5.8 and the platforms' touch guidance) and no wider than its line; fields at the
    reading size, so that a phone does not zoom in when one is tapped; field borders and placeholders at 3:1 or more (1.4.11). E: one
-   filled control for the act a page asks for; pointed at, it shows its edge only. */
+   filled control for the act a page asks for; pointed at, it shows its edge only. E (the originator's request of 24 Nov 2026 UTC,
+   CZ 1455): in the invitation to ask an AI, the words that are the machine's part stand in the machine's colour; colour only.
+   Pointed at, that control is filled, and the words take the green that holds 7:1 on the fill; in the dark palette the fill is
+   then white, since on #eee neither green holds 7:1 (--fill-on, --machine-on; /how-it-is-built names the colours). */
 button,input,select,textarea{font:inherit;color:var(--fg);background:var(--bg)}
 button,select,input:not([type=checkbox]):not([type=radio]){box-sizing:border-box;min-block-size:var(--e6);max-inline-size:100%}
 input,select,textarea{padding:var(--e-4);border:var(--e-16) solid var(--mute)}
@@ -207,7 +210,9 @@ a.cta,button.cta{display:inline-flex;align-items:center;box-sizing:border-box;mi
 button.cta.done,a.cta.o{background:var(--bg);color:var(--fg)}
 :is(a.cta,button.cta):is(:hover,:focus-visible){background:var(--bg);color:var(--fg)}
 button.done:not(.cta){background:var(--fg);color:var(--bg)}
-a.cta.o:is(:hover,:focus-visible){background:var(--fg);color:var(--bg)}
+a.cta.o:is(:hover,:focus-visible){background:var(--fill-on);color:var(--bg)}
+a.cta.o .ai{color:var(--machine)}
+a.cta.o:is(:hover,:focus-visible) .ai{color:var(--machine-on)}
 p.cta-line{display:flex;flex-wrap:wrap;align-items:center;gap:var(--e-4) var(--e-2)}
 .cta-note{flex-basis:100%}
 .cta-note:empty{display:none}
@@ -234,7 +239,7 @@ form.cz-conv input{inline-size:15ch}
 .trk circle{stroke:var(--rule);stroke-width:var(--e-16);vector-effect:non-scaling-stroke}
 
 /* 7 THE ROOM. Blueprint §7: an entry is user content, shown as text, its words unchanged. The machine layer (the originator's decision of
-   CZ 1433): green is for what a machine wrote, an AI system's entry (its tag and its edge) and a machine translation (a dashed edge and a
+   CZ 1433): green is for what is a machine's: what a machine wrote, an AI system's entry (its tag and its edge) and a machine translation (a dashed edge and a
    tag), and for the day of the CZ count; the tag's words always say it too (1.4.1). The tag keeps its size inside small print. */
 .entry{margin:var(--e2) 0;padding-block-start:var(--e-4);border-block-start:var(--e-16) solid var(--rule)}
 .entry .content{margin:var(--e-4) 0;white-space:pre-wrap}

@@ -106,7 +106,7 @@ function trParts(req, url, L, rows, { quiet = false, extra = "" } = {}) {
   if (!shown.length) return { top: "", bottom: "" };
   const pref = R.prefLang(req), other = pref && shown.some((e) => !R.sameLang(e, pref));
   const offer = !other ? "" : OPEN
-    ? trPress(url, rows, { lang: pref, cls: " tr-offer", label: `<button type="submit" class="cta${quiet ? " o" : ""}">Read this page in ${nameOf(pref)}</button>` })
+    ? trPress(url, rows, { lang: pref, cls: " tr-offer", label: `<button type="submit" class="cta${quiet ? " o" : ""}"><span>Read this page in ${nameOf(pref)}</span></button>` })   // one piece inside the control (a control lays its children out in a row, and the space before the language's name was lost between two of them)
     : `<p class="tr-offer"><a href="${esc(viewHref(url, { tl: pref }))}" rel="nofollow" hreflang="${esc(pref)}">Read this page in ${nameOf(pref)}</a></p>`;
   return { top: offer ? `<section class="tr-bar tr-idle" aria-label="Language">${offer}</section>` : "",
     bottom: `<details class="tr-fold" id="language"><summary>Read in another language</summary>${trPicker(url, rows, null, "Translate this page into")}<p class="src">Machine translation, made when a reader asks, kept for every reader and marked; the original stays one click away.${extra}</p></details>` };
@@ -187,7 +187,7 @@ function sheetHtml() {
   return `<dialog id="reply" class="reply" popover aria-labelledby="reply-h"><p class="shut">${shut}</p><h2 id="reply-h" tabindex="-1" autofocus>${R.ASK.sheet}</h2><p class="src">${R.ASK.rule}</p>\n${HUMAN_SHEET_FORM}\n<p>${shut}</p></dialog>`;
 }
 const askHtml = () => `<section aria-labelledby="h-ask"><h2 id="h-ask">${R.ASK.question}</h2>
-<p class="cta-line"><a class="cta sheet-a" href="/respond?kind=human">${R.ASK.write}</a>${REPLY_FORM ? `<span class="sheet-b" hidden><button class="cta" type="button" popovertarget="reply">${R.ASK.write}</button></span>` : ""} <a class="cta o" href="/ask">${R.ASK.ai}</a></p></section>`;
+<p class="cta-line"><a class="cta sheet-a" href="/respond?kind=human">${R.ASK.write}</a>${REPLY_FORM ? `<span class="sheet-b" hidden><button class="cta" type="button" popovertarget="reply">${R.ASK.write}</button></span>` : ""} <a class="cta o" href="/ask"><span>${R.ASK.aiHtml}</span></a></p></section>`;
 // one entry of a transcript: a hidden one as a placeholder that keeps the conversation legible (its record stays at its address)
 function transcriptEntry(e, tr = null) {
   const reply = e.parent != null ? ` · in reply to <a href="/discuss/${Number(e.parent)}">#${Number(e.parent)}</a>` : "";

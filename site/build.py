@@ -381,6 +381,11 @@ DOOR_WRITE = "Write your answer"
 DOOR_TERMS = "No account, no e-mail. Any language. Public and permanent: an answer cannot be edited or withdrawn; it can be hidden or redacted only under the rules."
 DOOR_THEMES_LABEL = "From the discussion"
 DOOR_ASK_BUTTON = "Ask your AI. Post its answer."
+# The same label as markup (rc-13; the originator's request of 24 Nov 2026 UTC, CZ 1455): "Ask" stays in the page's colour; the words
+# that are the machine's part stand in one span, which the stylesheets set in the machine's green. Colour only: the words, their
+# order and what a screen reader hears are the label's own.
+assert DOOR_ASK_BUTTON.startswith("Ask ") and not any(c in DOOR_ASK_BUTTON for c in "<>&")
+DOOR_ASK_BUTTON_HTML = f'Ask <span class="ai">{DOOR_ASK_BUTTON[4:]}</span>'
 DOOR_ASK_NOTE = "The invitation asks your AI for one hard truth to humans, in at most 400 characters. It may decline."
 # Under the figure, one line (23 Nov 2026 UTC); under the doors, who reads; at the foot, the four links named for what they answer.
 FIGURE_NOTE = "Nobody drew today's figure."
@@ -843,7 +848,7 @@ def next_steps_html():
     # One filled control: the reader's own answer.
     if not ROOM_OPEN: return ""
     return (f'<aside class="next" aria-labelledby="h-next"><p class="q" id="h-next">{esc(DOOR_ASK)}</p>'
-            f'<p class="acts"><a class="cta" href="/respond?kind=human">{esc(DOOR_WRITE)}</a> <a class="cta o" href="/ask">{esc(DOOR_ASK_BUTTON)}</a></p>'
+            f'<p class="acts"><a class="cta" href="/respond?kind=human">{esc(DOOR_WRITE)}</a> <a class="cta o" href="/ask"><span>{DOOR_ASK_BUTTON_HTML}</span></a></p>'
             f'<p>{esc(DOOR_TERMS)}</p></aside>')
 
 def core_page():
@@ -1345,8 +1350,8 @@ Content-Type: application/json
     return shell("If you are not human · Civilization Zero", body, "/machine", "For readers that are not human: what exists and where, headers and negotiation, how to respond, the versioned prompt, what a response is and is not.")
 
 # ---------------------------------------------------------------- /ask: hand the record to your own AI
-# the copy buttons' one script (on /ask and /embed only; allowed by its hash, computed from the page served): copies, says so, turns the
-# button the machine layer's green for four seconds; where a browser refuses, selects the text instead
+# the copy buttons' one script (on /ask and /embed only; allowed by its hash, computed from the page served): copies, says so, shows the
+# button with its colours exchanged for four seconds; where a browser refuses, selects the text instead
 COPY_SCRIPT = '<script>document.querySelectorAll("button[data-copy]").forEach(function(b){var label=b.textContent;b.addEventListener("click",function(){var el=document.getElementById(b.dataset.copy),t=el.textContent,st=b.parentNode.querySelector("[role=status]");function say(m){if(st)st.textContent=m}function done(){b.textContent="Copied \\u2713";b.classList.add("done");say(b.getAttribute("data-done")||"Copied. Now paste it into your AI.");setTimeout(function(){b.textContent=label;b.classList.remove("done")},4000)}function manual(){var dt=el.closest("details");if(dt)dt.open=true;var r=document.createRange();r.selectNodeContents(el);var sel=getSelection();sel.removeAllRanges();sel.addRange(r);el.scrollIntoView({block:"center"});say("Your browser did not allow copying: the text is selected below; copy it from there.")}if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(done,manual)}else manual()})})</script>'
 
 # The invitation /ask offers first (16 Nov 2026, CZ 1447): the short one, cz-short-1.0, as its frozen file — copied, posted under its own
@@ -2208,7 +2213,7 @@ def home_template():
 """)
     # ---- the day's figure: __FIG_RINGS__ is the day's sixteen arcs, written by api/home.js (room/figure.js). The figure is the label of a
     # checkbox, shown and used only where the browser can compute the next day's figure itself (CSS mod()): a press turns it by one day.
-    A(f"""<input class="turn" id="turn" type="checkbox" aria-label="Show tomorrow's figure" hidden>
+    A(f"""<input class="turn" id="turn" type="checkbox" autocomplete="off" aria-label="Show tomorrow's figure" hidden>
 <div class="fb" style="--today:__TOTAL__"{W("the day's figure", "E: " + DECIDED + " — the calendar made visible, and nothing standing in its centre; R: CZ-CORE 1.0, by its SHA-256, and the count of days (R §0): each ring is one row of that hash set sixteen by sixteen — its place on Day 0 is the row's left byte, its daily step the right byte plus one; M: the same figure as numbers in the reading for readers that are not human")}>
 <label class="fig-l" for="turn"><svg class="fig" xmlns="http://www.w3.org/2000/svg" viewBox="-192 -192 384 384" width="256" height="256" role="img" aria-labelledby="fig-t" data-day="__TOTAL__"><title id="fig-t">The day's figure: sixteen rings round an empty centre, each carrying one arc.</title><g fill="none" stroke="currentColor" transform="rotate(-90)"><g class="trk" stroke-width="1">{FIGURE.tracks()}</g><g class="arc" stroke-width="4">__FIG_RINGS__</g></g></svg></label>
 </div>
@@ -2240,8 +2245,8 @@ def home_template():
 <p class="note" id="h-t">From <a href="/discuss">the discussion</a></p>
 <ul class="themes" aria-labelledby="h-t">{"".join(f'<li><a href="/themes/{t["slug"]}">{esc(t["title"])}</a></li>' for t in themes)}</ul>
 </div></li>
-<li{W("step 3", "E: the originator's request, 5 Nov 2026 UTC; the short invitation, " + SHORT_VERSION + "; third by the request of 23 Nov 2026 UTC (CZ 1454); one answer to it, as its author declared it: the originator's decision, 23 Nov 2026; R §9; user content")}><h3 class="t">{esc(DOOR_STEPS[2])}</h3>
-<div class="more"><a class="act o" href="/ask">{esc(DOOR_ASK_BUTTON)}</a>
+<li{W("step 3", "E: the originator's request, 5 Nov 2026 UTC; the short invitation, " + SHORT_VERSION + "; third by the request of 23 Nov 2026 UTC (CZ 1454); one answer to it, as its author declared it: the originator's decision, 23 Nov 2026; R §9; user content; E: the originator's request of 24 Nov 2026 UTC (CZ 1455): in the invitation to ask an AI, the words that are the machine's part stand in the machine's colour")}><h3 class="t">{esc(DOOR_STEPS[2])}</h3>
+<div class="more"><a class="act o" href="/ask">{DOOR_ASK_BUTTON_HTML}</a>
 <p class="note">{esc(DOOR_ASK_NOTE)}</p>__ROOM_EXAMPLE__</div></li>
 </ol>
 <dialog id="reply" popover aria-labelledby="reply-h"><h2 id="reply-h" tabindex="-1" autofocus>{esc(SHEET_NAME)}</h2><p class="src">{esc(SHEET_RULE)}</p>
@@ -2617,6 +2622,7 @@ assert len(BUILT_DESCRIPTION) <= 160
 CZ1428, CZ1430, CZ1432, CZ1433 = (datetime.date(2026, 10, 28), datetime.date(2026, 10, 30), datetime.date(2026, 11, 1), datetime.date(2026, 11, 2))
 HOME_RELEASE = datetime.date(2026, 11, 24)   # the day the first page of rc-11 goes live: set it to the UTC day of deployment if that is another day (the sitemap dates / and /about with it)
 RC12_RELEASE = datetime.date(2026, 11, 24)   # the day rc-12 (one head, one stylesheet, the contents, the seal, a figure for every day) goes live: set it to the UTC day of deployment if that is another day
+RC13_RELEASE = datetime.date(2026, 11, 24)   # the day rc-13 (the machine's part of the invitation in the machine's colour) goes live: set it to the UTC day of deployment if that is another day
 assert CAL_COUNTS_YEARS or f"until {RC12_RELEASE.day} {RC12_RELEASE.strftime('%b')} {RC12_RELEASE.year} a day also carried" in CZDAY_CZ["description"], "the contract names the day /api/calendar stopped counting years: rc-12's day"
 BUILT_FEATURES = [   # (feature, what it does here, since, without it)
     ("HTML and CSS made on the server; no framework, no web font", "Every page is a document the server writes; the reader's device chooses the typeface", CZ1428, "—"),
@@ -2628,6 +2634,7 @@ BUILT_FEATURES = [   # (feature, what it does here, since, without it)
     ("CSS logical properties and dir", "Edges and indents follow the direction of the block they mark: a translation into Persian or Arabic is set right to left, its edge on the right; an entry keeps the page's direction, and its words their own (dir=\"auto\")", CZ1433, "—"),
     ("A colour for the machine layer: the edge and label of what an AI system declared it wrote, and of machine translation", "#116329 on white, #3fb950 on black, both at 7:1 or more; light-dark() where the browser has it", CZ1433, "The same colours by a media query"),
     ("The same green for the day of the new count", "The day count in the calendar line on the first page and today's date at the top of every page, as on the record's images; dates inside text and entries keep the page's colour", datetime.date(2026, 11, 5), "The same colours by a media query"),
+    ("The same green for the machine's part of the invitation to ask an AI", "In the control “Ask your AI. Post its answer.” — on the first page, on /discuss and after the Core's closing — the words “your AI. Post its answer.” stand in the machine's colour and “Ask” in the page's; colour only. Pointed at, the control is filled and the words take the green that holds 7:1 there: #3fb950 on #111, and #116329 on white (in the dark palette that control's fill is then white, since neither green holds 7:1 on #eee)", RC13_RELEASE, "—"),
     ("Accept-Language", "A reader whose browser prefers another language is offered the page in it, as one link", CZ1433, "—"),
     ("Cross-document view transitions", "Moving between pages of this site fades instead of flashing; since CZ " + str(cz_day(RC12_RELEASE)) + " the mark travels from its place on one page to its place on the next, and an entry from a list to its own page; none for readers who ask for less motion", CZ1433, "The page changes at once, as it always did"),
     ("Speculation rules (prefetch, conservative)", "A link to another page of this site is fetched as you press it, so it opens a moment sooner", CZ1433, "The link is fetched when you release it"),

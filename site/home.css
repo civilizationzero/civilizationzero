@@ -4,13 +4,13 @@
    centre empty; what is here, and who is behind it; two doors, one on either side of the figure's axis.
    R the record · M the machine reader · H a standard for human reading · C a constraint · E a choice. */
 
-/* 1 TOKENS. C: the scale. H: two palettes, every text colour at 7:1 or more (WCAG 2.2, 1.4.6); green means a machine wrote it, or
+/* 1 TOKENS. C: the scale. H: two palettes, every text colour at 7:1 or more (WCAG 2.2, 1.4.6); green marks what is a machine's, and
    the day of the CZ count; blue, a reason. C: no typeface is shipped: the reader's serif for people, its monospace for what is exact. */
 :root{--e-16:.0625rem;--e-12:.125rem;--e-8:.25rem;--e-4:.5rem;--e-2:.7071rem;--e-1:.8409rem;--e0:1rem;--e1:1.1892rem;--e2:1.4142rem;
 --e3:1.6818rem;--e4:2rem;--e5:2.3784rem;--e6:2.8284rem;--e12:8rem;--e14:11.3137rem;--e18:22.6274rem;--e21:38.0546rem;--e22:45.2548rem;
---l1:1.1892;--l2:1.4142;color-scheme:light dark;--bg:#fff;--fg:#111;--mute:#555;--rule:#bbb;--machine:#116329;--why:#0f4c81;
+--l1:1.1892;--l2:1.4142;color-scheme:light dark;--bg:#fff;--fg:#111;--mute:#555;--rule:#bbb;--machine:#116329;--why:#0f4c81;--fill-on:#111;--machine-on:#3fb950;
 --human:Charter,"Bitstream Charter","Sitka Text",Cambria,serif;--exact:ui-monospace,"Cascadia Mono",Consolas,"SF Mono",Menlo,monospace}
-@media(prefers-color-scheme:dark){:root{--bg:#101010;--fg:#eee;--mute:#aaa;--rule:#444;--machine:#3fb950;--why:#91c3f6}}
+@media(prefers-color-scheme:dark){:root{--bg:#101010;--fg:#eee;--mute:#aaa;--rule:#444;--machine:#3fb950;--why:#91c3f6;--fill-on:#fff;--machine-on:#116329}}
 
 /* 2 BASE. H + M: links underlined, never colour alone (1.4.1); focus always visible (2.4.7); a small link is a target 24 px tall
    (2.5.8). M: exact values in the monospace, one step smaller. */
@@ -132,7 +132,9 @@ p,li{text-wrap:pretty}
 .t::before{content:counter(step)}
 .act{display:block;box-sizing:border-box;min-block-size:var(--e6);padding:calc(var(--e-2) - var(--e-12));border:var(--e-12) solid var(--fg);font-weight:700;line-height:var(--l1);text-decoration:none}
 .act:not(.o){background:var(--fg);color:var(--bg)}
-.act.o:is(:hover,:focus-visible){background:var(--fg);color:var(--bg)}
+.act.o:is(:hover,:focus-visible){background:var(--fill-on);color:var(--bg)}
+.act .ai{color:var(--machine)}
+.act.o:is(:hover,:focus-visible) .ai{color:var(--machine-on)}
 .act:not(.o):is(:hover,:focus-visible){background:var(--bg);color:var(--fg)}
 .more{margin-inline-start:calc(2*var(--e-2))}
 .more>*{margin-block:var(--e-4) 0}

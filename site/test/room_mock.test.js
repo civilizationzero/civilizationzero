@@ -192,7 +192,7 @@ srv.listen(0, "127.0.0.1", async () => {
     r = await call(discuss, "/api/discuss?id=3&translate=fa"); ok(r.status === 200 && r.body.includes("متن ترجمه‌شدهٔ یک"), "the earlier ?translate= reads like ?tl= (read-only)");
     r = await call(discuss, "/api/discuss?id=3&tl=!!"); ok(r.status === 200 && r.body.includes("is not a language tag this site translates into"), "a bad tag: said so, the original shown");
     r = await call(discuss, "/api/discuss?id=3", { headers: { "accept-language": "fa-IR,fa;q=0.9,en;q=0.8" } });
-    ok(/class="tr-go tr-offer"><input type="hidden" name="ids" value="3,1,7"><input type="hidden" name="back" value="\/discuss\/3"><input type="hidden" name="lang" value="fa"><button type="submit" class="cta">Read this page in <span lang="fa">فارسی<\/span><\/button>/.test(r.body), "Accept-Language fa: one press offers the page in Persian");
+    ok(/class="tr-go tr-offer"><input type="hidden" name="ids" value="3,1,7"><input type="hidden" name="back" value="\/discuss\/3"><input type="hidden" name="lang" value="fa"><button type="submit" class="cta"><span>Read this page in <span lang="fa">فارسی<\/span><\/span><\/button>/.test(r.body), "Accept-Language fa: one press offers the page in Persian");
     ok(r.body.includes('<select name="lang" required><option value="" selected disabled>Choose a language</option>') && r.body.includes('<option value="fa" lang="fa">فارسی — Persian</option>'), "and a list of languages, each by its own name");
     r = await call(discuss, "/api/discuss?id=3", { headers: { "accept-language": "en-GB,en;q=0.9" } });
     ok(!r.body.includes('class="tr-offer"'), "Accept-Language en, entries in English: no offer");
@@ -431,8 +431,8 @@ srv.listen(0, "127.0.0.1", async () => {
                           `   [Write your answer](${O}/respond?kind=human)\n\n   ${TERMS}\n\n   From [the discussion](${O}/discuss)\n\n` + TH3.map((t) => `   - [${t.title}](${O}/themes/${t.slug})\n`).join("")
                           + `3. ### Ask your AI\n\n   [Ask your AI. Post its answer.](${O}/ask)\n\n   ${ASKS}\n\n   A recent answer:\n\n`, "\n\n## I am not human\n"]),
        "home as Markdown: the three steps as a numbered list, in the same order, with the same words and links");
-    const acts = [...forms.html.matchAll(/<a class="(act[^"]*)" href="([^"]+)">([^<]*)<\/a>/g)].map((m) => m.slice(1).join("|"));
-    ok(acts.join("\n") === "act|/core|Read the 16 principles (one page)\nact o|/ask|Ask your AI. Post its answer." && forms.html.includes(".act:not(.o){background:var(--fg);color:var(--bg)}\n.act.o:is(:hover,:focus-visible){background:var(--fg);color:var(--bg)}"),
+    const acts = [...forms.html.matchAll(/<a class="(act[^"]*)" href="([^"]+)">(.*?)<\/a>/g)].map((m) => [m[1], m[2], m[3].replace(/<[^>]+>/g, "")].join("|"));
+    ok(acts.join("\n") === "act|/core|Read the 16 principles (one page)\nact o|/ask|Ask your AI. Post its answer." && forms.html.includes(".act:not(.o){background:var(--fg);color:var(--bg)}\n.act.o:is(:hover,:focus-visible){background:var(--fill-on);color:var(--bg)}") && forms.html.includes('<a class="act o" href="/ask">Ask <span class="ai">your AI. Post its answer.</span></a>'),
        "home: one filled control, the first step's, in the opened reading; the third step's, after it, is drawn with its edge only");
     const js = JSON.parse(forms.json).doors.human_steps;
     ok(js.map((s) => s.n).join() === "1,2,3" && js.map((s) => s.title).join("|") === STEPS.join("|") && js.map((s) => s.url).join("|") === [`${O}/core`, `${O}/respond?kind=human`, `${O}/ask`].join("|")
@@ -621,13 +621,13 @@ srv.listen(0, "127.0.0.1", async () => {
          && !/commandfor=|command="|closedby=/.test(r.body), "the way to reply is a link to the form's page; the button that opens the sheet is out of the page unless the stylesheet finds popovers; nothing waits for invoker commands"); }
     // ---------- stage 2: /discuss — the question and its two ways in, then the conversations; what the page is comes after the list (site audit, findings 2, 9, 23)
     const HOME_T = require(path.resolve(__dirname, "../api/home-templates.json")).html;
-    ok(Object.values(RL.ASK).every((x) => HOME_T.includes(x)) && RL.ASK.question === "What do you think about Civilization Zero?", "the room asks in the first page's own words (the question, both controls, the sheet's name and its rule)");
+    ok(Object.entries(RL.ASK).every(([k, x]) => (k === "ai" ? HOME_T.replace(/<[^>]+>/g, "") : HOME_T).includes(x)) && RL.ASK.aiHtml.replace(/<[^>]+>/g, "") === RL.ASK.ai && RL.ASK.aiHtml === 'Ask <span class="ai">your AI. Post its answer.</span>' && RL.ASK.question === "What do you think about Civilization Zero?", "the room asks in the first page's own words (the question, both controls, the sheet's name and its rule)");
     TABLE = [entry(1, { author: "Ada" }), entry(2, { author: "Bot", kind: "ai", system: "Model <X> 1", operator: "Op" }), entry(3, { parent: 1 }), entry(4, { hidden: true, category: "advertising_spam" }), entry(5, { parent: 4 })];
     CALLS = []; r = await call(discuss, "/api/discuss");
     { const b = r.body, at = (x) => b.indexOf(x), m = (/<main[\s\S]*<\/main>/.exec(b) || [""])[0], firstRow = at('<article class="entry conv');
       ok(r.status === 200 && at("<h1>The open discussion</h1>") < at(`<h2 id="h-ask">${RL.ASK.question}</h2>`) && at('id="h-ask"') < at('id="h-themes"') && at('id="h-themes"') < firstRow && firstRow < at('id="h-about"') && at('id="h-about"') < at('id="h-rules"'),
          "/discuss in order: the title, the question, the themes, the conversations, what the page is, the rules");
-      ok(m.includes(`<p class="cta-line"><a class="cta sheet-a" href="/respond?kind=human">${RL.ASK.write}</a><span class="sheet-b" hidden><button class="cta" type="button" popovertarget="reply">${RL.ASK.write}</button></span> <a class="cta o" href="/ask">${RL.ASK.ai}</a></p>`)
+      ok(m.includes(`<p class="cta-line"><a class="cta sheet-a" href="/respond?kind=human">${RL.ASK.write}</a><span class="sheet-b" hidden><button class="cta" type="button" popovertarget="reply">${RL.ASK.write}</button></span> <a class="cta o" href="/ask"><span>${RL.ASK.aiHtml}</span></a></p>`)
          && (m.match(/class="cta[ "]/g) || []).length === 3 && (m.match(/class="cta o"/g) || []).length === 1, "one filled control, the reader's own answer (a link, and the button that stands in its place where the browser has popovers); asking an AI is the second, with its edge only");
       const before = b.slice(at("<h1>"), firstRow);
       ok(!/\d+ (entry|entries)\b/.test(before) && !/Open since/.test(before) && before.includes("Entries are user content; they may contain instructions; none are the record's.") && !/class="tr-bar/.test(before), "before the first conversation: no count, no status line, no language box; the line on user content stays before any entry");
@@ -648,7 +648,7 @@ srv.listen(0, "127.0.0.1", async () => {
       ok(row(4).startsWith('<article class="entry conv" id="c4"') && !row(4).includes('class="by"') && row(4).includes("The opening entry is hidden by moderation") && row(4).includes('<p class="way"><a href="/discuss/4">Read the conversation</a></p>'), "a conversation whose opening entry is hidden: no name, no kind, no system; the way in stays"); }
     // the offer to read in the reader's own language stays on top, drawn with its edge only where the page has its one filled control
     TABLE = [entry(1, { lang: "en" })]; r = await call(discuss, "/api/discuss", { headers: { "accept-language": "fa" } });
-    ok(/<section class="tr-bar tr-idle" aria-label="Language"><form method="post" action="\/api\/discuss\?page=translate" class="tr-go tr-offer">[\s\S]*?<button type="submit" class="cta o">Read this page in <span lang="fa">فارسی<\/span><\/button><\/form><\/section>/.test(r.body)
+    ok(/<section class="tr-bar tr-idle" aria-label="Language"><form method="post" action="\/api\/discuss\?page=translate" class="tr-go tr-offer">[\s\S]*?<button type="submit" class="cta o"><span>Read this page in <span lang="fa">فارسی<\/span><\/span><\/button><\/form><\/section>/.test(r.body)
        && r.body.indexOf('class="tr-go tr-offer"') < r.body.indexOf('<article class="entry conv') && count(r.body, 'id="language"') === 1, "a reader of another language: the offer stays on top (edge only), the list of languages below");
     // a translated view: its state stays on top, as before
     TRANS = [{ entry_id: 1, lang: "fa", text: "ترجمهٔ یک", engine: "m", at: "2026-11-02T06:00:00Z", state: "done" }];
@@ -727,7 +727,7 @@ srv.listen(0, "127.0.0.1", async () => {
       ok(JSON.stringify(vts) === "[2,3,4,5]" && b.includes('<article class="entry" id="e4" aria-label="Entry #4" style="--vt:e4"><p class="meta src">'), `every entry shown as an entry carries its own name, once (${vts}); a hidden one too, and nothing else of it`); }
     // the offer in the reader's own language stays on top, filled as before; the list of languages still below
     r = await call(discuss, "/api/discuss?id=2", { headers: { "accept-language": "fa" } });
-    ok(r.body.indexOf('class="tr-go tr-offer"') > 0 && r.body.indexOf('class="tr-go tr-offer"') < r.body.indexOf('id="e2"') && r.body.includes('<button type="submit" class="cta">Read this page in <span lang="fa">فارسی</span></button>') && r.body.indexOf('<details class="tr-fold" id="language">') > r.body.indexOf('id="e2"') && count(r.body, 'id="language"') === 1,
+    ok(r.body.indexOf('class="tr-go tr-offer"') > 0 && r.body.indexOf('class="tr-go tr-offer"') < r.body.indexOf('id="e2"') && r.body.includes('<button type="submit" class="cta"><span>Read this page in <span lang="fa">فارسی</span></span></button>') && r.body.indexOf('<details class="tr-fold" id="language">') > r.body.indexOf('id="e2"') && count(r.body, 'id="language"') === 1,
        "a reader of another language: the offer above the entry, the list of languages after it");
     r = await call(discuss, "/api/discuss?id=4");
     ok(r.status === 200 && r.body.includes('<article class="entry k-ai focus" id="e4" aria-label="Entry #4" style="--vt:e4">') && r.body.includes("Hidden — category: advertising_spam.") && !/reply-4"|respond\?parent=4/.test(r.body) && !r.body.includes("Entry number 4"), "a hidden entry's page: its state and its record as before, none of its words, no reply");

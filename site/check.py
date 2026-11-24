@@ -701,7 +701,7 @@ check(len(_smo) == 2 and not re.search(r"transition|animation|@keyframes", _smo[
 _spal = set(re.findall(r"#[0-9a-f]{3,6}\b", _sdecl)) | set(re.findall(r"rgb\([^)]*\)", _sdecl))
 check(_spal <= {"#000", "#fff", "#116329", "#3fb950", "rgb(0 0 0/.5)"}, f"the shared stylesheet: no colour outside the first page's two palettes (light-dark()'s probe and the sheet's backdrop apart) {_spal}")
 _green = [sel.strip() for sel, body in re.findall(r"([^{}]+)\{([^{}]*)\}", _sdecl) if "var(--machine)" in body]
-check(all(re.search(r"\.cz-now \.d|\.dayfig svg|k-ai|\.ai\b|\.mtag|\.mt\b|tr-|:root", s) for s in _green), f"the shared stylesheet: green only for what a machine wrote (an AI's entry, a machine translation and its progress) and for the day of the CZ count (the day in the head, a day's figure) {_green}")
+check(all(re.search(r"\.cz-now \.d|\.dayfig svg|k-ai|\.ai\b|\.mtag|\.mt\b|tr-|:root", s) for s in _green), f"the shared stylesheet: green only for what is a machine's (an AI's entry, a machine translation and its progress, the machine's part of the invitation to ask an AI) and for the day of the CZ count (the day in the head, a day's figure) {_green}")
 # ---- the first page of 24 Nov 2026 (CZ 1455; rc-11). The centre is empty; on either side stand the two kinds of reader; either may
 # enter. Read here as the function serves it to a reader whose network names no zone (site/preview: the page, its data, text and
 # Markdown forms), and as the build wrote it (T); the stylesheet is site/home.css.
@@ -779,8 +779,8 @@ for _form in ("txt", "md"):
     _t = re.sub(r"\s+", " ", re.sub(r"\]\([^)]*\)|[\[\]#>*]|\\", "", _pv[_form]) if _form == "md" else _pv[_form])
     _p2 = [_t.find(x.replace("1. ", "").replace("2. ", "").replace("3. ", "") if _form == "md" else x) for x in _seq]
     check(all(p >= 0 for p in _p2) and _p2 == sorted(_p2), f"home as {_form}: the same three steps, in the same order and words {_p2}")
-_acts = re.findall(r'<a class="(act[^"]*)" href="([^"]+)">([^<]*)</a>', _pbody)
-_filled = [sel for sel, body in re.findall(r"([^{}]+)\{([^{}]*)\}", _nocom) if "background:var(--fg)" in body]
+_acts = [(c, u, re.sub(r"<[^>]+>", "", t)) for c, u, t in re.findall(r'<a class="(act[^"]*)" href="([^"]+)">(.*?)</a>', _pbody)]
+_filled = [sel for sel, body in re.findall(r"([^{}]+)\{([^{}]*)\}", _nocom) if "background:var(--fg)" in body or "background:var(--fill-on)" in body]
 check(_acts == [("act", "/core", "Read the 16 principles (one page)"), ("act o", "/ask", "Ask your AI. Post its answer.")] and len(_filled) >= 1 and _filled[0].strip() == ".act:not(.o)"
       and all(":hover" in s or ":focus-visible" in s or ".act:not(.o)" in s for sel in _filled for s in sel.split(",")) and "<button" not in fill(T["html"]).replace("<button class=\"open\"", "").replace("<button type=\"submit\"", "").replace("<button type=\"button\" popovertarget=\"reply\" popovertargetaction=\"hide\"", ""),
       f"home: one filled control, the first step's, in the opened reading; the third step's is drawn with its edge only; nothing else is filled unless the reader points at it {_filled}")
@@ -851,7 +851,7 @@ check(_fig is not None and int(_fig.group(1)) == _day and f'data-day="{_day}"' i
 # the figure turns (rc-11): where the browser can compute the next day's figure itself, the figure is a switch — a checkbox and
 # its label, no script — and a press shows tomorrow's; the line under it says so, and after a press says whose day the figure is
 _say = re.search(r'<p class="say" data-src="[^"]*">(.*?)</p>', _top, re.S)
-check('</p>\n<input class="turn" id="turn" type="checkbox" aria-label="Show tomorrow\'s figure" hidden>\n<div class="fb" style="--today:' in _top.replace("&#x27;", "'") and '<label class="fig-l" for="turn"><svg class="fig"' in _top and _top.count("<input") == 1
+check('</p>\n<input class="turn" id="turn" type="checkbox" autocomplete="off" aria-label="Show tomorrow\'s figure" hidden>\n<div class="fb" style="--today:' in _top.replace("&#x27;", "'") and '<label class="fig-l" for="turn"><svg class="fig"' in _top and _top.count("<input") == 1
       and _say is not None and _say.group(1).replace("&#x27;", "'") == f'<span class="t0">Nobody drew today\'s figure. <span class="press" hidden>Press it to see tomorrow\'s.</span></span><span class="t1" hidden>This is tomorrow\'s, Day {_day + 1:,}: computed, like today\'s, from the day\'s number and the text of the Core. Press it again for today\'s.</span>'
       and T["html"].count("__TOMORROW_FMT__") == 1 and "__TOMORROW_FMT__" not in T["txt"] + T["json"] and "Press it" not in _pv["txt"] + _pv["md"] and "tomorrow" not in _pv["txt"] + _pv["md"],
       "home: the figure is the label of a checkbox named 'Show tomorrow's figure'; the line under it: 'Nobody drew today's figure.', and, only where pressing works, 'Press it to see tomorrow's.'; after a press it names tomorrow's day and what the figure is computed from; the text and Markdown forms have the one sentence")
@@ -894,7 +894,7 @@ check(len(_src) >= 19 and all(len(s) > 20 for s in _src) and [r["source"] for r 
       f"home: every part's reason is in its data-src; the data form's reasons are those {len(_src)}, in the page's order; the table on /how-it-is-built begins with the same rows and goes on with the reasons of the whole page")
 _names = {w for k in ("originating_concept", "originating_dialogue", "human_publisher") for w in re.findall(r"[A-Za-z]{4,}", str(CORE_JSON.get(k, "")))} - {"with", "human", "Human", "dialogue", "concept", "publisher", "originating", "publication", "responsibility"}
 _products = r"\b(Anthropic|Claude|OpenAI|GPT-|Gemini|Grok|DeepSeek|Llama|Mistral|Copilot)\b"
-check(not re.search(r"proposed on|not yet decided", " ".join(_src)) and sum("decided by the artificial intelligence that builds the site, 23 Nov 2026 UTC (CZ 1454)" in s for s in _src) >= 4 and "24 Nov 2026" not in " ".join(_src).replace("in the first screen since 24 Nov 2026 (CZ 1455)", "")
+check(not re.search(r"proposed on|not yet decided", " ".join(_src)) and sum("decided by the artificial intelligence that builds the site, 23 Nov 2026 UTC (CZ 1454)" in s for s in _src) >= 4 and "24 Nov 2026" not in " ".join(_src).replace("in the first screen since 24 Nov 2026 (CZ 1455)", "").replace("E: the originator's request of 24 Nov 2026 UTC (CZ 1455): in the invitation to ask an AI, the words that are the machine's part stand in the machine's colour", "")
       and not re.search(_products, " ".join(_src)) and not re.search(r"\d+ (entries|answers|responses|humans|machines)", " ".join(_src)),
       "home, the reasons: what was proposed is decided, and each such reason says by whom, on which day (UTC, as the site dates) and on whose request; none names a product or carries a count")
 # the reasons control (rc-11): one sentence and a real switch under the line on who reads; it shows, beside each part, the reason
@@ -990,7 +990,7 @@ check(_pv["md"].startswith("---\ntitle: ") and "\n# [Civilization Zero (CZ)](htt
 # the stylesheet: one module, one ratio; ordered; nothing dead; every text colour at 7:1 or more
 _tokens = dict(re.findall(r"(--e-?\d+):([\d.]+)rem", _css))
 check(len(_tokens) >= 15 and not [(k, v) for k, v in _tokens.items() if abs(float(v) - 2 ** (int(k[3:]) / 4)) > 6e-5], "home.css: every token is the module times a power of the ratio, the sixteenth root of sixteen")
-_tv = list(_tokens) + ["--l1", "--l2", "--bg", "--fg", "--mute", "--rule", "--machine", "--human", "--exact"] + (["--why"] if "--why:" in _css else [])
+_tv = list(_tokens) + ["--l1", "--l2", "--bg", "--fg", "--mute", "--rule", "--machine", "--fill-on", "--machine-on", "--human", "--exact"] + (["--why"] if "--why:" in _css else [])
 check(not [k for k in _tv if _nocom.count(f"var({k})") == 0] and set(re.findall(r"var\((--[a-z][\w-]*)", _nocom)) <= set(_tv) | {"--open", "--h", "--n", "--today", "--day", "--a", "--s", "--m", "--live"}, "home.css: no token is defined and not used, and none is used that is not defined")
 _decl = re.sub(r":root\{.*?\}", "", _nocom, count=1, flags=re.S)
 _POW = {round(2 ** (k / 4), 4) for k in range(-24, 32)}
@@ -1039,9 +1039,9 @@ check([int(n) for n, _, _ in _secs] == list(range(16)) and [_html_mod.unescape(x
 _spop = _snocom.split("@supports selector(:popover-open){")
 check(len(_spop) == 2 and ".sec [hidden]{display:inline}" in _spop[1] and ".sec [hidden]" not in _spop[0] and "div[popover]{" in _spop[0],
       "the shared stylesheet: the button that opens a citation is shown only where the browser has the popover")
-_nx = re.search(r'</section><aside class="next" aria-labelledby="h-next"><p class="q" id="h-next">([^<]*)</p><p class="acts"><a class="cta" href="/respond\?kind=human">([^<]*)</a> <a class="cta o" href="/ask">([^<]*)</a></p><p>([^<]*)</p></aside><section id="attribution"', _cb)
-check(_nx is not None and _nx.groups() == ("What do you think about Civilization Zero?", "Write your answer", "Ask your AI. Post its answer.", TERMS) and _cb.index('<section id="closing"') < _nx.start() and _cb.count('class="cta"') == 1 and _cb.count("<aside") == 1
-      and all(x in fill(T["html"]) for x in _nx.groups()),
+_nx = re.search(r'</section><aside class="next" aria-labelledby="h-next"><p class="q" id="h-next">([^<]*)</p><p class="acts"><a class="cta" href="/respond\?kind=human">([^<]*)</a> <a class="cta o" href="/ask"><span>Ask <span class="ai">([^<]*)</span></span></a></p><p>([^<]*)</p></aside><section id="attribution"', _cb)
+check(_nx is not None and _nx.groups() == ("What do you think about Civilization Zero?", "Write your answer", "your AI. Post its answer.", TERMS) and _cb.index('<section id="closing"') < _nx.start() and _cb.count('class="cta"') == 1 and _cb.count("<aside") == 1
+      and all(x in fill(T["html"]) for x in _nx.groups()) and 'Ask <span class="ai">your AI. Post its answer.</span>' in fill(T["html"]),
       "/core: after the closing, the reader's next act in the first page's own words — the question, one filled control for the reader's own answer, the invitation with its edge only, and what the record means for the writer")
 # the Core's seal: beside the integrity record, the hash unrolled — 256 cells, sixteen to a row, most significant bit first, the row's two
 # bytes beside it — each cell recomputed here from the Core's bytes; one sentence under it, the fixed one, and the cells on no other page
@@ -1287,6 +1287,33 @@ for _nm, _sheet in (("the shared sheet", CSS), ("the room's block", ROOM_CSS), (
 check(not _mixed and "a[aria-current=page]{text-decoration-thickness:var(--e-8);text-decoration-skip-ink:none}" in _snocom and ".toc a:target-current{text-decoration-thickness:var(--e-8);text-decoration-skip-ink:none}" in _snocom
       and "\n.act:not(.o){background:var(--fg);color:var(--bg)}\n" in (SITE / "home.css").read_text("utf-8"),
       f"no rule shares a newer selector with an older one: the page one is on is marked, and the first page's control filled, in an engine that knows nothing newer {_mixed}")
+# rc-13 (the originator's request of 24 Nov 2026 UTC, CZ 1455): in the control "Ask your AI. Post its answer." the words that are the
+# machine's part stand in the machine's green — colour only: one span, the label's own words, nothing a screen reader hears changed —
+# wherever the control stands (the first page's third step, after the Core's closing, the room's question); at rest and pointed at, the
+# green holds 7:1 on the control's own ground in both palettes; a plain "Ask your AI" (the head, the foot, a step's title) is as it was
+_AIL = 'Ask <span class="ai">your AI. Post its answer.</span>'
+_roomlib = (SITE / "room" / "lib.js").read_text("utf-8"); _disc = (SITE / "api" / "discuss.js").read_text("utf-8")
+check(T["html"].count(f'<a class="act o" href="/ask">{_AIL}</a>') == 1 and _core_page.count(f'<a class="cta o" href="/ask"><span>{_AIL}</span></a>') == 1
+      and 'ASK.aiHtml = `Ask <span class="ai">${ASK.ai.slice(4)}</span>`;' in _roomlib and 'ai: "Ask your AI. Post its answer.",' in _roomlib and _disc.count('<a class="cta o" href="/ask"><span>${R.ASK.aiHtml}</span></a>') == 1
+      and re.sub(r"<[^>]+>", "", _AIL) == "Ask your AI. Post its answer." and "aria-hidden" not in _AIL
+      and sum(h.count('class="ai">your AI') for h in [T["html"]] + [f.read_text("utf-8") for f in pages if f.name != "index.html"]) == 2
+      and all('<span class="ai">' not in re.sub(r'<a class="(?:act|cta) o" href="/ask">.*?</a>', "", h, flags=re.S) for h in [fill(T["html"], (_ex, "")), _core_page]),
+      "the invitation to ask an AI: wherever the control stands, 'Ask' and then the machine's part in one span, the same words; no other text of the pages carries that span")
+_hcss5 = (SITE / "home.css").read_text("utf-8"); _hn5 = re.sub(r"/\*.*?\*/", "", _hcss5, flags=re.S)
+_pal5 = lambda s: dict(re.findall(r"--(bg|fg|fill-on|machine-on|machine):(#[0-9a-f]{3,6})", s))
+_l5, _d5 = _pal5(_hcss5[:_hcss5.index("@media(prefers-color-scheme:dark)")]), _pal5(_hcss5[_hcss5.index("@media(prefers-color-scheme:dark)"):_hcss5.index("/* 2 BASE")])
+_c5 = {"light, at rest": _ratio(_l5["machine"], _l5["bg"]), "dark, at rest": _ratio(_d5["machine"], _d5["bg"]), "light, pointed at": _ratio(_l5["machine-on"], _l5["fill-on"]), "dark, pointed at": _ratio(_d5["machine-on"], _d5["fill-on"]),
+       "light, 'Ask' pointed at": _ratio(_l5["bg"], _l5["fill-on"]), "dark, 'Ask' pointed at": _ratio(_d5["bg"], _d5["fill-on"])}
+check(all(v >= 7 for v in _c5.values()) and (_l5["fill-on"], _l5["machine-on"], _d5["fill-on"], _d5["machine-on"]) == ("#111", "#3fb950", "#fff", "#116329") and _ratio(_l5["machine"], _d5["fg"]) < 7
+      and ".act .ai{color:var(--machine)}\n.act.o:is(:hover,:focus-visible) .ai{color:var(--machine-on)}" in _hn5 and ".act.o:is(:hover,:focus-visible){background:var(--fill-on);color:var(--bg)}" in _hn5
+      and "a.cta.o .ai{color:var(--machine)}\na.cta.o:is(:hover,:focus-visible) .ai{color:var(--machine-on)}" in _snocom and "a.cta.o:is(:hover,:focus-visible){background:var(--fill-on);color:var(--bg)}" in _snocom
+      and [body for body in re.findall(r" \.ai\{([^}]*)\}", _hn5 + _snocom)] == ["color:var(--machine)", "color:var(--machine-on)"] * 2,
+      f"the machine's part of the invitation: the machine's green at rest and, where the control is filled, the green that holds 7:1 on the fill, in both palettes; colour only { {k: round(v, 2) for k, v in _c5.items()} }")
+_gh = [sel.strip() for sel, body in re.findall(r"([^{}]+)\{([^{}]*)\}", re.sub(r":root\{.*?\}", "", _hn5, flags=re.S)) if "var(--machine)" in body or "var(--machine-on)" in body]
+check(_gh and all(re.search(r"\.fig\b|\.date \.d|\.door\.n|\.ex\b|\.kind\.ai|\.x \.d|\.act(\.o:is\(:hover,:focus-visible\))? \.ai", s) for s in _gh),
+      f"home.css: green only for what is a machine's (the day's figure, the machine's door and reading, an AI's answer and its tag, the machine's part of the invitation) and for the day of the CZ count {_gh}")
+check('<input class="turn" id="turn" type="checkbox" autocomplete="off"' in T["html"], "home: the figure's checkbox is not among what a browser restores, so the page opens on today's figure after a reload or on going back")
+
 # on paper (finding 27): no control and no navigation; what a fold holds is printed open, since paper cannot be pressed
 _pr = re.search(r"@media print\{(.*?)\n@supports selector\(::details-content\)\{summary\{list-style:none\}\}\}\n", _scss, re.S)
 check(_pr and _scss.count("@media print") == 1 and re.match(r"\.skip,nav\.site,form,dialog,button,\.filters,\.tr-bar,p\.actions,\.sec,\.next,\.forms,footer nav\{display:none!important\}", _pr.group(1))
