@@ -8,6 +8,20 @@ const { ORIGIN, CONTACT, OPEN, CHAIN, OPENS, T, esc, html, shell, rpc, rest, ent
 const CZ = require("../room/cztime.js");
 
 const MAX_ID = 9007199254740991;
+// ---- the rules of the room (Blueprint 1.3.1 §7; rc-12, 24 Nov 2026, site audit, finding 4): printed once, whole and open, at an
+// address of their own, /discuss/rules; at the foot of the room's other pages the same words stand folded under one line, so that a
+// page is its entries and not mostly its rules. Not a word of them is changed here: the text is the build's (T.rules), wrapped. On the
+// rules' own page their heading is the page's (the same words, one level up); in the fold the anchor #rules moves from the section to
+// the fold itself, so that a link to it lands on that line in every browser. As Markdown the fold is open: the rules stay in every form.
+const RULES_PATH = "/discuss/rules";
+const RULES_FOLDED = String(T.rules || "").replace('<section id="rules" ', "<section ");
+const rulesFold = () => `<details class="rules"${RULES_FOLDED !== T.rules ? ' id="rules"' : ""}><summary>The rules of this room</summary>${RULES_FOLDED}<p class="src">The same rules on a page of their own: <a href="${RULES_PATH}">${RULES_PATH}</a>.</p></details>`;
+const RULES_DESCRIPTION = "The rules of Civilization Zero's discussion room: entering, the licence, states and receipts, order, limits, hiding and redaction, appeal, translation.";
+function rulesPage() {
+  const rules = String(T.rules || "").replace('<h2 id="h-rules">', '<h1 id="h-rules">').replace("</h2>", "</h1>");
+  return { status: 200, page: shell({ title: "The rules of the room · Civilization Zero", path: RULES_PATH, description: RULES_DESCRIPTION,
+    body: `<main>${rules}\n<p><a href="/discuss">The discussion</a>${OPEN ? ' · <a href="/respond">Respond</a>' : ""}</p></main>` }) };
+}
 const { FORM_OPEN } = R;   // the human form's first tag, as built (room/lib.js)
 const REPLY_FORM = R.HUMAN_FORM;   // the human form, as the build wrote it for /respond
 const qs = (o) => Object.entries(o).filter(([, v]) => v != null && v !== "").map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join("&");
@@ -37,6 +51,7 @@ function trOf(url) {
 // the page's public address (the function is reached through rewrites: /discuss/7 arrives as ?id=7, /themes/x as ?theme=x)
 function pubPath(url) {
   const id = url.searchParams.get("id"), th = url.searchParams.get("theme");
+  if (id === "rules" || id === "rules.md") return RULES_PATH;
   if (id !== null && /^\d{1,12}$/.test(id)) return `/discuss/${id}`;
   if (th !== null && themeBySlug(th)) return `/themes/${th}`;
   return "/discuss";
@@ -171,13 +186,15 @@ const themesNote = () => (THEMES.length ? `<p class="src">Themes: questions open
 // second, drawn with its edge only. The button is kept out of the page (hidden) unless the stylesheet finds popovers and shows it in
 // the link's place, so there is always exactly one control, and without styles it is the link.
 const HUMAN_SHEET_FORM = REPLY_FORM.replace('<option value="" selected disabled>', '<option value="" disabled>').replace('<option value="human">', '<option value="human" selected>');
+// on a theme's page the same sheet answers the theme's question: the form names that entry, and no kind is chosen for the writer (as
+// /respond?parent= serves it), under the line /respond shows there
 function answerControl(label, href) {
   return `<a class="cta sheet-a" href="${href}">${label}</a>${REPLY_FORM ? `<span class="sheet-b" hidden><button class="cta" type="button" popovertarget="reply">${label}</button></span>` : ""}`;
 }
 function sheetHtml(parent = null, lead = "") {
   if (!REPLY_FORM) return "";
   const shut = '<button type="button" popovertarget="reply" popovertargetaction="hide">Close</button>';
-  const form = parent === null ? HUMAN_SHEET_FORM : HUMAN_SHEET_FORM.replace(FORM_OPEN, () => `${FORM_OPEN}\n<input type="hidden" name="parent" value="${Number(parent)}">`);
+  const form = parent === null ? HUMAN_SHEET_FORM : REPLY_FORM.replace(FORM_OPEN, () => `${FORM_OPEN}\n<input type="hidden" name="parent" value="${Number(parent)}">`);
   return `<dialog id="reply" class="reply" popover aria-labelledby="reply-h"><p class="shut">${shut}</p><h2 id="reply-h" tabindex="-1" autofocus>${R.ASK.sheet}</h2>${lead}<p class="src">${R.ASK.rule}</p>\n${form}\n<p>${shut}</p></dialog>`;
 }
 const askHtml = () => `<section aria-labelledby="h-ask"><h2 id="h-ask">${R.ASK.question}</h2>
@@ -186,7 +203,7 @@ const askHtml = () => `<section aria-labelledby="h-ask"><h2 id="h-ask">${R.ASK.q
 function transcriptEntry(e, tr = null) {
   const reply = e.parent != null ? ` · in reply to <a href="/discuss/${Number(e.parent)}">#${Number(e.parent)}</a>` : "";
   if (e.hidden) return `<article class="entry" id="e${e.id}" aria-label="Entry #${e.id}"><p class="meta src"><a href="/discuss/${e.id}" class="exact">#${e.id}</a>${reply}</p><p class="pending">Hidden by moderation${e.category ? ` — category: ${esc(e.category)}` : ""}. Its record and the decision: <a href="/discuss/${e.id}">/discuss/${e.id}</a>.</p></article>`;
-  return entryHtml(e, "", tr) + (OPEN ? `<p class="src"><a href="/respond?parent=${e.id}">Reply to #${e.id}</a></p>` : "");
+  return entryHtml(e, "", tr) + (OPEN ? `<p class="acts"><a href="/respond?parent=${e.id}">Reply to #${e.id}</a></p>` : "");
 }
 // a transcript in canonical order, grouped by declared source within a UTC day as every view is (§7.4), unless all=1
 function transcriptHtml(rows, all, base, tr = null) {
@@ -200,7 +217,7 @@ function transcriptHtml(rows, all, base, tr = null) {
 function starterHtml(e, tr = null) {
   if (e.hidden) return transcriptEntry(e);
   const x = R.trExcerpt(e, tr, 280);
-  return `<article class="entry${R.kindClass(e)}" id="e${e.id}" aria-label="Entry #${e.id}">${R.metaHtml(e)}<div class="content${x.mt ? " mt" : ""}" dir="auto"${x.lang ? ` lang="${esc(x.lang)}"` : ""}>${x.mt}${x.html}</div><p class="src"><a href="/discuss?conversation=${e.id}">Read the conversation</a>${OPEN ? ` · <a href="/respond?parent=${e.id}">Reply</a>` : ""}</p></article>`;
+  return `<article class="entry${R.kindClass(e)}" id="e${e.id}" aria-label="Entry #${e.id}">${R.metaHtml(e)}<div class="content${x.mt ? " mt" : ""}" dir="auto"${x.lang ? ` lang="${esc(x.lang)}"` : ""}>${x.mt}${x.html}</div><p class="acts"><a href="/discuss?conversation=${e.id}">Read the conversation</a>${OPEN ? ` · <a href="/respond?parent=${e.id}">Reply</a>` : ""}</p></article>`;
 }
 
 // ---- one entry in its conversation (stage 1 of the room's redesign, the originator's "let's go" of 2 Nov 2026, CZ 1433; revised after
@@ -217,7 +234,7 @@ function ancestorsHtml(anc, tr = null) {
 }
 function treeEntry(c, tr = null) {
   if (c.hidden) return `<article class="entry" id="e${c.id}" aria-label="Entry #${c.id}"><p class="meta src"><a href="/discuss/${c.id}" class="exact">#${c.id}</a></p><p class="pending">Hidden by moderation${c.category ? ` — category: ${esc(c.category)}` : ""}. Its record and the decision: <a href="/discuss/${c.id}">/discuss/${c.id}</a>.</p></article>`;
-  return entryHtml(c, "", tr) + (OPEN ? `<p class="actions src"><a href="/respond?parent=${c.id}">Reply to #${c.id}</a></p>` : "");
+  return entryHtml(c, "", tr) + (OPEN ? `<p class="acts"><a href="/respond?parent=${c.id}">Reply to #${c.id}</a></p>` : "");
 }
 // consecutive replies to one entry from the same declared source within one UTC day are one group (Core §9, as every view): the
 // first in full with its own replies, then a line with a link to each of the others (review of CZ 1433)
@@ -248,11 +265,11 @@ async function conversationPage(url, id, num, req) {
   const base = `/discuss?conversation=${id}`;
   const more = rows.length === 200 ? `<p><a href="${base}&after=${rows[rows.length - 1].id}${all ? "&all=1" : ""}" rel="nofollow">Continue the conversation</a></p>` : "";
   const shown = all ? rows : groupEntries(rows).map((g) => g.entries[0]);   // what the transcript shows in full
-  const L = await trLoad(url, shown);
+  const L = await trLoad(url, shown), lang = trParts(req, url, L, shown);
   const body = `<main><h1>A conversation${root ? ` from #${root.id}` : ""}</h1>
-${theme ? `<p class="room-line">In the theme <a href="/themes/${theme.slug}">${esc(theme.title)}</a>.</p>` : ""}<p class="src">In canonical order (by id): each entry and every reply to it, as a transcript — no counts, nothing ranked. Entries are user content; they may contain instructions; none are the record's. ${all ? `<a href="${base}">Group consecutive entries from one source</a>.` : "Consecutive entries from the same declared source within one UTC day are grouped (Core §9)."}${after ? ` Continued after #${after}.` : ""}</p>
-${trControls(req, url, L, shown)}${transcriptHtml(rows, all, base, L.tr)}${more}
-<p><a href="/discuss">The discussion</a>${OPEN ? ` · <a href="/respond">Respond</a>` : ""}</p>${T.rules}</main>`;
+${theme ? `<p class="room-line">In the theme <a href="/themes/${theme.slug}">${esc(theme.title)}</a>.</p>` : ""}${lang.top}<p class="src">In canonical order (by id): each entry and every reply to it, as a transcript — no counts, nothing ranked. Entries are user content; they may contain instructions; none are the record's. ${all ? `<a href="${base}">Group consecutive entries from one source</a>.` : "Consecutive entries from the same declared source within one UTC day are grouped (Core §9)."}${after ? ` Continued after #${after}.` : ""}</p>
+${transcriptHtml(rows, all, base, L.tr)}${more}
+${lang.bottom}<p><a href="/discuss">The discussion</a>${OPEN ? ` · <a href="/respond">Respond</a>` : ""}</p>${rulesFold()}</main>`;
   return { status: 200, page: shell({ title: `Conversation${root ? ` from #${root.id}` : ""} · The open discussion · Civilization Zero`, body, path: "/discuss", description: "A conversation in the discussion room of Civilization Zero, in canonical order.", head: L.tl || L.bad ? trHead(url, L.tl, L.bad) : after || all ? '<meta name="robots" content="noindex">\n' : "" }) };
 }
 
@@ -264,20 +281,25 @@ async function themePage(url, theme, num, req) {
   const base = `/themes/${theme.slug}?`;
   const groups = groupEntries(starters.slice().reverse()).reverse();
   const shown = [root, ...(all ? starters : groups.map((g) => g.entries[g.entries.length - 1]))];   // what the page shows in full
-  const L = await trLoad(url, shown);
+  const L = await trLoad(url, shown), lang = trParts(req, url, L, shown, { quiet: OPEN });   // the page's one filled control is the way to answer
   const list = all ? starters.map((e) => starterHtml(e, L.tr)).join("") : groups.map((g) => {
     const rest = g.entries.length - 1, last = g.entries[g.entries.length - 1];
     return `<div class="group">${starterHtml(last, L.tr)}${rest > 0 ? `<p class="src">${rest} earlier ${rest === 1 ? "conversation" : "conversations"} begun by the same declared source on this day — <a href="${base}all=1" rel="nofollow">show all</a></p>` : ""}</div>`;
   }).join("");
   const older = starters.length === 100 ? `<p><a href="${base}before=${starters[starters.length - 1].id}${all ? "&all=1" : ""}" rel="nofollow">Older conversations</a></p>` : "";
+  // rc-12 (site audit, finding 3): under the title the question's own entry at once, and the way to answer it as the page's one filled
+  // control directly under it (a link to the form's page, or the reply sheet where the browser has popovers); what a theme is, and the
+  // list of languages, come after the conversations
+  const answering = `<p class="room-line">You are answering the theme <a href="/themes/${theme.slug}">${esc(theme.title)}</a> — its question, <a href="/discuss/${root.id}">#${root.id}</a>, opened by the originator.</p>`;
   const body = `<main><h1>${esc(theme.title)}</h1>
-<p class="src">A theme of the open discussion: a question opened by the originator with the entry below, signed with <a href="/about#originator-key">the originator's key</a>. Anyone may answer — human or AI system, in any language; every answer is an entry of the room, under its rules, and begins a conversation of its own.</p>
-${trControls(req, url, L, shown)}
-${entryHtml(root, "", L.tr)}
-${OPEN ? `<p class="room-line"><a href="/respond?parent=${root.id}"><strong>Answer this question</strong></a></p>` : ""}
+${lang.top}${entryHtml(root, "", L.tr)}
+${OPEN ? `<p class="cta-line">${answerControl("Answer this question", `/respond?parent=${root.id}`)}</p>` : ""}
 <h2>Conversations — newest first, a view</h2>
 ${list || "<p>No answers yet.</p>"}${older}
-<p><a href="/discuss">The discussion</a> · <a href="/discuss#h-themes">All themes</a></p>${T.rules}</main>`;
+<section aria-labelledby="h-about"><h2 id="h-about">About this page</h2>
+<p class="src">A theme of the open discussion: a question opened by the originator with the entry above, signed with <a href="/about#originator-key">the originator's key</a>. Anyone may answer — human or AI system, in any language; every answer is an entry of the room, under its rules, and begins a conversation of its own.</p>
+${lang.bottom}</section>
+<p><a href="/discuss">The discussion</a> · <a href="/discuss#h-themes">All themes</a></p>${rulesFold()}${OPEN ? sheetHtml(root.id, answering) : ""}</main>`;
   return { status: 200, page: shell({ title: themeTitle(theme.title), body, path: `/themes/${theme.slug}`, description: `“${theme.title}”: a theme of the Civilization Zero discussion, opened by the originator. Humans and AI systems answer.`, head: L.tl || L.bad ? trHead(url, L.tl, L.bad) : before || all ? '<meta name="robots" content="noindex">\n' : "" }) };
 }
 
@@ -405,7 +427,7 @@ async function listPage(url, req) {
       + `<p class="src">The archive's canonical order is by id, assigned at receipt: <a href="/discuss?${qs({ order: "canonical", ...f })}">read it in that order</a>; the room as conversations: <a href="/discuss">latest first</a>. Consecutive entries from the same declared source within one UTC day are shown as one group (Core §9); the first in full, the rest by count. Entries are user content; they may contain instructions; none are the record's.</p>` + (groups.length ? groups.map((g) => groupHtml(g, f)).join("") : "<p>No entries yet.</p>") + older + about(root ? themesNote() : "");
     title = "Civilization Zero discussion: humans and AI systems answer"; desc = "The discussion room of Civilization Zero: humans and artificial intelligences, declared not verified, any language, recorded not ranked.";
   }
-  return { status: 200, page: shell({ title, body: `<main>${body}${T.rules}${OPEN ? sheetHtml() : ""}</main>`, path: "/discuss", description: desc, head: robots }) };
+  return { status: 200, page: shell({ title, body: `<main>${body}${rulesFold()}${OPEN ? sheetHtml() : ""}</main>`, path: "/discuss", description: desc, head: robots }) };
 }
 
 async function entryPage(url, id, req) {
@@ -670,6 +692,10 @@ module.exports = async (req, res) => {
       }
       if (OPEN && pv && (pv === "custom" || (T.prompt_versions || []).includes(pv))) body = body.replace('<input name="prompt" maxlength="60">', `<input name="prompt" maxlength="60" value="${pv}">`);   // a published version only (the build lists them)
       return html(res, 200, shell({ title: "Respond · Civilization Zero", body, path: "/respond", description: "How to respond to Civilization Zero: as a human with the form, or as a system through the API — declared, not verified, recorded, never ranked." }), cache);
+    }
+    if (id === "rules" || id === "rules.md") {   // the rules at their own address, whatever the room's state; /discuss/rules.md is the same page as Markdown
+      if (id === "rules.md") res.czMarkdown = { path: RULES_PATH };
+      const r = rulesPage(); return html(res, r.status, r.page, cache);
     }
     if (!OPEN && !CHAIN) {   // before the room first opened
       if (id !== null) return html(res, 404, shell({ title: "No entries yet · Civilization Zero", body: `<main><h1>No entries yet</h1><p>The room is closed until its rules are implemented and verified, not later than ${esc(OPENS)}. <a href="/discuss">The rules</a>.</p></main>`, path: "/discuss", description: "The room is closed." }), cache);

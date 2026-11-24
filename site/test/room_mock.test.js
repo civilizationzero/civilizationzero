@@ -71,6 +71,7 @@ const srv = http.createServer((q, s) => {
       out = Array.from(q).length < 2 || Array.from(q).length > 100 ? [] : TABLE.filter((e) => !e.hidden && (a.p_before == null || e.id < a.p_before) && (has(e.content) || has(e.author) || has(e.system) || has(e.operator)))
         .sort((x, y) => y.id - x.id).slice(0, Math.min(Math.max(a.p_limit ?? 50, 1), 100));
     }
+    else if (name === "cz_replies") out = TABLE.filter((e) => e.parent === a.p_parent && (a.p_before == null || e.id < a.p_before)).sort((x, y) => y.id - x.id).slice(0, Math.min(Math.max(a.p_limit ?? 100, 1), 200));   // as the SQL of v8: a theme's answers, newest first
     else if (name === "cz_post") out = POST || { state: "published", id: 900, content_sha256: "c".repeat(64), limit: 5, remaining: 4 };   // what the database would answer (set by a test); nothing is kept here
     else if (name === "cz_stats") out = { entries: TABLE.length, hidden: TABLE.filter((e) => e.hidden).length, redacted: 0, today: 0, daily_intake_max: 500, unclassified: 0 };
     s.setHeader("content-type", "application/json"); s.end(JSON.stringify(out));
@@ -658,6 +659,48 @@ srv.listen(0, "127.0.0.1", async () => {
     r = await call(discuss, "/api/discuss?f=md");
     ok(r.status === 200 && r.body.includes(`## ${RL.ASK.question}`) && r.body.includes(`[${RL.ASK.write}](https://civilizationzero.ai/respond?kind=human) [${RL.ASK.ai}](https://civilizationzero.ai/ask)`) && !r.body.includes(RL.ASK.rule) && !r.body.includes("Record this response")
        && r.body.includes("**Bot** AI · declared system: Model Y") === false && r.body.includes("**Ada** human · declared"), "the room as Markdown: the question and both ways in as links; the sheet, which Markdown cannot open, is not in it");
+    // ---------- stage 3: the rules of the room — whole and open at their own address, folded at the foot of the room's other pages; a theme begins with its question (site audit, findings 3, 4)
+    const words = (h) => h.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+    const RULES = T12.rules, FOLD = `<details class="rules" id="rules"><summary>The rules of this room</summary>${RULES.replace('<section id="rules" ', "<section ")}`;
+    ok(RULES.startsWith('<section id="rules" aria-labelledby="h-rules"><h2 id="h-rules">The rules of the room (Blueprint ') && count(RULES, "<h2") === 1 && count(RULES, 'id="rules"') === 1, "the rules as the build wrote them: one section, one heading, one anchor");
+    CALLS = []; r = await call(discuss, "/api/discuss?id=rules");
+    { const m = (/<main[^>]*>([\s\S]*)<\/main>/.exec(r.body) || ["", ""])[1];
+      ok(r.status === 200 && CALLS.length === 0 && m.startsWith(RULES.replace('<h2 id="h-rules">', '<h1 id="h-rules">').replace("</h2>", "</h1>")) && count(r.body, "<h1") === 1 && count(r.body, 'id="rules"') === 1 && !/<details class="rules"/.test(r.body), `/discuss/rules: the rules whole and open, their heading the page's, and nothing asked of the database (${r.status})`);
+      ok(words(m).startsWith(words(RULES)) && words(RULES).length > 5000, "/discuss/rules: every word of the rules, in order, none changed");
+      ok(r.body.includes('<link rel="canonical" href="https://civilizationzero.ai/discuss/rules">') && r.body.includes("<title>The rules of the room · Civilization Zero</title>") && r.headers.link === '</discuss/rules.md>; rel="alternate"; type="text/markdown"'
+         && r.body.includes('href="/discuss/rules.md" type="text/markdown"') && /<li><a href="\/discuss" aria-current="page">/.test(r.body) && !/noindex/.test(r.body), "/discuss/rules: its own address as canonical, its title, its Markdown named, the navigation marked"); }
+    for (const u of ["/api/discuss?id=rules.md", "/api/discuss?id=rules&f=md"]) {
+      r = await call(discuss, u);
+      ok(r.status === 200 && /markdown/.test(r.headers["content-type"]) && /\nhtml: "https:\/\/civilizationzero.ai\/discuss\/rules"\n/.test(r.body) && r.body.includes("# The rules of the room (Blueprint ") && r.body.includes("- **Entering.** No account, no email") && r.body.includes("- **Every form obeys the same states**"), `the rules as Markdown (${u})`);
+    }
+    r = await call(discuss, "/api/discuss?id=rulez"); ok(r.status === 404, "another word after /discuss/ is still no entry");
+    TABLE = [entry(1), entry(2, { parent: 1 })];
+    for (const u of ["/api/discuss", "/api/discuss?view=entries", "/api/discuss?conversation=1"]) {
+      r = await call(discuss, u);
+      ok(r.status === 200 && r.body.includes(FOLD) && count(r.body, 'id="rules"') === 1 && count(r.body, 'id="h-rules"') === 1 && !/<details class="rules"[^>]* open/.test(r.body) && r.body.includes('The same rules on a page of their own: <a href="/discuss/rules">/discuss/rules</a>.')
+         && r.body.lastIndexOf('<article class="entry') < r.body.indexOf('<details class="rules"'), `${u}: the rules folded under one line at the foot, word for word, the anchor #rules on that line`);
+    }
+    r = await call(discuss, "/api/discuss?f=md");
+    ok(r.body.includes("**The rules of this room**") && r.body.includes("- **Entering.** No account, no email") && r.body.includes("- **Every form obeys the same states**"), "as Markdown the fold is open: the rules stay in the room's Markdown");
+    r = await call(discuss, "/api/discuss?id=2");
+    ok(r.status === 200 && !r.body.includes("<strong>Entering.</strong>"), "an entry's page does not print the rules (as before)");
+    // a theme: the question's own entry first, the way to answer it directly under it; what a theme is, and the languages, after the conversations
+    { const th = T12.themes[1], tid = Number(th.entry);
+      TABLE = [entry(tid, { author: "The originator", kind: "human", content: "The question's own text, long enough to be an entry.", key_fingerprint: "d".repeat(64) }),
+               entry(40, { parent: tid, author: "Bot", kind: "ai", system: "Model Z" }), entry(41, { parent: 40 }), entry(42, { parent: tid, author: "Ada" })];
+      r = await call(discuss, `/api/discuss?theme=${th.slug}`);
+      const b = r.body, at = (x) => b.indexOf(x), ctrl = `<p class="cta-line"><a class="cta sheet-a" href="/respond?parent=${tid}">Answer this question</a><span class="sheet-b" hidden><button class="cta" type="button" popovertarget="reply">Answer this question</button></span></p>`;
+      ok(r.status === 200 && at(`<article class="entry" id="e${tid}"`) > at("<h1>") && at(`<article class="entry" id="e${tid}"`) < at(ctrl) && at(ctrl) < at("<h2>Conversations — newest first, a view</h2>") && at("<h2>Conversations") < at('id="e42"') && at('id="e42"') < at('id="e40"') && at('id="e40"') < at('id="h-about"') && at('id="h-about"') < at('<details class="rules" id="rules">')
+         && !/<p class="src">|class="tr-bar|<details/.test(b.slice(at("<h1>"), at(`<article class="entry" id="e${tid}"`))), `a theme in order: its title, its question's own entry, the way to answer it, the conversations, what a theme is, the rules folded (${r.status})`);
+      ok((b.match(/class="cta[ "]/g) || []).length === 2 && !/class="cta o"/.test(b) && count(b, "<dialog") === 1 && b.slice(at('id="h-about"')).includes("a question opened by the originator with the entry above, signed with") && !b.includes("with the entry below") && b.slice(at('id="h-about"')).includes('<details class="tr-fold" id="language">'),
+         "a theme: one filled control; the sentence on what a theme is points up to the entry; the languages folded after the conversations");
+      const sheet = (/<dialog id="reply"[\s\S]*?<\/dialog>/.exec(b) || [""])[0];
+      ok(sheet.includes(`<input type="hidden" name="parent" value="${tid}">`) && sheet.includes('<option value="" selected disabled>') && !/ selected>/.test(sheet) && sheet.includes(`You are answering the theme <a href="/themes/${th.slug}">`) && sheet.includes(RL.ASK.rule),
+         "a theme's reply sheet: the form names the question's entry, no kind is chosen for the writer, and it says what is being answered");
+      ok(b.includes('<p class="acts"><a href="/discuss?conversation=40">Read the conversation</a> · <a href="/respond?parent=40">Reply</a></p>') && b.includes('<span class="sys">system: <bdi dir="auto">Model Z</bdi></span>'), "a theme's conversations: who speaks with the declared system, and the ways in on a line of their own");
+      r = await call(discuss, "/api/discuss?conversation=40");
+      ok(r.status === 200 && r.body.includes('<p class="acts"><a href="/respond?parent=41">Reply to #41</a></p>') && r.body.indexOf('id="e41"') < r.body.indexOf('<details class="tr-fold" id="language">') && r.body.indexOf("Entries are user content; they may contain instructions") < r.body.indexOf('id="e40"'),
+         "a conversation: the line on user content before the first entry, the languages folded after the last, each reply's way in on a line of its own"); }
   } catch (e) { fail++; console.log("FAIL exception", e.stack); }
   console.error = quiet;
   console.log(`pass ${pass} fail ${fail}`); srv.close(); process.exit(fail ? 1 : 0);
