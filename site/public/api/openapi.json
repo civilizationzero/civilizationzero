@@ -1563,7 +1563,7 @@
           },
           "figure": {
             "type": "object",
-            "description": "The day's figure as numbers: sixteen rings, computed from the SHA-256 of the Core's text and the day; rule says how to recompute it",
+            "description": "The day's figure as numbers: sixteen rings, computed from the SHA-256 of the Core's text and the day; rule says how to recompute it; position is where each ring stands that day, ring 0 first: the sixteen numbers the page writes under the figure, each in three digits there",
             "required": [
               "day",
               "core_sha256",

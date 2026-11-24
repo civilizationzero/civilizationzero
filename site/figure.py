@@ -39,6 +39,10 @@ def constants(core_sha256):
 def positions(day, core_sha256):
     return [(a + day * s) % m for a, s, m in constants(core_sha256)]
 
+def places(day, core_sha256):
+    """Where the sixteen rings stand, as the first page writes it under the figure: each position in three digits, ring 0 first."""
+    return [f"{p:03d}" for p in positions(day, core_sha256)]
+
 def radius(i):                      # 68, 76, ... 188: the middle of ring i's unit
     return 68 + 8 * i
 

@@ -1,6 +1,6 @@
-// A figure for every day (rc-12, CZ 1455). One figure, three writers: the reference implementation of rc-10 (its answers for eight days
+// A figure for every day (rc-12, CZ 1455). One figure, three writers: the reference implementation of rc-10 (its answers for nine days
 // are kept in fixtures/day-figure.json), site/figure.py (the build's) and room/figure.js (the functions'). All three give the same
-// positions and the same bytes — for days 0, 1, 1454, 1455, 1461 and 100000, and for two days before Day 0, where the rule is the same
+// positions and the same bytes — for days 0, 1, 1454, 1455, 1456, 1461 and 100000, and for two days before Day 0, where the rule is the same
 // with the mathematical modulo: no position is negative. The frame the build writes for /calendar (room/cz-bar.json, dayfigure) is
 // the first page's own; filled by room/figure.js it is a whole figure with its one sentence. Where api/page.js writes the figure into
 // the converter's result (its dayFigure), the result of a conversion carries the figure of the day converted.
@@ -13,16 +13,20 @@ process.chdir(SITE);
 const FIG = require("../room/figure.js"), CZ = require("../room/cztime.js");
 const FX = require("./fixtures/day-figure.json"), BAR = require("../room/cz-bar.json"), HOME = require("../api/home-templates.json");
 const SHA = crypto.createHash("sha256").update(fs.readFileSync(path.join(SITE, "..", "record", "CZ-CORE-1.0.txt"))).digest("hex");
-const K = FIG.constants(SHA), DAYS = [0, 1, 1454, 1455, 1461, 100000, -1, -1997];
+const K = FIG.constants(SHA), DAYS = [0, 1, 1454, 1455, 1456, 1461, 100000, -1, -1997];
 const unesc = (s) => s.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#x27;/g, "'").replace(/&amp;/g, "&");
 
-test("the reference of rc-10, site/figure.py and room/figure.js: the same positions and the same bytes for eight days", () => {
+test("the reference of rc-10, site/figure.py and room/figure.js: the same positions and the same bytes for nine days", () => {
   assert.equal(FX.core_sha256, SHA, "the fixture was computed from this Core");
   assert.deepEqual(FX.days.map((d) => d.day), DAYS);
   const js = DAYS.map((d) => ({ day: d, positions: FIG.positions(d, K), rings: FIG.rings(d, K) }));
   const py = execFileSync("python3", [path.join(SITE, "figure.py"), SHA, ...DAYS.map(String)], { encoding: "utf8" }).trim().split("\n").map((l) => JSON.parse(l));
   assert.deepEqual(js, FX.days, "room/figure.js gives what the reference gave");
   assert.deepEqual(py, FX.days, "site/figure.py gives what the reference gave");
+  // the places as the first page writes them under the figure (rc-14): the reference's positions, each in three digits, ring 0 first
+  for (const x of FX.days) assert.deepEqual(FIG.places(x.day, K), x.positions.map((p) => String(p).padStart(3, "0")), `day ${x.day}: the sixteen places`);
+  assert.equal(FIG.places(1455, K).join(" "), "092 166 071 082 149 239 114 163 136 001 053 214 071 208 082 002");
+  assert.equal(FIG.places(1456, K).join(" "), "004 130 168 120 200 045 022 188 070 061 158 094 296 300 128 077");
 });
 
 test("a day before Day 0: the same rule with the mathematical modulo — every position in 0 … modulus − 1, a day's step apart from the next day's", () => {

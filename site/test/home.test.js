@@ -18,7 +18,7 @@ const Z = (zone) => ({ "x-vercel-ip-timezone": zone });
 const page = async (zone = "UTC") => (await call("/", { ...Z(zone), accept: "text/html" })).body;
 const data = async (zone = "UTC") => JSON.parse((await call("/", { ...Z(zone), accept: "application/json" })).body);
 const unesc = (s) => s.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#x27;/g, "'").replace(/&amp;/g, "&");
-const text = (b) => unesc(b.replace(/<(style|script|svg|title|form|dialog|button)\b[\s\S]*?<\/\1>/g, "").replace(/<[^>]+ hidden>[^<]*<\/[a-z]+>/g, "").replace(/<[^>]+>/g, " ")).replace(/\s+/g, " ");
+const text = (b) => unesc(b.replace(/<(style|script|svg|title|form|dialog|button)\b[\s\S]*?<\/\1>/g, "").replace(/<span class="t1" hidden>[\s\S]*?<\/span><\/span>/g, "").replace(/<[^>]+ hidden>[^<]*<\/[a-z]+>/g, "").replace(/<[^>]+>/g, " ")).replace(/\s+/g, " ");
 const inOrder = (b, parts) => { let at = -1; return parts.every((p) => { const i = b.indexOf(p, at + 1); at = i; return i >= 0; }); };
 const SHA = crypto.createHash("sha256").update(fs.readFileSync(path.join(SITE, "..", "record", "CZ-CORE-1.0.txt"))).digest("hex");
 const K = FIG.constants(SHA);
@@ -49,17 +49,33 @@ test("the day's figure in the page and in the data form is the reader's day's", 
     assert.equal(j.figure.core_sha256, SHA);
     assert.deepEqual(j.figure.position, j.figure.start.map((a, i) => (a + d * j.figure.step[i]) % j.figure.modulus[i]), "the rule the data form gives recomputes the positions");
   }
-  assert.ok(!/__[A-Z_]+__/.test((await page()).replace(/https?:\/\/\S+/g, "")), "no placeholder left");
+  assert.ok(!/__[A-Z][A-Z0-9_]*__/.test((await page()).replace(/https?:\/\/\S+/g, "")) && !/__[A-Z][A-Z0-9_]*__/.test((await call("/?f=txt")).body.replace(/https?:\/\/\S+/g, "")), "no placeholder left, in the page or in its text form");
 });
 
 test("the figure's switch and its line: today's at rest; after a press, tomorrow's day, named for the reader's zone", async () => {
   for (const zone of [EAST, WEST]) {
     const d = CZ.todayIn(Date.now(), zone), b = unesc(await page(zone));
     assert.ok(b.includes('<form id="fz" autocomplete="off" hidden></form><input class="turn" id="turn" type="checkbox" form="fz" aria-label="Show tomorrow\'s figure" hidden>') && !/<input[^>]*type="checkbox"[^>]*autocomplete/.test(b) && b.includes('<label class="fig-l" for="turn"><svg class="fig"'), "a checkbox and its label, the figure; hidden unless the browser can compute the next day");
-    assert.ok(b.includes(`<span class="t0">Nobody drew today's figure. <span class="press" hidden>Press it to see tomorrow's.</span></span><span class="t1" hidden>This is tomorrow's, Day ${(d + 1).toLocaleString("en-US")}: computed, like today's, from the day's number and the text of the Core. Press it again for today's.</span>`), `${zone}: the line, and the line after a press`);
+    const W = (s, attr = "") => s.split(" ").map((w) => `<span${attr}>${w}</span>`).join(" ");   // each word an element of its own, plain
+    assert.ok(b.includes(`<p class="say"><span class="t0">${W("Nobody drew today's figure: each ring stands at its number.")} ${W("Press it to see tomorrow's.", " hidden")}</span><span class="t1" hidden>${W(`This is tomorrow's, Day ${(d + 1).toLocaleString("en-US")}: computed, like today's, from the day's number and the text of the Core. Press it again for today's.`)}</span></p>\n</figcaption>\n</figure>`), `${zone}: the line, and the line after a press`);
+    // the sixteen rings' places as numbers: the day's, and the next day's for after a press — the positions the data form gives
+    const N = (day) => FIG.places(day, K).map((p) => `<span>${p}</span>`).join(" "), j = await data(zone);
+    assert.ok(b.includes(`<p class="nums"><span class="t0">${N(d)}</span><span class="t1" hidden>${N(d + 1)}</span></p>`), `${zone}: the day's sixteen numbers, and the next day's`);
+    assert.deepEqual(FIG.places(d, K).map(Number), j.figure.position, `${zone}: the numbers under the figure are the data form's positions`);
+    assert.deepEqual(FIG.places(d + 1, K).map(Number), j.figure.start.map((a, i) => (a + (d + 1) * j.figure.step[i]) % j.figure.modulus[i]), `${zone}: the next day's, by the rule the data form gives`);
+    assert.ok(FIG.places(d, K).every((p) => /^\d{3}$/.test(p)));
+    const t = (await call("/?f=txt", { "x-vercel-ip-timezone": zone })).body, m = (await call("/index.md?f=md", { "x-vercel-ip-timezone": zone })).body;
+    for (const [form, x] of [["text", t], ["Markdown", m]]) assert.ok(x.includes(`\n\n${FIG.places(d, K).join(" ")}\n\nNobody drew today's figure: each ring stands at its number.\n\n`) && !x.includes(FIG.places(d + 1, K).join(" ")), `${zone}, ${form}: the day's sixteen numbers on one line, over the sentence; not the next day's`);
   }
   const txt = (await call("/?f=txt")).body, j = await data();
-  assert.ok(txt.includes("Nobody drew today's figure.\n") && !/Press it|tomorrow/.test(txt) && j.figure_note === "Nobody drew today's figure.", "a form that cannot be pressed has the one sentence");
+  assert.ok(txt.includes("Nobody drew today's figure: each ring stands at its number.\n") && !/Press it|tomorrow/.test(txt) && j.figure_note === "Nobody drew today's figure: each ring stands at its number.", "a form that cannot be pressed has the one sentence");
+});
+
+test("the Markdown converter and a caption: a caption of words alone is one paragraph, as before; one that holds paragraphs gives each of them", () => {
+  const MD = require("../room/md.js"), body = (h) => MD.htmlToMarkdown(`<main>${h}</main>`, { path: "/x" }).split("\n---\n")[1].trim();
+  assert.equal(body('<figure><img src="/a.png" alt="A"><figcaption>One <strong>two</strong> three.</figcaption></figure>'), "![A](https://civilizationzero.ai/a.png)\n\nOne **two** three.");
+  assert.equal(body('<figure><figcaption>\n<p>First <a href="/calendar">line</a>.</p>\n<p><span><span>001</span> <span>002</span></span><span hidden><span>003</span></span></p>\n<p><span><span>Second</span> <span>line.</span> <span hidden>Hidden.</span></span></p>\n</figcaption></figure>'),
+    "First [line](https://civilizationzero.ai/calendar).\n\n001 002\n\nSecond line.");
 });
 
 test("three states, each an address: neither door answered, #human, #not-human", async () => {
@@ -116,9 +132,9 @@ test("with neither door answered a window shows no control: three bare titles; t
   assert.ok(secN.includes('<pre class="x bd" tabindex="0">') && secN.includes('<pre class="x sum" tabindex="0">'), "the two blocks that scroll take the keyboard");
 });
 
-test("the first screen in order: the headline, the figure, the calendar line, day 0, the line on the figure, the standfirst, who is behind it, the question, the doors", async () => {
+test("the first screen in order: the headline, the figure with its caption (the calendar line, day 0, the sixteen numbers, the line on the figure), the standfirst, who is behind it, the question, the doors", async () => {
   const b = await page(), j = await data(), top = b.slice(b.indexOf("<body>"), b.indexOf('<nav class="doors"'));
-  const marks = ['<h1 class="name"', '<p class="line"', '<div class="fb"', '<p class="date"', '<p class="zero"', '<p class="say"', '<p class="sub"', '<p class="who"', '<p class="ask"'];
+  const marks = ['<h1 class="name"', '<p class="line"', '<figure class="fb"', '<figcaption>', '<p class="date"', '<p class="zero"', '<p class="nums"', '<p class="say"', '</figcaption>\n</figure>', '<p class="sub"', '<p class="who"', '<p class="ask"'];
   assert.deepEqual(marks.map((m) => top.indexOf(m)), marks.map((m) => top.indexOf(m)).slice().sort((x, y) => x - y)); assert.ok(marks.every((m) => top.split(m).length === 2));
   assert.ok(/<p class="sub"[^>]*>Its Core is sixteen principles on what humans and AI owe each other\. Written for both\. Answered by both, <a href="\/discuss">on the record<\/a>\.<\/p>\n<p class="who"/.test(top), "the standfirst says what the Core is, before the who line names it");
   assert.equal(j.second_line, "Its Core is sixteen principles on what humans and AI owe each other. Written for both. Answered by both, on the record.");

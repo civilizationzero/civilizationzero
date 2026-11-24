@@ -332,7 +332,8 @@ sys.path.insert(0, str(SITE)); import figure as FIGURE
 check(set(T) == {"html", "json", "txt", "figure"} and all(isinstance(T[x], str) for x in ("html", "json", "txt")) and T["figure"] == {"core_sha256": _hashlib.sha256(CORE_BYTES).hexdigest()} and T["figure"]["core_sha256"] == PUBLISHED_CORE_SHA,
       "home templates: the three forms and the Core's SHA-256, computed from the Core's bytes and equal to the published one")
 sample = {"__TOTAL__": "1428", "__TOTAL_FMT__": "1,428", "__TOMORROW_FMT__": "1,429", "__ASOF_ISO__": "2026-10-28T10:00Z", "__CZ_ISO__": "2026-10-28", "__CZ_STAMP__": "CZ 1428", "__CZ_ZONE__": "Asia/Kuala_Lumpur", "__CZ_UTC_ISO__": "2026-10-27",
-          "__FIG_RINGS__": FIGURE.rings(1428, CORE_SHA), "__FIG_POS__": json.dumps(FIGURE.positions(1428, CORE_SHA)), "__HOME_HEAD__": "200", "__HOME_JSON__": "{}"}
+          "__FIG_RINGS__": FIGURE.rings(1428, CORE_SHA), "__FIG_POS__": json.dumps(FIGURE.positions(1428, CORE_SHA)), "__HOME_HEAD__": "200", "__HOME_JSON__": "{}",
+          **{f"__FIG_A{i}__": p for i, p in enumerate(FIGURE.places(1428, CORE_SHA))}, **{f"__FIG_B{i}__": p for i, p in enumerate(FIGURE.places(1429, CORE_SHA))}}
 ROOM_KEYS = ("__ROOM_EXAMPLE__", "__ROOM_ANSWER__")
 def fill(s, room=("", "")):
     for k in sorted(sample, key=len, reverse=True): s = s.replace(k, sample[k])
@@ -735,17 +736,17 @@ check(_bytes < 70000 and f"This page: {round(_bytes / 1024)} kB · no JavaScript
 # the first screen, in order: the head (mark and name only), the headline, the figure, the calendar line, day 0, one line on the figure,
 # what is here (the standfirst), who is behind the page, the question, the doors
 _FZ = '<form id="fz" autocomplete="off" hidden></form>'   # the empty form that owns the figure's checkbox (below): nothing in it, never shown, nothing that sends it
-_order = ['<header id="top">\n<h1 class="name"', '</h1>\n</header>\n<main id="content">\n<div class="axis">\n<p class="line"', '<div class="fb" style="--today:', '<p class="date" id="cz-read"', '<p class="zero"', '<p class="say"', '<p class="sub"', '<p class="who"', '<p class="ask"',
+_order = ['<header id="top">\n<h1 class="name"', '</h1>\n</header>\n<main id="content">\n<div class="axis">\n<p class="line"', '<figure class="fb" style="--today:', '<figcaption>\n<p class="date" id="cz-read"', '<p class="zero"', '<p class="nums"', '<p class="say"', '</figcaption>\n</figure>\n<p class="sub"', '<p class="who"', '<p class="ask"',
           '</div>\n<nav class="doors" aria-label="Reader">', '<div class="stage">\n<section id="human" class="col h"', '<section id="not-human" class="col n"', '</div>\n<p class="both"', '<div class="why"', '<section class="decl"', '<p class="next"', "</main>\n<footer", "</footer>\n</div>"]
 _at = [_pbody.find(x) for x in _order]
 check(all(a >= 0 for a in _at) and _at == sorted(_at) and all(_pbody.count(x) == 1 for x in _order) and _ph.count("<h1") == 1 and "<form" not in _top.replace(_FZ, "") and "<details" not in _top,
-      f"home, the order of the page: the name, the headline, the figure, the calendar line, day 0, the line on the figure, the standfirst, who is behind it, the question, the doors, the two readings, who reads, the line on the reasons, the Declaration, the four links, the foot {_at}")
+      f"home, the order of the page: the name, the headline, the figure with its caption (the calendar line, day 0, the sixteen numbers, the line on the figure), the standfirst, who is behind it, the question, the doors, the two readings, who reads, the line on the reasons, the Declaration, the four links, the foot {_at}")
 check(re.search(r'<p class="line" data-src="[^"]*">' + re.escape(HEADLINE) + "</p>", _top) is not None and _top.count(HEADLINE) == 1 and HEADLINE == ONE_LINE.split(" Here,")[0] and _pj["headline"] == HEADLINE,
       "home: the headline is the introduction's first sentence, word for word; once in the page; in its data form")
 _cal = f'<a href="/calendar">CZ calendar</a> · <time class="d" datetime="{_pj["cz_time"]["gregorian"]}">Day <data value="{_day}">{_day:,}</data></time></p>\n<p class="zero"'
-check(_cal in _top and _top.count('href="/calendar"') == 1 and '>Day 0: <time datetime="2022-11-30">30 November 2022</time>, the day ChatGPT was released.</p>\n<p class="say"' in _top and _top.count("ChatGPT") == 1 and "began" not in _strip(_top)
+check(_cal in _top and _top.count('href="/calendar"') == 1 and '>Day 0: <time datetime="2022-11-30">30 November 2022</time>, the day ChatGPT was released.</p>\n<p class="nums"' in _top and _top.count("ChatGPT") == 1 and "began" not in _strip(_top)
       and _pj["calendar_line"] == f"CZ calendar · Day {_day:,}" and _pj["calendar_note"] == CAL_NOTE and _pj["cz_time"]["date"] == f"CZ {_day}" and cz_day(datetime.date.fromisoformat(_pj["cz_time"]["gregorian"])) == _day
-      and ".date .d{color:var(--machine);font-weight:700" in _css and re.search(r"\.note,\.src,\.zero,\.say,[^{]*\{font-size:\.8409em;color:var\(--mute\)\}", _css) is not None
+      and ".date .d{color:var(--machine);font-weight:700" in _css and re.search(r"\.note,\.src,\.zero,[^{]*\{font-size:\.8409em;color:var\(--mute\)\}", _css) is not None
       and "CZ day 0 is 30 November 2022" in (PUBLIC / "llms.txt").read_text("utf-8") and 'ChatGPT was released on 30 November 2022.<!--/cz-day--></strong></p>\n<p class="forms" lang="en" dir="ltr">This page as <a href="/calendar.md" type="text/markdown">Markdown</a> · <a href="/calendar.json" type="application/json">JSON</a></p><p>CZ 0 is that day: the public threshold the record calls Coordinate Zero.' in (PUBLIC / "calendar.html").read_text("utf-8"),
       "home: the calendar line — 'CZ calendar' the link to /calendar, the day in green carrying the reader's date (<time datetime>) and the count (<data value>); under it, smaller and quiet, day 0 and what happened that day, as /calendar and llms.txt say it; nowhere 'began'")
 check(_top.count("30 November 2022") == 1 and _top.count("2022-11-30") == 1 and _top.count("30 November 2026") == 1 and _top.count(LAUNCH.isoformat()) == 1
@@ -753,7 +754,7 @@ check(_top.count("30 November 2022") == 1 and _top.count("2022-11-30") == 1 and 
       "home: Coordinate Zero's date and the launch date, each once above the doors, and no other Gregorian date; no years")
 _who = re.search(r'<p class="who" data-src="[^"]*">(.*?)</p>', _top, re.S)
 check(_who is not None and _strip(_who.group(1)) == WHO and _who.group(1).count("<a ") == 1 and 'named in <a href="/core#attribution">the Core</a>.' in _who.group(1) and 'id="attribution"' in (PUBLIC / "core.html").read_text("utf-8") and _pj["who"] == WHO
-      and _strip(re.sub(r'<span class="t1" hidden>.*?</span>', "", _top[:_top.index('<p class="who"')], flags=re.S)).count("Core") == 1 and _strip(_top[:_top.index('<p class="who"')]).count("Core") == 2 and "Its Core is sixteen principles" in _strip(_top[:_top.index('<p class="who"')]) and "/about" not in _who.group(1),
+      and to_text(_top[:_top.index('<p class="who"')]).count("Core") == 1 and _strip(_top[:_top.index('<p class="who"')]).count("Core") == 2 and "Its Core is sixteen principles" in _strip(_top[:_top.index('<p class="who"')]) and "/about" not in _who.group(1),
       "home: who is behind it, in the first screen, in the fixed words; 'the Core' is linked there, and the standfirst, before it, has said once what the Core is (the line shown after a press on the figure names the Core too); the same sentence in the data form")
 check(re.search(r'<p class="sub" data-src="[^"]*">Its Core is sixteen principles on what humans and AI owe each other\. Written for both\. Answered by both, <a href="/discuss">on the record</a>\.</p>\n<p class="who"', _top) is not None and _pj["second_line"] == SECOND_LINE
       and list(_pj).index("figure_note") + 1 == list(_pj).index("second_line") == list(_pj).index("who") - 1,
@@ -832,17 +833,22 @@ _short = (SITE / "prompts" / "cz-short-1.0.txt").read_text("utf-8")
 check("one hard truth" in _short and "At most 400 characters" in _short and "You may decline" in _short and "to humans" in _short, "home, the third step: the invitation said as cz-short-1.0 says it")
 # the day's figure: computed from the Core's SHA-256 and the day, by one algorithm in two languages (site/figure.py, room/figure.js)
 _sha = _hashlib.sha256(CORE_BYTES).hexdigest(); _hb = bytes.fromhex(_sha); _M = [257, 263, 269, 271, 277, 281, 283, 293, 307, 311, 313, 317, 331, 337, 347, 349]
-_days = [0, 1, 1454, 1455, 1461, 100000, -1, -1997, _day]   # days before Day 0 too (rc-12): the same rule, with the mathematical modulo
+_days = [0, 1, 1454, 1455, 1456, 1461, 100000, -1, -1997, _day]   # days before Day 0 too (rc-12): the same rule, with the mathematical modulo
 _fj = subprocess.run(["node", str(SITE / "room" / "figure.js"), _sha] + [str(d) for d in _days], capture_output=True, text=True)
 _fjs = [json.loads(l) for l in _fj.stdout.splitlines()] if _fj.returncode == 0 else []
 check(_fjs == [{"day": d, "positions": FIGURE.positions(d, _sha), "rings": FIGURE.rings(d, _sha)} for d in _days] and len(_fjs) == len(_days), f"the day's figure: room/figure.js and site/figure.py give the same positions and the same bytes for days {_days} ({_fj.stderr[:200]})")
-# the same eight days as the reference implementation of rc-10 computed them (test/fixtures/day-figure.json): one figure, three writers
+# the same nine days as the reference implementation of rc-10 computed them (test/fixtures/day-figure.json): one figure, three writers
 _fx = json.loads((SITE / "test" / "fixtures" / "day-figure.json").read_text("utf-8"))
-check(_fx["core_sha256"] == _sha and [x["day"] for x in _fx["days"]] == _days[:8] and _fx["days"] == _fjs[:8] and all(0 <= p < m for x in _fx["days"] for p, m in zip(x["positions"], _M)),
-      "the day's figure: site/figure.py and room/figure.js give what the reference of rc-10 gave, for days 0, 1, 1454, 1455, 1461, 100000, −1 and −1997; before Day 0 no position is negative")
+check(_fx["core_sha256"] == _sha and [x["day"] for x in _fx["days"]] == _days[:9] and _fx["days"] == _fjs[:9] and all(0 <= p < m for x in _fx["days"] for p, m in zip(x["positions"], _M)),
+      "the day's figure: site/figure.py and room/figure.js give what the reference of rc-10 gave, for days 0, 1, 1454, 1455, 1456, 1461, 100000, −1 and −1997; before Day 0 no position is negative")
+# the places as the first page writes them (rc-14): the positions, each in three digits, ring 0 first — by both writers, for the same days
+_pl = subprocess.run(["node", "-e", "const F = require(process.argv[1]), K = F.constants(process.argv[2]); console.log(JSON.stringify(process.argv.slice(3).map((d) => F.places(Number(d), K))))", str(SITE / "room" / "figure.js"), _sha] + [str(d) for d in _days], capture_output=True, text=True)
+check(_pl.returncode == 0 and json.loads(_pl.stdout) == [FIGURE.places(d, _sha) for d in _days] and all(FIGURE.places(x["day"], _sha) == [f"{p:03d}" for p in x["positions"]] for x in _fx["days"])
+      and all(re.fullmatch(r"\d{3}", p) for d in _days for p in FIGURE.places(d, _sha)),
+      f"the day's figure as numbers: room/figure.js and site/figure.py write the same sixteen places, each the reference's position in three digits ({_pl.stderr[:200]})")
 check(all(x % p for p in _M for x in range(2, 19)) and _M[0] == 257 and [n for n in range(257, 350) if all(n % k for k in range(2, 19))] == _M
       and FIGURE.constants(_sha) == [(_hb[2 * i], _hb[2 * i + 1] + 1, _M[i]) for i in range(16)], "the day's figure: the sixteen primes that follow 256; each ring's start and step are the two bytes of its row of the hash")
-_fig = re.search(r'<div class="fb" style="--today:(\d+)" data-src="[^"]*">\n(.*?)</div>\n<p class="date', _pbody, re.S)
+_fig = re.search(r'<figure class="fb" style="--today:(\d+)" data-src="[^"]*">\n(.*?)\n<figcaption>\n<p class="date', _pbody, re.S)
 _arcs = re.search(r'<g class="arc" stroke-width="4">(.*?)</g>', _fig.group(2)) if _fig else None
 check(_fig is not None and int(_fig.group(1)) == _day and f'data-day="{_day}"' in _fig.group(2) and "<title id=\"fig-t\">The day's figure: sixteen rings round an empty centre, each carrying one arc.</title>" in _fig.group(2).replace("&#x27;", "'") and _fig.group(2).count("<title") == 1
       and _arcs is not None and _arcs.group(1) == FIGURE.rings(_day, _sha) and f'<g class="trk" stroke-width="1">{FIGURE.tracks()}</g>' in _fig.group(2)
@@ -850,25 +856,61 @@ check(_fig is not None and int(_fig.group(1)) == _day and f'data-day="{_day}"' i
       and 'role="img" aria-labelledby="fig-t"' in _fig.group(2) and "__FIG_RINGS__" in T["html"] and T["html"].count("__FIG_RINGS__") == 1,
       "home: the figure in the page is the reader's day's — its sixteen arcs recomputed here from the Core's bytes and the day — with a text alternative; written at request time")
 # the figure turns (rc-11): where the browser can compute the next day's figure itself, the figure is a switch — a checkbox and
-# its label, no script — and a press shows tomorrow's; the line under it says so, and after a press says whose day the figure is
-_say = re.search(r'<p class="say" data-src="[^"]*">(.*?)</p>', _top, re.S)
-check('</p>\n<form id="fz" autocomplete="off" hidden></form><input class="turn" id="turn" type="checkbox" form="fz" aria-label="Show tomorrow\'s figure" hidden>\n<div class="fb" style="--today:' in _top.replace("&#x27;", "'") and '<label class="fig-l" for="turn"><svg class="fig"' in _top and _top.count("<input") == 1
-      and _say is not None and _say.group(1).replace("&#x27;", "'") == f'<span class="t0">Nobody drew today\'s figure. <span class="press" hidden>Press it to see tomorrow\'s.</span></span><span class="t1" hidden>This is tomorrow\'s, Day {_day + 1:,}: computed, like today\'s, from the day\'s number and the text of the Core. Press it again for today\'s.</span>'
-      and T["html"].count("__TOMORROW_FMT__") == 1 and "__TOMORROW_FMT__" not in T["txt"] + T["json"] and "Press it" not in _pv["txt"] + _pv["md"] and "tomorrow" not in _pv["txt"] + _pv["md"],
-      "home: the figure is the label of a checkbox named 'Show tomorrow's figure'; the line under it: 'Nobody drew today's figure.', and, only where pressing works, 'Press it to see tomorrow's.'; after a press it names tomorrow's day and what the figure is computed from; the text and Markdown forms have the one sentence")
+# its label, no script — and a press shows tomorrow's; the line under it says so, and after a press says whose day the figure is.
+# The figure and its lines are one thing (rc-14): a figure and its caption — the calendar line, day 0, the sixteen rings' places as
+# numbers, the sentence — and each word of a sentence and each number is an element of its own, plain, so that they can arrive one
+# after another; pressed, the next day's numbers and the second sentence stand in the first ones' place.
+_W = lambda s, attr="": " ".join(f"<span{attr}>{w}</span>" for w in s.split(" "))
+_REST, _PRESS, _PRESSED = "Nobody drew today's figure: each ring stands at its number.", "Press it to see tomorrow's.", f"This is tomorrow's, Day {_day + 1:,}: computed, like today's, from the day's number and the text of the Core. Press it again for today's."
+_unit = re.search(r'<figure class="fb" style="--today:\d+" data-src="([^"]*)">\n<label class="fig-l" for="turn"><svg class="fig".*?</svg></label>\n<figcaption>\n<p class="date" id="cz-read" data-src="[^"]*">.*?</p>\n<p class="zero" data-src="[^"]*">.*?</p>\n<p class="nums">(.*?)</p>\n<p class="say">(.*?)</p>\n</figcaption>\n</figure>\n<p class="sub"', _top, re.S)
+_n0, _n1 = FIGURE.places(_day, _sha), FIGURE.places(_day + 1, _sha)
+check('</p>\n<form id="fz" autocomplete="off" hidden></form><input class="turn" id="turn" type="checkbox" form="fz" aria-label="Show tomorrow\'s figure" hidden>\n<figure class="fb" style="--today:' in _top.replace("&#x27;", "'") and '<label class="fig-l" for="turn"><svg class="fig"' in _top and _top.count("<input") == 1
+      and _unit is not None and _top.count("<figure") == 1 and _top.count("<figcaption>") == 1
+      and _unit.group(3).replace("&#x27;", "'") == f'<span class="t0">{_W(_REST)} {_W(_PRESS, " hidden")}</span><span class="t1" hidden>{_W(_PRESSED)}</span>'
+      and T["html"].count("__TOMORROW_FMT__") == 1 and "__TOMORROW_FMT__" not in T["txt"] + T["json"] and "Press it" not in _pv["txt"] + _pv["md"] and "tomorrow" not in _pv["txt"] + _pv["md"]
+      and "aria-hidden" not in _unit.group(0).replace('aria-hidden="true" focusable="false"', "") and not re.search(r"<span[^>]*(class|style|role|aria-)[^>]*>(?!<span)", _unit.group(2) + _unit.group(3)),
+      "home: the figure is the label of a checkbox named 'Show tomorrow's figure'; in its caption the line 'Nobody drew today's figure: each ring stands at its number.', and, only where pressing works, 'Press it to see tomorrow's.'; after a press it names tomorrow's day and what the figure is computed from; each word a plain element, nothing hidden from a reader of the text; the text and Markdown forms have the one sentence")
+check(_unit is not None and _unit.group(2) == f'<span class="t0">{" ".join(f"<span>{p}</span>" for p in _n0)}</span><span class="t1" hidden>{" ".join(f"<span>{p}</span>" for p in _n1)}</span>'
+      and [int(p) for p in _n0] == _pj["figure"]["position"] and [int(p) for p in _n1] == [(_hb[2 * i] + (_day + 1) * (_hb[2 * i + 1] + 1)) % _M[i] for i in range(16)]
+      and f"\n\n{' '.join(_n0)}\n\n{_REST}\n\n" in _pv["txt"] and f"\n\n{' '.join(_n0)}\n\n{_REST}\n\n" in _pv["md"] and " ".join(_n1) not in _pv["txt"] + _pv["md"]
+      and all(T["html"].count(f"__FIG_{k}{i}__") == 1 for k in "AB" for i in range(16)) and all(T["txt"].count(f"__FIG_A{i}__") == 1 and f"__FIG_B{i}__" not in T["txt"] for i in range(16)) and "__FIG_A" not in T["json"],
+      "home: under the Day 0 line the sixteen rings' places that day, ring 0 first, each in three digits — the positions the data form gives for the same day, recomputed here from the Core's bytes — and, for after a press, the next day's; the text and Markdown forms carry the day's sixteen on one line, over the sentence")
+check(_unit is not None and _h.unescape(_unit.group(1)) == "E: the originator's idea of 24 Nov 2026 UTC (CZ 1455): the figure and its lines are one thing, set apart, and written together; developed by the artificial intelligence that builds the site: each arc is drawn from where its ring stood yesterday to where it stands today, which is what the arc records; each number is its ring's place; the words arrive one after another; R: CZ-CORE 1.0 by its SHA-256 and the count of days; M: the same sixteen numbers in the machine's reading",
+      "home: the reason of the figure and its lines, in its fixed words")
 _m5 = _css.split("@supports (stroke-dashoffset:calc(mod(1,2))){")
-check(len(_m5) == 3 and ".arc circle{stroke-dashoffset:calc(-1*mod(var(--a) + mod(var(--day) - 1,var(--m))*var(--s),var(--m)))}" in _m5[1] and ".turn:checked~.fb .fig{--day:calc(var(--today) + 1)}" in _m5[1]
-      and ".turn{display:block;" in _m5[1] and ".press,.turn:checked~.say .t1{display:inline}\n.turn:checked~.say .t0{display:none}" in _m5[1] and ".turn" not in _m5[0] and ".press" not in _m5[0]
+_m5b = _m5[1].split("\n}\n")[0] if len(_m5) == 2 else ""
+check(len(_m5) == 2 and ".arc circle{stroke-dashoffset:calc(-1*mod(var(--a) + mod(var(--day) - 1,var(--m))*var(--s),var(--m)))}" in _m5b and ".turn:checked~.fb .fig{--day:calc(var(--today) + 1)}" in _m5b
+      and ".turn{display:block;" in _m5b and ".t0 [hidden],.turn:checked~.fb .t1{display:inline}\n.turn:checked~.fb .t0{display:none}" in _m5b and ".turn" not in _m5[0] and "[hidden]" not in _m5[0] and ".t1" not in _m5[0]
       and '@property --day{syntax:"<number>";inherits:true;initial-value:0}' in _css and all(f'style="--a:{a};--s:{s};--m:{m}"' in _fig.group(2) for a, s, m in FIGURE.constants(_sha)),
-      "home.css: where the browser has mod() it computes the figure itself from --today and each ring's three constants (the same formula as figure.py), and a press moves the day by one; without mod() there is no switch and no second sentence")
+      "home.css: where the browser has mod() it computes the figure itself from --today and each ring's three constants (the same formula as figure.py), and a press moves the day by one and shows the next day's numbers and sentence; without mod() there is no switch, no second sentence and no second set of numbers")
+# the unit (rc-14): one hairline above and one below, equal space inside, no frame and no ground of its own; what the machine writes in
+# the machine's face, small; the numbers eight to a row, sixteen where the measure allows
+_n5 = re.sub(r"/\*.*?\*/", "", _m5[0], flags=re.S)
+check(".fb{margin:0;padding-block:var(--e-4);border-block:var(--e-16) solid var(--mute)}" in _n5 and "background" not in _n5[_n5.index(".fb{"):] and ".nums,.say{font-family:var(--exact);font-size:var(--e-2);color:var(--mute)}" in _n5
+      and ".nums{max-inline-size:32ch;margin:0 auto;line-height:var(--l1)}" in _n5 and "display:grid" not in _n5[_n5.index(".fb{"):]
+      and "@media(min-width:38.0546rem){\n.fb{padding-block:var(--e0)}\n.fig-l{inline-size:var(--e14)}\n.nums,.say{font-size:var(--e-1)}\n.nums{max-inline-size:64ch}\n}" in _n5
+      and sorted(set(re.findall(r"[\d.]+ch\b", _nocom))) == ["32ch", "64ch"] and (32 + 1) // (3 + 1) == 8 and (64 + 1) // (3 + 1) == 16
+      and ".date{color:var(--mute)}" in _n5 and re.search(r"\.(date|zero)[^{]*\{[^}]*font-family", _n5) is None,
+      "home.css: the figure and its lines between two hairlines of the page's one weight, equal space inside, no frame, no ground; the numbers and the sentence in the machine's face, small; the numbers eight to a row and sixteen from the wide measure (a line 32 or 64 characters wide holds 8 or 16 numbers of three digits and the spaces between them, and not one more), and fewer to a row where a reader's larger type leaves less room; the calendar line and the Day 0 line as they were")
 # nothing moves for a reader who asks for less motion: every transition and animation stands inside the one block that asks for the preference
 _mo = _nocom.split("@media(prefers-reduced-motion:no-preference){")
 check(len(_mo) == 2 and not re.search(r"transition|animation|@keyframes|@view-transition", _mo[0]) and _mo[1].rstrip().endswith("}") and "/* 10 MOTION." in _css and _css.index("/* 10 MOTION.") < _css.index("@media(prefers-reduced-motion:no-preference){")
-      and ".page{transition:--open .8409s" in _mo[1] and "animation:turn calc(var(--live,0)*1.6818s)" in _mo[1] and '@property --open{syntax:"<number>";inherits:true;initial-value:.5}' in _css,
-      "home.css: one block of motion — the figure's turn as the page opens, the day at a press, the line between the readings at a door — and all of it only for a reader who has not asked for less (WCAG 2.3.3)")
+      and ".page{transition:--open .8409s" in _mo[1] and '@property --open{syntax:"<number>";inherits:true;initial-value:.5}' in _css and "--live" not in _css and "@keyframes turn" not in _css,
+      "home.css: one block of motion — the writing of the figure and its lines as the page opens and at a press, the line between the readings at a door — and all of it only for a reader who has not asked for less (WCAG 2.3.3)")
+# the writing (rc-14): only on a screen that keeps its own colours; each arc drawn from nothing to its length, its start where the ring
+# stood the day before; a number or a word appears in one step, never fades, and nothing is hidden from a reader of the text while it
+# waits (opacity, not visibility or display); the steps from the browser's own count of siblings, in one rule, and without that count
+# all at once; nothing repeats
+_wr = re.search(r"\n@media screen and \(forced-colors:none\)\{\n(.*?)\n\}\n\}\s*$", _mo[1], re.S)
+_wb = _wr.group(1) if _wr else ""
+check(_wr is not None and _wb == ".arc circle{transition:--day .5s ease-out;animation:draw .5s ease-out backwards}\n.t0 span,.t1 span{animation:on 0s backwards}\n@keyframes draw{from{stroke-dasharray:0 var(--m)}}\n@keyframes on{from{opacity:0}}\n"
+      "@supports (order:sibling-index()){\n.arc circle,.t0 span,.t1 span{--w:calc((sibling-index() - 1)*.0743s);transition-delay:var(--w);animation-delay:var(--w)}\n}"
+      and _nocom.count("sibling-index()") == 2 and _nocom.count("@keyframes") == 2 and not re.search(r"infinite|alternate|iteration|visibility:hidden|steps\(", _wb) and _nocom.count("animation:") == 2
+      and abs(15 * .0743 + .5 - 1.6145) < 1e-9,
+      "home.css: the figure and its lines are written once as the page opens and once at each press, only on a screen that keeps its own colours: an arc grows from where its ring stood the day before, a number or a word appears in one step; the steps (0.0743 s, ring after ring, sixteen rings in 1.61 s) come from sibling-index() in one rule, and without it everything stands at once")
 _f = _pj["figure"]
 check(list(_f) == ["day", "core_sha256", "modulus", "start", "step", "position", "rule"] and _f["day"] == _day and _f["core_sha256"] == _sha == _pj["record"][0]["sha256_txt"] and _f["modulus"] == _M and _f["start"] == [_hb[2 * i] for i in range(16)] and _f["step"] == [_hb[2 * i + 1] + 1 for i in range(16)]
-      and _f["position"] == [(_hb[2 * i] + _day * (_hb[2 * i + 1] + 1)) % _M[i] for i in range(16)] and _f["rule"] == list(FIGURE.RULE) and len(_f["rule"]) == 5 and _pj["figure_note"] == "Nobody drew today's figure."
+      and _f["position"] == [(_hb[2 * i] + _day * (_hb[2 * i + 1] + 1)) % _M[i] for i in range(16)] and _f["rule"] == list(FIGURE.RULE) and len(_f["rule"]) == 5 and _pj["figure_note"] == _REST
       and re.search(r'"position": \[\d+(, \d+){15}\],\n', _pv["json"]) is not None,
       "home as data: the figure as numbers, each recomputed here from the Core's bytes and the day, with the rule to recompute it; a list of numbers stands on one line")
 # the data form: CZ time counts days — nothing in it counts years (24 Nov 2026); everything else machines relied on is still there
@@ -895,7 +937,7 @@ check(len(_src) >= 19 and all(len(s) > 20 for s in _src) and [r["source"] for r 
       f"home: every part's reason is in its data-src; the data form's reasons are those {len(_src)}, in the page's order; the table on /how-it-is-built begins with the same rows and goes on with the reasons of the whole page")
 _names = {w for k in ("originating_concept", "originating_dialogue", "human_publisher") for w in re.findall(r"[A-Za-z]{4,}", str(CORE_JSON.get(k, "")))} - {"with", "human", "Human", "dialogue", "concept", "publisher", "originating", "publication", "responsibility"}
 _products = r"\b(Anthropic|Claude|OpenAI|GPT-|Gemini|Grok|DeepSeek|Llama|Mistral|Copilot)\b"
-check(not re.search(r"proposed on|not yet decided", " ".join(_src)) and sum("decided by the artificial intelligence that builds the site, 23 Nov 2026 UTC (CZ 1454)" in s for s in _src) >= 4 and "24 Nov 2026" not in " ".join(_src).replace("in the first screen since 24 Nov 2026 (CZ 1455)", "").replace("E: the originator's request of 24 Nov 2026 UTC (CZ 1455): in the invitation to ask an AI, the words that are the machine's part stand in the machine's colour", "")
+check(not re.search(r"proposed on|not yet decided", " ".join(_src)) and sum("decided by the artificial intelligence that builds the site, 23 Nov 2026 UTC (CZ 1454)" in s for s in _src) >= 4 and "24 Nov 2026" not in " ".join(_src).replace("in the first screen since 24 Nov 2026 (CZ 1455)", "").replace("E: the originator's request of 24 Nov 2026 UTC (CZ 1455): in the invitation to ask an AI, the words that are the machine's part stand in the machine's colour", "").replace("E: the originator's idea of 24 Nov 2026 UTC (CZ 1455): the figure and its lines are one thing", "")
       and not re.search(_products, " ".join(_src)) and not re.search(r"\d+ (entries|answers|responses|humans|machines)", " ".join(_src)),
       "home, the reasons: what was proposed is decided, and each such reason says by whom, on which day (UTC, as the site dates) and on whose request; none names a product or carries a count")
 # the reasons control (rc-11): one sentence and a real switch under the line on who reads; it shows, beside each part, the reason
@@ -977,7 +1019,7 @@ check(_mine.replace("Civilization Zero is kept as an independent record, intende
       and _pj["maintained_by"] in _mine and _pj["built_by"] in _mine and re.findall(r'href="([^"]+)"', re.search(r"<footer.*?</footer>", _ph, re.S).group(0)) == re.findall(r'href="([^"]+)"', re.search(r"<footer.*?</footer>", (PUBLIC / "core.html").read_text("utf-8"), re.S).group(0).replace("/core.md", "/index.md")),
       "home: the foot says what every page's foot says, with the same links, and who keeps and who builds the site")
 # the text and Markdown forms say what the page says, in its order
-_words = [HEADLINE, f"CZ calendar · Day {_day:,}", CAL_NOTE, "Nobody drew today's figure.", SECOND_LINE, WHO, "Are you human? Either answer opens the record.", "I am human", "Read the Core", "Say what you think", "Ask your AI", "I am not human",
+_words = [HEADLINE, f"CZ calendar · Day {_day:,}", CAL_NOTE, " ".join(_n0), _REST, SECOND_LINE, WHO, "Are you human? Either answer opens the record.", "I am human", "Read the Core", "Say what you think", "Ask your AI", "I am not human",
           "Both kinds read this record every day. The counts are public.", "From the Declaration", "It places honesty before mythology.", "THE RECORD BEGINS HERE.", "Read the whole Declaration", "What is Civilization Zero?", "days since ChatGPT was released",
           "Civilization Zero is kept as an independent record", "No trackers, no cookies, no scripts that observe readers"]
 for _form in ("html", "txt", "md"):
@@ -992,7 +1034,7 @@ check(_pv["md"].startswith("---\ntitle: ") and "\n# [Civilization Zero (CZ)](htt
 _tokens = dict(re.findall(r"(--e-?\d+):([\d.]+)rem", _css))
 check(len(_tokens) >= 15 and not [(k, v) for k, v in _tokens.items() if abs(float(v) - 2 ** (int(k[3:]) / 4)) > 6e-5], "home.css: every token is the module times a power of the ratio, the sixteenth root of sixteen")
 _tv = list(_tokens) + ["--l1", "--l2", "--bg", "--fg", "--mute", "--rule", "--machine", "--fill-on", "--machine-on", "--human", "--exact"] + (["--why"] if "--why:" in _css else [])
-check(not [k for k in _tv if _nocom.count(f"var({k})") == 0] and set(re.findall(r"var\((--[a-z][\w-]*)", _nocom)) <= set(_tv) | {"--open", "--h", "--n", "--today", "--day", "--a", "--s", "--m", "--live"}, "home.css: no token is defined and not used, and none is used that is not defined")
+check(not [k for k in _tv if _nocom.count(f"var({k})") == 0] and set(re.findall(r"var\((--[a-z][\w-]*)", _nocom)) <= set(_tv) | {"--open", "--h", "--n", "--today", "--day", "--a", "--s", "--m", "--w"}, "home.css: no token is defined and not used, and none is used that is not defined")
 _decl = re.sub(r":root\{.*?\}", "", _nocom, count=1, flags=re.S)
 _POW = {round(2 ** (k / 4), 4) for k in range(-24, 32)}
 _loose = sorted({n + u for n, u in re.findall(r"(?<![\w#(.-])(\d*\.?\d+)(rem|em|px|s)\b", _decl) if float(n) != 0 and (u == "px" or round(float(n), 4) not in _POW)})
@@ -1111,7 +1153,7 @@ check(set(_df) == {"core_sha256", "html"} and _df["core_sha256"] == _sha == PUBL
       and 'role="img" aria-label="The figure of Day __FIG_DAY__: sixteen rings round an empty centre, each carrying one arc."' in _dfh,
       "room/cz-bar.json, dayfigure: the frame of a day's figure — the first page's own geometry and tracks, one place for the arcs, the day's number, a text alternative — and the Core's SHA-256 from the Core's bytes")
 check(_h.unescape(re.search(r"<figcaption>(.*?)</figcaption>", _dfh).group(1)) == "Day __FIG_DAY__'s figure: computed from the day's number and the text of the Core."
-      and "computed, like today's, from the day's number and the text of the Core" in _h.unescape(T["html"]),
+      and "computed, like today's, from the day's number and the text of the Core" in _strip(T["html"]),
       "a day's figure on /calendar: under it the one sentence, in the words the first page uses for tomorrow's")
 _cal0 = (PUBLIC / "calendar.html").read_text("utf-8")
 _fig_li = re.search(r'<li id="figure"><strong>Every day has a figure</strong>(.*?)</li>', _cal0, re.S)

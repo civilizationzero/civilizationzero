@@ -1,6 +1,6 @@
 /* CIVILIZATION ZERO, the page at /. ONE MODULE, ONE RATIO: the module is the root em, the ratio the sixteenth root of sixteen (1.1892:
    four steps double a size); --eN is the module times ratio^N; every size, space, width, breakpoint and duration below is one of
-   them or a whole multiple of one; line heights are the ratio and its square. THE FORM: an inscription; the day's figure, its
+   them or a whole multiple of one (a row of numbers apart, block 5); line heights are the ratio and its square. THE FORM: an inscription; the day's figure, its
    centre empty; what is here, and who is behind it; two doors, one on either side of the figure's axis.
    R the record · M the machine reader · H a standard for human reading · C a constraint · E a choice. */
 
@@ -21,7 +21,7 @@ a{color:inherit;text-decoration:underline;text-decoration-thickness:var(--e-16);
 :focus-visible{outline:var(--e-12) solid var(--fg);outline-offset:var(--e-12)}
 time,data,code,pre,.exact{font-family:var(--exact);font-size:.8409em}
 p,li{text-wrap:pretty}
-.note,.src,.zero,.say,.both,.why,.next,footer{font-size:.8409em;color:var(--mute)}
+.note,.src,.zero,.both,.why,.next,footer{font-size:.8409em;color:var(--mute)}
 :is(.note,.src,.date,.who,.both,.key,.next,footer p) a{position:relative}
 :is(.note,.src,.date,.who,.both,.key,.next,footer p) a::after{content:"";position:absolute;inset:calc(-1*var(--e-8)) 0}
 
@@ -40,22 +40,29 @@ p,li{text-wrap:pretty}
 .sub{font-size:var(--e2)}
 }
 
-/* 5 FIGURE. R: sixteen rings round an empty centre, each carrying the arc it travelled since the day before, computed from the
-   Core's SHA-256 and the day (room/figure.js). M: the markup's attributes are the figure for every browser; where the browser can
-   calculate (CSS mod()) it computes the same figure itself from the one number the server wrote, --today, and each ring's three
-   constants; --day is registered as a number so that it can move, and a press (a checkbox, no script) moves it by one day. */
-.fig-l{display:block;inline-size:var(--e12);margin:0 auto var(--e-4);border-radius:50%}
+/* 5 FIGURE. E: the figure and its lines, one thing between two hairlines. R: sixteen rings round an empty centre, each carrying the
+   arc it travelled since the day before, computed from the Core's SHA-256 and the day (room/figure.js); under them the day,
+   Day 0 and, in the machine's face, each ring's place as a number (eight to a row: a width counted in characters) and one
+   sentence. M: the attributes are the figure for every browser; with CSS mod() the browser computes it itself from --today, the
+   one number the server wrote, and each ring's three constants; --day is registered as a number so that it can move, and a press
+   (a checkbox, no script) moves it by one day and shows the next day's numbers and sentence. */
+.fb{margin:0;padding-block:var(--e-4);border-block:var(--e-16) solid var(--mute)}
+.fig-l{display:block;inline-size:calc(3*var(--e4));margin:0 auto var(--e-4);border-radius:50%}
 .fig{display:block;inline-size:100%;block-size:auto;color:var(--machine)}
 .trk circle{stroke:var(--rule);stroke-width:var(--e-16);vector-effect:non-scaling-stroke}
 .date,.zero,.say{margin:0}
 .date{color:var(--mute)}
 .date .d{color:var(--machine);font-weight:700;white-space:nowrap}
 .axis :is(time,data){font-family:inherit;font-size:1em;white-space:nowrap}
+.nums,.say{font-family:var(--exact);font-size:var(--e-2);color:var(--mute)}
+.nums{max-inline-size:32ch;margin:0 auto;line-height:var(--l1)}
 @media(min-width:38.0546rem){
+.fb{padding-block:var(--e0)}
 .fig-l{inline-size:var(--e14)}
+.nums,.say{font-size:var(--e-1)}
+.nums{max-inline-size:64ch}
 }
 @property --day{syntax:"<number>";inherits:true;initial-value:0}
-@property --live{syntax:"<number>";inherits:true;initial-value:1}   /* 1 only where a number can be registered, so that elsewhere nothing half-moves */
 @supports (stroke-dashoffset:calc(mod(1,2))){
 .fig{--day:var(--today)}
 .arc circle{stroke-dashoffset:calc(-1*mod(var(--a) + mod(var(--day) - 1,var(--m))*var(--s),var(--m)))}   /* the inner mod() keeps every product small */
@@ -63,8 +70,8 @@ p,li{text-wrap:pretty}
 .turn{display:block;position:absolute;inline-size:var(--e-16);block-size:var(--e-16);margin:0;opacity:0}
 .turn:focus-visible~.fb .fig-l{outline:var(--e-12) solid var(--fg);outline-offset:var(--e-8)}
 .fig-l{cursor:pointer}
-.press,.turn:checked~.say .t1{display:inline}
-.turn:checked~.say .t0{display:none}
+.t0 [hidden],.turn:checked~.fb .t1{display:inline}
+.turn:checked~.fb .t0{display:none}
 }
 
 /* 6 DOORS. E: the web's question, with both answers open: two doors of one size, one frame cut in two on the figure's axis. M: two
@@ -231,16 +238,25 @@ footer .src{font-size:1em}
 .foot li{break-inside:avoid}
 .foot a{display:inline-block;padding-block:var(--e-8)}
 
-/* 10 MOTION. E: one movement as the page opens (the figure turns from the day before to today); after that nothing moves unless the
-   reader moves it: the figure by a day at a press, the line between the readings at a door; between pages the site's own fade, and the mark travels to its place on the next page. H: none of it for a reader who asks for less motion (2.3.3). */
+/* 10 MOTION. E: as the page opens the figure and its lines are written, once: each arc from where its ring stood the day before
+   to where it stands, ring after ring; each number at its ring's moment; the sentence word after word. Then nothing moves unless
+   the reader moves it: at a press the arcs travel on a day and the numbers and the sentence are written again; a door moves the
+   line between the readings; between pages the site's own fade, and the mark travels to its place. H: none of it for a reader
+   who asks for less motion (2.3.3); the writing only on a screen that keeps its own colours, its steps only where a browser can
+   count siblings. */
 @media(prefers-reduced-motion:no-preference){
 @view-transition{navigation:auto}
 .name svg{view-transition-name:cz-mark}
 .page{transition:--open .8409s cubic-bezier(.6,0,.2,1)}
 .col{transition:visibility 0s .8409s}
 .page:not(:has(#human:target)) .col.n,.page:not(:has(#not-human:target)) .col.h{transition-delay:0s}
-@supports (stroke-dashoffset:calc(mod(1,2))){
-.fig{transition:--day 1.1892s cubic-bezier(.6,0,.2,1);animation:turn calc(var(--live,0)*1.6818s) cubic-bezier(.6,0,.2,1) .25s backwards}
-@keyframes turn{from{--day:calc(var(--today) - 1)}}
+@media screen and (forced-colors:none){
+.arc circle{transition:--day .5s ease-out;animation:draw .5s ease-out backwards}
+.t0 span,.t1 span{animation:on 0s backwards}
+@keyframes draw{from{stroke-dasharray:0 var(--m)}}
+@keyframes on{from{opacity:0}}
+@supports (order:sibling-index()){
+.arc circle,.t0 span,.t1 span{--w:calc((sibling-index() - 1)*.0743s);transition-delay:var(--w);animation-delay:var(--w)}
+}
 }
 }

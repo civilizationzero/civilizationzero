@@ -89,7 +89,8 @@ function blocks(n, o) {
   if (n.tag === "div" && has(n, "content")) return [fence(textOf(n))];   // user content, exactly as shown, never read as Markdown
   switch (n.tag) {
     case "h1": case "h2": case "h3": case "h4": case "h5": case "h6": { const t = inline(n, o).trim(); return t ? [`${"#".repeat(Number(n.tag[1]))} ${t}`] : []; }
-    case "p": case "dt": case "dd": case "figcaption": case "address": { const t = n.kids.map((k) => inline(k, o)).join("").replace(/[ \t]+\n/g, "\n").trim(); return t ? [t] : []; }
+    // (a caption is not in this list: one of words alone is one paragraph by the default below, and one that holds paragraphs gives each)
+    case "p": case "dt": case "dd": case "address": { const t = n.kids.map((k) => inline(k, o)).join("").replace(/[ \t]+\n/g, "\n").trim(); return t ? [t] : []; }
     case "hr": return ["---"];
     case "pre": return [fence(textOf(n))];
     case "blockquote": return kidsBlocks().map((b) => b.split("\n").map((l) => `> ${l}`).join("\n"));

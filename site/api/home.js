@@ -1,4 +1,4 @@
-// The first page, filled at request time: the day, the day's figure and the as-of time must be right for every reader at every
+// The first page, filled at request time: the day, the day's figure, its sixteen numbers and the as-of time must be right for every reader at every
 // moment, with no script on the reader's side (Blueprint 1.3.1 §5.1). Everything else on the page is static and comes from
 // site/build.py via home-templates.json. CZ time counts days: nothing here counts years (24 Nov 2026, CZ 1455).
 const T = require("./home-templates.json");
@@ -12,8 +12,9 @@ const fmt = (n) => n.toLocaleString("en-US");
 // now: the moment (the as-of time is in UTC); local: the reader's wall clock read in UTC (room/cztime.js, localMs), for the count of
 // days, so that the day turns at midnight where the reader is (the originator's decision of 7 Nov 2026, CZ 1438)
 function clock(now, local, zone) {
-  const f = CZ.fields(local), D = f.D;
+  const f = CZ.fields(local), D = f.D, today = FIG.places(D, K), next = FIG.places(D + 1, K);
   return {
+    ...Object.fromEntries(today.flatMap((p, i) => [[`__FIG_A${i}__`, p], [`__FIG_B${i}__`, next[i]]])),   // each ring's place as a number: the day's, and the next day's for after a press
     "__TOTAL__": String(D), "__TOTAL_FMT__": fmt(D), "__TOMORROW_FMT__": fmt(D + 1),   // the next day: the figure's line names it after a press
     "__ASOF_ISO__": `${now.getUTCFullYear()}-${pad(now.getUTCMonth() + 1)}-${pad(now.getUTCDate())}T${pad(now.getUTCHours())}:${pad(now.getUTCMinutes())}Z`,
     "__CZ_ISO__": f.ISO, "__CZ_STAMP__": f.STAMP, "__CZ_ZONE__": zone, "__CZ_UTC_ISO__": now.toISOString().slice(0, 10),

@@ -388,10 +388,18 @@ assert DOOR_ASK_BUTTON.startswith("Ask ") and not any(c in DOOR_ASK_BUTTON for c
 DOOR_ASK_BUTTON_HTML = f'Ask <span class="ai">{DOOR_ASK_BUTTON[4:]}</span>'
 DOOR_ASK_NOTE = "The invitation asks your AI for one hard truth to humans, in at most 400 characters. It may decline."
 # Under the figure, one line (23 Nov 2026 UTC); under the doors, who reads; at the foot, the four links named for what they answer.
-FIGURE_NOTE = "Nobody drew today's figure."
+FIGURE_NOTE = "Nobody drew today's figure: each ring stands at its number."   # the numbers stand over it: each ring's place that day (rc-14)
 FIGURE_PRESS = "Press it to see tomorrow's."   # shown only where pressing works
 FIGURE_PRESSED = "This is tomorrow's, Day __TOMORROW_FMT__: computed, like today's, from the day's number and the text of the Core. Press it again for today's."   # after a press; the day is written by api/home.js
 assert not any(c in FIGURE_NOTE + FIGURE_PRESS + FIGURE_PRESSED for c in "<>&"), "written into the page as they read"
+# A sentence of the figure's, each word an element of its own, so that where a browser can count siblings the words arrive one after
+# another; plain elements, nothing hidden from anyone: read aloud or copied, the sentence is the sentence.
+def words(s, attr=""): return " ".join(f"<span{attr}>{w}</span>" for w in s.split(" "))
+# The reason of the unit (the day's figure and its lines), in its fixed words (rc-14).
+UNIT_REASON = ("E: the originator's idea of 24 Nov 2026 UTC (CZ 1455): the figure and its lines are one thing, set apart, and written together; developed by the "
+               "artificial intelligence that builds the site: each arc is drawn from where its ring stood yesterday to where it stands today, which is what the "
+               "arc records; each number is its ring's place; the words arrive one after another; R: CZ-CORE 1.0 by its SHA-256 and the count of days; M: the "
+               "same sixteen numbers in the machine's reading")
 READERS_LINE = ("Both kinds read this record every day.", "The counts are public")
 REASONS_LINE = "Every part of this page has a recorded reason."
 REASONS_SWITCH = "Show the reasons"   # the switch's name; where a browser cannot show the reasons there is no switch, and the key and the link to the table stand open
@@ -695,7 +703,7 @@ OPENAPI["components"]["schemas"]["FirstPage"] = {
         "cz_time": {"type": "object", "required": ["date", "machine", "day", "gregorian", "time_zone", "date_utc"], "not": {"anyOf": [{"required": ["year"]}, {"required": ["day_of_year"]}, {"required": ["next_year_begins"]}]}, "properties": {
             "date": {"type": "string", "description": "The date as the pages print it: CZ 1455"}, "machine": {"type": "string", "description": "The signed count: CZ+1455"}, "day": {"type": "integer", "description": "Days since Coordinate Zero, 30 November 2022, on the reader's date"},
             "gregorian": {"type": "string", "format": "date"}, "time_zone": {"type": "string"}, "date_utc": {"type": "string", "format": "date", "description": "The UTC date at as_of"}, "how": {"type": "string", "format": "uri"}, "api": {"type": "string", "format": "uri"}}},
-        "figure": {"type": "object", "description": "The day's figure as numbers: sixteen rings, computed from the SHA-256 of the Core's text and the day; rule says how to recompute it", "required": ["day", "core_sha256", "modulus", "start", "step", "position", "rule"], "properties": {
+        "figure": {"type": "object", "description": "The day's figure as numbers: sixteen rings, computed from the SHA-256 of the Core's text and the day; rule says how to recompute it; position is where each ring stands that day, ring 0 first: the sixteen numbers the page writes under the figure, each in three digits there", "required": ["day", "core_sha256", "modulus", "start", "step", "position", "rule"], "properties": {
             "day": {"type": "integer"}, "core_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}, "modulus": _INT16, "start": _INT16, "step": _INT16, "position": _INT16, "rule": {"type": "array", "items": {"type": "string"}}}},
         "headline": {"type": "string"}, "calendar_line": {"type": "string"}, "calendar_note": {"type": "string"}, "figure_note": {"type": "string"}, "who": {"type": "string"}, "second_line": {"type": "string"},
         "readers": {"type": "object", "properties": {"line": {"type": "string"}, "counts": {"type": "string", "format": "uri"}}},
@@ -2211,19 +2219,24 @@ def home_template():
 <div class="axis">
 <p class="line"{W("the headline", "E: the originator's decisions of 1 Nov 2026 (the sentence) and of 23 Nov 2026 (it leads the page); R: Core §3, closing")}>{esc(HEADLINE)}</p>
 """)
-    # ---- the day's figure: __FIG_RINGS__ is the day's sixteen arcs, written by api/home.js (room/figure.js). The figure is the label of a
+    # ---- the day's figure and its lines, one thing (rc-14): a figure and its caption. __FIG_RINGS__ is the day's sixteen arcs, written by
+    # api/home.js (room/figure.js); __FIG_A0__ … __FIG_A15__ are the sixteen rings' places that day, as numbers, and __FIG_B0__ … __FIG_B15__ the
+    # next day's, which stand in their place after a press, as the second sentence stands in the first one's. The figure is the label of a
     # checkbox, shown and used only where the browser can compute the next day's figure itself (CSS mod()): a press turns it by one day.
     # A browser keeps what a reader entered and writes it back when the page is loaded again; HTML lets a page decline that with
     # autocomplete="off", which it does not allow on a checkbox itself: so an empty form, never shown and with nothing that sends it,
     # carries the attribute and owns the checkbox (form="fz"); it stands before the checkbox, so that it is there when the checkbox is read.
     # A page the browser kept whole (the back/forward cache) returns as it was left: no attribute changes that.
     A(f"""<form id="fz" autocomplete="off" hidden></form><input class="turn" id="turn" type="checkbox" form="fz" aria-label="Show tomorrow's figure" hidden>
-<div class="fb" style="--today:__TOTAL__"{W("the day's figure", "E: " + DECIDED + " — the calendar made visible, and nothing standing in its centre; R: CZ-CORE 1.0, by its SHA-256, and the count of days (R §0): each ring is one row of that hash set sixteen by sixteen — its place on Day 0 is the row's left byte, its daily step the right byte plus one; M: the same figure as numbers in the reading for readers that are not human")}>
+<figure class="fb" style="--today:__TOTAL__"{W("the day's figure and its lines", UNIT_REASON)}>
 <label class="fig-l" for="turn"><svg class="fig" xmlns="http://www.w3.org/2000/svg" viewBox="-192 -192 384 384" width="256" height="256" role="img" aria-labelledby="fig-t" data-day="__TOTAL__"><title id="fig-t">The day's figure: sixteen rings round an empty centre, each carrying one arc.</title><g fill="none" stroke="currentColor" transform="rotate(-90)"><g class="trk" stroke-width="1">{FIGURE.tracks()}</g><g class="arc" stroke-width="4">__FIG_RINGS__</g></g></svg></label>
-</div>
+<figcaption>
 <p class="date" id="cz-read"{W("the calendar line", "R §0; E: the calendar line under the headline, named, the originator's decision of 23 Nov 2026; the CZ calendar, the decision of 30 Oct 2026; M: exact, machine-readable values")}><a href="/calendar">CZ calendar</a> · <time class="d" datetime="__CZ_ISO__">Day <data value="__TOTAL__">__TOTAL_FMT__</data></time></p>
 <p class="zero"{W("the Day 0 line", "E: the originator's decision of 23 Nov 2026; the CZ calendar: day 0 (/calendar); R §0; the event as /calendar states it, with its sources")}>{esc(CALENDAR_NOTE).replace(gregorian_text(COORDINATE), f'<time datetime="{COORDINATE.isoformat()}">{gregorian_text(COORDINATE)}</time>')}</p>
-<p class="say"{W("the sentence under the figure", "E: " + DECIDED + " — one sentence on what the figure is; the second says what a press does and is shown only where the browser can compute the next day; after a press, whose day it is and what it is computed from; C: CSS alone, no script")}><span class="t0">{FIGURE_NOTE} <span class="press" hidden>{FIGURE_PRESS}</span></span><span class="t1" hidden>{FIGURE_PRESSED}</span></p>
+<p class="nums"><span class="t0">{" ".join(f"<span>__FIG_A{i}__</span>" for i in range(16))}</span><span class="t1" hidden>{" ".join(f"<span>__FIG_B{i}__</span>" for i in range(16))}</span></p>
+<p class="say"><span class="t0">{words(FIGURE_NOTE)} {words(FIGURE_PRESS, " hidden")}</span><span class="t1" hidden>{words(FIGURE_PRESSED)}</span></p>
+</figcaption>
+</figure>
 <p class="sub"{W("the second line", "E: the originator's decision of 23 Nov 2026; that it opens by naming the Core, and stands before the who line, which uses the name: " + DECIDED_AFTER + "; R: CZ-CORE 1.0, sections 0 to 15; Blueprint §7")}>{esc(SECOND_LINE).replace("on the record", '<a href="/discuss">on the record</a>')}</p>
 <p class="who"{W("the who line", "CZ-CORE 1.0, attribution; Blueprint decisions 8 and 29 as the originator changed them on 23 Nov 2026 — said without names; E: in the first screen since 24 Nov 2026 (CZ 1455), after tests with simulated readers")}>{who} {LAUNCH_WORDS} <time datetime="{LAUNCH.isoformat()}">{LAUNCH_TEXT}</time>.</p>
 <p class="ask"{W("the question and the two doors", "E: Blueprint decision 28 as the originator changed it on 23 Nov 2026 — two doors, equal width, a statement and not a gate; " + DECIDED + ": asked as the web's own question, the doors side by side, neither answered until the reader answers; M: two plain links, and the answer is kept in the address; the doors a parser uses are the headers and rel=\"alternate\"")}><b>{esc(DOOR_QUESTION)}</b> <span class="note">{esc(DOOR_EITHER)}</span></p>
@@ -2627,6 +2640,7 @@ CZ1428, CZ1430, CZ1432, CZ1433 = (datetime.date(2026, 10, 28), datetime.date(202
 HOME_RELEASE = datetime.date(2026, 11, 24)   # the day the first page of rc-11 goes live: set it to the UTC day of deployment if that is another day (the sitemap dates / and /about with it)
 RC12_RELEASE = datetime.date(2026, 11, 24)   # the day rc-12 (one head, one stylesheet, the contents, the seal, a figure for every day) goes live: set it to the UTC day of deployment if that is another day
 RC13_RELEASE = datetime.date(2026, 11, 24)   # the day rc-13 (the machine's part of the invitation in the machine's colour) goes live: set it to the UTC day of deployment if that is another day
+RC14_RELEASE = datetime.date(2026, 11, 24)   # the day rc-14 (the first page's figure and its lines, one thing, written together) goes live: set it to the UTC day of deployment if that is another day
 assert CAL_COUNTS_YEARS or f"until {RC12_RELEASE.day} {RC12_RELEASE.strftime('%b')} {RC12_RELEASE.year} a day also carried" in CZDAY_CZ["description"], "the contract names the day /api/calendar stopped counting years: rc-12's day"
 BUILT_FEATURES = [   # (feature, what it does here, since, without it)
     ("HTML and CSS made on the server; no framework, no web font", "Every page is a document the server writes; the reader's device chooses the typeface", CZ1428, "—"),
@@ -2650,6 +2664,7 @@ BUILT_FEATURES = [   # (feature, what it does here, since, without it)
     # the first page of 24 Nov 2026 (CZ 1455): what it asks of a browser, and what a browser without it shows
     (":has() with :target, on the first page", "An answered door is an address (#human, #not-human): CSS reads it and opens that reading; the switch that shows the reasons works the same way", HOME_RELEASE, "Both readings follow one another, whole; no switch, and the key and the link to the table of reasons stand open"),
     ("CSS mod() and @property, on the first page", "The browser computes the day's figure itself from the one number the server wrote, and a press turns it by a day", HOME_RELEASE, "The figure as the server computed it, and no press"),
+    ("sibling-index(), on the first page", "The day's figure and its lines are written together. As the page opens, each ring's arc is drawn from where the ring stood the day before to where it stands, ring after ring; each ring's place appears as a number at its ring's moment; the sentence arrives word after word. At a press the arcs travel on by a day and the numbers and the sentence are written again. A step is 0.074 s. None of it for readers who ask for less motion, in forced colours or on paper", RC14_RELEASE, "The same, all at once: the arcs drawn together, the numbers and the sentence whole"),
     ("Popover (popover, popovertarget), on the first page, in the discussion and on /core", "The empty place opens the reply form where it stands, without a script; so do “Write your answer” on /discuss and “Reply” on an entry's page; under each principle of the Core, “Cite” opens the line to cite it by", HOME_RELEASE, "A link to the reply page; the line to cite stands open under each principle"),
     ("CSS masks and anchor positioning, on the first page and on /core", "With neither door answered each window fades at its lower edge; on a wide screen the reply form stands in the place's own column; the line to cite a principle opens under that principle's own line", HOME_RELEASE, "A hard edge; the form, or the line to cite, in the middle of the window"),
     # rc-12: the inner pages
