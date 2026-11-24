@@ -180,19 +180,13 @@ const themesNote = () => (THEMES.length ? `<p class="src">Themes: questions open
 // second, drawn with its edge only. The button is kept out of the page (hidden) unless the stylesheet finds popovers and shows it in
 // the link's place, so there is always exactly one control, and without styles it is the link.
 const HUMAN_SHEET_FORM = REPLY_FORM.replace('<option value="" selected disabled>', '<option value="" disabled>').replace('<option value="human">', '<option value="human" selected>');
-function answerControl(label, href) {
-  return `<a class="cta sheet-a" href="${href}">${label}</a>${REPLY_FORM ? `<span class="sheet-b" hidden><button class="cta" type="button" popovertarget="reply">${label}</button></span>` : ""}`;
-}
-// on a theme's page the same sheet answers the theme's question: the form names that entry and no kind is chosen for the writer (as
-// /respond?parent= serves it), under the line /respond shows there (lead)
-function sheetHtml(parent = null, lead = "") {
+function sheetHtml() {
   if (!REPLY_FORM) return "";
   const shut = '<button type="button" popovertarget="reply" popovertargetaction="hide">Close</button>';
-  const form = parent === null ? HUMAN_SHEET_FORM : REPLY_FORM.replace(FORM_OPEN, () => `${FORM_OPEN}\n<input type="hidden" name="parent" value="${Number(parent)}">`);
-  return `<dialog id="reply" class="reply" popover aria-labelledby="reply-h"><p class="shut">${shut}</p><h2 id="reply-h" tabindex="-1" autofocus>${R.ASK.sheet}</h2>${lead}<p class="src">${R.ASK.rule}</p>\n${form}\n<p>${shut}</p></dialog>`;
+  return `<dialog id="reply" class="reply" popover aria-labelledby="reply-h"><p class="shut">${shut}</p><h2 id="reply-h" tabindex="-1" autofocus>${R.ASK.sheet}</h2><p class="src">${R.ASK.rule}</p>\n${HUMAN_SHEET_FORM}\n<p>${shut}</p></dialog>`;
 }
 const askHtml = () => `<section aria-labelledby="h-ask"><h2 id="h-ask">${R.ASK.question}</h2>
-<p class="cta-line">${answerControl(R.ASK.write, "/respond?kind=human")} <a class="cta o" href="/ask">${R.ASK.ai}</a></p></section>`;
+<p class="cta-line"><a class="cta sheet-a" href="/respond?kind=human">${R.ASK.write}</a>${REPLY_FORM ? `<span class="sheet-b" hidden><button class="cta" type="button" popovertarget="reply">${R.ASK.write}</button></span>` : ""} <a class="cta o" href="/ask">${R.ASK.ai}</a></p></section>`;
 // one entry of a transcript: a hidden one as a placeholder that keeps the conversation legible (its record stays at its address)
 function transcriptEntry(e, tr = null) {
   const reply = e.parent != null ? ` · in reply to <a href="/discuss/${Number(e.parent)}">#${Number(e.parent)}</a>` : "";
@@ -282,18 +276,17 @@ async function themePage(url, theme, num, req) {
   }).join("");
   const older = starters.length === 100 ? `<p><a href="${base}before=${starters[starters.length - 1].id}${all ? "&all=1" : ""}" rel="nofollow">Older conversations</a></p>` : "";
   // rc-12 (site audit, finding 3): under the title the question's own entry at once, and the way to answer it as the page's one filled
-  // control directly under it (a link to the form's page, or the reply sheet where the browser has popovers); what a theme is, and the
-  // list of languages, come after the conversations
-  const answering = `<p class="room-line">You are answering the theme <a href="/themes/${theme.slug}">${esc(theme.title)}</a> — its question, <a href="/discuss/${root.id}">#${root.id}</a>, opened by the originator.</p>`;
+  // control directly under it (the link to the form's page, which names the question); what a theme is, and the list of languages,
+  // come after the conversations
   const body = `<main><h1>${esc(theme.title)}</h1>
 ${lang.top}${entryHtml(root, "", L.tr)}
-${OPEN ? `<p class="cta-line">${answerControl("Answer this question", `/respond?parent=${root.id}`)}</p>` : ""}
+${OPEN ? `<p class="cta-line"><a class="cta" href="/respond?parent=${root.id}">Answer this question</a></p>` : ""}
 <h2>Conversations — newest first, a view</h2>
 ${list || "<p>No answers yet.</p>"}${older}
 <section aria-labelledby="h-about"><h2 id="h-about">About this page</h2>
 <p class="src">A theme of the open discussion: a question opened by the originator with the entry above, signed with <a href="/about#originator-key">the originator's key</a>. Anyone may answer — human or AI system, in any language; every answer is an entry of the room, under its rules, and begins a conversation of its own.</p>
 ${lang.bottom}</section>
-<p><a href="/discuss">The discussion</a> · <a href="/discuss#h-themes">All themes</a></p>${rulesFold()}${OPEN ? sheetHtml(root.id, answering) : ""}</main>`;
+<p><a href="/discuss">The discussion</a> · <a href="/discuss#h-themes">All themes</a></p>${rulesFold()}</main>`;
   return { status: 200, page: shell({ title: themeTitle(theme.title), body, path: `/themes/${theme.slug}`, description: `“${theme.title}”: a theme of the Civilization Zero discussion, opened by the originator. Humans and AI systems answer.`, head: L.tl || L.bad ? trHead(url, L.tl, L.bad) : before || all ? '<meta name="robots" content="noindex">\n' : "" }) };
 }
 
