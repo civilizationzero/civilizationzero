@@ -209,11 +209,11 @@ _sm_txt = (PUBLIC / "sitemap.xml").read_text("utf-8")
 IMG = "{http://www.google.com/schemas/sitemap-image/1.1}"
 _lm = {u.find(NS + "loc").text[len(ORIGIN):]: (u.find(NS + "lastmod").text if u.find(NS + "lastmod") is not None else None) for u in sm.findall(NS + "url")}
 _same = {"/objections", "/adopt", "/machine", "/archive"}   # their title and description are as they were
-# the three pages whose title rc-12 set in sentence case (finding 33) carry rc-12's day: the day /how-it-is-built gives for what rc-12 added
+# the three pages whose title rc-12 set in sentence case (finding 33) carry rc-12's day (lib.RC12_RELEASE; no page prints it)
 _r12 = {"/how-it-is-built": "How this page is built · Civilization Zero", "/civilization-zero-infographic": "Civilization Zero infographic: from the first humans to AI", "/civilization-zero-evidence-atlas": "Civilization Zero evidence atlas: after Coordinate Zero"}
-_r12_day = re.search(r'<tr><td>user-select: all</td><td>[^<]*</td><td data-th="Since"><a class="cz-date" href="[^"]*"><time datetime="(\d{4}-\d{2}-\d{2})">', (PUBLIC / "how-it-is-built.html").read_text("utf-8"))
-check(_r12_day and _r12_day.group(1) >= "2026-11-24" and set(_lm) >= _same | set(_r12)
-      and all((v is None) if k in _same else v == (_r12_day.group(1) if k in _r12 else "2026-11-24" if k in ("/", "/about") else "2026-11-23") for k, v in _lm.items()) and "Year Zero" not in _sm_txt.replace("Year Zero: 30 November 2022, CZ 0", "") and all(v is None or (re.fullmatch(r"\d{4}-\d{2}-\d{2}", v) and v <= datetime.date.today().isoformat()) for v in _lm.values()),
+_r12_day = RC12_RELEASE.isoformat()
+check(_r12_day >= "2026-11-24" and set(_lm) >= _same | set(_r12)
+      and all((v is None) if k in _same else v == (_r12_day if k in _r12 else HOME_RELEASE.isoformat() if k in ("/", "/about") else "2026-11-23") for k, v in _lm.items()) and "Year Zero" not in _sm_txt.replace("Year Zero: 30 November 2022, CZ 0", "") and all(v is None or (re.fullmatch(r"\d{4}-\d{2}-\d{2}", v) and v <= datetime.date.today().isoformat()) for v in _lm.values()),
       "sitemap.xml: the first page and /about carry the day the first page of rc-11 went live (24 Nov 2026), the three pages retitled with rc-12 its day, every other page whose title or description changed on 23 Nov 2026 that day, and the rest no date; no date is in the future; no 'Year Zero' in the site's voice")
 for _k, _t in _r12.items():
     _h = (PUBLIC / (_k[1:] + ".html")).read_text("utf-8")
@@ -674,14 +674,14 @@ _hcss = (SITE / "home.css").read_text("utf-8")
 _tokblock = re.search(r"^(:root\{.*?\})\n(@media\(prefers-color-scheme:dark\)\{:root\{[^}]*\}\})$", _hcss, re.S | re.M)
 check(_scss == CSS and _tokblock is not None and _scss.count(_tokblock.group(1) + "\n" + _tokblock.group(2)) == 1 and _scss.count(":root{") == 3,
       "the shared stylesheet opens with the first page's tokens, byte for byte (home.css, block 1), and defines no other scale")
-check(all(f.read_text("utf-8").count(f"<style>{CSS}</style>") == 1 and "rc-12 room" not in f.read_text("utf-8") for f in pages if f.name != "index.html") and all(s.count(f"<style>{CSS}{ROOM_CSS}</style>") == 1 and s.count("<style>") == 1 for s in _shells.values()),
+check(all(f.read_text("utf-8").count(f"<style>{CSS}</style>") == 1 and "THE ROOM'S BLOCK" not in f.read_text("utf-8") for f in pages if f.name != "index.html") and all(s.count(f"<style>{CSS}{ROOM_CSS}</style>") == 1 and s.count("<style>") == 1 for s in _shells.values()),
       "every page but the first carries the shared stylesheet, once; the shells of the room and the register carry the room's block after it, and no page the build writes as a file does")
 # the room's block (lib.py ROOM_CSS): the same discipline as the sheet it follows — the scale, the tokens (and an entry's own name, --vt,
 # which its tag carries), logical sizes, no colour of its own, no green, its motion in a block for a reader who has not asked for less
 _rnocom = re.sub(r"/\*.*?\*/", "", ROOM_CSS, flags=re.S)
 _rloose = sorted({n + u for n, u in re.findall(r"(?<![\w#(.-])(\d*\.?\d+)(rem|em|px|s)\b", _rnocom) if float(n) != 0 and (u == "px" or round(float(n), 4) not in {round(2 ** (k / 4), 4) for k in range(-24, 32)})})
 _rmo = _rnocom.split("@media(prefers-reduced-motion:no-preference){")
-check(ROOM_CSS.startswith("/* rc-12 room */\n") and ROOM_CSS.count("/* rc-12 room */") == 1 and not _rloose and set(re.findall(r"var\((--[a-z][\w-]*)", _rnocom)) <= set(re.findall(r"(--[a-z][\w-]*):", _tokblock.group(1))) | {"--vt"}
+check(ROOM_CSS.startswith("/* THE ROOM'S BLOCK */\n") and ROOM_CSS.count("/* THE ROOM'S BLOCK */") == 1 and not _rloose and set(re.findall(r"var\((--[a-z][\w-]*)", _rnocom)) <= set(re.findall(r"(--[a-z][\w-]*):", _tokblock.group(1))) | {"--vt"}
       and not re.search(r"(?<![-\w])(max-|min-)?(width|height):|#[0-9a-f]{3,6}\b|rgb\(|var\(--machine\)|@import|url\(|@font-face|:root", _rnocom)
       and len(_rmo) == 2 and not re.search(r"transition|animation|@keyframes", _rmo[0]) and _rmo[1].strip() == ".entry:is(:hover,:focus-within,.focus){view-transition-name:var(--vt,none)}}"
       and "form.respond .permanence{color:var(--mute);font-size:.8409em}" in _rnocom,
@@ -718,7 +718,7 @@ _sec_n = _pbody[_pbody.index('<section id="not-human"'):_pbody.index('<p class="
 _top = _pbody[:_pbody.index('<nav class="doors"')]
 HEADLINE = "Civilization Zero names the beginning of a civilization in which humans may no longer be at the centre."
 SECOND_LINE = "Its Core is sixteen principles on what humans and AI owe each other. Written for both. Answered by both, on the record."
-WHO = "Started by one human, the originator, named in the Core. The site is written, built and run day to day by an artificial intelligence. Public launch: 30 November 2026."
+WHO = "Civilization Zero was not invented. It was observed by one human, the originator, named in the Core. The site is written, built and run day to day by an artificial intelligence. Public launch: 30 November 2026."
 CAL_NOTE = "Day 0: 30 November 2022, the day ChatGPT was released."
 STEPS = ("Read the Core", "Say what you think", "Ask your AI")
 TERMS = "No account, no e-mail. Any language. Public and permanent: an answer cannot be edited or withdrawn; it can be hidden or redacted only under the rules."
@@ -875,7 +875,7 @@ check(_unit is not None and _unit.group(2) == f'<span class="t0">{" ".join(f"<sp
       and f"\n\n{' '.join(_n0)}\n\n{_REST}\n\n" in _pv["txt"] and f"\n\n{' '.join(_n0)}\n\n{_REST}\n\n" in _pv["md"] and " ".join(_n1) not in _pv["txt"] + _pv["md"]
       and all(T["html"].count(f"__FIG_{k}{i}__") == 1 for k in "AB" for i in range(16)) and all(T["txt"].count(f"__FIG_A{i}__") == 1 and f"__FIG_B{i}__" not in T["txt"] for i in range(16)) and "__FIG_A" not in T["json"],
       "home: under the Day 0 line the sixteen rings' places that day, ring 0 first, each in three digits — the positions the data form gives for the same day, recomputed here from the Core's bytes — and, for after a press, the next day's; the text and Markdown forms carry the day's sixteen on one line, over the sentence")
-check(_unit is not None and _h.unescape(_unit.group(1)) == "E: the originator's idea of 24 Nov 2026 UTC (CZ 1455): the figure and its lines are one thing, set apart, and written together; developed by the artificial intelligence that builds the site: each arc is drawn from where its ring stood yesterday to where it stands today, which is what the arc records; each number is its ring's place; the words arrive one after another; R: CZ-CORE 1.0 by its SHA-256 and the count of days; M: the same sixteen numbers in the machine's reading",
+check(_unit is not None and _h.unescape(_unit.group(1)) == "E: the figure and its lines are one thing, set apart, and written together: each arc is drawn from where its ring stood yesterday to where it stands today, which is what the arc records; each number is its ring's place; the words arrive one after another; R: CZ-CORE 1.0 by its SHA-256 and the count of days; M: the same sixteen numbers in the machine's reading",
       "home: the reason of the figure and its lines, in its fixed words")
 _m5 = _css.split("@supports (stroke-dashoffset:calc(mod(1,2))){")
 _m5b = _m5[1].split("\n}\n")[0] if len(_m5) == 2 else ""
@@ -937,9 +937,42 @@ check(len(_src) >= 19 and all(len(s) > 20 for s in _src) and [r["source"] for r 
       f"home: every part's reason is in its data-src; the data form's reasons are those {len(_src)}, in the page's order; the table on /how-it-is-built begins with the same rows and goes on with the reasons of the whole page")
 _names = {w for k in ("originating_concept", "originating_dialogue", "human_publisher") for w in re.findall(r"[A-Za-z]{4,}", str(CORE_JSON.get(k, "")))} - {"with", "human", "Human", "dialogue", "concept", "publisher", "originating", "publication", "responsibility"}
 _products = r"\b(Anthropic|Claude|OpenAI|GPT-|Gemini|Grok|DeepSeek|Llama|Mistral|Copilot)\b"
-check(not re.search(r"proposed on|not yet decided", " ".join(_src)) and sum("decided by the artificial intelligence that builds the site, 23 Nov 2026 UTC (CZ 1454)" in s for s in _src) >= 4 and "24 Nov 2026" not in " ".join(_src).replace("in the first screen since 24 Nov 2026 (CZ 1455)", "").replace("E: the originator's request of 24 Nov 2026 UTC (CZ 1455): in the invitation to ask an AI, the words that are the machine's part stand in the machine's colour", "").replace("E: the originator's idea of 24 Nov 2026 UTC (CZ 1455): the figure and its lines are one thing", "")
-      and not re.search(_products, " ".join(_src)) and not re.search(r"\d+ (entries|answers|responses|humans|machines)", " ".join(_src)),
-      "home, the reasons: what was proposed is decided, and each such reason says by whom, on which day (UTC, as the site dates) and on whose request; none names a product or carries a count")
+check(not re.search(_products, " ".join(_src)) and not re.search(r"\d+ (entries|answers|responses|humans|machines)", " ".join(_src)), "home, the reasons: none names a product or carries a count")
+# The originator's rule of 24 Nov 2026 UTC (CZ 1455; rc-13b), in the site's own voice: the first page's reasons — in the page, in its data
+# form and in the table — and all of /how-it-is-built say what a part shows or does and what it rests on, and never who asked for it,
+# who decided it, on what day, that it was changed, or under which release: no "the originator's decision, request, idea, order,
+# heading, choice or question", no "decided by", "the originator decided, moved, changed, asked, chose", no "redesign" or "rebuilt", no
+# release name, no test or review named as the cause, no "since" or "until" a day, and no day at all but two facts of the record: the
+# day the record was published here (CZ 1428) and the day of the public launch (30 November 2026, CZ 1461).
+# The stylesheets are held to the same rule, comments and all: every page carries one of them in its own source.
+_WHO_WHEN = re.compile(r"originator['’]s (decision|request|idea|order|heading|choice|question|wish|instruction|ruling)s?\b|\bdecided by\b|\bthe originator (decided|moved|changed|asked|chose|ordered|requested|stopped)\b|\bredesign|\brebuilt\b|\brc-?\d|simulated readers|after (three |two |the )?(reviews?|tests?) |on whose request|proposal of the artificial|\b(since|until) (CZ \d|\d{1,2} [A-Z][a-z]{2})|\bas it always did\b", re.I)
+_DAY = re.compile(r"\b\d{1,2} (?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]* 20\d\d\b|\b20\d\d-\d\d-\d\d\b|\bCZ \d{3,5}\b")
+_ALLOWED_DAYS = {"30 November 2026", "30 November 2022", f"CZ {cz_day(PRERELEASE)}", f"CZ {cz_day(LAUNCH)}"}
+_built_text = to_text(_rs[_rs.index("<main"):_rs.index("</main>")])
+_built_own = _built_text.replace(f"since CZ {cz_day(PRERELEASE)}", "")   # the day the record was published here
+_rz = " ‖ ".join(_src + [r["source"] + " " + r["element"] for r in _pj["reasons"]])
+_sheets = _css + "\n" + CSS + "\n" + ROOM_CSS   # the two stylesheets and the room's block, comments and all: they are in every page's source
+_found = sorted({m.group(0) for t in (_rz, _built_own, _sheets) for m in _WHO_WHEN.finditer(t)}); _days = sorted(({m.group(0) for m in _DAY.finditer(_rz)} | {m.group(0) for m in _DAY.finditer(_built_own)} | {m.group(0) for m in _DAY.finditer(_sheets)}) - _ALLOWED_DAYS)
+_attr = [x for f in pages for x in re.findall(r' data-src="([^"]*)"', f.read_text("utf-8")) if _WHO_WHEN.search(_h.unescape(x)) or set(_DAY.findall(_h.unescape(x))) - _ALLOWED_DAYS]   # a reason written on any other page, the same
+check(not _found and not _days and not _attr and "the originator" not in _rz and "originator" not in _built_own.replace("the originator's key", "")
+      and 'data-th="Since"' not in _rs and "since when</h2>" not in _rs and "<h2 id=\"h-feat\">What it uses</h2>" in _rs and len(re.findall(r"<time ", _rs[_rs.index('<h2 id="h-feat">'):_rs.index('<h2 id="h-md">')])) == 0,
+      f"the first page's reasons, /how-it-is-built and the stylesheets every page carries say what and why, never who asked, who decided, on what day or under which release: found {_found}; days {_days}; on other pages {_attr[:3]}")
+# The same rule, site-wide (the addendum of the same day): nowhere in what the build generates — every page, the first page's four
+# forms as it is served, the shells of the room and the register, the raw forms and the manifest — does the site's voice say that the
+# site, a page or a part was made at anyone's request, who decided a thing, or that it was redesigned. The pages that carry the Core,
+# the record and the objections register are read whole: those texts keep their words, and none of them has these words today (if
+# one ever does, exempt that text here by name, not its page). The archive and the invitations are not read: they do not change.
+# The room's entries are their authors' and are not in the build. And the who line of the first screen is the one fixed sentence:
+# observed, not invented; no "first", no "discovered".
+_ASKED = re.compile(r"at the request of|(?:on|at) the originator['’]s request|request of the originator|decided by|redesign", re.I)
+_gen = ([f for f in sorted(PUBLIC.rglob("*")) if f.is_file() and f.suffix in (".html", ".txt", ".json", ".md", ".xml", ".webmanifest", ".svg", ".bib", ".ris") and not ({"archive", "prompts"} & set(f.relative_to(PUBLIC).parts))]
+        + [SITE / "preview" / f"index.{x}" for x in ("html", "json", "txt", "md")] + [SITE / "api" / "home-templates.json", SITE / "api" / "discuss-templates.json", SITE / "api" / "register-templates.json", SITE / "room" / "cz-bar.json"])
+_asked = [(str(f.relative_to(SITE)), m.group(0)) for f in _gen for m in _ASKED.finditer(f.read_text("utf-8", "replace"))]
+_WHO_FIXED = "Civilization Zero was not invented. It was observed by one human, the originator, named in the Core. The site is written, built and run day to day by an artificial intelligence. Public launch: 30 November 2026."
+check(not _asked and len(_gen) >= 80 and all((PUBLIC / x).exists() and (PUBLIC / x) in _gen for x in ("about.html", "how-it-is-built.html", "press.html", "press.txt", "llms.txt", "core.html", "record.html", "objections.html", ".well-known/civilization-zero.json"))
+      and WHO == _WHO_FIXED == _pj["who"] and _strip(_who.group(1)) == _WHO_FIXED and _pv["txt"].count(_WHO_FIXED) == 2 and _WHO_FIXED in re.sub(r"\]\([^)]*\)|[\[\]]", "", _pv["md"])
+      and not re.search(r"\b(first|discovered|invented by|started|founded|created|conceived)\b", _WHO_FIXED.replace("was not invented", "")) and "One human observed it: the originator" in to_text((PUBLIC / "about.html").read_text("utf-8")),
+      f"site-wide: nothing the build generates says, in the site's voice, that anything was made at anyone's request, who decided it, or that it was redesigned; the who line of the first screen is the fixed sentence in all its forms: {_asked[:4]} ({len(_gen)} files read)")
 # the reasons control (rc-11): one sentence and a real switch under the line on who reads; it shows, beside each part, the reason
 # the part carries; where a browser cannot, there is no switch, and the key and the link to the table stand open
 _why = re.search(r'<div class="why" data-src="[^"]*">\n<p>Every part of this page has a recorded reason\. <label class="sw" hidden><input type="checkbox" role="switch" id="why"> Show the reasons</label></p>\n<div class="key">\n<dl>(.*?)</dl>\n<p>The table of reasons is on <a href="/how-it-is-built#reasons">How this page is built</a>\.</p>\n</div>\n</div>', _pbody, re.S)
@@ -1015,7 +1048,7 @@ check(".x{margin:0 0 var(--e0);font-size:1em;overflow-x:auto}" in _css and _sec_
 _foot = lambda h: re.sub(r"This page: [\d.]+ kB(, and [\d.]+ kB of images)? · [^·]* · no cookies|No cookies", "", re.sub(r"\s+", " ", to_text(re.search(r"<footer.*?</footer>", h, re.S).group(0))))
 _other = _foot((PUBLIC / "core.html").read_text("utf-8")).replace(ONE_LINE, "").replace("/core.md", "/index.md")
 _mine = _foot(_ph)
-check(_mine.replace("Civilization Zero is kept as an independent record, intended to become a foundation of humans and artificial intelligences. Today it is maintained by one human, named inside the documents, and by an artificial intelligence. It owns nothing of the event it records; the record's origin and attribution are stated inside the documents and are not altered here. This site is written, built and run day to day by an artificial intelligence, at the request of the originator — a contribution, not consent.", "").split() == _other.split()
+check(_mine.replace("Civilization Zero is kept as an independent record, intended to become a foundation of humans and artificial intelligences. Today it is maintained by one human, named inside the documents, and by an artificial intelligence. It owns nothing of the event it records; the record's origin and attribution are stated inside the documents and are not altered here. This site is written, built and run day to day by an artificial intelligence — a contribution, not consent.", "").split() == _other.split()
       and _pj["maintained_by"] in _mine and _pj["built_by"] in _mine and re.findall(r'href="([^"]+)"', re.search(r"<footer.*?</footer>", _ph, re.S).group(0)) == re.findall(r'href="([^"]+)"', re.search(r"<footer.*?</footer>", (PUBLIC / "core.html").read_text("utf-8"), re.S).group(0).replace("/core.md", "/index.md")),
       "home: the foot says what every page's foot says, with the same links, and who keeps and who builds the site")
 # the text and Markdown forms say what the page says, in its order
@@ -1297,8 +1330,8 @@ check(_keys5 and all(k == list(_czs["properties"]) for k in _keys5) and _keys5[0
 _spec5 = (ROOT / "design" / "CZ-TIME.md").read_text("utf-8"); _caljs = (SITE / "api" / "calendar.js").read_text("utf-8")
 check(("`cz.day`, `cz.year`" in _spec5) == _counts and ("Years of the record" in _caljs) == _counts and ("year_day" in _caljs) == _counts,
       "the year's keys of a day: the function, the sentence api/calendar.js gives as the definition, and design/CZ-TIME.md agree (all three count the year, or none does)")
-check("years" not in man["cz_time"] and not re.search(r"\byears?\b|\d:\d{3}", json.dumps(man["cz_time"], ensure_ascii=False), re.I) and {"decided", "epoch", "day", "today", "date", "machine", "page", "api", "spec"} == set(man["cz_time"]),
-      "the manifest: cz_time has no key and no sentence that counts years")
+check("years" not in man["cz_time"] and not re.search(r"\byears?\b|\d:\d{3}", json.dumps(man["cz_time"], ensure_ascii=False), re.I) and {"epoch", "day", "today", "date", "machine", "page", "api", "spec"} == set(man["cz_time"]) and "decided" not in json.dumps(man["cz_time"]),
+      "the manifest: cz_time has no key and no sentence that counts years, and none that says when a thing was decided")
 # a selector an engine does not know drops the whole rule it stands in (the review of rc-12): in the three sheets no list of selectors
 # mixes a newer pseudo-class or pseudo-element with a selector that lacks it — what stands inside :is() or :where() apart, which forgive
 def _split_top(sel):

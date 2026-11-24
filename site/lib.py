@@ -357,9 +357,9 @@ figure img{display:block;inline-size:100%;block-size:auto;border:var(--e-16) sol
 figure.poster img,img.tall{max-inline-size:calc(4*var(--e12))}
 ol.atlas li{margin-block-end:var(--e-1)}
 
-/* 3 HEAD. E: one block on every page (CZ 1455). First the mark and the name, the way to the first page; at the row's end today's day of
-   the CZ calendar in the first page's own words, the day in green (the originator's decision of 30 Oct 2026: the day at the top of every
-   page). Under them four pages, and the way to the list of all pages at the foot. H: each a target at least 24 px tall (2.5.8); the page
+/* 3 HEAD. E: one block on every page. First the mark and the name, the way to the first page; at the row's end today's day of
+   the CZ calendar in the first page's own words, the day in green. Under them four pages, and the way to the list of all pages at
+   the foot. H: each a target at least 24 px tall (2.5.8); the page
    one is on carries a heavier underline, never a colour alone (aria-current); a way past the head for keyboard and screen-reader users
    (2.4.1), shown when it has focus. H: the head keeps its two rows in a typeface wider than the one it was drawn in (measured
    with the widest serif at hand, at 360 and 390 px): where the head is narrow the day stands alone, "Day 1,455", still the link to
@@ -477,8 +477,8 @@ td.num,th.num{text-align:end;font-variant-numeric:tabular-nums}
 
 /* 6 CONTROLS. H: every control at least e6 tall (2.5.8 and the platforms' touch guidance) and no wider than its line; fields at the
    reading size, so that a phone does not zoom in when one is tapped; field borders and placeholders at 3:1 or more (1.4.11). E: one
-   filled control for the act a page asks for; pointed at, it shows its edge only. E (the originator's request of 24 Nov 2026 UTC,
-   CZ 1455): in the invitation to ask an AI, the words that are the machine's part stand in the machine's colour; colour only.
+   filled control for the act a page asks for; pointed at, it shows its edge only. E: in the invitation to ask an AI, the words that
+   are the machine's part stand in the machine's colour; colour only.
    Pointed at, that control is filled, and the words take the green that holds 7:1 on the fill; in the dark palette the fill is
    then white, since on #eee neither green holds 7:1 (--fill-on, --machine-on; /how-it-is-built names the colours). */
 button,input,select,textarea{font:inherit;color:var(--fg);background:var(--bg)}
@@ -520,8 +520,8 @@ form.cz-conv input{inline-size:15ch}
 .dayfig figcaption{flex:1 1 var(--e14)}
 .trk circle{stroke:var(--rule);stroke-width:var(--e-16);vector-effect:non-scaling-stroke}
 
-/* 7 THE ROOM. Blueprint §7: an entry is user content, shown as text, its words unchanged. The machine layer (the originator's decision of
-   CZ 1433): green is for what is a machine's, here what an AI system declared it wrote (its tag and its edge) and a machine translation
+/* 7 THE ROOM. Blueprint §7: an entry is user content, shown as text, its words unchanged. The machine layer:
+   green is for what is a machine's, here what an AI system declared it wrote (its tag and its edge) and a machine translation
    (its tag, its dashed edge and its progress), and for the count of days; /how-it-is-built names every use. The tag's words always say
    it too (1.4.1). The tag keeps its size inside small print. */
 .entry{margin:var(--e2) 0;padding-block-start:var(--e-4);border-block-start:var(--e-16) solid var(--rule)}
@@ -612,7 +612,7 @@ a.home svg{view-transition-name:cz-mark}
 # /discuss and its entries and themes, /respond, /stats, /adopt) and in no page the build writes as a file, so a static page does not
 # carry it. The same tokens and the same discipline as the sheet it follows (site/check.py holds it to them); its one moving thing, an
 # entry that travels from a list to its own page, stands in a block of its own for a reader who has not asked for less motion.
-ROOM_CSS = """/* rc-12 room */
+ROOM_CSS = """/* THE ROOM'S BLOCK */
 /* a form that records: one filled button; a box to correct is marked, by the browser before sending and by the server after */
 form.respond [type=submit]{padding-inline:var(--e1);border-width:var(--e-12);background:var(--fg);color:var(--bg);font-weight:700}
 button.cta.o{background:var(--bg);color:var(--fg)}
@@ -622,7 +622,7 @@ form.respond :is(:user-invalid,[aria-invalid=true]){border-color:var(--fg);borde
 p.refused,p.receipt{padding:var(--e-4) var(--e-2);border:var(--e-12) solid var(--fg)}
 p.receipt code{font-size:1em;font-weight:700}
 dialog.reply .shut{float:inline-end;margin:0 0 var(--e-4) var(--e-4)}
-/* in the form the sentence that matters is the one in reading size; the notice of CZ 1433 under it stays small */
+/* in the form the sentence that matters is the one in reading size; the long notice under it stays small */
 form.respond .permanence{color:var(--mute);font-size:.8409em}
 /* who speaks, in one line shared by every view of an entry; under it one small line, its exact values not shrunk twice */
 p.by{margin-block:var(--e-8) 0}.sys{color:var(--mute);font-size:.8409em}.by+.meta{margin-block:0 var(--e-4)}.meta time,.meta code,.meta .exact,form.respond .src code{font-size:1em}
@@ -681,6 +681,10 @@ FOOT_LINKS = [[("/core", "The Core"), ("/core#translations", f"{CORE_LANGUAGES} 
 # ---------------------------------------------------------------- stage 5 of the room's redesign (CZ 1433)
 # How this page is built: the page that says, with numbers, how every page is made.
 BUILT_PATH = "/how-it-is-built"
+# Two days the sitemap dates pages by (the day a page's title or description last changed). The build's own bookkeeping: no page prints
+# them, or any day on which a thing was decided or changed (the originator's rule of 24 Nov 2026 UTC, CZ 1455).
+HOME_RELEASE = datetime.date(2026, 11, 24)   # the day the first page of rc-11 goes live: set it to the UTC day of deployment if that is another day (the sitemap dates / and /about with it)
+RC12_RELEASE = datetime.date(2026, 11, 24)   # the day rc-12 (one head, one stylesheet, the contents, the seal, a figure for every day) goes live: set it to the UTC day of deployment if that is another day
 # The colour rule, whole: every use of green, in one sentence. /how-it-is-built prints it and site/room/lib.js quotes it; site/check.py
 # holds it to the two stylesheets rule by rule (a rule that sets a green token for anything the sentence does not name fails the build,
 # and so does a use the sentence names that no rule carries), to the badge and to the counter.

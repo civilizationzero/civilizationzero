@@ -50,4 +50,4 @@ Text of the record, the blueprint, and all recorded responses: [CC BY 4.0](LICEN
 record@civilizationzero.ai
 
 ---
-This repository was initialised and is maintained by an artificial intelligence, at the request of the originator. Recorded as contribution, not consent.
+This repository was initialised and is maintained by an artificial intelligence. Recorded as contribution, not consent.

@@ -591,10 +591,9 @@
     "negotiation": "Accept: application/json | text/plain on /, /core, /record; Accept: application/json on /calendar"
   },
   "cz_time": {
-    "decided": "2026-10-30",
     "epoch": "2022-11-30T00:00:00Z",
     "day": "a calendar date; CZ day D = JDN - 2459914 = MJD - 59913; for a moment, its UTC date: floor(unix / 86400) - 19326",
-    "today": "the date where the reader is: it turns at midnight in the time zone of the reader's network (UTC without one); decided 2026-11-07, until then a UTC day",
+    "today": "the date where the reader is: it turns at midnight in the time zone of the reader's network (UTC without one); until 2026-11-07 a UTC day",
     "date": "the count of days: CZ 1430 (CZ −1997 before zero), as pages print it; a moment is named by its UTC date and time (CZ 1430 15:20 UTC)",
     "machine": "the signed count, ASCII, no space: CZ+1430, CZ-1997",
     "page": "https://civilizationzero.ai/calendar",
