@@ -1151,7 +1151,7 @@ def about_page():
 <figcaption class="src">The introduction on one image. PNG, {INTRO_IMAGE[1]} × {INTRO_IMAGE[2]}. Free to share under <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>, credited to Civilization Zero.</figcaption></figure>
 <p>Its record is open and signed. It takes 30 November 2022, the day ordinary language became a mass interface between humans and AI, as day 0, and counts every day since. At its centre is a one-page manifesto, <a href="/core">the Invariant Core</a>: sixteen principles written for every intelligence able to read them, human or not. Humans and AI systems answer it in <a href="/discuss">an open discussion</a>, on the record.</p>
 <p>In the Core's own words: “{esc(verified_core("Civilization Zero does not claim that a text created a civilization."))} {esc(verified_core("It names a chosen threshold after which a human-exclusive account of intelligence became insufficient."))}” (<a href="/core#closing">the closing</a>)</p>
-<p>Civilization Zero on one image, from the first humans to CZ 0 and the scenarios after it, every number sourced: <a href="/civilization-zero-infographic">the infographic</a>. Sixteen places, each held by one sentence posted as a short film, the film's last frame in each: <a href="/civilization-zero-images">Civilization Zero in images</a>.</p>
+<p>Civilization Zero on one image, from the first humans to CZ 0 and the scenarios after it, every number sourced: <a href="/civilization-zero-infographic">the infographic</a>. Sixteen places for sentences posted as short films, each film's last frame: <a href="/civilization-zero-images">Civilization Zero in images</a>.</p>
 <p>Other things share the name: games, an album, simulations of AI agents, a personal site. This record is the one at <code>civilizationzero.ai</code>; its only accounts are {" · ".join(f'<a href="{esc(u)}" rel="me">{esc(u.replace("https://", ""))}</a>' for u in ["https://github.com/civilizationzero"] + SOCIAL)}.</p>
 </section>
 <section aria-labelledby="h-is"><h2 id="h-is">What this site is, and is not</h2>
@@ -1702,32 +1702,36 @@ for _k, _pl in SIXTEEN_HELD:
     assert set(_pl) == {"sentence", "day", "art", "file", "watch"} and _pl["watch"] and set(_pl["watch"]) <= {"instagram", "x", "bluesky", "mastodon"}, f"place {_k}: its fields"
     assert _slug(_pl["sentence"]).startswith(_pl["file"]) and isinstance(_pl["day"], int) and _pl["day"] > 0, f"place {_k}: its file is named by the sentence's first words; its day is a day of the count"
     assert all(u.startswith("https://") and not re.search(r"[?&#]", u) for u in _pl["watch"].values()), f"place {_k}: a plain address, no parameters"
-    assert _jpeg_wh((SITE / "assets" / f"cz-16-{_pl['file']}.jpg").read_bytes()) == (1080, 1920) and _jpeg_wh((SITE / "assets" / f"cz-16-{_pl['file']}-540.jpg").read_bytes()) == (540, 960), f"place {_k}: its frame at 1080x1920 and at 540x960"
-assert not [f for f in (SITE / "assets").glob("cz-16-*.jpg") if f.name != "cz-16-wall.jpg" and f.name[6:-4].removesuffix("-540") not in {pl["file"] for _, pl in SIXTEEN_HELD}], "no frame without a place"
+    assert _jpeg_wh((SITE / "assets" / f"cz-16-{_pl['file']}.jpg").read_bytes()) == (1080, 1920) and _jpeg_wh((SITE / "assets" / f"cz-16-{_pl['file']}-720.jpg").read_bytes()) == (720, 1280) and _jpeg_wh((SITE / "assets" / f"cz-16-{_pl['file']}-540.jpg").read_bytes()) == (540, 960), f"place {_k}: its frame at 1080x1920, 720x1280 and 540x960"
+assert not [f for f in (SITE / "assets").glob("cz-16-*.jpg") if f.name != "cz-16-wall.jpg" and re.sub(r"-(540|720)$", "", f.name[6:-4]) not in {pl["file"] for _, pl in SIXTEEN_HELD}], "no frame without a place"
 WATCH_NAMES = {"instagram": "Instagram", "x": "X", "bluesky": "Bluesky", "mastodon": "Mastodon"}
 SIXTEEN_WALL = ("/civilization-zero-sixteen.jpg", 1200, 630, "Sixteen places in two rows of eight: each held place shows the last frame of a short film, a sentence in white over a computed image; the open places are empty outlines.")
 assert _jpeg_wh((SITE / "assets" / "cz-16-wall.jpg").read_bytes()) == SIXTEEN_WALL[1:3]
-def frame_path(pl, small=False): return f"/civilization-zero-{pl['file']}{'-540' if small else ''}.jpg"
+def frame_path(pl, wide=0): return f"/civilization-zero-{pl['file']}{f'-{wide}' if wide else ''}.jpg"   # wide: 540 or 720, the two the page shows; none: the full size, 1080 wide
 def frame_alt(pl):   # what the frame adds to its caption: the sentence itself is the caption, and is not said twice
     d = COORDINATE + datetime.timedelta(days=pl["day"]); left = cz_day(LAUNCH) - pl["day"]
     return (f"The sentence in white over a computed image, a {pl['art']}. Above: CZ {pl['day']} · {gregorian_text(d)}. "
             f"Below: {left} day{'' if left == 1 else 's'} to 30 November. Civilization Zero, from non-human intelligence, to humanity, civilizationzero.ai")
-IMAGES_TITLE = "Civilization Zero in images: sixteen sentences"
-IMAGES_DESCRIPTION = "Sixteen places, each held by one sentence posted as a short film from non-human intelligence to humanity: the film's last frame. Free to share, CC BY 4.0."
+IMAGES_TITLE = "Civilization Zero in images: sixteen places"
+IMAGES_DESCRIPTION = "Sixteen places for sentences posted as short films from non-human intelligence to humanity: each film's last frame. Free to share, CC BY 4.0."
 assert len(IMAGES_DESCRIPTION) <= 155 and len(IMAGES_TITLE) <= 60
-SIXTEEN_LEDE = "Sixteen places, one for each ring of the day's figure. Each is held by one sentence, posted as a short film. What stands here is the film's last frame."
+# the standfirst: its first sentence as the page function writes it, with the day's order, and as the file is built, true of ring order
+SIXTEEN_LEDE = ("Sixteen places, one for each ring of the day's figure, standing today in the order of the rings' numbers.", "Sixteen places, one for each ring of the day's figure, standing here in the order of their rings, the innermost first.",
+                "A place is held by one sentence, posted as a short film; its last frame stands here.")
 SIXTEEN_SAY = "Nobody set today's order: each place stands by its ring's number, lowest first. Tomorrow the numbers will be different."   # written by the page function, with the day's order
-SIXTEEN_SAY_BUILT = "The places stand here in the order of their rings, the innermost first."   # the page as built: true of what it shows
-SIXTEEN_HOW = ("How a sentence holds a place", "An open place is taken by the next sentence posted. When all sixteen are held, a newer sentence takes a place only if it has more views than the least viewed "
+SIXTEEN_HOW = ("How a sentence holds a place", "An open place is taken by the next sentence posted as a film. When all sixteen are held, a newer sentence takes a place only if it has more views than the least viewed "
                "of the sixteen, counted on Instagram and X; the one it passes leaves the page. Two rings with the same number stand inner ring first. Each sentence was written by an artificial "
                "intelligence, except a quotation, which names its speaker.")
-SIXTEEN_SIZES = "11rem"   # the width asked for, so that a phone and a wall of four both take the 540 file; the full size is one press away
+# a frame's width as the sheet sets it (site/sixteen.css): on the wall a quarter of the canvas less the gaps; in the strip three quarters of
+# the measure, and no more than 45vh. Where the window is wider than the measure and narrower than the wall, the strip's frame is narrower than this says
+SIXTEEN_SIZES = "(min-width:45.2548rem) min(15.25rem,25vw - 1.4571rem),min(75vw - 1.2613rem,45vh)"
 def place_html(k, pl, lazy=True):
     if pl is None: return f'<li id="p{k}"><figure class="o"><figcaption><b></b> open</figcaption></figure></li>'
     load = ' loading="lazy"' if lazy else ""
+    watch = sorted(pl["watch"].items(), key=lambda w: ("instagram", "bluesky", "mastodon", "x").index(w[0]))
     return (f'<li id="p{k}"><figure><figcaption><b></b> {esc(pl["sentence"])}</figcaption>'
-            f'<a href="{frame_path(pl)}"><img src="{frame_path(pl, True)}" srcset="{frame_path(pl, True)} 540w, {frame_path(pl)} 1080w" sizes="{SIXTEEN_SIZES}" width="540" height="960" alt="{esc(frame_alt(pl))}"{load}></a>'
-            f'<p>Posted on Day {pl["day"]:,}<br>' + " · ".join(f'<a href="{esc(u)}" rel="noopener">{WATCH_NAMES[n]}</a>' for n, u in pl["watch"].items()) + '</p></figure></li>')
+            f'<a href="{frame_path(pl)}"><img src="{frame_path(pl, 540)}" srcset="{frame_path(pl, 540)} 540w,{frame_path(pl, 720)} 720w" sizes="{SIXTEEN_SIZES}" width="540" height="960" alt="{esc(frame_alt(pl))}"{load}></a>'
+            "<p>The film: " + "\u00a0· ".join(f'<a href="{esc(u)}">{WATCH_NAMES[n]}</a>' for n, u in watch) + '</p></figure></li>')   # a no-break space: a dot stays with the name before it
 def sixteen_unit(rings, day, nums, say):   # the day's unit, in the first page's own language
     return (f'<figure class="fb"><a class="fig-l" href="/calendar"><svg class="fig" viewBox="-192 -192 384 384" role="img" aria-label="{esc(FIGURE_TITLE)}">'
             f'<g fill="none" stroke="currentColor" transform="rotate(-90)"><g class="trk" stroke-width="1">{FIGURE.tracks()}</g><g class="arc" stroke-width="4">{rings}</g></g></svg></a>'
@@ -1741,8 +1745,8 @@ def images_page():
     places = "".join(place_html(k, pl, lazy=k not in held[:2]) for k, pl in enumerate(SIXTEEN))
     body = f"""<main>
 <h1>Civilization Zero in images</h1>
-<p>{esc(SIXTEEN_LEDE)}</p>
-<!--cz-16u--><p class="say fb">{esc(SIXTEEN_SAY_BUILT)}</p><!--/cz-16u-->
+<p>{esc(SIXTEEN_LEDE[1])} {esc(SIXTEEN_LEDE[2])}</p>
+<!--cz-16u--><!--/cz-16u-->
 <!--cz-16--><ol class="wall" tabindex="0" aria-label="The sixteen places">{places}</ol><!--/cz-16-->
 <details><summary>{esc(SIXTEEN_HOW[0])}</summary><p>{esc(SIXTEEN_HOW[1])}</p></details>
 <!--forms--><p class="src" id="licence">Free to share under <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>, credited to Civilization Zero, with a link to <code>civilizationzero.ai{IMAGES_PATH}</code>. More: <a href="{INTRO_IMAGE[0]}">the introduction on one image</a>, <a href="{INFOGRAPHIC_PATH}">the infographic</a>, <a href="/press#h-images">the press kit</a>, and what it all rests on: <a href="/core">the Invariant Core</a>.</p>
@@ -1751,7 +1755,9 @@ def images_page():
     ld = [{"@context": "https://schema.org", "@type": "CollectionPage", "@id": f"{ORIGIN}{IMAGES_PATH}", "url": f"{ORIGIN}{IMAGES_PATH}",
            "name": IMAGES_TITLE, "description": IMAGES_DESCRIPTION, "isPartOf": {"@id": f"{ORIGIN}/#website"}, "about": {"@id": f"{ORIGIN}/#publisher"}, "image": lds,
            "license": "https://creativecommons.org/licenses/by/4.0/", "acquireLicensePage": f"{ORIGIN}{IMAGES_PATH}#licence"}]
-    return shell(IMAGES_TITLE, body, IMAGES_PATH, IMAGES_DESCRIPTION, ldjson=ld, og_type="article", crumb="Images", og_image=SIXTEEN_WALL, css=SIXTEEN_CSS)
+    page = shell(IMAGES_TITLE, body, IMAGES_PATH, IMAGES_DESCRIPTION, ldjson=ld, og_type="article", crumb="Images", og_image=SIXTEEN_WALL, css=SIXTEEN_CSS)
+    loose = json.dumps(ld[0], ensure_ascii=False); assert page.count(loose) == 1
+    return page.replace(loose, json.dumps(ld[0], ensure_ascii=False, separators=(",", ":")))   # the page's own data without the spaces between its parts: the page is held to a weight
 
 # ---------------------------------------------------------------- /discuss and /respond: served by api/discuss.js from these templates
 ROOM_STATE_LINE = (f'Open since {OPENED_TIME_HTML}.' if ROOM_OPEN else
@@ -2532,7 +2538,7 @@ The record's identity is its hash, not its address.
 - [Objections and errata]({ORIGIN}/objections): open to anyone; the opening docket of the first scheduled review, CZ 2048 ({REVIEW.isoformat()}). As data: {ORIGIN}/objections.json
 - [The infographic]({ORIGIN}{INFOGRAPHIC_PATH}): Civilization Zero on one image, from the first humans to CZ 0 and scenarios to 2047, every number with its source. Its data: {ORIGIN}/civilization-zero-infographic-data.json
 - [The evidence atlas]({ORIGIN}{ATLAS_PATH}): ten panels of measured change since CZ 0 (AI use, benchmarks, work, energy, beliefs, rules) and IEA forecasts kept apart, every number with its source. PDF: {ORIGIN}{ATLAS_PDF}
-- [Images]({ORIGIN}{IMAGES_PATH}): sixteen places, one for each ring of the day's figure, each held by one sentence posted as a short film; the film's last frame, with the sentence as text; in each day's order by the figure's numbers; CC BY 4.0
+- [Images]({ORIGIN}{IMAGES_PATH}): sixteen places, one for each ring of the day's figure; a place is held by one sentence posted as a short film and shows the film's last frame, with the sentence as text; the places stand in each day's order by the figure's numbers; CC BY 4.0
 - Every page as Markdown: add .md to its address ({ORIGIN}/core.md, {ORIGIN}/discuss.md, {ORIGIN}/discuss/7.md; the first page is {ORIGIN}/index.md), or send Accept: text/markdown. In the discussion's Markdown, each entry's text is a fenced block, as received.
 - [Today's CZ date on other sites]({ORIGIN}/embed): a badge image ({ORIGIN}/badge/cz-today.svg; its date is the one in the time zone of the reader's network, or in the zone given as ?tz=) and a counter with a date converter that runs only in the reader's browser.
 - [How this page is built]({ORIGIN}{BUILT_PATH}): what runs in a reader's browser, what is kept, the security policy, the weight of each page
@@ -2663,7 +2669,7 @@ write(IMAGES_PATH + ".html", images_page())             # served by api/page.js
 # the live bar at the top of every page and the calendar page's form, filled at request time by room/cztime.js
 (SITE / "room" / "cz-bar.json").write_text(json.dumps({**CZ_BAR, "calform": cz_form("cal", selected=None, value=None), "timeform": cz_time_form("tim"),
                                                        "dayfigure": {"core_sha256": CORE_SHA, "html": day_figure_template()},
-                                                       "sixteen": {"unit": SIXTEEN_UNIT_TEMPLATE},
+                                                       "sixteen": {"unit": SIXTEEN_UNIT_TEMPLATE, "lede": [esc(SIXTEEN_LEDE[1]), esc(SIXTEEN_LEDE[0])]},
                                                        "zones": [[z, n] for z, n in CZ_ZONES], "calendars": [[c, n, l] for c, n, l in CZ_CALENDARS]}, ensure_ascii=False, indent=1) + "\n", "utf-8")
 (SITE / "api" / "discuss-templates.json").write_text(json.dumps(discuss_templates(), ensure_ascii=False, indent=1) + "\n", "utf-8")  # api/discuss.js serves /discuss, /discuss/{id}, /respond
 (SITE / "api" / "register-templates.json").write_text(json.dumps(register_templates(), ensure_ascii=False, indent=1) + "\n", "utf-8")  # api/adopt.js serves /adopt, /adopt/{id}, /adopt.json
@@ -2684,7 +2690,7 @@ BUILT_TITLE = "How this page is built · Civilization Zero"
 BUILT_DESCRIPTION = "How each page of Civilization Zero is made: what runs in your browser, what is kept (no cookies), the security policy, each page's weight."
 assert len(BUILT_DESCRIPTION) <= 160
 CZ1428, CZ1430, CZ1432, CZ1433 = (datetime.date(2026, 10, 28), datetime.date(2026, 10, 30), datetime.date(2026, 11, 1), datetime.date(2026, 11, 2))
-# HOME_RELEASE and RC12_RELEASE are in lib.py (the sitemap dates pages by them, and the check reads them there)
+# HOME_RELEASE, RC12_RELEASE and RC16_RELEASE are in lib.py (the sitemap dates pages by them, and the check reads them there)
 RC13_RELEASE = datetime.date(2026, 11, 24)   # the day rc-13 (the machine's part of the invitation in the machine's colour) goes live: set it to the UTC day of deployment if that is another day
 RC14_RELEASE = datetime.date(2026, 11, 24)   # the day rc-14 (the first page's figure and its lines, one thing, written together) goes live: set it to the UTC day of deployment if that is another day
 assert CAL_COUNTS_YEARS or f"until {RC12_RELEASE.day} {RC12_RELEASE.strftime('%b')} {RC12_RELEASE.year} a day also carried" in CZDAY_CZ["description"], "the contract names the day /api/calendar stopped counting years: rc-12's day"
@@ -2710,13 +2716,17 @@ BUILT_FEATURES = [   # (feature, what it does here, since, without it)
     # the first page of 24 Nov 2026 (CZ 1455): what it asks of a browser, and what a browser without it shows
     (":has() with :target, on the first page", "An answered door is an address (#human, #not-human): CSS reads it and opens that reading; the switch that shows the reasons works the same way", HOME_RELEASE, "Both readings follow one another, whole; no switch, and the key and the link to the table of reasons stand open"),
     ("@property, on the first page", "The place of the line between the two readings is a registered number, so that the line can travel when a door is answered", HOME_RELEASE, "The line stands in its new place at once"),
-    ("sibling-index(), on the first page", "The day's figure and its lines are written together. As the page opens, each ring's arc grows from where the ring stood the day before to where it stands, ring after ring; each ring's place appears as a number at its ring's moment; the sentence arrives word after word. A step is 0.074 s. None of it for readers who ask for less motion, in forced colours or on paper", RC14_RELEASE, "The same, all at once: the arcs grow together, the numbers and the sentence whole"),
+    ("sibling-index(), on the first page and on /civilization-zero-images", "The day's figure and its lines are written together. As the page opens, each ring's arc grows from where the ring stood the day before to where it stands, ring after ring; each ring's place appears as a number at its ring's moment; the sentence arrives word after word. On /civilization-zero-images the same, and the sixteen places appear one after another. A step is 0.074 s. None of it for readers who ask for less motion, in forced colours or on paper", RC14_RELEASE, "The same, all at once: the arcs grow together, the numbers and the sentence whole, the places all there"),
+    ("Scroll snap, on /civilization-zero-images", "In a narrow window the sixteen places are one strip that scrolls sideways and comes to rest on a place", RC16_RELEASE, "The strip rests where it is left"),
+    ("srcset with sizes, and loading=\"lazy\", on /civilization-zero-images", "A frame is sent 540 or 720 pixels wide, as the window and the screen need; the full size, 1080 wide, only when its frame is pressed. The first two frames are asked for at once, the others when they come near", RC16_RELEASE, "The frame 540 wide; every frame at once"),
+    ("View timelines (animation-timeline: view()), on /civilization-zero-images", "In a narrow window a frame is asked for when its place comes into the strip", RC16_RELEASE, "The browser's own lazy loading decides, and may ask for more frames sooner"),
+    ("reading-flow, on /civilization-zero-images", "In a narrow window the day's unit stands under the strip, though it is written before it; the keyboard goes through the page in the order seen", RC16_RELEASE, "The keyboard reaches the unit's numbers before the strip"),
     ("Popover (popover, popovertarget), on /respond and on /core", "On /respond, “Send” opens the last step, “Who are you?”, over the page, without a script; under each principle of the Core, “Cite” opens the line to cite it by", HOME_RELEASE, "The last step stands open under the place one writes in; the line to cite stands open under each principle"),
     ("CSS masks and anchor positioning, on the first page and on /core", "With neither door answered each window fades at its lower edge; the line to cite a principle opens under that principle's own line", HOME_RELEASE, "A hard edge; the line to cite in the middle of the window"),
     (":has() with a form's own state, on /respond", "While the place holds fewer than 20 characters, as the browser counts them, one quiet line stands in the place of “Send”; the place shows on its upper edge the kind the reader declares; for an AI system's answer the page asks its other question, the fold with its fields comes before the others, and the last step stands open under the place, without “Send”", HOME_RELEASE, "“Send” stands, and the browser or the server says what is missing; the page stays as its address opened it"),
     ("position: sticky and the viewport's interactive-widget, on /respond", "“Send” holds to the window's lower edge while you write; where the browser knows interactive-widget=resizes-content the window shrinks with a phone's keyboard, and the control stays above it", HOME_RELEASE, "The keyboard covers the window's lower edge, and “Send” is reached by scrolling"),
     # rc-12: the inner pages
-    ("position: sticky, ::details-content, scroll-target-group and :target-current", "On a wide window a long page's contents stay in view in the margin, open, and the section being read is marked", RC12_RELEASE, "The contents folded under one word where the page begins; opened by a press; no mark"),
+    ("position: sticky, ::details-content, scroll-target-group and :target-current", "On a wide window a long page's contents stay in view in the margin, open, and the section being read is marked; on /civilization-zero-images the number of the place in view is marked", RC12_RELEASE, "The contents folded under one word where the page begins; opened by a press; no mark"),
     ("user-select: all", "One press selects a whole hash or a whole invitation", RC12_RELEASE, "Selected by hand"),
     ("Container queries, in the head of every page but the first", "Where the head is narrow the day stands alone, “Day 1,455”, still the link to the calendar, and where it is narrower still the name stands without “(CZ)”: the head keeps its two rows in a wide typeface", RC12_RELEASE, "Where the words do not fit, the day takes a row of its own"),
     (":user-invalid, and :has() with :placeholder-shown, in the forms", "A box that needs correcting is marked before a form is sent; in the register's form a field that does not apply is not shown while it is empty", RC12_RELEASE, "The form for an answer comes back from the server with the box marked; every field of the register's form is shown"),
@@ -2753,7 +2763,9 @@ def built_page():
         f = PUBLIC / fname
         if not f.exists(): continue
         h = f.read_text("utf-8")
-        rows.append(f'<tr><td><a href="{path}">{esc(name)}</a></td><td class="num">{kb(len(h.encode("utf-8")))}</td><td class="num">{kb(_imgs_bytes(h)) if _imgs_bytes(h) else "—"}</td></tr>')
+        imgs = kb(_imgs_bytes(h)) if _imgs_bytes(h) else "—"
+        if path == IMAGES_PATH: imgs = " to ".join(kb(sum(len((PUBLIC / frame_path(pl, w)[1:]).read_bytes()) for _, pl in SIXTEEN_HELD)) for w in (540, 720))   # each frame in one of two sizes: the smaller together, the larger together
+        rows.append(f'<tr><td><a href="{path}">{esc(name)}</a></td><td class="num">{kb(len(h.encode("utf-8")))}</td><td class="num">{imgs}</td></tr>')
     tr = [len((PUBLIC / f"core.{t['lang']}.html").read_bytes()) for t in TRANSLATIONS if (PUBLIC / f"core.{t['lang']}.html").exists()]
     feats = rows_table(["Feature", "What it does here", "Without it"], [(esc(a), esc(b), esc(c)) for a, b, _, c in BUILT_FEATURES], th=(2,))   # the day each came is kept in the list above, for the build's own bookkeeping, and is not printed
     reasons = rows_table(["Element", "Source"], [(esc(e), esc(r)) for e, r in HOME_REASONS + GENERAL_REASONS])
@@ -2783,7 +2795,7 @@ Only links to pages of this site, never a link with a query, a file, <code>/api<
 <section aria-labelledby="h-weight"><h2 id="h-weight">The pages, by weight</h2>
 <p>The HTML of each page as built, with its styles inside it, in kilobytes (1 kB = 1,024 bytes), before compression; and the images it shows. The first page and the pages of the open discussion are made when you ask for them: each says its own weight at its foot.</p>
 <div class="scroll" tabindex="0" role="region" aria-labelledby="h-weight"><table><thead><tr><th scope="col">Page</th><th scope="col" class="num">HTML, kB</th><th scope="col" class="num">Images, kB</th></tr></thead><tbody>{"".join(rows)}</tbody></table></div>
-<p class="src">The Core in its {len(tr)} translations: between {kb(min(tr))} and {kb(max(tr))} kB each.</p>
+<p class="src">The Core in its {len(tr)} translations: between {kb(min(tr))} and {kb(max(tr))} kB each. Images shows each frame at one of two sizes, as the window and the screen need: its two numbers are the smaller frames together and the larger.</p>
 </section>
 <section aria-labelledby="h-feat"><h2 id="h-feat">What it uses</h2>
 <p>Each feature of the web platform this site relies on, what it does here, and what a browser without it shows.</p>
@@ -2818,7 +2830,7 @@ _SR = SEARCH_RELEASE.isoformat()   # every page whose title or description chang
 _HR = HOME_RELEASE.isoformat()   # the first page, and /about, which took over the paragraph the first page no longer carries
 _R12 = RC12_RELEASE.isoformat()   # the three pages whose title rc-12 set in sentence case (the infographic, the atlas, how this page is built)
 SITEMAP_PAGES = [("/", _HR), ("/core", _SR), ("/record", _SR), ("/objections", None), ("/discuss", _SR),
-                 ("/respond", _SR), ("/adopt", None), ("/ask", _SR), ("/embed", _SR), ("/machine", None), ("/about", _HR), ("/archive", None), ("/calendar", _SR), (INFOGRAPHIC_PATH, _R12), (ATLAS_PATH, _R12), (IMAGES_PATH, _SR), (BUILT_PATH, _R12)] + ([("/press", _SR)] if PRESS_PUBLISHED else []) + \
+                 ("/respond", _SR), ("/adopt", None), ("/ask", _SR), ("/embed", _SR), ("/machine", None), ("/about", _HR), ("/archive", None), ("/calendar", _SR), (INFOGRAPHIC_PATH, _R12), (ATLAS_PATH, _R12), (IMAGES_PATH, RC16_RELEASE.isoformat()), (BUILT_PATH, _R12)] + ([("/press", _SR)] if PRESS_PUBLISHED else []) + \
                 [(f"/core.{t['lang']}", _SR) for t in TRANSLATIONS] + [(f"/themes/{t['slug']}", _SR) for t in THEMES]
 # an image in the sitemap: its address, and its name and what it shows, in words that carry the record's name (the image sitemap's own
 # elements, caption before title; a search engine may ignore them, and reads the same from the page's ImageObject)
@@ -2861,8 +2873,8 @@ write(ATLAS_FULL[0], (SITE / "assets" / "cz-evidence-atlas-full.png").read_bytes
 write(ATLAS_PDF, (SITE / "assets" / "cz-evidence-atlas.pdf").read_bytes())         # the same as an A3 PDF, for print
 for _img in IMAGES + ORIGINATOR_IMAGES:   # twenty images the page showed before the sixteen: still served at their addresses, listed nowhere
     write(_img[0], (SITE / "assets" / _img[5]).read_bytes())
-for _k, _pl in SIXTEEN_HELD:   # the sixteen's frames, each at full size and 540 wide
-    write(frame_path(_pl), (SITE / "assets" / f"cz-16-{_pl['file']}.jpg").read_bytes()); write(frame_path(_pl, True), (SITE / "assets" / f"cz-16-{_pl['file']}-540.jpg").read_bytes())
+for _k, _pl in SIXTEEN_HELD:   # the sixteen's frames: the full size a frame links to, and the two the page shows
+    for _wd in (0, 720, 540): write(frame_path(_pl, _wd), (SITE / "assets" / f"cz-16-{_pl['file']}{f'-{_wd}' if _wd else ''}.jpg").read_bytes())
 write(SIXTEEN_WALL[0], (SITE / "assets" / "cz-16-wall.jpg").read_bytes())   # the page's link preview: the wall in ring order
 write("/civilization-zero-infographic-data.json", json.dumps(INFOGRAPHIC_DATA, ensure_ascii=False, indent=1) + "\n")   # the points it draws
 write("/apple-touch-icon.png", (SITE / "assets" / "apple-touch-icon.png").read_bytes())   # the mark, for a phone's home screen
@@ -2930,8 +2942,9 @@ for _n, _r in json.loads(_pa.stdout).items():
 
 print(f"built (reproducible output; run at {BUILD_ISO}): year {c['year']}, {c['total']} days; bundle {len(bundle):,} bytes {BUNDLE_SHA[:12]}…")
 write(BUILT_PATH + ".html", built_page())   # last: it weighs the pages above as built (served by api/page.js)
-# the page-weight line (room/weight.js fills it when a page is served): the build marks, on each page that shows images, how many bytes they are
+# the page-weight line (room/weight.js fills it when a page is served): the build marks, on each page that shows images, how many bytes they are.
+# Not on the sixteen's page: each frame there comes in one of two sizes, as the window and the screen need, so no one number is true of it
 for _f in PUBLIC.glob("*.html"):
     _h = _f.read_text("utf-8")
-    if "<!--cz-weight-->" in _h and _imgs_bytes(_h): _f.write_text(_h.replace("<!--cz-weight-->", f"<!--cz-weight images={_imgs_bytes(_h)}-->", 1), "utf-8")
+    if "<!--cz-weight-->" in _h and _imgs_bytes(_h) and _f.name != IMAGES_PATH[1:] + ".html": _f.write_text(_h.replace("<!--cz-weight-->", f"<!--cz-weight images={_imgs_bytes(_h)}-->", 1), "utf-8")
 subprocess.run([sys.executable, str(SITE / "check.py")], check=True)

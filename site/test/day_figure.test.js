@@ -88,10 +88,20 @@ test("the sixteen: the page function writes the places in the day's order, each 
   const places = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "sixteen.json"), "utf8")).places;
   const K16 = FIG.constants(require("../room/cz-bar.json").dayfigure.core_sha256);
   assert.equal(places.length, 16); assert.equal(new Set(places.filter(Boolean).map((p) => p.sentence)).size, places.filter(Boolean).length, "every held place its own sentence");
-  for (const p of places.filter(Boolean)) for (const f of [`cz-16-${p.file}.jpg`, `cz-16-${p.file}-540.jpg`]) assert.ok(fs.existsSync(path.join(__dirname, "..", "assets", f)), f);
-  // as built: ring order, no number, no word of today
+  for (const p of places.filter(Boolean)) for (const f of [`cz-16-${p.file}.jpg`, `cz-16-${p.file}-720.jpg`, `cz-16-${p.file}-540.jpg`]) assert.ok(fs.existsSync(path.join(__dirname, "..", "assets", f)), f);
+  // as built: ring order, no number, no word of today outside the sentences themselves; the standfirst says ring order
+  const LEDE = ["Sixteen places, one for each ring of the day&#x27;s figure, standing here in the order of their rings, the innermost first.", "Sixteen places, one for each ring of the day&#x27;s figure, standing today in the order of the rings&#x27; numbers."];
+  const noWall = (h) => h.replace(/<!--cz-16-->[\s\S]*?<\/ol><!--\/cz-16-->/, "").replace(/<!--cz-16u-->[\s\S]*?<!--\/cz-16u-->/, "");
+  assert.deepEqual(require("../room/cz-bar.json").sixteen.lede, LEDE);
   assert.deepEqual([...built.matchAll(/<li id="p(\d+)">/g)].map((m) => +m[1]), [...Array(16).keys()]);
-  assert.ok(built.includes("The places stand here in the order of their rings, the innermost first.") && !/today/.test(built.slice(built.indexOf("<main"), built.indexOf("</main>"))) && (built.match(/<b><\/b>/g) || []).length === 16);
+  assert.ok(built.includes(`<p>${LEDE[0]} A place is held by one sentence, posted as a short film; its last frame stands here.</p>`) && !built.includes(LEDE[1]) && !/today/.test(noWall(built.slice(built.indexOf("<main"), built.indexOf("</main>")))) && (built.match(/<b><\/b>/g) || []).length === 16);
+  // a frame is shown at 540 or 720 wide, and never at full size: the full-size file is the link's target alone
+  for (const m of built.matchAll(/<a href="(\/civilization-zero-[a-z0-9-]+)\.jpg"><img ([^>]*)>/g)) {
+    assert.ok(m[2].startsWith(`src="${m[1]}-540.jpg" srcset="${m[1]}-540.jpg 540w,${m[1]}-720.jpg 720w" sizes="(min-width:45.2548rem) min(15.25rem,25vw - 1.4571rem),min(75vw - 1.2613rem,45vh)" width="540" height="960" alt="`), m[1]);
+    assert.ok(!m[2].replace(/ alt="[^"]*"/, "").includes(`${m[1]}.jpg`), `${m[1]}: no image element names the full-size file`);
+  }
+  assert.equal([...built.matchAll(/<img /g)].length, places.filter(Boolean).length);
+  assert.ok(!/Posted on|Each is held|each held by|rel="noopener"/.test(built) && built.includes("<!--cz-weight-->") && !/<!--cz-weight images=/.test(built), "no day of posting; no word that every place is held; no bytes of images in the weight line");
   let openFirst = null;
   for (const day of [0, 1, 1454, 1455, 1456, 1461, 100000, -3]) {
     const out = page.sixteen(built, day), nums = FIG.places(day, K16);
@@ -106,20 +116,72 @@ test("the sixteen: the page function writes the places in the day's order, each 
     assert.ok(unit.replace(/<[^>]+>/g, "").includes("Nobody set today's order: each place stands by its ring's number, lowest first. Tomorrow the numbers will be different.") && out.includes(`aria-label="The sixteen places, in today's order"`));
     const imgs = [...out.matchAll(/<img [^>]*>/g)].map((m) => / loading="lazy"/.test(m[0]));
     assert.deepEqual(imgs, imgs.map((_, i) => i >= 2), `day ${day}: the first two frames are asked for at once, the others when they come near`);
-    assert.equal(out.replace(/<!--cz-16-->[\s\S]*?<!--\/cz-16-->/, "").replace(/<!--cz-16u-->[\s\S]*?<!--\/cz-16u-->/, ""), built.replace(/<!--cz-16-->[\s\S]*?<!--\/cz-16-->/, "").replace(/<!--cz-16u-->[\s\S]*?<!--\/cz-16u-->/, ""), `day ${day}: nothing else in the page changes`);
+    assert.ok(out.includes(`<p>${LEDE[1]} A place is held by one sentence, posted as a short film; its last frame stands here.</p>`) && !out.includes(LEDE[0]), `day ${day}: the standfirst says the order of the rings' numbers`);
+    assert.equal(noWall(out), noWall(built).replace(LEDE[0], LEDE[1]), `day ${day}: nothing else in the page changes`);
     if (openFirst === null && places[li[0][0]] === null) openFirst = day;
   }
-  // a day on which an open place stands first: it is written first, an empty frame with its number
-  let d = 1455; while (places[page.sixteenOrder(FIG.places(d, K16))[0]] !== null) d += 1;
-  const o = page.sixteen(built, d), first = /<li id="p(\d+)">(<figure class="o"><figcaption><b>(\d{3})<\/b> open<\/figcaption><\/figure>)<\/li>/.exec(o);
-  assert.ok(first && o.indexOf(first[0]) < o.indexOf("<img ") && first[3] === FIG.places(d, K16)[+first[1]], `day ${d}: an open place stands first`);
+  // a day on which an open place stands first, while a place is open: it is written first, an empty frame with its number
+  if (places.includes(null)) {
+    let d = 1455; while (places[page.sixteenOrder(FIG.places(d, K16))[0]] !== null) d += 1;
+    const o = page.sixteen(built, d), first = /<li id="p(\d+)">(<figure class="o"><figcaption><b>(\d{3})<\/b> open<\/figcaption><\/figure>)<\/li>/.exec(o);
+    assert.ok(first && o.indexOf(first[0]) < o.indexOf("<img ") && first[3] === FIG.places(d, K16)[+first[1]], `day ${d}: an open place stands first`);
+  }
   // a day with all sixteen held: every place a frame, fourteen of them asked for when they come near
   const held = built.match(/<li id="p0">[\s\S]*?<\/li>/)[0];
   const full = built.replace(/<li id="p(\d+)"><figure class="o">[\s\S]*?<\/li>/g, (m0, k) => held.replace('id="p0"', `id="p${k}"`));
   const f = page.sixteen(full, 1455);
   assert.equal((f.match(/<img /g) || []).length, 16); assert.equal((f.match(/ loading="lazy"/g) || []).length, 14);
   assert.deepEqual([...f.matchAll(/<li id="p(\d+)">/g)].map((m) => +m[1]), page.sixteenOrder(FIG.places(1455, K16)));
-  // a page without the build's markers, or with a place missing, is served as it is
+  // a page without the build's markers, with a place missing, or with another standfirst, is served as it is: all of it or nothing
   assert.equal(page.sixteen(built.replace("<!--cz-16-->", ""), 1455), built.replace("<!--cz-16-->", ""));
+  assert.equal(page.sixteen(built.replace("standing here in the order", "standing in the order"), 1455), built.replace("standing here in the order", "standing in the order"));
   assert.equal(page.sixteen(built.replace(/<li id="p7">[\s\S]*?<\/li>/, ""), 1455), built.replace(/<li id="p7">[\s\S]*?<\/li>/, ""));
+});
+
+test("the sixteen as Markdown: a held place is its number, its sentence, the day its frame is dated and where the film is", () => {
+  const page = require("../api/page.js"), MD = require("../room/md.js"), fs = require("node:fs"), path = require("node:path");
+  const built = fs.readFileSync(path.join(__dirname, "..", "public", "civilization-zero-images.html"), "utf8");
+  const places = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "sixteen.json"), "utf8")).places;
+  const K16 = FIG.constants(require("../room/cz-bar.json").dayfigure.core_sha256);
+  for (const day of [1455, 1461]) {
+    const md = MD.htmlToMarkdown(page.sixteenMd(page.sixteen(built, day)), { path: "/civilization-zero-images" }), nums = FIG.places(day, K16), order = page.sixteenOrder(nums);
+    const items = md.split("\n").filter((l) => /^\d+\. /.test(l));
+    assert.equal(items.length, 16, `day ${day}: sixteen places`);
+    assert.ok(!md.includes("![") && !/Posted on|The sentence in white/.test(md), `day ${day}: no frame and no text alternative in this form`);
+    order.forEach((k, i) => {
+      const p = places[k];
+      if (!p) return assert.equal(items[i], `${i + 1}. **${nums[k]}** open`, `day ${day}, place ${k}`);
+      const film = ["instagram", "bluesky", "mastodon", "x"].filter((n) => p.watch[n]).map((n) => `[${{ instagram: "Instagram", bluesky: "Bluesky", mastodon: "Mastodon", x: "X" }[n]}](${p.watch[n]})`).join(" · ");
+      assert.equal(items[i], `${i + 1}. **${nums[k]}** ${p.sentence} [Frame dated CZ ${p.day}](https://civilizationzero.ai/civilization-zero-${p.file}.jpg). The film: ${film}`, `day ${day}, place ${k}`);
+    });
+  }
+  // the page as built, in this form: the same places without numbers; nothing is changed where there is no wall
+  assert.equal((MD.htmlToMarkdown(page.sixteenMd(built), { path: "/civilization-zero-images" }).match(/\[Frame dated CZ \d+\]/g) || []).length, places.filter(Boolean).length);
+  assert.equal(page.sixteenMd("<main><p>no wall</p></main>"), "<main><p>no wall</p></main>");
+});
+
+test("the sixteen, all held: the page as served stays within its weight", () => {
+  const { execFileSync } = require("node:child_process"), fs = require("node:fs"), path = require("node:path"), os = require("node:os");
+  const built = fs.readFileSync(path.join(__dirname, "..", "public", "civilization-zero-images.html"), "utf8");
+  // the fixture: every open place held by a copy of the heaviest held place, in the wall and in the page's own data
+  const size = (x) => Buffer.byteLength(x, "utf8");
+  const heavy = [...built.matchAll(/<li id="p\d+"><figure><figcaption>[\s\S]*?<\/li>/g)].map((m) => m[0]).reduce((a, b) => (size(b) > size(a) ? b : a));
+  const ldm = /<script type="application\/ld\+json">(\{"@context":"https:\/\/schema\.org","@type":"CollectionPage"[\s\S]*?)<\/script>/.exec(built);
+  assert.ok(ldm, "the page's own data, without spaces between its parts");
+  const ld = JSON.parse(ldm[1]); assert.equal(JSON.stringify(ld), ldm[1]);
+  const heavyLd = ld.image.reduce((a, b) => (size(JSON.stringify(b)) > size(JSON.stringify(a)) ? b : a));
+  let open = 0;
+  let full = built.replace(/<li id="p(\d+)"><figure class="o">[\s\S]*?<\/li>/g, (m0, k) => { open += 1; return heavy.replace(/^<li id="p\d+">/, `<li id="p${k}">`); });
+  for (let i = 0; i < open; i++) ld.image.push(heavyLd);
+  full = full.replace(ldm[1], () => JSON.stringify(ld));
+  assert.equal((full.match(/<img /g) || []).length, 16); assert.equal(JSON.parse(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/.exec(full)[1]).image.length, 16);
+  // served by the page function itself, from a folder that holds the fixture as the built page
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "cz-sixteen-")); fs.mkdirSync(path.join(dir, "public")); fs.writeFileSync(path.join(dir, "public", "civilization-zero-images.html"), full);
+  try {
+    const run = `const page = require(process.argv[1]); const res = { statusCode: 200, headers: {}, setHeader(k, v) { this.headers[k.toLowerCase()] = v; }, getHeader(k) { return this.headers[k.toLowerCase()]; }, end(b) { process.stdout.write(JSON.stringify({ status: this.statusCode, bytes: Buffer.byteLength(b || "", "utf8"), imgs: (String(b).match(/<img /g) || []).length, lazy: (String(b).match(/ loading="lazy"/g) || []).length, today: /standing today in the order/.test(String(b)), weight: (/<!--cz-weight-->([^<]*)<!--\\/cz-weight-->/.exec(String(b)) || [])[1] })); } }; page({ url: "/api/page?p=civilization-zero-images", method: "GET", headers: {} }, res);`;
+    const r = JSON.parse(execFileSync(process.execPath, ["-e", run, path.join(__dirname, "..", "api", "page.js")], { cwd: dir, encoding: "utf8" }));
+    assert.ok(r.status === 200 && r.imgs === 16 && r.lazy === 14 && r.today, "the fixture is served as the page: sixteen frames, in the day's order");
+    assert.ok(/^This page: \d+ kB · no JavaScript that runs · no cookies$/.test(r.weight), `the weight line gives no bytes of images: ${r.weight}`);
+    assert.ok(r.bytes <= 44000, `sixteen held: ${r.bytes} bytes as served, at most 44,000`);
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
 });

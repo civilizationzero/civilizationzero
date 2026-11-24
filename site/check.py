@@ -215,9 +215,9 @@ _same = {"/objections", "/adopt", "/machine", "/archive"}   # their title and de
 # the three pages whose title rc-12 set in sentence case (finding 33) carry rc-12's day (lib.RC12_RELEASE; no page prints it)
 _r12 = {"/how-it-is-built": "How this page is built · Civilization Zero", "/civilization-zero-infographic": "Civilization Zero infographic: from the first humans to AI", "/civilization-zero-evidence-atlas": "Civilization Zero evidence atlas: after Coordinate Zero"}
 _r12_day = RC12_RELEASE.isoformat()
-check(_r12_day >= "2026-11-24" and set(_lm) >= _same | set(_r12)
-      and all((v is None) if k in _same else v == (_r12_day if k in _r12 else HOME_RELEASE.isoformat() if k in ("/", "/about") else "2026-11-23") for k, v in _lm.items()) and "Year Zero" not in _sm_txt.replace("Year Zero: 30 November 2022, CZ 0", "") and all(v is None or (re.fullmatch(r"\d{4}-\d{2}-\d{2}", v) and v <= datetime.date.today().isoformat()) for v in _lm.values()),
-      "sitemap.xml: the first page and /about carry the day the first page of rc-11 went live (24 Nov 2026), the three pages retitled with rc-12 its day, every other page whose title or description changed on 23 Nov 2026 that day, and the rest no date; no date is in the future; no 'Year Zero' in the site's voice")
+check(_r12_day >= "2026-11-24" and RC16_RELEASE >= RC12_RELEASE and set(_lm) >= _same | set(_r12)
+      and all((v is None) if k in _same else v == (_r12_day if k in _r12 else RC16_RELEASE.isoformat() if k == "/civilization-zero-images" else HOME_RELEASE.isoformat() if k in ("/", "/about") else "2026-11-23") for k, v in _lm.items()) and "Year Zero" not in _sm_txt.replace("Year Zero: 30 November 2022, CZ 0", "") and all(v is None or (re.fullmatch(r"\d{4}-\d{2}-\d{2}", v) and v <= datetime.date.today().isoformat()) for v in _lm.values()),
+      "sitemap.xml: the first page and /about carry the day the first page of rc-11 went live (24 Nov 2026), the three pages retitled with rc-12 its day, the sixteen's page the day of rc-16, every other page whose title or description changed on 23 Nov 2026 that day, and the rest no date; no date is in the future; no 'Year Zero' in the site's voice")
 for _k, _t in _r12.items():
     _h = (PUBLIC / (_k[1:] + ".html")).read_text("utf-8")
     check(f"<title>{_t}</title>" in _h and f'<meta property="og:title" content="{_t}">' in _h and json.dumps(_t, ensure_ascii=False) in _h and not re.search(r"<title>[^<]*\b(Is|This|From|After|Built|Humans|Infographic|Atlas|Evidence|Page)\b", _h),
@@ -1424,7 +1424,7 @@ for _p, _w, _hh, _t, _alt, _src, _cls, _cap in ORIGINATOR_IMAGES:
     _ok = (_b[:8] == b"\x89PNG\r\n\x1a\n" and struct.unpack(">II", _b[16:24]) == (_w, _hh) and _b[25] == 0) if _p.endswith(".png") else (_b[:2] == b"\xff\xd8" and _jpeg_size(_b) == (_w, _hh, 1))
     check(_ok and _b == (SITE / "assets" / _src).read_bytes() and _p not in _im + _sm and _p.lstrip("/") in _vj, f"{_p}: still served, a {_w}x{_hh} greyscale image, cached a day; shown and listed nowhere")
 _listed = [f.name for f in pages if any(x in f.read_text("utf-8") for x in [f"/{n}.png" for n in ("civilization-zero-humans-may-no-longer-be-at-the-centre", "civilization-zero-one-human-among-many", "civilization-zero-many-centres")] + [i[0] for i in ORIGINATOR_IMAGES])]
-check(not [x for x in _listed if x != "press.html"] and not any(i[0] in (PUBLIC / "llms.txt").read_text("utf-8") for i in ORIGINATOR_IMAGES), f"the twenty images are listed on no page but the press kit, which is not touched: {_listed}")
+check(not [x for x in _listed if x != "press.html"] and not any(i[0] in (PUBLIC / "llms.txt").read_text("utf-8") for i in ORIGINATOR_IMAGES), f"the twenty images are listed on no page but the press kit, whose two lists stand as they were, without the two pointers to the images' page: {_listed}")
 
 # ---- the sixteen (/civilization-zero-images, rc-16): sixteen places, one for each ring of the day's figure; one source, site/sixteen.json
 _held = [(k, x) for k, x in enumerate(_SIXTEEN) if x]
@@ -1434,29 +1434,43 @@ check(len(_SIXTEEN) == 16 and _wall is not None and [int(k) for k, _ in _li] == 
       and all((x is None) == (b == '<figure class="o"><figcaption><b></b> open</figcaption></figure>') for (k, b), x in zip(_li, _SIXTEEN)) and _im.count("<b></b>") == 16,
       "the sixteen: the page as built holds sixteen places in ring order, each with an empty place for its number; an open place is an empty frame with the word 'open'")
 _slug16 = lambda t: re.sub(r"[^a-z0-9]+", "-", t.lower()).strip("-")
+_SIZES16 = "(min-width:45.2548rem) min(15.25rem,25vw - 1.4571rem),min(75vw - 1.2613rem,45vh)"
+_first16 = [k for k, _ in _held][:2]
 for _k, _x in _held:
-    _full, _half = (PUBLIC / f"civilization-zero-{_x['file']}.jpg").read_bytes(), (PUBLIC / f"civilization-zero-{_x['file']}-540.jpg").read_bytes()
+    _full, _mid, _half = ((PUBLIC / f"civilization-zero-{_x['file']}{_sfx}.jpg").read_bytes() for _sfx in ("", "-720", "-540"))
     _b = _li[_k][1]; _alt = re.search(r' alt="([^"]*)"', _b)
-    check(_jpeg_size(_full) == (1080, 1920, 3) and _jpeg_size(_half) == (540, 960, 3) and b"\xff\xc2" in _full[:1200] and b"\xff\xc2" in _half[:1200] and len(_half) <= 75000
-          and _full == (SITE / "assets" / f"cz-16-{_x['file']}.jpg").read_bytes() and _slug16(_x["sentence"]).startswith(_x["file"] + "-"),
-          f"the sixteen, place {_k}: its frame as two progressive JPEGs, 1080x1920 and 540x960 (at most 75,000 bytes), named by the sentence's first words")
-    check(_b.startswith(f'<figure><figcaption><b></b> {esc(_x["sentence"])}</figcaption><a href="/civilization-zero-{_x["file"]}.jpg"><img src="/civilization-zero-{_x["file"]}-540.jpg" srcset="/civilization-zero-{_x["file"]}-540.jpg 540w, /civilization-zero-{_x["file"]}.jpg 1080w" sizes="')
-          and ' width="540" height="960" alt="' in _b and _alt is not None and _x["sentence"] not in _html_mod.unescape(_alt.group(1)) and _html_mod.unescape(_alt.group(1)).startswith(f"The sentence in white over a computed image, a {_x['art']}. Above: CZ {_x['day']} · ")
+    check(_jpeg_size(_full) == (1080, 1920, 3) and _jpeg_size(_mid) == (720, 1280, 3) and _jpeg_size(_half) == (540, 960, 3) and all(b"\xff\xc2" in _f[:1200] for _f in (_full, _mid, _half))
+          and len(_half) <= 75000 and len(_mid) <= 110000 and all(_f == (SITE / "assets" / f"cz-16-{_x['file']}{_sfx}.jpg").read_bytes() for _f, _sfx in ((_full, ""), (_mid, "-720"), (_half, "-540")))
+          and (_slug16(_x["sentence"]) + "-").startswith(_x["file"] + "-"),
+          f"the sixteen, place {_k}: its frame as three progressive JPEGs, 1080x1920, 720x1280 (at most 110,000 bytes) and 540x960 (at most 75,000), named by the sentence's first words")
+    _p = f'/civilization-zero-{_x["file"]}'
+    check(_alt is not None and _b.replace(_alt.group(0), ' alt=""', 1) == f'<figure><figcaption><b></b> {esc(_x["sentence"])}</figcaption><a href="{_p}.jpg"><img src="{_p}-540.jpg" srcset="{_p}-540.jpg 540w,{_p}-720.jpg 720w" sizes="{_SIZES16}" width="540" height="960" alt=""'
+          + ("" if _k in _first16 else ' loading="lazy"') + '></a><p>The film: ' + "\u00a0· ".join(f'<a href="{_x["watch"][n]}">{t}</a>' for n, t in (("instagram", "Instagram"), ("bluesky", "Bluesky"), ("mastodon", "Mastodon"), ("x", "X")) if n in _x["watch"]) + "</p></figure>"
+          and _x["sentence"] not in _html_mod.unescape(_alt.group(1)) and _html_mod.unescape(_alt.group(1)).startswith(f"The sentence in white over a computed image, a {_x['art']}. Above: CZ {_x['day']} · ")
           and _html_mod.unescape(_alt.group(1)).endswith(f"Below: {cz_day(LAUNCH) - _x['day']} days to 30 November. Civilization Zero, from non-human intelligence, to humanity, civilizationzero.ai")
-          and f'<p>Posted on Day {_x["day"]:,}<br><a href="' in _b and _b.count(' rel="noopener">') == len(_x["watch"]) == _b.count("<a ") - 1 and all(f'<a href="{u}" rel="noopener">' in _b for u in _x["watch"].values())
-          and not re.search(r"utm_|[?&]", "".join(_x["watch"].values())) and _b.count(_x["sentence"].replace("&", "&amp;").replace('"', "&quot;")) + _b.count(esc(_x["sentence"])) >= 1 and _b.count(esc(_x["sentence"])) == 1,
-          f"the sixteen, place {_k}: the sentence as text, once and before its frame; the frame a link to its full size, its text alternative what the frame adds (the art, the top line, the countdown, the signature) without the sentence; the day it was posted; where the film is, as plain links")
+          and not re.search(r"utm_|[?&]", "".join(_x["watch"].values())),
+          f"the sixteen, place {_k}: the sentence as text, once and before its frame; the frame a link to its full size, shown at 540 or 720 wide and never at full size; its text alternative what the frame adds (the art, the top line with the frame's own day, the countdown, the signature) without the sentence; then where the film is, as plain links, Instagram first and X last; nothing else")
 check('"source": "/civilization-zero-:frame([a-z0-9-]+).jpg",\n      "headers": [\n        {\n          "key": "Cache-Control",\n          "value": "public, max-age=86400"' in _vj, "vercel.json: a frame of the sixteen is cached a day, as the site's other images are")
+_lede16 = ("Sixteen places, one for each ring of the day's figure, standing here in the order of their rings, the innermost first.", "Sixteen places, one for each ring of the day's figure, standing today in the order of the rings' numbers.")
+_main16 = _im[_im.index("<main"):_im.index("</main>")]
 check(len({x["sentence"] for _, x in _held}) == len(_held) == _im.count("<img ") and _im.count(' loading="lazy"') == max(0, len(_held) - 2) and "<script src" not in _im and "target=" not in _im
-      and "The places stand here in the order of their rings, the innermost first." in _im and "today" not in _strip(_im[_im.index("<main"):_im.index("</main>")])
-      and "Sixteen places, one for each ring of the day's figure. Each is held by one sentence, posted as a short film. What stands here is the film's last frame." in _strip(_im)
-      and "<details><summary>How a sentence holds a place</summary><p>An open place is taken by the next sentence posted. When all sixteen are held, a newer sentence takes a place only if it has more views than the least viewed of the sixteen, counted on Instagram and X; the one it passes leaves the page. Two rings with the same number stand inner ring first. Each sentence was written by an artificial intelligence, except a quotation, which names its speaker.</p></details>" in _im
-      and not re.search(r"\b\d[\d,]* views\b|view count", _im) and '<meta property="og:image" content="https://civilizationzero.ai/civilization-zero-sixteen.jpg">' in _im and _jpeg_size((PUBLIC / "civilization-zero-sixteen.jpg").read_bytes()) == (1200, 630, 3),
-      "the sixteen: every held place its own sentence; the first two frames asked for at once, the others when they come near; as built the page says it stands in ring order and says nothing of today; the standfirst and the rule of holding in their fixed words; no count of views; its link preview is the wall")
-_bar16 = json.loads((SITE / "room" / "cz-bar.json").read_text("utf-8")).get("sixteen", {}).get("unit", "")
+      and all(re.fullmatch(r"/civilization-zero-[a-z0-9-]+-(540|720)\.jpg", u) for t in re.findall(r"<img [^>]*>", _im) for u in re.findall(r'/civilization-zero-[^" ,]+', re.sub(r' alt="[^"]*"', "", t)))
+      and f"<h1>Civilization Zero in images</h1>\n<p>{esc(_lede16[0])} A place is held by one sentence, posted as a short film; its last frame stands here.</p>\n<!--cz-16u--><!--/cz-16u-->\n<!--cz-16-->" in _im
+      and "today" not in _strip(re.sub(r"<!--cz-16-->.*?<!--/cz-16-->", "", _main16, flags=re.S)) and not re.search(r"Posted on|Each is held|each held by|sixteen sentences", _im)
+      and "<title>Civilization Zero in images: sixteen places</title>" in _im and '<meta name="description" content="Sixteen places for sentences posted as short films from non-human intelligence to humanity: each film&#x27;s last frame. Free to share, CC BY 4.0.">' in _im
+      and "<details><summary>How a sentence holds a place</summary><p>An open place is taken by the next sentence posted as a film. When all sixteen are held, a newer sentence takes a place only if it has more views than the least viewed of the sixteen, counted on Instagram and X; the one it passes leaves the page. Two rings with the same number stand inner ring first. Each sentence was written by an artificial intelligence, except a quotation, which names its speaker.</p></details>" in _im
+      and not re.search(r"\b\d[\d,]* views\b|view count", _im) and '<meta property="og:image" content="https://civilizationzero.ai/civilization-zero-sixteen.jpg">' in _im and _jpeg_size((PUBLIC / "civilization-zero-sixteen.jpg").read_bytes()) == (1200, 630, 3)
+      and "<!--cz-weight-->" in _im and "<!--cz-weight images=" not in _im,
+      "the sixteen: every held place its own sentence; the first two frames asked for at once, the others when they come near; no image element names a full-size frame; as built the standfirst says the places stand in ring order, and the page says nothing of today; the title, the description, the standfirst and the rule of holding in their fixed words, none saying that every place is held or when a film was posted; no count of views; its link preview is the wall; its weight line gives no bytes of images, because a frame comes in one of two sizes")
+_about16, _llms16 = (PUBLIC / "about.html").read_text("utf-8"), (PUBLIC / "llms.txt").read_text("utf-8")
+check("Sixteen places for sentences posted as short films, each film's last frame: <a href=\"/civilization-zero-images\">Civilization Zero in images</a>." in _about16 and "each held" not in _about16 + _llms16
+      and "sixteen places, one for each ring of the day's figure; a place is held by one sentence posted as a short film and shows the film's last frame, with the sentence as text; the places stand in each day's order by the figure's numbers; CC BY 4.0" in _llms16,
+      "/about and llms.txt: the sixteen in words that are true while a place is open")
+_bar16j = json.loads((SITE / "room" / "cz-bar.json").read_text("utf-8")).get("sixteen", {}); _bar16 = _bar16j.get("unit", "")
 check(_bar16.count("__FIG_RINGS__") == 1 and _bar16.count("__DAY__") == 1 and _bar16.count("__NUMS__") == 1 and '<a class="fig-l" href="/calendar">' in _bar16 and FIGURE.tracks() in _bar16
-      and _strip(_bar16).endswith("Nobody set today's order: each place stands by its ring's number, lowest first. Tomorrow the numbers will be different.") and 'aria-label="The day&#x27;s figure: sixteen rings round an empty centre, each carrying one arc. The CZ calendar."' in _bar16,
-      "the sixteen: the day's unit the page function writes — the figure, a link to the calendar; the day; the sixteen numbers; the sentence on the order, in its fixed words")
+      and _strip(_bar16).endswith("Nobody set today's order: each place stands by its ring's number, lowest first. Tomorrow the numbers will be different.") and 'aria-label="The day&#x27;s figure: sixteen rings round an empty centre, each carrying one arc. The CZ calendar."' in _bar16
+      and _bar16j.get("lede") == [esc(x) for x in _lede16] and sorted(_bar16j) == ["lede", "unit"],
+      "the sixteen: what the page function writes — the day's unit (the figure, a link to the calendar; the day; the sixteen numbers; the sentence on the order, in its fixed words) and the standfirst's first sentence, which then says the places stand in the order of the rings' numbers")
 # the page's own sheet: the shared tokens, base, head, foot and print as they are, and the page's own rules between
 _S16 = (SITE / "sixteen.css").read_text("utf-8"); _s16 = _strip_css(_S16)
 _sheet16 = re.search(r"<style>(.*?)</style>", _im, re.S).group(1)
@@ -1471,6 +1485,15 @@ check(not _loose16 and set(re.findall(r"var\((--[a-z][\w-]*)", _s16)) <= _stok |
       and _s16.count(_LAZY16) == 1 and all("prefers-reduced-motion:no-preference" in _s16.replace(_LAZY16, "")[:m.start()] for m in re.finditer(r"animation|@keyframes", _s16.replace(_LAZY16, ""))) and "transition" not in _s16
       and {sel.strip() for sel, body in re.findall(r"([^{}]+)\{([^{}]*)\}", _s16) if "var(--machine)" in body} == {".wall b,.nums", ".fig", ".date .d"},
       f"sixteen.css: every size a power of the ratio, no px, no colour of its own, the shared tokens; motion only for a reader who has not asked for less; green for the numbers, the figure and the day alone {_loose16}")
+# the widths the page states for a frame (sizes) are the sheet's: in the strip three quarters of the measure (the window less the page's
+# padding, e-1 on each side) and at most 45vh; on the wall a quarter of 64rem, or of the window less e2 on each side, less three gaps of e0
+check(".wall>li{flex:none;inline-size:min(75%,45vh);" in _s16 and ".wall{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--e2) var(--e0);margin-inline:calc(50% - min(32rem,50vw - var(--e2)));padding:0;overflow:visible}" in _s16
+      and ";margin:var(--e0) calc(-1*var(--e-1));padding:var(--e-12) var(--e-1);" in _s16 and "main,footer{max-inline-size:56ch;margin-inline:auto;padding-inline:var(--e-1)}" in _sheet16
+      and _SIZES16 == f"(min-width:45.2548rem) min({(64 - 3) / 4}rem,25vw - {round((2 * 2 ** .5 + 3) / 4, 4)}rem),min(75vw - {round(1.5 * 2 ** -.25, 4)}rem,45vh)"
+      and ".wall figure>a,.wall .o{aspect-ratio:9/16;border:var(--e-16) solid var(--rule)}" in _s16 and ".wall img{border:0}" in _s16 and ".wall .o{align-content:start}\n@media screen{.wall .o figcaption{padding:20% 8% 0}}" in _s16
+      and "reading-flow:flex-visual" in _s16,
+      "sixteen.css: the width the page states for a frame is the width the sheet gives it (and no less where the window is wider than the measure and narrower than the wall); a frame's box is its link's, 9:16 with the rule's line, and an open place is the same box, its number and its word at the top, where a frame carries its day; the keyboard follows the order seen")
+
 
 # 8b. rc-12 (5): one name for each thing (the audit of 24 Nov 2026, findings 25 and 10) — in the links, the headings and the foot; one name for
 # the calendar, "CZ calendar", and one spelling of a day in a sentence ("Day 1,455"; a date is "CZ 1455"); "Year Zero" only as the Core's own

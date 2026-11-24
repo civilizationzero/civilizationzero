@@ -69,13 +69,17 @@ function dayFigure(day) {
 // order (place k is ring k) with no numbers; here each ring's number that day is computed by the first page's own function
 // (room/figure.js), the places are written in that order — lowest number first, a tie inner ring first — so that the order read is the
 // order seen, each with its number; the first two frames are asked for at once and the others when they come near; and the day's unit
-// (the figure, the day, the sixteen numbers lowest first, each a link to its place) stands in the place the build left for it. Nothing
-// is changed if the frame of the figure or the build's markers are missing: the page as built is true of what it shows.
+// (the figure, the day, the sixteen numbers lowest first, each a link to its place) stands in the place the build left for it; the
+// standfirst's first sentence, which as built says the places stand in ring order, says they stand in the order of the rings' numbers.
+// All of it or nothing: if the frame of the figure, the build's markers or the standfirst are missing, the page stays as built, which
+// is true of what it shows.
 function sixteenOrder(nums) { return nums.map((n, k) => k).sort((a, b) => (Number(nums[a]) - Number(nums[b])) || (a - b)); }
 const WALL_RE = /(<!--cz-16--><ol[^>]*>)([\s\S]*?)(<\/ol><!--\/cz-16-->)/, UNIT_RE = /<!--cz-16u-->[\s\S]*?<!--\/cz-16u-->/;
 function sixteen(html, day) {
   const T = CZ.barTemplates(), f = T.dayfigure, u = T.sixteen;
   if (!f || !u || typeof u.unit !== "string" || !/^[0-9a-f]{64}$/.test(String(f.core_sha256))) return html;
+  const lede = Array.isArray(u.lede) && u.lede.length === 2 && u.lede.every((x) => typeof x === "string" && x) ? u.lede : null;
+  if (!lede || !html.includes(`<p>${lede[0]} `)) return html;
   const m = WALL_RE.exec(html); if (!m) return html;
   const items = m[2].match(/<li id="p\d+">[\s\S]*?<\/li>/g) || [];
   if (items.length !== 16 || items.join("") !== m[2]) return html;
@@ -89,7 +93,14 @@ function sixteen(html, day) {
   const links = order.map((k) => `<a href="#p${k}">${nums[k]}</a>`);
   const fours = [0, 4, 8, 12].map((j) => links.slice(j, j + 4).join("&nbsp;")).join(" ");
   const unit = u.unit.replace(/__(FIG_RINGS|DAY|NUMS)__/g, (m0, k) => (k === "FIG_RINGS" ? FIG.rings(day, K) : k === "DAY" ? CZ.fmtInt(day) : fours));
-  return html.replace(WALL_RE, () => m[1].replace('aria-label="The sixteen places"', `aria-label="The sixteen places, in today's order"`) + places + m[3]).replace(UNIT_RE, () => `<!--cz-16u-->${unit}<!--/cz-16u-->`);
+  return html.replace(`<p>${lede[0]} `, () => `<p>${lede[1]} `)
+             .replace(WALL_RE, () => m[1].replace('aria-label="The sixteen places"', `aria-label="The sixteen places, in today's order"`) + places + m[3]).replace(UNIT_RE, () => `<!--cz-16u-->${unit}<!--/cz-16u-->`);
+}
+// The sixteen as Markdown: a held place is its number, its sentence, the day its frame is dated (a link to the frame) and where the
+// film is. The frame's text alternative is for a reader of the page who cannot see the frame; this form shows no frame.
+const HELD_RE = /<li id="p(\d+)"><figure><figcaption>(<b>\d*<\/b>) ([^<]*)<\/figcaption><a href="([^"]+)"><img [^>]*? alt="[^"]*?Above: CZ (\d+) [^"]*"[^>]*><\/a><p>([\s\S]*?)<\/p><\/figure><\/li>/g;
+function sixteenMd(html) {
+  return html.replace(WALL_RE, (m0, a, items, z) => a + items.replace(HELD_RE, (m1, k, b, s, full, d, film) => `<li id="p${k}">${b} ${s} <a href="${full}">Frame dated CZ ${d}</a>. ${film}</li>`) + z);
 }
 function dateResult(r, today) {
   const x = CZ.describe(r.day), g = x.gregorian, sh = x.solar_hijri, lh = x.lunar_hijri;
@@ -263,6 +274,7 @@ module.exports = async (req, res) => {
     const pth = (p === "" ? "/" : `/${p}`) + (viewQuery ? `?${viewQuery}` : "");
     // the Core and the record name the DOI to cite them by in this form too (CZ 1433, item 5); no canonical beside the noindex (CZ 1445)
     const link = ["core", "record"].includes(p) && status === 200 ? { Link: CITE_AS } : {};
+    if (p === "civilization-zero-images" && status === 200) out = sixteenMd(out);
     return MD.sendMarkdown(res, status, req.method === "HEAD" ? "" : MD.htmlToMarkdown(out, { path: pth }), pth, "https://civilizationzero.ai", { "Cache-Control": `public, max-age=0, s-maxage=${ttl}`, Vary: vary, ...link });
   }
   out = fillWeight(out);   // the line at the foot: this page's weight as it is sent (room/weight.js)
@@ -282,6 +294,7 @@ module.exports.dayLine = dayLine;
 module.exports.dayFigure = dayFigure;
 module.exports.sixteen = sixteen;
 module.exports.sixteenOrder = sixteenOrder;
+module.exports.sixteenMd = sixteenMd;
 module.exports.linkFor = linkFor;
 module.exports.deployBlock = deployBlock;
 module.exports.OPEN = OPEN;

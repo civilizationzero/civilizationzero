@@ -1,22 +1,35 @@
-/* CIVILIZATION ZERO, the sixteen (/civilization-zero-images). E: sixteen places, one for each ring of the day's figure; each held place
+/* CIVILIZATION ZERO, the sixteen (/civilization-zero-images). E: sixteen places, one for each ring of the day's figure; a held place
    shows a film's last frame, its ring's number that day, its sentence and where the film is; an open place is an empty frame with its
    number. R: the day's figure (room/figure.js) gives each ring's number, and the places stand by that number, lowest first: the page
    function writes them in that order, so the order read is the order seen. M: the sentence is text, heard before its frame; the
    frame's text alternative says what the frame adds. C: one module, one ratio, as on every page. */
 
-/* A THE WALL. E: in a narrow window one strip that scrolls sideways, each frame three quarters of the measure wide so that the next
-   one shows; the page itself never scrolls sideways. From e22 a wall of four by four on a canvas wider than the reading measure.
-   H: the strip takes the keyboard's focus and its arrows (2.1.1); a place a number leads to stops clear of the strip's edge. */
-.wall{display:flex;gap:var(--e-2);margin:var(--e0) calc(-1*var(--e-1));padding:var(--e-12) var(--e-1);list-style:none;overflow-x:auto;scroll-snap-type:x mandatory;scroll-padding-inline:var(--e-1);overscroll-behavior-x:contain}
-.wall>li{flex:none;inline-size:75%;margin:0;scroll-snap-align:start}
+/* A THE WALL. E: in a narrow window one strip that scrolls sideways, each place three quarters of the measure wide so that the next
+   one shows, and never taller than the window (45vh wide is 80vh tall); the gap between two places is the strip's own padding, so a
+   place at rest shows nothing of the one before it; the page itself never scrolls sideways. From e22 a wall of four by four, 64rem
+   at most and e2 clear of the window's edges, centred on the reading column: the words stay on the column.
+   The frame's box is its link's (9:16, the rule's line around it), so a place is as tall before its image has a box as after, and
+   an open place, the same box, is exactly as large: its number and "open" stand where a frame carries its day, at the place's
+   leading edge, so they are read in the part of the next place that shows.
+   H: the strip takes the keyboard's focus and its arrows (2.1.1); a place a number leads to stops clear of the strip's edge.
+   Under a frame the sentence is small: it is read in the frame. Then where the film is, on one line where it fits: each name
+   a target e3 tall or more; the last, which may be one letter, reaches e-1 past its end, into the gap or the room beside the
+   wall, and no nearer the name before it than the dot (2.5.8). */
+.wall{display:flex;gap:var(--e-1);margin:var(--e0) calc(-1*var(--e-1));padding:var(--e-12) var(--e-1);list-style:none;overflow-x:auto;scroll-snap-type:x mandatory;scroll-padding-inline:var(--e-1);overscroll-behavior-x:contain}
+.wall>li{flex:none;inline-size:min(75%,45vh);margin:0;scroll-snap-align:start}
 .wall figure{display:grid;row-gap:var(--e-8);margin:0}
-.wall figure>a{grid-row:1}   /* the frame stands over its lines; in the page's text the sentence comes before it */
-.wall figcaption{grid-row:2;font-size:var(--e0);color:var(--fg)}
-.wall p{grid-row:3;margin:0;font-size:var(--e-1);color:var(--mute)}
-.wall p a{display:inline-block;min-inline-size:var(--e3);padding-block:var(--e-4);text-align:center}
+.wall figure>a,.wall .o{aspect-ratio:9/16;border:var(--e-16) solid var(--rule)}
+/* the frame stands over its lines; in the page's text the sentence comes before it */
+.wall figure>a{grid-row:1}
+.wall img{border:0}
+.wall figcaption{grid-row:2;font-size:var(--e-1)}
+.wall p{grid-row:3;margin:0;padding-block:var(--e-4);font-size:var(--e-1);color:var(--mute)}
+.wall p a{padding-block:var(--e-4)}
+.wall p a:last-child{margin-inline:calc(-1*var(--e-8)) calc(-1*var(--e-1));padding-inline:var(--e-8) var(--e-1)}
 .wall b,.nums{font-family:var(--exact);color:var(--machine)}
-.wall b{display:block;font-size:var(--e-1)}
-.wall .o{aspect-ratio:9/16;place-content:center;border:var(--e-16) solid var(--mute);text-align:center}
+.wall b{display:block}
+.wall .o{align-content:start}
+@media screen{.wall .o figcaption{padding:20% 8% 0}}
 /* C: on a phone a frame is asked for when its place comes into the strip, not before: where a browser has view timelines, a place's
    image has no box until the place enters (elsewhere the browser's own lazy loading decides, and asks earlier). */
 @supports (animation-timeline:view()){
@@ -27,20 +40,18 @@
 }
 }
 @media(min-width:45.2548rem){
-main{max-inline-size:64rem}
-main>:not(.wall){max-inline-size:56ch;margin-inline:auto}
-.wall{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--e2) var(--e0);margin-inline:0;padding:0;overflow:visible}
+.wall{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--e2) var(--e0);margin-inline:calc(50% - min(32rem,50vw - var(--e2)));padding:0;overflow:visible}
 .wall>li{inline-size:auto}
 }
 
 /* B THE DAY. E: the first page's own unit: the figure, a link to the calendar; the day; the sixteen numbers, lowest first, in fours
    (eight to a row where eight fit, otherwise four),
    each a link to its place, three characters wide in a line e3 tall (2.5.8); one sentence in the machine's face. In a narrow window it stands under
-   the strip, though it is written before it: the frames come first on a small screen. H: with text enlarged twice the figure
-   stands over its lines (1.4.4). */
-main{display:flex;flex-direction:column}
+   the strip, though it is written before it: the frames come first on a small screen; the keyboard goes through the page in the
+   order seen (reading-flow, 2.4.3). H: with text enlarged twice the figure stands over its lines (1.4.4). */
+main{display:flex;flex-direction:column;reading-flow:flex-visual}
 .fb{order:1;margin:0 0 var(--e0);padding-block:var(--e-8);border-block:var(--e-16) solid var(--mute)}
-main>details,main>.forms,main>#licence{order:2}
+.wall~*{order:2}
 .fig-l{display:block;float:left;inline-size:var(--e10);margin-right:var(--e-2);border-radius:50%}
 .fig{display:block;inline-size:100%;block-size:auto;color:var(--machine)}
 .trk circle{stroke:var(--rule);stroke-width:calc(var(--e-16)/2);vector-effect:non-scaling-stroke}
@@ -66,14 +77,15 @@ main>details,main>.forms,main>#licence{order:2}
 .nums a:target-current{text-decoration-thickness:var(--e-8)}
 }
 
-/* C PAPER AND MOTION. On paper the sixteen are a plain list: number, sentence, where it was posted. E: one moment as the page opens,
+/* C PAPER AND MOTION. On paper the sixteen are a plain list on the column: number, sentence, where the film is. E: one moment as the page opens,
    once: the unit is written as on the first page (each arc from where its ring stood the day before, each number at its moment, the
    sentence word after word) and the places take their positions one after another. H: none of it for a reader who asks for less
    motion (2.3.3), in forced colours, or without a count of siblings; on paper everything stands at once. */
 @media print{
-.wall,.wall .o{display:block;overflow:visible}
+.wall{display:block;margin-inline:0;padding:0;overflow:visible}
 .wall figure>a{display:none}
-.wall .o{aspect-ratio:auto;border:0;text-align:start}
+.wall .o{display:block;aspect-ratio:auto;border:0}
+.wall figcaption{font-size:var(--e0);color:var(--fg)}
 }
 @media(prefers-reduced-motion:no-preference) and (forced-colors:none){
 .arc circle{animation:draw .5s ease-out backwards}

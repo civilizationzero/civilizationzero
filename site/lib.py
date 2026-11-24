@@ -677,6 +677,7 @@ BUILT_PATH = "/how-it-is-built"
 # them, or any day on which a thing was decided or changed (the originator's rule of 24 Nov 2026 UTC, CZ 1455).
 HOME_RELEASE = datetime.date(2026, 11, 24)   # the day the first page of rc-11 goes live: set it to the UTC day of deployment if that is another day (the sitemap dates / and /about with it)
 RC12_RELEASE = datetime.date(2026, 11, 24)   # the day rc-12 (one head, one stylesheet, the contents, the seal, a figure for every day) goes live: set it to the UTC day of deployment if that is another day
+RC16_RELEASE = datetime.date(2026, 11, 24)   # the day rc-16 (the sixteen: /civilization-zero-images, its title and description) goes live: set it to the UTC day of deployment if that is another day (the sitemap dates the page with it)
 # The colour rule, whole: every use of green, in one sentence. /how-it-is-built prints it and site/room/lib.js quotes it; site/check.py
 # holds it to the two stylesheets rule by rule (a rule that sets a green token for anything the sentence does not name fails the build,
 # and so does a use the sentence names that no rule carries), to the badge and to the counter.
