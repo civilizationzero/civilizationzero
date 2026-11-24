@@ -35,9 +35,9 @@ p.cap label{display:inline;margin:0}
 /* A3 SEND. E: one filled control. While the text is not yet a text the record takes, one quiet line stands in its place (where the
    browser can tell, :has()). "Send" opens the last step and is shown only where the browser has the popover, as is the way back
    out of it; elsewhere the last step stands open under the place. H: the control stays in view while a person writes: it holds to
-   the window's lower edge, on the page's ground, under a hairline (the rule stands with the popover's, in A4), and the text being
-   written is kept clear of it, and of the window's upper edge, so that the question over the place stays in view where the
-   window is low. */
+   the window's lower edge, on the page's ground, under a hairline (the rule stands with the popover's, in A4; it is a hairline
+   wider than the place on each side, so that it covers the frame that shows the keyboard), and the text being written is kept
+   clear of it, and of the window's upper edge, so that the question over the place stays in view where the window is low. */
 html{scroll-padding-block:var(--e4) 4.7568rem}
 .acts{display:flex;flex-wrap:wrap;align-items:center;gap:var(--e-4) var(--e0);margin-block:var(--e0)}
 button.send,button.back{display:none}
@@ -82,7 +82,7 @@ p.receipt code{font-weight:700}
 @supports selector(:popover-open){
 button.send{display:inline-flex}
 button.back{display:inline-block}
-.bar{position:sticky;inset-block-end:0;margin-block-end:0;padding-block:var(--e-2) var(--e-1);border-block-start:var(--e-16) solid var(--rule);background:var(--bg)}
+.bar{position:sticky;z-index:1;inset-block-end:0;margin:var(--e0) calc(-1*var(--e-16)) 0;padding:var(--e-2) var(--e-16) var(--e-1);border-block-start:var(--e-16) solid var(--rule);background:var(--bg)}
 #who[popover]{position:fixed;inset:var(--e-1) 0 auto;box-sizing:border-box;inline-size:min(56ch,100% - 2*var(--e-1));block-size:100%;max-block-size:calc(100% - 2*var(--e-1));margin:0 auto;padding:var(--e0);border:var(--e-12) solid var(--fg);color:var(--fg);background:var(--bg);overflow:auto;overscroll-behavior:contain}
 #who[popover]::backdrop{background:var(--bg,rgb(0 0 0/.5))}
 @media(min-width:38.0546rem){#who[popover]{inset-block-start:var(--e6);max-block-size:calc(100% - var(--e6) - var(--e-1))}}
