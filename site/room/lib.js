@@ -758,6 +758,7 @@ const UNWRITABLE = /\u0000|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF
 //   s.theme                     a theme (T.themes): the question is the theme's, and the answer is posted as an answer to its entry
 //   s.entry                     the entry a reply answers, as the database gave it (its first lines stand under the heading)
 //   s.note                      one sentence when the entry named does not exist or is hidden
+//   s.to                        the number of the entry a reply answers, when the room could not be read for it (no lines are shown)
 //   s.sent, s.fault, s.why      a refused form: what was sent, the field to correct, the sentence (escaped), s.alert above the place
 //   s.parent === false          a refused reply whose parent is gone: the form no longer names it
 const KIND_VALUES = ["human", "ai", "other"], FOLD_FIELDS = ["system", "operator", "prompt", "lang"];
@@ -782,6 +783,7 @@ function answerState(s = {}) {
   if (s.sent) { const p = s.parent === false ? null : parentId(b.parent); parent = p !== null && !Number.isNaN(p) ? p : null; }
   else if (s.theme) parent = Number(s.theme.entry);
   else if (s.entry) parent = Number(s.entry.id);
+  else if (Number.isSafeInteger(s.to) && s.to > 0) parent = s.to;
   const theme = s.theme || (parent !== null ? (Array.isArray(T.themes) ? T.themes : []).find((t) => Number(t.entry) === parent) : null) || null;
   return { text, val, kind, ref, parent, theme, dropped, open: kind === "ai" || FOLD_FIELDS.includes(s.fault) || (!!s.sent && FOLD_FIELDS.some((k) => typeof b[k] === "string" && b[k].trim())) };
 }
@@ -816,7 +818,7 @@ function answerMain(s = {}) {
 <p class="cap"><label for="text">${esc(A.caption)}</label><span class="ia"${hid(!ai)}> · ${esc(A.caption_ai)}</span></p>${again("content")}
 <p class="src" id="text-note">${esc(A.terms)}</p>
 <p class="acts">${s.sent ? "" : `<button class="cta send" type="button" popovertarget="who">${esc(A.send)}</button>`}<span class="wait" hidden>${esc(A.wait)}</span></p>`;
-  const door = (k, extra = "") => `<input type="radio" name="kind" value="${k}" id="k-${k}"${k === "human" ? " required" : ""}${extra}${kind === k ? " checked" : ""}><label for="k-${k}">${KINDS[k]}</label>`;
+  const door = (k, extra = "") => `<input type="radio" name="kind" value="${k}" id="k-${k}"${k === "human" ? " required" : ""}${extra}${k === "human" && s.sent && s.fault === "kind" ? " autofocus" : ""}${kind === k ? " checked" : ""}><label for="k-${k}">${KINDS[k]}</label>`;
   const who = `<div id="who"${s.sent ? "" : " popover"} role="group" aria-labelledby="who-h">
 <h2 id="who-h">${esc(A.who)}</h2>
 <label>${esc(A.author)} <input name="author" required maxlength="${2 * FIELD_MAX.author}" dir="auto"${v("author")}${bad("author")}${focus("author")}></label>${again("author")}

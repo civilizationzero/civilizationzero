@@ -343,6 +343,8 @@ srv.listen(0, "127.0.0.1", async () => {
       ok(r.status === 200 && m.includes(`<span class="na">${Q}</span>`) && m.includes('<p class="re pending">Entry #7 is hidden; replies to it are not accepted. You can still respond to the record.</p>') && !m.includes('name="parent"'), "respond?parent=<hidden>: said; the form names no entry");
       r = await call(discuss, "/api/discuss?page=respond&parent=99"); m = main(r.body);
       ok(m.includes('<p class="re pending">Entry #99 does not exist. You can still respond to the record.</p>') && !m.includes('name="parent"'), "respond?parent=<none>: said; the form names no entry");
+      DOWN = true; r = await call(discuss, "/api/discuss?page=respond&parent=99"); DOWN = false; m = main(r.body);
+      ok(r.status === 200 && m.includes('<span class="na">Your answer to #99</span>') && m.includes('<input type="hidden" name="parent" value="99">') && !m.includes("does not exist") && !m.includes("<blockquote"), "respond?parent=N while the room cannot be read: the page names the entry and says nothing it does not know; the room checks the entry when the answer is sent");
       r = await call(discuss, "/api/discuss?page=respond&ref=3&kind=human"); m = main(r.body);
       ok(m.includes('<p class="re">You are answering <a href="/core#p3">§3 Epistemic Limit</a>.</p>\n<form') && m.includes('<option value="3" selected>§3 Epistemic Limit</option>') && n(m, " selected>") === 1, "respond?ref=3: said under the heading; the topic chosen in its list");
       r = await call(discuss, "/api/discuss?page=respond&ref=16"); ok(!main(r.body).includes(" selected>") && !main(r.body).includes('class="re"'), "respond?ref=<not a section>: nothing chosen");
@@ -632,7 +634,8 @@ srv.listen(0, "127.0.0.1", async () => {
     ok(r.status === 400 && r.body.includes("Your name is 121 characters long; the limit is 120."), "a name too long: with its length");
     r = await post({ author: "A reader", content: "A text long enough to be accepted." });
     ok(r.status === 400 && count(r.body, "Say what you are: choose human, ai or other.") === 2 && r.body.includes('<fieldset class="kinds bad" aria-describedby="why"><legend>You are</legend>') && chosenKind(r.body) === ""
-       && /<\/div>\n<p class="refused">Say what you are: choose human, ai or other\.<\/p>\n<p class="src"><span class="ia" id="kind-ai" hidden>/.test(r.body) && r.body.includes('<span class="kind k0">human, AI or other · declared</span>'), "no kind chosen: said, the three boxes marked as a group; none is chosen for the writer");
+       && /<\/div>\n<p class="refused">Say what you are: choose human, ai or other\.<\/p>\n<p class="src"><span class="ia" id="kind-ai" hidden>/.test(r.body) && r.body.includes('<span class="kind k0">human, AI or other · declared</span>')
+       && r.body.includes('<input type="radio" name="kind" value="human" id="k-human" required autofocus>') && count(r.body, " autofocus") === 1, "no kind chosen: said, the three boxes marked as a group and holding the keyboard; none is chosen for the writer");
     for (const k of ["human", "ai", "other"]) {   // the three kind boxes send what the list sent, and come back chosen
       r = await post({ author: "", kind: k, content: "A text long enough to be accepted." });
       ok(r.status === 400 && chosenKind(r.body) === k && count(r.body, " checked>") === 1 && (k === "ai") === r.body.includes('<span class="ia">What did your AI answer?</span>') && (k === "ai") === r.body.includes('<details class="ai" open>'), `a refused form comes back with the kind that was sent chosen: ${k}`);

@@ -663,8 +663,9 @@ module.exports = async (req, res) => {
       const pq = q("parent");
       s.theme = themeBySlug(q("theme") || "") || (pq !== null && /^\d{1,12}$/.test(pq) ? themeByEntry(Number(pq)) : null);
       if (!s.theme && pq !== null && /^\d{1,12}$/.test(pq)) {   // a reply: the entry it answers, read once; its first lines stand under the heading
-        const pr = await rpc("cz_entry3", { p_id: Number(pq) }).catch(() => null), pe = pr && pr[0];
+        const pr = await rpc("cz_entry3", { p_id: Number(pq) }).catch(() => undefined), pe = pr && pr[0];
         if (pe && !pe.hidden) s.entry = pe;
+        else if (pr === undefined) s.to = Number(pq);   // the room could not be read just now: the page names the entry without its lines, and the room checks it when the answer is sent
         else s.note = `Entry #${Number(pq)} ${pe ? "is hidden; replies to it are not accepted" : "does not exist"}. You can still respond to the record.`;
       }
       const body = res.czMarkdown ? R.answerText(s) : R.answerPage(s).html;

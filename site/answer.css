@@ -1,5 +1,5 @@
 /* CIVILIZATION ZERO, the page at /respond: the answer page. THE FORM: a question and a place. The page asks; the reader answers,
-   under terms said in one line; who the reader is comes last, in one step. The build (site/build.py, answer_css) sets these rules
+   under terms said in one line; who the reader is comes last, in one step. The build (site/build.py, ANSWER_CSS) sets these rules
    after the shared sheet's tokens, base and head and before its foot, so the head and the foot are every page's; the page is
    served without these comments. One module, one ratio, as everywhere: every size is a token or a power of the ratio.
    R the record · M the machine reader · H a standard for human reading · C a constraint · E a choice. */

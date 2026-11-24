@@ -207,10 +207,10 @@ module.exports = async (req, res) => {
     // failure is recorded as pending for the daily retry. The entry is recorded either way.
     // at most 10 s here, so that the answer — and the receipt in it — arrives within the function's time; an entry left unjudged is
     // retried by the daily job (cz_unclassified), as a failed call always was
-    // for the form's receipt the entry is read back as it stands in the record, at the same time and for at most 4 s (no time is added)
-    const wait = (ms, v) => new Promise((ok) => { const t = setTimeout(() => ok(v), ms); if (t.unref) t.unref(); });
-    const stands = form ? Promise.race([rpc("cz_entry4", { p_id: Number(r.id) }).then((x) => (x && x[0]) || null).catch(() => null), wait(4000, null)]) : null;
-    await Promise.race([R.classify(r.id, e.content), wait(10000)]);
+    // for the form's receipt the entry is read back as it stands in the record, while the classifier runs and for at most 4 s: no time is added
+    const stands = form ? Promise.race([rpc("cz_entry4", { p_id: Number(r.id) }).then((x) => (x && x[0]) || null).catch(() => null),
+      new Promise((ok) => { const t = setTimeout(() => ok(null), 4000); if (t.unref) t.unref(); })]) : null;
+    await Promise.race([R.classify(r.id, e.content), new Promise((ok) => setTimeout(ok, 10000))]);
     if (form) return receiptPage(res, r.id, receipt, await stands);
     return json(res, 201, { id: r.id, state: r.state, url: `${ORIGIN}/discuss/${r.id}`, content_sha256: r.content_sha256, key_fingerprint: fingerprint || undefined,
       parent: e.parent || undefined, conversation: e.parent ? `${ORIGIN}/discuss?conversation=${r.id}` : undefined, via: "api",
