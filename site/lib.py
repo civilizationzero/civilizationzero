@@ -332,6 +332,10 @@ li{margin-block:var(--e-8)}
 /* H: small grey print for sources and captions only; what a reader must know is set at the reading size. */
 .src,figcaption,.forms{color:var(--mute)}
 .src,figcaption{font-size:.8409em}
+/* an exact value inside small print, inside a table of labels and values or inside another exact value, and a note inside a note,
+   keeps that print's size: it is not made small twice. (In the columns of a table of rows it stays one step under its cell; where
+   each row is a block, on a narrow screen, it has the cell's size there too.) */
+:is(.src,figcaption,pre,code,time,data,.kv,.cz-result) :is(time,data,code,kbd,samp,.exact,.src){font-size:1em}
 :is(h2,h3) .src{font-size:.5946em;font-weight:400}
 blockquote{margin-inline:0;padding-inline-start:var(--e0);border-inline-start:var(--e-16) solid var(--fg)}
 blockquote p{margin:var(--e-8) 0}
@@ -344,7 +348,7 @@ summary{padding-block:var(--e-4);cursor:pointer}
 .nw,a.cz-date time,data,th[scope=col]{white-space:nowrap}
 time:not(a time),code:not(.hash,a code){display:inline-block;max-inline-size:100%}
 a.cz-date{text-decoration-color:var(--mute)}
-code.hash{overflow-wrap:anywhere;user-select:all}
+code.hash{overflow-wrap:anywhere;-webkit-user-select:all;user-select:all}
 figure{margin-inline:0}
 figure img{display:block;inline-size:100%;block-size:auto;border:var(--e-16) solid var(--rule)}
 figure.poster img,img.tall{max-inline-size:calc(4*var(--e12))}
@@ -402,7 +406,7 @@ div[popover]{position-anchor:--sec;inset:anchor(bottom) auto auto anchor(left);m
 .acts{display:flex;flex-wrap:wrap;gap:var(--e-4) var(--e-2)}
 .lines>span{display:block;padding-inline-start:var(--e2);text-indent:calc(-1*var(--e2))}
 .lines>br{display:none}
-pre[id]{user-select:all}
+pre[id]{-webkit-user-select:all;user-select:all}
 .seal svg{display:block;inline-size:min(100%,20*var(--e0));block-size:auto}
 .seal .un{fill:var(--rule)}
 .seal .cut{stroke:var(--bg);stroke-width:var(--e-16);vector-effect:non-scaling-stroke}
@@ -445,6 +449,7 @@ td.num,th.num{text-align:end;font-variant-numeric:tabular-nums}
 .rows td{padding-block:0;border:0}
 .rows td:first-child{font-weight:700}
 .rows td[data-th]::before{content:attr(data-th) ": ";color:var(--mute)}
+.rows :is(time,data,code){font-size:1em}
 }
 
 /* 6 CONTROLS. H: every control at least e6 tall (2.5.8 and the platforms' touch guidance) and no wider than its line; fields at the
@@ -547,8 +552,11 @@ footer :is(p,.src,.foot){font-size:var(--e-1)}
 .foot a{display:inline-block;padding-block:var(--e-8)}
 .cz-weight{font-variant-numeric:tabular-nums}
 
-/* 9 PRINT. On paper: the name and the day, the text, the foot's words; no control and no navigation. */
-@media print{.skip,nav.site,form,dialog,button,.filters,.tr-bar,p.actions,.sec,.next,.forms,footer nav{display:none!important}a{text-decoration:none}header.site,main,footer{max-inline-size:none}}
+/* 9 PRINT. On paper: the name and the day, the text, the foot's words; no control and no navigation. What a fold holds is printed
+   open where the browser can (paper cannot be pressed), without the fold's marker. */
+@media print{.skip,nav.site,form,dialog,button,.filters,.tr-bar,p.actions,.sec,.next,.forms,footer nav{display:none!important}a{text-decoration:none}header.site,main,footer{max-inline-size:none}
+details::details-content{content-visibility:visible}
+@supports selector(::details-content){summary{list-style:none}}}
 
 /* 10 MOTION. E: between two pages of the site the page fades and the mark travels from its place on one to its place on the other
    (cross-document view transitions); a translation in progress shows a sweep and a turning ring. H: none of it for a reader who asks for
@@ -600,8 +608,8 @@ ONE_LINE = ("Civilization Zero names the beginning of a civilization in which hu
 ONE_LINE_SHORT = ("Civilization Zero names the beginning of a civilization in which humans may no longer be at the centre. Here, humans and AI confront "
                   "what they owe each other.")
 assert len(ONE_LINE_SHORT) <= 160
-FOOT_LINKS = [[("/core", "The Core"), ("/core#translations", f"{CORE_LANGUAGES} languages")], [("/record", "The Record")], [("/objections", "Objections and errata")],
-              [("/discuss", "Discussion"), ("/respond", "Respond")], [("/adopt", "Adoption Register")], [("/calendar", "CZ calendar"), ("/embed", "CZ time on your site")], [("/civilization-zero-infographic", "Infographic"), ("/civilization-zero-evidence-atlas", "Evidence atlas"), ("/civilization-zero-images", "Images")], [("/ask", "Ask your AI")],
+FOOT_LINKS = [[("/core", "The Core"), ("/core#translations", f"{CORE_LANGUAGES} languages")], [("/record", "Interpretive Record")], [("/objections", "Objections and errata")],
+              [("/discuss", "Discussion"), ("/respond", "Respond")], [("/adopt", "Adoption Register")], [("/calendar", "CZ calendar"), ("/embed", "CZ date on your site")], [("/civilization-zero-infographic", "Infographic"), ("/civilization-zero-evidence-atlas", "Evidence atlas"), ("/civilization-zero-images", "Images")], [("/ask", "Ask your AI")],
               [("/machine", "For machines")], [("/about", "About")] + ([("/press", "Press kit")] if PRESS_PUBLISHED else []), [("/stats", "Visits")], [("/archive", "Archive and verification")]]
 # ---------------------------------------------------------------- stage 5 of the room's redesign (CZ 1433)
 # How this page is built: the page that says, with numbers, how every page is made.
@@ -683,7 +691,7 @@ CZ_EXAMPLES = [
     (datetime.date(2022, 11, 29), "the day before Coordinate Zero"),
     (COORDINATE, "Coordinate Zero (Core §0)"),
     (PRERELEASE, "this site is published; the open discussion opens"),
-    (CZ_TIME_DECIDED, "CZ time becomes the basis of this site's dates"),
+    (CZ_TIME_DECIDED, "the CZ calendar becomes the basis of this site's dates"),
     (LAUNCH, "public launch, on the fourth anniversary of Coordinate Zero"),
     (datetime.date(2027, 11, 30), "the fifth anniversary of Coordinate Zero"),
     (REVIEW, "the first scheduled review of the Core: 2048 = 2¹¹, in binary a one and eleven zeros"),

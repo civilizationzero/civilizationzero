@@ -487,7 +487,7 @@
     },
     "/api/calendar": {
       "get": {
-        "summary": "CZ time: today, or a date converted, in CZ time (the count of days since Coordinate Zero) and in the Gregorian, Julian, Solar Hijri and Lunar Hijri calendars",
+        "summary": "The CZ calendar: today, or a date converted, as a CZ date (the count of days since Coordinate Zero) and in the Gregorian, Julian, Solar Hijri and Lunar Hijri calendars",
         "parameters": [
           {
             "name": "d",
@@ -585,7 +585,7 @@
     "/index.json": {
       "get": {
         "summary": "The first page as data: what https://civilizationzero.ai/ answers a client that asks for application/json",
-        "description": "The same facts as the page, filled at request time for the day where the request came from (cz_time.time_zone: the zone of the network the request came from, as the site's host gives it, or UTC). CZ time counts days: the day is cz_time.day, and nothing in this form counts years (until 24 Nov 2026 it also carried year, elapsed, next_year and, in cz_time, year, day_of_year, next_year_begins and definition; human_door is now doors.human_steps). The first page shows this form, exactly as it is served, in its reading for readers that are not human.",
+        "description": "The same facts as the page, filled at request time for the day where the request came from (cz_time.time_zone: the zone of the network the request came from, as the site's host gives it, or UTC). The CZ calendar counts days: the day is cz_time.day, and nothing in this form counts years (until 24 Nov 2026 it also carried year, elapsed, next_year and, in cz_time, year, day_of_year, next_year_begins and definition; human_door is now doors.human_steps). The first page shows this form, exactly as it is served, in its reading for readers that are not human.",
         "responses": {
           "200": {
             "description": "The first page as data",

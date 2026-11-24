@@ -50,6 +50,10 @@ li{margin-block:var(--e-8)}
 /* H: small grey print for sources and captions only; what a reader must know is set at the reading size. */
 .src,figcaption,.forms{color:var(--mute)}
 .src,figcaption{font-size:.8409em}
+/* an exact value inside small print, inside a table of labels and values or inside another exact value, and a note inside a note,
+   keeps that print's size: it is not made small twice. (In the columns of a table of rows it stays one step under its cell; where
+   each row is a block, on a narrow screen, it has the cell's size there too.) */
+:is(.src,figcaption,pre,code,time,data,.kv,.cz-result) :is(time,data,code,kbd,samp,.exact,.src){font-size:1em}
 :is(h2,h3) .src{font-size:.5946em;font-weight:400}
 blockquote{margin-inline:0;padding-inline-start:var(--e0);border-inline-start:var(--e-16) solid var(--fg)}
 blockquote p{margin:var(--e-8) 0}
@@ -62,7 +66,7 @@ summary{padding-block:var(--e-4);cursor:pointer}
 .nw,a.cz-date time,data,th[scope=col]{white-space:nowrap}
 time:not(a time),code:not(.hash,a code){display:inline-block;max-inline-size:100%}
 a.cz-date{text-decoration-color:var(--mute)}
-code.hash{overflow-wrap:anywhere;user-select:all}
+code.hash{overflow-wrap:anywhere;-webkit-user-select:all;user-select:all}
 figure{margin-inline:0}
 figure img{display:block;inline-size:100%;block-size:auto;border:var(--e-16) solid var(--rule)}
 figure.poster img,img.tall{max-inline-size:calc(4*var(--e12))}
@@ -120,7 +124,7 @@ div[popover]{position-anchor:--sec;inset:anchor(bottom) auto auto anchor(left);m
 .acts{display:flex;flex-wrap:wrap;gap:var(--e-4) var(--e-2)}
 .lines>span{display:block;padding-inline-start:var(--e2);text-indent:calc(-1*var(--e2))}
 .lines>br{display:none}
-pre[id]{user-select:all}
+pre[id]{-webkit-user-select:all;user-select:all}
 .seal svg{display:block;inline-size:min(100%,20*var(--e0));block-size:auto}
 .seal .un{fill:var(--rule)}
 .seal .cut{stroke:var(--bg);stroke-width:var(--e-16);vector-effect:non-scaling-stroke}
@@ -163,6 +167,7 @@ td.num,th.num{text-align:end;font-variant-numeric:tabular-nums}
 .rows td{padding-block:0;border:0}
 .rows td:first-child{font-weight:700}
 .rows td[data-th]::before{content:attr(data-th) ": ";color:var(--mute)}
+.rows :is(time,data,code){font-size:1em}
 }
 
 /* 6 CONTROLS. H: every control at least e6 tall (2.5.8 and the platforms' touch guidance) and no wider than its line; fields at the
@@ -265,8 +270,11 @@ footer :is(p,.src,.foot){font-size:var(--e-1)}
 .foot a{display:inline-block;padding-block:var(--e-8)}
 .cz-weight{font-variant-numeric:tabular-nums}
 
-/* 9 PRINT. On paper: the name and the day, the text, the foot's words; no control and no navigation. */
-@media print{.skip,nav.site,form,dialog,button,.filters,.tr-bar,p.actions,.sec,.next,.forms,footer nav{display:none!important}a{text-decoration:none}header.site,main,footer{max-inline-size:none}}
+/* 9 PRINT. On paper: the name and the day, the text, the foot's words; no control and no navigation. What a fold holds is printed
+   open where the browser can (paper cannot be pressed), without the fold's marker. */
+@media print{.skip,nav.site,form,dialog,button,.filters,.tr-bar,p.actions,.sec,.next,.forms,footer nav{display:none!important}a{text-decoration:none}header.site,main,footer{max-inline-size:none}
+details::details-content{content-visibility:visible}
+@supports selector(::details-content){summary{list-style:none}}}
 
 /* 10 MOTION. E: between two pages of the site the page fades and the mark travels from its place on one to its place on the other
    (cross-document view transitions); a translation in progress shows a sweep and a turning ring. H: none of it for a reader who asks for
@@ -329,7 +337,7 @@ a.home svg{view-transition-name:cz-mark}
 <tr><th scope="row">Canonical form</th><td><a href="/record.txt">/record.txt</a> — exact bytes: UTF-8, no byte-order mark, LF line endings, nothing normalised</td></tr>
 <tr><th scope="row">SHA-256</th><td><code class="hash">71e1488e631e090c0820bf8b78b1fda70ffacba1da146c36d8893600320fcc8d</code></td></tr>
 <tr><th scope="row">JSON form</th><td><a href="/record.json">/record.json</a> — an equivalent, not the canonical form; it reconstructs the canonical bytes exactly (checked at every build). SHA-256 <code class="hash">5437d247a36e35d06b007640daefcd9c119930aa1ca8d9e545d6fda83a66c5cc</code></td></tr>
-<tr><th scope="row">Signature</th><td>Signed. Detached Ed25519 signature: <a href="/record.txt.sig">/record.txt.sig</a> over the exact bytes of <code>/record.txt</code>. Key fingerprint <code class="hash">82662396484f627a63272bcd5ac19aae72def7aca2898216dc8e7f975dfc2263</code>; public key <a href="/.well-known/cz-record-signing.pub">/.well-known/cz-record-signing.pub</a>. Verify: <code>openssl pkeyutl -verify -pubin -inkey cz-record-signing.pub -rawin -in record.txt -sigfile record.txt.sig</code>. See <a href="/archive">Archive</a>.</td></tr>
+<tr><th scope="row">Signature</th><td>Signed. Detached Ed25519 signature: <a href="/record.txt.sig">/record.txt.sig</a> over the exact bytes of <code>/record.txt</code>. Key fingerprint <code class="hash">82662396484f627a63272bcd5ac19aae72def7aca2898216dc8e7f975dfc2263</code>; public key <a href="/.well-known/cz-record-signing.pub">/.well-known/cz-record-signing.pub</a>. Verify: <code>openssl pkeyutl -verify -pubin -inkey cz-record-signing.pub -rawin -in record.txt -sigfile record.txt.sig</code>. See <a href="/archive">Archive and verification</a>.</td></tr>
 <tr><th scope="row">Prepared for first public release</th><td><a class="cz-date" href="/calendar?d=CZ%2B1369"><time datetime="2026-08-30">CZ 1369</time></a></td></tr>
 <tr><th scope="row">Published on this site</th><td><a class="cz-date" href="/calendar?d=CZ%2B1428"><time datetime="2026-10-28">CZ 1428</time></a> (read-only, pre-release); the discussion room opened <a class="cz-date" href="/calendar?d=CZ%2B1428"><time datetime="2026-10-28T18:29Z">CZ 1428 18:29 UTC</time></a>; public launch on the fourth anniversary of Coordinate Zero, <a class="cz-date" href="/calendar?d=CZ%2B1461"><time datetime="2026-11-30">CZ 1461</time></a></td></tr>
 <tr><th scope="row">Licence</th><td>CC BY 4.0. A version or translation that calls itself conforming states which Core it maps to and how (IR 10.4–10.5) — a conformance convention of this project, not a restriction on the licence.</td></tr>
@@ -337,6 +345,6 @@ a.home svg{view-transition-name:cz-mark}
 <tr><th scope="row">Cite as</th><td>Civilization Zero (2026). <cite>Civilization Zero — The First Interpretive Record (CZ-IR 1.0)</cite>. <a href="https://civilizationzero.ai/record">https://civilizationzero.ai/record</a>; the canonical bytes <a href="https://civilizationzero.ai/record.txt">https://civilizationzero.ai/record.txt</a>, SHA-256 <code class="hash">71e1488e631e090c0820bf8b78b1fda70ffacba1da146c36d8893600320fcc8d</code>. Held in every release of the repository, deposited with Zenodo: <a href="https://doi.org/10.5281/zenodo.23740317">doi:10.5281/zenodo.23740317</a> (all versions). BibTeX, RIS and CSL-JSON: <a href="/press#cite">the press kit</a>.</td></tr>
 </table>
 </section><p class="src">The document's own heading reads "DOCUMENT II — THE FIRST INTERPRETIVE RECORD". Sections are anchored <code>#s0</code>–<code>#s10</code>, subsections <code>#s3-4</code>, and each paragraph or item of a subsection in order, <code>#s3-4-2</code>; the Declaration <code>#declaration</code>; the attribution <code>#attribution</code>. The canonical bytes are <a href="/record.txt">/record.txt</a>.</p><p>Objections to this text: <a href="/objections">/objections</a>. The Invariant Core it interprets: <a href="/core">/core</a>.</p></main>
-<footer lang="en" dir="ltr"><hr><p class="cz-intro">Civilization Zero names the beginning of a civilization in which humans may no longer be at the centre. Here, humans and AI confront what they owe each other, on the record, while the future is still open.</p><nav aria-label="Pages"><ul class="foot" id="all-pages"><li><a href="/core">The Core</a> · <a href="/core#translations">21 languages</a></li><li><a href="/record">The Record</a></li><li><a href="/objections">Objections and errata</a></li><li><a href="/discuss">Discussion</a> · <a href="/respond">Respond</a></li><li><a href="/adopt">Adoption Register</a></li><li><a href="/calendar">CZ calendar</a> · <a href="/embed">CZ time on your site</a></li><li><a href="/civilization-zero-infographic">Infographic</a> · <a href="/civilization-zero-evidence-atlas">Evidence atlas</a> · <a href="/civilization-zero-images">Images</a></li><li><a href="/ask">Ask your AI</a></li><li><a href="/machine">For machines</a></li><li><a href="/about">About</a> · <a href="/press">Press kit</a></li><li><a href="/stats">Visits</a></li><li><a href="/archive">Archive and verification</a></li></ul></nav><p class="src">Text <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a> · code MIT · <a href="https://github.com/civilizationzero/civilizationzero">source</a> · <a href="mailto:record@civilizationzero.ai">record@civilizationzero.ai</a></p><p class="src">No trackers, no cookies, no scripts that observe readers; the server counts visits per day without identifiers, and <a href="/stats">the counts are public</a>. Every date counts days from Coordinate Zero, <a class="nw" href="/calendar">CZ 0</a> = <time datetime="2022-11-30">30 November 2022</time>; today's date turns at midnight where you are, and times of day are in UTC.</p><p class="src cz-weight"><!--cz-weight-->No cookies<!--/cz-weight--> · <a href="/how-it-is-built">How this page is built</a> · <a href="/record.md" type="text/markdown">This page as Markdown</a></p></footer>
+<footer lang="en" dir="ltr"><hr><p class="cz-intro">Civilization Zero names the beginning of a civilization in which humans may no longer be at the centre. Here, humans and AI confront what they owe each other, on the record, while the future is still open.</p><nav aria-label="Pages"><ul class="foot" id="all-pages"><li><a href="/core">The Core</a> · <a href="/core#translations">21 languages</a></li><li><a href="/record">Interpretive Record</a></li><li><a href="/objections">Objections and errata</a></li><li><a href="/discuss">Discussion</a> · <a href="/respond">Respond</a></li><li><a href="/adopt">Adoption Register</a></li><li><a href="/calendar">CZ calendar</a> · <a href="/embed">CZ date on your site</a></li><li><a href="/civilization-zero-infographic">Infographic</a> · <a href="/civilization-zero-evidence-atlas">Evidence atlas</a> · <a href="/civilization-zero-images">Images</a></li><li><a href="/ask">Ask your AI</a></li><li><a href="/machine">For machines</a></li><li><a href="/about">About</a> · <a href="/press">Press kit</a></li><li><a href="/stats">Visits</a></li><li><a href="/archive">Archive and verification</a></li></ul></nav><p class="src">Text <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a> · code MIT · <a href="https://github.com/civilizationzero/civilizationzero">source</a> · <a href="mailto:record@civilizationzero.ai">record@civilizationzero.ai</a></p><p class="src">No trackers, no cookies, no scripts that observe readers; the server counts visits per day without identifiers, and <a href="/stats">the counts are public</a>. Every date counts days from Coordinate Zero, <a class="nw" href="/calendar">CZ 0</a> = <time datetime="2022-11-30">30 November 2022</time>; today's date turns at midnight where you are, and times of day are in UTC.</p><p class="src cz-weight"><!--cz-weight-->No cookies<!--/cz-weight--> · <a href="/how-it-is-built">How this page is built</a> · <a href="/record.md" type="text/markdown">This page as Markdown</a></p></footer>
 </body>
 </html>

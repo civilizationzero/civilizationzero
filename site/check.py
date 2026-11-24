@@ -208,9 +208,17 @@ check(rb.startswith("User-agent: *\nAllow: /\n") and rb.count("User-agent:") == 
 _sm_txt = (PUBLIC / "sitemap.xml").read_text("utf-8")
 IMG = "{http://www.google.com/schemas/sitemap-image/1.1}"
 _lm = {u.find(NS + "loc").text[len(ORIGIN):]: (u.find(NS + "lastmod").text if u.find(NS + "lastmod") is not None else None) for u in sm.findall(NS + "url")}
-_same = {"/objections", "/adopt", "/machine", "/archive", "/how-it-is-built"}   # their title and description are as they were
-check(set(_lm) >= _same and all((v is None) if k in _same else v == ("2026-11-24" if k in ("/", "/about") else "2026-11-23") for k, v in _lm.items()) and "Year Zero" not in _sm_txt.replace("Year Zero: 30 November 2022, CZ 0", "") and all(v is None or (re.fullmatch(r"\d{4}-\d{2}-\d{2}", v) and v <= datetime.date.today().isoformat()) for v in _lm.values()),
-      "sitemap.xml: the first page and /about carry the day the first page of rc-11 went live (24 Nov 2026), every other page whose title or description changed on 23 Nov 2026 that day, and the rest no date; no date is in the future; no 'Year Zero' in the site's voice")
+_same = {"/objections", "/adopt", "/machine", "/archive"}   # their title and description are as they were
+# the three pages whose title rc-12 set in sentence case (finding 33) carry rc-12's day: the day /how-it-is-built gives for what rc-12 added
+_r12 = {"/how-it-is-built": "How this page is built · Civilization Zero", "/civilization-zero-infographic": "Civilization Zero infographic: from the first humans to AI", "/civilization-zero-evidence-atlas": "Civilization Zero evidence atlas: after Coordinate Zero"}
+_r12_day = re.search(r'<tr><td>user-select: all</td><td>[^<]*</td><td data-th="Since"><a class="cz-date" href="[^"]*"><time datetime="(\d{4}-\d{2}-\d{2})">', (PUBLIC / "how-it-is-built.html").read_text("utf-8"))
+check(_r12_day and _r12_day.group(1) >= "2026-11-24" and set(_lm) >= _same | set(_r12)
+      and all((v is None) if k in _same else v == (_r12_day.group(1) if k in _r12 else "2026-11-24" if k in ("/", "/about") else "2026-11-23") for k, v in _lm.items()) and "Year Zero" not in _sm_txt.replace("Year Zero: 30 November 2022, CZ 0", "") and all(v is None or (re.fullmatch(r"\d{4}-\d{2}-\d{2}", v) and v <= datetime.date.today().isoformat()) for v in _lm.values()),
+      "sitemap.xml: the first page and /about carry the day the first page of rc-11 went live (24 Nov 2026), the three pages retitled with rc-12 its day, every other page whose title or description changed on 23 Nov 2026 that day, and the rest no date; no date is in the future; no 'Year Zero' in the site's voice")
+for _k, _t in _r12.items():
+    _h = (PUBLIC / (_k[1:] + ".html")).read_text("utf-8")
+    check(f"<title>{_t}</title>" in _h and f'<meta property="og:title" content="{_t}">' in _h and json.dumps(_t, ensure_ascii=False) in _h and not re.search(r"<title>[^<]*\b(Is|This|From|After|Built|Humans|Infographic|Atlas|Evidence|Page)\b", _h),
+          f"{_k}: its title in sentence case, the same in the head, in the link preview and in the page's data")
 _imgs = [(i.find(IMG + "loc").text, (i.find(IMG + "title").text if i.find(IMG + "title") is not None else ""), (i.find(IMG + "caption").text if i.find(IMG + "caption") is not None else "")) for u in sm.findall(NS + "url") for i in u.findall(IMG + "image")]
 _img_locs = {l for l, _, _ in _imgs}
 check(all("Civilization Zero" in t and len(c) > 40 for _, t, c in _imgs)
@@ -527,7 +535,7 @@ check(re.search(r'<pre id="prompt-short">[^<]*</pre>\n<p class="cta-line"><butto
 check(re.search(r'<h3 id="h-long">The long invitation</h3>\n<p>[^\n]*</p>\n<p class="cta-line"><button type="button" data-copy="prompt-urls">[^\n]*\n<details><summary>Show the long invitation \(([\d,]+) characters\)</summary>\n<pre id="prompt-urls">[^<]*</pre>\n</details>', _cur) is not None
       and int(re.search(r"Show the long invitation \(([\d,]+) characters\)", _cur).group(1).replace(",", "")) == len((PUBLIC / f"prompts/{_curv}.txt").read_text("utf-8"))
       and _cur.index('data-copy="prompt-short"') < _cur.index('<pre id="prompt-short">') and "<details" not in _cur[_cur.index("<main"):_cur.index('<h3 id="h-long">')] and 'var dt=el.closest("details");if(dt)dt.open=true' in _cur
-      and "pre[id]{user-select:all}" in _snc,
+      and "pre[id]{-webkit-user-select:all;user-select:all}" in _snc and "code.hash{overflow-wrap:anywhere;-webkit-user-select:all;user-select:all}" in _snc,
       "/ask: the long invitation's copy button between its heading and its text; the text folded, with its length; the short one stays open; where a browser will not copy, the fold opens and the text is selected; one press selects an invitation whole")
 _open = json.loads((SITE / "api/ask-open.json").read_text("utf-8"))
 _bases = {"chatgpt": "https://chatgpt.com/?q=", "claude": "https://claude.ai/new?q=", "perplexity": "https://www.perplexity.ai/search?q="}
@@ -1170,6 +1178,69 @@ for _p, _w, _h, _t, _alt, _src, _cls, _cap in ORIGINATOR_IMAGES:
           and f"<image:loc>https://civilizationzero.ai{_p}</image:loc>" in _sm and _p.lstrip("/") in _vj,
           f"{_p}: a {_w}x{_h} greyscale image, on its page with its size, text alternative and caption, in the sitemap, cached a day")
 check('id="from-the-originator"' in _im and _im.count("<figure") == 20, "/civilization-zero-images: the nine and the originator's eleven")
+
+# 8b. rc-12 (5): one name for each thing (the audit of 24 Nov 2026, findings 25 and 10) — in the links, the headings and the foot; one name for
+# the calendar, "CZ calendar", and one spelling of a day in a sentence ("Day 1,455"; a date is "CZ 1455"); "Year Zero" only as the Core's own
+# phrase; no key that counts years in a form the build writes, and the contract's day typed as the function writes it.
+_s5 = {f.name: (VIRTUAL[f.name] if f.parent.name == "virtual" else f.read_text("utf-8")) for f in pages + [pathlib.Path("virtual") / n for n in VIRTUAL]}
+_s5.update({"llms.txt": (PUBLIC / "llms.txt").read_text("utf-8"), "openapi.json": (PUBLIC / "api/openapi.json").read_text("utf-8"), "manifest": (PUBLIC / ".well-known/civilization-zero.json").read_text("utf-8"),
+            "cz-bar.json": (SITE / "room/cz-bar.json").read_text("utf-8"), "home-templates.json": (SITE / "api/home-templates.json").read_text("utf-8")})
+_lab = [(n, m.group(1), re.sub(r"<[^>]+>", "", m.group(2)).strip()) for n, h in _s5.items() for m in re.finditer(r'<a [^>]*href="(/(?:record|discuss|respond|archive|machine|calendar|embed|adopt))(?:[#?][^"]*)?"[^>]*>(.*?)</a>', h, re.S)]
+_bad = [(n, t, l) for n, t, l in _lab if (t in ("/discuss", "/respond") and re.search(r"\broom\b", l)) or (t == "/record" and l in ("The Record", "The record", "Record")) or (t == "/archive" and (l == "Archive" or l.startswith("Archive,")))
+        or (t == "/machine" and l.startswith("If you are not human")) or (t in ("/calendar", "/embed") and "CZ time" in l) or (t == "/adopt" and l in ("Register", "The Register"))]
+check(len(_lab) > 400 and not _bad, f"a link's label is the one name of what it leads to (Interpretive Record, Discussion, Archive and verification, For machines, CZ calendar, Adoption Register): {_bad[:6]}")
+_foots = {n: re.search(r'<ul class="foot" id="all-pages">(.*?)</ul>', h, re.S) for n, h in _s5.items() if n.endswith(".html") and n != "index.html"}
+check(len(_foots) >= len(pages) - 1 and all(m and all(m.group(1).count(a) == 1 for a in ('<a href="/core">The Core</a>', '<a href="/record">Interpretive Record</a>', '<a href="/discuss">Discussion</a>', '<a href="/adopt">Adoption Register</a>',
+                                                                                         '<a href="/calendar">CZ calendar</a>', '<a href="/embed">CZ date on your site</a>', '<a href="/archive">Archive and verification</a>', '<a href="/machine">For machines</a>'))
+                                            for m in _foots.values()),
+      "the foot of every page: each thing under its one name")
+check("<h1>Archive and verification</h1>" in _s5["archive.html"] and "<h1>Put today's CZ date on your site</h1>" in _s5["embed.html"].replace("&#x27;", "'") and '<h2 id="h-how">How the CZ calendar works</h2>' in _s5["calendar.html"]
+      and '<h2 id="h-not">What the CZ calendar is not</h2>' in _s5["calendar.html"], "the headings: /archive, /embed and /calendar's two sections carry the one name")
+# "CZ time" stays in one place the build writes: /embed's title, which rc-9 left as it was (with the forms of that title in the head)
+_ct = {n: len(re.findall("CZ time", h.replace("Put CZ time on your site", ""))) for n, h in _s5.items()}
+check(not any(_ct.values()) and _s5["embed.html"].count("Put CZ time on your site") == 5, f"one name for the calendar, 'CZ calendar': 'CZ time' is left only in /embed's title: { {k: v for k, v in _ct.items() if v} }")
+# one spelling of a day: /calendar says it once; the counter other sites copy writes the day as the head does
+_cal5 = _s5["calendar.html"]
+check(_cal5.count("In a sentence the day is named: Day 1,430, as beside the words “CZ calendar” on every page.") == 1 and "<code>CZ 1430</code> is 30 October 2026" in _cal5, "/calendar says once how a day is written in a sentence, beside how a date is written")
+_num = re.search(r"  function num\(d\) \{ return .*? \}\n", _s5["embed.html"])
+_rn = subprocess.run(["node", "-e", "const num = eval('(' + process.argv[1].trim().replace(/^function num/, 'function') + ')'); process.stdout.write(JSON.stringify(JSON.parse(process.argv[2]).map(num)))",
+                      _num.group(0) if _num else "", json.dumps([0, 7, 999, 1000, 1455, 12345, 1234567, -1, -1997])], capture_output=True, text=True) if _num else None
+check(_rn is not None and _rn.returncode == 0 and json.loads(_rn.stdout) == ["0", "7", "999", "1,000", "1,455", "12,345", "1,234,567", "−1", "−1,997"]
+      and _s5["embed.html"].count("""Day <span class="d">' + num(d) + '</span> since Coordinate Zero""") == 1 and _s5["embed.html"].count("dd.textContent = num(d);") == 2 and "String(d)" not in _s5["embed.html"],
+      f"/embed: the counter writes the day as the head of every page does (Day 1,455) ({_rn.stderr[:200] if _rn else 'no num'})")
+# "Year Zero": the Core's phrase. Outside the Core's own sentence, the page's structured data (rc-9's, kept), the words the Core's image
+# prints (its text alternative) and the two notes of /how-it-is-built that name the phrase as the Core's, no page says it
+_core0 = json.loads((PUBLIC / "core.json").read_text("utf-8"))["principles"][0]["statements"][0]
+_poster_alt = re.search(r'<img src="/civilization-zero-core\.png"[^>]* alt="([^"]*)"', _s5["core.html"])
+def _voice(n, h):
+    h = re.sub(r'<script type="application/ld\+json">.*?</script>', "", h, flags=re.S).replace(esc(_core0), "").replace(_core0, "").replace(json.dumps(_core0)[1:-1], "")
+    if n == "core.html" and _poster_alt: h = h.replace(_poster_alt.group(1), "")
+    if n == "how-it-is-built.html": h = h.replace("&quot;Year Zero&quot; is the Core&#x27;s phrase", "").replace("&quot;Civilization Zero: Year Zero began on 30 November 2022&quot;", "")
+    return h
+_yz = [n for n, h in _s5.items() if not re.fullmatch(r"core\.[A-Za-z-]+\.html", n) and "Year Zero" in _voice(n, h)]
+check("Year Zero" in _core0 and _poster_alt and "Year Zero: 30 November 2022" in _poster_alt.group(1) and not _yz, f"'Year Zero' is the Core's phrase: no page says it in the site's own voice ({_yz})")
+check("as day 0, and counts every day since." in _s5["about.html"] and "30 November 2022</span>: CZ 0, the day ordinary language became" in _s5["civilization-zero-infographic.html"]
+      and '<figcaption class="src">The date, its meaning in the words of §0,' in _s5["core.html"] and "The Core on one image — the date, §0, the sixteen section titles" in _s5.get("press.html", "The Core on one image — the date, §0, the sixteen section titles"),
+      "the four sentences that said 'Year Zero' in the site's voice (/about, the infographic, /core's caption, /press) count days")
+# the year's keys: the manifest has none; the contract's day (CZDay.cz) is typed as the function writes it, and forbids them once the
+# function writes none; the function's own definition sentence and design/CZ-TIME.md say the same as the function
+_yk = ("year", "day_of_year", "days_in_year", "year_day")
+_rk = subprocess.run(["node", "-e", "const C = require(process.argv[1]); process.stdout.write(JSON.stringify([1430, 0, -1997, 1461].map((D) => Object.keys(C.describe(D).cz))))", str(SITE / "room" / "cztime.js")], capture_output=True, text=True)
+_keys5 = json.loads(_rk.stdout) if _rk.returncode == 0 else []
+_czs = oa["components"]["schemas"]["CZDay"]["properties"]["cz"]
+_counts = bool(_keys5) and any(k in _keys5[0] for k in _yk)
+check(_keys5 and all(k == list(_czs["properties"]) for k in _keys5) and _keys5[0][:3] == ["date", "machine", "day"] and (all(k in _keys5[0] for k in _yk) if _counts else True)
+      and (("not" in _czs) == (not _counts)) and (_counts or (_czs["not"] == {"anyOf": [{"required": [k]} for k in _yk]} and _czs["required"] == ["date", "machine", "day"])),
+      f"/api/calendar: the contract's day is typed as room/cztime.js writes it, and once the function counts no year the contract says an answer that does does not fit ({_keys5[:1]}, {list(_czs['properties'])})")
+_spec5 = (ROOT / "design" / "CZ-TIME.md").read_text("utf-8"); _caljs = (SITE / "api" / "calendar.js").read_text("utf-8")
+check(("`cz.day`, `cz.year`" in _spec5) == _counts and ("Years of the record" in _caljs) == _counts and ("year_day" in _caljs) == _counts,
+      "the year's keys of a day: the function, the sentence api/calendar.js gives as the definition, and design/CZ-TIME.md agree (all three count the year, or none does)")
+check("years" not in man["cz_time"] and not re.search(r"\byears?\b|\d:\d{3}", json.dumps(man["cz_time"], ensure_ascii=False), re.I) and {"decided", "epoch", "day", "today", "date", "machine", "page", "api", "spec"} == set(man["cz_time"]),
+      "the manifest: cz_time has no key and no sentence that counts years")
+# on paper (finding 27): no control and no navigation; what a fold holds is printed open, since paper cannot be pressed
+_pr = re.search(r"@media print\{(.*?)\n@supports selector\(::details-content\)\{summary\{list-style:none\}\}\}\n", _scss, re.S)
+check(_pr and _scss.count("@media print") == 1 and re.match(r"\.skip,nav\.site,form,dialog,button,\.filters,\.tr-bar,p\.actions,\.sec,\.next,\.forms,footer nav\{display:none!important\}", _pr.group(1))
+      and "details::details-content{content-visibility:visible}" in _pr.group(1), "the shared stylesheet, on paper: controls and navigation are left out, and a fold's content is printed")
 
 # 9. every date the pages print (the originator, 30 Oct 2026: "every date on the site checked at least three times"): each CZ date in a
 # <time datetime> is the day of that ISO value, counted independently here as (date − 2022-11-30).days; each link around it opens the

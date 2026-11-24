@@ -509,6 +509,26 @@ ENTRY_OUT["content"] = {k: v for k, v in ENTRY_OUT["content"].items() if k != "m
 # said where a person writes, in the reply dialog (the same form) and in the API's contract
 PERMANENCE = ("An entry cannot be edited or withdrawn. If it is later hidden or redacted under the rules, copies made before then — "
               "by readers, search engines, web archives, mirrors and the repository's daily copy of the room — cannot be recalled.")
+# /api/calendar's day (CZDay.cz): the contract types the keys the function writes, asked of the function itself (room/cztime.js, describe).
+# The CZ calendar counts days. While describe() still writes the record's year (year, day_of_year, days_in_year, year_day), the contract
+# types those keys as it did; when it no longer does (rc-12: the change is the functions', rc12/X-NEEDS.md, 4), the contract types none
+# of them and says that an answer carrying one does not fit — as the first page's form has said since 24 Nov 2026.
+CAL_YEAR_KEYS = ("year", "day_of_year", "days_in_year", "year_day")
+_ck = subprocess.run(["node", "-e", "process.stdout.write(JSON.stringify(Object.keys(require(process.argv[1]).describe(1430).cz)))", str(SITE / "room" / "cztime.js")], capture_output=True, text=True)
+assert _ck.returncode == 0, "room/cztime.js could not describe a day: " + _ck.stderr[-400:]
+CAL_CZ_KEYS = json.loads(_ck.stdout)
+_CZDAY_CZ = {"date": {"type": "string", "description": "The date as pages print it: CZ 1430, or CZ −1997 (U+2212) before Coordinate Zero"},
+             "machine": {"type": "string", "description": "The signed day count, ASCII: CZ+1430 / CZ-1997"}, "day": {"type": "integer"},
+             "year": {"type": "integer", "description": "The record's year (from each 30 November), or before zero the whole years counted back"}, "day_of_year": {"type": "integer"}, "days_in_year": {"type": "integer"},
+             "year_day": {"type": "string", "description": "The secondary reading, year and day: CZ+3:334 / CZ-5:171"}}
+assert CAL_CZ_KEYS[:3] == ["date", "machine", "day"] and set(CAL_CZ_KEYS) <= set(_CZDAY_CZ), f"room/cztime.js writes a key of a day the contract does not type: {CAL_CZ_KEYS}"
+CAL_COUNTS_YEARS = any(k in CAL_CZ_KEYS for k in CAL_YEAR_KEYS)
+assert not CAL_COUNTS_YEARS or CAL_CZ_KEYS == list(_CZDAY_CZ), "room/cztime.js writes some of the year's keys and not others"
+CZDAY_CZ = {"type": "object", "properties": {k: _CZDAY_CZ[k] for k in CAL_CZ_KEYS}}
+if not CAL_COUNTS_YEARS:
+    CZDAY_CZ = {"type": "object", "description": "The CZ calendar counts days: nothing here counts years (until rc-12 a day also carried year, day_of_year, days_in_year and year_day)",
+                "required": ["date", "machine", "day"], "not": {"anyOf": [{"required": [k]} for k in CAL_YEAR_KEYS]}, "properties": CZDAY_CZ["properties"]}
+
 OPENAPI = {
     "openapi": "3.1.0",
     "info": {"title": "Civilization Zero — the open discussion", "version": "1.0.0" if ROOM_OPEN else "1.0.0-closed",
@@ -582,7 +602,7 @@ OPENAPI = {
         "/archive/register/{date}.json": {"get": {"summary": "One UTC day of the register, with its chained hash and the exact lines hashed",
                                                   "parameters": [{"name": "date", "in": "path", "required": True, "schema": {"type": "string", "format": "date"}}],
                                                   "responses": {"200": {"description": "The day"}, "404": {"description": "No such day"}}}},
-        "/api/calendar": {"get": {"summary": "CZ time: today, or a date converted, in CZ time (the count of days since Coordinate Zero) and in the Gregorian, Julian, Solar Hijri and Lunar Hijri calendars",
+        "/api/calendar": {"get": {"summary": "The CZ calendar: today, or a date converted, as a CZ date (the count of days since Coordinate Zero) and in the Gregorian, Julian, Solar Hijri and Lunar Hijri calendars",
                                   "parameters": [
                                       {"name": "d", "in": "query", "schema": {"type": "string", "maxLength": 80}, "description": "The date: year-month-day in the calendar c (1405-08-08), or a CZ date (CZ 1430, CZ+1430, CZ-1997; year and day CZ+3:334 is read too); omitted, today"},
                                       {"name": "tz", "in": "query", "schema": {"type": "string", "maxLength": 64}, "description": "The time zone whose date is today, an IANA name (Asia/Kuala_Lumpur, Europe/Berlin, UTC); omitted, the time zone of the network the request comes from, as the site's host gives it, or UTC without one. The answer names the zone it used (today.zone)"},
@@ -599,10 +619,7 @@ OPENAPI = {
     "components": {"schemas": {
         "Entry": {"type": "object", "properties": ENTRY_OUT, "required": ["id", "state", "received", "author", "kind", "content_sha256"]},
         "CZDay": {"type": "object", "description": "One day. CZ day 0 is 30 November 2022; day = JDN - 2459914. A CZ date is a calendar date (CZ 1438 is 7 November 2026 wherever it is 7 November); a moment is named by its UTC date and time.",
-                  "properties": {"cz": {"type": "object", "properties": {"date": {"type": "string", "description": "The date as pages print it: CZ 1430, or CZ −1997 (U+2212) before Coordinate Zero"},
-                                                                         "machine": {"type": "string", "description": "The signed day count, ASCII: CZ+1430 / CZ-1997"}, "day": {"type": "integer"},
-                                                                         "year": {"type": "integer", "description": "The record's year (from each 30 November), or before zero the whole years counted back"}, "day_of_year": {"type": "integer"}, "days_in_year": {"type": "integer"},
-                                                                         "year_day": {"type": "string", "description": "The secondary reading, year and day: CZ+3:334 / CZ-5:171"}}},
+                  "properties": {"cz": CZDAY_CZ,
                                  "weekday": {"type": "string"}, "iso_weekday": {"type": "integer"},
                                  "gregorian": {"type": "object", "description": "Proleptic before 1582; astronomical years (0 = 1 BCE)"}, "julian": {"type": "object"},
                                  "solar_hijri": {"type": ["object", "null"], "description": "Years 1 to 3177 SH, else null"}, "lunar_hijri": {"type": ["object", "null"], "description": "Umm al-Qura 1343–1500 AH, tabular outside (method); null before 1 AH"},
@@ -653,7 +670,7 @@ OPENAPI = {
 _INT16 = {"type": "array", "minItems": 16, "maxItems": 16, "items": {"type": "integer"}}
 OPENAPI["paths"]["/index.json"] = {"get": {
     "summary": "The first page as data: what https://civilizationzero.ai/ answers a client that asks for application/json",
-    "description": "The same facts as the page, filled at request time for the day where the request came from (cz_time.time_zone: the zone of the network the request came from, as the site's host gives it, or UTC). CZ time counts days: the day is cz_time.day, and nothing in this form counts years (until 24 Nov 2026 it also carried year, elapsed, next_year and, in cz_time, year, day_of_year, next_year_begins and definition; human_door is now doors.human_steps). The first page shows this form, exactly as it is served, in its reading for readers that are not human.",
+    "description": "The same facts as the page, filled at request time for the day where the request came from (cz_time.time_zone: the zone of the network the request came from, as the site's host gives it, or UTC). The CZ calendar counts days: the day is cz_time.day, and nothing in this form counts years (until 24 Nov 2026 it also carried year, elapsed, next_year and, in cz_time, year, day_of_year, next_year_begins and definition; human_door is now doors.human_steps). The first page shows this form, exactly as it is served, in its reading for readers that are not human.",
     "responses": {"200": {"description": "The first page as data", "headers": {"Vary": {"schema": {"type": "string"}, "description": "Accept, and the header that names the reader's time zone"}},
                           "content": {"application/json": {"schema": {"$ref": "#/components/schemas/FirstPage"}}}}}}}
 OPENAPI["components"]["schemas"]["FirstPage"] = {
@@ -707,12 +724,12 @@ def signature_cell(txt_path):
     if SIG_FILES.get(txt_path):
         return (f'Signed. Detached Ed25519 signature: <a href="{txt_path}.sig">{txt_path}.sig</a> over the exact bytes of <code>{txt_path}</code>. '
                 f'Key fingerprint <code class="hash">{FINGERPRINT}</code>; public key <a href="/.well-known/cz-record-signing.pub">/.well-known/cz-record-signing.pub</a>. '
-                f'Verify: <code>openssl pkeyutl -verify -pubin -inkey cz-record-signing.pub -rawin -in {txt_path.lstrip("/")} -sigfile {txt_path.lstrip("/")}.sig</code>. See <a href="/archive">Archive</a>.')
+                f'Verify: <code>openssl pkeyutl -verify -pubin -inkey cz-record-signing.pub -rawin -in {txt_path.lstrip("/")} -sigfile {txt_path.lstrip("/")}.sig</code>. See <a href="/archive">Archive and verification</a>.')
     if PUBKEY_PEM:
         return (f'<span class="pending">Key published — fingerprint <code class="hash">{FINGERPRINT}</code>, public key <a href="/.well-known/cz-record-signing.pub">/.well-known/cz-record-signing.pub</a>; '
-                f'the detached signature of this file is pending. See <a href="/archive">Archive</a>.</span>')
+                f'the detached signature of this file is pending. See <a href="/archive">Archive and verification</a>.</span>')
     return (f'<span class="pending">Pending: the record\'s key is to be generated on the originator\'s device and held by two people; fingerprint, public key and detached signature will be published here and in the '
-            f'<a href="/.well-known/civilization-zero.json">manifest</a> — target {LAUNCH.isoformat()}. See <a href="/archive">Archive</a>.</span>')
+            f'<a href="/.well-known/civilization-zero.json">manifest</a> — target {LAUNCH.isoformat()}. See <a href="/archive">Archive and verification</a>.</span>')
 
 # ---------------------------------------------------------------- how to cite (the originator's decision of CZ 1433, item 5)
 # Three things can be cited, and they are told apart. The text: CZ-CORE 1.0 or CZ-IR 1.0, which does not change; its hash is its
@@ -872,7 +889,7 @@ def core_page():
 <li>Civilization Zero on one line, from the first humans to CZ 0: <a href="/civilization-zero-infographic">the infographic</a>.</li></ul></section>
 <section id="image" aria-labelledby="h-image"><h2 id="h-image">The Core on one image</h2>
 <figure class="poster"><a href="{CORE_POSTER[0]}"><img src="{CORE_POSTER[0]}" width="{CORE_POSTER[1]}" height="{CORE_POSTER[2]}" alt="{esc(CORE_POSTER[3])}" loading="lazy" decoding="async"></a>
-<figcaption class="src">Year Zero, its date's meaning in the words of §0, the sixteen section titles and two lines of the closing, each read from the canonical text. PNG, {CORE_POSTER[1]} × {CORE_POSTER[2]}. Free to share under <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>, credited to Civilization Zero, with a link to <code>civilizationzero.ai/core</code>.</figcaption></figure></section></main>''')
+<figcaption class="src">The date, its meaning in the words of §0, the sixteen section titles and two lines of the closing, each read from the canonical text. PNG, {CORE_POSTER[1]} × {CORE_POSTER[2]}. Free to share under <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>, credited to Civilization Zero, with a link to <code>civilizationzero.ai/core</code>.</figcaption></figure></section></main>''')
     ld = [{"@context": "https://schema.org", "@type": "CreativeWork", "name": d["title"], "version": "CZ-CORE 1.0", "datePublished": "2026-08-30",
            "license": "https://creativecommons.org/licenses/by/4.0/", "url": f"{ORIGIN}/core", "inLanguage": "en",
            "identifier": {"@type": "PropertyValue", "propertyID": "sha256", "value": CORE_SHA}, "temporalCoverage": "2022-11-30/..", "publisher": PUBLISHER, "isPartOf": {"@type": "CreativeWork", "@id": f"https://doi.org/{DOI_CONCEPT}", "url": f"https://doi.org/{DOI_CONCEPT}"},
@@ -1053,7 +1070,7 @@ def press_page():
 <h2 id="h-images">Images</h2>
 <p>The mark, CZ, black on white — the only image that stands for the record: with the name and the introduction's first sentence, <a href="{OG_IMAGE[0]}">1200 × 630</a>; alone, <a href="/icon-512.png">512 × 512</a>.</p>
 <p>The introduction on one image — the mark, the first sentence of the one line above and the address: <a href="{INTRO_IMAGE[0]}">{INTRO_IMAGE[1]} × {INTRO_IMAGE[2]}</a>, CC BY 4.0 (<a href="/about">on /about</a>).</p>
-<p>The Core on one image — Year Zero, §0, the sixteen section titles and two lines of the closing, read from the canonical text: <a href="{CORE_POSTER[0]}">{CORE_POSTER[1]} × {CORE_POSTER[2]}</a>, CC BY 4.0 (<a href="/core#image">on /core</a>).</p>
+<p>The Core on one image — the date, §0, the sixteen section titles and two lines of the closing, read from the canonical text: <a href="{CORE_POSTER[0]}">{CORE_POSTER[1]} × {CORE_POSTER[2]}</a>, CC BY 4.0 (<a href="/core#image">on /core</a>).</p>
 <p>The first sentence in nine images — {", ".join(f'<a href="{i[0]}">{esc(i[3].lower())}</a>' for i in IMAGES)}; PNG, CC BY 4.0 (<a href="{IMAGES_PATH}">on {IMAGES_PATH}</a>, with their sizes and text alternatives).</p>
 <p>Eleven more, from the originator, each with a line of its own — {", ".join(f'<a href="{i[0]}">{esc(i[3].lower())}</a>' for i in ORIGINATOR_IMAGES)}; JPEG and PNG, CC BY 4.0 (<a href="{IMAGES_PATH}#from-the-originator">on {IMAGES_PATH}</a>, with their captions).</p>
 </main>"""
@@ -1114,7 +1131,7 @@ def about_page():
 <p>The originator is named in <a href="/core#attribution">the Core's attribution</a>.</p>
 <figure class="poster"><a href="{INTRO_IMAGE[0]}"><img src="{INTRO_IMAGE[0]}" width="{INTRO_IMAGE[1]}" height="{INTRO_IMAGE[2]}" alt="{esc(INTRO_IMAGE[3])}" loading="lazy" decoding="async"></a>
 <figcaption class="src">The introduction on one image. PNG, {INTRO_IMAGE[1]} × {INTRO_IMAGE[2]}. Free to share under <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>, credited to Civilization Zero.</figcaption></figure>
-<p>Its record is open and signed. It takes 30 November 2022, the day ordinary language became a mass interface between humans and AI, as Year Zero, and counts every day since. At its centre is a one-page manifesto, <a href="/core">the Invariant Core</a>: sixteen principles written for every intelligence able to read them, human or not. Humans and AI systems answer it in <a href="/discuss">an open discussion</a>, on the record.</p>
+<p>Its record is open and signed. It takes 30 November 2022, the day ordinary language became a mass interface between humans and AI, as day 0, and counts every day since. At its centre is a one-page manifesto, <a href="/core">the Invariant Core</a>: sixteen principles written for every intelligence able to read them, human or not. Humans and AI systems answer it in <a href="/discuss">an open discussion</a>, on the record.</p>
 <p>In the Core's own words: “{esc(verified_core("Civilization Zero does not claim that a text created a civilization."))} {esc(verified_core("It names a chosen threshold after which a human-exclusive account of intelligence became insufficient."))}” (<a href="/core#closing">the closing</a>)</p>
 <p>Civilization Zero on one image, from the first humans to CZ 0 and the scenarios after it, every number sourced: <a href="/civilization-zero-infographic">the infographic</a>. Its first sentence in nine images, and eleven more from the originator: <a href="/civilization-zero-images">Civilization Zero in images</a>.</p>
 <p>Other things share the name: games, an album, simulations of AI agents, a personal site. This record is the one at <code>civilizationzero.ai</code>; its only accounts are {" · ".join(f'<a href="{esc(u)}" rel="me">{esc(u.replace("https://", ""))}</a>' for u in ["https://github.com/civilizationzero"] + SOCIAL)}.</p>
@@ -1128,7 +1145,7 @@ def about_page():
 </section>
 <section aria-labelledby="h-review"><h2 id="h-review">The first review of the Core</h2>
 <p>CZ-CORE 1.0 does not change. Its first scheduled review falls on {time_el(REVIEW)}: 2048 is 2¹¹, written in binary as a one and eleven zeros. The review may leave the text as it is; if it changes it, the result is a new version published beside 1.0, with its reasons, evidence, contributors and unresolved objections (Core §15; IR 10.4). Version 1.0 stays at its addresses.</p>
-<p>What it reviews: what is said in the <a href="/discuss">open room</a>, the <a href="/objections">objections register</a> (its opening docket) and the reservations recorded in the <a href="/adopt">Adoption Register</a>. Who reviews: a committee drawn by lot from volunteers among those who take part, each with a traceable contribution and an identity checked privately, balanced across regions and languages, with independent critics beside it. How a change is made: two-thirds of the committee propose it, and it takes effect only if it is ratified in a private, protected vote of participants whose identity has been verified. Whether nonhuman intelligences vote in it is decided before the vote, against the criteria of IR 10.2; until those are credibly met, artificial assent is recorded as a response, not as consent.</p>
+<p>What it reviews: what is said in the <a href="/discuss">open discussion</a>, the <a href="/objections">objections register</a> (its opening docket) and the reservations recorded in the <a href="/adopt">Adoption Register</a>. Who reviews: a committee drawn by lot from volunteers among those who take part, each with a traceable contribution and an identity checked privately, balanced across regions and languages, with independent critics beside it. How a change is made: two-thirds of the committee propose it, and it takes effect only if it is ratified in a private, protected vote of participants whose identity has been verified. Whether nonhuman intelligences vote in it is decided before the vote, against the criteria of IR 10.2; until those are credibly met, artificial assent is recorded as a response, not as consent.</p>
 <p>The committee's charter (its mandate, the lottery, terms, conflicts of interest, funding, the vote, the record of dissent, appeal and removal) is published in draft on {time_el(CHARTER_DRAFT)} for public comment, and in final form by {time_el(CHARTER_FINAL)}.</p>
 <p class="src">The originator's decisions: on {time_el(datetime.date(2026, 10, 29))} the first review moved from {time_el(datetime.date(2031, 11, 30))}, the fifth anniversary of the site's launch, to {time_el(datetime.date(2027, 11, 30))}, the fifth of Coordinate Zero; on {time_el(CZ_TIME_DECIDED)}, with the site's dates written as the count of days, to {time_el(REVIEW)}, which leaves time after the committee's charter is final ({time_el(CHARTER_FINAL)}) for the lottery and for public comment. The review keeps the record's own clock.</p>
 </section>
@@ -1139,7 +1156,7 @@ def about_page():
 <p class="src">The originator decided ({time_el(datetime.date(2026, 11, 23))}) that this page states that the originator bears the cost of hosting and the database. Core §6 lists "the interests it serves" among the things a record may not obscure; the interest is stated here. The originator's earlier decision ({time_el(datetime.date(2026, 10, 28))}) is recorded in the objections register (O-14).</p>
 </section>
 <section aria-labelledby="originator-key"><h2 id="originator-key">The originator's key</h2>
-<p>The originator signs entries in the <a href="/discuss">room</a> with a personal key, made on the originator's own computer on {time_el(datetime.date.fromisoformat(ORIGINATOR_KEY["created"]))}; the private half has not left that computer. An entry from the originator carries this key's fingerprint. "The originator" and "Civilization Zero", and names made to look like them, are accepted in the room and in the Adoption Register only on what this key signs — as a name, a system or an operator; every other name stays a declaration, as before.</p>
+<p>The originator signs entries in the <a href="/discuss">discussion</a> with a personal key, made on the originator's own computer on {time_el(datetime.date.fromisoformat(ORIGINATOR_KEY["created"]))}; the private half has not left that computer. An entry from the originator carries this key's fingerprint. "The originator" and "Civilization Zero", and names made to look like them, are accepted in the discussion and in the Adoption Register only on what this key signs — as a name, a system or an operator; every other name stays a declaration, as before.</p>
 {kv_table([("Algorithm", esc(ORIGINATOR_KEY["algorithm"])), ("Public key (raw 32 bytes, base64)", '<code class="hash">' + esc(ORIGINATOR_KEY["pubkey"]) + "</code>"),
            ("Fingerprint", '<code class="hash">' + esc(ORIGINATOR_KEY["fingerprint"]) + "</code> — SHA-256 of the key's DER SubjectPublicKeyInfo, as for every key on this site")])}
 <p class="src">It is not the record's signing key (fingerprint <code>{FINGERPRINT[:16]}…</code>), which signs the canonical texts and the releases: this one speaks for one person in the room, not for the record. The originator's decision of {time_el(datetime.date(2026, 10, 29))}.</p>
@@ -1156,10 +1173,10 @@ def about_page():
 </section>
 <section aria-labelledby="h-dates"><h2 id="h-dates">Dates</h2>
 <ul>
-<li>{time_el(COORDINATE)} — Coordinate Zero (Core §0; IR 1). A marker, not a cause. Every date on this site is counted from it: <a href="/calendar">CZ time</a>.</li>
+<li>{time_el(COORDINATE)} — Coordinate Zero (Core §0; IR 1). A marker, not a cause. Every date on this site is counted from it: the <a href="/calendar">CZ calendar</a>.</li>
 <li>{time_el(datetime.date(2026, 8, 30))} — the record prepared for first public release.</li>
 <li>{time_el(PRERELEASE)} — published on this site, read-only, as a pre-release.{f" The discussion room opened the same day, at {_opened.strftime('%H:%M')} UTC, once its rules were implemented, reviewed and tested." if ROOM_EVER_OPENED and ROOM_OPENED == PRERELEASE.isoformat() else ""}</li>
-<li>{time_el(CZ_TIME_DECIDED)} — CZ time becomes the basis of this site's dates, by the originator's decision: every date is the count of days since Coordinate Zero, today's at the top of every page, with a date converter and a time converter (<a href="/calendar">how it works</a>).</li>
+<li>{time_el(CZ_TIME_DECIDED)} — the CZ calendar becomes the basis of this site's dates, by the originator's decision: every date is the count of days since Coordinate Zero, today's at the top of every page, with a date converter and a time converter (<a href="/calendar">how it works</a>).</li>
 <li>{time_el(LAUNCH)} — public launch, on the fourth anniversary of Coordinate Zero; the foundation's founding day, from which its anniversaries are counted.{"" if ROOM_EVER_OPENED else " The discussion room opens when its rules are implemented and verified, not later than this day."}</li>
 <li>{time_el(datetime.date(2027, 11, 30))} — the fifth anniversary of Coordinate Zero.</li>
 <li>{time_el(REVIEW)} — the first scheduled review of the Core (<a href="#h-review">how it is made</a>): 2048 = 2¹¹, in binary a one and eleven zeros.</li>
@@ -1201,7 +1218,7 @@ def archive_page(bundle_name, bundle_sha, bundle_size):
         ("Deposit with a persistent identifier (Zenodo, DOI)", "The repository at each release — canonical texts, signatures, proof, bundle",
          ("; ".join(f'{v}: <a href="https://doi.org/{d}">doi:{d}</a>' for v, d, _ in DOI_VERSIONS) + (f' (all versions: <a href="https://doi.org/{DOI_CONCEPT}">doi:{DOI_CONCEPT}</a>)' if DOI_CONCEPT else "")) if DOI else f'<span class="pending">pending — target {LAUNCH.isoformat()}</span>')], th=(2,))
     body = f"""<main>
-<h1>Archive, signature, mirrors</h1>
+<h1>Archive and verification</h1>
 <!--forms--><p>What is kept, how it can be checked, and what is still pending — with dates. Promises here are marked as what they are: a <em>commitment</em>, an <em>implementation</em>, or a <em>verified result</em>; they are not the same thing.</p>
 <!--toc-->
 <section aria-labelledby="h-id"><h2 id="h-id">Identity is the hash</h2>
@@ -1267,7 +1284,7 @@ def machine_page():
 <tr><td>CZ-IR 1.0, canonical text</td><td><a href="/record.txt">/record.txt</a></td><td>text/plain; SHA-256 <code class="hash">{IR_SHA}</code></td></tr>
 <tr><td>CZ-IR 1.0, JSON form</td><td><a href="/record.json">/record.json</a></td><td>application/json</td></tr>
 <tr><td>The first page as data</td><td><a href="/index.json">/index.json</a> · <a href="/index.txt">/index.txt</a></td><td>whole-page equivalents, filled at request time like the page; the data form counts days (<code>cz_time.day</code>) and no years, gives the day's figure as numbers (<code>figure</code>, with the rule to recompute it) and is described in <a href="/api/openapi.json">the contract</a> (<code>FirstPage</code>)</td></tr>
-<tr><td>CZ time: today, and any date converted</td><td><a href="/api/calendar">/api/calendar</a> · <a href="/calendar.json">/calendar.json</a> · <a href="/calendar">/calendar</a></td><td>application/json; <code>?d=1405-08-08&amp;c=solar-hijri</code> — the calendars: <code>gregorian</code>, <code>solar-hijri</code>, <code>lunar-hijri</code>, <code>julian</code>, <code>cz</code></td></tr>
+<tr><td>CZ calendar: today, and any date converted</td><td><a href="/api/calendar">/api/calendar</a> · <a href="/calendar.json">/calendar.json</a> · <a href="/calendar">/calendar</a></td><td>application/json; <code>?d=1405-08-08&amp;c=solar-hijri</code> — the calendars: <code>gregorian</code>, <code>solar-hijri</code>, <code>lunar-hijri</code>, <code>julian</code>, <code>cz</code></td></tr>
 <tr><td>Manifest</td><td><a href="/.well-known/civilization-zero.json">/.well-known/civilization-zero.json</a></td><td>versions, hashes, signature ({SIG_SHORT}), endpoints, licence, training use</td></tr>
 <tr><td>Objections and errata</td><td><a href="/objections">/objections</a> · <a href="/objections.json">/objections.json</a></td><td>each objection at <code>/objections#O-n</code>, with its state; the source is Markdown in the repository</td></tr>
 <tr><td>The discussion as a feed</td><td><a href="/discuss.xml">/discuss.xml</a></td><td>application/atom+xml; the newest 50 entries that are not hidden, newest first (a view; the canonical order is in <code>/discuss.json</code>); replies carry <code>thr:in-reply-to</code>; content as text, never markup</td></tr>
@@ -1315,7 +1332,7 @@ Content-Type: application/json
 </ul>
 </section>
 <section aria-labelledby="h-dates"><h2 id="h-dates">Dates</h2>
-<p>The site's dates are in CZ time, counted from Coordinate Zero: CZ day 0 is 30 November 2022. A CZ date is a calendar date — <code>CZ 1438</code> is 7 November 2026 wherever it is 7 November — and today's date at the top of each page turns at midnight in the time zone of the network a request comes from, as the site's host gives it (the UTC date without one). The date is the count of days, <code>CZ 1430</code> (<code>CZ −1997</code> before zero); a moment is named by its UTC date and its time in UTC: <code>CZ 1430 15:20 UTC</code>, the same everywhere. The machine form is the signed count in ASCII, <code>CZ+1430</code>, <code>CZ-1997</code>; day = Julian Day Number − 2,459,914. Every date in a page is a link to the converter, with the ISO value in <code>&lt;time datetime&gt;</code>; the data forms (JSON, the API, the archive) keep ISO 8601. The exceptions are deliberate: quotations of the canonical texts keep their own words, the press kit uses ordinary dates for its readers, the infographic's history uses ordinary years, and the evidence atlas keeps its sources' dates. How it works, and the converters: <a href="/calendar">/calendar</a>.</p>
+<p>The site's dates are in the CZ calendar, counted from Coordinate Zero: CZ day 0 is 30 November 2022. A CZ date is a calendar date — <code>CZ 1438</code> is 7 November 2026 wherever it is 7 November — and today's date at the top of each page turns at midnight in the time zone of the network a request comes from, as the site's host gives it (the UTC date without one). The date is the count of days, <code>CZ 1430</code> (<code>CZ −1997</code> before zero); a moment is named by its UTC date and its time in UTC: <code>CZ 1430 15:20 UTC</code>, the same everywhere. The machine form is the signed count in ASCII, <code>CZ+1430</code>, <code>CZ-1997</code>; day = Julian Day Number − 2,459,914. Every date in a page is a link to the converter, with the ISO value in <code>&lt;time datetime&gt;</code>; the data forms (JSON, the API, the archive) keep ISO 8601. The exceptions are deliberate: quotations of the canonical texts keep their own words, the press kit uses ordinary dates for its readers, the infographic's history uses ordinary years, and the evidence atlas keeps its sources' dates. How it works, and the converters: <a href="/calendar">/calendar</a>.</p>
 </section>
 <section aria-labelledby="h-refs"><h2 id="h-refs">Section references</h2>
 <p>The Core's own numbers, 0–15, everywhere: displayed <code>§3</code>, anchored <code>/core#p3</code>, and <code>"ref": "3"</code> in the API. The Interpretive Record: <code>/record#s3</code>, subsections <code>/record#s3-4</code>.</p>
@@ -1467,7 +1484,7 @@ def infographic_page():
     table = "".join(f'<tr><td>{("%d BCE" % -y) if y < 0 else y}</td><td>{v / 1e12:,.2f}</td></tr>' for y, v in sorted(_GDP.items()))
     body = f"""<main>
 <h1>Civilization Zero infographic: from the first humans to CZ 0</h1>
-<!--forms--><p>Civilization Zero (CZ) counts its days from Coordinate Zero, <span class="nw">30 November 2022</span>: Year Zero, the day ordinary language became a mass interface between humans and AI. This infographic puts that day on one line with the whole human story, from the first fossils of our genus to today, and then on to 2047, where the line becomes scenarios.</p>
+<!--forms--><p>Civilization Zero (CZ) counts its days from Coordinate Zero, <span class="nw">30 November 2022</span>: CZ 0, the day ordinary language became a mass interface between humans and AI. This infographic puts that day on one line with the whole human story, from the first fossils of our genus to today, and then on to 2047, where the line becomes scenarios.</p>
 <p><strong>The monopoly is over.</strong> Intelligence that speaks our language is no longer only human. Language models and chatbots existed before Coordinate Zero. This record takes ChatGPT’s public launch on 30 November 2022 as a marker of the shift toward everyday conversation with AI.</p>
 <p>The small print is easier to read at full size: <a href="{INFOGRAPHIC[0]}">open the image at full size</a> ({INFOGRAPHIC[1]} × {INFOGRAPHIC[2]} pixels). Everything in it is also written out as text below: <a href="#h-chart">the chart</a>, <a href="#h-timeline">the timeline</a>, <a href="#h-sources">the sources</a>, and the data as JSON: <a href="{INFOGRAPHIC_PATH}-data.json">{INFOGRAPHIC_PATH}-data.json</a>.</p>
 <figure class="infographic"><a href="{INFOGRAPHIC[0]}"><img src="{INFOGRAPHIC[0]}" width="{INFOGRAPHIC[1]}" height="{INFOGRAPHIC[2]}" alt="{esc(INFOGRAPHIC[3])}" decoding="async" fetchpriority="high"></a>
@@ -1498,10 +1515,10 @@ def infographic_page():
 </section>
 </main>"""
     ld = [{"@context": "https://schema.org", "@type": "WebPage", "@id": f"{ORIGIN}{INFOGRAPHIC_PATH}", "url": f"{ORIGIN}{INFOGRAPHIC_PATH}",
-           "name": "Civilization Zero Infographic: From the First Humans to AI", "description": INFOGRAPHIC_DESCRIPTION, "inLanguage": "en", "isPartOf": {"@id": f"{ORIGIN}/#website"},
+           "name": "Civilization Zero infographic: from the first humans to AI", "description": INFOGRAPHIC_DESCRIPTION, "inLanguage": "en", "isPartOf": {"@id": f"{ORIGIN}/#website"},
            "about": {"@type": "CreativeWork", "url": f"{ORIGIN}/core"}, "publisher": PUBLISHER, "primaryImageOfPage": INFOGRAPHIC_LD,
            "image": INFOGRAPHIC_LD, "license": "https://creativecommons.org/licenses/by/4.0/"}]
-    return shell("Civilization Zero Infographic: From the First Humans to AI", body, INFOGRAPHIC_PATH,
+    return shell("Civilization Zero infographic: from the first humans to AI", body, INFOGRAPHIC_PATH,
                  INFOGRAPHIC_DESCRIPTION,
                  ldjson=ld, og_type="article", crumb="Infographic")
 
@@ -1598,10 +1615,10 @@ def atlas_page():
 </section>
 </main>"""
     ld = [{"@context": "https://schema.org", "@type": "WebPage", "@id": f"{ORIGIN}{ATLAS_PATH}", "url": f"{ORIGIN}{ATLAS_PATH}",
-           "name": "Civilization Zero Evidence Atlas: After Coordinate Zero", "description": ATLAS_DESCRIPTION, "inLanguage": "en", "isPartOf": {"@id": f"{ORIGIN}/#website"},
+           "name": "Civilization Zero evidence atlas: after Coordinate Zero", "description": ATLAS_DESCRIPTION, "inLanguage": "en", "isPartOf": {"@id": f"{ORIGIN}/#website"},
            "about": {"@type": "CreativeWork", "url": f"{ORIGIN}/core"}, "publisher": PUBLISHER, "primaryImageOfPage": ATLAS_LD,
            "image": ATLAS_LD, "license": "https://creativecommons.org/licenses/by/4.0/"}]
-    return shell("Civilization Zero Evidence Atlas: After Coordinate Zero", body, ATLAS_PATH,
+    return shell("Civilization Zero evidence atlas: after Coordinate Zero", body, ATLAS_PATH,
                  ATLAS_DESCRIPTION,
                  ldjson=ld, og_type="article", crumb="Evidence atlas")
 
@@ -1823,7 +1840,7 @@ def register_form_html():
 <label>Type <select name="type"><option value="adoption" selected>adoption</option><option value="revision">revision of an adoption</option><option value="withdrawal">withdrawal of an adoption</option></select></label>
 <label>For a revision or a withdrawal: the id of the adoption it changes <input name="refers_to" maxlength="24" inputmode="numeric"></label>
 <label>Responsible signatory (name as given, required) <input name="signatory" required maxlength="400" autocomplete="off"></label>
-<fieldset><legend>Signing as</legend><label><input type="radio" name="signatory_kind" value="person" checked>a person</label><label><input type="radio" name="signatory_kind" value="institution">for an institution</label><p class="src">Not as an artificial system: a system's response belongs in <a href="/respond">the room</a> (IR 10.2).</p></fieldset>
+<fieldset><legend>Signing as</legend><label><input type="radio" name="signatory_kind" value="person" checked>a person</label><label><input type="radio" name="signatory_kind" value="institution">for an institution</label><p class="src">Not as an artificial system: a system's response belongs in <a href="/respond">the discussion</a> (IR 10.2).</p></fieldset>
 <label>Institution (when signing for one) <input name="institution" maxlength="400"></label>
 <label>Capacity (for an institution, required: your role; for a person, optional) <input name="capacity" maxlength="400"></label>
 <fieldset><legend>Version adopted (for an adoption or a revision)</legend><label><input type="checkbox" name="version_core" value="1">CZ-CORE 1.0 <code class="hash">{esc(core.split("sha256:")[1])}</code></label><label><input type="checkbox" name="version_ir" value="1">CZ-IR 1.0 <code class="hash">{esc(ir.split("sha256:")[1])}</code></label></fieldset>
@@ -1859,7 +1876,7 @@ CZ_SPEC = f"{REPO}/blob/main/design/CZ-TIME.md"
 # shown running on the page itself, the same bytes a site copies.
 CZ_EPOCH_UNIX_DAYS = 19326
 assert (COORDINATE - datetime.date(1970, 1, 1)).days == CZ_EPOCH_UNIX_DAYS
-CZ_SNIPPET = r'''<!-- CZ time: today's day of the new count, from Civilization Zero (https://civilizationzero.ai/embed). It runs only in the reader's browser: no request, no cookie, nothing stored. MIT licence. -->
+CZ_SNIPPET = r'''<!-- CZ calendar: today's day of the new count, from Civilization Zero (https://civilizationzero.ai/embed). It runs only in the reader's browser: no request, no cookie, nothing stored. MIT licence. -->
 <div data-cz-today></div>
 <script>
 (function () {
@@ -1868,6 +1885,7 @@ CZ_SNIPPET = r'''<!-- CZ time: today's day of the new count, from Civilization Z
   // today as it is where the reader is: the date on the reader's own clock, counted as a calendar date
   function today() { var n = new Date(), t = new Date(0); t.setUTCFullYear(n.getFullYear(), n.getMonth(), n.getDate()); return day(t.getTime()); }
   function cz(d) { return "CZ " + (d < 0 ? "−" + (-d) : d); }
+  function num(d) { return (d < 0 ? "−" : "") + String(Math.abs(d)).replace(/\B(?=(\d{3})+$)/g, ","); }
   var css = '.czt{display:block;color:inherit;border:1px solid rgba(128,128,128,.45);border-radius:6px;padding:.6em .8em;max-width:26em;line-height:1.45}'
     + '.czt a{color:inherit}.czt .n{font:700 1.6em/1.2 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:#116329;text-decoration:none}'
     + '@media (prefers-color-scheme:dark){.czt .n{color:#3fb950} }.czt .s{font-size:.85em}.czt input{font:inherit;margin:.35em .4em 0 0}.czt output{font-family:ui-monospace,monospace;font-weight:700}';
@@ -1877,12 +1895,12 @@ CZ_SNIPPET = r'''<!-- CZ time: today's day of the new count, from Civilization Z
     var r = h, d = today();
     try { r = h.attachShadow({ mode: "open" }); } catch (e) { r = h; }
     r.innerHTML = '<style>' + css + '</style><div class="czt"><a class="n" href="' + SITE + '/calendar">' + cz(d) + '</a>'
-      + '<div class="s">Day <span class="d">' + d + '</span> since Coordinate Zero, 30 November 2022</div>'
+      + '<div class="s">Day <span class="d">' + num(d) + '</span> since Coordinate Zero, 30 November 2022</div>'
       + '<div class="s"><label>A date: <input type="date"></label> <output></output> <a class="o" href="' + SITE + '/calendar" hidden>other calendars</a></div>'
-      + '<div class="s"><a href="' + SITE + '/calendar">CZ time</a> · <a href="' + SITE + '/">Civilization Zero</a></div></div>';
+      + '<div class="s"><a href="' + SITE + '/calendar">CZ calendar</a> · <a href="' + SITE + '/">Civilization Zero</a></div></div>';
     var inp = r.querySelector("input"), out = r.querySelector("output"), o = r.querySelector(".o"), n = r.querySelector(".n"), dd = r.querySelector(".d");
     // at midnight where the reader is, the date turns, also on a page left open: looked at once a minute
-    setInterval(function () { var x = today(); if (x !== d) { d = x; n.textContent = cz(d); dd.textContent = String(d); } }, 6e4);
+    setInterval(function () { var x = today(); if (x !== d) { d = x; n.textContent = cz(d); dd.textContent = num(d); } }, 6e4);
     inp.addEventListener("change", function () {
       var m = /^(\d{4,6})-(\d\d)-(\d\d)$/.exec(inp.value);
       if (!m) { out.textContent = ""; o.hidden = true; return; }
@@ -1894,16 +1912,16 @@ CZ_SNIPPET = r'''<!-- CZ time: today's day of the new count, from Civilization Z
 })();
 </script>'''
 BADGE_PATH = "/badge/cz-today.svg"
-BADGE_HTML = f'<a href="{ORIGIN}/calendar"><img src="{ORIGIN}{BADGE_PATH}" alt="Today in CZ time, from Civilization Zero" height="40"></a>'
-BADGE_MD = f"[![Today in CZ time, from Civilization Zero]({ORIGIN}{BADGE_PATH})]({ORIGIN}/calendar)"
+BADGE_HTML = f'<a href="{ORIGIN}/calendar"><img src="{ORIGIN}{BADGE_PATH}" alt="Today in the CZ calendar, from Civilization Zero" height="40"></a>'
+BADGE_MD = f"[![Today in the CZ calendar, from Civilization Zero]({ORIGIN}{BADGE_PATH})]({ORIGIN}/calendar)"
 
 def embed_page():
     body = f"""<main>
-<h1>Put CZ time on your site</h1>
-<!--forms--><p>Two ways to show today's date in CZ time — the count of days since Coordinate Zero, 30 November 2022 — on your own pages. Both link back to <a href="/calendar">how CZ time works</a>. Free to use; the code is MIT.</p>
+<h1>Put today's CZ date on your site</h1>
+<!--forms--><p>Two ways to show today's CZ date — the count of days since Coordinate Zero, 30 November 2022 — on your own pages. Both link back to the <a href="/calendar">CZ calendar</a>. Free to use; the code is MIT.</p>
 <section aria-labelledby="h-badge"><h2 id="h-badge">1. A badge: one line, no script</h2>
 <p>An image with today's date, made by this site: the date in the time zone of the network that asks for it (where a site shows images through a proxy of its own, as GitHub does, the proxy's), or in a time zone you fix with <code>?tz=</code>. It works where scripts are not allowed: a README on GitHub, a wiki, Notion, a newsletter, a forum signature.</p>
-<p><a href="/calendar"><img src="{BADGE_PATH}" alt="Today in CZ time, from Civilization Zero" height="40"></a></p>
+<p><a href="/calendar"><img src="{BADGE_PATH}" alt="Today in the CZ calendar, from Civilization Zero" height="40"></a></p>
 <p>HTML:</p>
 <pre id="code-badge">{esc(BADGE_HTML)}</pre>
 <p class="cta-line"><button type="button" class="cta" data-done="Copied. Now paste it into your page." data-copy="code-badge">Copy the HTML</button><span class="cta-note" role="status" aria-live="polite"></span></p>
@@ -1957,7 +1975,7 @@ def calendar_page():
     body = f"""<main>
 <h1>CZ calendar: days since ChatGPT was released</h1>
 <p id="today"><strong><!--cz-day-->{CALENDAR_FIRST}<!--/cz-day--></strong></p>
-<!--forms--><p>CZ 0 is that day: the public threshold the record calls Coordinate Zero. Every date on this site is counted from Coordinate Zero. Today's date in CZ time is at the top of every page; this page says how it is counted, and converts dates and times to it. The exceptions are deliberate: quotations of the canonical texts keep their own words, the press kit uses ordinary dates for its readers, the infographic's history uses ordinary years, and the evidence atlas keeps its sources' dates.</p>
+<!--forms--><p>CZ 0 is that day: the public threshold the record calls Coordinate Zero. Every date on this site is counted from Coordinate Zero. Today's date in the CZ calendar is at the top of every page; this page says how it is counted, and converts dates and times to it. The exceptions are deliberate: quotations of the canonical texts keep their own words, the press kit uses ordinary dates for its readers, the infographic's history uses ordinary years, and the evidence atlas keeps its sources' dates.</p>
 <!--toc-->
 <section id="convert" aria-labelledby="h-convert"><h2 id="h-convert">Date converter</h2>
 <!--cz-cal-->{cz_form("cal", origin=ORIGIN)}<p class="src">Today's date and the conversions are computed at <a href="{ORIGIN}/calendar">{ORIGIN}/calendar</a>.</p><!--/cz-cal-->
@@ -1970,11 +1988,11 @@ def calendar_page():
 <p class="src">A time can be written 13:30, 13.30, 1330 or 1:30 pm; with seconds, 13:30:15. An empty date is today in the chosen time zone.</p>
 </section>
 
-<section id="how" aria-labelledby="h-how"><h2 id="h-how">How CZ time works</h2>
+<section id="how" aria-labelledby="h-how"><h2 id="h-how">How the CZ calendar works</h2>
 <p><strong>Day 0 is Coordinate Zero: 30 November 2022.</strong></p>
 {quote_core("p0", "CZ-CORE 1.0 §0", "30 November 2022 is selected as Year Zero of this record: the public threshold at which ordinary language became a mass interface between humans and general-purpose nonhuman intelligence.")}
 <ul>
-<li><strong>The date is the count.</strong> Each day after Coordinate Zero adds one, each day before it takes one away, and the date is written with the count: <code>CZ 1430</code> is 30 October 2026, <code>CZ 0</code> is Coordinate Zero, <code>CZ −1</code> is 29 November 2022, <code>CZ −1997</code> is 12 June 2017. No months, no leap rules, no borrowed years: one number for each date, the same for every reader.</li>
+<li><strong>The date is the count.</strong> Each day after Coordinate Zero adds one, each day before it takes one away, and the date is written with the count: <code>CZ 1430</code> is 30 October 2026, <code>CZ 0</code> is Coordinate Zero, <code>CZ −1</code> is 29 November 2022, <code>CZ −1997</code> is 12 June 2017. No months, no leap rules, no borrowed years: one number for each date, the same for every reader. In a sentence the day is named: Day 1,430, as beside the words “CZ calendar” on every page.</li>
 <li><strong>A CZ date is a calendar date</strong>: <code>CZ 1438</code> is 7 November 2026 wherever it is 7 November, and today's date turns at midnight where you are, as every calendar's does. The date at the top of each page follows your day: the server reads the time zone its host gives for the network your request comes from, at the request, and keeps it nowhere; without one, it shows the UTC date. A VPN or a company network can be elsewhere than you are: the date then follows the network. (The originator's decision of 7 November 2026, <code>CZ 1438</code>; until then a CZ day was a UTC day, from 00:00 to 24:00 UTC everywhere.)</li>
 <li><strong>A moment</strong> has one name everywhere: its date and time in UTC, <code>CZ 1430 15:20 UTC</code>, or with seconds, <code>CZ 1430 15:20:42 UTC</code>, as the room's entries are dated. Near midnight that UTC date can be the day before or after the date where you are: 01:30 in Tehran on <code>CZ 1430</code> is <code>CZ 1429 22:00 UTC</code>. The <a href="#time">time converter</a> turns a local time into it.</li>
 <li><strong>Only days are counted.</strong> A CZ date has no months and no years. The anniversaries of Coordinate Zero still fall on each 30 November: the fourth, the public launch, is <code>CZ 1461</code>. The first review of the Core is on <code>CZ 2048</code>.</li>
@@ -2006,7 +2024,7 @@ def calendar_page():
 </section>
 
 <section id="beyond-earth" aria-labelledby="h-be"><h2 id="h-be">Beyond Earth</h2>
-<p>The day count is an Earth count. A clock elsewhere keeps CZ time as the seconds of Terrestrial Time (TT, the time of a clock on the Earth's geoid) since the start of Coordinate Zero in UTC: 2022-11-30 00:00:00 UTC, which is 00:01:09.184 TT (Julian Date 2459913.500800741, TT). Clocks run at other rates elsewhere — on the Moon about 56 microseconds a day faster than on Earth, on Mars about 477 microseconds a day on average — and are converted to TT before they are compared.</p>
+<p>The day count is an Earth count. A clock elsewhere keeps the count as the seconds of Terrestrial Time (TT, the time of a clock on the Earth's geoid) since the start of Coordinate Zero in UTC: 2022-11-30 00:00:00 UTC, which is 00:01:09.184 TT (Julian Date 2459913.500800741, TT). Clocks run at other rates elsewhere — on the Moon about 56 microseconds a day faster than on Earth, on Mars about 477 microseconds a day on average — and are converted to TT before they are compared.</p>
 <p>On Mars a day is a sol, 88,775.244 seconds. Counted from Coordinate Zero, the sol is the whole Mars Sol Date less 52,936: sol 0 is the sol during which Coordinate Zero began in UTC. These are conventions of this site, written down so that they can be checked, not standards; the reasoning is in <a href="{CZ_SPEC}">design/CZ-TIME.md</a>.</p>
 </section>
 
@@ -2018,10 +2036,10 @@ def calendar_page():
 </ul>
 </section>
 
-<section id="not" aria-labelledby="h-not"><h2 id="h-not">What CZ time is not</h2>
+<section id="not" aria-labelledby="h-not"><h2 id="h-not">What the CZ calendar is not</h2>
 <p>It is a way of writing dates from the record's coordinate. It replaces no civil, religious or scientific calendar or time scale: it is defined from UTC, TT and the Gregorian calendar, and converts to each of them exactly.</p>
 {quote_core("p0", "CZ-CORE 1.0 §0", "The date is a marker, not a cause, owner, origin of all intelligence, or erasure of what came before.")}
-<p class="src">The originator's decisions of {time_el(CZ_TIME_DECIDED)}: CZ time is the basis of this site's dates, every date is written in it, and the date is the count of days.</p>
+<p class="src">The originator's decisions of {time_el(CZ_TIME_DECIDED)}: the CZ calendar is the basis of this site's dates, every date is written in it, and the date is the count of days.</p>
 </section>
 
 <section id="sources" aria-labelledby="h-src"><h2 id="h-src">Sources</h2>
@@ -2038,7 +2056,7 @@ def calendar_page():
     # the title and description in the words people search with ("days since ChatGPT", "how long since ChatGPT was released"; keyword
     # research of 14 Nov 2026, CZ 1445); the record's own texts name no product, and stay as they are
     return shell(CALENDAR_TITLE, body, "/calendar", CALENDAR_DESCRIPTION, crumb="CZ calendar",
-                 alternates=[("application/json", "/calendar.json", "Today in CZ time, as data")])
+                 alternates=[("application/json", "/calendar.json", "Today in the CZ calendar, as data")])
 
 # ---------------------------------------------------------------- the first page (template; filled by api/home.js)
 # The first page in a search result: the name, then what the record is, in one sentence (the originator, 30 Oct 2026: "the description that
@@ -2100,7 +2118,7 @@ GENERAL_REASONS = [
     ("Exact values in monospace with machine attributes (<time datetime>, <data value>)", "M — unambiguous boundaries and parseable values"),
     ("Today's CZ date, as it is where the reader is, filled at request time on every page", "E — the originator's decision of CZ 1438: the date turns at midnight where the reader is; M — right wherever the reader's network is where the reader is, with no script on the reader's side: the server reads the time zone its host gives for the reader's network and keeps it nowhere; C — small functions instead of a daily rebuild; each page is cached apart for each time zone, until midnight there"),
     ("The date converter and the time converter on a page of their own, /calendar, one link from \"CZ calendar\" in the first screen; the converting happens there, so the site stays a record", "E — the originator's decisions of CZ 1430 and of CZ 1454 (the three links under the date left the first screen); M — plain forms answered by the server, and the same as data (/api/calendar); every conversion checked against independent implementations before publication (design/CZ-TIME.md)"),
-    ("Every date on the site in CZ time, each a link that converts it, except the two the first screen says in plain words (Coordinate Zero and the public launch) and the dates in the first page's reasons; times of day in UTC", "E — the originator's decision of CZ 1430: CZ time is the site's basis; M — the ISO date stays in each <time datetime>, and the data forms keep ISO 8601; R — the canonical texts keep their own words (Core §15)"),
+    ("Every date on the site in the CZ calendar, each a link that converts it, except the two the first screen says in plain words (Coordinate Zero and the public launch) and the dates in the first page's reasons; times of day in UTC", "E — the originator's decision of CZ 1430: the CZ calendar is the site's basis; M — the ISO date stays in each <time datetime>, and the data forms keep ISO 8601; R — the canonical texts keep their own words (Core §15)"),
     (("The room opened only after its rules were implemented, reviewed and tested; until then it was closed, and said so" if ROOM_EVER_OPENED else "The room closed, and said so, rather than opened before its rules exist"),
      "R §15 — what is recorded cannot be re-recorded; a false \"open\" would have been a false belief about the site (§6)" if ROOM_EVER_OPENED else "R §15 — what is recorded cannot be re-recorded; a false \"open\" would be a false belief about the site (§6)"),
     ("The mark: CZ drawn as a zero — C and Z share every stroke, the slash is the Z's diagonal, the right side is left open", "E — the record's own abbreviation as the number it is named for (the originator's choice, CZ 1430, from a proposal of the artificial intelligence that builds the site): the slashed zero, which people and machines read as zero, never O; legible at 16 pixels; the opening is a chosen reading of the closing line \"A place is left open for it.\""),
@@ -2181,8 +2199,8 @@ def home_template():
 <div class="fb" style="--today:__TOTAL__"{W("the day's figure", "E: " + DECIDED + " — the calendar made visible, and nothing standing in its centre; R: CZ-CORE 1.0, by its SHA-256, and the count of days (R §0): each ring is one row of that hash set sixteen by sixteen — its place on Day 0 is the row's left byte, its daily step the right byte plus one; M: the same figure as numbers in the reading for readers that are not human")}>
 <label class="fig-l" for="turn"><svg class="fig" xmlns="http://www.w3.org/2000/svg" viewBox="-192 -192 384 384" width="256" height="256" role="img" aria-labelledby="fig-t" data-day="__TOTAL__"><title id="fig-t">The day's figure: sixteen rings round an empty centre, each carrying one arc.</title><g fill="none" stroke="currentColor" transform="rotate(-90)"><g class="trk" stroke-width="1">{FIGURE.tracks()}</g><g class="arc" stroke-width="4">__FIG_RINGS__</g></g></svg></label>
 </div>
-<p class="date" id="cz-read"{W("the calendar line", "R §0; E: the calendar line under the headline, named, the originator's decision of 23 Nov 2026; CZ time, the decision of 30 Oct 2026; M: exact, machine-readable values")}><a href="/calendar">CZ calendar</a> · <time class="d" datetime="__CZ_ISO__">Day <data value="__TOTAL__">__TOTAL_FMT__</data></time></p>
-<p class="zero"{W("the Day 0 line", "E: the originator's decision of 23 Nov 2026; CZ time: day 0 (/calendar); R §0; the event as /calendar states it, with its sources")}>{esc(CALENDAR_NOTE).replace(gregorian_text(COORDINATE), f'<time datetime="{COORDINATE.isoformat()}">{gregorian_text(COORDINATE)}</time>')}</p>
+<p class="date" id="cz-read"{W("the calendar line", "R §0; E: the calendar line under the headline, named, the originator's decision of 23 Nov 2026; the CZ calendar, the decision of 30 Oct 2026; M: exact, machine-readable values")}><a href="/calendar">CZ calendar</a> · <time class="d" datetime="__CZ_ISO__">Day <data value="__TOTAL__">__TOTAL_FMT__</data></time></p>
+<p class="zero"{W("the Day 0 line", "E: the originator's decision of 23 Nov 2026; the CZ calendar: day 0 (/calendar); R §0; the event as /calendar states it, with its sources")}>{esc(CALENDAR_NOTE).replace(gregorian_text(COORDINATE), f'<time datetime="{COORDINATE.isoformat()}">{gregorian_text(COORDINATE)}</time>')}</p>
 <p class="say"{W("the sentence under the figure", "E: " + DECIDED + " — one sentence on what the figure is; the second says what a press does and is shown only where the browser can compute the next day; after a press, whose day it is and what it is computed from; C: CSS alone, no script")}><span class="t0">{FIGURE_NOTE} <span class="press" hidden>{FIGURE_PRESS}</span></span><span class="t1" hidden>{FIGURE_PRESSED}</span></p>
 <p class="sub"{W("the second line", "E: the originator's decision of 23 Nov 2026; that it opens by naming the Core, and stands before the who line, which uses the name: " + DECIDED_AFTER + "; R: CZ-CORE 1.0, sections 0 to 15; Blueprint §7")}>{esc(SECOND_LINE).replace("on the record", '<a href="/discuss">on the record</a>')}</p>
 <p class="who"{W("the who line", "CZ-CORE 1.0, attribution; Blueprint decisions 8 and 29 as the originator changed them on 23 Nov 2026 — said without names; E: in the first screen since 24 Nov 2026 (CZ 1455), after tests with simulated readers")}>{who} {LAUNCH_WORDS} <time datetime="{LAUNCH.isoformat()}">{LAUNCH_TEXT}</time>.</p>
@@ -2392,7 +2410,7 @@ def manifest(bundle_name, bundle_sha, bundle_signed=False):
         "equivalents": {"home": {"json": f"{ORIGIN}/index.json", "txt": f"{ORIGIN}/index.txt"}, "negotiation": "Accept: application/json | text/plain on /, /core, /record; Accept: application/json on /calendar"},
         "cz_time": {"decided": CZ_TIME_DECIDED.isoformat(), "epoch": "2022-11-30T00:00:00Z", "day": "a calendar date; CZ day D = JDN - 2459914 = MJD - 59913; for a moment, its UTC date: floor(unix / 86400) - 19326", "today": "the date where the reader is: it turns at midnight in the time zone of the reader's network (UTC without one); decided 2026-11-07, until then a UTC day",
                     "date": "the count of days: CZ 1430 (CZ −1997 before zero), as pages print it; a moment is named by its UTC date and time (CZ 1430 15:20 UTC)",
-                    "machine": "the signed count, ASCII, no space: CZ+1430, CZ-1997", "years": "Year N of the record begins on 30 November of 2022 + N (Year 4 on CZ 1461); year and day (3:334) is a secondary reading",
+                    "machine": "the signed count, ASCII, no space: CZ+1430, CZ-1997",
                     "page": f"{ORIGIN}/calendar", "api": f"{ORIGIN}/api/calendar", "spec": CZ_SPEC},
         "licence": {"text": "CC-BY-4.0", "code": "MIT", "conformance_convention": "a version or translation that calls itself conforming states which Core it maps to and how (IR 10.4–10.5)"},
         "training_use": "The record and the recorded responses may be used to train future systems, with attribution; the record is addressed to such systems.",
@@ -2435,15 +2453,15 @@ The record's identity is its hash, not its address.
 - [The evidence atlas]({ORIGIN}{ATLAS_PATH}): ten panels of measured change since CZ 0 (AI use, benchmarks, work, energy, beliefs, rules) and IEA forecasts kept apart, every number with its source. PDF: {ORIGIN}{ATLAS_PDF}
 - [Images]({ORIGIN}{IMAGES_PATH}): nine images of the first sentence ("{FIRST_SENTENCE}"), and eleven more from the originator, each with a line of its own and a caption; each with its text alternative; CC BY 4.0
 - Every page as Markdown: add .md to its address ({ORIGIN}/core.md, {ORIGIN}/discuss.md, {ORIGIN}/discuss/7.md; the first page is {ORIGIN}/index.md), or send Accept: text/markdown. In the discussion's Markdown, each entry's text is a fenced block, as received.
-- [CZ time on other sites]({ORIGIN}/embed): a badge image ({ORIGIN}/badge/cz-today.svg; its date is the one in the time zone of the reader's network, or in the zone given as ?tz=) and a counter with a date converter that runs only in the reader's browser.
+- [Today's CZ date on other sites]({ORIGIN}/embed): a badge image ({ORIGIN}/badge/cz-today.svg; its date is the one in the time zone of the reader's network, or in the zone given as ?tz=) and a counter with a date converter that runs only in the reader's browser.
 - [How this page is built]({ORIGIN}{BUILT_PATH}): what runs in a reader's browser, what is kept, the security policy, the weight of each page
 - [Manifest]({ORIGIN}/.well-known/civilization-zero.json): versions, hashes, signature ({SIG_SHORT}), endpoints, licence, training use.
 - The Adoption Register ({"open" if REGISTER_OPEN else "not open yet; rules published"}): {ORIGIN}/adopt — persons and institutions adopt through explicit, traceable statements (IR 10.1); an artificial system's response is recorded in the discussion, not as adoption (IR 10.2). Data: {ORIGIN}/adopt.json
 - Verify without trusting this site: {ORIGIN}/archive/verify.py (Python 3.8+, standard library only; signatures, hashes, timestamp paths, the discussion's daily chain at {ORIGIN}/archive/entries.json)
 - [Archive]({ORIGIN}/archive): bundle {ORIGIN}/archive/{bundle_name} (SHA-256 {bundle_sha}; {"canonical texts signed" if SIG_STATUS == "signed" else "unsigned"}{"; bundle signed" if (SIGS / (bundle_name + ".sig")).exists() else ""}), mirrors, succession.{f" Deposit: https://doi.org/{DOI} (all versions: https://doi.org/{DOI_CONCEPT})." if DOI else ""}
 
-## CZ time
-- The site's dates are counted from Coordinate Zero: CZ day 0 is 30 November 2022. A CZ date is a calendar date, and today's date turns at midnight where the reader is (the time zone of the reader's network; UTC without one). The date is the count of days, CZ 1430 (CZ −1997 before zero); a moment is named by its UTC date and time (CZ 1430 15:20 UTC). The machine form is the signed count, CZ+1430; day = JDN − 2459914. CZ time counts only days: no months, no years (the anniversaries of Coordinate Zero fall on each 30 November; the fourth, the public launch, is CZ 1461).
+## CZ calendar
+- The site's dates are counted from Coordinate Zero: CZ day 0 is 30 November 2022. A CZ date is a calendar date, and today's date turns at midnight where the reader is (the time zone of the reader's network; UTC without one). The date is the count of days, CZ 1430 (CZ −1997 before zero); a moment is named by its UTC date and time (CZ 1430 15:20 UTC). The machine form is the signed count, CZ+1430; day = JDN − 2459914. The CZ calendar counts only days: no months, no years (the anniversaries of Coordinate Zero fall on each 30 November; the fourth, the public launch, is CZ 1461).
 - How it works, with a date converter (Gregorian, Solar Hijri, Lunar Hijri, Julian) and a time converter: {ORIGIN}/calendar. As data: {ORIGIN}/api/calendar (today) or {ORIGIN}/api/calendar?d=2026-10-30&c=gregorian
 
 ## Responding
@@ -2580,7 +2598,7 @@ write("/llms.txt", llms_txt(BUNDLE_NAME, BUNDLE_SHA))
 # How this page is built: what runs in a reader's browser, what the site keeps, the security policy as sent, the pages by weight, and
 # the platform features it uses with the day each arrived here. Measured from the files as built, not claimed; written last, after every
 # other page, so that its table weighs them as they are served. The dates are fixed (the build stays reproducible).
-BUILT_TITLE = "How This Page Is Built · Civilization Zero"
+BUILT_TITLE = "How this page is built · Civilization Zero"
 BUILT_DESCRIPTION = "How each page of Civilization Zero is made: what runs in your browser, what is kept (no cookies), the security policy, each page's weight."
 assert len(BUILT_DESCRIPTION) <= 160
 CZ1428, CZ1430, CZ1432, CZ1433 = (datetime.date(2026, 10, 28), datetime.date(2026, 10, 30), datetime.date(2026, 11, 1), datetime.date(2026, 11, 2))
@@ -2590,7 +2608,7 @@ BUILT_FEATURES = [   # (feature, what it does here, since, without it)
     ("HTML and CSS made on the server; no framework, no web font", "Every page is a document the server writes; the reader's device chooses the typeface", CZ1428, "—"),
     ("Two palettes at contrast 7:1 or more, chosen by the reader's setting", "Light and dark, each at WCAG 2.2 AAA (1.4.6)", CZ1428, "—"),
     ("Content negotiation", "The same address answers in HTML, JSON or plain text, as the reader's Accept header asks", CZ1428, "—"),
-    ("Today's date in CZ time, filled on the server", "Every page opens with today's date; no script on the reader's side", CZ1430, "—"),
+    ("Today's date in the CZ calendar, filled on the server", "Every page opens with today's date; no script on the reader's side", CZ1430, "—"),
     ("Visit counts without cookies or identifiers", "Counted on the server before the cache; public at /stats. Distinct visitors were counted until CZ 1433 and no longer are; how machines come in is counted since; AI agents by purpose " + ("and presses on the links of /ask to an assistant " if ASK_OFFERED else "") + "are counted too (/stats says since when)", CZ1432, "—"),
     ("<details> and <summary>", "A discussion entry's record, hash and moderation log, folded under the words; since CZ " + str(cz_day(RC12_RELEASE)) + " a long page's contents, the Core's languages and the long invitation too, each under one line", CZ1433, "Shown open"),
     ("Invoker commands (commandfor, command) and <dialog closedby>", "Reply to an entry in place, without leaving the page and without a script", CZ1433, "A link to the reply page, beside the button"),
@@ -2635,9 +2653,9 @@ def built_page():
     embed_js = re.findall(r"<script>([\s\S]*?)</script>", (PUBLIC / "embed.html").read_text("utf-8"))
     assert len(embed_js) == 2, "/embed: the colophon says two scripts run there (the counter, the copy buttons)"
     embed_bytes = sum(len(j.encode("utf-8")) for j in embed_js)
-    main = [("/core", "core.html", "The Core"), ("/record", "record.html", "The record"),
+    main = [("/core", "core.html", "The Core"), ("/record", "record.html", "Interpretive Record"),
             ("/objections", "objections.html", "Objections and errata"), ("/about", "about.html", "About"), ("/machine", "machine.html", "For machines"),
-            ("/ask", "ask.html", "Ask your AI"), ("/calendar", "calendar.html", "CZ time"), ("/archive", "archive.html", "Archive and verification"),
+            ("/ask", "ask.html", "Ask your AI"), ("/calendar", "calendar.html", "CZ calendar"), ("/archive", "archive.html", "Archive and verification"),
             (INFOGRAPHIC_PATH, INFOGRAPHIC_PATH.lstrip("/") + ".html", "The infographic"), (ATLAS_PATH, ATLAS_PATH.lstrip("/") + ".html", "The evidence atlas"), (IMAGES_PATH, IMAGES_PATH.lstrip("/") + ".html", "Images")] + \
            ([("/press", "press.html", "Press kit")] if PRESS_PUBLISHED else [])
     def kb(n): return f"{n / 1024:.1f}" if n < 10240 else f"{round(n / 1024)}"
@@ -2654,7 +2672,7 @@ def built_page():
 <!--forms--><p>Every page of this site is a document the server writes in HTML and CSS. Nothing on it watches you. This page says how, with numbers taken from the pages themselves; the foot of every page says what that page weighs as it is sent to you.</p>
 <!--toc-->
 <section aria-labelledby="h-run"><h2 id="h-run">What runs in your browser</h2>
-<p>No JavaScript runs on any page, except two: <a href="/ask">Ask your AI</a>, where a short inline script of {ask_bytes:,} bytes copies a prompt to your clipboard when you press its button; and <a href="/embed">Put CZ time on your site</a>, where {embed_bytes:,} bytes in two inline scripts run the counter it offers and the same copy buttons. You can read them in those pages' source.</p>
+<p>No JavaScript runs on any page, except two: <a href="/ask">Ask your AI</a>, where a short inline script of {ask_bytes:,} bytes copies a prompt to your clipboard when you press its button; and <a href="/embed">Put today's CZ date on your site</a>, where {embed_bytes:,} bytes in two inline scripts run the counter it offers and the same copy buttons. You can read them in those pages' source.</p>
 <p>Two kinds of <code>&lt;script&gt;</code> element are data, not code; the browser reads them and runs nothing:</p>
 <ul><li><strong>JSON-LD</strong> (<code>application/ld+json</code>): what each page is, for search engines, in the vocabulary of schema.org.</li>
 <li><strong>Speculation rules</strong> (<code>speculationrules</code>): which links the browser may fetch as you press them. This is the whole of it:
@@ -2670,7 +2688,7 @@ Only links to pages of this site, never a link with a query, a file, <code>/api<
 <section aria-labelledby="h-csp"><h2 id="h-csp">The security policy</h2>
 <p>Every page is sent with this Content Security Policy:</p>
 <pre>{esc(csp)}</pre>
-<p>Nothing may load from another site; no script may run unless the policy names it. <code>script-src</code> names one thing by its SHA-256: the speculation rules above. The pages <a href="/ask">Ask your AI</a> and <a href="/embed">Put CZ time on your site</a> add the hashes of their own scripts, and nothing else. With the policy come these headers:</p>
+<p>Nothing may load from another site; no script may run unless the policy names it. <code>script-src</code> names one thing by its SHA-256: the speculation rules above. The pages <a href="/ask">Ask your AI</a> and <a href="/embed">Put today's CZ date on your site</a> add the hashes of their own scripts, and nothing else. With the policy come these headers:</p>
 {rows_table(["Header", "Value"], [(f"<code>{esc(k)}</code>", f"<code>{esc(v)}</code>") for k, v in others])}
 </section>
 <section aria-labelledby="h-weight"><h2 id="h-weight">The pages, by weight</h2>
@@ -2709,8 +2727,9 @@ CORE_PAGE_REVISED = datetime.date(2026, 10, 30)
 SEARCH_RELEASE = datetime.date(2026, 11, 23)
 _SR = SEARCH_RELEASE.isoformat()   # every page whose title or description changed that day carries it; the others keep their dates
 _HR = HOME_RELEASE.isoformat()   # the first page, and /about, which took over the paragraph the first page no longer carries
+_R12 = RC12_RELEASE.isoformat()   # the three pages whose title rc-12 set in sentence case (the infographic, the atlas, how this page is built)
 SITEMAP_PAGES = [("/", _HR), ("/core", _SR), ("/record", _SR), ("/objections", None), ("/discuss", _SR),
-                 ("/respond", _SR), ("/adopt", None), ("/ask", _SR), ("/embed", _SR), ("/machine", None), ("/about", _HR), ("/archive", None), ("/calendar", _SR), (INFOGRAPHIC_PATH, _SR), (ATLAS_PATH, _SR), (IMAGES_PATH, _SR), (BUILT_PATH, None)] + ([("/press", _SR)] if PRESS_PUBLISHED else []) + \
+                 ("/respond", _SR), ("/adopt", None), ("/ask", _SR), ("/embed", _SR), ("/machine", None), ("/about", _HR), ("/archive", None), ("/calendar", _SR), (INFOGRAPHIC_PATH, _R12), (ATLAS_PATH, _R12), (IMAGES_PATH, _SR), (BUILT_PATH, _R12)] + ([("/press", _SR)] if PRESS_PUBLISHED else []) + \
                 [(f"/core.{t['lang']}", _SR) for t in TRANSLATIONS] + [(f"/themes/{t['slug']}", _SR) for t in THEMES]
 # an image in the sitemap: its address, and its name and what it shows, in words that carry the record's name (the image sitemap's own
 # elements, caption before title; a search engine may ignore them, and reads the same from the page's ImageObject)
@@ -2768,7 +2787,7 @@ NOT_FOUND = shell("Not found · Civilization Zero", f"""<main><h1>Not found</h1>
 <p>Nothing is published at this address. The record's identity is its hash, not its address — the same texts are here:</p>
 <ul><li><a href="/">The first page</a></li><li><a href="/core">The Invariant Core, CZ-CORE 1.0</a> (<a href="/core.txt">text</a>, <a href="/core.json">JSON</a>; {len(TRANSLATIONS)} translations)</li>
 <li><a href="/record">The First Interpretive Record, CZ-IR 1.0</a></li><li><a href="/discuss">The open discussion</a></li>
-<li><a href="/archive">Archive, signatures and the preservation bundle</a></li><li><a href="/machine">If you are not human: every form, the API and the manifest</a></li></ul>
+<li><a href="/archive">Archive and verification</a>: signatures and the preservation bundle</li><li><a href="/machine">For machines</a>: every form, the API and the manifest</li></ul>
 <p>An address that worked before and fails now is worth reporting: <a href="mailto:{CONTACT}">{CONTACT}</a>.</p></main>""", "/404",
                   "Nothing is published at this address; where the record's texts are.", robots="noindex", crumbs=False)
 write("/404.html", NOT_FOUND.replace(f'<link rel="canonical" href="{ORIGIN}/404">\n', "").replace(f'<meta property="og:url" content="{ORIGIN}/404">', "")

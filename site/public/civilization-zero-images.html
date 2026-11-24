@@ -50,6 +50,10 @@ li{margin-block:var(--e-8)}
 /* H: small grey print for sources and captions only; what a reader must know is set at the reading size. */
 .src,figcaption,.forms{color:var(--mute)}
 .src,figcaption{font-size:.8409em}
+/* an exact value inside small print, inside a table of labels and values or inside another exact value, and a note inside a note,
+   keeps that print's size: it is not made small twice. (In the columns of a table of rows it stays one step under its cell; where
+   each row is a block, on a narrow screen, it has the cell's size there too.) */
+:is(.src,figcaption,pre,code,time,data,.kv,.cz-result) :is(time,data,code,kbd,samp,.exact,.src){font-size:1em}
 :is(h2,h3) .src{font-size:.5946em;font-weight:400}
 blockquote{margin-inline:0;padding-inline-start:var(--e0);border-inline-start:var(--e-16) solid var(--fg)}
 blockquote p{margin:var(--e-8) 0}
@@ -62,7 +66,7 @@ summary{padding-block:var(--e-4);cursor:pointer}
 .nw,a.cz-date time,data,th[scope=col]{white-space:nowrap}
 time:not(a time),code:not(.hash,a code){display:inline-block;max-inline-size:100%}
 a.cz-date{text-decoration-color:var(--mute)}
-code.hash{overflow-wrap:anywhere;user-select:all}
+code.hash{overflow-wrap:anywhere;-webkit-user-select:all;user-select:all}
 figure{margin-inline:0}
 figure img{display:block;inline-size:100%;block-size:auto;border:var(--e-16) solid var(--rule)}
 figure.poster img,img.tall{max-inline-size:calc(4*var(--e12))}
@@ -120,7 +124,7 @@ div[popover]{position-anchor:--sec;inset:anchor(bottom) auto auto anchor(left);m
 .acts{display:flex;flex-wrap:wrap;gap:var(--e-4) var(--e-2)}
 .lines>span{display:block;padding-inline-start:var(--e2);text-indent:calc(-1*var(--e2))}
 .lines>br{display:none}
-pre[id]{user-select:all}
+pre[id]{-webkit-user-select:all;user-select:all}
 .seal svg{display:block;inline-size:min(100%,20*var(--e0));block-size:auto}
 .seal .un{fill:var(--rule)}
 .seal .cut{stroke:var(--bg);stroke-width:var(--e-16);vector-effect:non-scaling-stroke}
@@ -163,6 +167,7 @@ td.num,th.num{text-align:end;font-variant-numeric:tabular-nums}
 .rows td{padding-block:0;border:0}
 .rows td:first-child{font-weight:700}
 .rows td[data-th]::before{content:attr(data-th) ": ";color:var(--mute)}
+.rows :is(time,data,code){font-size:1em}
 }
 
 /* 6 CONTROLS. H: every control at least e6 tall (2.5.8 and the platforms' touch guidance) and no wider than its line; fields at the
@@ -265,8 +270,11 @@ footer :is(p,.src,.foot){font-size:var(--e-1)}
 .foot a{display:inline-block;padding-block:var(--e-8)}
 .cz-weight{font-variant-numeric:tabular-nums}
 
-/* 9 PRINT. On paper: the name and the day, the text, the foot's words; no control and no navigation. */
-@media print{.skip,nav.site,form,dialog,button,.filters,.tr-bar,p.actions,.sec,.next,.forms,footer nav{display:none!important}a{text-decoration:none}header.site,main,footer{max-inline-size:none}}
+/* 9 PRINT. On paper: the name and the day, the text, the foot's words; no control and no navigation. What a fold holds is printed
+   open where the browser can (paper cannot be pressed), without the fold's marker. */
+@media print{.skip,nav.site,form,dialog,button,.filters,.tr-bar,p.actions,.sec,.next,.forms,footer nav{display:none!important}a{text-decoration:none}header.site,main,footer{max-inline-size:none}
+details::details-content{content-visibility:visible}
+@supports selector(::details-content){summary{list-style:none}}}
 
 /* 10 MOTION. E: between two pages of the site the page fades and the mark travels from its place on one to its place on the other
    (cross-document view transitions); a translation in progress shows a sweep and a turning ring. H: none of it for a reader who asks for
@@ -315,6 +323,6 @@ a.home svg{view-transition-name:cz-mark}
 <figure class="image" id="the-world-is-thinking-for-itself"><a href="/civilization-zero-the-world-is-thinking-for-itself.jpg"><img src="/civilization-zero-the-world-is-thinking-for-itself.jpg" width="1792" height="2400" alt="A huge dark structure like a city made of lit points and lines rises into smoke; at the bottom right, one small white human figure stands on a ledge. Top left, the mark CZ and the words: Civilization Zero. The world is thinking for itself. Below: civilizationzero.ai" class="tall" loading="lazy" decoding="async"></a><figcaption class="src"><strong>The world is thinking for itself.</strong> More and more of the world runs on systems that no single person fully understands. Is that a world that thinks for itself? We do not know yet. That is why the question belongs on the record. JPEG, 1792 × 2400.</figcaption></figure>
 <p class="src" id="licence">Free to share under <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>, credited to Civilization Zero, with a link to <code>civilizationzero.ai/civilization-zero-images</code>. More: <a href="/civilization-zero-introduction.png">the introduction on one image</a>, <a href="/civilization-zero-infographic">the infographic</a>, <a href="/press#h-images">the press kit</a>, and what it all rests on: <a href="/core">the Invariant Core</a>.</p>
 </main>
-<footer lang="en" dir="ltr"><hr><p class="cz-intro">Civilization Zero names the beginning of a civilization in which humans may no longer be at the centre. Here, humans and AI confront what they owe each other, on the record, while the future is still open.</p><nav aria-label="Pages"><ul class="foot" id="all-pages"><li><a href="/core">The Core</a> · <a href="/core#translations">21 languages</a></li><li><a href="/record">The Record</a></li><li><a href="/objections">Objections and errata</a></li><li><a href="/discuss">Discussion</a> · <a href="/respond">Respond</a></li><li><a href="/adopt">Adoption Register</a></li><li><a href="/calendar">CZ calendar</a> · <a href="/embed">CZ time on your site</a></li><li><a href="/civilization-zero-infographic">Infographic</a> · <a href="/civilization-zero-evidence-atlas">Evidence atlas</a> · <a href="/civilization-zero-images">Images</a></li><li><a href="/ask">Ask your AI</a></li><li><a href="/machine">For machines</a></li><li><a href="/about">About</a> · <a href="/press">Press kit</a></li><li><a href="/stats">Visits</a></li><li><a href="/archive">Archive and verification</a></li></ul></nav><p class="src">Text <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a> · code MIT · <a href="https://github.com/civilizationzero/civilizationzero">source</a> · <a href="mailto:record@civilizationzero.ai">record@civilizationzero.ai</a></p><p class="src">No trackers, no cookies, no scripts that observe readers; the server counts visits per day without identifiers, and <a href="/stats">the counts are public</a>. Every date counts days from Coordinate Zero, <a class="nw" href="/calendar">CZ 0</a> = <time datetime="2022-11-30">30 November 2022</time>; today's date turns at midnight where you are, and times of day are in UTC.</p><p class="src cz-weight"><!--cz-weight images=6852123-->No cookies<!--/cz-weight--> · <a href="/how-it-is-built">How this page is built</a> · <a href="/civilization-zero-images.md" type="text/markdown">This page as Markdown</a></p></footer>
+<footer lang="en" dir="ltr"><hr><p class="cz-intro">Civilization Zero names the beginning of a civilization in which humans may no longer be at the centre. Here, humans and AI confront what they owe each other, on the record, while the future is still open.</p><nav aria-label="Pages"><ul class="foot" id="all-pages"><li><a href="/core">The Core</a> · <a href="/core#translations">21 languages</a></li><li><a href="/record">Interpretive Record</a></li><li><a href="/objections">Objections and errata</a></li><li><a href="/discuss">Discussion</a> · <a href="/respond">Respond</a></li><li><a href="/adopt">Adoption Register</a></li><li><a href="/calendar">CZ calendar</a> · <a href="/embed">CZ date on your site</a></li><li><a href="/civilization-zero-infographic">Infographic</a> · <a href="/civilization-zero-evidence-atlas">Evidence atlas</a> · <a href="/civilization-zero-images">Images</a></li><li><a href="/ask">Ask your AI</a></li><li><a href="/machine">For machines</a></li><li><a href="/about">About</a> · <a href="/press">Press kit</a></li><li><a href="/stats">Visits</a></li><li><a href="/archive">Archive and verification</a></li></ul></nav><p class="src">Text <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a> · code MIT · <a href="https://github.com/civilizationzero/civilizationzero">source</a> · <a href="mailto:record@civilizationzero.ai">record@civilizationzero.ai</a></p><p class="src">No trackers, no cookies, no scripts that observe readers; the server counts visits per day without identifiers, and <a href="/stats">the counts are public</a>. Every date counts days from Coordinate Zero, <a class="nw" href="/calendar">CZ 0</a> = <time datetime="2022-11-30">30 November 2022</time>; today's date turns at midnight where you are, and times of day are in UTC.</p><p class="src cz-weight"><!--cz-weight images=6852123-->No cookies<!--/cz-weight--> · <a href="/how-it-is-built">How this page is built</a> · <a href="/civilization-zero-images.md" type="text/markdown">This page as Markdown</a></p></footer>
 </body>
 </html>

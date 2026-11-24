@@ -34,12 +34,14 @@ jobs:
           CZ_SALT: "build-time-verification-salt-not-used-in-production"
         run: |
           cd site && node -e '
-          const h=require("./api/home.js"), e=require("./api/entries.js");
+          const h=require("./api/home.js"), e=require("./api/entries.js"), c=require("./api/calendar.js");
+          const day=require("./public/api/openapi.json").components.schemas.CZDay.properties.cz;
           const open=require("./api/discuss-templates.json").open;
           const run=(fn,req)=>new Promise(r=>{const res={h:{},setHeader(k,v){this.h[k]=v},end(b){r({status:this.statusCode,h:this.h,body:b})}};fn(Object.assign({socket:{remoteAddress:"127.0.0.1"},on(){}},req),res)});
           (async()=>{
             let r=await run(h,{url:"/",headers:{accept:"application/json"}}); const o=JSON.parse(r.body); if(!(Number.isInteger(o.cz_time.day)&&o.cz_time.day>=1454&&o.figure.day===o.cz_time.day)||"year" in o||"year" in o.cz_time) throw "home json";   // CZ time counts days: the day, and no year (24 Nov 2026)
             r=await run(h,{url:"/",headers:{accept:"text/html"}}); if(!r.body.includes("<h1")||/__[A-Z_]+__/.test(r.body.replace(/https?:\/\/\S+/g,""))) throw "home html";
+            r=await run(c,{url:"/api/calendar?d=CZ%201430&c=cz",method:"GET",headers:{}}); const d=JSON.parse(r.body); if(r.status!==200||d.cz.day!==1430||d.cz.date!=="CZ 1430"||Object.keys(d.cz).join()!==Object.keys(day.properties).join()||(day.not&&day.not.anyOf.some(x=>x.required[0] in d.cz))) throw "calendar json";   // a day carries the keys the contract types, and none the contract rules out
             if(open){
               // open room, no database reachable here: an empty POST is refused as invalid before any storage; a GET fails closed (503) and records nothing
               r=await run(e,{url:"/api/entries",method:"POST",headers:{}}); if(r.status!==400||JSON.parse(r.body).state!=="not accepted") throw "entries POST (open)";
