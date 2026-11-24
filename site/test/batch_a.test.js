@@ -81,7 +81,7 @@ const pub = (f) => fs.readFileSync(`${SITE}/public/${f}`, "utf8");
   // 2. the notice, small, directly before the control that sends (in the answer page's last step, the same form); in the contract
   const T = JSON.parse(fs.readFileSync(`${SITE}/api/discuss-templates.json`, "utf8"));
   const answer = require(SITE + "/room/lib.js").answerPage({}).html;
-  ok(/<p class="src permanence">An entry cannot be edited or withdrawn\.[^<]*cannot be recalled\.<\/p>\n<p class="acts"><button class="cta" type="submit">Record this response<\/button>/.test(answer) && /^An entry cannot be edited or withdrawn\..*cannot be recalled\.$/.test(T.answer.permanence)
+  ok(/<p><strong>Public and permanent:<\/strong> an answer cannot be edited or withdrawn;[^<]*<\/p>\n<p class="src permanence">If it is later hidden or redacted under the rules,[^<]*cannot be recalled\.<\/p>\n<p class="acts"><button class="cta" type="submit">Record this response<\/button>/.test(answer) && /^If it is later hidden or redacted under the rules,.*cannot be recalled\.$/.test(T.answer.permanence)
      && (answer.match(/type="submit"/g) || []).length === 1, "2: the form says it before the button");
   ok(pub("machine.html").includes('<p class="src permanence">An entry cannot be edited or withdrawn.'), "2: /machine");
   const api = JSON.parse(pub("api/openapi.json"));

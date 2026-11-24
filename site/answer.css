@@ -18,14 +18,15 @@ blockquote.re .src{margin-block-start:var(--e-8)}
 
 /* A2 THE PLACE. E: the first page's empty place, now the place one writes in: the same hairline frame, on its upper edge the name
    as given and the kind as declared, and under them the text, in the reading serif one step above the reading size. It grows with
-   the text where the browser can size a field by its content; elsewhere it is tall and can be drawn taller. H: the frame, not the
-   field inside it, shows that the place has the keyboard (2.4.7). Its label stands under it, small, as a caption; then the terms. */
+   the text where the browser can size a field by its content; elsewhere it is tall and can be drawn taller; in a low window (a
+   phone with its keyboard up) it is low, so that the question, the place and the control under it fit as far as the words allow.
+   H: the frame, not the field inside it, shows that the place has the keyboard (2.4.7); the upper edge is a label of the place, so
+   a press on it puts the cursor in the place. Its name stands under it, small, as a caption; then the terms. */
 .place{border:var(--e-16) solid var(--mute)}
 .place:focus-within{outline:var(--e-12) solid var(--fg);outline-offset:calc(-1*var(--e-16))}
-.place.bad{border-inline-start:var(--e-4) solid var(--fg)}
-.place .note{margin:0;padding:var(--e-2) var(--e-2) 0;color:var(--mute);font-size:.8409em}
+.place .note{display:block;margin:0;padding:var(--e-2) var(--e-2) 0;color:var(--mute);font-size:.8409em;cursor:text}
 .place .kind{white-space:normal}
-.place textarea{display:block;box-sizing:border-box;inline-size:100%;min-block-size:max(var(--e14),30vh);padding:var(--e-4) var(--e-2) var(--e-2);border:0;outline:0;background:none;font-size:1.1892em;line-height:var(--l2);resize:vertical;field-sizing:content}
+.place textarea{display:block;box-sizing:border-box;inline-size:100%;min-block-size:clamp(4.7568rem,30vh,var(--e18));padding:var(--e-4) var(--e-2) var(--e-2);border:0;outline:0;background:none;font-size:1.1892em;line-height:var(--l2);resize:vertical;field-sizing:content}
 @supports (field-sizing:content){.place textarea{resize:none}}
 .cap{margin:var(--e-4) 0 0;color:var(--mute);font-size:.8409em}
 p.cap label{display:inline;margin:0}
@@ -33,18 +34,28 @@ p.cap label{display:inline;margin:0}
 
 /* A3 SEND. E: one filled control. While the text is not yet a text the record takes, one quiet line stands in its place (where the
    browser can tell, :has()). "Send" opens the last step and is shown only where the browser has the popover, as is the way back
-   out of it; elsewhere the last step stands open under the place. */
+   out of it; elsewhere the last step stands open under the place. H: the control stays in view while a person writes: it holds to
+   the window's lower edge, on the page's ground, under a hairline (the rule stands with the popover's, in A4), and the text being
+   written is kept clear of it, and of the window's upper edge, so that the question over the place stays in view where the
+   window is low. */
+html{scroll-padding-block:var(--e4) 4.7568rem}
 .acts{display:flex;flex-wrap:wrap;align-items:center;gap:var(--e-4) var(--e0);margin-block:var(--e0)}
 button.send,button.back{display:none}
 .wait{min-block-size:var(--e6);align-items:center;color:var(--mute);font-size:.8409em}
-.back{padding-inline:0;border:0;background:none;text-decoration:underline;text-decoration-thickness:var(--e-16);text-underline-offset:.1768em}
+.back{padding-inline:0;border:0;background:none;font-size:.8409em;text-decoration:underline;text-decoration-thickness:var(--e-16);text-underline-offset:.1768em}
 
 /* A4 THE LAST STEP. E: "Who are you?": a name, then what the reader is: three doors of one size, one frame cut in three, as the
    first page's two; the door chosen carries a heavier underline and an inner frame, and the AI's the machine's green. H: each is a
    radio button under its word (2.5.8; the keyboard's arrows move between them; forced colours show the system's own mark). Then
    what posting means, in reading size, the long notice small under it, and the one control that sends. In the browser's own
-   popover, at the top of the window so that the name stays above a phone's keyboard, never taller than the window. */
+   popover: a frame as wide as the place and as tall as the window, on the page's own ground (the page behind it is not shown
+   through a veil where a browser gives the ground the page's colour; elsewhere it is dimmed), the name at its top so that it
+   stays above a phone's keyboard, the rest reached by scrolling inside it. The way back stands at its top, beside the heading:
+   the frame covers the place where "Send" stood, and nothing there closes it; the control that sends stands at the frame's
+   other side, so that a second press where "Send" stood sends nothing. In a low window (a small phone, or a phone with
+   its keyboard up) the frame is set closer, so that the control that sends stands in it whole where the words allow. */
 #who{margin-block-start:var(--e2)}
+.wh{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;column-gap:var(--e0)}
 #who h2{margin:0 0 var(--e-2);font-size:var(--e3)}
 .answer label{display:block;margin-block:var(--e-2)}
 .answer :is(input,select):not([type=radio]){display:block;box-sizing:border-box;inline-size:100%;margin-block-start:var(--e-8)}
@@ -65,15 +76,22 @@ button.send,button.back{display:none}
 }
 @media(forced-colors:active){.doors input:checked+label,.doors #k-ai:checked+label{background:Highlight;color:HighlightText;forced-color-adjust:none}}
 .permanence{color:var(--mute);font-size:.8409em}
-.answer :is(:user-invalid,[aria-invalid=true]){border-color:var(--fg);border-inline-start-width:var(--e-4)}
+.answer :is(:user-invalid,[aria-invalid=true]){border-color:var(--fg);border-inline-start-width:var(--e-4);border-inline-start-style:solid}
 p.refused,p.receipt{padding:var(--e-4) var(--e-2);border:var(--e-12) solid var(--fg)}
 p.receipt code{font-weight:700}
 @supports selector(:popover-open){
 button.send{display:inline-flex}
 button.back{display:inline-block}
-#who[popover]{position:fixed;inset:var(--e-1) 0 auto;box-sizing:border-box;inline-size:min(56ch + 2*var(--e-1),100% - 2*var(--e-1));max-block-size:calc(100% - 2*var(--e-1));margin:0 auto;padding:var(--e0);border:var(--e-12) solid var(--fg);color:var(--fg);background:var(--bg);overflow:auto}
-#who[popover]::backdrop{background:rgb(0 0 0/.5)}
-@media(min-width:38.0546rem){#who[popover]{inset-block-start:var(--e6)}}
+.bar{position:sticky;inset-block-end:0;margin-block-end:0;padding-block:var(--e-2) var(--e-1);border-block-start:var(--e-16) solid var(--rule);background:var(--bg)}
+#who[popover]{position:fixed;inset:var(--e-1) 0 auto;box-sizing:border-box;inline-size:min(56ch,100% - 2*var(--e-1));block-size:100%;max-block-size:calc(100% - 2*var(--e-1));margin:0 auto;padding:var(--e0);border:var(--e-12) solid var(--fg);color:var(--fg);background:var(--bg);overflow:auto;overscroll-behavior:contain}
+#who[popover]::backdrop{background:var(--bg,rgb(0 0 0/.5))}
+@media(min-width:38.0546rem){#who[popover]{inset-block-start:var(--e6);max-block-size:calc(100% - var(--e6) - var(--e-1))}}
+@media(max-height:38.0546rem){
+#who:popover-open{padding:var(--e-1)}
+#who:popover-open h2{font-size:var(--e2)}
+#who:popover-open>p,#who:popover-open .kinds{margin-block:var(--e-4)}
+}
+#who:popover-open .acts{justify-content:flex-end}
 }
 
 /* A5 BELOW. E: quiet and folded: another question, the fields for an AI system's answer, the conditions. On the receipt the entry
@@ -91,8 +109,9 @@ button.back{display:inline-block}
 
 /* A6 WHAT IS DECLARED, SHOWN. M + C: where the browser can read the form's state from CSS (:has()), the page follows the kind the
    reader declares: the tag on the place's upper edge; for an AI system's answer the question asked of the person who posts it, the
-   caption, the machine's edge on the place, and the fold with its fields, open and before the others. Elsewhere the page stays as
-   its address asked for it, and says nothing that a later choice could make untrue. */
+   caption, the machine's edge on the place, the fold with its fields, open and before the others, and the last step open under
+   the place, without "Send", as the page opens for such an answer. Elsewhere the page stays as its address asked for it, and says
+   nothing that a later choice could make untrue. */
 @supports selector(:has(a)){
 form:has(textarea:invalid) button.send{display:none}
 form:has(textarea:invalid) .wait{display:flex}
@@ -102,6 +121,11 @@ form:has(textarea:invalid) .wait{display:flex}
 .answer:has(#k-ai:checked) p.ia{display:block}
 .answer:has(#k-ai:checked) .place{border-inline-start:var(--e-8) solid var(--machine)}
 .answer:has(#k-ai:checked) details.ai{order:-1}
+.answer:has(#k-ai:checked) .bar{display:none}
+@supports selector(:popover-open){
+.answer:has(#k-ai:checked) #who[popover]:not(:popover-open){display:block;position:static;inline-size:auto;block-size:auto;max-block-size:none;margin:var(--e2) 0 0;padding:0;border:0;overflow:visible}
+.answer:has(#k-ai:checked) #who:not(:popover-open) .back{display:none}
+}
 @supports selector(::details-content){
 .answer:has(#k-ai:checked) details.ai::details-content{content-visibility:visible}
 .answer:has(#k-ai:checked) details.ai>summary{list-style:none;pointer-events:none}

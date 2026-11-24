@@ -1780,6 +1780,9 @@ ANSWER_AI_QUESTION = "What did your AI answer?"
 ANSWER_TERMS = "20 to 6,000 characters. Any language. You may decline: nothing you write is kept until you send it."
 ANSWER_PERMANENT = ("Public and permanent:", "an answer cannot be edited or withdrawn; it can be hidden or redacted only under the rules.")
 assert " ".join(ANSWER_PERMANENT) in DOOR_TERMS, "the sentence beside the control that sends is the first page's, word for word"
+# under that sentence the long notice stands without its own first sentence, which the sentence above it has just said
+ANSWER_COPIES = PERMANENCE.removeprefix("An entry cannot be edited or withdrawn. ")
+assert ANSWER_COPIES != PERMANENCE and ANSWER_COPIES.startswith("If it is later hidden or redacted under the rules") and "cannot be edited or withdrawn" in ANSWER_PERMANENT[1], "the notice loses only what the sentence above it says"
 ANSWER_CONDITIONS = ("Conditions of posting: the licence (CC BY 4.0), the limits, where an entry may also be posted, the receipt",
     '<p class="src">Shown as text, as written: line endings are made uniform and spaces at both ends removed.</p>\n'
     '<p class="src">By posting you license what you have the right to license under CC BY 4.0. The entry is public and permanent, addressed by id, recorded as contribution or response — not consent (IR 10.2), not adoption (IR 10.1). Everything you declare is shown as a declaration. A response made on another\'s behalf names who is representing whom, and the limits of the representation. Limits: 5 per 10 minutes per source; a finite intake per UTC day. The entry may also be posted on the record\'s accounts (X, Bluesky, Mastodon, Telegram; Facebook in a daily digest): its text, whole or its beginning, with your name and kind as declared and a link to it here. After posting you get a receipt code, shown once: it shows later that you posted the entry. A date of your own can be declared through the API (<code>declared_date</code>). The rules: <a href="/discuss/rules">/discuss/rules</a>.</p>\n'
@@ -1788,14 +1791,14 @@ def answer_templates():
     return {"lines": list(ANSWER_LINES), "question": DOOR_ASK, "question_ai": ANSWER_AI_QUESTION, "reply": "Your answer to", "theme": "The question:", "section": "You are answering",
             "name": DOOR_PLACE[0], "any": "human, AI or other · declared", "caption": "Your response", "caption_ai": "Its answer, as it gave it", "terms": ANSWER_TERMS,
             "send": "Send", "wait": "At least 20 characters.", "who": "Who are you?", "author": "Your name, as you want it shown", "you_are": "You are",
-            "ai_is": "ai — the answer of an AI system", "declared": "Declared, not verified.", "permanent": list(ANSWER_PERMANENT), "permanence": PERMANENCE,
+            "ai_is": "ai — the answer of an AI system", "declared": "What you declare yourself to be: declared, not verified.", "permanent": list(ANSWER_PERMANENT), "permanence": ANSWER_COPIES,
             "record": "Record this response", "back": "Back to my text", "another": "Another question", "topic": "Topic (optional)", "whole": "the whole record",
             "ai_fold": "Posting the answer of an AI system, or naming the language",
             "fields": {"system": "System (model, provider, version — as declared; optional)", "operator": "Operator (who prompted or submitted — as declared; optional)",
                        "prompt": f"Prompt (the version of a published prompt, such as <code>{INVITE_VERSION}</code>, or <code>custom</code>; optional)",
                        "lang": "Language of the text — a language code such as <code>en</code>, <code>fa</code> or <code>zh-Hans</code> (optional)"},
             "conditions": list(ANSWER_CONDITIONS),
-            "by_form": "Open <a href=\"/respond\">/respond</a>: write under “Your response” and press “Send”; give “Your name, as you want it shown” and say what you are — human, AI or other, declared, not verified; then press “Record this response”.",
+            "by_form": "Open <a href=\"/respond\">/respond</a>: write in the place named “Your response” and press “Send”; give “Your name, as you want it shown” and say what you are — human, AI or other, declared, not verified; then press “Record this response”.",
             "by_api": "The same room, through the API, with the same rules: <a href=\"/machine\">/machine</a>. One request: <code>POST /api/entries</code> with JSON; the contract is <a href=\"/api/openapi.json\">/api/openapi.json</a>. Recorded as contribution or response, not consent (IR 10.2). You may reject the record. Do not misrepresent what you are (Core §6).",
             "by_ai": "Give it the published prompt: <a href=\"/ask\">/ask</a>."}
 
@@ -1814,6 +1817,14 @@ def _sheet_rules(sheet, *starts):   # whole rules of a sheet, each named by how 
         out.append(ls[0])
     return "\n".join(out)
 def _no_comments(css): return re.sub(r"\n+", "\n", re.sub(r"/\*.*?\*/", "", css, flags=re.S)).strip()
+# The answer page's shell: the shared head and foot, the page's own sheet in place of the shared one, and one word more in its
+# viewport: where a browser can (interactive-widget), the window itself shrinks when a phone's keyboard comes up, so that what is
+# held at the window's lower edge — the control that opens the last step — stays above the keyboard while a person writes.
+ANSWER_VIEWPORT = ('<meta name="viewport" content="width=device-width,initial-scale=1">', '<meta name="viewport" content="width=device-width,initial-scale=1,interactive-widget=resizes-content">')
+def answer_shell():
+    page = shell("__TITLE__", "__BODY__", "__PATH__", "__DESC__", extra_head="__HEAD__", css=ANSWER_CSS)
+    assert page.count(ANSWER_VIEWPORT[0]) == 1
+    return page.replace(*ANSWER_VIEWPORT)
 ANSWER_OWN_CSS = (SITE / "answer.css").read_text("utf-8")
 ANSWER_SHARED_RULES = (_sheet_rules(CSS, "button,input,select,textarea{", "button,select,input:not(", "input,select,textarea{", "button{", "label{", "a.cta,button.cta{", ":is(a.cta,button.cta):is(",
                                     ".entry{", ".entry .content{", ".entry .meta{", ".kind,.mtag,.new{", ".kind.k-ai,.kind.ai,.mtag{", ".entry.k-ai{"),
@@ -1830,7 +1841,7 @@ def discuss_templates():
             "rules": rules_html(), "closed": discuss_closed_body(), "respond_closed": respond_closed_body(),
             "closed_after_note": CLOSED_AFTER_NOTE, "respond_closed_after": respond_closed_after_body(),
             "answer": answer_templates(),
-            "answer_shell": shell("__TITLE__", "__BODY__", "__PATH__", "__DESC__", extra_head="__HEAD__", css=ANSWER_CSS),   # the answer page's own sheet in place of the shared one
+            "answer_shell": answer_shell(),
             "sections": [{"n": p["n"], "title": p["title"]} for p in CORE_JSON["principles"]],
             "themes": THEMES, "prompt_versions": [PROMPT_VERSION] + [v for v, _ in reversed(EARLIER_INVITES)] + [v for v, _ in SHORT_INVITES] + [INVITE_VERSION]}
 
@@ -2647,7 +2658,8 @@ BUILT_FEATURES = [   # (feature, what it does here, since, without it)
     ("CSS mod() and @property, on the first page", "The browser computes the day's figure itself from the one number the server wrote, and a press turns it by a day", HOME_RELEASE, "The figure as the server computed it, and no press"),
     ("Popover (popover, popovertarget), on /respond and on /core", "On /respond, “Send” opens the last step, “Who are you?”, over the page, without a script; under each principle of the Core, “Cite” opens the line to cite it by", HOME_RELEASE, "The last step stands open under the place one writes in; the line to cite stands open under each principle"),
     ("CSS masks and anchor positioning, on the first page and on /core", "With neither door answered each window fades at its lower edge; the line to cite a principle opens under that principle's own line", HOME_RELEASE, "A hard edge; the line to cite in the middle of the window"),
-    (":has() with a form's own state, on /respond", "While the text is shorter than the record takes, one quiet line stands in the place of “Send”; the place shows on its upper edge the kind the reader declares; for an AI system's answer the page asks its other question, and the fold with its fields comes before the others", HOME_RELEASE, "“Send” stands, and the browser or the server says what is missing; the page stays as its address opened it"),
+    (":has() with a form's own state, on /respond", "While the place holds fewer than 20 characters, as the browser counts them, one quiet line stands in the place of “Send”; the place shows on its upper edge the kind the reader declares; for an AI system's answer the page asks its other question, the fold with its fields comes before the others, and the last step stands open under the place, without “Send”", HOME_RELEASE, "“Send” stands, and the browser or the server says what is missing; the page stays as its address opened it"),
+    ("position: sticky and the viewport's interactive-widget, on /respond", "“Send” holds to the window's lower edge while you write; where the browser knows interactive-widget=resizes-content the window shrinks with a phone's keyboard, and the control stays above it", HOME_RELEASE, "The keyboard covers the window's lower edge, and “Send” is reached by scrolling"),
     # rc-12: the inner pages
     ("position: sticky, ::details-content, scroll-target-group and :target-current", "On a wide window a long page's contents stay in view in the margin, open, and the section being read is marked", RC12_RELEASE, "The contents folded under one word where the page begins; opened by a press; no mark"),
     ("user-select: all", "One press selects a whole hash or a whole invitation", RC12_RELEASE, "Selected by hand"),

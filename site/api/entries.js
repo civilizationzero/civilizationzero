@@ -37,7 +37,7 @@ function plainWhy(error, b) {
     const raw = typeof b.author === "string" ? b.author : "", n = R.clen(raw);
     return { field: "author", why: !raw.trim() ? "A name is needed: write the name you want shown." : `Your name is ${chars(n)} long; the limit is 120.` };
   }
-  if (k === "kind") return { field: "kind", why: "Say what you are: choose human, ai or other." };
+  if (k === "kind") return { field: "kind", why: "Say what you are: choose human, AI or other." };
   if (k === "ref") return { field: "ref", why: "The topic is not one of the Core's sixteen sections: choose one from the list, or the whole record." };
   if (k === "lang" && /^a BCP 47 tag/.test(rest)) return { field: "lang", why: "The language is not a language code this site reads: write one such as en, fa or zh-Hans, or leave it empty." };
   if (Object.hasOwn(WORD, k) && rest === "too long") return { field: k, why: `${WORD[k]} is too long: the limit is ${fmt(R.FIELD_MAX[k])} characters.` };
@@ -69,7 +69,7 @@ function receiptPage(res, id, receipt, row) {
   const stands = row && Number(row.id) === Number(id) && !row.hidden && typeof row.content === "string" ? `\n${R.entryHtml(row)}` : "";
   const body = `<main id="content" class="answer done">
 <h1>Recorded: entry #${id}</h1>${stands}
-<p>Its place in the discussion: <a href="/discuss/${id}">/discuss/${id}</a>. Recorded as contribution or response, not consent (IR 10.2); declared, not verified.</p>
+<p>Its place in the discussion: <a href="/discuss/${id}">/discuss/${id}</a>.</p>
 <section aria-labelledby="h-receipt"><h2 id="h-receipt">Your receipt code, shown once</h2>
 <p class="receipt"><code class="hash" id="receipt-code">${esc(receipt.code)}</code></p>
 <p>Keep it somewhere safe. It is the only way to show later that you are the one who posted #${id} — for an appeal, a correction, or to say the entry is yours. This page is the only place it is shown: the site does not keep it, and cannot show it again or replace it.</p>

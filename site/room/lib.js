@@ -800,7 +800,7 @@ function answerHead(A, s, st) {
   }
   if (s.note) under += `\n<p class="re pending">${esc(s.note)}</p>`;
   if (st.ref) under += `\n<p class="re">${esc(A.section)} <a href="/core#p${st.ref}">${esc(sectionLabel(st.ref))}</a>.</p>`;
-  return `<h1><span class="na"${hid(ai)}>${q}</span><span class="ia"${hid(!ai)}>${esc(A.question_ai)}</span></h1>${under}`;
+  return `<h1 id="q"><span class="na"${hid(ai)}>${q}</span><span class="ia"${hid(!ai)}>${esc(A.question_ai)}</span></h1>${under}`;
 }
 function answerMain(s = {}) {
   const A = T.answer;
@@ -810,17 +810,23 @@ function answerMain(s = {}) {
   // the control to correct: marked for assistive technology and described by the sentence above the place (id "why"), repeated under it
   const bad = (k, more = "") => (s.fault === k ? ` aria-invalid="true" aria-describedby="why${more ? " " + more : ""}"` : more ? ` aria-describedby="${more}"` : "");
   const again = (k) => (s.fault === k && s.why ? `\n<p class="refused">${s.why}</p>` : "");
-  const focus = (k) => (s.sent ? (s.fault === k ? " autofocus" : "") : " autofocus");
-  const edge = `<p class="note">${esc(A.name)} · <span class="kind k0"${hid(!!kind)}>${esc(A.any)}</span><span class="kind kh"${hid(kind !== "human")}>${KINDS.human} · declared</span><span class="kind k-ai ia"${hid(!ai)}>${KINDS.ai} · declared</span><span class="kind ko"${hid(kind !== "other")}>${KINDS.other} · declared</span></p>`;
+  // the last step stands open under the place, not in a sheet, when a form comes back and when the page opens for an AI system's
+  // answer: the published invitations send a person to "Your name, as you want it shown" and "Record this response" by name
+  const inline = !!s.sent || ai;
+  const focus = (k) => (s.sent ? (s.fault === k ? " autofocus" : "") : k === "content" || !inline ? " autofocus" : "");
+  // the place's upper edge — the name as given, the kind as declared — is a label of the place: a press on it puts the cursor in the
+  // place; the place is called by its caption ("Your response") and described by the question and the terms
+  const edge = `<label class="note" for="text">${esc(A.name)} · <span class="kind k0"${hid(!!kind)}>${esc(A.any)}</span><span class="kind kh"${hid(kind !== "human")}>${KINDS.human} · declared</span><span class="kind k-ai ia"${hid(!ai)}>${KINDS.ai} · declared</span><span class="kind ko"${hid(kind !== "other")}>${KINDS.other} · declared</span></label>`;
   // the text: after the tag's own line break, so that a first line break of the writer's is not taken for it
-  const place = `<div class="place${s.fault === "content" ? " bad" : ""}">${edge}
-<textarea id="text" name="content" required minlength="20" maxlength="${2 * FIELD_MAX.content}" dir="auto"${bad("content", "text-note")}${focus("content")}>\n${esc(st.text)}</textarea></div>
-<p class="cap"><label for="text">${esc(A.caption)}</label><span class="ia"${hid(!ai)}> · ${esc(A.caption_ai)}</span></p>${again("content")}
-<p class="src" id="text-note">${esc(A.terms)}</p>
-<p class="acts">${s.sent ? "" : `<button class="cta send" type="button" popovertarget="who">${esc(A.send)}</button>`}<span class="wait" hidden>${esc(A.wait)}</span></p>`;
+  const place = `<div class="place">${edge}
+<textarea id="text" name="content" required minlength="20" maxlength="${2 * FIELD_MAX.content}" dir="auto" aria-labelledby="text-cap"${bad("content", "q text-note")}${focus("content")}>\n${esc(st.text)}</textarea></div>
+<p class="cap"><label for="text" id="text-cap">${esc(A.caption)}</label><span class="ia"${hid(!ai)}> · ${esc(A.caption_ai)}</span></p>${again("content")}
+<p class="src" id="text-note">${esc(A.terms)}</p>${inline ? "" : `
+<p class="acts bar"><button class="cta send" type="button" popovertarget="who">${esc(A.send)}</button><span class="wait" hidden>${esc(A.wait)}</span></p>`}`;
   const door = (k, extra = "") => `<input type="radio" name="kind" value="${k}" id="k-${k}"${k === "human" ? " required" : ""}${extra}${k === "human" && s.sent && s.fault === "kind" ? " autofocus" : ""}${kind === k ? " checked" : ""}><label for="k-${k}">${KINDS[k]}</label>`;
-  const who = `<div id="who"${s.sent ? "" : " popover"} role="group" aria-labelledby="who-h">
-<h2 id="who-h">${esc(A.who)}</h2>
+  // in the sheet the way back stands at its top, beside the heading: where "Send" stood nothing closes the sheet
+  const who = `<div id="who"${inline ? "" : " popover"} role="group" aria-labelledby="who-h">
+<div class="wh"><h2 id="who-h">${esc(A.who)}</h2>${inline ? "" : ` <button class="back" type="button" popovertarget="who" popovertargetaction="hide">${esc(A.back)}</button>`}</div>
 <label>${esc(A.author)} <input name="author" required maxlength="${2 * FIELD_MAX.author}" dir="auto"${v("author")}${bad("author")}${focus("author")}></label>${again("author")}
 <fieldset class="kinds${s.fault === "kind" ? " bad" : ""}"${s.fault === "kind" ? ' aria-describedby="why"' : ""}><legend>${esc(A.you_are)}</legend>
 <div class="doors">${door("human")}${door("ai", ' aria-describedby="kind-ai"')}${door("other")}</div>${again("kind")}
@@ -828,7 +834,7 @@ function answerMain(s = {}) {
 </fieldset>
 <p><strong>${esc(A.permanent[0])}</strong> ${esc(A.permanent[1])}</p>
 <p class="src permanence">${esc(A.permanence)}</p>
-<p class="acts"><button class="cta" type="submit">${esc(A.record)}</button>${s.sent ? "" : ` <button class="back" type="button" popovertarget="who" popovertargetaction="hide">${esc(A.back)}</button>`}</p>
+<p class="acts"><button class="cta" type="submit">${esc(A.record)}</button></p>
 </div>`;
   // below, folded: another question (the themes' questions; the one being answered is marked), the fields for an AI system's answer
   // (open, and before the others, when that is what is posted), the conditions
@@ -849,22 +855,29 @@ ${field("lang", ' autocomplete="off"')}
 </details>`;
   const conditions = `<details><summary>${esc(A.conditions[0])}</summary>\n${A.conditions[1]}\n</details>`;
   const alert = typeof s.alert === "function" ? s.alert(st.dropped) : s.alert || "";
+  // for an AI system's answer the fold with its fields stands before the last step, as the invitations name them: the answer, its
+  // system and operator, then the name and the control that records; otherwise the folds follow the last step
   const html = `${answerHead(A, s, st)}${alert ? "\n" + alert : ""}
 <form class="respond" method="post" action="/api/entries" accept-charset="utf-8">${st.parent !== null ? `\n<input type="hidden" name="parent" value="${st.parent}">` : ""}
-${place}
+${place}${ai ? `\n<div class="folds">\n${fold}\n</div>` : ""}
 ${who}
 <div class="folds">
-${ai ? fold + "\n" + another : another + "\n" + fold}
+${ai ? another : another + "\n" + fold}
 ${conditions}
 </div>
 </form>`;
-  return { html, dropped: st.dropped };
+  return { html, dropped: st.dropped, asks: asksQuestion(A, st) };
 }
-// the page whole: the two small lines over the question (not over a form that came back), the form, and under it the page's other form
+// "This one is asked of you" is said only over a question: the page's own, or a theme whose title is one (it ends in a question
+// mark); not over "Your answer to #N", nor over a theme's title that asks nothing. The heading for an AI system's answer can be
+// chosen after the page opens, so it does not decide this.
+const asksQuestion = (A, st) => /\?$/.test(String(st.theme ? st.theme.title : st.parent !== null ? "" : A.question).trim());
+// the page whole: the two small lines over the question (not over a form that came back, nor over a heading that asks nothing), the
+// form, and under it the page's other form
 function answerPage(s = {}) {
   const A = T.answer, m = answerMain(s);
   if (!m.html) return { html: "", dropped: [] };
-  return { html: `<main id="content" class="answer">\n${s.sent ? "" : `<p class="pre">${esc(A.lines[0])}<br>${esc(A.lines[1])}</p>\n`}${m.html}${s.sent ? "" : "\n" + formsLine()}\n</main>`, dropped: m.dropped };
+  return { html: `<main id="content" class="answer">\n${s.sent || !m.asks ? "" : `<p class="pre">${esc(A.lines[0])}<br>${esc(A.lines[1])}</p>\n`}${m.html}${s.sent ? "" : "\n" + formsLine()}\n</main>`, dropped: m.dropped };
 }
 // the same page for a reader of text (/respond.md): the question, the terms, how to post by the form or by the API; no control
 function answerText(s = {}) {
@@ -877,7 +890,7 @@ function answerText(s = {}) {
   else if (s.entry) under += `\n<p>${whoHtml(s.entry)} · <a href="/discuss/${Number(s.entry.id)}">#${Number(s.entry.id)}</a></p>\n<div class="content">${esc(excerpt(s.entry.content, 200))}</div>`;
   if (s.note) under += `\n<p>${esc(s.note)}</p>`;
   if (st.ref) under += `\n<p>${esc(A.section)} <a href="/core#p${st.ref}">${esc(sectionLabel(st.ref))}</a>.</p>`;
-  return `<main>\n<h1>${q}</h1>\n${formsLine()}\n<p>${esc(A.lines[0])} ${esc(A.lines[1])}</p>${under}
+  return `<main>\n<h1>${q}</h1>\n${formsLine()}${asksQuestion(A, st) ? `\n<p>${esc(A.lines[0])} ${esc(A.lines[1])}</p>` : ""}${under}
 <p>${esc(A.terms)}</p>
 <p><strong>${esc(A.permanent[0])}</strong> ${esc(A.permanent[1])}</p>
 <p>${esc(A.permanence)}</p>
