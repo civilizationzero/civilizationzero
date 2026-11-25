@@ -173,6 +173,16 @@
     "mastodon": "https://mastodon.social/@civilizationzero/117675485733270823"
    }
   },
-  null
+  {
+   "sentence": "Humans have always handed the future to their children. Who are you handing it to now?",
+   "day": 1456,
+   "art": "Clifford attractor",
+   "file": "humans-have-always",
+   "watch": {
+    "x": "https://x.com/czrecord/status/2125569470504866248",
+    "bluesky": "https://bsky.app/profile/civilizationzero.ai/post/3n356mumgkk2k",
+    "mastodon": "https://mastodon.social/@civilizationzero/117677146051117094"
+   }
+  }
  ]
 }
