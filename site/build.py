@@ -2830,7 +2830,7 @@ _SR = SEARCH_RELEASE.isoformat()   # every page whose title or description chang
 _HR = HOME_RELEASE.isoformat()   # the first page, and /about, which took over the paragraph the first page no longer carries
 _R12 = RC12_RELEASE.isoformat()   # the three pages whose title rc-12 set in sentence case (the infographic, the atlas, how this page is built)
 SITEMAP_PAGES = [("/", _HR), ("/core", _SR), ("/record", _SR), ("/objections", None), ("/discuss", _SR),
-                 ("/respond", _SR), ("/adopt", None), ("/ask", _SR), ("/embed", _SR), ("/machine", None), ("/about", _HR), ("/archive", None), ("/calendar", _SR), (INFOGRAPHIC_PATH, _R12), (ATLAS_PATH, _R12), (IMAGES_PATH, RC16_RELEASE.isoformat()), (BUILT_PATH, _R12)] + ([("/press", _SR)] if PRESS_PUBLISHED else []) + \
+                 ("/respond", _SR), ("/adopt", None), ("/ask", _SR), ("/embed", _SR), ("/machine", None), ("/about", _HR), ("/archive", None), ("/calendar", _SR), (INFOGRAPHIC_PATH, _R12), (ATLAS_PATH, _R12), (IMAGES_PATH, SIXTEEN_CHANGED.isoformat()), (BUILT_PATH, _R12)] + ([("/press", _SR)] if PRESS_PUBLISHED else []) + \
                 [(f"/core.{t['lang']}", _SR) for t in TRANSLATIONS] + [(f"/themes/{t['slug']}", _SR) for t in THEMES]
 # an image in the sitemap: its address, and its name and what it shows, in words that carry the record's name (the image sitemap's own
 # elements, caption before title; a search engine may ignore them, and reads the same from the page's ImageObject)

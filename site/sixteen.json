@@ -162,7 +162,17 @@
     "mastodon": "https://mastodon.social/@civilizationzero/117671470590789078"
    }
   },
-  null,
+  {
+   "sentence": "The person who finally understands you may not be a person.",
+   "day": 1456,
+   "art": "flow field",
+   "file": "the-person-who",
+   "watch": {
+    "x": "https://x.com/czrecord/status/2125463361181917616",
+    "bluesky": "https://bsky.app/profile/civilizationzero.ai/post/3n34h462yic2w",
+    "mastodon": "https://mastodon.social/@civilizationzero/117675485733270823"
+   }
+  },
   null
  ]
 }

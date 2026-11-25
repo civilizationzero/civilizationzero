@@ -215,8 +215,8 @@ _same = {"/objections", "/adopt", "/machine", "/archive"}   # their title and de
 # the three pages whose title rc-12 set in sentence case (finding 33) carry rc-12's day (lib.RC12_RELEASE; no page prints it)
 _r12 = {"/how-it-is-built": "How this page is built · Civilization Zero", "/civilization-zero-infographic": "Civilization Zero infographic: from the first humans to AI", "/civilization-zero-evidence-atlas": "Civilization Zero evidence atlas: after Coordinate Zero"}
 _r12_day = RC12_RELEASE.isoformat()
-check(_r12_day >= "2026-11-24" and RC16_RELEASE >= RC12_RELEASE and set(_lm) >= _same | set(_r12)
-      and all((v is None) if k in _same else v == (_r12_day if k in _r12 else RC16_RELEASE.isoformat() if k == "/civilization-zero-images" else HOME_RELEASE.isoformat() if k in ("/", "/about") else "2026-11-23") for k, v in _lm.items()) and "Year Zero" not in _sm_txt.replace("Year Zero: 30 November 2022, CZ 0", "") and all(v is None or (re.fullmatch(r"\d{4}-\d{2}-\d{2}", v) and v <= datetime.date.today().isoformat()) for v in _lm.values()),
+check(_r12_day >= "2026-11-24" and SIXTEEN_CHANGED >= RC16_RELEASE >= RC12_RELEASE and set(_lm) >= _same | set(_r12)
+      and all((v is None) if k in _same else v == (_r12_day if k in _r12 else SIXTEEN_CHANGED.isoformat() if k == "/civilization-zero-images" else HOME_RELEASE.isoformat() if k in ("/", "/about") else "2026-11-23") for k, v in _lm.items()) and "Year Zero" not in _sm_txt.replace("Year Zero: 30 November 2022, CZ 0", "") and all(v is None or (re.fullmatch(r"\d{4}-\d{2}-\d{2}", v) and v <= datetime.date.today().isoformat()) for v in _lm.values()),
       "sitemap.xml: the first page and /about carry the day the first page of rc-11 went live (24 Nov 2026), the three pages retitled with rc-12 its day, the sixteen's page the day of rc-16, every other page whose title or description changed on 23 Nov 2026 that day, and the rest no date; no date is in the future; no 'Year Zero' in the site's voice")
 for _k, _t in _r12.items():
     _h = (PUBLIC / (_k[1:] + ".html")).read_text("utf-8")

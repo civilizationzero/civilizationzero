@@ -183,10 +183,10 @@ await check("a translation asked for from another site's page is refused", async
   const r = await raw("/api/discuss?page=translate", { origin: "https://example.com", "content-type": "application/x-www-form-urlencoded" }, "POST", "lang=fa&ids=7&back=%2Fdiscuss%2F7%3Ftl%3Dfa");
   return det(r.s === 403, `status ${r.s}`);
 });
-await check("the forms say an entry cannot be recalled (/respond, the reply dialog), where the room takes entries", async () => {
-  const [a, b] = await Promise.all([get("/respond"), get("/discuss/1")]);
-  const re = /<p class="src permanence">An entry cannot be edited or withdrawn\./;
-  return det((re.test(a.t) || !a.t.includes('<form class="respond"')) && (re.test(b.t) || !b.t.includes("<dialog")), "");
+await check("the form says an answer cannot be edited, withdrawn or recalled (/respond), where the room takes entries", async () => {
+  const a = await get("/respond");   // the one place an answer is written: the first page and /discuss lead to it
+  const says = a.t.includes("an answer cannot be edited or withdrawn") && a.t.includes("cannot be recalled.");
+  return det(says || !a.t.includes('<form class="respond"'), says ? "" : "the form is there without the two sentences");
 });
 await check("robots.txt keeps views out of the index; sitemaps answer", async () => {
   const [r, s] = await Promise.all([raw("/robots.txt"), raw("/sitemap.xml")]);
