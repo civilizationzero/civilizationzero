@@ -1,12 +1,12 @@
 {
  "what": "The daily check of the live site by site/verify/live-check.mjs: what the site sends and how it answers, against what its pages say. The record's own checks are verify.py's.",
- "checked_at": "2026-11-27T13:04:53Z",
+ "checked_at": "2026-11-28T12:18:13Z",
  "site": "https://civilizationzero.ai",
  "commit": "d783f5697fb65ed55b8e013f3b6de6403e3074a8",
  "passed": 48,
  "total": 48,
  "failed": [],
- "run": "https://github.com/civilizationzero/civilizationzero/actions/runs/46003970561",
+ "run": "https://github.com/civilizationzero/civilizationzero/actions/runs/46143944697",
  "script": "site/verify/live-check.mjs",
  "checks": [
   {
@@ -77,7 +77,7 @@
   {
    "name": "/stats: HTML with its policy, no cookie, its weight, its Markdown linked",
    "ok": true,
-   "detail": "58317 bytes"
+   "detail": "58505 bytes"
   },
   {
    "name": "/respond: HTML with its policy, no cookie, its weight, its Markdown linked",
@@ -97,7 +97,7 @@
   {
    "name": "the date at the top of the pages is today's, in the time zone of this network",
    "ok": true,
-   "detail": "America/Chicago: today is CZ 1458; /index.json 1458, / 1458, /core 1458, /about 1458, /press 1458, /discuss 1458"
+   "detail": "America/New_York: today is CZ 1459; /index.json 1459, / 1459, /core 1459, /about 1459, /press 1459, /discuss 1459"
   },
   {
    "name": "/core.txt: the canonical bytes, with a Repr-Digest that matches them",
@@ -222,7 +222,7 @@
   {
    "name": "GET of a translation only reads (never asks the engine)",
    "ok": true,
-   "detail": "qmv"
+   "detail": "qke"
   },
   {
    "name": "a translation asked for from another site's page is refused",
